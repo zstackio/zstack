@@ -10,8 +10,15 @@ import org.zstack.core.jsonlabel.JsonLabelInventory;
 import org.zstack.core.jsonlabel.JsonLabelVO;
 import org.zstack.core.jsonlabel.JsonLabelVO_;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.image.ImageBackupStorageRefVO;
+import org.zstack.header.image.ImageBackupStorageRefVO_;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.storage.backup.StorageTrashSpec;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -54,10 +61,10 @@ public class StorageTrashImpl implements StorageTrash {
             spec.setStorageType(getResourceType(spec.getStorageUuid()));
         }
 
-        return new JsonLabel().create(makeTrashType(type), spec, spec.getStorageUuid());
+        return new JsonLabel().create(makeTrashKey(type), spec, spec.getStorageUuid());
     }
 
-    private String makeTrashType(TrashType type) {
+    private String makeTrashKey(TrashType type) {
         return String.format("%s-%s", type.toString(), Platform.getUuid());
     }
 
@@ -110,6 +117,12 @@ public class StorageTrashImpl implements StorageTrash {
         List<JsonLabelVO> lables = Q.New(JsonLabelVO.class).eq(JsonLabelVO_.resourceUuid, storageUuid).like(JsonLabelVO_.labelValue, String.format("%%%s%%", installPath)).list();
         if (!lables.isEmpty()) {
             for (JsonLabelVO lable: lables) {
+                for (TrashType type: TrashType.values()) {
+                    if (!lable.getLabelKey().startsWith(type.name())) {
+                        // if lable key not starts with type, it may not be storage trash
+                        continue;
+                    }
+                }
                 StorageTrashSpec spec = JSONObjectUtil.toObject(lable.getLabelValue(), StorageTrashSpec.class);
                 if (spec.getInstallPath().equals(installPath)) {
                     return lable.getId();
@@ -117,5 +130,29 @@ public class StorageTrashImpl implements StorageTrash {
             }
         }
         return null;
+    }
+
+    private boolean makeSureInstallPathNotUsedByVolume(String installPath) {
+        return !Q.New(VolumeVO.class).eq(VolumeVO_.installPath, installPath).isExists();
+    }
+
+    private boolean makeSureInstallPathNotUsedByImage(String installPath) {
+        return !Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.installPath, installPath).isExists();
+    }
+
+    private boolean makeSureInstallPathNotUsedBySnapshot(String installPath) {
+        return !Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.primaryStorageInstallPath, installPath).isExists();
+    }
+
+    @Override
+    public boolean makeSureInstallPathNotUsed(StorageTrashSpec spec) {
+        if (spec.getResourceType().equals(VolumeVO.class.getSimpleName())) {
+            return makeSureInstallPathNotUsedByVolume(spec.getInstallPath());
+        } else if (spec.getResourceType().equals(ImageVO.class.getSimpleName())) {
+            return makeSureInstallPathNotUsedByImage(spec.getInstallPath());
+        } else if (spec.getResourceType().equals(VolumeSnapshotVO.class.getSimpleName())) {
+            return makeSureInstallPathNotUsedBySnapshot(spec.getInstallPath());
+        }
+        return true;
     }
 }

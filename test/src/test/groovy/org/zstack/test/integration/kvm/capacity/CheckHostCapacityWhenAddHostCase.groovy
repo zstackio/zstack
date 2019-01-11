@@ -6,12 +6,10 @@ import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.AddKVMHostAction
 import org.zstack.test.integration.kvm.KvmTest
+import org.zstack.test.integration.kvm.host.HostEnv
 import org.zstack.testlib.ClusterSpec
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.test.integration.kvm.Env
-import org.zstack.testlib.Test
-
 /**
  * Created by zouye on 2017/3/1.
  */
@@ -25,7 +23,7 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
 
     @Override
     void environment() {
-        env = Env.noHostBasicEnv()
+        env = HostEnv.noHostBasicEnv()
     }
 
     @Override

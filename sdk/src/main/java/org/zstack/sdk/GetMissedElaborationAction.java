@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetMissedElaborationAction extends AbstractAction {
 
@@ -24,7 +25,7 @@ public class GetMissedElaborationAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
     public java.lang.Long repeats;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

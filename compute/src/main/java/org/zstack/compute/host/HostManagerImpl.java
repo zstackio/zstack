@@ -359,7 +359,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 String release = HostSystemTags.OS_RELEASE.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_RELEASE_TOKEN);
                 String version = HostSystemTags.OS_VERSION.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_VERSION_TOKEN);
 
-                if (distro == null && release == null && version == null) {
+                if (distro == null || release == null || version == null) {
                     trigger.fail(operr("after connecting, host[name:%s, ip:%s] returns a null os version", vo.getName(), vo.getManagementIp()));
                     return;
                 }
@@ -381,7 +381,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 String cdistro = HostSystemTags.OS_DISTRIBUTION.getTokenByResourceUuid(otherHostUuid, HostSystemTags.OS_DISTRIBUTION_TOKEN);
                 String crelease = HostSystemTags.OS_RELEASE.getTokenByResourceUuid(otherHostUuid, HostSystemTags.OS_RELEASE_TOKEN);
                 String cversion = HostSystemTags.OS_VERSION.getTokenByResourceUuid(otherHostUuid, HostSystemTags.OS_VERSION_TOKEN);
-                if (cdistro == null && crelease == null && cversion == null) {
+                if (cdistro == null || crelease == null || cversion == null) {
                     // this the first host in cluster
                     trigger.next();
                     return;

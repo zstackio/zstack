@@ -7569,8 +7569,8 @@
     "fileName": "src/zstack/./premium/cloudformation/src/main/java/org/zstack/cloudformation/template/CloudFormationDecoder.java"
   },
   {
-    "raw": "cannot found such msg: %s for create",
-    "en_US": "cannot found such msg: {0} for create",
+    "raw": "cannot find such msg: %s for create",
+    "en_US": "cannot find such msg: {0} for create",
     "zh_CN": "",
     "arguments": [
       "msg"
@@ -8347,7 +8347,7 @@
   {
     "raw": "oss bucket is not empty!",
     "en_US": "oss bucket is not empty!",
-    "zh_CN": "oss Bucket不能为空",
+    "zh_CN": "oss Bucket不为空",
     "arguments": [],
     "line": 164,
     "fileName": "src/zstack/./premium/hybrid/src/main/java/org/zstack/aliyun/oss/EcsOssManagerImpl.java"
@@ -16875,5 +16875,15 @@
     "arguments": [],
     "line": 29,
     "fileName": "src/main/java/org/zstack/zwatch/ruleengine/ComparisonOperator.java"
+  },
+  {
+    "raw": "there is no available ipRange on L3 network [%s]",
+    "en_US": "there is no available ipRange on L3 network [{0}]",
+    "zh_CN": "L3网络[{0}]中没有可用的网络段",
+    "arguments": [
+      "v.getUuid()"
+    ],
+    "line": 79,
+    "fileName": "# at: src/main/java/org/zstack/compute/vm/VmAllocateNicFlow.java"
   }
 ]

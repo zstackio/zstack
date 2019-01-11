@@ -15,8 +15,6 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.job.JobQueueFacade;
-import org.zstack.core.jsonlabel.JsonLabelVO;
-import org.zstack.core.jsonlabel.JsonLabelVO_;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -54,7 +52,6 @@ import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
@@ -355,11 +352,11 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected void handle(final CheckInstallPathMsg msg) {
         CheckInstallPathReply reply = new CheckInstallPathReply();
-        reply.setTrashId(trash.getTrashId(self.getUuid(), msg.getInstallPath()));
+        Long trashId = trash.getTrashId(self.getUuid(), msg.getInstallPath());
 
-        if (reply.getTrashId() != null) {
-            String lable = Q.New(JsonLabelVO.class).eq(JsonLabelVO_.id, reply.getTrashId()).select(JsonLabelVO_.labelValue).find();
-            StorageTrashSpec spec = JSONObjectUtil.toObject(lable, StorageTrashSpec.class);
+        if (trashId != null) {
+            StorageTrashSpec spec = trash.getTrash(self.getUuid(), trashId);
+            reply.setTrashId(trashId);
             reply.setResourceUuid(spec.getResourceUuid());
         }
         bus.reply(msg, reply);
@@ -701,6 +698,12 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             return;
         }
 
+        if (!trash.makeSureInstallPathNotUsed(spec)) {
+            logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+            trash.remove(spec.getTrashId());
+            completion.success(result);
+            return;
+        }
         DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
         msg.setPrimaryStorageUuid(self.getUuid());
         msg.setInstallPath(spec.getInstallPath());
@@ -748,6 +751,12 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         new While<>(trashs.entrySet()).all((t, coml) -> {
             StorageTrashSpec spec = t.getValue();
 
+            if (!trash.makeSureInstallPathNotUsed(spec)) {
+                logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+                trash.remove(spec.getTrashId());
+                coml.done();
+                return;
+            }
             DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
             msg.setPrimaryStorageUuid(self.getUuid());
             msg.setInstallPath(spec.getInstallPath());

@@ -44,8 +44,10 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     private ReturnValueCompletion<List<HostInventory>> completion;
     private ReturnValueCompletion<List<HostInventory>> dryRunCompletion;
 
+    private int skipCounter = 0;
 
     private AbstractHostAllocatorFlow lastFlow;
+
     private HostAllocationPaginationInfo paginationInfo;
 
     private Set<String> seriesErrorWhenPagination = new HashSet<String>();
@@ -144,6 +146,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     private void startOver() {
         it = flows.iterator();
         result = null;
+        skipCounter = 0;
         runFlow(it.next());
     }
 
@@ -227,8 +230,10 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     public void skip() {
         logger.debug(String.format("[Host Allocation]: flow[%s] asks to skip itself, we are running to the next flow",
                 lastFlow.getClass()));
-
         if (it.hasNext()) {
+            if (isFirstFlow(lastFlow)) {
+                skipCounter++;
+            }
             runFlow(it.next());
             return;
         }
@@ -237,8 +242,8 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     }
 
     @Override
-    public int indexOfFlow(AbstractHostAllocatorFlow flow) {
-        return flows.indexOf(flow);
+    public boolean isFirstFlow(AbstractHostAllocatorFlow flow) {
+        return flows.indexOf(flow) == skipCounter;
     }
 
     private void fail(ErrorCode errorCode) {

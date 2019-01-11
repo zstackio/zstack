@@ -130,9 +130,7 @@ public abstract class HostBase extends AbstractHost {
         checkStatus();
     }
 
-    protected int getHostSyncLevel() {
-        return 10;
-    }
+    protected abstract int getHostSyncLevel();
 
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIChangeHostStateMsg) {
@@ -895,9 +893,7 @@ public abstract class HostBase extends AbstractHost {
         });
     }
 
-    protected HostInventory getSelfInventory() {
-        return HostInventory.valueOf(self);
-    }
+    protected abstract HostInventory getSelfInventory();
 
     protected boolean changeConnectionState(final HostStatusEvent event) {
         return changeConnectionState(event, null);
@@ -1128,15 +1124,5 @@ public abstract class HostBase extends AbstractHost {
                 return getHostSyncLevel();
             }
         });
-    }
-
-    @Override
-    @MessageSafe
-    public void handleMessage(Message msg) {
-        if (msg instanceof APIMessage) {
-            handleApiMessage((APIMessage) msg);
-        } else {
-            handleLocalMessage(msg);
-        }
     }
 }

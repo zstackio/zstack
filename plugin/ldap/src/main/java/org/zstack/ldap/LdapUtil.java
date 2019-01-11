@@ -11,6 +11,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by miao on 12/19/16.
@@ -32,7 +34,7 @@ public class LdapUtil {
         ldapContextSource.setAuthenticationStrategy(tls);
     }
 
-    LdapTemplateContextSource loadLdap(LdapServerInventory inv) {
+    LdapContextSource buildLdapContextSource(LdapServerInventory inv, Map<String, Object> baseEnvironmentProperties) {
         LdapContextSource ldapContextSource;
         ldapContextSource = new LdapContextSource();
         ldapContextSource.setUrl(inv.getUrl());
@@ -47,10 +49,9 @@ public class LdapUtil {
         ldapContextSource.setPooled(false);
         ldapContextSource.setReferral("follow");
 
-        LdapTemplate ldapTemplate;
-        ldapTemplate = new LdapTemplate();
-        ldapTemplate.setIgnorePartialResultException(true);
-        ldapTemplate.setContextSource(ldapContextSource);
+        if (baseEnvironmentProperties != null && !baseEnvironmentProperties.isEmpty()) {
+            ldapContextSource.setBaseEnvironmentProperties(baseEnvironmentProperties);
+        }
 
         try {
             ldapContextSource.afterPropertiesSet();
@@ -59,6 +60,28 @@ public class LdapUtil {
             logger.error("Test LDAP Context Source not loaded ", e);
             throw new CloudRuntimeException("Test LDAP Context Source not loaded", e);
         }
+
+        return ldapContextSource;
+    }
+
+    LdapTemplateContextSource loadLdap(LdapServerInventory inv) {
+        LdapContextSource ldapContextSource = buildLdapContextSource(inv, new HashMap<>());
+
+        LdapTemplate ldapTemplate;
+        ldapTemplate = new LdapTemplate();
+        ldapTemplate.setIgnorePartialResultException(true);
+        ldapTemplate.setContextSource(ldapContextSource);
+
+        return new LdapTemplateContextSource(ldapTemplate, ldapContextSource);
+    }
+
+    LdapTemplateContextSource loadLdap(LdapServerInventory inv, Map<String, Object> baseEnvironmentProperties) {
+        LdapContextSource ldapContextSource = buildLdapContextSource(inv, baseEnvironmentProperties);
+
+        LdapTemplate ldapTemplate;
+        ldapTemplate = new LdapTemplate();
+        ldapTemplate.setIgnorePartialResultException(true);
+        ldapTemplate.setContextSource(ldapContextSource);
 
         return new LdapTemplateContextSource(ldapTemplate, ldapContextSource);
     }

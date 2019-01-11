@@ -4,6 +4,7 @@ import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.cloudbus.CloudBusGlobalConfig
 import org.zstack.core.db.Q
+import org.zstack.header.image.ImageConstant
 import org.zstack.header.vm.VmCreationStrategy
 import org.zstack.header.vm.VmInstanceEO
 import org.zstack.header.vm.VmInstanceEO_
@@ -48,9 +49,9 @@ test a VM's start/stop/reboot/destroy/recover operations
             testRebootVm()
             testDestroyVm()
             testRecoverVm()
-            testExpungeVm()
-
+            testExpungeVm()            
             testDeleteCreatedVm()
+            testCreateVmParameter()
         }
     }
 
@@ -199,6 +200,196 @@ test a VM's start/stop/reboot/destroy/recover operations
 
         Long after = Q.New(VmInstanceEO.class).count()
         assert before == after + 1
+    }
+
+    void testCreateVmParameter() {
+        VmSpec spec = env.specByName("vm")
+        DiskOfferingInventory diskOfferingInventory = env.inventoryByName("diskOffering")
+        InstanceOfferingInventory instanceOfferingInventory = env.inventoryByName("instanceOffering")
+        ImageInventory imageInventory = env.inventoryByName("image1")
+        L3NetworkInventory l3NetworkInventory = env.inventoryByName("l3")
+        L3NetworkInventory l3pubInventory = env.inventoryByName("pubL3")
+        ZoneInventory zoneInventory = env.inventoryByName("zone")
+        ClusterInventory clusterInventory = env.inventoryByName("cluster")
+        HostInventory hostInventory = env.inventoryByName("kvm")
+
+
+        // create vm with a disable zone
+        changeZoneState {
+            uuid = zoneInventory.uuid
+            stateEvent = "disable"
+        }
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "test-for-parameter"
+                zoneUuid = zoneInventory.uuid
+                instanceOfferingUuid = instanceOfferingInventory.uuid
+                imageUuid = imageInventory.uuid
+                l3NetworkUuids = [l3NetworkInventory.uuid]
+                strategy = VmCreationStrategy.JustCreate.toString()
+            }
+        }
+
+        changeZoneState {
+            uuid = zoneInventory.uuid
+            stateEvent = "enable"
+        }
+
+        // create vm with a disable cluster
+        changeClusterState {
+            uuid = clusterInventory.uuid
+            stateEvent = "disable"
+        }
+
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "test-for-parameter"
+                clusterUuid = clusterInventory.uuid
+                instanceOfferingUuid = instanceOfferingInventory.uuid
+                imageUuid = imageInventory.uuid
+                l3NetworkUuids = [l3NetworkInventory.uuid]
+                strategy = VmCreationStrategy.JustCreate.toString()
+            }
+        }
+
+        changeClusterState {
+            uuid = clusterInventory.uuid
+            stateEvent = "enable"
+        }
+
+        // create vm with a disable host
+        changeHostState {
+            uuid = hostInventory.uuid
+            stateEvent = "disable"
+        }
+
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "test-for-parameter"
+                hostUuid = hostInventory.uuid
+                instanceOfferingUuid = instanceOfferingInventory.uuid
+                imageUuid = imageInventory.uuid
+                l3NetworkUuids = [l3NetworkInventory.uuid]
+                strategy = VmCreationStrategy.JustCreate.toString()
+            }
+        }
+
+        changeHostState {
+            uuid = hostInventory.uuid
+            stateEvent = "enable"
+        }
+
+        changeDiskOfferingState {
+            uuid = diskOfferingInventory.uuid
+            stateEvent = "disable"
+        }
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "test-for-parameter"
+                hostUuid = hostInventory.uuid
+                rootDiskOfferingUuid = diskOfferingInventory.uuid
+                instanceOfferingUuid = instanceOfferingInventory.uuid
+                imageUuid = imageInventory.uuid
+                l3NetworkUuids = [l3NetworkInventory.uuid]
+                strategy = VmCreationStrategy.JustCreate.toString()
+            }
+        }
+
+        changeDiskOfferingState {
+            uuid = diskOfferingInventory.uuid
+            stateEvent = "enable"
+        }
+
+        //without default l3 network
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "test-for-parameter"
+                hostUuid = hostInventory.uuid
+                instanceOfferingUuid = instanceOfferingInventory.uuid
+                imageUuid = imageInventory.uuid
+                l3NetworkUuids = [l3NetworkInventory.uuid, l3pubInventory.uuid]
+                strategy = VmCreationStrategy.JustCreate.toString()
+            }
+        }
+
+        //with default l3, but it is not in l3NetworkUuids
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "test-for-parameter"
+                hostUuid = hostInventory.uuid
+                instanceOfferingUuid = instanceOfferingInventory.uuid
+                imageUuid = imageInventory.uuid
+                l3NetworkUuids = [l3NetworkInventory.uuid]
+                defaultL3NetworkUuid = l3pubInventory.uuid
+                strategy = VmCreationStrategy.JustCreate.toString()
+            }
+        }
+
+        //with default l3, but it is not in l3NetworkUuids
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "test-for-parameter"
+                hostUuid = hostInventory.uuid
+                instanceOfferingUuid = instanceOfferingInventory.uuid
+                imageUuid = imageInventory.uuid
+                l3NetworkUuids = [l3NetworkInventory.uuid]
+                defaultL3NetworkUuid = l3pubInventory.uuid
+                strategy = VmCreationStrategy.JustCreate.toString()
+            }
+        }
+
+        //image
+        BackupStorageInventory bs = env.inventoryByName("sftp")
+        ImageInventory data = addImage {
+            name = "image-data-volume"
+            mediaType = ImageConstant.ImageMediaType.DataVolumeTemplate
+            url = "http://zstack.org/download/test-volume.qcow2"
+            backupStorageUuids = [bs.uuid]
+            format = ImageConstant.QCOW2_FORMAT_STRING
+            system = true
+        }
+
+        ImageInventory iso = addImage {
+            name = "sized-image"
+            url = "http://my-site/foo.iso"
+            backupStorageUuids = [bs.uuid]
+            format = ImageConstant.ISO_FORMAT_STRING
+        }
+
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "test-for-parameter"
+                hostUuid = hostInventory.uuid
+                instanceOfferingUuid = instanceOfferingInventory.uuid
+                imageUuid = data.uuid
+                l3NetworkUuids = [l3NetworkInventory.uuid]
+                strategy = VmCreationStrategy.JustCreate.toString()
+            }
+        }
+
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "test-for-parameter"
+                hostUuid = hostInventory.uuid
+                instanceOfferingUuid = instanceOfferingInventory.uuid
+                imageUuid = iso.uuid
+                l3NetworkUuids = [l3NetworkInventory.uuid]
+                strategy = VmCreationStrategy.JustCreate.toString()
+            }
+        }
+
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "test-for-parameter"
+                hostUuid = hostInventory.uuid
+                rootDiskOfferingUuid = diskOfferingInventory.uuid
+                instanceOfferingUuid = instanceOfferingInventory.uuid
+                imageUuid = data.uuid
+                l3NetworkUuids = [l3NetworkInventory.uuid]
+                strategy = VmCreationStrategy.JustCreate.toString()
+            }
+        }
+
     }
 
     void testDeleteCreatedVm() {

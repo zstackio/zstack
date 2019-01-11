@@ -19,4 +19,6 @@ public interface StorageTrash {
 
     void remove(String trashKey, String storageUuid);  // only remove db, not storage data
     void remove(Long trashId);
+
+    boolean makeSureInstallPathNotUsed(StorageTrashSpec spec);
 }

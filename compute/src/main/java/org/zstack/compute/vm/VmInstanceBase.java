@@ -5042,7 +5042,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     logger.warn(e.getMessage());
                 }
 
-                completion.fail(err(SysErrors.OPERATION_ERROR, errCode, errCode.getDetails()));
+                completion.fail(operr(errCode, errCode.getDetails()));
             }
         }).start();
     }
@@ -5376,6 +5376,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                     checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
                         @Override
                         public void done() {
+                            self = refreshVO();
+                            if ((originState == VmInstanceState.Running || originState == VmInstanceState.Paused) &&
+                                    self.getState() == VmInstanceState.Stopped) {
+                                returnHostCpacity(spec.getDestHost().getUuid());
+                            }
                             completion.fail(errCode);
                         }
                     });
@@ -5386,6 +5391,15 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
             }
         }).start();
+    }
+
+    protected void returnHostCpacity(String hostUuid) {
+        ReturnHostCapacityMsg rmsg = new ReturnHostCapacityMsg();
+        rmsg.setCpuCapacity(self.getCpuNum());
+        rmsg.setMemoryCapacity(self.getMemorySize());
+        rmsg.setHostUuid(hostUuid);
+        rmsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+        bus.send(rmsg);
     }
 
     protected void rebootVm(final APIRebootVmInstanceMsg msg, final SyncTaskChain taskChain) {

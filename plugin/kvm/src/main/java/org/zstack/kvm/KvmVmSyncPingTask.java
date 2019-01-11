@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.DeleteVmGC;
 import org.zstack.compute.vm.VmTracer;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -22,10 +23,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
-import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
-import org.zstack.header.message.Message;
-import org.zstack.header.message.MessageReply;
-import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.message.*;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.vm.*;
@@ -36,10 +34,7 @@ import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.zstack.core.Platform.operr;
@@ -59,6 +54,8 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     @Autowired
     private ApiTimeoutManager timeoutMgr;
 
+    // A map from apiId to VM instance uuid
+    private ConcurrentHashMap<String, String> vmApis = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Boolean> vmsToSkip = new ConcurrentHashMap<>();
 
     @SuppressWarnings("unchecked")
@@ -67,9 +64,17 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
             @Override
             public void beforeDeliveryMessage(Message msg) {
                 if (msg instanceof VmInstanceMessage) {
-                    String vmUuid = ((VmInstanceMessage) msg).getVmInstanceUuid();
-                    logger.info(String.format("Skipping tracing VM[uuid:%s], due to %s", vmUuid, msg.getMessageName()));
+                    final String vmUuid = ((VmInstanceMessage) msg).getVmInstanceUuid();
                     vmsToSkip.putIfAbsent(vmUuid, true);
+
+                    if (msg instanceof APIMessage) {
+                        final String apiId = msg.getId();
+                        if (vmApis.putIfAbsent(apiId, vmUuid) == null) {
+                            logger.info(String.format("Skipping tracing VM[uuid:%s], due to %s, api=%s", vmUuid, msg.getMessageName(), apiId));
+                        }
+                    } else {
+                        logger.info(String.format("Skipping tracing VM[uuid:%s], due to %s", vmUuid, msg.getMessageName()));
+                    }
                 }
             }
         }, StartVmInstanceMsg.class, MigrateVmMsg.class, StopVmInstanceMsg.class, APIPauseVmInstanceMsg.class, APIMigrateVmMsg.class);
@@ -83,12 +88,17 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     @Override
     public void marshalReplyMessageBeforeSending(Message replyOrEvent, NeedReplyMessage msg) {
         String vmUuid = null;
+        String apiId = null;
+
         if (msg instanceof VmInstanceMessage) {
             vmUuid = ((VmInstanceMessage) msg).getVmInstanceUuid();
-        } else if (replyOrEvent instanceof APIPauseVmInstanceEvent) {
-            vmUuid = ((APIPauseVmInstanceEvent) replyOrEvent).getInventory().getUuid();
-        } else if (replyOrEvent instanceof APIMigrateVmEvent) {
-            vmUuid = ((APIMigrateVmEvent) replyOrEvent).getInventory().getUuid();
+        } else if (replyOrEvent instanceof APIEvent) {
+            // do not rely on the inventory from event reply - the VM operation might fail
+            apiId = ((APIEvent) replyOrEvent).getApiId();
+        }
+
+        if (apiId != null) {
+            vmUuid = vmApis.remove(apiId);
         }
 
         if (vmUuid != null) {
@@ -117,17 +127,25 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                 VmSyncResponse ret = r.toResponse(VmSyncResponse.class);
                 if (ret.isSuccess()) {
                     Map<String, VmInstanceState> states = new HashMap<String, VmInstanceState>(ret.getStates().size());
+                    Set<String> vmsToSkipSet = new HashSet<>(vmsToSkip.keySet());
+                    Collection<String> vmUuidsInDeleteVmGC = DeleteVmGC.queryVmInGC(host.getUuid(), ret.getStates().keySet());
+
                     for (Map.Entry<String, String> e : ret.getStates().entrySet()) {
                         if (logger.isTraceEnabled()) {
                             logger.trace(String.format("state from vmsync vm %s state %s", e.getKey(), e.getValue()));
+                        }
+                        if (vmUuidsInDeleteVmGC != null && vmUuidsInDeleteVmGC.contains(e.getKey())) {
+                            /*the vm has been deleted and recovered that no resource, so skip to trace */
+                            vmsToSkipSet.add(e.getKey());
                         }
                         VmInstanceState state = KvmVmState.valueOf(e.getValue()).toVmInstanceState();
                         if (state == VmInstanceState.Running || state == VmInstanceState.Paused || state == VmInstanceState.Unknown) {
                             states.put(e.getKey(), state);
                         }
+
                     }
 
-                    reportVmState(host.getUuid(), states, vmsToSkip.keySet());
+                    reportVmState(host.getUuid(), states, vmsToSkipSet);
                     completion.success();
                 } else {
                     ErrorCode errorCode = operr("unable to do vm sync on host[uuid:%s, ip:%s] because %s", host.getUuid(), host.getManagementIp(), ret.getError());

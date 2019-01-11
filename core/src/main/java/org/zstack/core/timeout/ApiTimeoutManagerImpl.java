@@ -316,9 +316,24 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
         return Long.parseLong(df.format(o).split("\\.")[0]);
     }
 
+    /**
+     * This method is aimed to set up message timeout, there are
+     * two situations need to resolve
+     * 1. when send configurable message which do not have message
+     * timeout in thread context, need to set up its timeout from
+     * message timeout global config
+     * assume apiMessage default timeout 72h will send a configurableTimeoutMessage,
+     * the configurableTimeoutMessage set a default timeout 24h.
+     * So check the TASK_CONTEXT_MESSAGE_TIMEOUT to confirm the message will use a
+     * timeout from its api message but not from global config
+     * 2. when send need reply message(this kind of message always
+     * have timeout thread context) use getTimeout() to set its own
+     * timeout
+     * @param msg the message need to set up message timeout
+     */
     @Override
     public void setMessageTimeout(Message msg) {
-        if (msg instanceof ConfigurableTimeoutMessage) {
+        if (msg instanceof ConfigurableTimeoutMessage && !TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_TIMEOUT)) {
             ((ConfigurableTimeoutMessage) msg).setTimeout(getMessageTimeout((ConfigurableTimeoutMessage) msg));
         } else if (msg instanceof NeedReplyMessage) {
             NeedReplyMessage nmsg = (NeedReplyMessage) msg;
