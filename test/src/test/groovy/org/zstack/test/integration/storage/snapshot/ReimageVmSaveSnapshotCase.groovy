@@ -13,9 +13,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
-import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.*
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.primary.PrimaryStoragePathMaker
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
@@ -28,7 +26,6 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.path.PathUtil
-
 /**
  * Created by liangbo.zhou on 17-6-24.
  */
@@ -67,6 +64,7 @@ class ReimageVmSaveSnapshotCase extends SubCase {
                 image {
                     name = "test-iso"
                     url  = "http://zstack.org/download/test.iso"
+                    format = "iso"
                 }
                 image {
                     name = "image"
@@ -89,6 +87,7 @@ class ReimageVmSaveSnapshotCase extends SubCase {
                 image {
                     name = "test-iso"
                     url  = "http://zstack.org/download/test.iso"
+                    format = "iso"
                 }
 
                 image {
@@ -298,6 +297,7 @@ class ReimageVmSaveSnapshotCase extends SubCase {
     void test() {
         
         env.create {
+            testReimageVmfailCase()
             testReimageVmSaveSnapshotLocal()
             testReimageVmSaveSnapshotCeph()
             testReimageVmSaveSnapshotSmp()
@@ -306,6 +306,42 @@ class ReimageVmSaveSnapshotCase extends SubCase {
 
     }
 
+    void testReimageVmfailCase() {
+        def offering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        def diskOffer = env.inventoryByName("diskOffering") as DiskOfferingInventory
+        def iso = env.inventoryByName("test-iso") as ImageInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
+
+        def vm = createVmInstance {
+            name = "vm-iso"
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3.uuid]
+            instanceOfferingUuid = offering.uuid
+            rootDiskOfferingUuid = diskOffer.uuid
+        } as VmInstanceInventory
+
+        //fail to reinit image with running status
+        expect(AssertionError.class) {
+            reimageVmInstance {
+                vmInstanceUuid = vm.uuid
+            }
+        }
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
+        // iso fail
+        expect(AssertionError.class) {
+            reimageVmInstance {
+                vmInstanceUuid = vm.uuid
+            }
+        }
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+    }
     void testReimageVmSaveSnapshotLocal(){
         def vm = env.inventoryByName("local-vm") as VmInstanceInventory
         def local = env.inventoryByName("local") as PrimaryStorageInventory

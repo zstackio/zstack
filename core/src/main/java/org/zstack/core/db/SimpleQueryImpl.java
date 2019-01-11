@@ -135,10 +135,10 @@ public class SimpleQueryImpl<T> implements SimpleQuery<T> {
                 preds.add(_builder.isNotNull(p));
             } else if (op == Op.IN) {
                 //preds.add(_builder.in(p.in(vals)));
-                assert vals.length !=0 : String.format("Op.IN needs more than on value, but %s given", vals.length);
+                assert vals.length !=0 : String.format("Op.IN needs more than one value, but %s given", vals.length);
                 preds.add(p.in(vals));
             } else if (op == Op.NOT_IN) {
-                assert vals.length !=0 : String.format("Op.NOT_IN needs more than on value, but %s given", vals.length);
+                assert vals.length !=0 : String.format("Op.NOT_IN needs more than one value, but %s given", vals.length);
                 preds.add(_builder.not(p.in(vals)));
             } else if (op == Op.NULL) {
                 preds.add(_builder.isNull(p)); 

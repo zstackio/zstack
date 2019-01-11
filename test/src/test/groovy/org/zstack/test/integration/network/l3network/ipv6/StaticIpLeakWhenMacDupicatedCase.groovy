@@ -51,15 +51,32 @@ class StaticIpLeakWhenMacDupicatedCase extends SubCase {
         String staticMac = "00:00:01:00:00:02"
         String staticIp = "192.168.100.10"
 
-        VmInstanceInventory vm = createVmInstance {
-            name = "vm-static-ip"
-            instanceOfferingUuid = offering.uuid
-            imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
-            defaultL3NetworkUuid = l3.uuid
-            systemTags = [String.format("%s::%s::%s", VmSystemTags.STATIC_IP_TOKEN, l3.uuid, staticIp),
-                          String.format("%s::%s::%s", VmSystemTags.MAC_TOKEN, l3.uuid, staticMac)]
-        }
+        CreateVmInstanceAction action = new CreateVmInstanceAction()
+        action.name = "vm-static-ip"
+        action.instanceOfferingUuid = offering.uuid
+        action.l3NetworkUuids = [l3.uuid]
+        action.imageUuid = image.uuid
+        action.defaultL3NetworkUuid = l3.uuid
+        action.sessionId = adminSession()
+
+        //invalid l3 uuid
+        action.systemTags = [String.format("%s::%s::%s", VmSystemTags.STATIC_IP_TOKEN, "invalid l3 uuid", staticIp),
+                      String.format("%s::%s::%s", VmSystemTags.MAC_TOKEN, l3.uuid, staticMac)]
+
+        CreateVmInstanceAction.Result result = action.call()
+        assert result.error != null
+
+        //ip version mismatch
+        action.systemTags = [String.format("%s::%s::%s", VmSystemTags.STATIC_IP_TOKEN, l3.uuid, "1234::1234"),
+                      String.format("%s::%s::%s", VmSystemTags.MAC_TOKEN, l3.uuid, staticMac)]
+        result = action.call()
+        assert result.error != null
+
+        action.systemTags = [String.format("%s::%s::%s", VmSystemTags.STATIC_IP_TOKEN, l3.uuid, staticIp),
+                      String.format("%s::%s::%s", VmSystemTags.MAC_TOKEN, l3.uuid, staticMac)]
+        result = action.call()
+        assert result.error == null && result.value != null
+        VmInstanceInventory vm = result.value.inventory
         assert vm.getVmNics().size() == 1
 
         VmNicInventory nic = vm.getVmNics().get(0)
@@ -74,17 +91,8 @@ class StaticIpLeakWhenMacDupicatedCase extends SubCase {
         assert nic.mac == staticMac
         assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, l3.uuid).eq(UsedIpVO_.ip, staticIp).isExists()
 
-        expect (AssertionError.class) {
-            VmInstanceInventory vm1 = createVmInstance {
-                name = "vm-static-ip"
-                instanceOfferingUuid = offering.uuid
-                imageUuid = image.uuid
-                l3NetworkUuids = [l3.uuid]
-                defaultL3NetworkUuid = l3.uuid
-                systemTags = [String.format("%s::%s::%s", VmSystemTags.STATIC_IP_TOKEN, l3.uuid, staticIp),
-                              String.format("%s::%s::%s", VmSystemTags.MAC_TOKEN, l3.uuid, staticMac)]
-            }
-        }
+        result = action.call()
+        assert result.error != null
         assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, l3.uuid).eq(UsedIpVO_.ip, staticIp).isExists()
     }
 
