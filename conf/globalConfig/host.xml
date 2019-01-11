@@ -98,4 +98,11 @@
         <defaultValue>StopVmOnMigrationFailure</defaultValue>
         <type>java.lang.String</type>
     </config>
+    <config>
+        <category>host</category>
+        <name>connection.autoReconnectOnError.maxAttemptsNum</name>
+        <description>the number of continuous connect failures that do not auto reconnect host again. 0 means never stop.</description>
+        <defaultValue>0</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>

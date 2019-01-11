@@ -69,6 +69,10 @@ public abstract class AsyncTimer implements Runnable {
         }
     }
 
+    protected boolean isCanceled() {
+        return cancelled.get();
+    }
+
     protected void continueToRunThisTimer() {
         if (cancelled.get()) {
             return;

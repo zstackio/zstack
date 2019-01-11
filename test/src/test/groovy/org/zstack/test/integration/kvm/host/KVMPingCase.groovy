@@ -205,6 +205,61 @@ class KVMPingCase extends SubCase {
         recoverHostToConnected(kvm1.uuid)
     }
 
+    void testNoPingIfConnectFailTooManyTimes() {
+        canDoReconnectFunc = {  HostReconnectTask.CanDoAnswer.Ready }
+        def kvm1 = env.inventoryByName("kvm1") as HostInventory
+        int connectCount  = 0
+
+        env.simulator(KVMConstant.KVM_PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            KVMAgentCommands.PingCmd cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.PingCmd.class)
+
+            def rsp = new KVMAgentCommands.PingResponse()
+            if (cmd.hostUuid == kvm1.uuid && new Random().nextBoolean()) {
+                throw new RuntimeException("failure on purpose")
+            } else {
+                rsp.hostUuid = cmd.hostUuid
+            }
+
+            return rsp
+        }
+
+        boolean limitAttemtpsThisTime = new Random().nextBoolean()
+        logger.debug(String.format("limit this time: %s", limitAttemtpsThisTime))
+
+        if (limitAttemtpsThisTime) {
+            HostGlobalConfig.AUTO_RECONNECT_ON_ERROR_MAX_ATTEMPT_NUM.updateValue(1)
+        }
+        env.afterSimulator(KVMConstant.KVM_CONNECT_PATH) { rsp, HttpEntity<String> entity ->
+            rsp.success = true
+            def cmd = json(entity.getBody(),KVMAgentCommands.ConnectCmd.class)
+            if (cmd.hostUuid == kvm1.uuid) {
+                connectCount++
+                rsp.success = false
+                rsp.error = "on purpose"
+            }
+
+            return rsp
+        }
+
+        SQL.New(HostVO.class).eq(HostVO_.uuid, kvm1.uuid).set(HostVO_.status, HostStatus.Disconnected).update()
+        sleep(3000)
+
+        if (limitAttemtpsThisTime) {
+            assert connectCount == 1
+            assert Q.New(HostVO.class).eq(HostVO_.uuid, kvm1.uuid).select(HostVO_.status).findValue() == HostStatus.Disconnected
+        } else {
+            assert retryInSecs { return connectCount > 1 }
+            assert Q.New(HostVO.class).eq(HostVO_.uuid, kvm1.uuid).select(HostVO_.status).findValue() != HostStatus.Connected
+        }
+
+        env.cleanSimulatorHandlers()
+        env.cleanAfterSimulatorHandlers()
+        canDoReconnectFunc = {  HostReconnectTask.CanDoAnswer.Ready }
+        reconnectHost {
+            uuid = kvm1.uuid
+        }
+    }
+
     void testContinuePingIfHostNoReconnect() {
         canDoReconnectFunc = {  HostReconnectTask.CanDoAnswer.NoReconnect }
 
@@ -295,7 +350,6 @@ class KVMPingCase extends SubCase {
         }
 
         cleanup()
-        recoverHostToConnected(kvm1.uuid)
     }
 
     void testNoPingIfHostNotReadyToReconnect() {
@@ -411,6 +465,7 @@ class KVMPingCase extends SubCase {
             testPingAfterRescanHost()
             testNoPingWhenHostMaintainedAndPingAfterEnabled()
             testNoPingIfAutoReconnectIsFalse()
+            testNoPingIfConnectFailTooManyTimes()
             testHostReconnectAfterPingFailure()
             testContinuePingIfHostNoReconnect()
             testNoPingIfHostNotReadyToReconnect()
