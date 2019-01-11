@@ -3,6 +3,7 @@ package org.zstack.test.integration.kvm.host
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
+import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.host.AddHostReply
 import org.zstack.header.host.HostConstant
 import org.zstack.header.host.HostStatus
@@ -14,6 +15,7 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.tester.ZTester
+
 /**
  * Created by mingjian.deng on 2019/1/3.*/
 class AddHostCase extends SubCase {
@@ -41,6 +43,7 @@ class AddHostCase extends SubCase {
         env.create {
             prepare()
             testCheckHostVersionFailure()
+            testCheckHostManagementFailure()
             testInnerAddHostMsg()
         }
     }
@@ -66,6 +69,24 @@ class AddHostCase extends SubCase {
         assert Q.New(HostVO.class).count() == 0
     }
 
+    void testCheckHostManagementFailure() {
+        env.testter.clearAll()
+
+        def action = new AddKVMHostAction()
+        action.sessionId = adminSession()
+        action.resourceUuid = Platform.uuid
+        action.clusterUuid = cluster.uuid
+        action.managementIp = "###"
+        action.name = "kvm"
+        action.username = "root"
+        action.password = "password"
+        def res = action.call()
+
+        assert res.error != null
+        assert res.error.code == SysErrors.INVALID_ARGUMENT_ERROR.toString()
+        assert Q.New(HostVO.class).count() == 0
+    }
+
     void testInnerAddHostMsg() {
         env.testter.clearAll()
 
@@ -79,7 +100,7 @@ class AddHostCase extends SubCase {
         amsg.setUsername("root")
 
         bus.makeLocalServiceId(amsg, HostConstant.SERVICE_ID)
-        AddHostReply reply = (AddHostReply)bus.call(amsg)
+        AddHostReply reply = (AddHostReply) bus.call(amsg)
         assert reply.inventory.status == HostStatus.Connected.toString()
     }
 }
