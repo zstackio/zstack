@@ -7,7 +7,9 @@ import org.zstack.compute.host.HostReconnectTask
 import org.zstack.compute.host.HostTrackImpl
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.core.NoErrorCompletion
+import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.host.*
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
@@ -350,6 +352,25 @@ class KVMPingCase extends SubCase {
         cleanup()
     }
 
+    void testPingConnectingHost() {
+        HostInventory host = env.inventoryByName("kvm1")
+        SQL.New(HostVO.class)
+                .eq(HostVO_.uuid, host.uuid)
+                .set(HostVO_.status, HostStatus.Connecting)
+                .update()
+
+        // ping when host status is Connecting
+        CloudBus bus = bean(CloudBus.class)
+        PingHostMsg msg = new PingHostMsg()
+        msg.hostUuid = host.uuid
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.uuid)
+
+        PingHostReply reply = (PingHostReply) bus.call(msg)
+        assert !reply.isSuccess()
+        assert !reply.isConnected()
+        assert reply.getError().getCode() == SysErrors.OPERATION_ERROR.toString()
+    }
+
     static class HostReconnectTaskForTest extends HostReconnectTask {
         @Override
         protected HostReconnectTask.CanDoAnswer canDoReconnect() {
@@ -394,6 +415,7 @@ class KVMPingCase extends SubCase {
             testContinuePingIfHostNoReconnect()
             testNoPingIfHostNotReadyToReconnect()
             testManagementNodeReadyConnectAllHost()
+            testPingConnectingHost()
 
             canDoReconnectFunc = null
         }
