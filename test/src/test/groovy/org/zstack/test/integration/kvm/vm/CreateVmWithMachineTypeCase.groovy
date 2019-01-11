@@ -48,6 +48,9 @@ class CreateVmWithMachineTypeCase extends SubCase {
         env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { rsp, HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
             assert cmd.machineType == machineTypeValue
+            if (machineTypeValue == "q35") {
+                assert cmd.pciePortNums != null
+            }
             return rsp
         }
 

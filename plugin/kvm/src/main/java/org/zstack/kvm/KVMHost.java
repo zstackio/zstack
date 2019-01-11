@@ -1938,6 +1938,9 @@ public class KVMHost extends HostBase implements Host {
         String machineType = VmSystemTags.MACHINE_TYPE.getTokenByResourceUuid(cmd.getVmInstanceUuid(),
                 VmInstanceVO.class, VmSystemTags.MACHINE_TYPE_TOKEN);
         cmd.setMachineType(StringUtils.isNotEmpty(machineType) ? machineType : "pc");
+        if (VmMachineType.q35.toString().equals(machineType)) {
+            cmd.setPciePortNums(VmGlobalConfig.PCIE_PORT_NUMS.value(Integer.class));
+        }
 
         VolumeTO rootVolume = new VolumeTO();
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());
