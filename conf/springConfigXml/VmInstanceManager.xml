@@ -21,6 +21,7 @@
                 <value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicFlow</value>
                 <value>org.zstack.compute.vm.VmAttachL3NetworkToNicFlow</value>
+                <value>org.zstack.compute.vm.VmAllocateCdRomFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
                 <value>org.zstack.compute.vm.VmCreateOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
@@ -158,6 +159,12 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.compute.vm.VmNicManager" />
             <zstack:extension interface="org.zstack.compute.vm.VmNicExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VmCdRomUpgradeExtension" class="org.zstack.compute.vm.VmCdRomUpgradeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

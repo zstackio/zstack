@@ -61,6 +61,8 @@ import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
+import org.zstack.header.vm.cdrom.VmCdRomVO;
+import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.*;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
@@ -2118,6 +2120,22 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
         for (String vmnicUuid : vmnics) {
             acntMgr.changeResourceOwner(vmnicUuid, newOwnerUuid);
+        }
+
+        changeVmCdRomsOwner(ref.getResourceUuid(), newOwnerUuid);
+    }
+
+    private void changeVmCdRomsOwner(String vmInstanceUuid, String newOwnerUuid) {
+        List<String> vmCdRomUuids = Q.New(VmCdRomVO.class)
+                .select(VmCdRomVO_.uuid)
+                .eq(VmCdRomVO_.vmInstanceUuid, vmInstanceUuid)
+                .listValues();
+        if (vmCdRomUuids.isEmpty()) {
+            return;
+        }
+
+        for (String uuid :vmCdRomUuids) {
+            acntMgr.changeResourceOwner(uuid, newOwnerUuid);
         }
     }
 

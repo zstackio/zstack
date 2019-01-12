@@ -871,6 +871,57 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class CdRomTO {
+        private String path;
+        private String imageUuid;
+        private int deviceId;
+        // unmounted iso
+        private boolean isEmpty;
+
+        public CdRomTO() {
+        }
+
+        public CdRomTO(CdRomTO other) {
+            this.isEmpty = other.isEmpty;
+            this.path = other.path;
+            this.imageUuid = other.imageUuid;
+            this.deviceId = other.deviceId;
+        }
+
+
+        public String getImageUuid() {
+            return imageUuid;
+        }
+
+        public void setImageUuid(String imageUuid) {
+            this.imageUuid = imageUuid;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+
+        public int getDeviceId() {
+            return deviceId;
+        }
+
+        public void setDeviceId(int deviceId) {
+            this.deviceId = deviceId;
+        }
+
+        public boolean isEmpty() {
+            return isEmpty;
+        }
+
+        public void setEmpty(boolean empty) {
+            this.isEmpty = empty;
+        }
+    }
+
     public static class HardenVmConsoleCmd extends AgentCommand {
         public String vmUuid;
         public Long vmInternalId;
@@ -902,6 +953,7 @@ public class KVMAgentCommands {
         private List<String> bootDev;
         private VolumeTO rootVolume;
         private List<IsoTO> bootIso = new ArrayList<>();
+        private List<CdRomTO> cdRoms = new ArrayList<>();
         private List<VolumeTO> dataVolumes;
         private List<NicTO> nics;
         private long timeout;
@@ -1144,12 +1196,22 @@ public class KVMAgentCommands {
             this.instanceOfferingOnlineChange = instanceOfferingOnlineChange;
         }
 
+        @Deprecated
         public List<IsoTO> getBootIso() {
             return bootIso;
         }
 
+        @Deprecated
         public void setBootIso(List<IsoTO> bootIso) {
             this.bootIso = bootIso;
+        }
+
+        public List<CdRomTO> getCdRoms() {
+            return cdRoms;
+        }
+
+        public void setCdRoms(List<CdRomTO> cdRoms) {
+            this.cdRoms = cdRoms;
         }
 
         public String getConsoleMode() {
