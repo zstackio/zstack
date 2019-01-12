@@ -4,13 +4,12 @@ import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.header.errorcode.SysErrors
-import org.zstack.header.host.AddHostReply
-import org.zstack.header.host.HostConstant
-import org.zstack.header.host.HostStatus
-import org.zstack.header.host.HostVO
+import org.zstack.header.host.*
+import org.zstack.header.message.MessageReply
 import org.zstack.kvm.AddKVMHostMsg
 import org.zstack.sdk.AddKVMHostAction
 import org.zstack.sdk.ClusterInventory
+import org.zstack.sdk.GetHypervisorTypesResult
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -45,6 +44,7 @@ class AddHostCase extends SubCase {
             testCheckHostVersionFailure()
             testCheckHostManagementFailure()
             testInnerAddHostMsg()
+            testGetHypervisorTypes()
         }
     }
 
@@ -102,5 +102,12 @@ class AddHostCase extends SubCase {
         bus.makeLocalServiceId(amsg, HostConstant.SERVICE_ID)
         AddHostReply reply = (AddHostReply) bus.call(amsg)
         assert reply.inventory.status == HostStatus.Connected.toString()
+    }
+
+    void testGetHypervisorTypes() {
+        GetHypervisorTypesResult result = getHypervisorTypes {
+            sessionId = adminSession()
+        }
+        assert !result.getHypervisorTypes().isEmpty()
     }
 }

@@ -37,8 +37,6 @@ import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
-import org.zstack.search.GetQuery;
-import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Bucket;
 import org.zstack.utils.CollectionUtils;
@@ -95,12 +93,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIAddHostMsg) {
             handle((APIAddHostMsg) msg);
-        } else if (msg instanceof APIListHostMsg) {
-            handle((APIListHostMsg) msg);
-        } else if (msg instanceof APISearchHostMsg) {
-            handle((APISearchHostMsg) msg);
-        } else if (msg instanceof APIGetHostMsg) {
-            handle((APIGetHostMsg) msg);
         } else if (msg instanceof APIGetHypervisorTypesMsg) {
             handle((APIGetHypervisorTypesMsg) msg);
         } else if (msg instanceof HostMessage) {
@@ -116,30 +108,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         List<String> res = new ArrayList<String>();
         res.addAll(HypervisorType.getAllTypeNames());
         reply.setHypervisorTypes(res);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIGetHostMsg msg) {
-        GetQuery q = new GetQuery();
-        String res = q.getAsString(msg, HostInventory.class);
-        APIGetHostReply reply = new APIGetHostReply();
-        reply.setInventory(res);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APISearchHostMsg msg) {
-        SearchQuery<HostInventory> query = SearchQuery.create(msg, HostInventory.class);
-        String content = query.listAsString();
-        APISearchHostReply reply = new APISearchHostReply();
-        reply.setContent(content);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIListHostMsg msg) {
-        List<HostVO> vos = dl.listByApiMessage(msg, HostVO.class);
-        List<HostInventory> invs = HostInventory.valueOf(vos);
-        APIListHostReply reply = new APIListHostReply();
-        reply.setInventories(invs);
         bus.reply(msg, reply);
     }
 
