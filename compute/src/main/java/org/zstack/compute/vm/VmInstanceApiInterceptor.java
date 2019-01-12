@@ -26,10 +26,7 @@ import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.cdrom.APIDeleteVmCdRomMsg;
-import org.zstack.header.vm.cdrom.APISetVmInstanceDefaultCdRomMsg;
-import org.zstack.header.vm.cdrom.APIUpdateVmCdRomMsg;
-import org.zstack.header.vm.cdrom.VmCdRomVO;
+import org.zstack.header.vm.cdrom.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
@@ -117,10 +114,20 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateVmCdRomMsg) msg);
         } else if (msg instanceof APISetVmInstanceDefaultCdRomMsg) {
             validate((APISetVmInstanceDefaultCdRomMsg) msg);
+        } else if (msg instanceof APICreateVmCdRomMsg) {
+            validate((APICreateVmCdRomMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(final APICreateVmCdRomMsg msg) {
+        VmInstanceVO vo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+        if (!vo.getState().equals(VmInstanceState.Stopped)) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "Can not create CD-ROM for vm[uuid:%s] which is in state[%s] ", msg.getVmInstanceUuid(), vo.getState().toString()));
+        }
     }
 
     private void validate(final APIGetCandidatePrimaryStoragesForCreatingVmMsg msg) {

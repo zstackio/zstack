@@ -71,10 +71,20 @@ public class VmCdRomUpgradeExtension implements ManagementNodeReadyExtensionPoin
         Map<Integer, String> vmDeviceIdIsoMap = getVmIsoMap(vmUuid);
 
         if (VmSystemTags.V2V_VM_CDROMS.hasTag(vmUuid)) {
-            // todo
-            // liningTODO
+            // mark that this v2v vm cdrom on ZStack only use cdroms from this system tag
             String cdRomDeviceId = VmSystemTags.V2V_VM_CDROMS.getTokenByResourceUuid(vmUuid, VmSystemTags.V2V_VM_CDROMS_TOKEN);
             String[] cdRomDeviceIds = cdRomDeviceId.split(",");
+
+            for (int deviceId = 0; deviceId < cdRomDeviceIds.length; deviceId++) {
+                VmCdRomVO cdRomVO = new VmCdRomVO();
+                cdRomVO.setUuid(Platform.getUuid());
+                cdRomVO.setDeviceId(deviceId);
+                cdRomVO.setIsoUuid(vmDeviceIdIsoMap.get(deviceId));
+                cdRomVO.setVmInstanceUuid(vmUuid);
+                cdRomVO.setName(String.format("vm-%s-cdRom", vmUuid));
+                cdRomVO.setAccountUuid(acntUuid);
+                cdRomVOS.add(cdRomVO);
+            }
         } else {
             for (int deviceId = 0; deviceId < VmInstanceConstant.MAXIMUM_CDROM_NUMBER; deviceId++) {
                 VmCdRomVO cdRomVO = new VmCdRomVO();
