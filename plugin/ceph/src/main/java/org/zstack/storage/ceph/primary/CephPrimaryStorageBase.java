@@ -29,6 +29,7 @@ import org.zstack.header.core.trash.CleanTrashResult;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
@@ -1545,7 +1546,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             return;
         }
 
-        List<ErrorCode> errs = new ArrayList<>();
+        ErrorCodeList errorCodeList = new ErrorCodeList();
         new While<>(trashs.entrySet()).all((t, coml) -> {
             StorageTrashSpec spec = t.getValue();
 
@@ -1616,17 +1617,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             }).error(new FlowErrorHandler(coml) {
                 @Override
                 public void handle(ErrorCode errCode, Map data) {
-                    errs.add(errCode);
+                    errorCodeList.getCauses().add(errCode);
                     coml.done();
                 }
             }).start();
         }).run(new NoErrorCompletion() {
             @Override
             public void done() {
-                if (errs.isEmpty()) {
+                if (errorCodeList.getCauses().isEmpty()) {
                     completion.success(result);
                 } else {
-                    completion.fail(errs.get(0));
+                    completion.fail(errorCodeList.getCauses().get(0));
                 }
             }
         });
