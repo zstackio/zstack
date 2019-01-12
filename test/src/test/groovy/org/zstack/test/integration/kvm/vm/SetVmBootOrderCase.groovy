@@ -41,10 +41,18 @@ class SetVmBootOrderCase extends SubCase {
 
     void testSetVmBootFromHardDisk() {
         VmInstanceInventory vm = env.inventoryByName("vm")
-        setVmBootOrder {
+
+        expect(AssertionError.class) {
+            setVmBootOrder {
+                uuid = vm.uuid
+                bootOrder = asList("invalid boot order")
+            }
+        }
+
+         setVmBootOrder {
             uuid = vm.uuid
             bootOrder = asList(VmBootDevice.HardDisk.toString(), VmBootDevice.CdRom.toString())
-        }
+         }
 
         rebootVmInstance {
             uuid = vm.uuid
