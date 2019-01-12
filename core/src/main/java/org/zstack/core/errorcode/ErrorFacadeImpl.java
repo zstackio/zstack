@@ -44,7 +44,9 @@ public class ErrorFacadeImpl implements ErrorFacade {
     @Override
     public ErrorCode instantiateErrorCode(String code, String details, ErrorCode cause) {
         ErrorCode err = instantiateErrorCode(code, details);
-        err.setCause(cause);
+        if (cause != null) {
+            err.setCause(cause);
+        }
         return err;
     }
 

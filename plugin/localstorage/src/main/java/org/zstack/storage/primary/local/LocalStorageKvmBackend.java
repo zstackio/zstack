@@ -1909,7 +1909,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         PrimaryStorageVO ps = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
         if (ps == null) {
-            logger.warn(String.format("ps [%s] cannot found, maybe it is deleted already.", msg.getPrimaryStorageUuid()));
+            logger.warn(String.format("ps [%s] cannot find, maybe it is deleted already.", msg.getPrimaryStorageUuid()));
             DeleteImageCacheOnPrimaryStorageReply reply = new DeleteImageCacheOnPrimaryStorageReply();
             completion.success(reply);
             return;

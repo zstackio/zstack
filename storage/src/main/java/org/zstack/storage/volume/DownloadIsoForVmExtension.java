@@ -7,6 +7,8 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -19,17 +21,19 @@ import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
-import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
+import org.zstack.header.vm.VmInstanceSpec.CdRomSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.header.vm.VmInstantiateResourceException;
+import org.zstack.header.vm.cdrom.VmCdRomVO;
+import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Objects;
+import java.util.stream.Collectors;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -60,27 +64,50 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
 
     @Override
     public void preInstantiateVmResource(final VmInstanceSpec spec, final Completion completion) {
-        if (spec.getDestIsoList().isEmpty() || !operations.contains(spec.getCurrentVmOperation())) {
+        if (spec.getCdRomSpecs().isEmpty() || !operations.contains(spec.getCurrentVmOperation())) {
             completion.success();
             return;
         }
 
+        List<String> isoUuids = spec.getCdRomSpecs().stream().map(CdRomSpec::getImageUuid).collect(Collectors.toList());
+        //isoUuids = isoUuids.parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
+        if (isoUuids.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        /*
+        if (spec.getDestIsoList().isEmpty() || !operations.contains(spec.getCurrentVmOperation())) {
+            completion.success();
+            return;
+        }
         spec.getDestIsoList().forEach(isoSpec -> {
             assert isoSpec.getBackupStorageUuid() != null : "backup storage uuid cannot be null";
         });
+       */
+        spec.getCdRomSpecs().forEach(cdRomSpec -> {
+            if (cdRomSpec.getImageUuid() == null) {
+                return;
+            }
+            assert cdRomSpec.getBackupStorageUuid() != null : "backup storage uuid cannot be null";
+        });
 
-        List<DownloadIsoToPrimaryStorageMsg> msgs = CollectionUtils.transformToList(spec.getDestIsoList(),
-             new Function<DownloadIsoToPrimaryStorageMsg,IsoSpec>() {
+        List<DownloadIsoToPrimaryStorageMsg> msgs = CollectionUtils.transformToList(spec.getCdRomSpecs(),
+             new Function<DownloadIsoToPrimaryStorageMsg, CdRomSpec>() {
                 @Override
-                public DownloadIsoToPrimaryStorageMsg call(IsoSpec isoSpec) {
+                public DownloadIsoToPrimaryStorageMsg call(CdRomSpec cdRomSpec) {
+                    if (cdRomSpec.getImageUuid() == null) {
+                        return null;
+                    }
+
                     final String psUuid;
                     ImageSpec imageSpec = new ImageSpec();
-                    final ImageInventory iso = ImageInventory.valueOf(dbf.findByUuid(isoSpec.getImageUuid(), ImageVO.class));
+                    final ImageInventory iso = ImageInventory.valueOf(dbf.findByUuid(cdRomSpec.getImageUuid(), ImageVO.class));
                     imageSpec.setInventory(iso);
                     imageSpec.setSelectedBackupStorage(CollectionUtils.find(iso.getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
                         @Override
                         public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
-                            return arg.getBackupStorageUuid().equals(isoSpec.getBackupStorageUuid()) ? arg : null;
+                            return arg.getBackupStorageUuid().equals(cdRomSpec.getBackupStorageUuid()) ? arg : null;
                         }
                     }));
 
@@ -110,12 +137,17 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                 public void run(MessageReply reply) {
                     if (reply.isSuccess()) {
                         DownloadIsoToPrimaryStorageReply re = reply.castReply();
-                        VmInstanceSpec.IsoSpec isoSpec = spec.getDestIsoList().stream()
-                                .filter(s -> s.getImageUuid().equals(msg.getIsoSpec().getInventory().getUuid()))
+                        VmInstanceSpec.CdRomSpec cdRomSpec = spec.getCdRomSpecs().stream()
+                                .filter(s -> s.getImageUuid() != null && s.getImageUuid().equals(msg.getIsoSpec().getInventory().getUuid()))
                                 .findAny()
                                 .get();
-                        isoSpec.setInstallPath(re.getInstallPath());
-                        isoSpec.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                        cdRomSpec.setInstallPath(re.getInstallPath());
+                        cdRomSpec.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+
+                        SQL.New(VmCdRomVO.class)
+                                .eq(VmCdRomVO_.uuid, cdRomSpec.getUuid())
+                                .set(VmCdRomVO_.isoInstallPath, re.getInstallPath())
+                                .update();
                     } else {
                         errorCodes.add(reply.getError());
                     }
@@ -140,17 +172,28 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
 
     @Override
     public void preReleaseVmResource(VmInstanceSpec spec, final Completion completion) {
-        List<IsoSpec> isoSpecs = spec.getDestIsoList();
+        List<CdRomSpec> cdRomSpecs = spec.getCdRomSpecs();
 
-        if (isoSpecs.isEmpty()) {
+        if (cdRomSpecs.isEmpty()) {
             completion.success();
             return;
         }
 
-        List<DeleteIsoFromPrimaryStorageMsg> msgs = CollectionUtils.transformToList(isoSpecs,
-                new Function<DeleteIsoFromPrimaryStorageMsg, IsoSpec>() {
+        List<String> isoUuids = spec.getCdRomSpecs().stream().map(CdRomSpec::getImageUuid).collect(Collectors.toList());
+        isoUuids = isoUuids.parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
+        if (isoUuids.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        List<DeleteIsoFromPrimaryStorageMsg> msgs = CollectionUtils.transformToList(cdRomSpecs,
+                new Function<DeleteIsoFromPrimaryStorageMsg, CdRomSpec>() {
                     @Override
-                    public DeleteIsoFromPrimaryStorageMsg call(IsoSpec arg) {
+                    public DeleteIsoFromPrimaryStorageMsg call(CdRomSpec arg) {
+                        if (arg.getImageUuid() == null) {
+                            return null;
+                        }
+
                         String psUuid;
                         if (VmOperation.NewCreate == spec.getCurrentVmOperation()) {
                             VolumeSpec vspec = spec.getVolumeSpecs().get(0);

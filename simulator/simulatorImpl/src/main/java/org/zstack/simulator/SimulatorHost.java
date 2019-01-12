@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.host.HostBase;
+import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
@@ -263,6 +264,24 @@ class SimulatorHost extends HostBase {
     void removeVm(String vmUuid) {
         synchronized (config.vms) {
             config.removeVm(self.getUuid(), vmUuid);
+        }
+    }
+
+    protected int getHostSyncLevel() {
+        return 10;
+    }
+
+    protected HostInventory getSelfInventory() {
+        return HostInventory.valueOf(self);
+    }
+
+    @Override
+    @MessageSafe
+    public void handleMessage(Message msg) {
+        if (msg instanceof APIMessage) {
+            handleApiMessage((APIMessage) msg);
+        } else {
+            handleLocalMessage(msg);
         }
     }
 }

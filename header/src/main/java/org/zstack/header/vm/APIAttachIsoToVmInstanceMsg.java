@@ -8,6 +8,7 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -25,6 +26,9 @@ public class APIAttachIsoToVmInstanceMsg extends APIMessage implements VmInstanc
     private String vmInstanceUuid;
     @APIParam(resourceType = ImageVO.class, checkAccount = true)
     private String isoUuid;
+
+    @APINoSee
+    private String cdRomUuid;
 
     @Override
     public String getVmInstanceUuid() {
@@ -67,5 +71,13 @@ public class APIAttachIsoToVmInstanceMsg extends APIMessage implements VmInstanc
                 }
             }
         };
+    }
+
+    public String getCdRomUuid() {
+        return cdRomUuid;
+    }
+
+    public void setCdRomUuid(String cdRomUuid) {
+        this.cdRomUuid = cdRomUuid;
     }
 }

@@ -21,4 +21,18 @@ public class SystemTagUtils {
         String result = opt.isPresent() ? tag.getTokenByTag(opt.get(), tagToken) : null;
         return result;
     }
+
+    public static String findTagValue(List<String> systemTags, PatternedSystemTag tag){
+        if(systemTags == null || tag == null){
+            throw new IllegalArgumentException("illegal argument");
+        }
+
+        if(systemTags.isEmpty()){
+            return null;
+        }
+
+        Optional<String> opt = systemTags.stream().filter(s -> tag.isMatch(s)).findAny();
+        String result = opt.isPresent() ? opt.get() : null;
+        return result;
+    }
 }

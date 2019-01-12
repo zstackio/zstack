@@ -60,6 +60,14 @@ public class AlarmData  {
         return this.alarmStatus;
     }
 
+    public java.lang.String dataUuid;
+    public void setDataUuid(java.lang.String dataUuid) {
+        this.dataUuid = dataUuid;
+    }
+    public java.lang.String getDataUuid() {
+        return this.dataUuid;
+    }
+
     public java.util.Set queryableLabels;
     public void setQueryableLabels(java.util.Set queryableLabels) {
         this.queryableLabels = queryableLabels;
@@ -124,6 +132,22 @@ public class AlarmData  {
         return this.TAG_ALARM_STATUS;
     }
 
+    public java.lang.String TAG_DATA_UUID;
+    public void setTAG_DATA_UUID(java.lang.String TAG_DATA_UUID) {
+        this.TAG_DATA_UUID = TAG_DATA_UUID;
+    }
+    public java.lang.String getTAG_DATA_UUID() {
+        return this.TAG_DATA_UUID;
+    }
+
+    public java.lang.String FIELD_READ_STATUS;
+    public void setFIELD_READ_STATUS(java.lang.String FIELD_READ_STATUS) {
+        this.FIELD_READ_STATUS = FIELD_READ_STATUS;
+    }
+    public java.lang.String getFIELD_READ_STATUS() {
+        return this.FIELD_READ_STATUS;
+    }
+
     public java.lang.String alarmName;
     public void setAlarmName(java.lang.String alarmName) {
         this.alarmName = alarmName;
@@ -170,6 +194,14 @@ public class AlarmData  {
     }
     public java.lang.String getComparisonOperator() {
         return this.comparisonOperator;
+    }
+
+    public java.lang.String readStatus;
+    public void setReadStatus(java.lang.String readStatus) {
+        this.readStatus = readStatus;
+    }
+    public java.lang.String getReadStatus() {
+        return this.readStatus;
     }
 
     public long time;

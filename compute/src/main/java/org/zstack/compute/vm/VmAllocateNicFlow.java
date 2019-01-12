@@ -11,6 +11,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -20,6 +21,7 @@ import org.zstack.header.core.workflow.FlowException;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
@@ -68,7 +70,16 @@ public class VmAllocateNicFlow implements Flow {
         data.put(VmInstanceConstant.Params.VmAllocateNicFlow_nics.toString(), nics);
         List<ErrorCode> errs = new ArrayList<>();
         Map<String, String> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(spec.getVmInventory().getUuid());
-        List<L3NetworkInventory> firstL3s = VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks());
+        List<L3NetworkInventory> firstL3s = VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks())
+                .stream()
+                .peek(v -> {
+                    if (!Q.New(IpRangeVO.class)
+                            .eq(IpRangeVO_.l3NetworkUuid, v.getUuid())
+                            .isExists()) {
+                        throw new OperationFailureException(Platform.operr("there is no available ipRange on L3 network [%s]", v.getUuid()));
+                    }
+                })
+                .collect(Collectors.toList());
         new While<>(firstL3s).each((nw, wcomp) -> {
             int deviceId = deviceIdBitmap.nextClearBit(0);
             deviceIdBitmap.set(deviceId);

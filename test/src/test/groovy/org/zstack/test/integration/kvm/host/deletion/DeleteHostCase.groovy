@@ -1,6 +1,9 @@
 package org.zstack.test.integration.kvm.host.deletion
 
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
+import org.zstack.header.host.HostVO
+import org.zstack.header.host.HostVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
@@ -167,6 +170,7 @@ class DeleteHostCase extends SubCase{
     void test() {
         env.create {
             testDataVolumeStatusWhenDeleteHost()
+            testForceDeleteHost()
         }
     }
 
@@ -227,6 +231,20 @@ class DeleteHostCase extends SubCase{
         assert 2 == newVm.allVolumes.size()
         assert newVm.allVolumes[0].status == VolumeStatus.Ready.name()
         assert newVm.allVolumes[1].status == VolumeStatus.Ready.name()
+    }
+
+    void testForceDeleteHost() {
+        String hostUuid = Q.New(HostVO.class)
+                .select(HostVO_.uuid)
+                .findValue()
+
+        deleteHost {
+            uuid = hostUuid
+            deleteMode = "Enforcing"
+        }
+        assert !Q.New(HostVO.class)
+                .eq(HostVO_.uuid, hostUuid)
+                .isExists()
     }
 
     @Override

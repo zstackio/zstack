@@ -36,7 +36,7 @@ class VmConsoleCase extends SubCase {
     void test() {
         env.create {
             testSetConsolePasswordSuccess()
-            testSetConsolePasswordFailure()
+            testClearConsolePasswordSuccess()
             testGetVmConsoleAddressSuccess()
         }
     }
@@ -63,19 +63,26 @@ class VmConsoleCase extends SubCase {
 
     }
 
-    void testSetConsolePasswordFailure() {
+    void testClearConsolePasswordSuccess() {
+        def password = "123456789"
         VmSpec spec = env.specByName("vm")
         VmInstanceInventory inv = setVmConsolePassword {
             uuid = spec.inventory.uuid
-            consolePassword = "123456789"
+            consolePassword = password
             sessionId = adminSession()
         }
         def action  = new GetVmConsolePasswordAction()
         action.uuid = spec.inventory.uuid
         action.sessionId = adminSession()
         GetVmConsolePasswordAction.Result res = action.call()
-        assert res.value.getPassword() == "123456789"
+        assert res.value.getPassword() == password
 
+        deleteVmConsolePassword {
+            uuid = spec.inventory.uuid
+        }
+
+        res = action.call()
+        assert res.value.getPassword() == null
     }
 
     @Override

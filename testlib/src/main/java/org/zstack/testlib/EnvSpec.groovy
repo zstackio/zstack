@@ -2,7 +2,11 @@ package org.zstack.testlib
 
 import groovy.transform.AutoClone
 import org.codehaus.groovy.runtime.InvokerHelper
-import org.springframework.http.*
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestTemplate
 import org.zstack.compute.vm.VmGlobalConfig
@@ -749,8 +753,9 @@ class EnvSpec implements Node, ApiHelper {
             }
 
             cleanupEO()
-
             makeSureAllEntitiesDeleted()
+
+            testter.clearAll()
         } catch (StopTestSuiteException e) {
             throw e
         } catch (Throwable t) {

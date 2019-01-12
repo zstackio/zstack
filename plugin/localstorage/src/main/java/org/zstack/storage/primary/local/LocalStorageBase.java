@@ -1544,6 +1544,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
                                 .param("uuids", vmUuidsToDelete).execute();
                     }
 
+                    if (!vmUuidsToDelete.isEmpty()) {
+                        // delete vm cdrom
+                        sql("delete from VmCdRomVO cdrom where cdrom.vmInstanceUuid in (:uuids)")
+                                .param("uuids", vmUuidsToDelete).execute();
+                    }
+
                     // delete volumes including root and data volumes
                     sql("delete from VolumeVO vol where vol.uuid in (:uuids)")
                             .param("uuids", volumesUuids).execute();

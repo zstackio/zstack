@@ -134,14 +134,29 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
                     }));
 
             if (ImageMediaType.ISO.toString().equals(spec.getImageSpec().getInventory().getMediaType())) {
-                spec.getDestIsoList().get(0).setBackupStorageUuid(bsUuid);
+                spec.getCdRomSpecs().get(0).setBackupStorageUuid(bsUuid);
             }
+
+            spec.getCdRomSpecs().forEach(cdRomSpec -> {
+                if (cdRomSpec.getBackupStorageUuid() != null) {
+                    return;
+                }
+                if (cdRomSpec.getImageUuid() == null) {
+                    return;
+                }
+                cdRomSpec.setBackupStorageUuid(
+                        findIsoBsUuidInTheZone(cdRomSpec.getImageUuid(), spec.getVmInventory().getZoneUuid())
+                );
+            });
         } else if ((VmOperation.Start == spec.getCurrentVmOperation()
                 || VmOperation.Reboot == spec.getCurrentVmOperation())
-                && !spec.getDestIsoList().isEmpty()) {
-            spec.getDestIsoList().forEach(isoSpec -> {
-                isoSpec.setBackupStorageUuid(
-                        findIsoBsUuidInTheZone(isoSpec.getImageUuid(), spec.getVmInventory().getZoneUuid())
+                && !spec.getCdRomSpecs().isEmpty()) {
+            spec.getCdRomSpecs().forEach(cdRomSpec -> {
+                if (cdRomSpec.getImageUuid() == null) {
+                    return;
+                }
+                cdRomSpec.setBackupStorageUuid(
+                        findIsoBsUuidInTheZone(cdRomSpec.getImageUuid(), spec.getVmInventory().getZoneUuid())
                 );
             });
         }

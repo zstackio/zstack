@@ -209,6 +209,13 @@ class SetStaticIpv6AddressCase extends SubCase {
         Map<String, String> ips = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
         assert ips.get(l3_statefull.uuid) == IPv6NetworkUtils.ipv6TagValueToAddress(static_ip)
 
+        expect(AssertionError.class) {
+            deleteVmStaticIp {
+                vmInstanceUuid = vm.uuid
+                l3NetworkUuid = "invalid uuid"
+            }
+        }
+
         deleteVmStaticIp {
             vmInstanceUuid = vm.uuid
             l3NetworkUuid = l3_statefull.uuid

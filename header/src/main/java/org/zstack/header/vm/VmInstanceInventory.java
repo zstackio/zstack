@@ -12,6 +12,7 @@ import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.TypeField;
+import org.zstack.header.vm.cdrom.VmCdRomInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.utils.CollectionUtils;
@@ -144,6 +145,8 @@ import java.util.List;
                 foreignKey = "uuid", expandedInventoryKey = "vmInstanceUuid"),
         @ExpandedQuery(expandedField = "allVolumes", inventoryClass = VolumeInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "vmInstanceUuid"),
+        @ExpandedQuery(expandedField = "vmCdRoms", inventoryClass = VmCdRomInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "vmInstanceUuid"),
 })
 public class VmInstanceInventory implements Serializable, Cloneable {
     /**
@@ -258,6 +261,8 @@ public class VmInstanceInventory implements Serializable, Cloneable {
      */
     private List<VolumeInventory> allVolumes;
 
+    private List<VmCdRomInventory> vmCdRoms;
+
     protected VmInstanceInventory(VmInstanceVO vo) {
         this.setUuid(vo.getUuid());
         this.setName(vo.getName());
@@ -276,6 +281,7 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.setRootVolumeUuid(vo.getRootVolumeUuid());
         this.setAllVolumes(VolumeInventory.valueOf(vo.getAllVolumes()));
         this.setVmNics(VmNicInventory.valueOf(vo.getVmNics()));
+        this.setVmCdRoms(VmCdRomInventory.valueOf(vo.getVmCdRoms()));
         this.setInternalId(vo.getInternalId());
         this.setDefaultL3NetworkUuid(vo.getDefaultL3NetworkUuid());
         this.setCpuNum(vo.getCpuNum());
@@ -552,5 +558,13 @@ public class VmInstanceInventory implements Serializable, Cloneable {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public List<VmCdRomInventory> getVmCdRoms() {
+        return vmCdRoms;
+    }
+
+    public void setVmCdRoms(List<VmCdRomInventory> vmCdRoms) {
+        this.vmCdRoms = vmCdRoms;
     }
 }

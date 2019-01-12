@@ -14,11 +14,8 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.TransactionalCallback;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.jsonlabel.JsonLabelVO;
-import org.zstack.core.jsonlabel.JsonLabelVO_;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -46,7 +43,6 @@ import org.zstack.header.storage.backup.BackupStorageCanonicalEvents.BackupStora
 import org.zstack.header.storage.backup.BackupStorageErrors.Opaque;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
@@ -58,8 +54,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static org.zstack.core.Platform.operr;
 import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class BackupStorageBase extends AbstractBackupStorage {
@@ -233,12 +229,12 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     protected void handle(final CheckInstallPathOnBSMsg msg) {
         CheckInstallPathOnBSReply reply = new CheckInstallPathOnBSReply();
-        reply.setTrashId(trash.getTrashId(self.getUuid(), msg.getInstallPath()));
+        Long trashId = trash.getTrashId(self.getUuid(), msg.getInstallPath());
 
-        if (reply.getTrashId() != null) {
-            String lable = Q.New(JsonLabelVO.class).eq(JsonLabelVO_.id, reply.getTrashId()).select(JsonLabelVO_.labelValue).find();
-            StorageTrashSpec spec = JSONObjectUtil.toObject(lable, StorageTrashSpec.class);
+        if (trashId != null) {
+            StorageTrashSpec spec = trash.getTrash(self.getUuid(), trashId);
             reply.setResourceUuid(spec.getResourceUuid());
+            reply.setTrashId(trashId);
         }
         bus.reply(msg, reply);
     }
@@ -475,6 +471,12 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             return;
         }
 
+        if (!trash.makeSureInstallPathNotUsed(spec)) {
+            logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+            trash.remove(spec.getTrashId());
+            completion.success(result);
+            return;
+        }
         DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
         msg.setInstallPath(spec.getInstallPath());
         msg.setBackupStorageUuid(self.getUuid());
@@ -521,6 +523,13 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         List<ErrorCode> errs = new ArrayList<>();
         new While<>(trashs.entrySet()).all((t, coml) -> {
             StorageTrashSpec spec = t.getValue();
+            if (!trash.makeSureInstallPathNotUsed(spec)) {
+                logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+                trash.remove(spec.getTrashId());
+                coml.done();
+                return;
+            }
+
             DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
             msg.setInstallPath(spec.getInstallPath());
             msg.setBackupStorageUuid(self.getUuid());

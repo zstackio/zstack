@@ -11,5 +11,5 @@ public interface HostAllocatorTrigger {
 
     void skip();
 
-    int indexOfFlow(AbstractHostAllocatorFlow flow);
+    boolean isFirstFlow(AbstractHostAllocatorFlow flow);
 }

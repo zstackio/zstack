@@ -77,6 +77,7 @@ public class StringSimilarity {
     private static List<ErrorCodeElaboration> initialElaborations() {
         List<String> errorTemplates = PathUtil.scanFolderOnClassPath(elaborateFolder);
         List<ErrorCodeElaboration> els = Collections.synchronizedList(new ArrayList<>());
+        logger.info("start initializing elaborations");
 
         for (String errorTemplate: errorTemplates) {
             String name = PathUtil.fileName(errorTemplate);
@@ -107,6 +108,7 @@ public class StringSimilarity {
         }
 
         validate(els);
+        logger.info(String.format("finish initializing system elaborations, got %s elaborations", els.size()));
         return els;
     }
 

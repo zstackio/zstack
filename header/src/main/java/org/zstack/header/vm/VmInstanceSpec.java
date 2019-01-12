@@ -151,6 +151,63 @@ public class VmInstanceSpec implements Serializable {
         }
     }
 
+    public static class CdRomSpec implements Serializable {
+        private String uuid;
+        private int deviceId;
+        private String installPath;
+        private String imageUuid;
+        private String primaryStorageUuid;
+        private String backupStorageUuid;
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
+        public String getBackupStorageUuid() {
+            return backupStorageUuid;
+        }
+
+        public void setBackupStorageUuid(String backupStorageUuid) {
+            this.backupStorageUuid = backupStorageUuid;
+        }
+
+        public String getPrimaryStorageUuid() {
+            return primaryStorageUuid;
+        }
+
+        public void setPrimaryStorageUuid(String primaryStorageUuid) {
+            this.primaryStorageUuid = primaryStorageUuid;
+        }
+
+        public String getImageUuid() {
+            return imageUuid;
+        }
+
+        public void setImageUuid(String imageUuid) {
+            this.imageUuid = imageUuid;
+        }
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+
+        public int getDeviceId() {
+            return deviceId;
+        }
+
+        public void setDeviceId(int deviceId) {
+            this.deviceId = deviceId;
+        }
+    }
+
     public static class HostName implements Serializable {
         private String l3NetworkUuid;
         private String hostname;
@@ -198,6 +255,7 @@ public class VmInstanceSpec implements Serializable {
     private Map<String, JsonWrapper> extensionData = new HashMap<>();
     private String dataIsoPath;
     private List<IsoSpec> destIsoList = new ArrayList<>();
+    private List<CdRomSpec> cdRomSpecs = new ArrayList<>();
     private List<String> userdataList;
     private List<String> bootOrders;
     private boolean gcOnStopFailure;
@@ -316,6 +374,14 @@ public class VmInstanceSpec implements Serializable {
 
     public void setDestIsoList(List<IsoSpec> destIsoList) {
         this.destIsoList = destIsoList;
+    }
+
+    public List<CdRomSpec> getCdRomSpecs() {
+        return cdRomSpecs;
+    }
+
+    public void setCdRomSpecs(List<CdRomSpec> cdRomSpecs) {
+        this.cdRomSpecs = cdRomSpecs;
     }
 
     public VmInstanceSpec() {

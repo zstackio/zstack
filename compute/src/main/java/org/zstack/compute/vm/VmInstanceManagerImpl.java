@@ -37,7 +37,6 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.AfterChangeHostStatusExtensionPoint;
@@ -62,6 +61,8 @@ import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
+import org.zstack.header.vm.cdrom.VmCdRomVO;
+import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.*;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
@@ -91,9 +92,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.inerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VmInstanceManagerImpl extends AbstractService implements
@@ -169,7 +168,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
     protected L3NetworkManager l3nm;
 
     @Override
-    @MessageSafe
     public void handleMessage(Message msg) {
         if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
@@ -2122,6 +2120,22 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
         for (String vmnicUuid : vmnics) {
             acntMgr.changeResourceOwner(vmnicUuid, newOwnerUuid);
+        }
+
+        changeVmCdRomsOwner(ref.getResourceUuid(), newOwnerUuid);
+    }
+
+    private void changeVmCdRomsOwner(String vmInstanceUuid, String newOwnerUuid) {
+        List<String> vmCdRomUuids = Q.New(VmCdRomVO.class)
+                .select(VmCdRomVO_.uuid)
+                .eq(VmCdRomVO_.vmInstanceUuid, vmInstanceUuid)
+                .listValues();
+        if (vmCdRomUuids.isEmpty()) {
+            return;
+        }
+
+        for (String uuid :vmCdRomUuids) {
+            acntMgr.changeResourceOwner(uuid, newOwnerUuid);
         }
     }
 

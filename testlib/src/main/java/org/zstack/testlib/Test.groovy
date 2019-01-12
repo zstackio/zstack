@@ -24,6 +24,7 @@ import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 import org.zstack.utils.path.PathUtil
+import org.zstack.utils.tester.ZTester
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
@@ -111,6 +112,14 @@ abstract class Test implements ApiHelper, Retry {
 
     static EnvSpec makeEnv(@DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=EnvSpec.class) Closure c) {
         def spec = new EnvSpec()
+        c.delegate = spec
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c()
+        return spec
+    }
+
+    static EnvSpec makeEnv(EnvSpec parent, @DelegatesTo(strategy=Closure.DELEGATE_FIRST, value=EnvSpec.class) Closure c) {
+        def spec = parent
         c.delegate = spec
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()

@@ -5,8 +5,8 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.header.network.l3.L3NetworkHostRouteVO
 import org.zstack.header.network.l3.L3NetworkHostRouteVO_
+import org.zstack.header.network.l3.L3NetworkStateEvent
 import org.zstack.header.network.service.NetworkServiceConstants
-import org.zstack.network.service.flat.FlatNetworkSystemTags
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
@@ -17,7 +17,6 @@ import org.zstack.test.integration.networkservice.provider.NetworkServiceProvide
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
-
 /**
  * Created by weiwang on 01/06/2017.
  */
@@ -39,9 +38,73 @@ class VirtualRouterAttachNetworkCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testAttachL3Network()
             testHostRouteOnL3Network()
             testAttachOneSystemNetwork()
         }
+    }
+    void testAttachL3Network() {
+        def l2 = env.inventoryByName("l2") as L2NetworkInventory
+        def vm = env.inventoryByName("vm") as VmInstanceInventory
+        L3NetworkInventory l3_1 = createL3Network {
+            delegate.category = "Private"
+            delegate.l2NetworkUuid = l2.uuid
+            delegate.name = "L3-2"
+        }
+        L3NetworkInventory l3_2 = createL3Network {
+            delegate.system = true
+            delegate.category = "System"
+            delegate.l2NetworkUuid = l2.uuid
+            delegate.name = "L3-2"
+        }
+
+        // attach system L3Network to user vm
+        expect(AssertionError.class) {
+            attachL3NetworkToVm {
+                l3NetworkUuid = l3_2.uuid
+                vmInstanceUuid = vm.uuid
+            }
+        }
+
+        pauseVmInstance {
+            uuid = vm.uuid
+        }
+
+        // attachL3Network when vm paused ([ApiMessageInterceptionException.class, AssertionError.class])
+        expect(AssertionError.class) {
+            attachL3NetworkToVm {
+                l3NetworkUuid = l3_1.uuid
+                vmInstanceUuid = vm.uuid
+            }
+        }
+
+        resumeVmInstance {
+            uuid = vm.uuid
+        }
+
+        // attach a L3Network without ip range to vm
+        expect(AssertionError.class) {
+            attachL3NetworkToVm {
+                l3NetworkUuid = l3_1.uuid
+                vmInstanceUuid = vm.uuid
+                staticIp = "123.123.124.124"
+            }
+        }
+
+        changeL3NetworkState {
+            uuid = l3_1.uuid
+            stateEvent = L3NetworkStateEvent.disable
+        }
+
+        // attach a disable L3Network to vm  ([ApiMessageInterceptionException.class, AssertionError.class])
+        expect(AssertionError.class) {
+            attachL3NetworkToVm {
+                l3NetworkUuid = l3_1.uuid
+                vmInstanceUuid = vm.uuid
+            }
+        }
+
+
     }
 
     void testHostRouteOnL3Network() {
