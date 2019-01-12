@@ -55,6 +55,9 @@ public class CreateAlarmAction extends AbstractAction {
     @Param(required = false)
     public java.util.List actions;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {-1L,2147483647L}, noTrim = false)
+    public java.lang.Integer repeatCount = -1;
+
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type = "Any";
 

@@ -242,3 +242,6 @@ CREATE TABLE `VmCdRomVO` (
     CONSTRAINT `fkVmCdRomVOVmInstanceEO` FOREIGN KEY (`vmInstanceUuid`) REFERENCES `VmInstanceEO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkVmCdRomVOImageEO` FOREIGN KEY (`isoUuid`) REFERENCES `ImageEO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE AlarmVO ADD COLUMN `repeatCount` int DEFAULT NULL;
+UPDATE `AlarmVO` SET `repeatCount` = -1;

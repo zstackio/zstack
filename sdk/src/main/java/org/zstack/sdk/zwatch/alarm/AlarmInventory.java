@@ -78,6 +78,14 @@ public class AlarmInventory  {
         return this.repeatInterval;
     }
 
+    public java.lang.Integer repeatCount;
+    public void setRepeatCount(java.lang.Integer repeatCount) {
+        this.repeatCount = repeatCount;
+    }
+    public java.lang.Integer getRepeatCount() {
+        return this.repeatCount;
+    }
+
     public AlarmStatus status;
     public void setStatus(AlarmStatus status) {
         this.status = status;
