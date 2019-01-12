@@ -243,5 +243,8 @@ CREATE TABLE `VmCdRomVO` (
     CONSTRAINT `fkVmCdRomVOImageEO` FOREIGN KEY (`isoUuid`) REFERENCES `ImageEO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE AlarmVO ADD COLUMN `repeatCount` int DEFAULT NULL;
+UPDATE `AlarmVO` SET `repeatCount` = -1;
+
 ALTER TABLE `V2VConversionCacheVO` ADD COLUMN `downloadTime` VARCHAR(32);
 ALTER TABLE `V2VConversionCacheVO` ADD COLUMN `uploadTime` VARCHAR(32);
