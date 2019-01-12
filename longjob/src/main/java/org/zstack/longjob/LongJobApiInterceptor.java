@@ -161,7 +161,7 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
         jobMsg.setSession(msg.getSession());
 
         try {
-            jobMsg = apiMediator.getProcesser().process(jobMsg);                     // may throw ApiMessageInterceptionException
+            apiMediator.getProcesser().process(jobMsg);                     // may throw ApiMessageInterceptionException
         } catch (StopRoutingException e) {
             APISubmitLongJobEvent evt = new APISubmitLongJobEvent(msg.getId());
             evt.setInventory(LongJobInventory.valueOf(vo));
@@ -170,7 +170,6 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
             throw e;
         }
 
-        vo.setJobData(JSONObjectUtil.toJsonString(jobMsg));    // msg may be changed during validation
         dbf.updateAndRefresh(vo);
     }
 

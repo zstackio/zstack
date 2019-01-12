@@ -8,6 +8,7 @@ import org.zstack.header.message.NeedReplyMessage;
  */
 public class GetKVMHostDownloadCredentialMsg extends NeedReplyMessage implements HostMessage {
     private String hostUuid;
+    private String dataNetworkCidr;
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
@@ -16,5 +17,13 @@ public class GetKVMHostDownloadCredentialMsg extends NeedReplyMessage implements
     @Override
     public String getHostUuid() {
         return hostUuid;
+    }
+
+    public String getDataNetworkCidr() {
+        return dataNetworkCidr;
+    }
+
+    public void setDataNetworkCidr(String dataNetworkCidr) {
+        this.dataNetworkCidr = dataNetworkCidr;
     }
 }

@@ -63,6 +63,7 @@ import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
 import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -3332,6 +3333,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         GetKVMHostDownloadCredentialMsg gmsg = new GetKVMHostDownloadCredentialMsg();
         gmsg.setHostUuid(msg.getSrcHostUuid());
+
+        if (PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.hasTag(self.getUuid())) {
+            gmsg.setDataNetworkCidr(PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByResourceUuid(self.getUuid(), PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN));
+        }
+
         bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, msg.getSrcHostUuid());
         bus.send(gmsg, new CloudBusCallBack(reply) {
             @Override
