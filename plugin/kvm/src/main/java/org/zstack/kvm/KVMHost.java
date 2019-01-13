@@ -706,7 +706,7 @@ public class KVMHost extends HostBase implements Host {
         DetachIsoCmd cmd = new DetachIsoCmd();
         cmd.isoUuid = msg.getIsoUuid();
         cmd.vmUuid = msg.getVmInstanceUuid();
-        Integer deviceId = IsoOperator.getIsoDeviceId2(msg.getVmInstanceUuid(), msg.getIsoUuid());
+        Integer deviceId = IsoOperator.getIsoDeviceId(msg.getVmInstanceUuid(), msg.getIsoUuid());
         assert deviceId != null;
         cmd.deviceId = deviceId;
 

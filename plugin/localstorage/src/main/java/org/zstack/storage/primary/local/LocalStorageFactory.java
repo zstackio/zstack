@@ -882,7 +882,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                     " Only linux guest is supported. Current platform is [%s]", vm.getUuid(), vm.getPlatform());
         }
 
-        if (IsoOperator.isIsoAttachedToVm2(vm.getUuid())) {
+        if (IsoOperator.isIsoAttachedToVm(vm.getUuid())) {
             return operr("unable to live migrate vm[uuid:%s] with ISO on local storage." +
                     " Need detach all ISO first.", vm.getUuid());
         }
@@ -1138,7 +1138,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 capabilities.setSupportVolumeMigration(false);
             }
 
-            if (IsoOperator.isIsoAttachedToVm2(inv.getUuid())) {
+            if (IsoOperator.isIsoAttachedToVm(inv.getUuid())) {
                 capabilities.setSupportVolumeMigration(false);
             }
         }

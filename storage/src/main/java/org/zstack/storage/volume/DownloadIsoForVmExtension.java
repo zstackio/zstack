@@ -70,21 +70,11 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
         }
 
         List<String> isoUuids = spec.getCdRomSpecs().stream().map(CdRomSpec::getImageUuid).collect(Collectors.toList());
-        //isoUuids = isoUuids.parallelStream().filter(Objects::nonNull).collect(Collectors.toList());
         if (isoUuids.isEmpty()) {
             completion.success();
             return;
         }
 
-        /*
-        if (spec.getDestIsoList().isEmpty() || !operations.contains(spec.getCurrentVmOperation())) {
-            completion.success();
-            return;
-        }
-        spec.getDestIsoList().forEach(isoSpec -> {
-            assert isoSpec.getBackupStorageUuid() != null : "backup storage uuid cannot be null";
-        });
-       */
         spec.getCdRomSpecs().forEach(cdRomSpec -> {
             if (cdRomSpec.getImageUuid() == null) {
                 return;
