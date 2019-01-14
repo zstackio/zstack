@@ -2,18 +2,21 @@ package org.zstack.compute.vm;
 
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO_;
+import org.zstack.tag.SystemTagCreator;
 import java.util.List;
-
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created by xing5 on 2016/5/26.
  */
 public class IsoOperator {
-    public static List<String> getIsoUuidByVmUuid2(String vmUuid) {
+    public static List<String> getIsoUuidByVmUuid(String vmUuid) {
        List<String> isoUuids = Q.New(VmCdRomVO.class)
                .select(VmCdRomVO_.isoUuid)
                .eq(VmCdRomVO_.vmInstanceUuid, vmUuid)
@@ -22,7 +25,7 @@ public class IsoOperator {
        return isoUuids;
     }
 
-    public static List<String> getVmUuidByIsoUuid2(String isoUuid) {
+    public static List<String> getVmUuidByIsoUuid(String isoUuid) {
         List<String> result = Q.New(VmCdRomVO.class)
                 .select(VmCdRomVO_.vmInstanceUuid)
                 .eq(VmCdRomVO_.isoUuid, isoUuid)
@@ -30,8 +33,8 @@ public class IsoOperator {
         return result;
     }
 
-    static void checkAttachIsoToVm2(String vmUuid, String isoUuid) {
-        List<String> isoList = getIsoUuidByVmUuid2(vmUuid);
+    static void checkAttachIsoToVm(String vmUuid, String isoUuid) {
+        List<String> isoList = getIsoUuidByVmUuid(vmUuid);
 
         if (isoList.contains(isoUuid)) {
             throw new OperationFailureException(operr("VM[uuid:%s] has attached ISO[uuid:%s]", vmUuid, isoUuid));
@@ -46,7 +49,7 @@ public class IsoOperator {
         }
     }
 
-    public static Integer getIsoDeviceId2(String vmUuid, String isoUuid) {
+    public static Integer getIsoDeviceId(String vmUuid, String isoUuid) {
         VmCdRomVO vmCdRomVO = Q.New(VmCdRomVO.class)
                 .eq(VmCdRomVO_.vmInstanceUuid, vmUuid)
                 .eq(VmCdRomVO_.isoUuid, isoUuid)
@@ -59,7 +62,7 @@ public class IsoOperator {
         return vmCdRomVO.getDeviceId();
     }
 
-    public static boolean isIsoAttachedToVm2(String vmUuid) {
+    public static boolean isIsoAttachedToVm(String vmUuid) {
         boolean exsit = Q.New(VmCdRomVO.class)
                 .eq(VmCdRomVO_.vmInstanceUuid, vmUuid)
                 .notNull(VmCdRomVO_.isoUuid)
@@ -77,5 +80,32 @@ public class IsoOperator {
                 .find();
 
         return cdRomVO;
+    }
+
+    @AsyncThread
+    @Deprecated
+    public void syncVmIsoSystemTag(String vmUuid) {
+        if (!VmCdRomGlobalProperty.syncVmIsoSystemTag) {
+            return;
+        }
+
+        VmSystemTags.ISO.delete(vmUuid);
+
+        List<VmCdRomVO> cdRomVOS = Q.New(VmCdRomVO.class)
+                .eq(VmCdRomVO_.vmInstanceUuid, vmUuid)
+                .notNull(VmCdRomVO_.isoUuid)
+                .list();
+        if (cdRomVOS.isEmpty()) {
+            return;
+        }
+
+        for (VmCdRomVO cdRomVO : cdRomVOS){
+            SystemTagCreator creator = VmSystemTags.ISO.newSystemTagCreator(vmUuid);
+            creator.setTagByTokens(map(
+                    e(VmSystemTags.ISO_TOKEN, cdRomVO.getIsoUuid()),
+                    e(VmSystemTags.ISO_DEVICEID_TOKEN, cdRomVO.getDeviceId())
+            ));
+            creator.create();
+        }
     }
 }

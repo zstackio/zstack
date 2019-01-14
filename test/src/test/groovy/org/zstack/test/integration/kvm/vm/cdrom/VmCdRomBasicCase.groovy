@@ -6,6 +6,7 @@ import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.Q
 import org.zstack.core.db.SimpleQuery
 import org.zstack.header.image.ImageConstant
+import org.zstack.header.vm.VmBootDevice
 import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.header.vm.cdrom.VmCdRomVO
 import org.zstack.header.vm.cdrom.VmCdRomVO_
@@ -19,6 +20,8 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.sdk.VmCdRomInventory
 
 import java.util.stream.Collectors
+
+import static org.zstack.utils.CollectionDSL.list
 
 /**
  * Created by lining on 2018/02/10.
@@ -436,6 +439,9 @@ class VmCdRomBasicCase extends SubCase {
                 i ++
             }
 
+            assert 1 == cmd.getBootDev().size()
+            assert KVMAgentCommands.BootDev.hd.toString() == cmd.getBootDev().get(0)
+
             return rsp
         }
 
@@ -465,6 +471,9 @@ class VmCdRomBasicCase extends SubCase {
                 assert null == cdRomTO.path
                 i ++
             }
+
+            assert 1 == cmd.getBootDev().size()
+            assert KVMAgentCommands.BootDev.hd.toString() == cmd.getBootDev().get(0)
 
             return rsp
         }
@@ -502,6 +511,9 @@ class VmCdRomBasicCase extends SubCase {
                 i ++
             }
 
+            assert 1 == cmd.getBootDev().size()
+            assert KVMAgentCommands.BootDev.hd.toString() == cmd.getBootDev().get(0)
+
             return rsp
         }
         VmInstanceInventory twoEmptyCdRomVm = createVmInstance {
@@ -538,6 +550,9 @@ class VmCdRomBasicCase extends SubCase {
                 i ++
             }
 
+            assert 1 == cmd.getBootDev().size()
+            assert KVMAgentCommands.BootDev.hd.toString() == cmd.getBootDev().get(0)
+
             return rsp
         }
 
@@ -568,6 +583,9 @@ class VmCdRomBasicCase extends SubCase {
                 i ++
             }
 
+            assert 1 == cmd.getBootDev().size()
+            assert KVMAgentCommands.BootDev.hd.toString() == cmd.getBootDev().get(0)
+
             return rsp
         }
 
@@ -581,5 +599,35 @@ class VmCdRomBasicCase extends SubCase {
             ]
         }
         assert oneIsoCdRomVm.getVmCdRoms().size() == 1
+
+        
+        cmd = null
+        env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { rsp, HttpEntity<String> e ->
+            cmd = json(e.body, KVMAgentCommands.StartVmCmd.class)
+            assert 1 == cmd.getCdRoms().size()
+
+            int i = 0
+            for ( KVMAgentCommands.CdRomTO cdRomTO : cmd.getCdRoms()) {
+                assert !cdRomTO.isEmpty()
+                assert iso.uuid == cdRomTO.imageUuid
+                assert null != cdRomTO.path
+                assert i == cdRomTO.deviceId
+                i ++
+            }
+
+            assert 1 == cmd.getBootDev().size()
+            assert KVMAgentCommands.BootDev.cdrom.toString() == cmd.getBootDev().get(0)
+
+            return rsp
+        }
+
+        createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = vm.instanceOfferingUuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [vm.defaultL3NetworkUuid]
+            rootDiskOfferingUuid = diskOfferingInventory.uuid
+        }
+        assert null != cmd
     }
 }

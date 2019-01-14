@@ -33,11 +33,8 @@ import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
-import org.zstack.tag.PatternedSystemTag;
-import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -325,7 +322,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAttachIsoToVmInstanceMsg msg) {
-        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid2(msg.getVmInstanceUuid());
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
         if (isoUuids.contains(msg.getIsoUuid())) {
             throw new ApiMessageInterceptionException(operr("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), msg.getIsoUuid()));
         }
@@ -354,14 +351,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void fillIsoUuid(APIDetachIsoFromVmInstanceMsg msg) {
-        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid2(msg.getVmInstanceUuid());
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
         if(isoUuids.size() == 1) {
             msg.setIsoUuid(isoUuids.get(0));
         }
     }
 
     private void validate(APIDetachIsoFromVmInstanceMsg msg) {
-        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid2(msg.getVmInstanceUuid());
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
 
         if (isoUuids.size() > 1 && msg.getIsoUuid() == null) {
             throw new ApiMessageInterceptionException(operr("VM[uuid:%s] has multiple ISOs attached, specify the isoUuid when detaching", msg.getVmInstanceUuid()));

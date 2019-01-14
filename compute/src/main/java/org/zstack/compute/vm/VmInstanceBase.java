@@ -39,8 +39,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.identity.PolicyVO;
-import org.zstack.header.identity.PolicyVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.*;
 import org.zstack.header.message.*;
@@ -80,7 +78,6 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.Platform.err;
-import static org.zstack.header.vm.VmInstanceConstant.MAXIMUM_CDROM_NUMBER;
 import static org.zstack.utils.CollectionDSL.*;
 
 
@@ -2394,8 +2391,18 @@ public class VmInstanceBase extends AbstractVmInstance {
             throw new CloudRuntimeException("selectBootOrder must be called after VmOperation is set");
         }
 
-        if (spec.getCurrentVmOperation() == VmOperation.NewCreate && !spec.getDestIsoList().isEmpty()) {
-            spec.setBootOrders(list(VmBootDevice.CdRom.toString()));
+        List<CdRomSpec> cdRomSpecs = spec.getCdRomSpecs().stream()
+                .filter(cdRom -> cdRom.getImageUuid() != null)
+                .collect(Collectors.toList());
+        if (spec.getCurrentVmOperation() == VmOperation.NewCreate && !cdRomSpecs.isEmpty()) {
+            ImageVO imageVO = dbf.findByUuid(spec.getVmInventory().getImageUuid(), ImageVO.class);
+            assert imageVO != null;
+
+            if(imageVO.getMediaType() == ImageMediaType.ISO) {
+                spec.setBootOrders(list(VmBootDevice.CdRom.toString()));
+            } else {
+                spec.setBootOrders(list(VmBootDevice.HardDisk.toString()));
+            }
         } else {
             String order = VmSystemTags.BOOT_ORDER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.BOOT_ORDER_TOKEN);
             if (order == null) {
@@ -2621,7 +2628,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         List<ImageInventory> result = getImageCandidatesForVm(ImageMediaType.ISO);
-        List<String> vmIsoList = IsoOperator.getIsoUuidByVmUuid2(msg.getVmInstanceUuid());
+        List<String> vmIsoList = IsoOperator.getIsoUuidByVmUuid(msg.getVmInstanceUuid());
         result = result.stream()
                 .filter(iso -> !vmIsoList.contains(iso.getUuid()))
                 .collect(Collectors.toList());
@@ -2854,7 +2861,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         String order = VmSystemTags.BOOT_ORDER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.BOOT_ORDER_TOKEN);
         if (order != null) {
             reply.setOrder(list(order.split(",")));
-        } else if (order == null && !IsoOperator.isIsoAttachedToVm2(msg.getUuid())) {
+        } else if (order == null && !IsoOperator.isIsoAttachedToVm(msg.getUuid())) {
             reply.setOrder(list(VmBootDevice.HardDisk.toString()));
         } else {
             reply.setOrder(list(VmBootDevice.HardDisk.toString(), VmBootDevice.CdRom.toString()));
@@ -3190,12 +3197,12 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void detachIso(final String isoUuid, final Completion completion) {
-        if (!IsoOperator.isIsoAttachedToVm2(self.getUuid())) {
+        if (!IsoOperator.isIsoAttachedToVm(self.getUuid())) {
             completion.success();
             return;
         }
 
-        if (!IsoOperator.getIsoUuidByVmUuid2(self.getUuid()).contains(isoUuid)) {
+        if (!IsoOperator.getIsoUuidByVmUuid(self.getUuid()).contains(isoUuid)) {
             completion.success();
             return;
         }
@@ -3210,6 +3217,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             targetVmCdRomVO.setIsoUuid(null);
             targetVmCdRomVO.setIsoInstallPath(null);
             dbf.update(targetVmCdRomVO);
+            new IsoOperator().syncVmIsoSystemTag(self.getUuid());
             completion.success();
             return;
         }
@@ -3236,10 +3244,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                //IsoOperator.detachIsoFromVm(self.getUuid(), isoUuid);
                 targetVmCdRomVO.setIsoUuid(null);
                 targetVmCdRomVO.setIsoInstallPath(null);
                 dbf.update(targetVmCdRomVO);
+                new IsoOperator().syncVmIsoSystemTag(self.getUuid());
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
@@ -3463,7 +3471,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void attachIso(final String isoUuid, String specifiedCdRomUuid, final Completion completion) {
         checkIfIsoAttachable(isoUuid);
-        IsoOperator.checkAttachIsoToVm2(self.getUuid(), isoUuid);
+        IsoOperator.checkAttachIsoToVm(self.getUuid(), isoUuid);
 
         List<VmInstanceInventory> vms = list(VmInstanceInventory.valueOf(self));
         for (VmAttachIsoExtensionPoint ext : pluginRgty.getExtensionList(VmAttachIsoExtensionPoint.class)) {
@@ -3484,10 +3492,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmCdRomVO targetVmCdRomVO = vmCdRomVO;
 
         if (self.getState() == VmInstanceState.Stopped) {
-            // new IsoOperator().attachIsoToVm(self.getUuid(), isoUuid);
             targetVmCdRomVO.setIsoUuid(isoUuid);
             dbf.update(targetVmCdRomVO);
             completion.success();
+            new IsoOperator().syncVmIsoSystemTag(self.getUuid());
             return;
         }
 
@@ -3518,7 +3526,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 targetVmCdRomVO.setIsoUuid(isoUuid);
                 targetVmCdRomVO.setIsoInstallPath(isoSpec.getInstallPath());
                 dbf.update(targetVmCdRomVO);
-
+                new IsoOperator().syncVmIsoSystemTag(self.getUuid());
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
@@ -4161,7 +4169,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         String vmUuid = self.getUuid();
-        List<String> isoList = IsoOperator.getIsoUuidByVmUuid2(vmUuid);
+        List<String> isoList = IsoOperator.getIsoUuidByVmUuid(vmUuid);
         if (!isoList.contains(isoUuid)) {
             throw new OperationFailureException(operr("ISO[uuid:%s] is not attached to VM[uuid:%s]", isoUuid , self.getUuid()));
         }

@@ -246,19 +246,19 @@ class ChangeIsoOrderCase extends SubCase {
     }
 
     void checkIsoSystemTag(String vmUuid, String isoUuid, int expectIsoDeviceId) {
-        assert expectIsoDeviceId == IsoOperator.getIsoDeviceId2(vmUuid, isoUuid)
+        assert expectIsoDeviceId == IsoOperator.getIsoDeviceId(vmUuid, isoUuid)
     }
 
     void checkVmIsoNum(String vmUuid, int expectIsoNum) {
-        assert expectIsoNum == IsoOperator.getIsoUuidByVmUuid2(vmUuid).size()
+        assert expectIsoNum == IsoOperator.getIsoUuidByVmUuid(vmUuid).size()
     }
 
     void checkVmIsoSystemTags(String vmUuid) {
-        if (!IsoOperator.isIsoAttachedToVm2(vmUuid)) {
+        if (!IsoOperator.isIsoAttachedToVm(vmUuid)) {
             return
         }
 
-        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid2(vmUuid)
+        List<String> isoUuids = IsoOperator.getIsoUuidByVmUuid(vmUuid)
 
         int max = VmGlobalConfig.MAXIMUM_CD_ROM_NUM.value(Integer.class)
         assert isoUuids.size() <= max

@@ -70,6 +70,7 @@ public class VmAllocateCdRomFlow implements Flow {
         }
 
         dbf.persistCollection(cdRomVOS);
+        new IsoOperator().syncVmIsoSystemTag(spec.getVmInventory().getUuid());
         trigger.next();
     }
 

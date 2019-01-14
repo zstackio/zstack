@@ -1,18 +1,24 @@
-package org.zstack.test.integration.image
+package org.zstack.test.integration.kvm.vm.cdrom
 
-import org.zstack.compute.vm.IsoOperator
-import org.zstack.compute.vm.VmGlobalConfig
+import org.zstack.compute.vm.VmCdRomGlobalProperty
+import org.zstack.compute.vm.VmSystemTags
 import org.zstack.header.image.ImageConstant
-import org.zstack.sdk.*
+import org.zstack.header.vm.VmInstanceConstant
+import org.zstack.sdk.DiskOfferingInventory
+import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.VmCdRomInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 
 /**
- * Created by lining on 2018/02/10.
+ * Created by lining on 2019/01/13.
  */
-class DeleteIsoCase extends SubCase {
+class VmIsoSystemTagCase extends SubCase {
     EnvSpec env
 
     @Override
@@ -30,7 +36,7 @@ class DeleteIsoCase extends SubCase {
         env = env {
             instanceOffering {
                 name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
+                memory = SizeUnit.GIGABYTE.toByte(1)
                 cpu = 4
             }
 
@@ -48,31 +54,25 @@ class DeleteIsoCase extends SubCase {
 
                 image {
                     name = "iso_0"
-                    url  = "http://zstack.org/download/test.iso"
+                    url = "http://zstack.org/download/test.iso"
                     format = ImageConstant.ISO_FORMAT_STRING.toString()
                 }
 
                 image {
                     name = "iso_1"
-                    url  = "http://zstack.org/download/test.iso"
+                    url = "http://zstack.org/download/test.iso"
                     format = ImageConstant.ISO_FORMAT_STRING.toString()
                 }
 
                 image {
                     name = "iso_2"
-                    url  = "http://zstack.org/download/test.iso"
-                    format = ImageConstant.ISO_FORMAT_STRING.toString()
-                }
-
-                image {
-                    name = "iso_3"
-                    url  = "http://zstack.org/download/test.iso"
+                    url = "http://zstack.org/download/test.iso"
                     format = ImageConstant.ISO_FORMAT_STRING.toString()
                 }
 
                 image {
                     name = "image"
-                    url  = "http://zstack.org/download/image.qcow2"
+                    url = "http://zstack.org/download/image.qcow2"
                 }
             }
 
@@ -117,14 +117,6 @@ class DeleteIsoCase extends SubCase {
                 }
                 attachBackupStorage("sftp")
             }
-
-            vm {
-                name = "vm"
-                useL3Networks("l3")
-                useInstanceOffering("instanceOffering")
-                useRootDiskOffering("diskOffering")
-                useImage("iso_1")
-            }
         }
 
     }
@@ -132,60 +124,89 @@ class DeleteIsoCase extends SubCase {
     @Override
     void test() {
         env.create {
-            testDeleteIso()
+            testVmIsoSystemTag()
         }
     }
 
-    void testDeleteIso() {
-        VmGlobalConfig.VM_DEFAULT_CD_ROM_NUM.updateValue(3)
+    void testVmIsoSystemTag() {
+        VmCdRomGlobalProperty.syncVmIsoSystemTag = true
 
-        ImageInventory image = env.inventoryByName("image")
+        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
+        ImageInventory iso = env.inventoryByName("iso_0")
         ImageInventory iso1 = env.inventoryByName("iso_1")
         ImageInventory iso2 = env.inventoryByName("iso_2")
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
-        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         L3NetworkInventory l3 = env.inventoryByName("l3")
+        InstanceOfferingInventory instanceOfferingInventory = env.inventoryByName("instanceOffering")
 
-        VmInstanceInventory newVm = createVmInstance {
-            name = "new-vm"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
-            l3NetworkUuids = [l3.uuid]
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = instanceOfferingInventory.uuid
             rootDiskOfferingUuid = diskOffering.uuid
-        }
-
-        VmInstanceInventory newVm2 = createVmInstance {
-            name = "new-vm"
-            instanceOfferingUuid = instanceOffering.uuid
-            imageUuid = image.uuid
+            imageUuid = iso.uuid
             l3NetworkUuids = [l3.uuid]
-            rootDiskOfferingUuid = diskOffering.uuid
+            systemTags = [
+                    "${VmSystemTags.CD_ROM_LIST_TOKEN}::${iso.uuid}::${iso1.uuid}::${VmInstanceConstant.EMPTY_CDROM}".toString()
+            ]
+        }
+
+        retryInSecs {
+            List<String> isoUuids = getIsoUuidByVmUuid(vm.uuid)
+            assert 2 == isoUuids.size()
+            assert isoUuids.containsAll([
+                    iso.uuid,
+                    iso1.uuid
+            ])
         }
 
         attachIsoToVmInstance {
-            vmInstanceUuid = newVm.uuid
-            isoUuid = iso1.uuid
-        }
-
-        attachIsoToVmInstance {
-            vmInstanceUuid = newVm2.uuid
-            isoUuid = iso1.uuid
-        }
-
-        attachIsoToVmInstance {
-            vmInstanceUuid = newVm.uuid
+            vmInstanceUuid = vm.uuid
             isoUuid = iso2.uuid
         }
-
-        deleteImage {
-            uuid = iso1.uuid
+        retryInSecs {
+            List<String> isoUuids = getIsoUuidByVmUuid(vm.uuid)
+            assert 3 == isoUuids.size()
+            assert isoUuids.containsAll([
+                    iso.uuid,
+                    iso1.uuid,
+                    iso2.uuid
+            ])
         }
 
-        deleteImage {
-            uuid = iso2.uuid
+        detachIsoFromVmInstance {
+            vmInstanceUuid = vm.uuid
+            isoUuid = iso2.uuid
+        }
+        retryInSecs {
+            List<String> isoUuids = getIsoUuidByVmUuid(vm.uuid)
+            assert 2 == isoUuids.size()
+            assert isoUuids.containsAll([
+                    iso.uuid,
+                    iso1.uuid
+            ])
         }
 
-        assert 0 == IsoOperator.getIsoUuidByVmUuid(newVm.uuid).size()
-        assert 0 == IsoOperator.getIsoUuidByVmUuid(newVm2.uuid).size()
+        detachIsoFromVmInstance {
+            vmInstanceUuid = vm.uuid
+            isoUuid = iso1.uuid
+        }
+        retryInSecs {
+            List<String> isoUuids = getIsoUuidByVmUuid(vm.uuid)
+            assert 1 == isoUuids.size()
+            assert isoUuids.containsAll([
+                    iso.uuid
+            ])
+        }
     }
+
+    List<String> getIsoUuidByVmUuid(String vmUuid) {
+        List<String> result = []
+
+        List<Map<String, String>> tokenList = VmSystemTags.ISO.getTokensOfTagsByResourceUuid(vmUuid)
+        for (Map<String, String> tokens : tokenList) {
+            result.add(tokens.get(VmSystemTags.ISO_TOKEN))
+        }
+
+        return result
+    }
+
 }

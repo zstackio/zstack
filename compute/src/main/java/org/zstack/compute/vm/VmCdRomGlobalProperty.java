@@ -10,4 +10,7 @@ import org.zstack.core.GlobalPropertyDefinition;
 public class VmCdRomGlobalProperty {
     @GlobalProperty(name="addCdRomToHistoricalVm", defaultValue = "false")
     public static boolean addCdRomToHistoricalVm;
+
+    @GlobalProperty(name = "syncVmIsoSystemTag", defaultValue = "false")
+    public static boolean syncVmIsoSystemTag;
 }
