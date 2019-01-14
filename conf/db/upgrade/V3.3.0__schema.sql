@@ -220,6 +220,9 @@ CREATE PROCEDURE fixMissingProjectAdminPolicy()
     END $$
 DELIMITER ;
 
+# delete dirty project admin attributes in db
+delete from IAM2VirtualIDAttributeVO where name = '__ProjectAdmin__' and value not in (select uuid from IAM2ProjectVO);
+
 call fixMissingProjectAdminPolicy();
 DROP PROCEDURE IF EXISTS fixMissingProjectAdminPolicy;
 DROP PROCEDURE IF EXISTS checkProjectAdminOfVirtualId;
