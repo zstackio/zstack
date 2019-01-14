@@ -33,4 +33,11 @@ public class VirtualRouterApplianceVmFactory implements ApplianceVmSubTypeFactor
         dbf.getEntityManager().persist(vr);
         return vr;
     }
+
+    @Override
+    @Transactional
+    public void removeApplianceVm(ApplianceVmSpec spec, ApplianceVmVO apvm) {
+        dbf.removeByPrimaryKey(apvm.getUuid(), VirtualRouterVmVO.class);
+        return;
+    }
 }

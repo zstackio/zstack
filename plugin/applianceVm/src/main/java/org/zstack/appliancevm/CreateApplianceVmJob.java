@@ -15,8 +15,11 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.job.Job;
 import org.zstack.core.job.JobContext;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
@@ -32,6 +35,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 import static org.zstack.utils.CollectionDSL.list;
@@ -72,105 +76,148 @@ public class CreateApplianceVmJob implements Job {
             }
         }
 
-        ApplianceVmVO avo = new ApplianceVmVO();
-        avo.setName(spec.getName());
-        if (spec.getUuid() != null) {
-            avo.setUuid(spec.getUuid());
-        } else {
-            avo.setUuid(Platform.getUuid());
-        }
-        String defaultRouteL3NetworkUuid = spec.getDefaultRouteL3Network() != null ? spec.getDefaultRouteL3Network().getUuid() : spec.getManagementNic().getL3NetworkUuid();
-        avo.setDefaultRouteL3NetworkUuid(defaultRouteL3NetworkUuid);
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName("create-applianceVm");
+        chain.then(new Flow() {
+            String __name__ = "persist-applianceVm-to-db";
 
-        String zoneUuid = Q.New(L3NetworkVO.class)
-            .select(L3NetworkVO_.zoneUuid)
-            .eq(L3NetworkVO_.uuid, defaultRouteL3NetworkUuid)
-            .findValue();
-        avo.setZoneUuid(zoneUuid);
-
-        avo.setDescription(spec.getDescription());
-        avo.setImageUuid(spec.getTemplate().getUuid());
-        avo.setInstanceOfferingUuid(spec.getInstanceOffering().getUuid());
-        avo.setState(VmInstanceState.Created);
-        avo.setType(ApplianceVmConstant.APPLIANCE_VM_TYPE);
-        avo.setInternalId(dbf.generateSequenceNumber(VmInstanceSequenceNumberVO.class));
-        avo.setApplianceVmType(spec.getApplianceVmType().toString());
-        avo.setAgentPort(spec.getAgentPort());
-
-        SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
-        imgq.select(ImageVO_.platform);
-        imgq.add(ImageVO_.uuid, Op.EQ, spec.getTemplate().getUuid());
-        ImagePlatform platform = imgq.findValue();
-        avo.setPlatform(platform.toString());
-
-        InstanceOfferingVO iovo = dbf.findByUuid(spec.getInstanceOffering().getUuid(), InstanceOfferingVO.class);
-        avo.setCpuNum(iovo.getCpuNum());
-        avo.setCpuSpeed(iovo.getCpuSpeed());
-        avo.setMemorySize(iovo.getMemorySize());
-        avo.setAllocatorStrategy(iovo.getAllocatorStrategy());
-
-        ApplianceVmSubTypeFactory factory = apvmFactory.getApplianceVmSubTypeFactory(avo.getApplianceVmType());
-
-        ApplianceVmVO finalAvo1 = avo;
-        avo = new SQLBatchWithReturn<ApplianceVmVO>() {
             @Override
-            protected ApplianceVmVO scripts() {
-                finalAvo1.setAccountUuid(spec.getAccountUuid());
-                ApplianceVmVO vo = factory.persistApplianceVm(spec, finalAvo1);
-                return reload(vo);
-            }
-        }.execute();
-
-        tagMgr.copySystemTag(iovo.getUuid(), InstanceOfferingVO.class.getSimpleName(), avo.getUuid(), VmInstanceVO.class.getSimpleName(), false);
-        if (spec.getInherentSystemTags() != null && !spec.getInherentSystemTags().isEmpty()) {
-            tagMgr.createInherentSystemTags(spec.getInherentSystemTags(), avo.getUuid(), VmInstanceVO.class.getSimpleName());
-        }
-        if (spec.getNonInherentSystemTags() != null && !spec.getNonInherentSystemTags().isEmpty()) {
-            tagMgr.createNonInherentSystemTags(spec.getNonInherentSystemTags(), avo.getUuid(), VmInstanceVO.class.getSimpleName());
-        }
-        apvf.setApplianceVmSystemTags(avo.getUuid(), avo.getApplianceVmType());
-
-        /**
-         * send event, if cloudformation is creating now, it will recieve the event and record vrouter for rollback
-         */
-        L3NetworkConstant.VRouterData data = new L3NetworkConstant.VRouterData();
-        for (ApplianceVmNicSpec nic: spec.getAdditionalNics()) {
-            data.l3NetworkUuid.add(nic.getL3NetworkUuid());
-        }
-        if (data.l3NetworkUuid.isEmpty()) {
-            data.l3NetworkUuid.add(spec.getManagementNic().getL3NetworkUuid());
-        }
-        data.vrouterUuid = avo.getUuid();
-        evtf.fire(L3NetworkConstant.VROUTER_CREATE_EVENT_PATH, data);
-
-        final ApplianceVmInventory inv = ApplianceVmInventory.valueOf(avo);
-        StartNewCreatedApplianceVmMsg msg = new StartNewCreatedApplianceVmMsg();
-        List<VmNicSpec> nicSpecs = new ArrayList<>();
-        L3NetworkInventory mnL3 = L3NetworkInventory.valueOf(dbf.findByUuid(spec.getManagementNic().getL3NetworkUuid(), L3NetworkVO.class));
-        nicSpecs.add(new VmNicSpec(mnL3));
-        for (ApplianceVmNicSpec aSpec : spec.getAdditionalNics()) {
-            L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(aSpec.getL3NetworkUuid(), L3NetworkVO.class));
-            nicSpecs.add(new VmNicSpec(l3));
-        }
-        msg.setL3NetworkUuids(nicSpecs);
-        msg.setVmInstanceInventory(inv);
-        msg.setApplianceVmSpec(spec);
-        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getUuid());
-        final ApplianceVmVO finalAvo = avo;
-        bus.send(msg, new CloudBusCallBack(complete) {
-            @Override
-            public void run(MessageReply reply) {
-                if (reply.isSuccess()) {
-                    logger.debug(String.format("successfully created appliance vm[uuid:%s, name: %s, appliance vm type: %s]", inv.getUuid(), inv.getName(), inv.getApplianceVmType()));
-                    ApplianceVmVO apvo = dbf.findByUuid(finalAvo.getUuid(), ApplianceVmVO.class);
-                    ApplianceVmInventory ainv = ApplianceVmInventory.valueOf(apvo);
-                    complete.success(ainv);
+            public void run(FlowTrigger trigger, Map data) {
+                ApplianceVmVO avo = new ApplianceVmVO();
+                avo.setName(spec.getName());
+                if (spec.getUuid() != null) {
+                    avo.setUuid(spec.getUuid());
                 } else {
-                    logger.warn(String.format("failed to create appliance vm[uuid:%s, name: %s, appliance vm type: %s], %s", inv.getUuid(), inv.getName(), inv.getApplianceVmType(), reply.getError()));
-                    complete.fail(reply.getError());
+                    avo.setUuid(Platform.getUuid());
                 }
+                String defaultRouteL3NetworkUuid = spec.getDefaultRouteL3Network() != null ? spec.getDefaultRouteL3Network().getUuid() : spec.getManagementNic().getL3NetworkUuid();
+                avo.setDefaultRouteL3NetworkUuid(defaultRouteL3NetworkUuid);
+
+                String zoneUuid = Q.New(L3NetworkVO.class)
+                        .select(L3NetworkVO_.zoneUuid)
+                        .eq(L3NetworkVO_.uuid, defaultRouteL3NetworkUuid)
+                        .findValue();
+                avo.setZoneUuid(zoneUuid);
+
+                avo.setDescription(spec.getDescription());
+                avo.setImageUuid(spec.getTemplate().getUuid());
+                avo.setInstanceOfferingUuid(spec.getInstanceOffering().getUuid());
+                avo.setState(VmInstanceState.Created);
+                avo.setType(ApplianceVmConstant.APPLIANCE_VM_TYPE);
+                avo.setInternalId(dbf.generateSequenceNumber(VmInstanceSequenceNumberVO.class));
+                avo.setApplianceVmType(spec.getApplianceVmType().toString());
+                avo.setAgentPort(spec.getAgentPort());
+
+                SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
+                imgq.select(ImageVO_.platform);
+                imgq.add(ImageVO_.uuid, Op.EQ, spec.getTemplate().getUuid());
+                ImagePlatform platform = imgq.findValue();
+                avo.setPlatform(platform.toString());
+
+                InstanceOfferingVO iovo = dbf.findByUuid(spec.getInstanceOffering().getUuid(), InstanceOfferingVO.class);
+                avo.setCpuNum(iovo.getCpuNum());
+                avo.setCpuSpeed(iovo.getCpuSpeed());
+                avo.setMemorySize(iovo.getMemorySize());
+                avo.setAllocatorStrategy(iovo.getAllocatorStrategy());
+
+                ApplianceVmSubTypeFactory factory = apvmFactory.getApplianceVmSubTypeFactory(avo.getApplianceVmType());
+
+                ApplianceVmVO finalAvo1 = avo;
+                avo = new SQLBatchWithReturn<ApplianceVmVO>() {
+                    @Override
+                    protected ApplianceVmVO scripts() {
+                        finalAvo1.setAccountUuid(spec.getAccountUuid());
+                        ApplianceVmVO vo = factory.persistApplianceVm(spec, finalAvo1);
+                        return reload(vo);
+                    }
+                }.execute();
+
+                data.put(ApplianceVmVO.class.getSimpleName(), avo);
+
+                tagMgr.copySystemTag(iovo.getUuid(), InstanceOfferingVO.class.getSimpleName(), avo.getUuid(), VmInstanceVO.class.getSimpleName(), false);
+                if (spec.getInherentSystemTags() != null && !spec.getInherentSystemTags().isEmpty()) {
+                    tagMgr.createInherentSystemTags(spec.getInherentSystemTags(), avo.getUuid(), VmInstanceVO.class.getSimpleName());
+                }
+                if (spec.getNonInherentSystemTags() != null && !spec.getNonInherentSystemTags().isEmpty()) {
+                    tagMgr.createNonInherentSystemTags(spec.getNonInherentSystemTags(), avo.getUuid(), VmInstanceVO.class.getSimpleName());
+                }
+                apvf.setApplianceVmSystemTags(avo.getUuid(), avo.getApplianceVmType());
+
+                trigger.next();
             }
-        });
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                ApplianceVmVO avo = (ApplianceVmVO) data.get(ApplianceVmVO.class.getSimpleName());
+                if (avo != null) {
+                    ApplianceVmSubTypeFactory factory = apvmFactory.getApplianceVmSubTypeFactory(avo.getApplianceVmType());
+                    factory.removeApplianceVm(spec, avo);
+                }
+                trigger.rollback();
+            }
+        }).then(new Flow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                ApplianceVmVO avo = (ApplianceVmVO) chain.getData().get(ApplianceVmVO.class.getSimpleName());
+                final ApplianceVmInventory inv = ApplianceVmInventory.valueOf(avo);
+                StartNewCreatedApplianceVmMsg msg = new StartNewCreatedApplianceVmMsg();
+                List<VmNicSpec> nicSpecs = new ArrayList<>();
+                L3NetworkInventory mnL3 = L3NetworkInventory.valueOf(dbf.findByUuid(spec.getManagementNic().getL3NetworkUuid(), L3NetworkVO.class));
+                nicSpecs.add(new VmNicSpec(mnL3));
+                for (ApplianceVmNicSpec aSpec : spec.getAdditionalNics()) {
+                    L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(aSpec.getL3NetworkUuid(), L3NetworkVO.class));
+                    nicSpecs.add(new VmNicSpec(l3));
+                }
+                msg.setL3NetworkUuids(nicSpecs);
+                msg.setVmInstanceInventory(inv);
+                msg.setApplianceVmSpec(spec);
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getUuid());
+                final ApplianceVmVO finalAvo = avo;
+                bus.send(msg, new CloudBusCallBack(complete) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(reply.getError());
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                trigger.rollback();
+            }
+        }).done(new FlowDoneHandler(complete) {
+            @Override
+            public void handle(Map chainData) {
+                /**
+                 * send event, if cloudformation is creating now, it will recieve the event and record vrouter for rollback
+                 */
+                ApplianceVmVO avo = (ApplianceVmVO) chainData.get(ApplianceVmVO.class.getSimpleName());
+                L3NetworkConstant.VRouterData data = new L3NetworkConstant.VRouterData();
+                for (ApplianceVmNicSpec nic: spec.getAdditionalNics()) {
+                    data.l3NetworkUuid.add(nic.getL3NetworkUuid());
+                }
+                if (data.l3NetworkUuid.isEmpty()) {
+                    data.l3NetworkUuid.add(spec.getManagementNic().getL3NetworkUuid());
+                }
+                data.vrouterUuid = avo.getUuid();
+                evtf.fire(L3NetworkConstant.VROUTER_CREATE_EVENT_PATH, data);
+
+                logger.debug(String.format("successfully created appliance vm[uuid:%s, name: %s, appliance vm type: %s]", avo.getUuid(), avo.getName(), avo.getApplianceVmType()));
+                ApplianceVmVO apvo = dbf.findByUuid(avo.getUuid(), ApplianceVmVO.class);
+                ApplianceVmInventory ainv = ApplianceVmInventory.valueOf(apvo);
+                complete.success(ainv);
+            }
+        }).error(new FlowErrorHandler(complete) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                logger.warn(String.format("failed to create appliance vm[name: %s, appliance vm type: %s], %s", spec.getName(), spec.getApplianceVmType()));
+                complete.fail(errCode);
+            }
+        }).start();
     }
 
     public ApplianceVmSpec getSpec() {
