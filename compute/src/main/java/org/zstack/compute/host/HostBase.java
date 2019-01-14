@@ -723,7 +723,9 @@ public abstract class HostBase extends AbstractHost {
                         return;
                     }
 
-                    new HostDisconnectedCanonicalEvent(self.getUuid(), errorCode).fire();
+                    if (!self.getStatus().equals(HostStatus.Disconnected)) {
+                        new HostDisconnectedCanonicalEvent(self.getUuid(), errorCode).fire();
+                    }
 
                     changeConnectionState(HostStatusEvent.disconnected);
 
