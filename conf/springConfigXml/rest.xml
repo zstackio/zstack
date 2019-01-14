@@ -26,4 +26,11 @@
     		<zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="IpWhitelistManagerImp" class="org.zstack.rest.ipwhitelist.IpWhitelistManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
+
 </beans>

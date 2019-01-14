@@ -31,6 +31,17 @@ public class AccountVO extends ResourceVO {
     @Enumerated(EnumType.STRING)
     private AccountType type;
 
+    @Column
+    private Timestamp passwordExpireDate;
+
+    public Timestamp getPasswordExpireDate() {
+        return passwordExpireDate;
+    }
+
+    public void setPasswordExpireDate(Timestamp passwordExpireDate) {
+        this.passwordExpireDate = passwordExpireDate;
+    }
+
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;

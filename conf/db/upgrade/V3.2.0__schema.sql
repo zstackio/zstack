@@ -204,3 +204,5 @@ CREATE PROCEDURE fixMissingShareResourceVO()
 DELIMITER ;
 
 call fixMissingShareResourceVO();
+
+ALTER TABLE AccountVO ADD COLUMN `passwordExpireDate` timestamp NOT NULL;

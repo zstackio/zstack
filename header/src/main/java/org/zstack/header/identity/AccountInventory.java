@@ -29,6 +29,7 @@ public class AccountInventory {
     private String type;
     private Timestamp createDate;
     private Timestamp lastOpDate;
+    private Timestamp passwordExpireDate;
 
     public static AccountInventory valueOf(AccountVO vo) {
         AccountInventory inv = new AccountInventory();
@@ -38,6 +39,7 @@ public class AccountInventory {
         inv.setType(vo.getType().toString());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
+        inv.setPasswordExpireDate(vo.getPasswordExpireDate());
         return inv;
     }
 
@@ -95,5 +97,13 @@ public class AccountInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public Timestamp getPasswordExpireDate() {
+        return passwordExpireDate;
+    }
+
+    public void setPasswordExpireDate(Timestamp passwordExpireDate) {
+        this.passwordExpireDate = passwordExpireDate;
     }
 }

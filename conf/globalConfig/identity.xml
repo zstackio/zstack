@@ -34,4 +34,11 @@
 		<defaultValue>org.zstack.header.storage.backup.APIQueryBackupStorageMsg, org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageMsg, org.zstack.header.image.APIAddImageMsg, org.zstack.header.host.APIQueryHostMsg</defaultValue>
 		<category>identity</category>
 	</config>
+
+	<config>
+		<name>account.password.expirationTime</name>
+		<description>New account password expire time, unit days</description>
+		<defaultValue>90</defaultValue>
+		<category>identity</category>
+	</config>
 </globalConfig>

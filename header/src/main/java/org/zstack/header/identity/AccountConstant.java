@@ -50,4 +50,6 @@ public interface AccountConstant {
 
     String ACCOUNT_REST_AUTH = "OAuth";
     RestAuthenticationType ACCOUNT_REST_AUTHENTICATION_TYPE = new RestAuthenticationType(ACCOUNT_REST_AUTH);
+
+    String DEFAULT_USER_CONNECTION_IP_WHITELIST = "[{\"ipAddressRangeType\": \"IpRange\", \"ip\": \"0.0.0.0-255.255.255.255\", \"state\": \"Enabled\"}]";
 }

@@ -38,10 +38,8 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.sql.Timestamp;
+import java.util.*;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.list;
@@ -91,6 +89,10 @@ public class AccountBase extends AbstractAccount {
         }
         if (msg.getPassword() != null) {
             account.setPassword(msg.getPassword());
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(Calendar.DATE, calendar.get(Calendar.DATE) + IdentityGlobalConfig.ACCOUNT_PASSWORD_EXPIRATION_TIME.value(Integer.class));
+            account.setPasswordExpireDate(new Timestamp(calendar.getTime().getTime()));
         }
         account = dbf.updateAndRefresh(account);
 
