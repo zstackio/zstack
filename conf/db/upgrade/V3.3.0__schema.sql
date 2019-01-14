@@ -57,13 +57,6 @@ CREATE PROCEDURE getRoleUuid(OUT targetRoleUuid VARCHAR(32))
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE getRolePolicyStatement(OUT policyStatement text, IN targetRoleUuid VARCHAR(32))
-    BEGIN
-        SELECT statement into policyStatement from RolePolicyStatementVO where roleUuid = targetRoleUuid LIMIT 0,1;
-    END $$
-DELIMITER ;
-
-DELIMITER $$
 CREATE PROCEDURE getMaxAccountResourceRefVO(OUT refId bigint(20) unsigned)
     BEGIN
         SELECT max(id) INTO refId from zstack.AccountResourceRefVO;
@@ -114,10 +107,8 @@ CREATE PROCEDURE fixMissingTag2RoleInProjects()
                    values (refId + 1, targetAccountUuid, targetAccountUuid, new_role_uuid, 'RoleVO', 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
                    SET new_statement_uuid = REPLACE(UUID(), '-', '');
-                   CALL getRandomUuid(new_statement_uuid);
-                   CALL getRolePolicyStatement(policyStatement, targetRoleUuid);
                    INSERT INTO RolePolicyStatementVO (`uuid`, `statement`, `roleUuid`, `lastOpDate`, `createDate`)
-                   values (new_statement_uuid, policyStatement, new_role_uuid, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+                   values (new_statement_uuid, '{"name":"tag2","effect":"Allow","actions":["org.zstack.tag2.**"]}', new_role_uuid, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
                END IF;
             END IF;
         END LOOP;
@@ -128,7 +119,6 @@ DELIMITER ;
 
 call fixMissingTag2RoleInProjects();
 DROP PROCEDURE IF EXISTS fixMissingTag2RoleInProjects;
-DROP PROCEDURE IF EXISTS getRolePolicyStatement;
 DROP PROCEDURE IF EXISTS getRoleUuid;
 
 DELIMITER $$
