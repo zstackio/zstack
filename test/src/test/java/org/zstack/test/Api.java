@@ -504,15 +504,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<HostInventory> listHosts(int offset, int length, List<String> uuids) throws ApiSenderException {
-        APIListHostMsg msg = new APIListHostMsg(uuids);
-        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setOffset(offset);
-        msg.setSession(adminSession);
-        msg.setLength(length);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIListHostReply reply = sender.call(msg, APIListHostReply.class);
-        return reply.getInventories();
+        return Collections.emptyList();
     }
 
     public void deleteHost(String uuid) throws ApiSenderException {

@@ -16,19 +16,7 @@
     </message>
 
     <message>
-        <name>org.zstack.header.host.APIListHostMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.host.APIReconnectHostMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.host.APISearchHostMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.host.APIGetHostMsg</name>
     </message>
 
     <message>
