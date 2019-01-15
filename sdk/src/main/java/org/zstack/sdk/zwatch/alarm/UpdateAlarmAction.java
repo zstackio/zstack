@@ -47,7 +47,7 @@ public class UpdateAlarmAction extends AbstractAction {
     public java.lang.Integer repeatInterval;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {-1L,2147483647L}, noTrim = false)
-    public java.lang.Integer repeatCount = -1;
+    public java.lang.Integer repeatCount;
 
     @Param(required = false)
     public java.util.List systemTags;
