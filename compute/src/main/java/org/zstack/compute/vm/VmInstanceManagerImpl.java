@@ -72,10 +72,7 @@ import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.TagUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -93,6 +90,9 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VmInstanceManagerImpl extends AbstractService implements
@@ -883,16 +883,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
             protected VmInstanceVO scripts() {
                 finalVo.setAccountUuid(msg.getAccountUuid());
                 factory.createVmInstance(finalVo, msg);
+
                 return reload(finalVo);
             }
         }.execute();
 
         if (cmsg != null) {
             tagMgr.createTagsFromAPICreateMessage(cmsg, vo.getUuid(), VmInstanceVO.class.getSimpleName());
-        }
-
-        if (cmsg == null && msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
-            tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), VmInstanceVO.class.getSimpleName());
+        } else {
+            tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), VmInstanceVO.class.getSimpleName());
         }
 
         if (instanceOfferingUuid != null) {
@@ -911,11 +910,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     VmInstanceVO.class.getSimpleName(), false);
         }
 
-        if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
-            extEmitter.handleSystemTag(vo.getUuid(), msg.getSystemTags());
-        }
         if (cmsg != null && cmsg.getSystemTags() != null && !cmsg.getSystemTags().isEmpty()) {
             extEmitter.handleSystemTag(vo.getUuid(), cmsg.getSystemTags());
+        } else if (cmsg == null && msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
+            extEmitter.handleSystemTag(vo.getUuid(), msg.getSystemTags());
         }
 
         InstantiateNewCreatedVmInstanceMsg smsg = new InstantiateNewCreatedVmInstanceMsg();
@@ -1762,14 +1760,70 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     private void installCleanTrafficValidator() {
-        VmSystemTags.CLEAN_TRAFFIC.installValidator((resourceUuid, resourceType, systemTag) -> {
-            String vmType = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, resourceUuid).select(VmInstanceVO_.type).findValue();
-            if (!VmInstanceConstant.USER_VM_TYPE.equals(vmType)) {
-                throw new ApiMessageInterceptionException(argerr(
-                        "clean traffic is not supported for vm type [%s]", vmType)
-                );
+        class CleanTrafficValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
+            @Override
+            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+                if (msg instanceof APICreateVmInstanceMsg) {
+                    Optional.ofNullable(msg.getSystemTags()).ifPresent(it -> {
+                        if (it.stream().anyMatch(tag -> VmSystemTags.CLEAN_TRAFFIC.isMatch(tag))) {
+                            validateVmType(null, ((APICreateVmInstanceMsg) msg).getType());
+                        }
+                    });
+                }
             }
-        });
+
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                validateVmType(resourceUuid, null);
+            }
+
+            private void validateVmType(String vmUuid, String vmType) {
+                if (vmType == null) {
+                    vmType = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).select(VmInstanceVO_.type).findValue();
+                }
+
+                if (!VmInstanceConstant.USER_VM_TYPE.equals(vmType)) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "clean traffic is not supported for vm type [%s]", vmType)
+                    );
+                }
+            }
+        }
+
+        CleanTrafficValidator validator = new CleanTrafficValidator();
+        tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), validator);
+        VmSystemTags.CLEAN_TRAFFIC.installValidator(validator);
+    }
+
+    private void installMachineTypeValidator() {
+        class MachineTypeValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
+            @Override
+            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+                Optional.ofNullable(msg.getSystemTags()).ifPresent(it -> it.forEach(this::validateMachineType));
+            }
+
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                validateMachineType(systemTag);
+            }
+
+            private void validateMachineType(String systemTag) {
+                if (!VmSystemTags.MACHINE_TYPE.isMatch(systemTag)) {
+                    return;
+                }
+
+                String type = VmSystemTags.MACHINE_TYPE.getTokenByTag(systemTag, VmSystemTags.MACHINE_TYPE_TOKEN);
+                if (!"q35".equals(type) && !"pc".equals(type)) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "vm machine type requires [q35, pc], but get [%s]", type)
+                    );
+                }
+            }
+        }
+
+        MachineTypeValidator validator = new MachineTypeValidator();
+        tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), validator);
+        VmSystemTags.MACHINE_TYPE.installValidator(validator);
     }
 
     private void installSystemTagValidator() {
@@ -1777,6 +1831,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         installUserdataValidator();
         installBootModeValidator();
         installCleanTrafficValidator();
+        installMachineTypeValidator();
     }
 
     @Override

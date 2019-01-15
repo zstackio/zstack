@@ -112,6 +112,14 @@
 	</config>
 
 	<config>
+		<name>pciePortNums</name>
+		<description>PCIe-root-port numbers of VM. On x86-64/q35, it determine the hot-pluggable pci device numbers.</description>
+		<defaultValue>28</defaultValue>
+		<category>vm</category>
+		<type>java.lang.Integer</type>
+	</config>
+
+	<config>
 		<name>vm.totalNum</name>
 		<description>default quota for vm.total number</description>
 		<defaultValue>20</defaultValue>
