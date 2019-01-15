@@ -415,6 +415,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((DetachIsoFromVmInstanceMsg) msg);
         } else if (msg instanceof DeleteVmCdRomMsg) {
             handle((DeleteVmCdRomMsg) msg);
+        } else if (msg instanceof CreateVmCdRomMsg) {
+            handle((CreateVmCdRomMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -424,6 +426,41 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.dealWithUnknownMessage(msg);
             }
         }
+    }
+
+    private void handle(CreateVmCdRomMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                CreateVmCdRomReply reply = new CreateVmCdRomReply();
+
+                doCreateVmCdRom(msg, new ReturnValueCompletion<VmCdRomInventory>(msg) {
+                    @Override
+                    public void success(VmCdRomInventory inv) {
+                        reply.setInventory(inv);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("create-vm-%s-cd-rom", msg.getVmInstanceUuid());
+            }
+        });
     }
 
     private void handle(MigrateVmInnerMsg msg) {
@@ -5929,83 +5966,76 @@ public class VmInstanceBase extends AbstractVmInstance {
         completion.success();
     }
 
+    private void doCreateVmCdRom(CreateVmCdRomMsg msg, ReturnValueCompletion<VmCdRomInventory> completion) {
+        long vmCdRomNum = Q.New(VmCdRomVO.class)
+                .eq(VmCdRomVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                .count();
+        int max = VmGlobalConfig.MAXIMUM_CD_ROM_NUM.value(Integer.class);
+        if (max <= vmCdRomNum) {
+            completion.fail(operr("VM[uuid:%s] can only add %s CDROMs", msg.getVmInstanceUuid(), max));
+            return;
+        }
+
+        if (msg.getIsoUuid() != null) {
+            boolean targetIsoUsed = Q.New(VmCdRomVO.class)
+                    .eq(VmCdRomVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                    .eq(VmCdRomVO_.isoUuid, msg.getIsoUuid())
+                    .isExists();
+            if (targetIsoUsed) {
+                completion.fail(operr("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), msg.getIsoUuid()));
+                return;
+            }
+        }
+
+        List<Integer> deviceIds = Q.New(VmCdRomVO.class)
+                .select(VmCdRomVO_.deviceId)
+                .eq(VmCdRomVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                .listValues();
+        BitSet full = new BitSet(deviceIds.size() + 1);
+        deviceIds.forEach(full::set);
+        int targetDeviceId = full.nextClearBit(0);
+        if (targetDeviceId >= max) {
+            completion.fail(operr("VM[uuid:%s] can only add %s CDROMs", msg.getVmInstanceUuid(), max));
+            return;
+        }
+
+        VmCdRomVO cdRomVO = new VmCdRomVO();
+        String cdRomUuid = msg.getResourceUuid() != null ? msg.getResourceUuid() : Platform.getUuid();
+        cdRomVO.setUuid(cdRomUuid);
+        cdRomVO.setDeviceId(targetDeviceId);
+        cdRomVO.setIsoUuid(msg.getIsoUuid());
+        cdRomVO.setVmInstanceUuid(msg.getVmInstanceUuid());
+        cdRomVO.setName(msg.getName());
+        String acntUuid = Account.getAccountUuidOfResource(msg.getVmInstanceUuid());
+        cdRomVO.setAccountUuid(acntUuid);
+        cdRomVO.setDescription(msg.getDescription());
+        cdRomVO = dbf.persistAndRefresh(cdRomVO);
+
+        completion.success(VmCdRomInventory.valueOf(cdRomVO));
+    }
+
     private void handle(final APICreateVmCdRomMsg msg) {
         APICreateVmCdRomEvent event = new APICreateVmCdRomEvent(msg.getId());
 
-        thdf.chainSubmit(new ChainTask(msg) {
+        CreateVmCdRomMsg cmsg = new CreateVmCdRomMsg();
+        cmsg.setResourceUuid(msg.getResourceUuid());
+        cmsg.setName(msg.getName());
+        cmsg.setIsoUuid(msg.getIsoUuid());
+        cmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        cmsg.setDescription(msg.getDescription());
+        bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, cmsg.getVmInstanceUuid());
+        bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
-            public String getSyncSignature() {
-                return syncThreadName;
-            }
-
-            @Override
-            public void run(SyncTaskChain chain) {
-                long vmCdRomNum = Q.New(VmCdRomVO.class)
-                        .eq(VmCdRomVO_.vmInstanceUuid, msg.getVmInstanceUuid())
-                        .count();
-                int max = VmGlobalConfig.MAXIMUM_CD_ROM_NUM.value(Integer.class);
-                if (max <= vmCdRomNum) {
-                    event.setError(operr("VM[uuid:%s] can only add %s CDROMs", msg.getVmInstanceUuid(), max));
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    event.setError(reply.getError());
                     bus.publish(event);
-                    chain.next();
                     return;
                 }
 
-                if (msg.getIsoUuid() != null) {
-                    boolean targetIsoUsed = Q.New(VmCdRomVO.class)
-                            .eq(VmCdRomVO_.vmInstanceUuid, msg.getVmInstanceUuid())
-                            .eq(VmCdRomVO_.isoUuid, msg.getIsoUuid())
-                            .isExists();
-                    if (targetIsoUsed) {
-                        event.setError(operr("VM[uuid:%s] already has an ISO[uuid:%s] attached", msg.getVmInstanceUuid(), msg.getIsoUuid()));
-                        bus.publish(event);
-                        chain.next();
-                        return;
-                    }
-                }
-
-                ErrorCode error = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
-                if (error != null) {
-                    event.setError(error);
-                    bus.publish(event);
-                    chain.next();
-                    return;
-                }
-
-                List<Integer> deviceIds = Q.New(VmCdRomVO.class)
-                        .select(VmCdRomVO_.deviceId)
-                        .eq(VmCdRomVO_.vmInstanceUuid, msg.getVmInstanceUuid())
-                        .listValues();
-                BitSet full = new BitSet(deviceIds.size() + 1);
-                deviceIds.forEach(full::set);
-                int targetDeviceId = full.nextClearBit(0);
-                if (targetDeviceId >= max) {
-                    event.setError(operr("VM[uuid:%s] can only add %s CDROMs", msg.getVmInstanceUuid(), max));
-                    bus.publish(event);
-                    chain.next();
-                    return;
-                }
-
-                VmCdRomVO cdRomVO = new VmCdRomVO();
-                String cdRomUuid = msg.getResourceUuid() != null ? msg.getResourceUuid() : Platform.getUuid();
-                cdRomVO.setUuid(cdRomUuid);
-                cdRomVO.setDeviceId(targetDeviceId);
-                cdRomVO.setIsoUuid(msg.getIsoUuid());
-                cdRomVO.setVmInstanceUuid(msg.getVmInstanceUuid());
-                cdRomVO.setName(msg.getName());
-                String acntUuid = Account.getAccountUuidOfResource(msg.getVmInstanceUuid());
-                cdRomVO.setAccountUuid(acntUuid);
-                cdRomVO.setDescription(msg.getDescription());
-                cdRomVO = dbf.persistAndRefresh(cdRomVO);
-
-                event.setInventory(VmCdRomInventory.valueOf(cdRomVO));
+                CreateVmCdRomReply r1 = reply.castReply();
+                event.setInventory(r1.getInventory());
                 bus.publish(event);
-                chain.next();
-            }
-
-            @Override
-            public String getName() {
-                return String.format("create-vm-%s-cd-rom", msg.getVmInstanceUuid());
             }
         });
     }
