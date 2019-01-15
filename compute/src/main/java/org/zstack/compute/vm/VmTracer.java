@@ -16,10 +16,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -36,6 +33,15 @@ public abstract class VmTracer {
     private ThreadFacade thdf;
     @Autowired
     private EventFacade evtf;
+
+    private static final int strangeVmNumberInCache = 1500;
+
+    private static Map<String, String> strangeVms = new LinkedHashMap<String, String>(strangeVmNumberInCache, 0.9f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry eldest) {
+            return this.size() > strangeVmNumberInCache;
+        }
+    };
 
     private class Tracer {
         String hostUuid;
@@ -96,6 +102,15 @@ public abstract class VmTracer {
             final VmInstanceVO vm = dbf.findByUuid(vmUuid, VmInstanceVO.class);
             if (vm == null) {
                 logger.debug(String.format("[Vm Tracer] detects stranger vm[identity:%s, state:%s]", vmUuid, actualState));
+                String cachedHostUuid = strangeVms.get(vmUuid);
+
+                if (cachedHostUuid != null) {
+                    logger.debug(String.format("[Vm Tracer] detects stranger vm[identity:%s, state:%s] but it's already in cache, skip firing event", vmUuid, actualState));
+                    return;
+                }
+
+                strangeVms.put(vmUuid, hostUuid);
+
                 VmTracerCanonicalEvents.StrangerVmFoundData data = new VmTracerCanonicalEvents.StrangerVmFoundData();
                 data.setVmIdentity(vmUuid);
                 data.setVmState(actualState);
