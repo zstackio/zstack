@@ -73,6 +73,15 @@ class CephBSAddImageCase extends SubCase{
                     url  = "http://zstack.org/download/image.qcow2"
                 }
             }
+            cephBackupStorage {
+                name="ceph-bk2"
+                description="Test"
+                totalCapacity = SizeUnit.GIGABYTE.toByte(100)
+                availableCapacity= SizeUnit.GIGABYTE.toByte(100)
+                url = "/bk2"
+                fsid ="7ff218d9-f525-435f-8a40-3618d1772a65"
+                monUrls = ["root:password@127.0.0.3/?monPort=7777", "root:password@127.0.0.4/?monPort=7777"]
+            }
         }
     }
 
@@ -121,6 +130,7 @@ class CephBSAddImageCase extends SubCase{
 
     void testImageBackupStorageRefVOWhenAddImage(){
         BackupStorageInventory bs = env.inventoryByName("ceph-bk")
+        BackupStorageInventory bs2 = env.inventoryByName("ceph-bk2")
 
         ImageInventory newImage = addImage {
             name = "large-image"
@@ -150,6 +160,14 @@ class CephBSAddImageCase extends SubCase{
             format = ImageConstant.ISO_FORMAT_STRING
         }
 
+        //if the url starting with "/" or "files:", the case will be fail, ma jin will check it.
+        ImageInventory newImage4 = addImage {
+            name = "image5"
+            url = "http://my-site/foo.iso"
+            backupStorageUuids = [bs.uuid, bs2.uuid]
+            format = ImageConstant.ISO_FORMAT_STRING
+        }
+
         assert 1 == Q.New(ImageBackupStorageRefVO.class)
                 .eq(ImageBackupStorageRefVO_.imageUuid, newImage.uuid)
                 .count()
@@ -161,6 +179,9 @@ class CephBSAddImageCase extends SubCase{
                 .count()
         assert 1 == Q.New(ImageBackupStorageRefVO.class)
                 .eq(ImageBackupStorageRefVO_.imageUuid, newImage3.uuid)
+                .count()
+        assert 2 == Q.New(ImageBackupStorageRefVO.class)
+                .eq(ImageBackupStorageRefVO_.imageUuid, newImage4.uuid)
                 .count()
     }
 
