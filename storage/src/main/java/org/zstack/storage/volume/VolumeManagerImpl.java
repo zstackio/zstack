@@ -7,10 +7,7 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.DbEntityLister;
-import org.zstack.core.db.SQLBatchWithReturn;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
@@ -35,7 +32,10 @@ import org.zstack.header.storage.backup.BackupStorageState;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmStateChangedExtensionPoint;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
@@ -63,7 +63,7 @@ import static org.zstack.core.Platform.operr;
 
 public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint,
         VolumeDeletionExtensionPoint, VolumeBeforeExpungeExtensionPoint, RecoverDataVolumeExtensionPoint,
-        ResourceOwnerAfterChangeExtensionPoint {
+        ResourceOwnerAfterChangeExtensionPoint, VmStateChangedExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeManagerImpl.class);
 
     @Autowired
@@ -884,6 +884,15 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
         for (String uuid : uuids) {
             acntMgr.changeResourceOwner(uuid, newOwnerUuid);
+        }
+    }
+
+    @Override
+    public void vmStateChanged(VmInstanceInventory vm, VmInstanceState oldState, VmInstanceState newState) {
+        if (newState == VmInstanceState.Destroyed && vm != null && vm.getRootVolumeUuid() != null) {
+            SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, vm.getRootVolumeUuid())
+                    .set(VolumeVO_.status, VolumeStatus.Deleted)
+                    .update();
         }
     }
 }
