@@ -10,7 +10,7 @@ import org.zstack.utils.network.NetworkUtils;
 public class IpWhitelistConfigUtils {
     private static final Gson gson = new GsonBuilder().create();
 
-    static String validateConfigFormat(IpWhitelistConfig config) {
+    public static String validateConfigFormat(IpWhitelistConfig config) {
         if (config.getIp() == null) {
             return "ip not configured";
         }
@@ -32,7 +32,7 @@ public class IpWhitelistConfigUtils {
                 return String.format("The ip[%s] is not an IPv4 address", config.getIp());
             }
         } else {
-            if (config.getIp().contains("-")) {
+            if (!config.getIp().contains("-")) {
                 return String.format("Ip range[%s] format error, reference example: 192.168.0.1-192.168.0.100", config.getIp());
             }
 

@@ -1723,8 +1723,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(argerr("unable to create an account. An account already called %s", msg.getName()));
         }
-
-        validatePasswordStrength(msg.getName(), msg.getPassword());
     }
 
     private void validatePasswordStrength(String accountName, String password) {
@@ -1914,10 +1912,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         if (!account.getUuid().equals(a.getUuid())) {
             throw new OperationFailureException(operr("account[uuid: %s, name: %s] is a normal account, it cannot reset the password of another account[uuid: %s]",
                             account.getUuid(), account.getName(), msg.getUuid()));
-        }
-
-        if (msg.getPassword() != null) {
-            validatePasswordStrength(msg.getName(), msg.getPassword());
         }
     }
 

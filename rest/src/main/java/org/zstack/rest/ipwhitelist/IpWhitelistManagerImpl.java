@@ -41,7 +41,7 @@ public class IpWhitelistManagerImpl implements Component{
                 Gson gson = new GsonBuilder().create();
                 IpWhiteListConfigList list = gson.fromJson(newValue, IpWhiteListConfigList.class);
                 if (list == null) {
-                    throw new GlobalConfigException(String.format("The format is wrong, reference example: %s", AccountConstant.DEFAULT_USER_CONNECTION_IP_WHITELIST));
+                    throw new GlobalConfigException(String.format("The format is wrong, reference example: %s", RestConstants.DEFAULT_USER_CONNECTION_IP_WHITELIST));
                 }
 
                 for (IpWhitelistConfig config : list) {
