@@ -174,6 +174,9 @@ CREATE PROCEDURE checkProjectAdminOfVirtualId(IN virtualUuid VARCHAR(32))
                 SET new_statement_uuid = REPLACE(UUID(), '-', '');
                 INSERT INTO RolePolicyStatementVO (`uuid`, `statement`, `roleUuid`, `lastOpDate`, `createDate`)
                 values (new_statement_uuid, policyStatement, new_role_uuid, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+
+                INSERT INTO IAM2VirtualIDRoleRefVO (`virtualIDUuid`, `roleUuid`, `lastOpDate`, `createDate`)
+                values (virtualUuid, new_role_uuid, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
             END IF;
         END LOOP;
         CLOSE cur;
