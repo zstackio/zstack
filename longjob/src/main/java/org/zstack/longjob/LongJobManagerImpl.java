@@ -14,11 +14,13 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutExtensionPoint;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Constants;
 import org.zstack.header.core.AsyncBackup;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.APIDeleteAccountEvent;
 import org.zstack.header.longjob.*;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
@@ -35,10 +37,7 @@ import org.zstack.utils.logging.CLogger;
 import java.sql.SQLNonTransientConnectionException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
@@ -66,6 +65,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     @Autowired
     private ProgressReportService progRpt;
     @Autowired
+    protected ApiTimeoutManager timeoutMgr;
+    @Autowired
     private transient ResourceDestinationMaker destinationMaker;
 
     // we need a longjob factory to produce LongJob based on JobName
@@ -73,10 +74,16 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     private LongJobFactory longJobFactory;
 
     private List<String> longJobClasses = new ArrayList<String>();
+    private Map<String, Class<? extends APIMessage>> useApiTimeout = new HashMap<>();
 
     private void collectLongJobs() {
         Set<Class<?>> subs = BeanUtils.reflections.getTypesAnnotatedWith(LongJobFor.class);
         for (Class sub : subs) {
+            UseApiTimeout timeout = (UseApiTimeout) sub.getAnnotation(UseApiTimeout.class);
+            if (timeout != null) {
+                useApiTimeout.put(sub.toString(), timeout.value());
+            }
+
             longJobClasses.add(sub.toString());
         }
     }
@@ -552,10 +559,23 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     public Long getApiTimeout() {
         String type = ThreadContext.get(Constants.THREAD_CONTEXT_TASK_NAME);
         if (type != null && longJobClasses.contains(type)) {
+            Class<? extends APIMessage> batchJobFor = useApiTimeout.get(type);
+            if (batchJobFor != null) {
+                return getMessageTimeout(batchJobFor);
+            }
+
             // default input unit is second should be changed to millis
             return TimeUnit.SECONDS.toMillis(LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.value(Long.class));
         }
 
         return null;
+    }
+
+    private long getMessageTimeout(Class<? extends APIMessage> clz) {
+        try {
+            return timeoutMgr.getMessageTimeout(clz.newInstance());
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 }

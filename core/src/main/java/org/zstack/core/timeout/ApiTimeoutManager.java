@@ -1,5 +1,6 @@
 package org.zstack.core.timeout;
 
+import org.zstack.header.message.ConfigurableTimeoutMessage;
 import org.zstack.header.message.Message;
 
 /**
@@ -7,6 +8,8 @@ import org.zstack.header.message.Message;
  */
 public interface ApiTimeoutManager {
     Long getTimeout();
+
+    long getMessageTimeout(ConfigurableTimeoutMessage msg);
 
     void setMessageTimeout(Message msg);
 }
