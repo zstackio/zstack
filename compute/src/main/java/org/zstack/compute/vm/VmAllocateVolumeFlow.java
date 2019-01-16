@@ -114,12 +114,12 @@ public class VmAllocateVolumeFlow implements Flow {
                         CreateVolumeReply cr = r.castReply();
                         VolumeInventory inv = cr.getInventory();
                         if (inv.getType().equals(VolumeType.Root.toString())) {
+                            spec.setDestRootVolume(inv);
                             UpdateQuery.New(VmInstanceVO.class)
                                     .isNull(VmInstanceVO_.rootVolumeUuid)
                                     .set(VmInstanceVO_.rootVolumeUuid, inv.getUuid())
                                     .condAnd(VmInstanceVO_.uuid, Op.EQ, spec.getVmInventory().getUuid())
                                     .update();
-                            spec.setDestRootVolume(inv);
                         } else {
                             spec.getDestDataVolumes().add(inv);
                         }
