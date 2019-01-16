@@ -284,6 +284,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIIsOpensourceVersionMsg) msg);
         } else if (msg instanceof APIRenewSessionMsg) {
             handle((APIRenewSessionMsg) msg);
+        } else if (msg instanceof APICheckPasswordStrengthMsg) {
+            handle((APICheckPasswordStrengthMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -437,6 +439,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         APIRenewSessionEvent evt = new APIRenewSessionEvent(msg.getId());
         evt.setInventory(Session.renewSession(msg.getSessionUuid(), msg.getDuration()));
         bus.publish(evt);
+    }
+
+    private void handle(APICheckPasswordStrengthMsg msg) {
+        APICheckPasswordStrengthEvent event = new APICheckPasswordStrengthEvent(msg.getId());
+        bus.publish(event);
     }
 
     private void handle(APILogOutMsg msg) {
@@ -1644,6 +1651,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             validate((APIGetAccountQuotaUsageMsg) msg);
         } else if (msg instanceof APIChangeResourceOwnerMsg) {
             validate((APIChangeResourceOwnerMsg) msg);
+        } else if (msg instanceof APICheckPasswordStrengthMsg) {
+            validate((APICheckPasswordStrengthMsg) msg);
         }
 
         setServiceId(msg);
@@ -1681,6 +1690,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void validate(APIChangeResourceOwnerMsg msg) {
         checkQuotaForChangeResourceOwner(msg);
+    }
+
+    private void validate(APICheckPasswordStrengthMsg msg) {
+        validatePasswordStrength(msg.getAccountName(), msg.getPassword());
     }
 
     private void validate(APIGetAccountQuotaUsageMsg msg) {
