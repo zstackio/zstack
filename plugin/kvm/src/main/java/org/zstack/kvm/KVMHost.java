@@ -57,6 +57,7 @@ import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
+import org.zstack.network.l3.NetworkGlobalProperty;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -2667,6 +2668,9 @@ public class KVMHost extends HostBase implements Host {
                             if (info.isNewAdded()) {
                                 runner.putArgument("init", "true");
                                 runner.setFullDeploy(true);
+                            }
+                            if (NetworkGlobalProperty.SKIP_IPV6) {
+                                runner.putArgument("skipIpv6", "true");
                             }
                             runner.putArgument("pkg_kvmagent", agentPackageName);
                             runner.putArgument("hostname", String.format("%s.zstack.org", self.getManagementIp().replaceAll("\\.", "-")));
