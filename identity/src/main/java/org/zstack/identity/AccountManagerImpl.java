@@ -1183,7 +1183,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                         vo.setPassword(AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD);
                         vo.setType(AccountType.SystemAdmin);
                         Calendar calendar = Calendar.getInstance();
-                        calendar.set(Calendar.YEAR, calendar.get(Calendar.YEAR) + 100);
+                        calendar.set(Calendar.YEAR, calendar.get(Calendar.YEAR) + 10);
                         vo.setPasswordExpireDate(new Timestamp(calendar.getTime().getTime()));
                         persist(vo);
                         flush();

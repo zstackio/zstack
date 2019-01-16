@@ -7,7 +7,7 @@ import org.zstack.header.rest.RestRequest;
 
 @Action(category = AccountConstant.ACTION_CATEGORY)
 @RestRequest(
-        path = "/accounts/",
+        path = "/accounts/actions",
         responseClass = APICheckPasswordStrengthEvent.class,
         method = HttpMethod.PUT,
         isAction = true
