@@ -119,6 +119,6 @@ class VmOperationMultyTypeStorageCase extends SubCase{
                 volumeUuid: volume.uuid,
                 sessionId: currentEnvSpec.session.uuid
         )
-        assert action.call().error != null
+        assert action.call().error == null
     }
 }
