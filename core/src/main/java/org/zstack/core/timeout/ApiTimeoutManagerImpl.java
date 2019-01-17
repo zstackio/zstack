@@ -89,7 +89,8 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
         return 100;
     }
 
-    private long getMessageTimeout(ConfigurableTimeoutMessage msg) {
+    @Override
+    public long getMessageTimeout(ConfigurableTimeoutMessage msg) {
         if (msg instanceof APIMessage) {
             return getAPIMessageTimeout((APIMessage) msg);
         } else {
@@ -110,7 +111,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
 
         if (msg instanceof APISyncCallMessage) {
             return SYNCALL_TIMEOUT;
-        } else  {
+        } else {
             String s = gcf.getConfigValue(APITIMEOUT_GLOBAL_CONFIG_TYPE, msg.getClass().getName(), String.class);
             return parseTimeout(s);
         }
