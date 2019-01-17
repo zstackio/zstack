@@ -9,9 +9,13 @@ import org.kohsuke.groovy.sandbox.SandboxTransformer
 import org.kohsuke.groovy.sandbox.impl.Super
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.db.Q
 import org.zstack.header.errorcode.OperationFailureException
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.header.identity.AccountConstant
+import org.zstack.header.identity.AccountType
+import org.zstack.header.identity.AccountVO
+import org.zstack.header.identity.AccountVO_
 import org.zstack.header.identity.Action
 import org.zstack.header.identity.SessionInventory
 import org.zstack.header.identity.SuppressCredentialCheck
@@ -287,6 +291,13 @@ class BatchQuery {
         return result
     }
 
+    private boolean isSystemAdminType(SessionInventory session) {
+        return Q.New(AccountVO.class)
+                .eq(AccountVO_.uuid, session.getAccountUuid())
+                .eq(AccountVO_.type, AccountType.SystemAdmin)
+                .isExists()
+    }
+
     private Map doQuery(String qstr) {
         List<String> words = qstr.split(" ")
         words = words.findAll { !it.isEmpty() }
@@ -305,7 +316,7 @@ class BatchQuery {
         startDebug(msg)
 
         msg.setSession(session)
-        if (AccountConstant.INITIAL_SYSTEM_ADMIN_UUID != msg.session.accountUuid && !msgClz.isAnnotationPresent(Action.class)) {
+        if (!isSystemAdminType(msg.getSession()) && !msgClz.isAnnotationPresent(Action.class)) {
             // the resource is owned by admin and the account is a normal account
             //TODO: fix hard code check admin query
             return ["total": 0, "result": []]
