@@ -133,6 +133,7 @@ CREATE PROCEDURE checkProjectAdminOfVirtualId(IN virtualUuid VARCHAR(32))
     BEGIN
         DECLARE done INT DEFAULT FALSE;
         DECLARE count_policy INT DEFAULT 0;
+        DECLARE count_vid_role_ref INT DEFAULT 0;
         DECLARE targetProjectUuid varchar(32);
         DECLARE targetAccountUuid varchar(32);
         DECLARE refId bigint(20) unsigned;
@@ -156,6 +157,21 @@ CREATE PROCEDURE checkProjectAdminOfVirtualId(IN virtualUuid VARCHAR(32))
              AccountResourceRefVO ref where ref.resourceUuid = role.uuid and projectAccountRef.accountUuid =
              ref.accountUuid and projectAccountRef.projectUuid = targetProjectUuid and role.uuid = ref.resourceUuid
              and role.name = role_name;
+
+            IF (count_policy = 1) THEN
+                SELECT role.uuid into new_role_uuid from IAM2ProjectAccountRefVO projectAccountRef, RoleVO role,
+                 AccountResourceRefVO ref where ref.resourceUuid = role.uuid and projectAccountRef.accountUuid =
+                 ref.accountUuid and projectAccountRef.projectUuid = targetProjectUuid and role.uuid = ref.resourceUuid
+                 and role.name = role_name;
+
+                SELECT count(*) into count_vid_role_ref from IAM2VirtualIDRoleRefVO where virtualIDUuid = virtualUuid
+                 and roleUuid = new_role_uuid;
+
+                IF (count_vid_role_ref < 1) THEN
+                    INSERT INTO IAM2VirtualIDRoleRefVO (`virtualIDUuid`, `roleUuid`, `lastOpDate`, `createDate`)
+                    values (virtualUuid, new_role_uuid, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+                END IF;
+            END IF;
 
             IF (count_policy < 1) THEN
                 SET new_role_uuid = REPLACE(UUID(), '-', '');
