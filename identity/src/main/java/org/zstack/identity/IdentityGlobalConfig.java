@@ -20,4 +20,9 @@ public class IdentityGlobalConfig {
     public static GlobalConfig SHOW_ALL_RESOURCE_TO_ADMIN = new GlobalConfig(CATEGORY, "admin.showAllResource");
     @GlobalConfigValidation(notEmpty = false)
     public static GlobalConfig ACCOUNT_API_CONTROL = new GlobalConfig(CATEGORY, "account.api.control");
+
+    @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 3650)
+    public static GlobalConfig ACCOUNT_PASSWORD_EXPIRATION_TIME = new GlobalConfig(CATEGORY, "account.password.expirationTime");
+
+
 }

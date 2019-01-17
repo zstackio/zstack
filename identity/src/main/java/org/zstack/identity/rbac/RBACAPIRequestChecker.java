@@ -4,12 +4,10 @@ import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.identity.IdentityByPassCheck;
-import org.zstack.header.identity.PolicyInventory;
-import org.zstack.header.identity.PolicyStatement;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.rbac.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.SkipLogger;
@@ -122,6 +120,13 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         return RBAC.checkAPIPermission(rbacEntity.getApiMessage(), policyMatcher.match(ap, rbacEntity.getApiName()));
     }
 
+    private boolean isSystemAdminType(SessionInventory session) {
+        return Q.New(AccountVO.class)
+                .eq(AccountVO_.uuid, session.getAccountUuid())
+                .eq(AccountVO_.type, AccountType.SystemAdmin)
+                .isExists();
+    }
+
     protected boolean isPrincipalMatched(List<String> principals) {
         // if not principals specified, means the statement applies for all accounts/users
         // if principals specified, check if they matches current account/user
@@ -132,6 +137,9 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                 String uuidRegex = ss[1];
 
                 if (rbacEntity.getApiMessage().getSession().isAccountSession() && AccountConstant.PRINCIPAL_ACCOUNT.equals(principal)) {
+                    if (isSystemAdminType(rbacEntity.getApiMessage().getSession())) {
+                        return true;
+                    }
                     if (checkAccountPrincipal(uuidRegex)) {
                         return true;
                     }

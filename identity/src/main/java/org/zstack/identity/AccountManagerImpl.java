@@ -284,6 +284,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIIsOpensourceVersionMsg) msg);
         } else if (msg instanceof APIRenewSessionMsg) {
             handle((APIRenewSessionMsg) msg);
+        } else if (msg instanceof APICheckPasswordStrengthMsg) {
+            handle((APICheckPasswordStrengthMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -439,6 +441,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         bus.publish(evt);
     }
 
+    private void handle(APICheckPasswordStrengthMsg msg) {
+        APICheckPasswordStrengthEvent event = new APICheckPasswordStrengthEvent(msg.getId());
+        bus.publish(event);
+    }
+
     private void handle(APILogOutMsg msg) {
         APILogOutReply reply = new APILogOutReply();
         logOutSession(msg.getSessionUuid());
@@ -507,6 +514,19 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private void handle(APILogInByAccountMsg msg) {
         APILogInReply reply = new APILogInReply();
 
+        AccountVO accountVO = Q.New(AccountVO.class)
+                .eq(AccountVO_.name, msg.getAccountName())
+                .find();
+
+        if (!accountVO.getUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)) {
+            boolean passwordExipred = accountVO.getPasswordExpireDate().before(new Timestamp(System.currentTimeMillis()));
+            if (passwordExipred) {
+                reply.setError(operr("The account[name=%s] password has expired. Please change the password first.", msg.getAccountName()));
+                bus.reply(msg, reply);
+                return;
+            }
+        }
+
         SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
         q.add(AccountVO_.name, Op.EQ, msg.getAccountName());
         q.add(AccountVO_.password, Op.EQ, msg.getPassword());
@@ -568,6 +588,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 vo.setDescription(msg.getDescription());
                 vo.setPassword(msg.getPassword());
                 vo.setType(msg.getType() != null ? AccountType.valueOf(msg.getType()) : AccountType.Normal);
+
+                Calendar calendar = Calendar.getInstance();
+                calendar.set(Calendar.DATE, calendar.get(Calendar.DATE) + IdentityGlobalConfig.ACCOUNT_PASSWORD_EXPIRATION_TIME.value(Integer.class));
+                vo.setPasswordExpireDate(new Timestamp(calendar.getTime().getTime()));
+
                 persist(vo);
                 reload(vo);
 
@@ -679,6 +704,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
+
         return true;
     }
 
@@ -1156,6 +1182,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                         vo.setName(AccountConstant.INITIAL_SYSTEM_ADMIN_NAME);
                         vo.setPassword(AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD);
                         vo.setType(AccountType.SystemAdmin);
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.set(Calendar.YEAR, calendar.get(Calendar.YEAR) + 10);
+                        vo.setPasswordExpireDate(new Timestamp(calendar.getTime().getTime()));
                         persist(vo);
                         flush();
                         
@@ -1622,6 +1651,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             validate((APIGetAccountQuotaUsageMsg) msg);
         } else if (msg instanceof APIChangeResourceOwnerMsg) {
             validate((APIChangeResourceOwnerMsg) msg);
+        } else if (msg instanceof APICheckPasswordStrengthMsg) {
+            validate((APICheckPasswordStrengthMsg) msg);
         }
 
         setServiceId(msg);
@@ -1659,6 +1690,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void validate(APIChangeResourceOwnerMsg msg) {
         checkQuotaForChangeResourceOwner(msg);
+    }
+
+    private void validate(APICheckPasswordStrengthMsg msg) {
+        validatePasswordStrength(msg.getAccountName(), msg.getPassword());
     }
 
     private void validate(APIGetAccountQuotaUsageMsg msg) {
@@ -1700,6 +1735,17 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         q.add(AccountVO_.name, Op.EQ, msg.getName());
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(argerr("unable to create an account. An account already called %s", msg.getName()));
+        }
+    }
+
+    private void validatePasswordStrength(String accountName, String password) {
+        if (accountName.equals(password)) {
+            throw new ApiMessageInterceptionException(argerr("The account name cannot be the same as the password"));
+        }
+
+        String validateResult = PasswordStrengthUtils.checkPasswordStrength(password);
+        if (validateResult != null) {
+            throw new ApiMessageInterceptionException(argerr(validateResult));
         }
     }
 

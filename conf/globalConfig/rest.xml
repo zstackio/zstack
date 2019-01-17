@@ -15,4 +15,20 @@
         <defaultValue>3600</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+
+    <config>
+        <category>rest</category>
+        <name>enable.user.connection.ip.whitelist</name>
+        <description>Whether to open user connection ip whitelist</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <category>rest</category>
+        <name>user.connection.ip.whitelist</name>
+        <description>user connection ip whitelist</description>
+        <defaultValue>[{"ipAddressRangeType": "IpRange", "ip": "0.0.0.0-255.255.255.255", "state": "Enabled"}]</defaultValue>
+        <type>java.lang.String</type>
+    </config>
 </globalConfig>

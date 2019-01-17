@@ -11,6 +11,7 @@ public interface RestConstants {
     String HEADER_JSON_SCHEMA = "X-JSON-Schema";
     String HEADER_WEBHOOK = "X-Web-Hook";
     String HEADER_JOB_UUID = "X-Job-UUID";
+    String HEADER_USER_IP = "X-User-IP";
     String HEADER_API_TIMEOUT = "X-API-Timeout";
     String HEADER_JOB_SUCCESS = "X-Job-Success";
     String HEADER_OAUTH = "OAuth";
@@ -25,4 +26,6 @@ public interface RestConstants {
 
     final String ACCOUNT_REST_AUTH = "OAuth";
     final String ACCOUNT_REST_ACCESSKEY = "ZStack";
+
+    String DEFAULT_USER_CONNECTION_IP_WHITELIST = "[{\"ipAddressRangeType\": \"IpRange\", \"ip\": \"0.0.0.0-255.255.255.255\", \"state\": \"Enabled\"}]";
 }

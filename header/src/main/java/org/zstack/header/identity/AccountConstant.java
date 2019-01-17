@@ -10,9 +10,9 @@ public interface AccountConstant {
     String INITIAL_SYSTEM_ADMIN_UUID = "36c27e8ff05c4780bf6d2fa65700f22e";
     @PythonClass
     String INITIAL_SYSTEM_ADMIN_NAME = "admin";
-    // 'password' SHA512 hex coding
+    // 'ZSpassword426' SHA512 hex coding
     @PythonClass
-    String INITIAL_SYSTEM_ADMIN_PASSWORD = "b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86";
+    String INITIAL_SYSTEM_ADMIN_PASSWORD = "5a52135717771302571748200a83e30ad6ae94776f3a9ac907aa8ea8864158ec195a16b392fc24c7bb8b079a7c1e9c3e007563347d2972a6c814b4a654957d11";
 
     String SYSTEM_ADMIN_ROLE = ".*";
 
