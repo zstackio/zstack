@@ -27,6 +27,9 @@ import org.zstack.header.vm.VmInstance
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.header.volume.VolumeStatus
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMGlobalConfig
@@ -54,6 +57,7 @@ class VmDestroyingCase extends SubCase {
     EnvSpec env
     VmInstanceInventory vm
     ErrorFacade errf
+    KVMAgentCommands.DestroyVmCmd cmd = null
 
     @Override
     void clean() {
@@ -184,14 +188,15 @@ class VmDestroyingCase extends SubCase {
         env.create {
             vm = env.inventoryByName("vm") as VmInstanceInventory
             errf = bean(ErrorFacade.class)
+            simulatorEnv()
             testDestroyingVmWillBeSetToDestroyedIfDestroyingFailButVmSyncMsgReturnStopped()
+            testRecover()
+            testDestroyingVmWillBeSetToDestroyedIfDestroyingFailButVmSyncMsgReturnStopped()
+            testExpunge()
         }
     }
 
-    void testDestroyingVmWillBeSetToDestroyedIfDestroyingFailButVmSyncMsgReturnStopped() {
-        String sessionId = adminSession()
-
-        KVMAgentCommands.DestroyVmCmd cmd = null
+    void simulatorEnv() {
         env.afterSimulator(KVMConstant.KVM_DESTROY_VM_PATH) { KVMAgentCommands.DestroyVmResponse rsp, HttpEntity<String> e->
             cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.DestroyVmCmd.class)
             rsp.success = false
@@ -207,6 +212,10 @@ class VmDestroyingCase extends SubCase {
             reply.success = true
             bus.reply(msg, reply)
         }
+    }
+
+    void testDestroyingVmWillBeSetToDestroyedIfDestroyingFailButVmSyncMsgReturnStopped() {
+        String sessionId = adminSession()
 
         new Thread(new Runnable() {
             @Override
@@ -221,12 +230,14 @@ class VmDestroyingCase extends SubCase {
         }).start()
 
         retryInSecs {
-            VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).list().get(0)
+            VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid).find()
 
             assert vo.state == VmInstanceState.Destroyed
             assert cmd != null
         }
+    }
 
+    void testRecover() {
         recoverVmInstance {
             uuid = vm.uuid
         }
@@ -239,5 +250,14 @@ class VmDestroyingCase extends SubCase {
         assert vo.state == VmInstanceState.Running
 
         env.cleanSimulatorAndMessageHandlers()
+    }
+
+    void testExpunge() {
+        assert Q.New(VolumeVO.class).eq(VolumeVO_.uuid, vm.rootVolumeUuid)
+                .select(VolumeVO_.status)
+                .findValue() == VolumeStatus.Deleted
+        expungeVmInstance {
+            uuid = vm.uuid
+        }
     }
 }
