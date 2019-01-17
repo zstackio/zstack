@@ -38,4 +38,7 @@ public class HostGlobalConfig {
     public static GlobalConfig BATCH_ADD_HOST_LIMIT = new GlobalConfig(CATEGORY, "add.batchLimit");
     @GlobalConfigValidation(validValues = {"JustMigrate", "StopVmOnMigrationFailure"})
     public static GlobalConfig HOST_MAINTENANCE_POLICY = new GlobalConfig(CATEGORY, "host.maintenance.policy");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig AUTO_RECONNECT_ON_ERROR_MAX_ATTEMPT_NUM = new GlobalConfig(CATEGORY, "connection.autoReconnectOnError.maxAttemptsNum");
+
 }

@@ -1,9 +1,7 @@
 package org.zstack.compute.host;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -25,7 +23,9 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener, Component, ManagementNodeReadyExtensionPoint {
@@ -43,8 +43,12 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     private ThreadFacade thdf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    protected EventFacade evtf;
 
     private static Map<String, HostReconnectTaskFactory> hostReconnectTaskFactories = new HashMap<>();
+
+    private Map<String, AtomicInteger> hostDisconnectCount = new ConcurrentHashMap<>();
 
     @Override
     public void managementNodeReady() {
@@ -135,6 +139,13 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                         return ReconnectDecision.DoNothing;
                     }
 
+                    AtomicInteger disconnectCount = hostDisconnectCount.get(uuid);
+                    int threshold = HostGlobalConfig.AUTO_RECONNECT_ON_ERROR_MAX_ATTEMPT_NUM.value(Integer.class);
+                    if (threshold > 0 && disconnectCount != null && disconnectCount.get() >= threshold) {
+                        logger.warn(String.format("stop pinging host[uuid:%s, hypervisorType:%s] because it fail to reconnect too many times", uuid, hypervisorType));
+                        return ReconnectDecision.StopPing;
+                    }
+
                     boolean autoReconnect = HostGlobalConfig.AUTO_RECONNECT_ON_ERROR.value(Boolean.class);
                     if (!r.isConnected() && autoReconnect) {
                         return ReconnectDecision.SubmitReconnectTask;
@@ -145,6 +156,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                         if (autoReconnect) {
                             return ReconnectDecision.ReconnectNow;
                         } else {
+                            logger.warn(String.format("stop pinging host[uuid:%s, hypervisorType:%s] because it's disconnected and connection.autoReconnectOnError is false", uuid, hypervisorType));
                             return ReconnectDecision.StopPing;
                         }
                     }
@@ -176,7 +188,6 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
                     }
                 });
             } else if (decision == ReconnectDecision.StopPing) {
-                logger.debug(String.format("stop pinging host[uuid:%s, hypervisorType:%s] because it's disconnected and connection.autoReconnectOnError is false", uuid, hypervisorType));
                 cancel();
             } else if (decision == ReconnectDecision.SubmitReconnectTask) {
                 submitReconnectTask();
@@ -186,6 +197,10 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
         }
 
         private void submitReconnectTask() {
+            if (isCanceled()) {
+                return;
+            }
+
             if (reconnectTask != null) {
                 reconnectTask.cancel();
             }
@@ -305,6 +320,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     @Override
     public boolean start() {
         populateExtensions();
+        onHostStatusChange();
 
         HostGlobalConfig.PING_HOST_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> {
             logger.debug(String.format("%s change from %s to %s, restart host trackers",
@@ -331,6 +347,22 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
             }
 
             hostReconnectTaskFactories.put(f.getHypervisorType(), f);
+        });
+    }
+
+    private void onHostStatusChange() {
+        evtf.onLocal(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new EventCallback() {
+
+            @Override
+            protected void run(Map tokens, Object data) {
+                HostCanonicalEvents.HostStatusChangedData d = (HostCanonicalEvents.HostStatusChangedData) data;
+                if (HostStatus.Connected.toString().equals(d.getNewStatus())) {
+                    hostDisconnectCount.remove(d.getHostUuid());
+                } else if (HostStatus.Disconnected.toString().equals(d.getNewStatus()) &&
+                        HostStatus.Connecting.toString().equals(d.getOldStatus())) {
+                    hostDisconnectCount.computeIfAbsent(d.getHostUuid(), key -> new AtomicInteger(0)).addAndGet(1);
+                }
+            }
         });
     }
 
