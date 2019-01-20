@@ -877,38 +877,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         }
 
-        // complete default quota
-        SimpleQuery<GlobalConfigVO> q = dbf.createQuery(GlobalConfigVO.class);
-        q.select(GlobalConfigVO_.name);
-        q.add(GlobalConfigVO_.category, Op.EQ, AccountConstant.QUOTA_GLOBAL_CONFIG_CATETORY);
-        List<String> existingQuota = q.listValue();
-
-        List<GlobalConfigVO> quotaConfigs = new ArrayList<>();
-        for (Map.Entry<String, Long> e : defaultQuota.entrySet()) {
-            String rtype = e.getKey();
-            Long value = e.getValue();
-            if (existingQuota.contains(rtype)) {
-                continue;
-            }
-
-            GlobalConfigVO g = new GlobalConfigVO();
-            g.setCategory(QuotaGlobalConfig.CATEGORY);
-            g.setDefaultValue(value.toString());
-            g.setValue(g.getDefaultValue());
-            g.setName(rtype);
-            g.setDescription(String.format("default quota for %s", rtype));
-            quotaConfigs.add(g);
-
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("create default quota[name: %s, value: %s] global config", rtype, value));
-            }
-        }
-
-        for (GlobalConfigVO vo : quotaConfigs) {
-            gcf.createGlobalConfig(vo);
-        }
-
-        //
         repairAccountQuota(defaultQuota);
     }
 
