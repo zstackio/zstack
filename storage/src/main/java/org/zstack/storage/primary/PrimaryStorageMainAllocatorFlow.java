@@ -231,7 +231,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
     public void run(FlowTrigger trigger, Map data) {
         Result ret = allocate(data);
         if (ret.result.isEmpty()) {
-            throw new OperationFailureException(operr(ret.error));
+            throw new OperationFailureException(operr("%s", ret.error));
         }
 
         logger.debug(String.format("PrimaryStorageMainAllocatorFlow: %s", ret.result.size()));

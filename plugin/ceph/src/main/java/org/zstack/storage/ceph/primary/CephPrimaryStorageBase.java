@@ -2610,7 +2610,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 public void success(GetFactsRsp rsp) {
                                     if (!rsp.success) {
                                         // one mon cannot get the facts, directly error out
-                                        errors.add(Platform.operr(rsp.getError()));
+                                        errors.add(Platform.operr("%s", rsp.getError()));
                                         compl.allDone();
                                         return;
                                     }
@@ -3488,7 +3488,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
-                return rsp.isSuccess() ? null : operr(rsp.getError());
+                return rsp.isSuccess() ? null : operr("%s", rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(msg) {
             @Override

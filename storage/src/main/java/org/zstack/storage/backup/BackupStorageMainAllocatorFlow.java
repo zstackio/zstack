@@ -85,7 +85,7 @@ public class BackupStorageMainAllocatorFlow extends NoRollbackFlow {
     public void run(FlowTrigger trigger, Map data) {
         Result ret = allocate(data);
         if (ret.result.isEmpty()) {
-            throw new OperationFailureException(operr(ret.error));
+            throw new OperationFailureException(operr("%s", ret.error));
         }
 
         data.put(AllocatorParams.CANDIDATES, ret.result);
