@@ -7,6 +7,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.ImageVO_;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceVO;
@@ -147,6 +149,9 @@ public class VmCdRomUpgradeExtension implements ManagementNodeReadyExtensionPoin
         for (Map<String, String> tokens : tokenList) {
             String isoUuid = tokens.get(VmSystemTags.ISO_TOKEN);
             String isoDeviceId = tokens.get(VmSystemTags.ISO_DEVICEID_TOKEN);
+
+            boolean imageExists = Q.New(ImageVO.class).eq(ImageVO_.uuid, isoUuid).isExists();
+            isoUuid = imageExists ? isoUuid : null;
             vmDeviceIdIsoMap.put(Integer.parseInt(isoDeviceId), isoUuid);
         }
 
