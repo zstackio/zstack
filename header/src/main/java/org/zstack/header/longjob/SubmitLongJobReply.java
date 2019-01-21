@@ -7,6 +7,7 @@ import org.zstack.header.message.MessageReply;
  */
 public class SubmitLongJobReply extends MessageReply {
     private LongJobInventory inventory;
+    private boolean needAudit = false;
 
     public LongJobInventory getInventory() {
         return inventory;
@@ -14,5 +15,13 @@ public class SubmitLongJobReply extends MessageReply {
 
     public void setInventory(LongJobInventory inventory) {
         this.inventory = inventory;
+    }
+
+    public boolean isNeedAudit() {
+        return needAudit;
+    }
+
+    public void setNeedAudit(boolean needAudit) {
+        this.needAudit = needAudit;
     }
 }

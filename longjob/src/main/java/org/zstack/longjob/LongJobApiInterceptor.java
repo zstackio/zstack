@@ -15,15 +15,14 @@ import org.zstack.header.longjob.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.identity.AccountManager;
 import org.zstack.portal.apimediator.ApiMediator;
-import org.zstack.portal.apimediator.ApiMessageProcessor;
-import org.zstack.portal.apimediator.ApiMessageProcessorImpl;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.Set;
+import java.util.TreeMap;
 
 import static org.zstack.core.Platform.argerr;
 
@@ -80,6 +79,7 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
 
             APISubmitLongJobEvent evt = new APISubmitLongJobEvent(msg.getId());
             evt.setInventory(LongJobInventory.valueOf(vo));
+            evt.setNeedAudit(false);
             bus.publish(evt);
 
             throw e;
@@ -165,6 +165,7 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
         } catch (StopRoutingException e) {
             APISubmitLongJobEvent evt = new APISubmitLongJobEvent(msg.getId());
             evt.setInventory(LongJobInventory.valueOf(vo));
+            evt.setNeedAudit(false);
             bus.publish(evt);
 
             throw e;

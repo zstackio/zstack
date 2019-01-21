@@ -1,6 +1,7 @@
 package org.zstack.header.longjob;
 
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestResponse;
 
 /**
@@ -9,6 +10,8 @@ import org.zstack.header.rest.RestResponse;
 @RestResponse(allTo = "inventory")
 public class APISubmitLongJobEvent extends APIEvent {
     private LongJobInventory inventory;
+    @APINoSee
+    private boolean needAudit = false;
 
     public LongJobInventory getInventory() {
         return inventory;
@@ -16,6 +19,14 @@ public class APISubmitLongJobEvent extends APIEvent {
 
     public void setInventory(LongJobInventory inventory) {
         this.inventory = inventory;
+    }
+
+    public boolean isNeedAudit() {
+        return needAudit;
+    }
+
+    public void setNeedAudit(boolean needAudit) {
+        this.needAudit = needAudit;
     }
 
     public APISubmitLongJobEvent() {
@@ -30,6 +41,7 @@ public class APISubmitLongJobEvent extends APIEvent {
         LongJobInventory inv = new LongJobInventory();
         inv.setUuid(uuid());
         event.setInventory(inv);
+        event.setNeedAudit(false);
         return event;
     }
 }

@@ -8,7 +8,6 @@ import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -23,6 +22,7 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
      * Key:LongJobName
      */
     private TreeMap<String, LongJob> allLongJob = new TreeMap<>();
+    private TreeMap<String, String> fullJobName = new TreeMap<>();
 
     @Override
     public LongJob getLongJob(String jobName) {
@@ -50,8 +50,14 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
             }
             logger.debug(String.format("[LongJob] collect class [%s]", job.getClass().getSimpleName()));
             allLongJob.put(at.value().getSimpleName(), job);
+            fullJobName.put(at.value().getSimpleName(), at.value().getName());
         }
         return true;
+    }
+
+    @Override
+    public TreeMap<String, String> getFullJobName() {
+        return fullJobName;
     }
 
     @Override

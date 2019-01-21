@@ -7,9 +7,14 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
+import org.zstack.header.other.APILongJobAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vo.ResourceVO;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 /**
  * Created by GuoYi on 11/13/17.
@@ -21,7 +26,9 @@ import org.zstack.header.vo.ResourceVO;
         parameterName = "params",
         responseClass = APISubmitLongJobEvent.class
 )
-public class APISubmitLongJobMsg extends APICreateMessage {
+public class APISubmitLongJobMsg extends APICreateMessage implements APILongJobAuditor {
+    private static final CLogger logger = Utils.getLogger(APISubmitLongJobMsg.class);
+
     @APIParam(maxLength = 255, required = false)
     private String name;
     @APIParam(maxLength = 2048, required = false)
@@ -107,5 +114,17 @@ public class APISubmitLongJobMsg extends APICreateMessage {
                 }
             }
         };
+    }
+
+    private String getResourceUuid(LongJob job) {
+        return job.getAuditResourceUuid() == null ? "" : job.getAuditResourceUuid();
+    }
+
+    @Override
+    public APIAuditor.Result longJobAudit(LongJob job, APIEvent rsp) {
+        Class resourceType = job.getAuditType();
+        DebugUtils.Assert(resourceType != null, String.format("resourceType mustn't be null from longjob: %s", job.getClass().getSimpleName()));
+
+        return new APIAuditor.Result(getResourceUuid(job), resourceType);
     }
 }
