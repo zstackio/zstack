@@ -7,13 +7,13 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.longjob.LongJob;
 import org.zstack.header.longjob.LongJobFor;
 import org.zstack.header.longjob.LongJobVO;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.snapshot.APIDeleteVolumeSnapshotMsg;
-import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotMsg;
-import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 /**
@@ -26,7 +26,7 @@ public class DeleteVolumeSnapshotLongJob implements LongJob {
     protected CloudBus bus;
 
     @Override
-    public void start(LongJobVO job, Completion completion) {
+    public void start(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
         DeleteVolumeSnapshotMsg msg = new DeleteVolumeSnapshotMsg();
         APIDeleteVolumeSnapshotMsg apiMessage = JSONObjectUtil.toObject(job.getJobData(), APIDeleteVolumeSnapshotMsg.class);
         msg.setApiMessage(apiMessage);
@@ -38,7 +38,7 @@ public class DeleteVolumeSnapshotLongJob implements LongJob {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    completion.success();
+                    completion.success(null);
                 } else {
                     completion.fail(reply.getError());
                 }

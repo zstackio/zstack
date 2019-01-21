@@ -1390,6 +1390,7 @@ public class VolumeSnapshotTreeBase {
                 });
 
                 flow(new Flow() {
+                    String __name__ = "move old install path to trash if no snapshots";
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         if (!VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {

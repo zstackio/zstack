@@ -3,7 +3,6 @@ package org.zstack.header.errorcode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Created by xing5 on 2016/4/19.
@@ -60,5 +59,26 @@ public class ErrorCodeList extends ErrorCode {
         sb.append(getCause() == null ? "" : getCause().toString());
         sb.append(causes == null || causes.isEmpty() ? "" : causes.toString());
         return sb.toString().hashCode();
+    }
+
+    @Override
+    public String getReadableDetails() {
+        ErrorCodeList root = this;
+        StringBuffer errorBuf = new StringBuffer();
+        if (root.causes != null && !root.causes.isEmpty()) {
+            root.causes.forEach(cause -> {
+                if (errorBuf.length() > 0) {
+                    errorBuf.append(",");
+                }
+                errorBuf.append(getReadableDetails(cause));
+            });
+        } else {
+            return super.getReadableDetails();
+        }
+        return errorBuf.toString().trim();
+    }
+
+    private String getReadableDetails(ErrorCode errCode) {
+        return errCode.getReadableDetails();
     }
 }
