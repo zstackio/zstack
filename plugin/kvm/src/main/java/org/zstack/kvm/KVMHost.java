@@ -2277,7 +2277,7 @@ public class KVMHost extends HostBase implements Host {
 
                                     trigger.next();
                                 } else {
-                                     trigger.fail(operr(ret.getError()));
+                                     trigger.fail(operr("%s", ret.getError()));
                                 }
                             }
 
@@ -2787,7 +2787,7 @@ public class KVMHost extends HostBase implements Host {
                                             if (ret.isSuccess()) {
                                                 trigger.next();
                                             } else {
-                                                trigger.fail(Platform.operr(ret.getError()));
+                                                trigger.fail(Platform.operr("%s", ret.getError()));
                                             }
                                         }
 
@@ -3038,7 +3038,7 @@ public class KVMHost extends HostBase implements Host {
                                 if (ret.isSuccess()) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(Platform.operr(ret.getError()));
+                                    trigger.fail(Platform.operr("%s", ret.getError()));
                                 }
                             }
 

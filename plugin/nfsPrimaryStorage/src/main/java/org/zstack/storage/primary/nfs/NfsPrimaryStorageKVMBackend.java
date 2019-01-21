@@ -633,7 +633,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
         new KvmCommandSender(host.getUuid()).send(cmd, NFS_TO_NFS_MIGRATE_BITS_PATH, wrapper -> {
             NfsToNfsMigrateBitsRsp rsp = wrapper.getResponse(NfsToNfsMigrateBitsRsp.class);
-            return rsp.isSuccess() ? null : operr(rsp.getError());
+            return rsp.isSuccess() ? null : operr("%s", rsp.getError());
         }, msg.getTimeout(), new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
             public void success(KvmResponseWrapper w) {
@@ -662,7 +662,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public ErrorCode getError(KvmResponseWrapper wrapper) {
                 NfsRebaseVolumeBackingFileRsp rsp = wrapper.getResponse(NfsRebaseVolumeBackingFileRsp.class);
-                return rsp.isSuccess() ? null : operr(rsp.getError());
+                return rsp.isSuccess() ? null : operr("%s", rsp.getError());
             }
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
@@ -989,7 +989,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 if (!rsp.isSuccess()) {
                     logger.warn(String.format("failed to list path[%s] on nfs primary storage[uuid:%s], %s, will clean up",
                             path, pinv.getUuid(), rsp.getError()));
-                    completion.fail(operr(rsp.getError()));
+                    completion.fail(operr("%s", rsp.getError()));
                 } else {
                     completion.success(rsp.getPaths());
                 }

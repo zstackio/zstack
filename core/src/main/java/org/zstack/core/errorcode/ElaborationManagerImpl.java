@@ -333,7 +333,7 @@ public class ElaborationManagerImpl extends AbstractService {
                         if (returnValue.isEmpty()) {
                             trigger.next();
                         } else {
-                            trigger.fail(operr(returnValue.get(0).getReason()));
+                            trigger.fail(operr("%s", returnValue.get(0).getReason()));
                         }
                     }
 
