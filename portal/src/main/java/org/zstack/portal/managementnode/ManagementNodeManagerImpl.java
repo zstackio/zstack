@@ -713,6 +713,14 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     Timestamp curr = getCurrentSqlTime();
                     Timestamp lastHeartbeat = vo.getHeartBeat();
                     final long delta = TimeUnit.SECONDS.toMillis(PortalGlobalProperty.MAX_HEARTBEAT_FAILURE * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class));
+
+                    if (lastHeartbeat.getTime() > curr.getTime()) {
+                        ManagementNodeCanonicalEvent.ManagementNodeTemporalRegressionData d = new ManagementNodeCanonicalEvent.ManagementNodeTemporalRegressionData();
+                        d.setNodeUuid(vo.getUuid());
+                        d.setHostname(vo.getHostName());
+                        evtf.fire(ManagementNodeCanonicalEvent.NODE_TEMPORAL_REGRESSION_PATH, d);
+                    }
+
                     if (Math.abs(lastHeartbeat.getTime() - curr.getTime()) > delta) {
                         suspects.add(vo);
                         logger.warn(String.format("management node[uuid:%s, hostname: %s]'s heart beat has stopped for %s secs, add it in suspicious list",
