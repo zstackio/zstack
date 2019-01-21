@@ -108,7 +108,7 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
 
         if (!where.isEmpty()) {
             sqlClauses.add("WHERE");
-            sqlClauses.add(StringUtils.join(where, "AND"));
+            sqlClauses.add(StringUtils.join(where, " AND "));
         }
 
         String groupBy = plugin.groupBy();
