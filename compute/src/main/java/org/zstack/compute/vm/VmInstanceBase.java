@@ -62,10 +62,7 @@ import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
-import org.zstack.utils.CollectionDSL;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
@@ -6240,7 +6237,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     public void run(final FlowTrigger trigger, Map data) {
                         MarkRootVolumeAsSnapshotMsg gmsg = new MarkRootVolumeAsSnapshotMsg();
                         rootVolumeInventory.setDescription(String.format("save snapshot for reimage vm [uuid:%s]", msg.getVmInstanceUuid()));
-                        rootVolumeInventory.setName("reimage-vm-point");
+                        rootVolumeInventory.setName(String.format("reimage-vm-point-%s-%s", msg.getVmInstanceUuid(), TimeUtils.getCurrentTimeStamp("yyyyMMddHHmmss")));
                         gmsg.setVolume(rootVolumeInventory);
                         gmsg.setAccountUuid(msg.getAccountUuid());
                         bus.makeLocalServiceId(gmsg, VolumeSnapshotConstant.SERVICE_ID);

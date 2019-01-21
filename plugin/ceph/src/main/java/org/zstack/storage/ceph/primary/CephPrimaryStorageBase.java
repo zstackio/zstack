@@ -1464,7 +1464,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         if (!trash.makeSureInstallPathNotUsed(spec)) {
             logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
-            trash.remove(spec.getTrashId());
+            trash.removeFromDb(spec.getTrashId());
             completion.success(result);
             return;
         }
@@ -1520,7 +1520,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                 bus.send(imsg);
                 logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", spec.getSize(), self.getUuid()));
-                trash.remove(trashId);
+                trash.removeFromDb(trashId);
 
                 result.setSize(spec.getSize());
                 result.setResourceUuids(CollectionDSL.list(spec.getResourceUuid()));
@@ -1553,7 +1553,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             if (!trash.makeSureInstallPathNotUsed(spec)) {
                 logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
-                trash.remove(spec.getTrashId());
+                trash.removeFromDb(spec.getTrashId());
                 coml.done();
                 return;
             }
@@ -1612,7 +1612,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     result.getResourceUuids().add(spec.getResourceUuid());
                     updateTrashSize(result, spec.getSize());
-                    trash.remove(t.getKey(), self.getUuid());
+                    trash.removeFromDb(t.getKey(), self.getUuid());
                     coml.done();
                 }
             }).error(new FlowErrorHandler(coml) {
@@ -3661,39 +3661,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 trigger.fail(errorCode);
                             }
                         }, TimeUnit.MILLISECONDS, msg.getTimeout());
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "delete-origin-root-volume-which-has-no-snapshot";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        TaskProgressRange stage = markTaskStage(parentStage, DELETE_ORIGINAL_SNAPSHOT_STAGE);
-
-                        SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
-                        sq.add(VolumeSnapshotVO_.primaryStorageInstallPath, Op.LIKE,
-                                String.format("%s%%", originalVolumePath));
-                        sq.count();
-                        if (sq.count() == 0) {
-                            DeleteCmd cmd = new DeleteCmd();
-                            cmd.installPath = originalVolumePath;
-                            httpCall(DELETE_PATH, cmd, DeleteRsp.class, new ReturnValueCompletion<DeleteRsp>(null) {
-                                @Override
-                                public void success(DeleteRsp returnValue) {
-                                    reportProgress(stage.getEnd().toString());
-                                    logger.debug(String.format("successfully deleted %s", originalVolumePath));
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    //TODO GC
-                                    logger.warn(String.format("unable to delete %s, %s. Need a cleanup",
-                                            originalVolumePath, errorCode));
-                                }
-                            });
-                        }
-                        trigger.next();
                     }
                 });
 

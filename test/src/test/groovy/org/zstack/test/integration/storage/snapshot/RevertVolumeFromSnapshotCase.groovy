@@ -1,22 +1,19 @@
 package org.zstack.test.integration.storage.snapshot
 
 import org.zstack.core.db.Q
+import org.zstack.core.trash.StorageTrash
+import org.zstack.core.trash.TrashType
+import org.zstack.header.storage.backup.StorageTrashSpec
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
-import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
-import org.zstack.header.volume.VolumeVO
-import org.zstack.header.volume.VolumeVO_
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VolumeInventory
 import org.zstack.sdk.VolumeSnapshotInventory
 import org.zstack.test.integration.ldap.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.kvm.KVMConstant
-import org.zstack.simulator.kvm.VolumeSnapshotKvmSimulator
-import org.zstack.core.db.DatabaseFacade
-
 /**
  * Created by ads6 on 2018/1/2.
  */
@@ -30,6 +27,7 @@ STEP:
 
     EnvSpec env
     VmInstanceInventory vm
+    VolumeInventory root
 
     @Override
     void clean() {
@@ -55,34 +53,55 @@ STEP:
     }
 
     void testRevertVolumeFromSnapshot(){
-        VolumeSnapshotInventory rootSnapshotInv = createSnapshot(vm.getRootVolumeUuid())
-        createSnapshot(vm.getRootVolumeUuid())
-        createSnapshot(vm.getRootVolumeUuid())
+        def s1 = createSnapshot(vm.rootVolumeUuid) as VolumeSnapshotInventory
+        def s2 = createSnapshot(vm.rootVolumeUuid) as VolumeSnapshotInventory
+        def s3 = createSnapshot(vm.rootVolumeUuid) as VolumeSnapshotInventory
 
         stopVmInstance {
             uuid = vm.uuid
         }
 
+        root = queryVolume {
+            conditions = ["uuid=${vm.rootVolumeUuid}"]
+        }[0] as VolumeInventory
+
+        def installPath = root.installPath
+        def size = root.size
+
         revertVolumeFromSnapshot {
-            uuid = rootSnapshotInv.uuid
+            uuid = s1.uuid
         }
 
-        assert Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.latest).eq(VolumeSnapshotVO_.uuid, rootSnapshotInv.uuid).findValue()
+        assert Q.New(VolumeSnapshotVO.class).select(VolumeSnapshotVO_.latest).eq(VolumeSnapshotVO_.uuid, s1.uuid).findValue()
         assert Q.New(VolumeSnapshotVO.class).count() == 3
 
-        VolumeSnapshotInventory snapshot1 =  createSnapshot(vm.getRootVolumeUuid())
-        VolumeSnapshotInventory snapshot2 = createSnapshot(vm.getRootVolumeUuid())
+        def s4 =  createSnapshot(vm.rootVolumeUuid) as VolumeSnapshotInventory
+        def s5 = createSnapshot(vm.rootVolumeUuid) as VolumeSnapshotInventory
 
-        VolumeSnapshotVO s1vo = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, snapshot1.uuid).find()
-        VolumeSnapshotVO s2vo = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, snapshot2.uuid).find()
-        assert s1vo.getDistance() == 2
-        assert s2vo.getDistance() == 3
-        assert s2vo.getParentUuid() == s1vo.getUuid()
-        assert s1vo.getParentUuid() == rootSnapshotInv.uuid
-        assert !s1vo.isLatest()
-        assert s2vo.isLatest()
+        VolumeSnapshotVO s1vo = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, s4.uuid).find()
+        VolumeSnapshotVO s2vo = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, s5.uuid).find()
+        assert s1vo.distance == 2
+        assert s2vo.distance == 3
+        assert s2vo.parentUuid == s1vo.uuid
+        assert s1vo.parentUuid == s1.uuid
+        assert !s1vo.latest
+        assert s2vo.latest
         assert Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.latest, true).count() == 1
         assert Q.New(VolumeSnapshotTreeVO.class).count() == 1
+
+        def trash = bean(StorageTrash.class)
+        def specs = trash.getTrashList(root.primaryStorageUuid) as Map<String, StorageTrashSpec>
+
+        def trashed = false
+        specs.each { k,v ->
+            if (v.resourceUuid == vm.rootVolumeUuid) {
+                assert v.installPath == installPath
+                assert v.size == size
+                assert k.startsWith(TrashType.RevertVolume.toString())
+                trashed = true
+            }
+        }
+        assert trashed
     }
 
     private VolumeSnapshotInventory createSnapshot(String uuid){
@@ -92,7 +111,4 @@ STEP:
         } as VolumeSnapshotInventory
         return inv
     }
-
-
-
 }

@@ -21,6 +21,8 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.trash.StorageTrash;
+import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -55,6 +57,7 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -75,6 +78,9 @@ import static org.zstack.utils.CollectionDSL.e;
 public class VolumeSnapshotTreeBase {
     protected static OperationChecker allowedStatus = new OperationChecker(true);
     private static CLogger logger = Utils.getLogger(VolumeSnapshotTreeBase.class);
+
+    @Autowired
+    private StorageTrash trash;
 
     static {
         allowedStatus.addState(VolumeSnapshotStatus.Ready,
@@ -1302,18 +1308,50 @@ public class VolumeSnapshotTreeBase {
         chain.setName(String.format("revert-volume-%s-from-snapshot-%s", currentRoot.getVolumeUuid(), currentRoot.getUuid()));
         chain.then(new ShareFlow() {
             String newVolumeInstallPath;
+            String labelKey;
             long newSize;
             VolumeVO volume = dbf.findByUuid(currentRoot.getVolumeUuid(), VolumeVO.class);
             VolumeInventory volumeInventory = VolumeInventory.valueOf(volume);
+            String oldVolumeInstallPath = volume.getInstallPath();
 
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "create-snapshot-for-current-volume-first";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        reportProgress("10");
+                        if (!VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {
+                            trigger.next();
+                            return;
+                        }
+                        CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
+                        cmsg.setName(String.format("revert-volume-point-%s-%s", volume.getUuid(), TimeUtils.getCurrentTimeStamp("yyyyMMddHHmmss")));
+                        cmsg.setDescription(String.format("save snapshot for revert volume [uuid:%s]", volume.getUuid()));
+                        cmsg.setVolumeUuid(volume.getUuid());
+                        cmsg.setAccountUuid(msg.getSession().getAccountUuid());
+
+                        bus.makeLocalServiceId(cmsg, VolumeSnapshotConstant.SERVICE_ID);
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply r) {
+                                if (!r.isSuccess()) {
+                                    trigger.fail(r.getError());
+                                    return;
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+                });
+
                 flow(new NoRollbackFlow() {
                     String __name__ = "revert-volume-from-volume-snapshot-on-primary-storage";
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        reportProgress("10");
+                        reportProgress("40");
                         RevertVolumeFromSnapshotOnPrimaryStorageMsg rmsg = new RevertVolumeFromSnapshotOnPrimaryStorageMsg();
                         rmsg.setSnapshot(getSelfInventory());
                         rmsg.setVolume(volumeInventory);
@@ -1348,6 +1386,27 @@ public class VolumeSnapshotTreeBase {
                                 }
                             }
                         });
+                    }
+                });
+
+                flow(new Flow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (!VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {
+                            StorageTrashSpec spec = new StorageTrashSpec(volume.getUuid(), VolumeVO.class.getSimpleName(),
+                                    getSelfInventory().getPrimaryStorageUuid(), PrimaryStorageVO.class.getSimpleName(),
+                                    oldVolumeInstallPath, volume.getSize());
+                            labelKey = trash.createTrash(TrashType.RevertVolume, spec).getLabelKey();
+                        }
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (labelKey != null) {
+                            trash.removeFromDb(labelKey, getSelfInventory().getPrimaryStorageUuid());
+                        }
+                        trigger.rollback();
                     }
                 });
 

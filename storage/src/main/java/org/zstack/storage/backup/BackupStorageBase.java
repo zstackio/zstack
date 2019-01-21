@@ -473,7 +473,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
         if (!trash.makeSureInstallPathNotUsed(spec)) {
             logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
-            trash.remove(spec.getTrashId());
+            trash.removeFromDb(spec.getTrashId());
             completion.success(result);
             return;
         }
@@ -491,7 +491,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                     logger.info(String.format("Deleted image %s and returned space[size:%s] to BS[uuid:%s] after image migration",
                             spec.getInstallPath(), spec.getSize(), self.getUuid()));
 
-                    trash.remove(spec.getTrashId());
+                    trash.removeFromDb(spec.getTrashId());
                     result.setSize(spec.getSize());
                     result.setResourceUuids(CollectionDSL.list(spec.getResourceUuid()));
                     completion.success(result);
@@ -525,7 +525,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             StorageTrashSpec spec = t.getValue();
             if (!trash.makeSureInstallPathNotUsed(spec)) {
                 logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
-                trash.remove(spec.getTrashId());
+                trash.removeFromDb(spec.getTrashId());
                 coml.done();
                 return;
             }
@@ -545,7 +545,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                                 spec.getInstallPath(), spec.getSize(), self.getUuid()));
                         result.getResourceUuids().add(spec.getResourceUuid());
                         updateTrashSize(result, spec.getSize());
-                        trash.remove(t.getKey(), self.getUuid());
+                        trash.removeFromDb(t.getKey(), self.getUuid());
                     } else {
                         logger.warn(String.format("Failed to delete image %s in image migration.", spec.getInstallPath()));
                         errs.add(reply.getError());

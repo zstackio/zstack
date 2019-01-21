@@ -499,7 +499,7 @@ class ReimageVmSaveSnapshotCase extends SubCase {
         revertVolumeFromSnapshot {
             uuid = snapshotVO.uuid
         }
-        assert cmd.snapshotInstallPath == snapshotVO.getPrimaryStorageInstallPath()
+        assert cmd.snapshotInstallPath == snapshotVO.primaryStorageInstallPath
 
     }
     @Override

@@ -29,6 +29,7 @@ public class APIGetTrashOnBackupStorageReply extends APIReply {
 
         StorageTrashSpec spec = new StorageTrashSpec(uuid(), "ImageVO", uuid(), "BackupStorageVO", "/zstack_bs/installpath", 1024000L);
         spec.setTrashId(1L);
+        spec.setTrashType("MigrateImage");
         spec.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         reply.setStorageTrashSpecs(asList(spec));
 
