@@ -4,10 +4,13 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.tag.TagResourceType;
 
 /**
  * Created by frank on 7/1/2015.
  */
+@TagResourceType(PrimaryStorageVO.class)
 @RestRequest(
         path = "/primary-storage/local-storage",
         method = HttpMethod.POST,
@@ -19,7 +22,7 @@ public class APIAddLocalPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     public String getType() {
         return LocalStorageConstants.LOCAL_STORAGE_TYPE;
     }
- 
+
     public static APIAddLocalPrimaryStorageMsg __example__() {
         APIAddLocalPrimaryStorageMsg msg = new APIAddLocalPrimaryStorageMsg();
 

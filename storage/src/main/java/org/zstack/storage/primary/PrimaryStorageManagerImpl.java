@@ -24,10 +24,13 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
+import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.tag.SystemTagCreateMessageValidator;
+import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceStartExtensionPoint;
@@ -37,6 +40,7 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -491,8 +495,52 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     public boolean start() {
         populateExtensions();
         installGlobalConfigValidator();
+        installPrimaryStorageCidrValidator();
         return true;
     }
+
+
+    private void installPrimaryStorageCidrValidator() {
+        class PrimaryStorageCidrValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
+
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                if (PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.isMatch(systemTag)) {
+                    String cidr=PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByTag(systemTag,PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN);
+                    if (!NetworkUtils.isCidr(cidr)) {
+                        throw new ApiMessageInterceptionException(argerr(
+                                "cidr[%s] Input Format Error", cidr));
+                    }
+                }
+            }
+
+            @Override
+            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+                if (msg.getSystemTags() == null || msg.getSystemTags().isEmpty()) {
+                    return;
+                }
+
+                int cidrCount = 0;
+                for (String systemTag : msg.getSystemTags()) {
+                    if (PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.isMatch(systemTag)) {
+                        if (++cidrCount > 1) {
+                            throw new ApiMessageInterceptionException(argerr("only one primaryStorage cidr system tag is allowed, but %d got", cidrCount));
+                        }
+                        String cidr=PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByTag(systemTag,PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN);
+                        if (!NetworkUtils.isCidr(cidr)) {
+                            throw new ApiMessageInterceptionException(argerr(
+                                    "cidr[%s] Input Format Error", cidr));
+                        }
+                    }
+                }
+            }
+        }
+
+        PrimaryStorageCidrValidator primaryStorageCidrValidator = new PrimaryStorageCidrValidator();
+        tagMgr.installCreateMessageValidator(PrimaryStorageVO.class.getSimpleName(), primaryStorageCidrValidator);
+        PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.installValidator(primaryStorageCidrValidator);
+    }
+
 
     private void installGlobalConfigValidator() {
         PrimaryStorageGlobalConfig.RESERVED_CAPACITY.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
