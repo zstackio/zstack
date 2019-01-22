@@ -7,7 +7,6 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
-import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
@@ -37,9 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
-import static org.zstack.utils.CollectionDSL.list;
-
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class CreateApplianceVmJob implements Job {
     protected static final CLogger logger = Utils.getLogger(CreateApplianceVmJob.class);
@@ -55,8 +51,6 @@ public class CreateApplianceVmJob implements Job {
     private ApplianceVmFactory apvmFactory;
     @Autowired
     private TagManager tagMgr;
-    @Autowired
-    private PluginRegistry pluginRgty;
     @Autowired
     private ApplianceVmFacade apvf;
     @Autowired
@@ -172,7 +166,6 @@ public class CreateApplianceVmJob implements Job {
                 msg.setVmInstanceInventory(inv);
                 msg.setApplianceVmSpec(spec);
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getUuid());
-                final ApplianceVmVO finalAvo = avo;
                 bus.send(msg, new CloudBusCallBack(complete) {
                     @Override
                     public void run(MessageReply reply) {
@@ -214,7 +207,7 @@ public class CreateApplianceVmJob implements Job {
         }).error(new FlowErrorHandler(complete) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                logger.warn(String.format("failed to create appliance vm[name: %s, appliance vm type: %s], %s", spec.getName(), spec.getApplianceVmType()));
+                logger.warn(String.format("failed to create appliance vm[name: %s, appliance vm type: %s], %s", spec.getName(), spec.getApplianceVmType(), errCode.getDetails()));
                 complete.fail(errCode);
             }
         }).start();
