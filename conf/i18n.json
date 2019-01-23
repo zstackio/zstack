@@ -12813,9 +12813,19 @@
     "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
   },
   {
+    "raw": "VCenter[uuid:%s] not found: ",
+    "en_US": "VCenter[uuid:{0}] not found: ",
+    "zh_CN": "VCenter[uuid:{0}]不存在",
+    "arguments": [
+      "msg.getVCenterUuid()"
+    ],
+    "line": 2762,
+    "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
+  },
+  {
     "raw": "Missing destination host uuid.",
     "en_US": "Missing destination host uuid.",
-    "zh_CN": "",
+    "zh_CN": "缺少目标物理机的Uuid",
     "arguments": [],
     "line": 3268,
     "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
@@ -12823,7 +12833,7 @@
   {
     "raw": "Destination host is not ESX host.",
     "en_US": "Destination host is not ESX host.",
-    "zh_CN": "",
+    "zh_CN": "目标物理机不是Esx类型物理机",
     "arguments": [],
     "line": 3273,
     "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
@@ -12831,7 +12841,7 @@
   {
     "raw": "HOST CPU/software NOT compatible",
     "en_US": "HOST CPU/software NOT compatible",
-    "zh_CN": "",
+    "zh_CN": "物理机的CPU/software不兼容",
     "arguments": [],
     "line": 3298,
     "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
@@ -15603,7 +15613,7 @@
   {
     "raw": "account has no access to the resource[uuid: %s]",
     "en_US": "account has no access to the resource[uuid: {0}]",
-    "zh_CN": "",
+    "zh_CN": "账号没有访问资源[uuid:{0}]的权限",
     "arguments": [
       "msg.getSession().getAccountUuid()",
       "resourceUuid"
@@ -15643,6 +15653,50 @@
       "msg.getMetricName()"
     ],
     "line": 165,
+    "fileName": "src/zstack/./premium/zwatch/src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
+  },
+  {
+    "raw": "cannot find namespace[%s]",
+    "en_US": "cannot find namespace[{0}]",
+    "zh_CN": "名字空间(namespace[{0}]不存在",
+    "arguments": [
+      "msg.getNamespace()"
+    ],
+    "line": 152,
+    "fileName": "src/zstack/./premium/zwatch/src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
+  },
+  {
+    "raw": "cannot find metric[%s] in namespace[%s]",
+    "en_US": "cannot find metric[{0}] in namespace[{1}]",
+    "zh_CN": "名字空间(namespace[{1}]中找不到时序数据[{0}]",
+    "arguments": [
+      "msg.getMetricName()",
+      "msg.getNamespace()"
+    ],
+    "line": 157,
+    "fileName": "src/zstack/./premium/zwatch/src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
+  },
+  {
+    "raw": "metric[%s]\u0027s labels[%s] does not include [%s]",
+    "en_US": "metric[{0}]\u0027s labels[{1}] does not include [{2}]",
+    "zh_CN": "时序数据[{0}]的标签列表[{1}]没有指定的标签[{2}]",
+    "arguments": [
+      "msg.getMetricName()",
+      "metric.getLabelNames()",
+      "l.getKey()"
+    ],
+    "line": 170,
+    "fileName": "src/zstack/./premium/zwatch/src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
+  },
+  {
+    "raw": "metric[%s] does not has filter[%s]",
+    "en_US": "metric[{0}] does not has filter[{1}]",
+    "zh_CN": "时序数据[{0}]不包含过滤条件[{1}]",
+    "arguments": [
+      "msg.getMetricName()",
+      "l.getValue()"
+    ],
+    "line": 182,
     "fileName": "src/zstack/./premium/zwatch/src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
