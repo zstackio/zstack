@@ -32,8 +32,10 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.SyncSystemTagFromVolumeMsg;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -816,6 +818,24 @@ public class VolumeSnapshotTreeBase {
         });
         chain.then(workflowTemplate.getUploadToBackupStorage());
         chain.then(workflowTemplate.getDeleteTemporaryTemplate());
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                SyncSystemTagFromVolumeMsg smsg = new SyncSystemTagFromVolumeMsg();
+                smsg.setImageUuid(msg.getImageUuid());
+                smsg.setVolumeUuid(msg.getVolumeUuid());
+                bus.makeLocalServiceId(smsg, ImageConstant.SERVICE_ID);
+                bus.send(smsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.warn(String.format("sync image[uuid:%s]system tag fail", msg.getImageUuid()));
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+        });
         chain.done(new FlowDoneHandler(msg, completion) {
             @Override
             public void handle(Map data) {

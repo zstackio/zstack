@@ -211,5 +211,24 @@ class BootModeCase extends SubCase {
             ]
         } as List<SystemTagInventory>
         assert tags.size() == 1
+
+        def snap = createVolumeSnapshot {
+            volumeUuid = vm.getRootVolumeUuid()
+            name = "test"
+        } as VolumeSnapshotInventory
+
+        img = createRootVolumeTemplateFromVolumeSnapshot {
+            name = "template"
+            snapshotUuid = snap.uuid
+            backupStorageUuids = [bs.uuid]
+        }
+
+        tags = querySystemTag {
+            conditions = [
+                    "resourceUuid=${img.uuid}".toString(),
+                    "tag~=bootMode::UEFI"
+            ]
+        } as List<SystemTagInventory>
+        assert tags.size() == 1
     }
 }

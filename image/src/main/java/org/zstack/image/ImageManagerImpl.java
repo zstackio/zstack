@@ -5,7 +5,6 @@ import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -56,7 +55,6 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.search.SearchQuery;
-import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
@@ -1657,27 +1655,19 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        // find the rootimage and create some systemtag if it has
-                        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-                        q.add(VolumeVO_.uuid, SimpleQuery.Op.EQ, msgData.getRootVolumeUuid());
-                        q.select(VolumeVO_.vmInstanceUuid);
-                        String vmInstanceUuid = q.findValue();
-                        if (tagMgr.hasSystemTag(vmInstanceUuid, ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat())) {
-                            tagMgr.createNonInherentSystemTag(imageVO.getUuid(),
-                                    ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat(),
-                                    ImageVO.class.getSimpleName());
-                        }
-
-                        String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(vmInstanceUuid, VmSystemTags.BOOT_MODE_TOKEN);
-                        if (bootMode != null) {
-                            SystemTagCreator creator = ImageSystemTags.BOOT_MODE.newSystemTagCreator(imageVO.getUuid());
-                            creator.setTagByTokens(map(e(VmSystemTags.BOOT_MODE_TOKEN, bootMode)));
-                            creator.inherent = false;
-                            creator.recreate = true;
-                            creator.create();
-                        }
-
-                        trigger.next();
+                        SyncSystemTagFromVolumeMsg smsg = new SyncSystemTagFromVolumeMsg();
+                        smsg.setImageUuid(imageVO.getUuid());
+                        smsg.setVolumeUuid(msgData.getRootVolumeUuid());
+                        bus.makeLocalServiceId(smsg, ImageConstant.SERVICE_ID);
+                        bus.send(smsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    logger.warn(String.format("sync image[uuid:%s]system tag fail", msgData.getRootVolumeUuid()));
+                                }
+                                trigger.next();
+                            }
+                        });
                     }
 
                     @Override
