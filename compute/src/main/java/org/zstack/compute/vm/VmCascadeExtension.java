@@ -415,7 +415,9 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     HostVO.class.getSimpleName(), PrimaryStorageVO.class.getSimpleName()
             ).contains(action.getParentIssuer());
 
-            new While<>(vminvs).all((inv, noErrorCompletion) -> {
+
+            int parallelism = 20;
+            new While<>(vminvs).step((inv, noErrorCompletion) -> {
                 VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
                 if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer()) ||
                         ZoneVO.class.getSimpleName().equals(action.getRootIssuer())) {
@@ -444,7 +446,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                         noErrorCompletion.done();
                     }
                 });
-            }).run(new NoErrorCompletion(completion) {
+            }, parallelism).run(new NoErrorCompletion(completion) {
                 @Override
                 public void done() {
                     if (ZoneVO.class.getSimpleName().equals(action.getRootIssuer())) {
