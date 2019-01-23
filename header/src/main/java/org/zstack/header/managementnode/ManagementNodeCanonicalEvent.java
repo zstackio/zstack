@@ -7,10 +7,32 @@ import org.zstack.header.message.NeedJsonSchema;
  */
 public class ManagementNodeCanonicalEvent {
     public static final String NODE_LIFECYCLE_PATH = "/managementnode/lifecycle";
+    public static final String NODE_TEMPORAL_REGRESSION_PATH = "/managementnode/temporal/regression";
 
     public enum LifeCycle {
         NodeJoin,
         NodeLeft
+    }
+
+    public static class ManagementNodeTemporalRegressionData {
+        private String nodeUuid;
+        private String hostname;
+
+        public String getNodeUuid() {
+            return nodeUuid;
+        }
+
+        public void setNodeUuid(String nodeUuid) {
+            this.nodeUuid = nodeUuid;
+        }
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
+        }
     }
 
     @NeedJsonSchema
