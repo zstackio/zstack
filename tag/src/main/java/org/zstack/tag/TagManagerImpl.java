@@ -201,7 +201,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
         if (isTagExisting(resourceUuid, tag, type, resourceType)) {
             throw new OperationFailureException(operr("Duplicated Tag[tag:%s, type:%s, resourceType:%s, resourceUuid:%s]",
-                            tag, type, resourceType, resourceUuid));
+                    tag, type, resourceType, resourceUuid));
         }
 
         if (type == TagType.User) {
