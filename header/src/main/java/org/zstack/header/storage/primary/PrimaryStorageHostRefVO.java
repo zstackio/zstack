@@ -2,10 +2,9 @@ package org.zstack.header.storage.primary;
 
 import org.zstack.header.host.HostEO;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.vo.*;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
-import org.zstack.header.vo.SoftDeletionCascade;
-import org.zstack.header.vo.SoftDeletionCascades;
 
 
 import javax.persistence.*;
@@ -17,25 +16,29 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
+@BaseResource
 @SoftDeletionCascades({
         @SoftDeletionCascade(parent = PrimaryStorageVO.class, joinColumn = "primaryStorageUuid"),
         @SoftDeletionCascade(parent = HostVO.class, joinColumn = "hostUuid")
 })
-@IdClass(CompositePrimaryKeyForPrimaryStorageHostRefVO.class)
 @EntityGraph(
         friends = {
                 @EntityGraph.Neighbour(type = PrimaryStorageVO.class, myField = "primaryStorageUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = HostVO.class, myField = "hostUuid", targetField = "uuid"),
         }
 )
+@Inheritance(strategy = InheritanceType.JOINED)
 public class PrimaryStorageHostRefVO {
-    @Column
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column
+    private long id;
+
+    @Column
     @ForeignKey(parentEntityClass = HostEO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String hostUuid;
 
     @Column
-    @Id
     @ForeignKey(parentEntityClass = PrimaryStorageEO.class, onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String primaryStorageUuid;
 
@@ -48,6 +51,26 @@ public class PrimaryStorageHostRefVO {
 
     @Column
     private Timestamp lastOpDate;
+
+    public PrimaryStorageHostRefVO() {
+    }
+
+    public PrimaryStorageHostRefVO(PrimaryStorageHostRefVO vo) {
+        this.setId(vo.getId());
+        this.setHostUuid(vo.getHostUuid());
+        this.setPrimaryStorageUuid(vo.getPrimaryStorageUuid());
+        this.setStatus(vo.getStatus());
+        this.setCreateDate(vo.getCreateDate());
+        this.setLastOpDate(vo.getLastOpDate());
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
