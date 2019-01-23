@@ -2816,17 +2816,12 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(APISetVmBootModeMsg msg) {
-        if (!VmSystemTags.BOOT_MODE.hasTag(self.getUuid())) {
-            SystemTagCreator creator = VmSystemTags.BOOT_MODE.newSystemTagCreator(self.getUuid());
-            creator.setTagByTokens(map(
-                    e(VmSystemTags.BOOT_MODE_TOKEN, msg.getBootMode())
-            ));
-            creator.create();
-        } else {
-            VmSystemTags.BOOT_MODE.update(self.getUuid(), VmSystemTags.BOOT_MODE.instantiateTag(
-                    map(e(VmSystemTags.BOOT_MODE_TOKEN, msg.getBootMode()))
-            ));
-        }
+        SystemTagCreator creator = VmSystemTags.BOOT_MODE.newSystemTagCreator(self.getUuid());
+        creator.setTagByTokens(map(
+                e(VmSystemTags.BOOT_MODE_TOKEN, msg.getBootMode())
+        ));
+        creator.recreate = true;
+        creator.create();
 
         APISetVmBootModeEvent evt = new APISetVmBootModeEvent(msg.getId());
         bus.publish(evt);
