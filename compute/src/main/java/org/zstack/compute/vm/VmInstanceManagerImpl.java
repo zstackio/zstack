@@ -225,8 +225,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
             handle((APIDeleteVmNicMsg) msg);
         } else if (msg instanceof APIAttachL3NetworkToVmNicMsg) {
             handle((APIAttachL3NetworkToVmNicMsg) msg);
-        } else if (msg instanceof APIDetachIpAddressFromVmNicMsg) {
-            handle((APIDetachIpAddressFromVmNicMsg) msg);
         } else if (msg instanceof APIGetCandidateZonesClustersHostsForCreatingVmMsg) {
             handle((APIGetCandidateZonesClustersHostsForCreatingVmMsg) msg);
         } else if (msg instanceof APIGetCandidatePrimaryStoragesForCreatingVmMsg) {
@@ -1326,27 +1324,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
-            }
-        });
-    }
-
-    private void handle(final APIDetachIpAddressFromVmNicMsg msg) {
-        final APIDetachIpAddressFromVmNicEvent evt = new APIDetachIpAddressFromVmNicEvent(msg.getId());
-
-        doDetachIpAddressFromNic(msg.getVmNicUuid(), msg.getUsedIpUuid(), new Completion(msg) {
-            @Override
-            public void success() {
-                VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
-                if (vmNicVO != null) {
-                    evt.setInventory(VmNicInventory.valueOf(vmNicVO));
-                }
-                bus.publish(evt);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setError(errorCode);
-                bus.publish(evt);
             }
         });
     }
