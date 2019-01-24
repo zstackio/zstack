@@ -1,19 +1,22 @@
 package org.zstack.storage.snapshot;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.header.Constants;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.longjob.LongJob;
 import org.zstack.header.longjob.LongJobFor;
 import org.zstack.header.longjob.LongJobVO;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.snapshot.APIRevertVolumeFromSnapshotMsg;
-import org.zstack.header.storage.snapshot.RevertVolumeSnapshotMsg;
-import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
+import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 /**
@@ -25,8 +28,10 @@ public class RevertVolumeSnapshotLongJob implements LongJob {
     @Autowired
     protected CloudBus bus;
 
+    protected String auditResourceUuid;
+
     @Override
-    public void start(LongJobVO job, Completion completion) {
+    public void start(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
         RevertVolumeSnapshotMsg msg = new RevertVolumeSnapshotMsg();
         APIRevertVolumeFromSnapshotMsg apiMessage = JSONObjectUtil.toObject(job.getJobData(), APIRevertVolumeFromSnapshotMsg.class);
         msg.setApiMessage(apiMessage);
@@ -37,8 +42,11 @@ public class RevertVolumeSnapshotLongJob implements LongJob {
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
+                auditResourceUuid = msg.getVolumeUuid();
                 if (reply.isSuccess()) {
-                    completion.success();
+                    APIRevertVolumeFromSnapshotEvent evt = new APIRevertVolumeFromSnapshotEvent(ThreadContext.get(Constants.THREAD_CONTEXT_API));
+
+                    completion.success(evt);
                 } else {
                     completion.fail(reply.getError());
                 }
@@ -50,5 +58,15 @@ public class RevertVolumeSnapshotLongJob implements LongJob {
     public void cancel(LongJobVO job, Completion completion) {
         // TODO
         completion.fail(Platform.operr("not supported"));
+    }
+
+    @Override
+    public Class getAuditType() {
+        return VolumeVO.class;
+    }
+
+    @Override
+    public String getAuditResourceUuid() {
+        return auditResourceUuid;
     }
 }

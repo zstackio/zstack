@@ -12,8 +12,10 @@ import org.zstack.header.cluster.ClusterConstant;
 import org.zstack.header.cluster.UpdateClusterOSMsg;
 import org.zstack.header.cluster.UpdateClusterOSReply;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.longjob.LongJobFor;
 import org.zstack.header.longjob.LongJobVO;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.longjob.LongJob;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -30,7 +32,7 @@ public class UpdateClusterOSJob implements LongJob {
     protected DatabaseFacade dbf;
 
     @Override
-    public void start(LongJobVO job, Completion completion) {
+    public void start(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
         UpdateClusterOSMsg msg = JSONObjectUtil.toObject(job.getJobData(), UpdateClusterOSMsg.class);
         bus.makeLocalServiceId(msg, ClusterConstant.SERVICE_ID);
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -40,7 +42,7 @@ public class UpdateClusterOSJob implements LongJob {
                 if (reply.isSuccess()) {
                     job.setJobResult(JSONObjectUtil.toJsonString(rly.getResults()));
                     dbf.update(job);
-                    completion.success();
+                    completion.success(null);
                 } else {
                     completion.fail(reply.getError());
                 }
