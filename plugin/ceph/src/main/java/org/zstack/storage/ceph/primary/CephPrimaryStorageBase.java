@@ -36,10 +36,8 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.image.CreateImageExtensionPoint;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -3718,6 +3716,36 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     }
 
+    private ImageSpec makeImageSpec(VolumeInventory volume) {
+        ImageVO image = dbf.findByUuid(volume.getRootImageUuid(), ImageVO.class);
+        if (image == null) {
+            throw new OperationFailureException(operr("cannot reinit rootvolume [%s] because image [%s] has been deleted and imagecache cannot be found",
+                    volume.getUuid(), volume.getRootImageUuid()));
+        }
+
+        ImageSpec imageSpec = new ImageSpec();
+        imageSpec.setInventory(ImageInventory.valueOf(image));
+
+        ImageBackupStorageRefInventory ref = CollectionUtils.find(image.getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefVO>() {
+            @Override
+            public ImageBackupStorageRefInventory call(ImageBackupStorageRefVO arg) {
+                String fsid = Q.New(CephBackupStorageVO.class).eq(CephBackupStorageVO_.uuid, arg.getBackupStorageUuid()).select(CephBackupStorageVO_.fsid).findValue();
+                if (fsid != null && fsid.equals(getSelf().getFsid())) {
+                    return ImageBackupStorageRefInventory.valueOf(arg);
+                }
+                return null;
+            }
+        });
+
+        if (ref == null) {
+            throw new OperationFailureException(operr("cannot find backupstorage to download image [%s] to primarystorage [%s]", volume.getRootImageUuid(), getSelf().getUuid()));
+        }
+
+        imageSpec.setSelectedBackupStorage(ImageBackupStorageRefInventory.valueOf(image.getBackupStorageRefs().iterator().next()));
+
+        return imageSpec;
+    }
+
     protected void handle(final ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         final ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
 
@@ -3726,21 +3754,50 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         chain.then(new ShareFlow() {
             String originalVolumePath = msg.getVolume().getInstallPath();
             String volumePath = makeResetImageRootVolumeInstallPath(msg.getVolume().getUuid());
+            String installUrl;
 
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "download-image-to-cache";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        installUrl = Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, msg.getVolume().getRootImageUuid()).
+                                eq(ImageCacheVO_.primaryStorageUuid, msg.getPrimaryStorageUuid()).select(ImageCacheVO_.installUrl).findValue();
+
+                        if (installUrl != null) {
+                            trigger.next();
+                            return;
+                        }
+
+
+
+                        DownloadToCache downloadToCache = new DownloadToCache();
+
+                        downloadToCache.image = makeImageSpec(msg.getVolume());
+                        downloadToCache.download(new ReturnValueCompletion<ImageCacheVO>(trigger) {
+                            @Override
+                            public void success(ImageCacheVO returnValue) {
+                                installUrl = returnValue.getInstallUrl();
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
                 flow(new NoRollbackFlow() {
                     String __name__ = "clone-image";
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        SimpleQuery<ImageCacheVO> sq = dbf.createQuery(ImageCacheVO.class);
-                        sq.add(ImageCacheVO_.imageUuid, Op.EQ, msg.getVolume().getRootImageUuid());
-                        sq.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
-                        ImageCacheVO ivo = sq.find();
-
                         CloneCmd cmd = new CloneCmd();
-                        cmd.srcPath = ivo.getInstallUrl();
+                        cmd.srcPath = installUrl;
                         cmd.dstPath = volumePath;
 
                         httpCall(CLONE_PATH, cmd, CloneRsp.class, new ReturnValueCompletion<CloneRsp>(trigger) {
