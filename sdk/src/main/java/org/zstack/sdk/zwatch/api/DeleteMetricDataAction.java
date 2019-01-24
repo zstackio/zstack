@@ -25,8 +25,14 @@ public class DeleteMetricDataAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, validValues = {"all"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String category;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String namespace;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String metricName;
+
+    @Param(required = false)
+    public java.util.List labels;
 
     @Param(required = false)
     public java.util.List systemTags;
