@@ -4,11 +4,12 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageVO;
-import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.concurrent.TimeUnit;
@@ -21,7 +22,7 @@ import java.util.concurrent.TimeUnit;
         responseClass = APIExportImageFromBackupStorageEvent.class
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
-public class APIExportImageFromBackupStorageMsg extends APIMessage implements BackupStorageMessage {
+public class APIExportImageFromBackupStorageMsg extends APIMessage implements BackupStorageMessage, APIAuditor {
     @APIParam(resourceType = BackupStorageVO.class, checkAccount = true, operationTarget = true)
     private String backupStorageUuid;
 
@@ -65,5 +66,10 @@ public class APIExportImageFromBackupStorageMsg extends APIMessage implements Ba
                         .messageAndEvent(that, evt).done();
             }
         };
+    }
+
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(((APIExportImageFromBackupStorageMsg)msg).imageUuid, ImageVO.class);
     }
 }

@@ -6,6 +6,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.*;
@@ -19,6 +20,7 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.Constants;
 import org.zstack.header.core.AsyncBackup;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.APIDeleteAccountEvent;
@@ -26,6 +28,7 @@ import org.zstack.header.longjob.*;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -40,12 +43,12 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.db.DBSourceUtils.isDBConnected;
+import static org.zstack.core.db.DBSourceUtils.waitDBConnected;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.longjob.LongJobConstants.LongJobOperation;
 import static org.zstack.longjob.LongJobUtils.jobCompleted;
 import static org.zstack.longjob.LongJobUtils.updateByUuid;
-import static org.zstack.core.db.DBSourceUtils.isDBConnected;
-import static org.zstack.core.db.DBSourceUtils.waitDBConnected;
 
 /**
  * Created by GuoYi on 11/14/17.
@@ -66,6 +69,9 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     private ProgressReportService progRpt;
     @Autowired
     protected ApiTimeoutManager timeoutMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
+    private List<LongJobExtensionPoint> exts = new ArrayList<>();
     @Autowired
     private transient ResourceDestinationMaker destinationMaker;
 
@@ -269,6 +275,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             public void run(MessageReply rly) {
                 SubmitLongJobReply reply = rly.castReply();
                 evt.setInventory(reply.getInventory());
+                evt.setNeedAudit(reply.isNeedAudit());
                 bus.publish(evt);
             }
         });
@@ -333,6 +340,9 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 doStartJob(job, vo, msg);
 
                 reply.setInventory(LongJobInventory.valueOf(vo));
+                if (job.getAuditType() != null) {
+                    reply.setNeedAudit(true);
+                }
                 logger.info(String.format("longjob [uuid:%s, name:%s] has been started", vo.getUuid(), vo.getName()));
                 bus.reply(msg, reply);
 
@@ -348,16 +358,20 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
     private void doStartJob(LongJob job, LongJobVO vo, AsyncBackup async) {
         String longJobUuid = vo.getUuid();
-        job.start(vo, new Completion(async) {
+        job.start(vo, new ReturnValueCompletion<APIEvent>(async) {
 
             @Override
-            public void success() {
+            public void success(APIEvent evt) {
                 reportProgress("100");
                 updateByUuid(longJobUuid, it -> {
                     it.setState(LongJobState.Succeeded);
                     if (it.getJobResult() == null || it.getJobResult().isEmpty()) {
                         it.setJobResult("Succeeded");
                     }
+                });
+
+                exts.forEach(ext -> {
+                    ext.afterJobFinished(job, vo, evt);
                 });
 
                 logger.info(String.format("successfully run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
@@ -370,6 +384,13 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                     if (it.getJobResult() == null || it.getJobResult().isEmpty()) {
                         it.setJobResult("Failed : " + errorCode.toString());
                     }
+                });
+
+                APIEvent evt = new APIEvent(ThreadContext.get(Constants.THREAD_CONTEXT_API));
+                evt.setError(errorCode);
+
+                exts.forEach(ext -> {
+                    ext.afterJobFailed(job, vo, evt);
                 });
 
                 logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
@@ -414,7 +435,13 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             }
         });
 
+        populateExtensions();
+
         return true;
+    }
+
+    private void populateExtensions() {
+        exts = pluginRgty.getExtensionList(LongJobExtensionPoint.class);
     }
 
     @Override
