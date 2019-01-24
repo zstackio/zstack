@@ -353,6 +353,8 @@ public class VirtualRouter extends ApplianceVmBase {
     }
 
     private void reconnect(final Completion completion) {
+        ApplianceVmStatus oldStatus = getSelf().getStatus();
+
         FlowChain chain = getReconnectChain();
         chain.setName(String.format("reconnect-virtual-router-%s", self.getUuid()));
         chain.getData().put(VirtualRouterConstant.Param.VR.toString(), vr);
@@ -366,7 +368,6 @@ public class VirtualRouter extends ApplianceVmBase {
         List<ApplianceVmFirewallRuleVO> vos = q.list();
         List<ApplianceVmFirewallRuleInventory> rules = ApplianceVmFirewallRuleInventory.valueOf(vos);
         chain.getData().put(ApplianceVmConstant.Params.applianceVmFirewallRules.toString(), rules);
-
         chain.insert(new Flow() {
             String __name__ = "change-appliancevm-status-to-connecting";
 
@@ -403,7 +404,10 @@ public class VirtualRouter extends ApplianceVmBase {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                fireDisconnectedCanonicalEvent(errCode);
+                if (oldStatus == ApplianceVmStatus.Connected) {
+                    fireDisconnectedCanonicalEvent(errCode);
+                }
+
                 completion.fail(errCode);
             }
         }).start();
