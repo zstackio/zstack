@@ -63,6 +63,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
+
 /**
  * Created by xing5 on 2017/2/12.
  */
@@ -461,21 +463,35 @@ class EnvSpec implements Node, ApiHelper {
         }
     }
 
-    void resetAllGlobalConfig() {
+    private List<GlobalConfigInventory> getChangedConfig() {
+        List<GlobalConfigInventory> results = new ArrayList<>()
         def a = new QueryGlobalConfigAction()
         a.sessionId = session.uuid
-        QueryGlobalConfigAction.Result res = a.call()
-        assert res.error == null: res.error.toString()
+        a.limit = 500
+        a.start = 0
+        while (true) {
+            QueryGlobalConfigAction.Result res = a.call()
+            assert res.error == null: res.error.toString()
+            List<GlobalConfigInventory> changed = res.value.inventories.stream()
+                    .filter({con -> con.value != con.defaultValue})
+                    .collect(Collectors.toList())
+            results.addAll(changed)
+            a.start += 500
+
+            if (res.value.inventories.size() < 500) {
+                break
+            }
+        }
+
+        return results
+    }
+
+    void resetAllGlobalConfig() {
         CountDownLatch latch = new CountDownLatch(1)
         List<ErrorCode> errors = []
-        new While<GlobalConfigInventory>(res.value.inventories).all(new While.Do<GlobalConfigInventory>() {
+        new While<>(getChangedConfig()).all(new While.Do<GlobalConfigInventory>() {
             @Override
             void accept(GlobalConfigInventory config, WhileCompletion completion) {
-                if (config.value == config.defaultValue) {
-                    completion.done()
-                    return
-                }
-
                 def ua = new UpdateGlobalConfigAction()
                 ua.category = config.category
                 ua.name = config.name

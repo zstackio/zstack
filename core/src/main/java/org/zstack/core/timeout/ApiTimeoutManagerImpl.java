@@ -1,13 +1,14 @@
 package org.zstack.core.timeout;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.*;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -26,8 +27,7 @@ import static org.zstack.core.Platform.argerr;
  * Created by frank on 2/17/2016.
  */
 public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
-        BeforeDeliveryMessageInterceptor, PrepareDbInitialValueExtensionPoint,
-        GlobalConfigInitExtensionPoint {
+        BeforeDeliveryMessageInterceptor, GlobalConfigInitExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ApiTimeoutManagerImpl.class);
 
     @Autowired
@@ -129,95 +129,48 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
     }
 
     @Override
-    public void prepareDbInitialValue() {
-        GLock lock = new GLock(GlobalConfigConstant.LOCK, 60);
-        lock.lock();
-        try {
-            new SQLBatch() {
-                @Override
-                protected void scripts() {
-                    List<String> apiClassNamesInGlobalConfig = q(GlobalConfigVO.class).select(GlobalConfigVO_.name)
-                            .eq(GlobalConfigVO_.category, APITIMEOUT_GLOBAL_CONFIG_TYPE).listValues();
-
-                    List<String> configurationLocalMessageClassNamesInGlobalConfig = q(GlobalConfigVO.class).select(GlobalConfigVO_.name)
-                            .eq(GlobalConfigVO_.category, CONFIGURABLE_TIMEOUT_GLOBAL_CONFIG_TYPE).listValues();
-
-                    Set<Class<? extends ConfigurableTimeoutMessage>> allConfigurableMessageClasses = BeanUtils.reflections.getSubTypesOf(ConfigurableTimeoutMessage.class)
-                            .stream()
-                            .filter(clz -> !APISyncCallMessage.class.isAssignableFrom(clz))
-                            .collect(Collectors.toSet());
-                    List<Class> newConfigurableMessageClasses = allConfigurableMessageClasses
-                            .stream().filter(clz -> !apiClassNamesInGlobalConfig.contains(clz.getName())
-                                    && !configurationLocalMessageClassNamesInGlobalConfig.contains(clz.getName()))
-                            .collect(Collectors.toList());
-
-                    newConfigurableMessageClasses.forEach(clz -> {
-                        GlobalConfigVO vo = new GlobalConfigVO();
-
-                        if (APIMessage.class.isAssignableFrom(clz)) {
-                            vo.setCategory(APITIMEOUT_GLOBAL_CONFIG_TYPE);
-                        } else {
-                            vo.setCategory(CONFIGURABLE_TIMEOUT_GLOBAL_CONFIG_TYPE);
-                        }
-
-                        vo.setName(clz.getName());
-                        vo.setDescription(String.format("timeout for message %s", clz));
-
-                        DefaultTimeout at = (DefaultTimeout) clz.getAnnotation(DefaultTimeout.class);
-                        if (at == null) {
-                            vo.setDefaultValue("30m");
-                        } else {
-                            vo.setDefaultValue(String.valueOf(at.timeunit().toMillis(at.value())));
-                        }
-
-                        Long timeout = getLegacyTimeout(clz);
-                        if (timeout != null) {
-                            vo.setValue(String.valueOf(timeout));
-                        } else {
-                            vo.setValue(vo.getDefaultValue());
-                        }
-
-                        gcf.createGlobalConfig(vo);
-                    });
-
-                    // update global config when default value changed
-                    allConfigurableMessageClasses.removeAll(newConfigurableMessageClasses);
-                    allConfigurableMessageClasses.forEach(clz -> {
-                        String category = null;
-                        if (APIMessage.class.isAssignableFrom(clz)) {
-                            category = APITIMEOUT_GLOBAL_CONFIG_TYPE;
-                        } else {
-                            category = CONFIGURABLE_TIMEOUT_GLOBAL_CONFIG_TYPE;
-                        }
-
-                        GlobalConfigVO vo = q(GlobalConfigVO.class)
-                                .eq(GlobalConfigVO_.category, category)
-                                .eq(GlobalConfigVO_.name, clz.getName()).find();
-
-                        DefaultTimeout at = clz.getAnnotation(DefaultTimeout.class);
-                        String defaultTimeout = null;
-                        if (at == null) {
-                            defaultTimeout = "30m";
-                        } else {
-                            defaultTimeout = String.valueOf(at.timeunit().toMillis(at.value()));
-                        }
-
-                        // if default value updated
-                        if (!vo.getDefaultValue().equals(defaultTimeout)) {
-                            vo.setDefaultValue(defaultTimeout);
-                            merge(vo);
-                        }
-                    });
-                }
-            }.execute();
-        } finally {
-            lock.unlock();
-        }
+    public List<GlobalConfig> getGenerationGlobalConfig() {
+        return prepareTimeoutGlobalConfig();
     }
 
-    @Override
-    public List<String> getPredefinedGlobalConfigCategories() {
-        return Arrays.asList(APITIMEOUT_GLOBAL_CONFIG_TYPE);
+
+    private List<GlobalConfig> prepareTimeoutGlobalConfig() {
+        Set<Class<? extends ConfigurableTimeoutMessage>> allConfigurableMessageClasses = BeanUtils.reflections
+                .getSubTypesOf(ConfigurableTimeoutMessage.class).stream()
+                .filter(clz -> !APISyncCallMessage.class.isAssignableFrom(clz))
+                .collect(Collectors.toSet());
+
+        List<GlobalConfig> results = new ArrayList<>();
+        allConfigurableMessageClasses.forEach(clz -> {
+            GlobalConfigVO vo = new GlobalConfigVO();
+
+            if (APIMessage.class.isAssignableFrom(clz)) {
+                vo.setCategory(APITIMEOUT_GLOBAL_CONFIG_TYPE);
+            } else {
+                vo.setCategory(CONFIGURABLE_TIMEOUT_GLOBAL_CONFIG_TYPE);
+            }
+
+            vo.setName(clz.getName());
+            vo.setDescription(String.format("timeout for message %s", clz));
+
+            DefaultTimeout at = clz.getAnnotation(DefaultTimeout.class);
+            if (at == null) {
+                vo.setDefaultValue("30m");
+            } else {
+                vo.setDefaultValue(String.valueOf(at.timeunit().toMillis(at.value())));
+            }
+
+            Long timeout = getLegacyTimeout(clz);
+            if (timeout != null) {
+                vo.setValue(String.valueOf(timeout));
+            } else {
+                vo.setValue(vo.getDefaultValue());
+            }
+
+            results.add(GlobalConfig.valueOf(vo));
+        });
+
+        return results;
     }
 
     class Value {
