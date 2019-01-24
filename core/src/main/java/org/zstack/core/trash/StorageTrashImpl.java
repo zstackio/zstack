@@ -14,6 +14,8 @@ import org.zstack.header.image.ImageBackupStorageRefVO;
 import org.zstack.header.image.ImageBackupStorageRefVO_;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.storage.backup.StorageTrashSpec;
+import org.zstack.header.storage.primary.ImageCacheVO;
+import org.zstack.header.storage.primary.ImageCacheVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vo.ResourceVO;
@@ -140,7 +142,8 @@ public class StorageTrashImpl implements StorageTrash {
     }
 
     private boolean makeSureInstallPathNotUsedByVolume(String installPath) {
-        return !Q.New(VolumeVO.class).eq(VolumeVO_.installPath, installPath).isExists();
+        return !Q.New(VolumeVO.class).eq(VolumeVO_.installPath, installPath).isExists() &&
+                !Q.New(ImageCacheVO.class).eq(ImageCacheVO_.installUrl, installPath).isExists();
     }
 
     private boolean makeSureInstallPathNotUsedByImage(String installPath) {
@@ -148,7 +151,8 @@ public class StorageTrashImpl implements StorageTrash {
     }
 
     private boolean makeSureInstallPathNotUsedBySnapshot(String installPath) {
-        return !Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.primaryStorageInstallPath, installPath).isExists();
+        return !Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.primaryStorageInstallPath, installPath).isExists() &&
+                !Q.New(ImageCacheVO.class).eq(ImageCacheVO_.installUrl, installPath).isExists();
     }
 
     @Override
