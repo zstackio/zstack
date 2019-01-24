@@ -1,24 +1,20 @@
 package org.zstack.core.timeout;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.*;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.GLock;
-import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -47,6 +43,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
     public static final String CONFIGURABLE_TIMEOUT_GLOBAL_CONFIG_TYPE = "configurableTimeout";
     private long SYNCALL_TIMEOUT = -1;
     public static final String TASK_CONTEXT_MESSAGE_TIMEOUT = "__messagetimeout__";
+    public static final String TASK_CONTEXT_INIT_TIME = "__inittime__";
 
     void init() {
         SYNCALL_TIMEOUT = parseTimeout(ApiTimeoutGlobalProperty.SYNCCALL_API_TIMEOUT);
@@ -121,6 +118,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
     public void beforeDeliveryMessage(Message msg) {
         if (msg instanceof ConfigurableTimeoutMessage && !TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_TIMEOUT)) {
             TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_TIMEOUT, getMessageTimeout((ConfigurableTimeoutMessage) msg));
+            TaskContext.putTaskContextItem(TASK_CONTEXT_INIT_TIME, System.nanoTime());
         }
     }
 
@@ -243,8 +241,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
         return TimeUtils.parseTimeInMillis(timeout);
     }
 
-    @Override
-    public Long getTimeout() {
+    private Long getTotalTimeout() {
         for (ApiTimeoutExtensionPoint apiTimeoutExt : apiTimeoutExts) {
             Long timeout = apiTimeoutExt.getApiTimeout();
             if (timeout != null) {
@@ -259,6 +256,20 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
             // this is an internal message
             return parseTimeout(ApiTimeoutGlobalProperty.INTERNAL_MESSAGE_TIMEOUT);
         }
+    }
+
+    private long calculateRemaining(long timeout) {
+        if (!TaskContext.containsTaskContext(TASK_CONTEXT_INIT_TIME)) {
+            return timeout;
+        }
+
+        timeout -= TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - (long) TaskContext.getTaskContext().get(TASK_CONTEXT_INIT_TIME));
+        return timeout < 0 ? 1 : timeout;
+    }
+
+    @Override
+    public Long getTimeout() {
+        return calculateRemaining(getTotalTimeout());
     }
 
     private static Long parseObjectToLong(Object o) {
