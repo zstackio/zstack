@@ -151,6 +151,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     parseGlobalConfigFields();
                     loadConfigFromXml();
                     loadConfigFromJava();
+                    loadConfigFromAutoGeneration();
                     loadConfigFromDatabase();
                     createValidatorForBothXmlAndDatabase();
                     validateConfigFromXml();
@@ -324,19 +325,6 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     dbf.persistCollection(toSave);
                 }
 
-                List<String> predefinedGlobalConfigCategories = new ArrayList<>();
-                for (GlobalConfigInitExtensionPoint ext : pluginRgty.getExtensionList(GlobalConfigInitExtensionPoint.class)) {
-                    List<String> tmp = ext.getPredefinedGlobalConfigCategories();
-
-                    if (tmp != null) {
-                        predefinedGlobalConfigCategories.addAll(tmp);
-                    }
-                }
-
-                toRemove = toRemove.stream()
-                        .filter(config -> !predefinedGlobalConfigCategories.contains(config.getCategory()))
-                        .collect(Collectors.toList());
-
                 for (GlobalConfig config : toRemove) {
                     logger.debug(String.format("Will remove an old global config from database: %s", config.toString()));
                     SQL.New(GlobalConfigVO.class)
@@ -368,6 +356,15 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                             .eq(GlobalConfigVO_.name, config.getName())
                             .set(GlobalConfigVO_.value, config.value())
                             .update();
+                }
+            }
+
+            private void loadConfigFromAutoGeneration() {
+                for (GlobalConfigInitExtensionPoint ext : pluginRgty.getExtensionList(GlobalConfigInitExtensionPoint.class)) {
+                    List<GlobalConfig> tmp = ext.getGenerationGlobalConfig();
+                    Optional.ofNullable(tmp).ifPresent(configs -> configs.forEach(it ->
+                            configsFromXml.put(it.getIdentity(), it)
+                    ));
                 }
             }
 
@@ -675,7 +672,14 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         return c.value(clz);
     }
 
+    /**
+     * do not use it until support multi management node
+     *
+     * @param vo
+     * @return
+     */
     @Override
+    @Deprecated
     public GlobalConfig createGlobalConfig(GlobalConfigVO vo) {
         vo = dbf.persistAndRefresh(vo);
         GlobalConfig c = GlobalConfig.valueOf(vo);
@@ -683,7 +687,16 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         return c;
     }
 
+    /**
+     * do not use it until support multi management node
+     *
+     * @param category
+     * @param name
+     * @param value
+     * @return
+     */
     @Override
+    @Deprecated
     public String updateConfig(String category, String name, String value) {
         GlobalConfig c = allConfig.get(GlobalConfig.produceIdentity(category,name));
         DebugUtils.Assert(c != null, String.format("cannot find GlobalConfig[category:%s, name:%s]", category, name));

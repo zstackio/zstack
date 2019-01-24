@@ -8,8 +8,10 @@ import org.zstack.core.config.GlobalConfigVO
 import org.zstack.core.config.GlobalConfigVO_
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.core.db.SimpleQuery
 import org.zstack.core.db.UpdateQuery
+import org.zstack.header.vm.APICreateVmNicMsg
 import org.zstack.image.ImageGlobalConfig
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.GlobalConfigInventory
@@ -58,6 +60,7 @@ class GlobalConfigCase extends SubCase {
             testResetGlobalConfig()
             testSyncConfigUponEvent()
             testNormalized()
+            testUpdateApiTimeoutDefaultValue()
         }
     }
 
@@ -155,7 +158,7 @@ class GlobalConfigCase extends SubCase {
             conditions = ["category=${KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.category}","name=${KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.name}"]
         }[0]
         assert KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value(int.class) == 10
-        
+
 
         resetGlobalConfig {}
 
@@ -189,13 +192,40 @@ class GlobalConfigCase extends SubCase {
 
     void testNormalized() {
         UpdateQuery.New(GlobalConfigVO.class).condAnd(GlobalConfigVO_.category, SimpleQuery.Op.EQ, "quota").
-                condAnd(GlobalConfigVO_.name, SimpleQuery.Op.EQ, "snapshot.volume.num").set(GlobalConfigVO_.value, "200.0").update()
+                condAnd(GlobalConfigVO_.@name, SimpleQuery.Op.EQ, "snapshot.volume.num").set(GlobalConfigVO_.value, "200.0").update()
 
         GlobalConfigFacadeImpl gcf = bean(GlobalConfigFacadeImpl.class)
         gcf.start()
 
         assert gcf.getConfigValue("quota", "snapshot.volume.num", Long.class) == 200L
         assert Q.New(GlobalConfigVO.class).eq(GlobalConfigVO_.category, "quota").
-                eq(GlobalConfigVO_.name, "snapshot.volume.num").select(GlobalConfigVO_.value).findValue() == "200"
+                eq(GlobalConfigVO_.@name, "snapshot.volume.num").select(GlobalConfigVO_.value).findValue() == "200"
+    }
+
+    void testUpdateApiTimeoutDefaultValue() {
+        SQL.New(GlobalConfigVO.class).eq(GlobalConfigVO_.@name, APICreateVmNicMsg.class.name)
+                .set(GlobalConfigVO_.defaultValue, "5m")
+                .set(GlobalConfigVO_.value, "10800000")
+                .update()
+
+        GlobalConfigFacadeImpl gcf = bean(GlobalConfigFacadeImpl.class)
+        gcf.start()
+        // do not update value
+        assert Q.New(GlobalConfigVO.class).select(GlobalConfigVO_.value)
+                .eq(GlobalConfigVO_.@name, APICreateVmNicMsg.class.name)
+                .eq(GlobalConfigVO_.defaultValue, "30m")
+                .findValue() == "10800000"
+
+        SQL.New(GlobalConfigVO.class).eq(GlobalConfigVO_.@name, APICreateVmNicMsg.class.name)
+                .set(GlobalConfigVO_.defaultValue, "10800000")
+                .set(GlobalConfigVO_.value, "10800000")
+                .update()
+
+        gcf.start()
+        // update to new default value
+        assert Q.New(GlobalConfigVO.class).select(GlobalConfigVO_.value)
+                .eq(GlobalConfigVO_.@name, APICreateVmNicMsg.class.name)
+                .eq(GlobalConfigVO_.defaultValue, "30m")
+                .findValue() == "30m"
     }
 }
