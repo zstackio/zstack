@@ -61,7 +61,7 @@ class PrimaryStorageController {
     }
 
     void connect(String name) {
-        PrimaryStorageInventory inv = env.inventoryByName("name")
+        PrimaryStorageInventory inv = env.inventoryByName(name)
         assert inv != null : "cannot find primary storage[${name}"
 
         disconnectedUuids.remove(inv.uuid)
