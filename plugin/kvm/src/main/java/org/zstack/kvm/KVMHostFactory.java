@@ -274,15 +274,25 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         });
 
         KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.installValidator(((resourceUuid, resourceType, systemTag) -> {
+            String check = KVMSystemTags.CHECK_CLUSTER_CPU_MODEL.getTokenByTag(systemTag, KVMSystemTags.CHECK_CLUSTER_CPU_MODEL_TOKEN);
+
+            if (!Boolean.parseBoolean(check)) {
+                return;
+            }
+
             Map<String, String> hostModelMap = getHostsWithDiffModel(resourceUuid);
 
+            if (hostModelMap.isEmpty()) {
+                return;
+            }
+
             if (hostModelMap.values().stream().distinct().collect(Collectors.toList()).size() != 1) {
-                String str = "";
+                StringBuilder str = new StringBuilder();
                 for (Map.Entry entry : hostModelMap.entrySet()) {
-                    str += String.format("host[uuid:%s]'s cpu model is %s ;\n", entry.getKey(), entry.getValue());
+                    str.append(String.format("host[uuid:%s]'s cpu model is %s ;\n", entry.getKey(), entry.getValue()));
                 }
 
-                throw new OperationFailureException(operr("there are still hosts not have the same cpu model, details: %s", str));
+                throw new OperationFailureException(operr("there are still hosts not have the same cpu model, details: %s", str.toString()));
             }
         }));
 
