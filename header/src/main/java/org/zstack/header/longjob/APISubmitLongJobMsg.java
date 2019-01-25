@@ -13,8 +13,6 @@ import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 
 /**
  * Created by GuoYi on 11/13/17.
@@ -27,8 +25,6 @@ import org.zstack.utils.logging.CLogger;
         responseClass = APISubmitLongJobEvent.class
 )
 public class APISubmitLongJobMsg extends APICreateMessage implements APILongJobAuditor {
-    private static final CLogger logger = Utils.getLogger(APISubmitLongJobMsg.class);
-
     @APIParam(maxLength = 255, required = false)
     private String name;
     @APIParam(maxLength = 2048, required = false)
