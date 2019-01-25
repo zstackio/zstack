@@ -3,6 +3,7 @@ package org.zstack.core.cloudbus;
 import com.google.gson.*;
 import org.zstack.header.message.GsonTransient;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.SkipLogger;
 import org.zstack.utils.gson.GsonTypeCoder;
 import org.zstack.utils.gson.GsonUtil;
 
@@ -44,6 +45,41 @@ public class CloudBusGson {
                     return false;
                 }
             }
+    }).create();
+
+    private static Gson logSafeGson = new GsonUtil().setCoder(Message.class, new GsonTypeCoder<Message>() {
+
+        @Override
+        public JsonElement serialize(Message message, Type type, JsonSerializationContext jsonSerializationContext) {
+            JsonObject jObj = new JsonObject();
+            jObj.add(message.getClass().getName(), logSafeGson.toJsonTree(message));
+            return jObj;
+        }
+
+        @Override
+        public Message deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+            JsonObject jObj = jsonElement.getAsJsonObject();
+            Map.Entry<String, JsonElement> entry = jObj.entrySet().iterator().next();
+            String className = entry.getKey();
+            Class<?> clazz;
+            try {
+                clazz = Class.forName(className);
+            } catch (ClassNotFoundException e) {
+                throw new JsonParseException(String.format("Unable to deserialize class[%s]", className), e);
+            }
+            return (Message) logSafeGson.fromJson(entry.getValue(), clazz);
+        }
+    }).setSerializationExclusionStrategy(new ExclusionStrategy() {
+        @Override
+        public boolean shouldSkipField(FieldAttributes f) {
+            return f.getAnnotation(SkipLogger.class) != null ||
+                    f.getAnnotation(GsonTransient.class) != null;
+        }
+
+        @Override
+        public boolean shouldSkipClass(Class<?> clazz) {
+            return false;
+        }
     }).create();
 
     private static Gson httpGson = new GsonUtil().setCoder(Message.class, new GsonTypeCoder<Message>() {
@@ -92,6 +128,10 @@ public class CloudBusGson {
 
     public static String toJson(Message msg) {
         return gson.toJson(msg, Message.class);
+    }
+
+    public static String toLogSafeJson(Message msg) {
+        return logSafeGson.toJson(msg, Message.class);
     }
 
     public static String toJson(Object obj) {

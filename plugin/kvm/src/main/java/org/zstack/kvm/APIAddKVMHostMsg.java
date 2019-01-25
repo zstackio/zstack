@@ -5,6 +5,7 @@ import org.zstack.header.host.APIAddHostEvent;
 import org.zstack.header.host.APIAddHostMsg;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.SkipLogger;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
 
@@ -75,6 +76,7 @@ public class APIAddKVMHostMsg extends APIAddHostMsg implements AddKVMHostMessage
      * Max length of 255 characters
      */
     @APIParam(maxLength = 255)
+    @SkipLogger
     private String password;
 
 

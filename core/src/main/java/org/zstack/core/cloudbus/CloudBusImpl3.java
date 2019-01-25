@@ -215,7 +215,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     };
 
     private String dumpMessage(Message msg) {
-        return String.format("%s %s", msg.getClass().getName(), CloudBusGson.toJson(msg));
+        return String.format("%s %s", msg.getClass().getName(), CloudBusGson.toLogSafeJson(msg));
     }
 
     private interface EndPoint {
