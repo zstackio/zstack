@@ -6,8 +6,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.console.ConsoleHypervisorBackend;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.HostConstant;
@@ -17,8 +15,6 @@ import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.kvm.KVMAgentCommands.GetVncPortResponse;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -33,16 +29,10 @@ import static org.zstack.core.Platform.operr;
  * To change this template use File | Settings | File Templates.
  */
 public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
-    private static final CLogger logger = Utils.getLogger(KVMConsoleHypervisorBackend.class);
-
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
-    @Autowired
-    private ErrorFacade errf;
-    @Autowired
-    private ApiTimeoutManager timeoutMgr;
 
     @Override
     public HypervisorType getConsoleBackendHypervisorType() {
