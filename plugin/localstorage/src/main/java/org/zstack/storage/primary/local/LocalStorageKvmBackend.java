@@ -20,7 +20,6 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
@@ -673,6 +672,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         super(self);
     }
 
+    public String makeTemporaryVolumeInstallUrl(VolumeInventory vol, String originVolumeUuid) {
+        return PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeTemporaryRootVolumeInstallPath(vol, originVolumeUuid));
+    }
+
     public String makeRootVolumeInstallUrl(VolumeInventory vol) {
         return PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeRootVolumeInstallPath(vol));
     }
@@ -846,26 +849,41 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     protected void handle(final InstantiateVolumeOnPrimaryStorageMsg msg, final ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
-        if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
+        if (msg instanceof InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            createTemporaryRootVolume((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg) msg, completion);
+        } else if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
             createRootVolume((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg, completion);
+        } else if (msg instanceof InstantiateTemporaryVolumeOnPrimaryStorageMsg) {
+            createTemporaryEmptyVolume((InstantiateTemporaryVolumeOnPrimaryStorageMsg)msg, completion);
         } else {
-            createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<String>(completion) {
-                @Override
-                public void success(String returnValue) {
-                    InstantiateVolumeOnPrimaryStorageReply r = new InstantiateVolumeOnPrimaryStorageReply();
-                    VolumeInventory vol = msg.getVolume();
-                    vol.setInstallPath(returnValue);
-                    vol.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
-                    r.setVolume(vol);
-                    completion.success(r);
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    completion.fail(errorCode);
-                }
-            });
+            createEmptyVolume(msg, completion);
         }
+    }
+
+
+    private void createTemporaryEmptyVolume(InstantiateTemporaryVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
+        final VolumeInventory volume = msg.getVolume();
+        volume.setInstallPath(makeTemporaryVolumeInstallUrl(volume, msg.getOriginVolumeUuid()));
+        createEmptyVolume(msg, completion);
+    }
+
+    private void createEmptyVolume(InstantiateVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
+        createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), new ReturnValueCompletion<String>(completion) {
+            @Override
+            public void success(String returnValue) {
+                InstantiateVolumeOnPrimaryStorageReply r = new InstantiateVolumeOnPrimaryStorageReply();
+                VolumeInventory vol = msg.getVolume();
+                vol.setInstallPath(returnValue);
+                vol.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
+                r.setVolume(vol);
+                completion.success(r);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     private void createEmptyVolume(final VolumeInventory volume, final String hostUuid, final ReturnValueCompletion<String> completion) {
@@ -1156,6 +1174,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
+    private void createTemporaryRootVolume(InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg msg, final ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
+        final VolumeInventory volume = msg.getVolume();
+        volume.setInstallPath(makeTemporaryVolumeInstallUrl(volume, msg.getOriginVolumeUuid()));
+        createRootVolume(msg, completion);
+    }
+
     private void createRootVolume(final InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg, final ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
         final ImageSpec ispec = msg.getTemplateSpec();
         final ImageInventory image = ispec.getInventory();
@@ -1193,7 +1217,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         chain.setName(String.format("kvm-localstorage-create-root-volume-from-image-%s", image.getUuid()));
         chain.then(new ShareFlow() {
             String pathInCache = makeCachedImageInstallUrl(image);
-            String installPath;
+            String installPath = StringUtils.isNotEmpty(volume.getInstallPath()) ? volume.getInstallPath() :
+                    makeRootVolumeInstallUrl(volume) ;
 
             @Override
             public void setup() {
@@ -1228,8 +1253,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        installPath = makeRootVolumeInstallUrl(volume);
-
                         CreateVolumeFromCacheCmd cmd = new CreateVolumeFromCacheCmd();
                         cmd.setInstallUrl(installPath);
                         cmd.setTemplatePathInCache(pathInCache);
@@ -2575,7 +2598,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             completion.success();
             return;
         }
-        
+
         List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids,
                 new Function<KVMHostAsyncHttpCallMsg, String>() {
                     @Override

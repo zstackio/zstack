@@ -656,7 +656,14 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
-    private void handle(final InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg) throws PrimaryStorageException {
+    private void handle(final InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
+        final VolumeInventory volume = msg.getVolume();
+        volume.setInstallPath(NfsPrimaryStorageKvmHelper.makeTemporaryVolumeInstallUrl(
+                getSelfInventory(), volume, msg.getOriginVolumeUuid()));
+        handle((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
+    }
+
+    private void handle(final InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
         final ImageSpec ispec = msg.getTemplateSpec();
 
@@ -664,10 +671,9 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         q.select(BackupStorageVO_.type);
         q.add(BackupStorageVO_.uuid, Op.EQ, ispec.getSelectedBackupStorage().getBackupStorageUuid());
         final String bsType = q.findValue();
-
         final VolumeInventory volume = msg.getVolume();
-
         final ImageInventory image = ispec.getInventory();
+
         if (ImageMediaType.RootVolumeTemplate.toString().equals(image.getMediaType())) {
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
             chain.setName(String.format("create-root-volume-from-image-%s", image.getUuid()));
@@ -749,6 +755,13 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
+    private void createTemporaryEmptyVolume(final InstantiateTemporaryVolumeOnPrimaryStorageMsg msg) {
+        VolumeInventory volume = msg.getVolume();
+        volume.setInstallPath(NfsPrimaryStorageKvmHelper.makeTemporaryVolumeInstallUrl(
+                getSelfInventory(), msg.getVolume(), msg.getOriginVolumeUuid()));
+        createEmptyVolume(msg);
+    }
+
     private void createEmptyVolume(final InstantiateVolumeOnPrimaryStorageMsg msg) {
         NfsPrimaryStorageBackend backend;
         if (msg.getDestHost() != null) {
@@ -757,8 +770,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             backend = getUsableBackend();
             if (backend == null) {
                 throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find any usable host to" +
-                                        " create the data volume[uuid:%s, name:%s]", self.getUuid(), self.getName(),
-                                msg.getVolume().getUuid(), msg.getVolume().getName()));
+                                " create the data volume[uuid:%s, name:%s]", self.getUuid(), self.getName(),
+                        msg.getVolume().getUuid(), msg.getVolume().getName()));
             }
         }
 
@@ -808,17 +821,14 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(InstantiateVolumeOnPrimaryStorageMsg msg) {
-        try {
-            if (msg.getClass() == InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg.class) {
-                handle((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
-            } else {
-                createEmptyVolume(msg);
-            }
-        } catch (PrimaryStorageException e) {
-            logger.warn(e.getMessage(), e);
-            InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
-            reply.setError(operr(e.getMessage()));
-            bus.reply(msg, reply);
+        if (msg instanceof InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            handle((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            handle((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof InstantiateTemporaryVolumeOnPrimaryStorageMsg) {
+            createTemporaryEmptyVolume((InstantiateTemporaryVolumeOnPrimaryStorageMsg) msg);
+        } else {
+            createEmptyVolume(msg);
         }
     }
 

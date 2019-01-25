@@ -98,8 +98,8 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec espec ->
             KVMAgentCommands.TakeSnapshotCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.TakeSnapshotCmd.class)
             def rsp = new KVMAgentCommands.TakeSnapshotResponse()
-            rsp.newVolumeInstallPath = Paths.get(cmd.installPath).getParent().resolve("snapshots").resolve(Platform.uuid).toString()
-            rsp.snapshotInstallPath = cmd.installPath
+            rsp.newVolumeInstallPath = cmd.installPath
+            rsp.snapshotInstallPath = cmd.volumeInstallPath
             rsp.size = 1
             return rsp
         }

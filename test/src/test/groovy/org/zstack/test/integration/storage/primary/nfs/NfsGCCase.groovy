@@ -8,6 +8,7 @@ import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VolumeInventory
 import org.zstack.sdk.VolumeSnapshotInventory
 import org.zstack.storage.primary.nfs.NfsDeleteVolumeGC
+import org.zstack.storage.primary.nfs.NfsDeleteVolumeSnapshotGC
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageGlobalConfig
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
 import org.zstack.storage.volume.VolumeGlobalConfig
@@ -169,7 +170,7 @@ class NfsGCCase extends SubCase {
         GarbageCollectorInventory volumeGC = null
         retryInSecs {
             spGC = queryGCJob {
-                conditions = ["context~=%${sp.getUuid()}%".toString()]
+                conditions = ["context~=%${sp.getUuid()}%".toString(), "runnerClass=${NfsDeleteVolumeSnapshotGC.class.name}".toString()]
             }[0]
 
             volumeGC = queryGCJob {
@@ -196,7 +197,7 @@ class NfsGCCase extends SubCase {
         retryInSecs {
             // trigger GC cause it's cancelled
             spGC = queryGCJob {
-                conditions = ["context~=%${sp.getUuid()}%".toString()]
+                conditions = ["context~=%${sp.getUuid()}%".toString(), "runnerClass=${NfsDeleteVolumeSnapshotGC.class.name}".toString()]
             }[0]
 
             assert spGC.status == GCStatus.Done.toString()

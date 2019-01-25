@@ -819,7 +819,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.setName(volume.getName());
         cmd.setSize(volume.getSize());
         cmd.setVolumeUuid(volume.getUuid());
-        if (volume.getRootImageUuid() != null) {
+        if (StringUtils.isNotEmpty(volume.getInstallPath())) {
+            cmd.setInstallUrl(volume.getInstallPath());
+        } else if (volume.getRootImageUuid() != null) {
             cmd.setInstallUrl(NfsPrimaryStorageKvmHelper.makeRootVolumeInstallUrl(pinv, volume));
         } else {
             cmd.setInstallUrl(NfsPrimaryStorageKvmHelper.makeDataVolumeInstallUrl(pinv, volume.getUuid()));

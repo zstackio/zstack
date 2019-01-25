@@ -21,6 +21,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
@@ -978,7 +979,17 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         }
 
         InstantiateVolumeOnPrimaryStorageMsg imsg;
-        if (msg instanceof InstantiateRootVolumeMsg) {
+        if (msg instanceof InstantiateTemporaryRootVolumeMsg) {
+            InstantiateTemporaryRootVolumeMsg tmsg = (InstantiateTemporaryRootVolumeMsg) msg;
+            if (ImageConstant.ImageMediaType.RootVolumeTemplate.toString().equals(tmsg.getTemplateSpec().getInventory().getMediaType())) {
+                imsg = new InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg();
+                ((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg)imsg).setOriginVolumeUuid(tmsg.getOriginVolumeUuid());
+                ((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg)imsg).setTemplateSpec(tmsg.getTemplateSpec());
+            } else {
+                imsg = new InstantiateTemporaryVolumeOnPrimaryStorageMsg();
+                ((InstantiateTemporaryVolumeOnPrimaryStorageMsg)imsg).setOriginVolumeUuid(tmsg.getOriginVolumeUuid());
+            }
+        } else if (msg instanceof InstantiateRootVolumeMsg) {
             InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg irmsg = new InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg();
             irmsg.setTemplateSpec(((InstantiateRootVolumeMsg) msg).getTemplateSpec());
             imsg = irmsg;

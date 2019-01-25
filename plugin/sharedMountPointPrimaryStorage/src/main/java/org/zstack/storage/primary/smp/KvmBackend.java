@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.smp;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -328,11 +329,19 @@ public class KvmBackend extends HypervisorBackend {
 
     @Override
     void handle(InstantiateVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
-        if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
+        if (msg instanceof InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            createTemporaryRootVolume((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg) msg, completion);
+        } else if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
             createRootVolume((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg, completion);
+        } else if (msg instanceof InstantiateTemporaryVolumeOnPrimaryStorageMsg) {
+            createTemporaryEmptyVolume((InstantiateTemporaryVolumeOnPrimaryStorageMsg)msg, completion);
         } else {
             createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), completion);
         }
+    }
+
+    public String makeTemporaryVolumeInstallUrl(VolumeInventory vol, String originVolumeUuid) {
+        return PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeTemporaryRootVolumeInstallPath(vol, originVolumeUuid));
     }
 
     public String makeRootVolumeInstallUrl(VolumeInventory vol) {
@@ -561,9 +570,22 @@ public class KvmBackend extends HypervisorBackend {
         }
     }
 
+    private void createTemporaryEmptyVolume(InstantiateTemporaryVolumeOnPrimaryStorageMsg msg, final ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
+        final VolumeInventory volume = msg.getVolume();
+        volume.setInstallPath(makeTemporaryVolumeInstallUrl(volume, msg.getOriginVolumeUuid()));
+        createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), completion);
+    }
+
     private void createEmptyVolume(final VolumeInventory volume, String hostUuid, final ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
-        cmd.installPath = VolumeType.Root.toString().equals(volume.getType()) ? makeRootVolumeInstallUrl(volume) : makeDataVolumeInstallUrl(volume.getUuid());
+
+        if (StringUtils.isNotEmpty(volume.getInstallPath())) {
+            cmd.installPath = volume.getInstallPath();
+        } else if (VolumeType.Root.toString().equals(volume.getType())) {
+            cmd.installPath = makeRootVolumeInstallUrl(volume);
+        } else {
+            cmd.installPath = makeDataVolumeInstallUrl(volume.getUuid());
+        }
         cmd.name = volume.getName();
         cmd.size = volume.getSize();
         cmd.volumeUuid = volume.getUuid();
@@ -585,6 +607,12 @@ public class KvmBackend extends HypervisorBackend {
         });
     }
 
+    private void createTemporaryRootVolume(InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg msg, final ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
+        final VolumeInventory volume = msg.getVolume();
+        volume.setInstallPath(makeTemporaryVolumeInstallUrl(volume, msg.getOriginVolumeUuid()));
+        createRootVolume(msg, completion);
+    }
+
     private void createRootVolume(InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg, final ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
         final ImageSpec ispec = msg.getTemplateSpec();
         final ImageInventory image = ispec.getInventory();
@@ -601,7 +629,8 @@ public class KvmBackend extends HypervisorBackend {
         chain.setName(String.format("kvm-smp-storage-create-root-volume-from-image-%s", image.getUuid()));
         chain.then(new ShareFlow() {
             String pathInCache = makeCachedImageInstallUrl(image);
-            String installPath;
+            String installPath = StringUtils.isNotEmpty(volume.getInstallPath()) ? volume.getInstallPath() :
+                    makeRootVolumeInstallUrl(volume) ;
 
             @Override
             public void setup() {
@@ -635,8 +664,6 @@ public class KvmBackend extends HypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        installPath = makeRootVolumeInstallUrl(volume);
-
                         CreateVolumeFromCacheCmd cmd = new CreateVolumeFromCacheCmd();
                         cmd.installPath = installPath;
                         cmd.templatePathInCache = pathInCache;

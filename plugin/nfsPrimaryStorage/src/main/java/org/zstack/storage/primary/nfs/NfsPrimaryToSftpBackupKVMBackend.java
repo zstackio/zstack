@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.nfs;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -76,7 +77,8 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
                                            final VolumeInventory volume, final ReturnValueCompletion<String> completion) {
         HostInventory host = primaryStorageFactory.getConnectedHostForOperation(primaryStorage).get(0);
 
-        final String installPath = NfsPrimaryStorageKvmHelper.makeRootVolumeInstallUrl(primaryStorage, volume);
+        final String installPath = StringUtils.isNotEmpty(volume.getInstallPath()) ? volume.getInstallPath() :
+                NfsPrimaryStorageKvmHelper.makeRootVolumeInstallUrl(primaryStorage, volume);
         final String accountUuid = acntMgr.getOwnerAccountUuidOfResource(volume.getUuid());
         final CreateRootVolumeFromTemplateCmd cmd = new CreateRootVolumeFromTemplateCmd();
         cmd.setTemplatePathInCache(image.getInstallUrl());

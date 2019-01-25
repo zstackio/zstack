@@ -34,6 +34,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
@@ -306,44 +307,45 @@ public class VolumeBase implements Volume {
                                 }
                             });
                         } else {
-                            if (msg instanceof InstantiateRootVolumeMsg) {
+                            if (msg instanceof InstantiateTemporaryRootVolumeMsg) {
+                                instantiateTemporaryRootVolume((InstantiateTemporaryRootVolumeMsg) msg , trigger);
+                            } else if (msg instanceof InstantiateRootVolumeMsg) {
                                 instantiateRootVolume((InstantiateRootVolumeMsg) msg, trigger);
                             } else {
                                 instantiateDataVolume(msg, trigger);
                             }
-
                         }
+                    }
+
+                    private void instantiateTemporaryRootVolume(InstantiateTemporaryRootVolumeMsg msg , FlowTrigger trigger) {
+                        InstantiateVolumeOnPrimaryStorageMsg imsg;
+                        if (ImageConstant.ImageMediaType.RootVolumeTemplate.toString().equals(msg.getTemplateSpec().getInventory().getMediaType())) {
+                            imsg = new InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg();
+                            ((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg)imsg).setOriginVolumeUuid(msg.getOriginVolumeUuid());
+                            ((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg)imsg).setTemplateSpec(msg.getTemplateSpec());
+                        } else {
+                            imsg = new InstantiateTemporaryVolumeOnPrimaryStorageMsg();
+                            ((InstantiateTemporaryVolumeOnPrimaryStorageMsg)imsg).setOriginVolumeUuid(msg.getOriginVolumeUuid());
+                        }
+
+                        prepareMsg(msg, imsg);
+                        doInstantiateVolume(imsg, trigger);
                     }
 
                     private void instantiateRootVolume(InstantiateRootVolumeMsg msg, FlowTrigger trigger) {
                         InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg imsg = new InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg();
-                        imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-                        imsg.setVolume(getSelfInventory());
-                        if (msg.getHostUuid() != null) {
-                            imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
-                        }
-                        imsg.setSystemTags(msg.getSystemTags());
+                        prepareMsg(msg, imsg);
                         imsg.setTemplateSpec(msg.getTemplateSpec());
-                        bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
-                        bus.send(imsg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
-                                    return;
-                                }
-
-                                success = true;
-                                InstantiateVolumeOnPrimaryStorageReply ir = reply.castReply();
-                                installPath = ir.getVolume().getInstallPath();
-                                format = ir.getVolume().getFormat();
-                                trigger.next();
-                            }
-                        });
+                        doInstantiateVolume(imsg, trigger);
                     }
 
                     private void instantiateDataVolume(InstantiateVolumeMsg msg, FlowTrigger trigger) {
                         InstantiateVolumeOnPrimaryStorageMsg imsg = new InstantiateVolumeOnPrimaryStorageMsg();
+                        prepareMsg(msg, imsg);
+                        doInstantiateVolume(imsg, trigger);
+                    }
+
+                    private void prepareMsg(InstantiateVolumeMsg msg, InstantiateVolumeOnPrimaryStorageMsg imsg) {
                         imsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                         imsg.setVolume(getSelfInventory());
                         imsg.setSystemTags(msg.getSystemTags());
@@ -352,6 +354,9 @@ public class VolumeBase implements Volume {
                             imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
                         }
                         bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+                    }
+
+                    private void doInstantiateVolume(InstantiateVolumeOnPrimaryStorageMsg imsg, FlowTrigger trigger) {
                         bus.send(imsg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
