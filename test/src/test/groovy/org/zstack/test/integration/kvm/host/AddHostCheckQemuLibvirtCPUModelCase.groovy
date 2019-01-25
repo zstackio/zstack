@@ -10,6 +10,7 @@ import org.zstack.sdk.AddKVMHostAction
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.CreateSystemTagAction
 import org.zstack.sdk.KVMHostInventory
+import org.zstack.sdk.ZoneInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -76,6 +77,25 @@ class AddHostCheckQemuLibvirtCPUModelCase extends SubCase {
             testAddHostWithDifferentQemuVerion()
             testAddHostWithSameQemuVerion()
             testAddHostCpuModelName()
+            createClusterWithoutHost()
+        }
+    }
+
+    void createClusterWithoutHost() {
+        def zone = env.inventoryByName("zone") as ZoneInventory
+
+        createCluster {
+            name = "cluster"
+            hypervisorType = "KVM"
+            zoneUuid = zone.uuid
+            systemTags = ["check::cluster::cpu::model::false"]
+        }
+
+        createCluster {
+            name = "cluster"
+            hypervisorType = "KVM"
+            zoneUuid = zone.uuid
+            systemTags = ["check::cluster::cpu::model::true"]
         }
     }
 
