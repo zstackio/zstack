@@ -4,15 +4,14 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.vm.IsoOperator;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.notification.N;
@@ -35,8 +34,17 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.message.*;
 import org.zstack.header.storage.backup.*;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
+import org.zstack.header.tag.TagInventory;
 import org.zstack.header.vm.DetachIsoFromVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
+import org.zstack.tag.SystemTag;
+import org.zstack.tag.SystemTagCreator;
+import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
@@ -46,6 +54,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
@@ -76,6 +85,8 @@ public class ImageBase implements Image {
     private ImageDeletionPolicyManager deletionPolicyMgr;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private TagManager tagMgr;
 
     protected ImageVO self;
 
@@ -115,6 +126,10 @@ public class ImageBase implements Image {
             handle((SyncImageSizeMsg) msg);
         } else if (msg instanceof OverlayMessage) {
             handle((OverlayMessage) msg);
+        } else if (msg instanceof SyncSystemTagFromVolumeMsg) {
+            handle((SyncSystemTagFromVolumeMsg) msg);
+        } else if (msg instanceof SyncSystemTagFromTagMsg) {
+            handle((SyncSystemTagFromTagMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -489,6 +504,49 @@ public class ImageBase implements Image {
                 noErrorCompletion.done();
             }
         });
+    }
+
+    private void handle(SyncSystemTagFromVolumeMsg msg) {
+        SyncSystemTagFromVolumeReply reply = new SyncSystemTagFromVolumeReply();
+
+        // only sync root volume
+        List<String> vmSystemTags = SQL.New("select s.tag from SystemTagVO s, VolumeVO vol" +
+                " where vol.uuid = :volUuid" +
+                " and vol.type = :type" +
+                " and vol.vmInstanceUuid = s.resourceUuid", String.class)
+                .param("volUuid", msg.getVolumeUuid())
+                .param("type", VolumeType.Root)
+                .list();
+
+        syncVmSystemTags(vmSystemTags);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(SyncSystemTagFromTagMsg msg) {
+        SyncSystemTagFromTagReply reply = new SyncSystemTagFromTagReply();
+        syncVmSystemTags(msg.getVmSystemTags());
+        bus.reply(msg, reply);
+    }
+
+    private void syncVmSystemTags(List<String> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return;
+        }
+
+        for (String tag : tags) {
+            if (VmSystemTags.VM_INJECT_QEMUGA.getTagFormat().equals(tag)) {
+                tagMgr.createNonInherentSystemTag(self.getUuid(),
+                        ImageSystemTags.IMAGE_INJECT_QEMUGA.getTagFormat(),
+                        ImageVO.class.getSimpleName());
+            } else if (VmSystemTags.BOOT_MODE.isMatch(tag)) {
+                String bootMode = VmSystemTags.BOOT_MODE.getTokenByTag(tag, VmSystemTags.BOOT_MODE_TOKEN);
+                SystemTagCreator creator = ImageSystemTags.BOOT_MODE.newSystemTagCreator(self.getUuid());
+                creator.setTagByTokens(Collections.singletonMap(VmSystemTags.BOOT_MODE_TOKEN, bootMode));
+                creator.inherent = false;
+                creator.recreate = true;
+                creator.create();
+            }
+        }
     }
 
     private void handleApiMessage(APIMessage msg) {
