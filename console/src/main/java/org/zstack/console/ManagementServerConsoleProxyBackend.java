@@ -95,11 +95,13 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         return new ConsoleProxyBase(inv, getAgentPort());
     }
 
-    private void setupPublicKey() throws IOException {
+    private void setupPublicKey() {
         File pubKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PUBLIC_KEY);
         String script = PathUtil.findFileOnClassPath(AnsibleConstant.IMPORT_PUBLIC_KEY_SCRIPT_PATH, true).getAbsolutePath();
 
-        ShellUtils.run(String.format("sh %s '%s'", script, pubKeyFile.getAbsolutePath()));
+        if (pubKeyFile != null) {
+            ShellUtils.run(String.format("sh %s '%s'", script, pubKeyFile.getAbsolutePath()));
+        }
     }
 
     protected void doConnectAgent(final Completion completion) {
@@ -139,6 +141,12 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
 
                     setupPublicKey();
                     File privKeyFile = PathUtil.findFileOnClassPath("ansible/rsaKeys/id_rsa");
+                    if (privKeyFile == null) {
+                        completion.fail(operr("Ansible private key not found."));
+                        chain.next();
+                        return;
+                    }
+
                     String privKey = FileUtils.readFileToString(privKeyFile);
 
                     String srcPath = PathUtil.findFileOnClassPath(String.format("ansible/consoleproxy/%s", agentPackageName), true).getAbsolutePath();
@@ -163,6 +171,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     if (CoreGlobalProperty.SYNC_NODE_TIME) {
                         if (CoreGlobalProperty.CHRONY_SERVERS == null || CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
                             completion.fail(operr("chrony server not configured!"));
+                            chain.next();
                             return;
                         }
                         runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
@@ -185,7 +194,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                             dbf.update(finalVo);
 
                             connected = false;
-                            logger.warn(String.format("failed to deploy console proxy agent by ansible, %s", errorCode));
+                            logger.warn(String.format("failed to deploy console proxy agent by ansible, %s", errorCode.getDetails()));
                             completion.fail(errorCode);
                             chain.next();
                         }
