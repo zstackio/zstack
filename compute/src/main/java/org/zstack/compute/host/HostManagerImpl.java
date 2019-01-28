@@ -540,7 +540,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     }
 
     private void setupGlobalConfig() {
-        HostGlobalConfig.HOST_CPU_OVER_PROVISIONING_RATIO.installLocalUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+        HostGlobalConfig.HOST_CPU_OVER_PROVISIONING_RATIO.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
                 cpuRatioMgr.setGlobalRatio(newConfig.value(Integer.class));
