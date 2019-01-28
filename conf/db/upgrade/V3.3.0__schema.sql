@@ -260,3 +260,5 @@ UPDATE `AlarmVO` SET `repeatCount` = -1;
 
 ALTER TABLE `V2VConversionCacheVO` ADD COLUMN `downloadTime` VARCHAR(32);
 ALTER TABLE `V2VConversionCacheVO` ADD COLUMN `uploadTime` VARCHAR(32);
+
+DELETE FROM `HostCapacityVO` WHERE uuid NOT IN (SELECT uuid FROM `HostVO`);
