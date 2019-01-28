@@ -302,24 +302,33 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
                         .select(PrimaryStorageHostRefVO_.status)
                         .findValue();
 
-                if(newStatus != oldStatus) {
+                if (oldStatus == newStatus) {
+                    return;
+                }
+
+                if (oldStatus == null) {
                     PrimaryStorageHostRefVO ref = new PrimaryStorageHostRefVO();
                     ref.setPrimaryStorageUuid(psUuid);
                     ref.setHostUuid(huuid);
                     ref.setStatus(newStatus);
-                    dbf.getEntityManager().merge(ref);
-
-                    N.New(HostVO.class, huuid).info_("change status between primary storage[uuid:%s] and host[uuid:%s]" +
-                                    " from %s to %s in db",
-                            psUuid, huuid, oldStatus == null ? "unknown" : oldStatus.toString(), newStatus.toString());
-
-
-                    data.setHostUuid(huuid);
-                    data.setPrimaryStorageUuid(psUuid);
-                    data.setNewStatus(newStatus);
-                    data.setOldStatus(oldStatus);
+                    persist(ref);
+                } else if(newStatus != oldStatus) {
+                    sql(PrimaryStorageHostRefVO.class)
+                            .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, psUuid)
+                            .eq(PrimaryStorageHostRefVO_.hostUuid, huuid)
+                            .set(PrimaryStorageHostRefVO_.status, newStatus)
+                            .update();
 
                 }
+
+                N.New(HostVO.class, huuid).info_("change status between primary storage[uuid:%s] and host[uuid:%s] from %s to %s in db",
+                        psUuid, huuid, oldStatus == null ? "unknown" : oldStatus.toString(), newStatus.toString());
+
+
+                data.setHostUuid(huuid);
+                data.setPrimaryStorageUuid(psUuid);
+                data.setNewStatus(newStatus);
+                data.setOldStatus(oldStatus);
             }
         }.execute();
         if (data.getHostUuid() != null){

@@ -385,26 +385,36 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                             .select(PrimaryStorageHostRefVO_.status)
                             .findValue();
 
-                    if(newStatus != oldStatus){
+                    if (oldStatus == newStatus) {
+                        return;
+                    }
+
+                    if (oldStatus == null) {
                         PrimaryStorageHostRefVO ref = new PrimaryStorageHostRefVO();
                         ref.setHostUuid(hostUuid);
                         ref.setPrimaryStorageUuid(psUuid);
                         ref.setStatus(newStatus);
-                        dbf.getEntityManager().merge(ref);
-
-                        logger.debug(String.format("change status between primary storage[uuid:%s]" +
-                                        " and host[uuid:%s] from %s to %s in db",
-                                psUuid, hostUuid, oldStatus == null ? "unknown" : oldStatus.toString(), newStatus));
-
-                        PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData data =
-                                new PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData();
-                        data.setHostUuid(hostUuid);
-                        data.setPrimaryStorageUuid(psUuid);
-                        data.setNewStatus(newStatus);
-                        data.setOldStatus(oldStatus);
-                        data.setReason(reason);
-                        datas.add(data);
+                        persist(ref);
+                    } else {
+                        sql(PrimaryStorageHostRefVO.class)
+                           .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, psUuid)
+                           .eq(PrimaryStorageHostRefVO_.hostUuid, hostUuid)
+                           .set(PrimaryStorageHostRefVO_.status, newStatus)
+                           .update();
                     }
+
+                    logger.debug(String.format("change status between primary storage[uuid:%s]" +
+                                    " and host[uuid:%s] from %s to %s in db",
+                            psUuid, hostUuid, oldStatus == null ? "unknown" : oldStatus.toString(), newStatus));
+
+                    PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData data =
+                            new PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData();
+                    data.setHostUuid(hostUuid);
+                    data.setPrimaryStorageUuid(psUuid);
+                    data.setNewStatus(newStatus);
+                    data.setOldStatus(oldStatus);
+                    data.setReason(reason);
+                    datas.add(data);
                 }
             }
         }.execute();
