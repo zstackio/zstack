@@ -45,7 +45,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -70,6 +73,20 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     private static int NODE_STARTING = 0;
     private static int NODE_RUNNING = 1;
     private static int NODE_FAILED = -1;
+
+    public static class ManagementNodeTimeRegressionCanonicalEvent extends CanonicalEventEmitter {
+        ManagementNodeCanonicalEvent.ManagementNodeTemporalRegressionData data;
+
+        public ManagementNodeTimeRegressionCanonicalEvent(String nodeUuid, String hostname) {
+            data = new ManagementNodeCanonicalEvent.ManagementNodeTemporalRegressionData();
+            data.setNodeUuid(nodeUuid);
+            data.setHostname(hostname);
+        }
+
+        public void fire() {
+            fire(ManagementNodeCanonicalEvent.NODE_TEMPORAL_REGRESSION_PATH, data);
+        }
+    }
 
     @Autowired
     private DatabaseFacade dbf;
@@ -617,6 +634,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             // you MUST USE heartBeatDBSource for any database operation
 
             private List<ManagementNodeVO> suspects = new ArrayList<>();
+            private Timestamp lastHearbeatTime = null;
 
             @Override
             public String getName() {
@@ -675,6 +693,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             }
 
             private void updateHeartbeat() {
+                lastHearbeatTime = getNodeHeartbeatTime(node().getUuid());
                 String sql = "update ManagementNodeVO set heartBeat = NULL where uuid = ?";
                 if (heartBeatDBSource.jdbc.update(sql, node().getUuid()) > 0) {
                     ManagementNodeVO n = getNode(node().getUuid());
@@ -683,6 +702,15 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     } else {
                         logger.warn(String.format("updateHeartbeat cannot find our record[uuid:%s] in database, we are deleted by other nodes", node().getUuid()));
                     }
+                }
+            }
+
+            private Timestamp getNodeHeartbeatTime(String uuid) {
+                try {
+                    String sql = "select heartBeat from ManagementNodeVO where uuid = ?";
+                    return heartBeatDBSource.jdbc.queryForObject(sql, new Object[]{uuid}, Timestamp.class);
+                } catch (IncorrectResultSizeDataAccessException e) {
+                    return null;
                 }
             }
 
@@ -706,19 +734,21 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                     nodesInDb.add(vo);
 
+                    Timestamp curr = getCurrentSqlTime();
+
                     if (vo.getUuid().equals(node().getUuid())) {
+                        if (lastHearbeatTime != null && lastHearbeatTime.getTime() > curr.getTime()) {
+                            new ManagementNodeTimeRegressionCanonicalEvent(vo.getUuid(), vo.getHostName()).fire();
+                        }
+                        
                         continue;
                     }
 
-                    Timestamp curr = getCurrentSqlTime();
                     Timestamp lastHeartbeat = vo.getHeartBeat();
                     final long delta = TimeUnit.SECONDS.toMillis(PortalGlobalProperty.MAX_HEARTBEAT_FAILURE * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class));
 
                     if (lastHeartbeat.getTime() > curr.getTime()) {
-                        ManagementNodeCanonicalEvent.ManagementNodeTemporalRegressionData d = new ManagementNodeCanonicalEvent.ManagementNodeTemporalRegressionData();
-                        d.setNodeUuid(vo.getUuid());
-                        d.setHostname(vo.getHostName());
-                        evtf.fire(ManagementNodeCanonicalEvent.NODE_TEMPORAL_REGRESSION_PATH, d);
+                        new ManagementNodeTimeRegressionCanonicalEvent(vo.getUuid(), vo.getHostName()).fire();
                     }
 
                     if (Math.abs(lastHeartbeat.getTime() - curr.getTime()) > delta) {
