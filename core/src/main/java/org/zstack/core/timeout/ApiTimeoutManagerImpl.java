@@ -118,7 +118,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
     public void beforeDeliveryMessage(Message msg) {
         if (msg instanceof ConfigurableTimeoutMessage && !TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_TIMEOUT)) {
             TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_TIMEOUT, getMessageTimeout((ConfigurableTimeoutMessage) msg));
-            TaskContext.putTaskContextItem(TASK_CONTEXT_INIT_TIME, String.valueOf(System.nanoTime()));
+            TaskContext.putTaskContextItem(TASK_CONTEXT_INIT_TIME, System.nanoTime());
         }
     }
 
@@ -263,7 +263,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
             return timeout;
         }
 
-        timeout -= TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - Long.valueOf((String) TaskContext.getTaskContext().get(TASK_CONTEXT_INIT_TIME)));
+        timeout -= TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - (long) TaskContext.getTaskContext().get(TASK_CONTEXT_INIT_TIME));
         return timeout < 0 ? 1 : timeout;
     }
 
