@@ -11,6 +11,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
@@ -19,6 +20,7 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
 import org.zstack.tag.PatternedSystemTag;
+import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.VipUseForList;
 import org.zstack.utils.logging.CLogger;
@@ -45,6 +47,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private TagManager tagMgr;
 
     private static final CLogger logger = CLoggerImpl.getLogger(LoadBalancerApiInterceptor.class);
 
@@ -240,6 +244,27 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
                         map(e(LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN, LoadBalancerGlobalConfig.BALANCER_ALGORITHM.value()))
                 )
         );
+
+        /*check the validation of systemtags*/
+        for (String tag : msg.getSystemTags()) {
+            try {
+                tagMgr.validateSystemTag(msg.getResourceUuid(), LoadBalancerListenerVO.class.getSimpleName(), tag);
+                /*it'd better add this section code into the validateSystemTag function of MAX_CONNECTION.
+                * keep the previous version to work and just add it in API intercepter only
+                * */
+                if (LoadBalancerSystemTags.MAX_CONNECTION.isMatch(tag)) {
+                    String s = LoadBalancerSystemTags.MAX_CONNECTION.getTokenByTag(tag,
+                            LoadBalancerSystemTags.MAX_CONNECTION_TOKEN);
+                    if (Long.valueOf(s) > LoadBalancerConstants.MAX_CONNECTION_LIMIT) {
+                        throw new OperationFailureException(argerr("invalid max connection[%s], %s is larger than upper threshold %d", tag, s, LoadBalancerConstants.MAX_CONNECTION_LIMIT));
+                    }
+                }
+            } catch (OperationFailureException oe) {
+                ApiMessageInterceptionException ae = new ApiMessageInterceptionException(oe.getErrorCode());
+                ae.initCause(oe);
+                throw ae;
+            }
+        }
 
         SimpleQuery<LoadBalancerListenerVO> q = dbf.createQuery(LoadBalancerListenerVO.class);
         q.select(LoadBalancerListenerVO_.uuid);

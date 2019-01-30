@@ -12,14 +12,11 @@ import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
-import org.zstack.sdk.LoadBalancerInventory
-import org.zstack.sdk.UpdateLoadBalancerAction
-import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.*
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by heathhose on 17-5-5.
  */
@@ -167,6 +164,7 @@ class VirtualRouterLoadBalancerCase extends SubCase{
         env.create {
             virtualRouterDownReconnectVm()
             updateLoadBalancerCase()
+            updateLoadBalancerSystemtagCase()
         }
     }
 
@@ -191,6 +189,39 @@ class VirtualRouterLoadBalancerCase extends SubCase{
         List<VirtualRouterLoadBalancerRefVO> list = dbf.listAll(VirtualRouterLoadBalancerRefVO.class)
         assert list.size() == 1
         assert list.get(0).getLoadBalancerUuid() == load.getUuid()
+    }
+
+    void updateLoadBalancerSystemtagCase() {
+        LoadBalancerInventory load = env.inventoryByName("lb")
+        def _name = "test2"
+
+        CreateLoadBalancerListenerAction listenerAction = new CreateLoadBalancerListenerAction()
+        listenerAction.loadBalancerUuid = load.uuid
+        listenerAction.name = _name
+        listenerAction.loadBalancerPort = 44
+        listenerAction.instancePort = 44
+        listenerAction.protocol = "tcp"
+        listenerAction.systemTags = ["maxConnection::abc"]
+        listenerAction.sessionId = adminSession()
+
+        CreateLoadBalancerListenerAction.Result lblRes = listenerAction.call()
+        assert lblRes.error != null
+
+        listenerAction.systemTags = ["maxConnection::500000"]
+        lblRes = listenerAction.call()
+        assert lblRes.error != null
+
+        listenerAction.systemTags = ["maxConnection::"+LoadBalancerConstants.MAX_CONNECTION_LIMIT]
+        lblRes = listenerAction.call()
+        assert lblRes.error == null
+        assert _name == lblRes.value.inventory.name
+
+        UpdateLoadBalancerListenerAction updateListenerAction = new UpdateLoadBalancerListenerAction()
+        updateListenerAction.uuid  = load.uuid
+        updateListenerAction.systemTags = ["maxConnection::abc"]
+        updateListenerAction.sessionId = adminSession()
+        UpdateLoadBalancerListenerAction.Result res = updateListenerAction.call()
+        assert res.error != null
     }
 
     void updateLoadBalancerCase() {
