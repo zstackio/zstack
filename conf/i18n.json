@@ -605,6 +605,27 @@
     "fileName": "src/zstack/./compute/src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {
+    "raw": "unable to attach a L3 network. The L3 network[uuid:%s] are belonged to different l2 networks [uuids:%s]",
+    "en_US": "unable to attach a L3 network. The L3 network[uuid:{0}] are belonged to different l2 networks [uuids:{1}]",
+    "zh_CN": "不能挂载L3网络，L3网络[uuid:{0}]属于不同的L2网络",
+    "arguments": [
+      "newAddedL3Uuids",
+      "l2Uuids"
+    ],
+    "line": 439,
+    "fileName": "src/zstack/./compute/src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
+  },
+  {
+    "raw": "there are %d ipv6 stateful or stateless network on same nic",
+    "en_US": "there are {0} ipv6 stateful or stateless network on same nic",
+    "zh_CN": "不能挂载L3网络，有{0}个Stateful-DHCP类型或者Stateless-DHCP类型的网络属于同一个网卡",
+    "arguments": [
+      "statefulIpv6"
+    ],
+    "line": 479,
+    "fileName": "src/zstack/./compute/src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
+  },
+  {
     "raw": "unable to detach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
     "en_US": "unable to detach a L3 network. The vm[uuid: {0}] is not Running or Stopped; the current state is {1}",
     "zh_CN": "不能挂载L3网络，云主机[uuid: {0}]不是运行状态或者暂停状态，状态为{1}",
@@ -613,6 +634,17 @@
       "state"
     ],
     "line": 483,
+    "fileName": "src/zstack/./compute/src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
+  },
+  {
+    "raw": "static ip l3 uuid[%s] is not included in nic l3 [%s]",
+    "en_US": "static ip l3 uuid[{0}] is not included in nic l3 [{1}]",
+    "zh_CN": "静态IP的L3网络[uuid:{0}]不在网卡的L3列表[uuid:{1}]中",
+    "arguments": [
+      "e.getKey()",
+      "newAddedL3Uuids"
+    ],
+    "line": 511,
     "fileName": "src/zstack/./compute/src/main/java/org/zstack/compute/vm/VmInstanceApiInterceptor.java"
   },
   {

@@ -9,6 +9,8 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.*;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 import java.util.Map;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmSetDefaultL3NetworkOnAttachingFlow implements Flow {
+    private static final CLogger logger = Utils.getLogger(VmSetDefaultL3NetworkOnAttachingFlow.class);
     @Autowired
     private DatabaseFacade dbf;
 

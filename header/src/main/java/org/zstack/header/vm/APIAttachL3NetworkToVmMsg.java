@@ -7,7 +7,11 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.notification.ApiNotification;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @api attach a nic to vm. If vm is running, user is responsible for running DHCP client software inside
@@ -58,6 +62,12 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
 
     private String staticIp;
 
+    @APINoSee
+    private List<String> secondaryL3Uuids;
+
+    @APINoSee
+    private Map<String, String> staticIpMap;
+
     public String getStaticIp() {
         return staticIp;
     }
@@ -82,7 +92,23 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
     }
- 
+
+    public List<String> getSecondaryL3Uuids() {
+        return secondaryL3Uuids;
+    }
+
+    public void setSecondaryL3Uuids(List<String> secondaryL3Uuids) {
+        this.secondaryL3Uuids = secondaryL3Uuids;
+    }
+
+    public Map<String, String> getStaticIpMap() {
+        return staticIpMap;
+    }
+
+    public void setStaticIpMap(Map<String, String> staticIpMap) {
+        this.staticIpMap = staticIpMap;
+    }
+
     public static APIAttachL3NetworkToVmMsg __example__() {
         APIAttachL3NetworkToVmMsg msg = new APIAttachL3NetworkToVmMsg();
         msg.vmInstanceUuid = uuid();
