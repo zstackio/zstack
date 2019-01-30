@@ -37,6 +37,9 @@ public class LoadBalancerConstants {
     public static final int SSH_PORT = 22;
     public static final int ZVR_PORT = 7272;
 
+    /*max concurrent connect no more than MAX_CONNECTION_LIMIT per listener*/
+    public static final long MAX_CONNECTION_LIMIT = 100000;
+
     static {
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_ROUND_ROBIN);
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_LEAST_CONN);
