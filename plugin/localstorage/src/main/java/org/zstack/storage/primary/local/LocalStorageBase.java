@@ -4,7 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.VolumeMigrationTargetHostFilter;
 import org.zstack.compute.vm.VmInstanceBase;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -24,10 +26,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostStatus;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.*;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
@@ -45,6 +44,8 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
+import org.zstack.tag.SystemTagCreator;
+import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -62,7 +63,9 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created by frank on 6/30/2015.
@@ -78,6 +81,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
     protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
     @Autowired
     private LocalStorageImageCleaner imageCacheCleaner;
+    @Autowired
+    private EventFacade eventf;
 
     static class FactoryCluster {
         LocalStorageHypervisorFactory factory;
@@ -1580,59 +1585,94 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     protected void handle(final InitPrimaryStorageOnHostConnectedMsg msg) {
         final InitPrimaryStorageOnHostConnectedReply reply = new InitPrimaryStorageOnHostConnectedReply();
-        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid(), false);
-        final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-
-        bkd.handle(msg, new ReturnValueCompletion<PhysicalCapacityUsage>(msg) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName("init primarystorage on host connected");
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "initial db";
             @Override
-            public void success(PhysicalCapacityUsage c) {
-                List<LocalStorageHostRefVO> refs = Q.New(LocalStorageHostRefVO.class)
-                        .eq(LocalStorageHostRefVO_.hostUuid, msg.getHostUuid())
-                        .eq(LocalStorageHostRefVO_.primaryStorageUuid, self.getUuid())
-                        .list();
+            public void run(FlowTrigger trigger, Map data) {
+                LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid(), false);
+                final LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
 
-                LocalStorageHostRefVO ref;
-                if (refs == null || refs.isEmpty()) {
-                    ref = new LocalStorageHostRefVO();
-                    ref.setTotalCapacity(c.totalPhysicalSize);
-                    ref.setAvailableCapacity(c.availablePhysicalSize);
-                    ref.setTotalPhysicalCapacity(c.totalPhysicalSize);
-                    ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
-                    ref.setHostUuid(msg.getHostUuid());
-                    ref.setPrimaryStorageUuid(self.getUuid());
-                    ref.setSystemUsedCapacity(c.totalPhysicalSize - c.availablePhysicalSize);
-                    dbf.persist(ref);
+                bkd.handle(msg, new ReturnValueCompletion<PhysicalCapacityUsage>(msg) {
+                    @Override
+                    public void success(PhysicalCapacityUsage c) {
+                        List<LocalStorageHostRefVO> refs = Q.New(LocalStorageHostRefVO.class)
+                                .eq(LocalStorageHostRefVO_.hostUuid, msg.getHostUuid())
+                                .eq(LocalStorageHostRefVO_.primaryStorageUuid, self.getUuid())
+                                .list();
 
-                    increaseCapacity(
-                            c.totalPhysicalSize,
-                            c.availablePhysicalSize,
-                            c.totalPhysicalSize,
-                            c.availablePhysicalSize,
-                            ref.getSystemUsedCapacity());
-                } else {
-                    ref = refs.get(0);
-                    ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
-                    ref.setTotalPhysicalCapacity(c.totalPhysicalSize);
-                    ref.setTotalCapacity(c.totalPhysicalSize);
-                    dbf.update(ref);
+                        LocalStorageHostRefVO ref;
+                        if (refs == null || refs.isEmpty()) {
+                            ref = new LocalStorageHostRefVO();
+                            ref.setTotalCapacity(c.totalPhysicalSize);
+                            ref.setAvailableCapacity(c.availablePhysicalSize);
+                            ref.setTotalPhysicalCapacity(c.totalPhysicalSize);
+                            ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
+                            ref.setHostUuid(msg.getHostUuid());
+                            ref.setPrimaryStorageUuid(self.getUuid());
+                            ref.setSystemUsedCapacity(c.totalPhysicalSize - c.availablePhysicalSize);
+                            dbf.persist(ref);
 
-                    // the host's local storage capacity changed
-                    // need to recalculate the capacity in the database
-                    RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
-                    rmsg.setPrimaryStorageUuid(self.getUuid());
-                    bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
-                    bus.send(rmsg);
-                }
+                            increaseCapacity(
+                                    c.totalPhysicalSize,
+                                    c.availablePhysicalSize,
+                                    c.totalPhysicalSize,
+                                    c.availablePhysicalSize,
+                                    ref.getSystemUsedCapacity());
+                        } else {
+                            ref = refs.get(0);
+                            ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
+                            ref.setTotalPhysicalCapacity(c.totalPhysicalSize);
+                            ref.setTotalCapacity(c.totalPhysicalSize);
+                            dbf.update(ref);
 
+                            // the host's local storage capacity changed
+                            // need to recalculate the capacity in the database
+                            RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+                            rmsg.setPrimaryStorageUuid(self.getUuid());
+                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                            bus.send(rmsg);
+                        }
+
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "create initailized file";
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                HostInventory host = HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class));
+                checkLocalStoragePrimaryStorageInitilized(CollectionDSL.list(host), true, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
                 bus.reply(msg, reply);
             }
-
+        }).error(new FlowErrorHandler(msg) {
             @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
+            public void handle(ErrorCode errCode, Map data) {
+                reply.setError(errCode);
                 bus.reply(msg, reply);
             }
-        });
+        }).start();
     }
 
     @ExceptionSafe
@@ -2459,16 +2499,141 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void connectHook(final ConnectParam param, final Completion completion) {
-        RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
-        rmsg.setPrimaryStorageUuid(self.getUuid());
-        bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
-        bus.send(rmsg);
-        completion.success();
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName("connect localstorage host hook");
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "check localstorage initilized on host";
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                checkLocalStoragePrimaryStorageInitilized(true, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "recaculate primarystorage capacity";
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                RecalculatePrimaryStorageCapacityMsg rmsg = new RecalculatePrimaryStorageCapacityMsg();
+                rmsg.setPrimaryStorageUuid(self.getUuid());
+                bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
+                bus.send(rmsg);
+                trigger.next();
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
+
+    private List<HostInventory> getLocalStorageHosts() {
+        return new Callable<List<HostInventory>>() {
+            @Override
+            @Transactional(readOnly = true)
+            public List<HostInventory> call() {
+                String sql = "select host" +
+                        " from LocalStorageHostRefVO h, HostVO host" +
+                        " where h.primaryStorageUuid = :puuid" +
+                        " and h.hostUuid = host.uuid" +
+                        " and host.status = :hstatus";
+                TypedQuery<HostVO> q = dbf.getEntityManager().createQuery(sql, HostVO.class);
+                q.setParameter("puuid", self.getUuid());
+                q.setParameter("hstatus", HostStatus.Connected);
+                return HostInventory.valueOf(q.getResultList());
+            }
+        }.call();
+    }
+
+    private void sendWarnning(String hostUuid, String details, PrimaryStorageInventory ps) {
+        HostCanonicalEvents.HostMountData data = new HostCanonicalEvents.HostMountData();
+        data.hostUuid = hostUuid;
+        data.psUuid = ps.getUuid();
+        data.details = details;
+        eventf.fire(HostCanonicalEvents.HOST_CHECK_INITIALIZED_FAILED, data);
+    }
+
+    private boolean hostHasInitializedTag(String hostUuid) {
+        List<Map<String, String>> tags = LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED.getTokensOfTagsByResourceUuid(hostUuid);
+        for (Map<String, String> tag: tags) {
+            if (tag.get(LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED_TOKEN).equals(self.getUuid())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void checkLocalStoragePrimaryStorageInitilized(boolean initialized, Completion completion) {
+        List<HostInventory> hosts = getLocalStorageHosts();
+        checkLocalStoragePrimaryStorageInitilized(hosts, initialized, completion);
+    }
+
+    private void checkLocalStoragePrimaryStorageInitilized(List<HostInventory> hosts, boolean initialized, Completion completion) {
+        new While<>(hosts).all((host, com) -> {
+            if (hostHasInitializedTag(host.getUuid())) {
+                LocalStorageHypervisorFactory f = getHypervisorBackendFactory(host.getHypervisorType());
+                LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+                bkd.checkHostAttachedPSMountPath(host.getUuid(), new Completion(com) {
+                    @Override
+                    public void success() {
+                        com.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        sendWarnning(host.getUuid(), errorCode.getDetails(), getSelfInventory());
+                        com.done();
+                    }
+                });
+            } else {
+                if (initialized) {
+                    LocalStorageHypervisorFactory f = getHypervisorBackendFactory(host.getHypervisorType());
+                    LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+                    bkd.initializeHostAttachedPSMountPath(host.getUuid(), new Completion(com) {
+                        @Override
+                        public void success() {
+                            SystemTagCreator creator = LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED.newSystemTagCreator(host.getUuid());
+                            creator.inherent = true;
+                            creator.unique = false;
+                            creator.setTagByTokens(map(e(LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED_TOKEN, self.getUuid())));
+                            creator.create();
+                            com.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            sendWarnning(host.getUuid(), errorCode.getDetails(), getSelfInventory());
+                            com.done();
+                        }
+                    });
+                } else {
+                    com.done();
+                }
+            }
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                completion.success();
+            }
+        });
     }
 
     @Override
     protected void pingHook(Completion completion) {
-        completion.success();
+        checkLocalStoragePrimaryStorageInitilized(false, completion);
     }
 
     @Override

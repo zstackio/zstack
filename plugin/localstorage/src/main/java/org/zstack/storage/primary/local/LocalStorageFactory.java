@@ -50,7 +50,9 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created by frank on 6/30/2015.
@@ -61,7 +63,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
         RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint,
         InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint, PostMarkRootVolumeAsSnapshotExtension,
-        AfterTakeLiveSnapshotsOnVolumes, VmCapabilitiesExtensionPoint {
+        AfterTakeLiveSnapshotsOnVolumes, VmCapabilitiesExtensionPoint, PrimaryStorageDetachExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
         @Override
@@ -1152,6 +1154,35 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             if (IsoOperator.isIsoAttachedToVm(inv.getUuid())) {
                 capabilities.setSupportVolumeMigration(false);
             }
+        }
+    }
+
+    @Override
+    public void preDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+
+    }
+
+    @Override
+    public void beforeDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+
+    }
+
+    @Override
+    public void failToDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+
+    }
+
+    @Override
+    public void afterDetachPrimaryStorage(PrimaryStorageInventory inventory, String clusterUuid) {
+        if (!inventory.getType().equals(LocalStorageConstants.LOCAL_STORAGE_TYPE)) {
+            return;
+        }
+        List<String> hostUuids = Q.New(LocalStorageHostRefVO.class).select(LocalStorageHostRefVO_.hostUuid).listValues();
+
+        for (String hostUuid: hostUuids) {
+            LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED.deleteInherentTag(hostUuid,
+                    LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED.instantiateTag(map(
+                    e(LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED_TOKEN, inventory.getUuid()))));
         }
     }
 }

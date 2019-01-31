@@ -508,6 +508,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     ChangeHostConnectionStateMsg msg = new ChangeHostConnectionStateMsg();
                     msg.setHostUuid(d.getHostUuid());
                     msg.setConnectionStateEvent(HostStatusEvent.disconnected.toString());
+                    msg.setCause("base cause: host disconnected from other status and has no connected primary storage attached");
                     bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, d.getHostUuid());
                     bus.send(msg);
 

@@ -253,8 +253,28 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         return backend;
     }
 
-    @Transactional
-    public List<HostInventory> getConnectedHostForOperation(PrimaryStorageInventory pri, int startPage, int pageLimit) {
+    public List<HostInventory> getConnectedHostForPing(PrimaryStorageInventory pri) {
+        if (pri.getAttachedClusterUuids().isEmpty()) {
+            throw new OperationFailureException(operr("cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid()));
+        }
+
+        String sql = "select h from HostVO h " +
+                "where h.status = :connectionState and h.clusterUuid in (:clusterUuids)";
+        TypedQuery<HostVO> q = dbf.getEntityManager().createQuery(sql, HostVO.class);
+        q.setParameter("connectionState", HostStatus.Connected);
+        q.setParameter("clusterUuids", pri.getAttachedClusterUuids());
+
+        List<HostVO> ret = q.getResultList();
+        if (ret.isEmpty()) {
+            throw new OperationFailureException(
+                    operr("cannot find a connected host in cluster which ps [uuid: %s] attached", pri.getUuid()));
+        } else {
+            Collections.shuffle(ret);
+            return HostInventory.valueOf(ret);
+        }
+    }
+
+    public List<HostInventory> getConnectedHostForOperation(PrimaryStorageInventory pri) {
         if (pri.getAttachedClusterUuids().isEmpty()) {
             throw new OperationFailureException(operr("cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid()));
         }
@@ -269,13 +289,8 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         q.setParameter("psUuid", pri.getUuid());
         q.setParameter("status", PrimaryStorageHostStatus.Disconnected);
 
-        q.setFirstResult(startPage * pageLimit);
-        if (pageLimit > 0){
-            q.setMaxResults(pageLimit);
-        }
-
         List<HostVO> ret = q.getResultList();
-        if (ret.isEmpty() && startPage == 0) { //check is first page
+        if (ret.isEmpty()) {
             throw new OperationFailureException(
                     operr("cannot find a host which has Connected host-NFS connection to execute command " +
                             "for nfs primary storage[uuid:%s]", pri.getUuid()));
@@ -283,10 +298,6 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
             Collections.shuffle(ret);
             return HostInventory.valueOf(ret);
         }
-    }
-
-    public List<HostInventory> getConnectedHostForOperation(PrimaryStorageInventory pri) {
-        return getConnectedHostForOperation(pri, 0, 0);
     }
 
     public final void updateNfsHostStatus(String psUuid, String huuid, PrimaryStorageHostStatus newStatus){
