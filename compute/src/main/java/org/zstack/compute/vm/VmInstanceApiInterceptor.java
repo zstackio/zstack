@@ -32,7 +32,6 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -625,19 +624,37 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private void validateInstanceSettings(APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {
+        final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
+
+        if (instanceOfferingUuid == null) {
+            if (msg.getCpuNum() == null || msg.getMemorySize() == null) {
+                throw new ApiMessageInterceptionException(operr("Missing CPU/memory settings"));
+            }
+
+            if (msg.getCpuNum() < 0 || msg.getMemorySize() < 0) {
+                throw new ApiMessageInterceptionException(operr("Unexpected CPU/memory settings"));
+            }
+
+            return;
+        }
+
+        // InstanceOffering takes precedence over CPU/memory settings.
+        InstanceOfferingVO ivo = dbf.findByUuid(instanceOfferingUuid, InstanceOfferingVO.class);
+        if (ivo.getState() == InstanceOfferingState.Disabled) {
+            throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s] is Disabled, can't create vm from it", instanceOfferingUuid));
+        }
+
+        if (!ivo.getType().equals(VmInstanceConstant.USER_VM_TYPE)){
+            throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s, type:%s] is not UserVm type, can't create vm from it", instanceOfferingUuid, ivo.getType()));
+        }
+
+        msg.setCpuNum(ivo.getCpuNum());
+        msg.setMemorySize(ivo.getMemorySize());
+    }
+
     private void validate(APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {
-        SimpleQuery<InstanceOfferingVO> iq = dbf.createQuery(InstanceOfferingVO.class);
-        iq.select(InstanceOfferingVO_.state, InstanceOfferingVO_.type);
-        iq.add(InstanceOfferingVO_.uuid, Op.EQ, msg.getInstanceOfferingUuid());
-        Tuple inst = iq.findTuple();
-        InstanceOfferingState istate = inst.get(0, InstanceOfferingState.class);
-        String itype = inst.get(1, String.class);
-        if (istate == InstanceOfferingState.Disabled) {
-            throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s] is Disabled, can't create vm from it", msg.getInstanceOfferingUuid()));
-        }
-        if (!itype.equals(VmInstanceConstant.USER_VM_TYPE)){
-            throw new ApiMessageInterceptionException(operr("instance offering[uuid:%s, type:%s] is not UserVm type, can't create vm from it", msg.getInstanceOfferingUuid(), itype));
-        }
+        validateInstanceSettings(msg);
 
         Set<String> macs = new HashSet<>();
         if (null != msg.getSystemTags()) {

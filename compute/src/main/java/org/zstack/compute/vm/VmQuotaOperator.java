@@ -18,6 +18,7 @@ import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.QuotaUtil;
+import org.zstack.utils.data.Pair;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -431,6 +432,21 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
         }
     }
 
+    private Pair<Integer, Long> getInstanceOfferingAsked(APICreateVmInstanceMsg msg) {
+
+        if (msg.getInstanceOfferingUuid() != null) {
+            String sql = "select i.cpuNum, i.memorySize" +
+                    " from InstanceOfferingVO i" +
+                    " where i.uuid = :uuid";
+            TypedQuery<Tuple> iq = dbf.getEntityManager().createQuery(sql, Tuple.class);
+            iq.setParameter("uuid", msg.getInstanceOfferingUuid());
+            Tuple t = iq.getSingleResult();
+            return new Pair<Integer, Long>(t.get(0, Integer.class), t.get(1, Long.class));
+        }
+
+        return new Pair<Integer, Long>(msg.getCpuNum(), msg.getMemorySize());
+    }
+
     @Transactional(readOnly = true)
     private void check(APICreateVmInstanceMsg msg, Map<String, Quota.QuotaPair> pairs) {
         String currentAccountUuid = msg.getSession().getAccountUuid();
@@ -456,14 +472,9 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
                     currentAccountUuid, VmQuotaConstant.VM_RUNNING_NUM, runningVmNumQuota));
         }
 
-        String sql = "select i.cpuNum, i.memorySize" +
-                " from InstanceOfferingVO i" +
-                " where i.uuid = :uuid";
-        TypedQuery<Tuple> iq = dbf.getEntityManager().createQuery(sql, Tuple.class);
-        iq.setParameter("uuid", msg.getInstanceOfferingUuid());
-        Tuple it = iq.getSingleResult();
-        int cpuNumAsked = it.get(0, Integer.class);
-        long memoryAsked = it.get(1, Long.class);
+        final Pair<Integer, Long> pair = getInstanceOfferingAsked(msg);
+        int cpuNumAsked = pair.first();
+        long memoryAsked = pair.second();
 
         if (vmQuotaUsed.runningVmCpuNum + cpuNumAsked > runningVmCpuNumQuota) {
             throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
@@ -488,12 +499,12 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
         // check all volume size
         long allVolumeSizeAsked = 0;
 
-        sql = "select img.size, img.mediaType" +
+        String sql = "select img.size, img.mediaType" +
                 " from ImageVO img" +
                 " where img.uuid = :iuuid";
-        iq = dbf.getEntityManager().createQuery(sql, Tuple.class);
+        TypedQuery<Tuple> iq = dbf.getEntityManager().createQuery(sql, Tuple.class);
         iq.setParameter("iuuid", msg.getImageUuid());
-        it = iq.getSingleResult();
+        Tuple it = iq.getSingleResult();
         Long imgSize = it.get(0, Long.class);
         ImageConstant.ImageMediaType imgType = it.get(1, ImageConstant.ImageMediaType.class);
 
