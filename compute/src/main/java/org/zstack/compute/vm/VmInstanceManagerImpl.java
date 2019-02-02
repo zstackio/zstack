@@ -72,7 +72,10 @@ import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.TagUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -90,9 +93,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VmInstanceManagerImpl extends AbstractService implements
@@ -1026,12 +1026,16 @@ public class VmInstanceManagerImpl extends AbstractService implements
             cmsg.setZoneUuid(zoneUuid);
         }
 
-        InstanceOfferingVO iovo = dbf.findByUuid(msg.getInstanceOfferingUuid(), InstanceOfferingVO.class);
-        cmsg.setInstanceOfferingUuid(iovo.getUuid());
-        cmsg.setCpuNum(iovo.getCpuNum());
-        cmsg.setCpuSpeed(iovo.getCpuSpeed());
-        cmsg.setMemorySize(iovo.getMemorySize());
-        cmsg.setAllocatorStrategy(iovo.getAllocatorStrategy());
+        final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
+        if (instanceOfferingUuid != null) {
+            InstanceOfferingVO iovo = dbf.findByUuid(instanceOfferingUuid, InstanceOfferingVO.class);
+            cmsg.setInstanceOfferingUuid(iovo.getUuid());
+            cmsg.setCpuSpeed(iovo.getCpuSpeed());
+            cmsg.setAllocatorStrategy(iovo.getAllocatorStrategy());
+        }
+
+        cmsg.setCpuNum(msg.getCpuNum());
+        cmsg.setMemorySize(msg.getMemorySize());
 
         cmsg.setAccountUuid(msg.getSession().getAccountUuid());
         cmsg.setName(msg.getName());
@@ -1103,7 +1107,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         @Override
                         public void run(MessageReply reply) {
                             if (!reply.isSuccess()) {
-                                logger.warn(String.format("failed to return ip address[uuid: %d]", msg.getUsedIpUuid()));
+                                logger.warn(String.format("failed to return ip address[uuid: %s]", msg.getUsedIpUuid()));
                             }
                             com.done();
                         }

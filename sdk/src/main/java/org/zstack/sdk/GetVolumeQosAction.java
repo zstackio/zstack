@@ -29,7 +29,7 @@ public class GetVolumeQosAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean forceSync;
+    public java.lang.Boolean forceSync = false;
 
     @Param(required = false)
     public java.util.List systemTags;

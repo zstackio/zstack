@@ -87,8 +87,15 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     /**
      * @desc uuid of instance offering. See :ref:`InstanceOfferingInventory`
      */
-    @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true)
+    @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true, required = false)
     private String instanceOfferingUuid;
+
+    @APIParam(required = false)
+    private Integer cpuNum;
+
+    @APIParam(required = false)
+    private Long memorySize;
+
     /**
      * @desc uuid of image. See :ref:`ImageInventory`
      */
@@ -197,6 +204,22 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setInstanceOfferingUuid(String instanceOfferingUuid) {
         this.instanceOfferingUuid = instanceOfferingUuid;
+    }
+
+    public Integer getCpuNum() {
+        return cpuNum;
+    }
+
+    public void setCpuNum(Integer cpuNum) {
+        this.cpuNum = cpuNum;
+    }
+
+    public Long getMemorySize() {
+        return memorySize;
+    }
+
+    public void setMemorySize(Long memorySize) {
+        this.memorySize = memorySize;
     }
 
     public String getImageUuid() {
