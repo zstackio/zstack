@@ -74,6 +74,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.lb.APIChangeLoadBalancerListenerMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.lb.APIQueryCertificateMsg</name>
         <serviceId>query</serviceId>
     </message>

@@ -72,6 +72,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
             validate((APIAddCertificateToLoadBalancerListenerMsg) msg);
         } else if(msg instanceof APIRemoveCertificateFromLoadBalancerListenerMsg){
             validate((APIRemoveCertificateFromLoadBalancerListenerMsg) msg);
+        } else if(msg instanceof APIChangeLoadBalancerListenerMsg){
+            validate((APIChangeLoadBalancerListenerMsg) msg);
         }
         return msg;
     }
@@ -343,5 +345,29 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
 
         LoadBalancerListenerVO vo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
         msg.setLoadBalancerUuid(vo.getLoadBalancerUuid());
+    }
+
+    private void validate(APIChangeLoadBalancerListenerMsg msg) {
+        String target = msg.getHealthCheckTarget();
+        if (target != null) {
+            if (!LoadBalancerConstants.HEALTH_CHECK_TARGET_DEFAULT.equals(target)) {
+                try {
+                    int port = Integer.valueOf(target);
+                    if (port < 1 || port > 65535) {
+                        throw new ApiMessageInterceptionException(argerr("healthCheck target [%s] error, it must be 'default' or number between[1~65535] ",
+                                target));
+                    }
+                } catch (Exception e) {
+                    throw new ApiMessageInterceptionException(argerr("healthCheck target [%s] error, it must be 'default' or number between[1~65535] ",
+                            target));
+                }
+            }
+        }
+
+        String loadBalancerUuid = Q.New(LoadBalancerListenerVO.class).
+                select(LoadBalancerListenerVO_.loadBalancerUuid).
+                eq(LoadBalancerListenerVO_.uuid,msg.getLoadBalancerListenerUuid()).findValue();
+        msg.setLoadBalancerUuid(loadBalancerUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, loadBalancerUuid);
     }
 }
