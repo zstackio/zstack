@@ -49,7 +49,7 @@ import org.zstack.header.zone.ZoneVO;
         method = HttpMethod.POST,
         responseClass = APICreateClusterEvent.class
 )
-public class APICreateClusterMsg extends APICreateMessage implements APIAuditor {
+public class APICreateClusterMsg extends APICreateMessage implements CreateClusterMessage, APIAuditor {
     /**
      * @desc uuid of zone this cluster is going to create in
      */
