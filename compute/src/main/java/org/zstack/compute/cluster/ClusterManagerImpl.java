@@ -10,9 +10,13 @@ import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.defer.Deferred;
 import org.zstack.header.AbstractService;
 import org.zstack.header.cluster.*;
+import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.search.GetQuery;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
@@ -104,35 +108,76 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
 		bus.reply(msg, reply);
 	}
 
+	private void doCreateCluster(CreateClusterMessage msg, ReturnValueCompletion<ClusterInventory> completion) {
+		String clusterType = msg.getType();
+		if (clusterType == null) {
+			clusterType = BaseClusterFactory.type.toString();
+		}
+
+		ClusterFactory factory = this.getClusterFactory(ClusterType.valueOf(clusterType));
+		ClusterVO vo = new ClusterVO();
+
+		if (msg.getResourceUuid() != null) {
+			vo.setUuid(msg.getResourceUuid());
+		} else {
+			vo.setUuid(Platform.getUuid());
+		}
+
+		vo.setDescription(msg.getDescription());
+		vo.setHypervisorType(msg.getHypervisorType());
+		vo.setManagementNodeId(Platform.getManagementServerId());
+		vo.setZoneUuid(msg.getZoneUuid());
+		vo.setState(ClusterState.Enabled);
+		vo.setName(msg.getClusterName());
+		vo = factory.createCluster(vo, msg);
+
+		if (msg instanceof APICreateMessage) {
+			tagMgr.createTagsFromAPICreateMessage((APICreateMessage)msg, vo.getUuid(), ClusterVO.class.getSimpleName());
+		} else if (msg instanceof NeedReplyMessage) {
+			NeedReplyMessage m = (NeedReplyMessage) msg;
+			tagMgr.createTags(m.getSystemTags(), m.getUserTags(), vo.getUuid(), ClusterVO.class.getSimpleName());
+		}
+
+		ClusterInventory inv = ClusterInventory.valueOf(vo);
+		logger.debug(String.format("Created new cluster: %s", printer.print(inv)));
+		completion.success(inv);
+	}
+
+	private void handle(CreateClusterMsg msg) {
+		CreateClusterReply reply = new CreateClusterReply();
+
+		doCreateCluster(msg, new ReturnValueCompletion<ClusterInventory>(msg) {
+			@Override
+			public void success(ClusterInventory inv) {
+				reply.setInventory(inv);
+				bus.reply(msg, reply);
+			}
+
+			@Override
+			public void fail(ErrorCode errorCode) {
+				reply.setError(errorCode);
+				bus.reply(msg, reply);
+			}
+		});
+	}
+
 	@Deferred
 	private void handle(APICreateClusterMsg msg) {
-	    String clusterType = msg.getType();
-	    if (clusterType == null) {
-	        clusterType = BaseClusterFactory.type.toString();
-	    }
-	    
 		APICreateClusterEvent evt = new APICreateClusterEvent(msg.getId());
-	    ClusterFactory factory = this.getClusterFactory(ClusterType.valueOf(clusterType));
-        ClusterVO vo = new ClusterVO();
-        if (msg.getResourceUuid() != null) {
-            vo.setUuid(msg.getResourceUuid());
-        } else {
-            vo.setUuid(Platform.getUuid());
-        }
-        vo.setDescription(msg.getDescription());
-        vo.setHypervisorType(msg.getHypervisorType());
-        vo.setManagementNodeId(Platform.getManagementServerId());
-        vo.setZoneUuid(msg.getZoneUuid());
-        vo.setState(ClusterState.Enabled);
-        vo.setName(msg.getClusterName());
-	    vo = factory.createCluster(vo, msg);
 
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), ClusterVO.class.getSimpleName());
+    	doCreateCluster(msg, new ReturnValueCompletion<ClusterInventory>(msg) {
+			@Override
+			public void success(ClusterInventory inv) {
+				evt.setInventory(inv);
+				bus.publish(evt);
+			}
 
-	    ClusterInventory inv = ClusterInventory.valueOf(vo);
-	    evt.setInventory(inv);
-	    logger.debug(String.format("Created new cluster: %s", printer.print(inv)));
-	    bus.publish(evt);
+			@Override
+			public void fail(ErrorCode errorCode) {
+			    evt.setError(errorCode);
+			    bus.publish(evt);
+			}
+		});
 	}
 
 	@Override
@@ -140,6 +185,8 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
 	public void handleMessage(Message msg) {
 		if (msg instanceof APIMessage) {
 			handleApiMessage((APIMessage) msg);
+		} else if (msg instanceof CreateClusterMsg) {
+			handle((CreateClusterMsg) msg);
 		} else if (msg instanceof ClusterMessage) {
 			passThrough((ClusterMessage) msg);
 		} else {

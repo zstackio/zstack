@@ -18,7 +18,7 @@ public class BaseClusterFactory implements ClusterFactory {
     }
 
     @Override
-    public ClusterVO createCluster(ClusterVO vo, APICreateClusterMsg msg) {
+    public ClusterVO createCluster(ClusterVO vo, CreateClusterMessage msg) {
         vo.setType(type.toString());
         vo = dbf.persistAndRefresh(vo);
         return vo;
