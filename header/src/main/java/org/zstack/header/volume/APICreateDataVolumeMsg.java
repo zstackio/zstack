@@ -65,8 +65,11 @@ public class APICreateDataVolumeMsg extends APICreateMessage implements APIAudit
     /**
      * @desc uuid of disk offering the volume is created from
      */
-    @APIParam(resourceType = DiskOfferingVO.class, checkAccount = true)
+    @APIParam(required = false, resourceType = DiskOfferingVO.class, checkAccount = true)
     private String diskOfferingUuid;
+
+    @APIParam(required = false)
+    private long diskSize;
 
     @APIParam(required = false, resourceType = PrimaryStorageVO.class)
     private String primaryStorageUuid;
@@ -102,7 +105,15 @@ public class APICreateDataVolumeMsg extends APICreateMessage implements APIAudit
     public void setDiskOfferingUuid(String diskOfferingUuid) {
         this.diskOfferingUuid = diskOfferingUuid;
     }
- 
+
+    public long getDiskSize() {
+        return diskSize;
+    }
+
+    public void setDiskSize(long diskSize) {
+        this.diskSize = diskSize;
+    }
+
     public static APICreateDataVolumeMsg __example__() {
         APICreateDataVolumeMsg msg = new APICreateDataVolumeMsg();
         msg.setResourceUuid(uuid());

@@ -13,7 +13,6 @@ import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
@@ -24,21 +23,19 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
-import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
-
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Tuple;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -72,6 +69,8 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             validate((APIChangeVolumeStateMsg) msg);
         } else if (msg instanceof APIDeleteDataVolumeMsg) {
             validate((APIDeleteDataVolumeMsg) msg);
+        } else if (msg instanceof APICreateDataVolumeMsg) {
+            validate((APICreateDataVolumeMsg) msg);
         } else if (msg instanceof APIBackupDataVolumeMsg) {
             validate((APIBackupDataVolumeMsg) msg);
         } else if (msg instanceof APIAttachDataVolumeToVmMsg) {
@@ -278,6 +277,14 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         }
 
         exceptionIsVolumeIsDeleted(msg.getVolumeUuid());
+    }
+
+    private void validate(APICreateDataVolumeMsg msg) {
+        if (msg.getDiskOfferingUuid() == null) {
+            if (msg.getDiskSize() < 0) {
+                throw new ApiMessageInterceptionException(argerr("unexpected disk size settings"));
+            }
+        }
     }
 
     private void validate(APIDeleteDataVolumeMsg msg) {

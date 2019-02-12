@@ -9,13 +9,13 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.configuration.DiskOfferingVO;
+import org.zstack.header.configuration.DiskOfferingVO_;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -75,8 +75,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     @Autowired
     private AccountManager acntMgr;
     @Autowired
-    private ErrorFacade errf;
-    @Autowired
     private TagManager tagMgr;
     @Autowired
     private ThreadFacade thdf;
@@ -84,8 +82,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     private ResourceDestinationMaker destMaker;
     @Autowired
     private VolumeDeletionPolicyManager deletionPolicyMgr;
-    @Autowired
-    private EventFacade evtf;
     @Autowired
     private PluginRegistry pluginRgty;
 
@@ -605,18 +601,24 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     private void handle(APICreateDataVolumeMsg msg) {
         APICreateDataVolumeEvent evt = new APICreateDataVolumeEvent(msg.getId());
-        DiskOfferingVO dvo = dbf.findByUuid(msg.getDiskOfferingUuid(), DiskOfferingVO.class);
-
         VolumeVO vo = new VolumeVO();
+
+        final String diskOfferingUuid = msg.getDiskOfferingUuid();
+        if (diskOfferingUuid != null) {
+            Long diskSize = Q.New(DiskOfferingVO.class).eq(DiskOfferingVO_.uuid, diskOfferingUuid).select(DiskOfferingVO_.diskSize).findValue();
+            vo.setDiskOfferingUuid(diskOfferingUuid);
+            vo.setSize(diskSize);
+        } else {
+            vo.setSize(msg.getDiskSize());
+        }
+
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
         } else {
             vo.setUuid(Platform.getUuid());
         }
-        vo.setDiskOfferingUuid(dvo.getUuid());
         vo.setDescription(msg.getDescription());
         vo.setName(msg.getName());
-        vo.setSize(dvo.getDiskSize());
         vo.setActualSize(0L);
         vo.setType(VolumeType.Data);
         vo.setStatus(VolumeStatus.NotInstantiated);

@@ -387,6 +387,19 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
         }
     }
 
+    private long getDataVolumeSizeAsked(APICreateDataVolumeMsg msg) {
+        if (msg.getDiskOfferingUuid() == null) {
+            return msg.getDiskSize();
+        }
+
+        String sql = "select diskSize from DiskOfferingVO where uuid = :uuid ";
+        TypedQuery<Long> dq = dbf.getEntityManager().createQuery(sql, Long.class);
+        dq.setParameter("uuid", msg.getDiskOfferingUuid());
+        Long dsize = dq.getSingleResult();
+        dsize = dsize == null ? 0 : dsize;
+        return dsize;
+    }
+
     @Transactional(readOnly = true)
     private void check(APICreateDataVolumeMsg msg, Map<String, Quota.QuotaPair> pairs) {
         String currentAccountUuid = msg.getSession().getAccountUuid();
@@ -411,13 +424,7 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
         }
 
         // check data volume size
-        long allVolumeSizeAsked;
-        String sql = "select diskSize from DiskOfferingVO where uuid = :uuid ";
-        TypedQuery<Long> dq = dbf.getEntityManager().createQuery(sql, Long.class);
-        dq.setParameter("uuid", msg.getDiskOfferingUuid());
-        Long dsize = dq.getSingleResult();
-        dsize = dsize == null ? 0 : dsize;
-        allVolumeSizeAsked = dsize;
+        long allVolumeSizeAsked = getDataVolumeSizeAsked(msg);
 
         long allVolumeSizeUsed = new VmQuotaUtil().getUsedAllVolumeSize(currentAccountUuid);
         {
