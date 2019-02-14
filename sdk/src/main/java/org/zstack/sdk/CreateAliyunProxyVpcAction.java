@@ -43,6 +43,9 @@ public class CreateAliyunProxyVpcAction extends AbstractAction {
     @Param(required = false)
     public java.lang.String resourceUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagUuids;
+
     @Param(required = false)
     public java.util.List systemTags;
 
