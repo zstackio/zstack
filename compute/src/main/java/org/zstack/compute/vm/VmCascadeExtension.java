@@ -370,16 +370,13 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
         if (op == OP_STOP) {
             List<StopVmInstanceMsg> msgs = new ArrayList<>();
-            List<String> vmStateCanStop = Arrays.asList(
-                    VmInstanceState.Unknown.toString(),
-                    VmInstanceState.Stopped.toString(),
-                    VmInstanceState.Running.toString());
+            Set<String> vmStateCanStop = AbstractVmInstance.getAllowedStatesForOperation(StopVmInstanceMsg.class);
+
             boolean ignoreResourceReleaseFailure = Arrays.asList(
                     HostVO.class.getSimpleName(), PrimaryStorageVO.class.getSimpleName()
             ).contains(action.getParentIssuer());
             for (VmDeletionStruct inv : vminvs) {
-                if (!vmStateCanStop.stream().anyMatch(
-                        str -> str.trim().equals(inv.getInventory().getState()))) {
+                if (!vmStateCanStop.contains(inv.getInventory().getState())) {
                     continue;
                 }
                 StopVmInstanceMsg msg = new StopVmInstanceMsg();

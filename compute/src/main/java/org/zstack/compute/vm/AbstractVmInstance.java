@@ -10,6 +10,8 @@ import org.zstack.header.vm.*;
 import org.zstack.header.vm.cdrom.DeleteVmCdRomMsg;
 import org.zstack.utils.message.OperationChecker;
 
+import java.util.Set;
+
 import static org.zstack.core.Platform.err;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -158,6 +160,9 @@ public abstract class AbstractVmInstance implements VmInstance {
                 VmInstanceState.Expunging.toString());
     }
 
+    public static Set<String> getAllowedStatesForOperation(Class<? extends Message> clz) {
+        return allowedOperations.getStatesForOperation(clz.getName());
+    }
 
     private ErrorCode validateOperationByState(OperationChecker checker, Message msg, VmInstanceState currentState, Enum errorCode) {
         if (checker.isOperationAllowed(msg.getMessageName(), currentState.toString())) {
