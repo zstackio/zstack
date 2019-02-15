@@ -17,4 +17,6 @@ public @interface Param {
     int minLength() default 0;
 
     Class resourceType() default Object.class;
+
+    String[] validValues() default {};
 }

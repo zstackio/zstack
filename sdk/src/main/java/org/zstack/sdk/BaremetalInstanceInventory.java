@@ -68,6 +68,14 @@ public class BaremetalInstanceInventory  {
         return this.imageUuid;
     }
 
+    public java.lang.String templateUuid;
+    public void setTemplateUuid(java.lang.String templateUuid) {
+        this.templateUuid = templateUuid;
+    }
+    public java.lang.String getTemplateUuid() {
+        return this.templateUuid;
+    }
+
     public java.lang.String platform;
     public void setPlatform(java.lang.String platform) {
         this.platform = platform;

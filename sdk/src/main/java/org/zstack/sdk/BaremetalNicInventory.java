@@ -28,6 +28,14 @@ public class BaremetalNicInventory  {
         return this.l3NetworkUuid;
     }
 
+    public java.lang.String baremetalBondingUuid;
+    public void setBaremetalBondingUuid(java.lang.String baremetalBondingUuid) {
+        this.baremetalBondingUuid = baremetalBondingUuid;
+    }
+    public java.lang.String getBaremetalBondingUuid() {
+        return this.baremetalBondingUuid;
+    }
+
     public java.lang.String mac;
     public void setMac(java.lang.String mac) {
         this.mac = mac;

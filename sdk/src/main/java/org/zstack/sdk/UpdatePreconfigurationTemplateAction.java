@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateBaremetalInstanceAction extends AbstractAction {
+public class UpdatePreconfigurationTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateBaremetalInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateBaremetalInstanceResult value;
+        public org.zstack.sdk.UpdatePreconfigurationTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,41 +25,23 @@ public class CreateBaremetalInstanceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String chassisUuid;
+    @Param(required = false, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String distribution;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String imageUuid;
+    @Param(required = false, validValues = {"kickstart","preseed","autoyast"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String templateUuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String username = "root";
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map nicCfgs;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map bondingCfgs;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map customConfigurations;
-
-    @Param(required = false, validValues = {"InstantStart","JustCreate"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String strategy = "InstantStart";
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    @Param(required = false, maxLength = 16777215, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String content;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -90,8 +72,8 @@ public class CreateBaremetalInstanceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateBaremetalInstanceResult value = res.getResult(org.zstack.sdk.CreateBaremetalInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateBaremetalInstanceResult() : value; 
+        org.zstack.sdk.UpdatePreconfigurationTemplateResult value = res.getResult(org.zstack.sdk.UpdatePreconfigurationTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdatePreconfigurationTemplateResult() : value; 
 
         return ret;
     }
@@ -120,11 +102,11 @@ public class CreateBaremetalInstanceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/baremetal/instances";
+        info.httpMethod = "PUT";
+        info.path = "/baremetal/preconfigurations/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updatePreconfigurationTemplate";
         return info;
     }
 
