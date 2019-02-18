@@ -123,6 +123,15 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         if (ImageStatus.Ready != img.getStatus()) {
             throw new ApiMessageInterceptionException(operr("image[uuid:%s] is not Ready, it's %s", img.getUuid(), img.getStatus()));
         }
+
+        if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
+            for (String systemTag : msg.getSystemTags()) {
+                if (VolumeSystemTags.SHAREABLE.isMatch(systemTag)) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "DataVolumeFromVolumeTemplate not support Shareable"));
+                }
+            }
+        }
     }
 
     private void validate(APIGetDataVolumeAttachableVmMsg msg) {
