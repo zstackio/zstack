@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.VolumeMigrationTargetHostFilter;
+import org.zstack.compute.vm.VmInstanceBase;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
@@ -422,6 +423,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             public void run(FlowTrigger trigger, Map data) {
                 String __name__ = "migrate-volume-on-local-storage";
 
+                VmInstanceBase.volumeMigrateQueue.add(struct.getVmUuid());
                 MigrateVolumeOnLocalStorageMsg mmsg = new MigrateVolumeOnLocalStorageMsg();
                 mmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                 mmsg.setDestHostUuid(msg.getDestHostUuid());
@@ -464,6 +466,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             public void run(FlowTrigger trigger, Map data) {
                 String __name__ = "change-vm-state-to-volume-migrated";
 
+                VmInstanceBase.volumeMigrateQueue.remove(struct.getVmUuid());
                 if (!struct.isRootVolume) {
                     trigger.next();
                     return;
@@ -515,6 +518,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                VmInstanceBase.volumeMigrateQueue.remove(struct.getVmUuid());
                 evt.setError(errCode);
                 bus.publish(evt);
             }

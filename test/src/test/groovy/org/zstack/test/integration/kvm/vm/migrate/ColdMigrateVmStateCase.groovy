@@ -95,6 +95,7 @@ class ColdMigrateVmStateCase extends SubCase{
             reconnectHost {
                 uuid = originHostUuid
             }
+            sleep 500
             assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.uuid)
                     .select(VmInstanceVO_.state).findValue() == VmInstanceState.VolumeMigrating
 

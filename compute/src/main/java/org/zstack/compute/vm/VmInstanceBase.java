@@ -106,6 +106,9 @@ public class VmInstanceBase extends AbstractVmInstance {
     @Autowired
     private HostAllocatorManager hostAllocatorMgr;
 
+    // volume migrating is running, it was empty when mn restarted
+    public static List<String> volumeMigrateQueue = new ArrayList<>();
+
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
     protected String syncThreadName;
@@ -953,7 +956,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                return String.format("change-vm-state-%s", syncThreadName);
             }
 
             @Override
@@ -1084,6 +1087,16 @@ public class VmInstanceBase extends AbstractVmInstance {
             bus.reply(msg, reply);
             completion.done();
             return;
+        }
+
+        // if vm was in VolumeMigrating state, then Stopped msg would be ignore
+        if (originalState == VmInstanceState.VolumeMigrating && (currentState == VmInstanceState.Stopped || currentState == VmInstanceState.Paused)) {
+            // vm is volumemigrating
+            if (volumeMigrateQueue.contains(msg.getVmInstanceUuid())) {
+                bus.reply(msg, reply);
+                completion.done();
+                return;
+            }
         }
 
         final Runnable fireEvent = () -> {
