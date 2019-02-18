@@ -1,6 +1,10 @@
 package org.zstack.header.message;
 
+import org.zstack.header.tag.TagPatternType;
+import org.zstack.header.tag.TagPatternVO;
+
 import java.util.ArrayList;
+import java.util.List;
 
 public class APICreateMessage extends APIMessage {
     /**
@@ -10,6 +14,9 @@ public class APICreateMessage extends APIMessage {
      * is raised if the uuid conflicted with any existing resource uuid
      */
     private String resourceUuid;
+
+    @APIParam(required = false, checkAccount = true, resourceType = TagPatternVO.class)
+    private List<String> tagUuids;
 
     public void addSystemTag(String tag) {
         if (systemTags == null) {
@@ -24,5 +31,13 @@ public class APICreateMessage extends APIMessage {
 
     public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
+    }
+
+    public List<String> getTagUuids() {
+        return tagUuids;
+    }
+
+    public void setTagUuids(List<String> tagUuids) {
+        this.tagUuids = tagUuids;
     }
 }

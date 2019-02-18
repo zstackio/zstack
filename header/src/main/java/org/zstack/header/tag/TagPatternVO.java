@@ -10,7 +10,6 @@ import java.sql.Timestamp;
 @Entity
 @Table
 @BaseResource
-
 public class TagPatternVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String name;

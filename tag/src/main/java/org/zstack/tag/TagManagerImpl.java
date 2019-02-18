@@ -63,6 +63,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     private Map<Class, Class> resourceTypeCreateMessageMap = new HashMap<>();
     private Map<String, List<SystemTagCreateMessageValidator>> createMessageValidators = new HashMap<>();
     private Map<String, List<SystemTagLifeCycleExtension>> lifeCycleExtensions = new HashMap<>();
+    private List<CreateTagFromMsgExtensionPoint> createTagExtensions = new ArrayList<>();
     private List<Class> autoDeleteTagClasses;
 
 
@@ -177,6 +178,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                 lst.add(ext);
             }
         }
+
+        createTagExtensions.addAll(pluginRgty.getExtensionList(CreateTagFromMsgExtensionPoint.class));
     }
 
     private boolean isTagExisting(String resourceUuid, String tag, TagType type, String resourceType) {
@@ -313,6 +316,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Transactional
     public void createTagsFromAPICreateMessage(APICreateMessage msg, String resourceUuid, String resourceType) {
         createTags(msg.getSystemTags(),msg.getUserTags(),resourceUuid,resourceType);
+        createTagExtensions.forEach(it -> it.afterCreateTagFromMsg(msg, resourceUuid, resourceType));
     }
 
     @Override
