@@ -10,6 +10,7 @@ import org.zstack.testlib.Test
 import org.zstack.utils.data.SizeUnit
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Created by lining on 2018/1/14.
@@ -130,39 +131,40 @@ class BatchCreateVmFailOnLocalStorageCase extends SubCase{
         ImageInventory image = env.inventoryByName("iso")
         DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
 
-        int errorNum = 0
+        AtomicInteger errorNum = new AtomicInteger(0)
 
-        final CountDownLatch latch = new CountDownLatch(10)
+        def threads = []
+
         for (int i = 0; i < 10; i++) {
-            CreateVmInstanceAction action = new CreateVmInstanceAction(
-                    name : "test-" + i,
-                    instanceOfferingUuid : instanceOffering.uuid,
-                    l3NetworkUuids : [l3.uuid],
-                    imageUuid : image.uuid,
-                    rootDiskOfferingUuid : diskOffering.uuid,
-                    dataDiskOfferingUuids: [diskOffering.uuid],
-                    sessionId: Test.currentEnvSpec.session.uuid
-            )
+            def thread = Thread.start {
+                CreateVmInstanceAction action = new CreateVmInstanceAction(
+                        name : "test-" + i,
+                        instanceOfferingUuid : instanceOffering.uuid,
+                        l3NetworkUuids : [l3.uuid],
+                        imageUuid : image.uuid,
+                        rootDiskOfferingUuid : diskOffering.uuid,
+                        dataDiskOfferingUuids: [diskOffering.uuid],
+                        sessionId: Test.currentEnvSpec.session.uuid
+                )
 
-            action.call(new Completion<CreateVmInstanceAction.Result>() {
-                @Override
-                void complete(CreateVmInstanceAction.Result ret) {
-                    latch.countDown()
+                CreateVmInstanceAction.Result ret = action.call()
 
-                    if(ret.error != null){
-                        errorNum ++
-                    }
+                if (ret.error != null) {
+                    errorNum.incrementAndGet()
                 }
-            })
+            }
+
+            threads.add(thread)
         }
 
-        latch.await(15, TimeUnit.SECONDS)
-        assert errorNum >= 0
+        threads.each { it.join() }
+
+        assert errorNum.get() >= 0
 
         ps = queryPrimaryStorage {
             conditions=["uuid=${ps.uuid}".toString()]
         }[0]
-        assert SizeUnit.GIGABYTE.toByte(errorNum) == ps.availableCapacity
+        assert SizeUnit.GIGABYTE.toByte(errorNum.get()) == ps.availableCapacity
 
     }
 }
