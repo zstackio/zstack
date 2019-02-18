@@ -6,7 +6,6 @@ import org.springframework.ldap.AuthenticationException;
 import org.springframework.ldap.CommunicationException;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
-import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -18,13 +17,12 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
-import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.*;
 
 /**
  */
@@ -65,6 +63,10 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddLdapServerMsg msg) {
+        if (!LdapEffectiveScope.hasScope(msg.getScope())) {
+            throw new ApiMessageInterceptionException(argerr("unsupported ldap server scope"));
+        }
+
         LdapServerInventory inv = new LdapServerInventory();
         inv.setName(msg.getName());
         inv.setDescription(msg.getDescription());
@@ -127,7 +129,7 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
         Map<String, Object> properties = new HashMap<>();
         String timeout = Integer.toString(LdapGlobalProperty.LDAP_ADD_SERVER_CONNECT_TIMEOUT);
         properties.put("com.sun.jndi.ldap.connect.timeout", timeout);
-        LdapTemplateContextSource ldapTemplateContextSource = new LdapUtil().loadLdap(inv, properties);
+        LdapTemplateContextSource ldapTemplateContextSource = LdapManager.ldapUtil.loadLdap(inv, properties);
 
         try {
             AndFilter filter = new AndFilter();

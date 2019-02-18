@@ -260,6 +260,7 @@ public class SourceClassMap {
 			put("org.zstack.ldap.LdapServerInventory", "org.zstack.sdk.LdapServerInventory");
 			put("org.zstack.license.LicenseAddOnInventory", "org.zstack.sdk.LicenseAddOnInventory");
 			put("org.zstack.license.LicenseInventory", "org.zstack.sdk.LicenseInventory");
+			put("org.zstack.login.entity.LdapResourceRefInventory", "org.zstack.sdk.LdapResourceRefInventory");
 			put("org.zstack.mevoco.ShareableVolumeVmInstanceRefInventory", "org.zstack.sdk.ShareableVolumeVmInstanceRefInventory");
 			put("org.zstack.monitoring.AlertInventory", "org.zstack.sdk.AlertInventory");
 			put("org.zstack.monitoring.MonitorTriggerInventory", "org.zstack.sdk.MonitorTriggerInventory");
@@ -571,6 +572,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.L3NetworkHostRouteInventory", "org.zstack.header.network.l3.L3NetworkHostRouteInventory");
 			put("org.zstack.sdk.L3NetworkInventory", "org.zstack.header.network.l3.L3NetworkInventory");
 			put("org.zstack.sdk.LdapAccountRefInventory", "org.zstack.ldap.LdapAccountRefInventory");
+			put("org.zstack.sdk.LdapResourceRefInventory", "org.zstack.login.entity.LdapResourceRefInventory");
 			put("org.zstack.sdk.LdapServerInventory", "org.zstack.ldap.LdapServerInventory");
 			put("org.zstack.sdk.LicenseAddOnInventory", "org.zstack.license.LicenseAddOnInventory");
 			put("org.zstack.sdk.LicenseInventory", "org.zstack.license.LicenseInventory");

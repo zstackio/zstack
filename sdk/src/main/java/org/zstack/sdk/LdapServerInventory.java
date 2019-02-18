@@ -52,6 +52,14 @@ public class LdapServerInventory  {
         return this.username;
     }
 
+    public java.lang.String scope;
+    public void setScope(java.lang.String scope) {
+        this.scope = scope;
+    }
+    public java.lang.String getScope() {
+        return this.scope;
+    }
+
     public java.lang.String encryption;
     public void setEncryption(java.lang.String encryption) {
         this.encryption = encryption;

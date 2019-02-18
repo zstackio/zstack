@@ -3,6 +3,7 @@ package org.zstack.ldap;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.LoginProcessor;
 import org.zstack.header.identity.LoginType;
 import org.zstack.header.message.APIMessage;
@@ -13,9 +14,6 @@ import org.zstack.header.message.APIMessage;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class LdapLoginProcessor implements LoginProcessor {
     public static final LoginType loginType = new LoginType(LdapConstant.LOGIN_TYPE);
-
-    @Autowired
-    private LdapManager ldapManager;
 
     @Override
     public LoginType getLoginType() {
@@ -28,9 +26,9 @@ public class LdapLoginProcessor implements LoginProcessor {
     }
 
     public String resourceChecker(String resourceName) {
-        String dn = ldapManager.getFullUserDn(resourceName);
+        String dn = LdapManager.ldapUtil.getFullUserDn(resourceName);
 
-        LdapAccountRefVO vo = ldapManager.findLdapAccountRefVO(dn);
+        LdapAccountRefVO vo = LdapManager.ldapUtil.findLdapAccountRefVO(dn);
 
         if (vo == null) {
             return null;
@@ -44,9 +42,9 @@ public class LdapLoginProcessor implements LoginProcessor {
         Result r = new Result();
 
         APILogInByLdapMsg msg = (APILogInByLdapMsg) message;
-        String dn = ldapManager.getFullUserDn(msg.getUid());
+        String dn = LdapManager.ldapUtil.getFullUserDn(msg.getUid());
 
-        LdapAccountRefVO vo = ldapManager.findLdapAccountRefVO(dn);
+        LdapAccountRefVO vo = LdapManager.ldapUtil.findLdapAccountRefVO(dn);
 
         if (vo == null) {
             r.setTargetResourceIdentity(null);
