@@ -12,6 +12,10 @@ import org.zstack.utils.path.PathUtil;
 import java.io.File;
 
 public class NfsPrimaryStorageKvmHelper {
+    public static String makeTemporaryVolumeInstallUrl(PrimaryStorageInventory pinv, VolumeInventory vol, String originVolumeUuid) {
+        return PathUtil.join(pinv.getMountPath(), PrimaryStoragePathMaker.makeTemporaryRootVolumeInstallPath(vol, originVolumeUuid));
+    }
+
     public static String makeRootVolumeInstallUrl(PrimaryStorageInventory pinv, VolumeInventory vol) {
         return PathUtil.join(pinv.getMountPath(), PrimaryStoragePathMaker.makeRootVolumeInstallPath(vol));
     }

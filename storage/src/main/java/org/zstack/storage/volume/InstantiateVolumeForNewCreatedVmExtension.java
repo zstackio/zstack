@@ -34,7 +34,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
     public void preBeforeInstantiateVmResource(VmInstanceSpec spec) throws VmInstantiateResourceException{
     }
 
-    private void doInstantiate(final Iterator<InstantiateVolumeMsg> it, final VmInstanceSpec spec, final Completion completion) {
+    protected void doInstantiate(final Iterator<InstantiateVolumeMsg> it, final VmInstanceSpec spec, final Completion completion) {
         if (!it.hasNext()) {
             completion.success();
             return;
@@ -97,8 +97,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
 
     @Override
     public void preInstantiateVmResource(VmInstanceSpec spec, Completion completion) {
-        if (!(VmInstanceConstant.VmOperation.NewCreate == spec.getCurrentVmOperation())
-                && VmInstanceConstant.VmOperation.ChangeImage != spec.getCurrentVmOperation()) {
+        if (VmInstanceConstant.VmOperation.NewCreate != spec.getCurrentVmOperation()) {
             completion.success();
             return;
         }
