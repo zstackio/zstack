@@ -1,3 +1,8 @@
+ALTER TABLE `zstack`.`TwoFactorAuthenticationSecretVO` ADD COLUMN `status` varchar(255) NOT NULL DEFAULT "NewCreated";
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "TwoFactorAuthenticationSecretVO" FROM TwoFactorAuthenticationSecretVO t;
+ALTER TABLE `zstack`.`TwoFactorAuthenticationSecretVO` CHANGE `resourceUuid` `userUuid` VARCHAR(32) NOT NULL;
+ALTER TABLE `zstack`.`TwoFactorAuthenticationSecretVO` CHANGE `resourceType` `userType` VARCHAR(256) NOT NULL;
+
 # Add primary key to PrimaryStorageHostRefVO and make SharedBlockGroupPrimaryStorageHostRefVO inherit it
 
 ALTER TABLE PrimaryStorageHostRefVO ADD id BIGINT UNSIGNED NOT NULL UNIQUE AUTO_INCREMENT;
