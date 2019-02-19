@@ -683,6 +683,7 @@ public class KVMAgentCommands {
         private boolean shareable;
         private String cacheMode = "none";
         private String wwn;
+
         public VolumeTO() {
         }
 
@@ -936,6 +937,7 @@ public class KVMAgentCommands {
 
     public interface VmAddOnsCmd {
         Map<String, Object> getAddons();
+
         String getVmInstanceUuid();
     }
 
@@ -1078,7 +1080,7 @@ public class KVMAgentCommands {
             this.kvmHiddenState = kvmHiddenState;
         }
 
-        public void setVmPortOff(boolean vmPortOff){
+        public void setVmPortOff(boolean vmPortOff) {
             this.vmPortOff = vmPortOff;
         }
 
@@ -1321,7 +1323,7 @@ public class KVMAgentCommands {
     public static class StartVmResponse extends AgentResponse {
     }
 
-    public static class ChangeCpuMemoryCmd extends AgentCommand{
+    public static class ChangeCpuMemoryCmd extends AgentCommand {
         private String vmUuid;
         private int cpuNum;
         private long memorySize;
@@ -1351,7 +1353,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class ChangeCpuMemoryResponse extends AgentResponse{
+    public static class ChangeCpuMemoryResponse extends AgentResponse {
         private int cpuNum;
         private long memorySize;
 
@@ -1372,7 +1374,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class IncreaseCpuCmd extends AgentCommand{
+    public static class IncreaseCpuCmd extends AgentCommand {
         private String vmUuid;
         private int cpuNum;
 
@@ -1393,7 +1395,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class IncreaseCpuResponse extends AgentResponse{
+    public static class IncreaseCpuResponse extends AgentResponse {
         private int cpuNum;
 
         public void setCpuNum(int cpuNum) {
@@ -1405,7 +1407,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class IncreaseMemoryCmd extends AgentCommand{
+    public static class IncreaseMemoryCmd extends AgentCommand {
         private String vmUuid;
         private long memorySize;
 
@@ -1426,7 +1428,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class IncreaseMemoryResponse extends AgentResponse{
+    public static class IncreaseMemoryResponse extends AgentResponse {
         private long memorySize;
 
         public void setMemorySize(long memorySize) {
@@ -1504,47 +1506,53 @@ public class KVMAgentCommands {
     public static class StopVmResponse extends AgentResponse {
     }
 
-    public static class PauseVmCmd extends AgentCommand{
+    public static class PauseVmCmd extends AgentCommand {
         private String uuid;
         private long timeout;
 
-        public String getUuid(){
+        public String getUuid() {
             return uuid;
         }
-        public void setUuid(String uuid){
+
+        public void setUuid(String uuid) {
             this.uuid = uuid;
         }
-        public long getTimeout(){
+
+        public long getTimeout() {
             return timeout;
         }
-        public void setTimeout(long timeout){
+
+        public void setTimeout(long timeout) {
             this.timeout = timeout;
         }
     }
 
-    public static class PauseVmResponse extends AgentResponse{
+    public static class PauseVmResponse extends AgentResponse {
 
     }
 
-    public static class ResumeVmCmd extends AgentCommand{
+    public static class ResumeVmCmd extends AgentCommand {
         private String uuid;
         private long timeout;
 
-        public String getUuid(){
+        public String getUuid() {
             return uuid;
         }
-        public void setUuid(String uuid){
+
+        public void setUuid(String uuid) {
             this.uuid = uuid;
         }
-        public long getTimeout(){
+
+        public long getTimeout() {
             return timeout;
         }
-        public void setTimeout(long timeout){
+
+        public void setTimeout(long timeout) {
             this.timeout = timeout;
         }
     }
 
-    public static class ResumeVmResponse extends AgentResponse{
+    public static class ResumeVmResponse extends AgentResponse {
 
     }
 

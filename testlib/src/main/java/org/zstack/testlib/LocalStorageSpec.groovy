@@ -173,6 +173,14 @@ class LocalStorageSpec extends PrimaryStorageSpec {
             simulator(LocalStorageKvmBackend.OFFLINE_MERGE_PATH) {
                 return new LocalStorageKvmBackend.OfflineMergeSnapshotRsp()
             }
+
+            simulator(LocalStorageKvmBackend.CHECK_INITIALIZED_FILE) {
+                return new LocalStorageKvmBackend.CheckInitializedFileRsp()
+            }
+
+            simulator(LocalStorageKvmBackend.CREATE_INITIALIZED_FILE) {
+                return new LocalStorageKvmBackend.AgentResponse()
+            }
         }
     }
 

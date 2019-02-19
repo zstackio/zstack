@@ -9,12 +9,15 @@ import org.zstack.core.asyncbatch.LoopAsyncBatch;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.notification.N;
+import org.zstack.core.step.StepRun;
+import org.zstack.core.step.StepRunCondition;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
@@ -82,6 +85,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     private NfsPrimaryStorageFactory nfsFactory;
     @Autowired
     private NfsPrimaryStorageManager nfsMgr;
+    @Autowired
+    private EventFacade eventf;
     @Autowired
     protected ApiTimeoutManager timeoutManager;
 
@@ -279,13 +284,20 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         return HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE);
     }
 
+    private void sendWarnning(String hostUuid, PrimaryStorageInventory ps) {
+        HostCanonicalEvents.HostMountData data = new HostCanonicalEvents.HostMountData();
+        data.hostUuid = hostUuid;
+        data.psUuid = ps.getUuid();
+        data.details = String.format("host: [%s] not mount url [%s] on mountpath [%s]", hostUuid, ps.getUrl(), ps.getMountPath());
+        eventf.fire(HostCanonicalEvents.HOST_CHECK_MOUNT_FAULT, data);
+    }
+
     @Override
     public void ping(PrimaryStorageInventory inv, final Completion completion) {
-        final int STEP_LIMIT = 100;
         final int ALL_LIMIT = 3;
-        int count;
+        List<HostInventory> hosts;
         try {
-            count = nfsFactory.getConnectedHostForOperation(inv).size();
+            hosts = nfsFactory.getConnectedHostForPing(inv);
         }catch (OperationFailureException e){
             pingAll(inv, ALL_LIMIT, new Completion(completion) {
                 @Override
@@ -301,64 +313,17 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             return;
         }
 
-        pingFilter(inv, count, STEP_LIMIT, new Completion(completion) {
+        new StepRun<HostInventory>(hosts) {
             @Override
-            public void success() {
-                    completion.success();
-                }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                    completion.fail(errorCode);
-                }
-        });
-    }
-    private void pingFilter(PrimaryStorageInventory inv, int count, int oneStepLimit, Completion completion){
-        List<Integer> stepCount = new ArrayList<>();
-        for(int i = 0; i <= count/oneStepLimit; i ++){
-            stepCount.add(i);
-        }
-
-        List<ErrorCode> errs = new ArrayList<>();
-        new While<>(stepCount).each((currentStep, compl) -> {
-            pingFilterStep(inv, currentStep, oneStepLimit, new Completion(compl) {
-                @Override
-                public void success() {
-                    compl.allDone();
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    errs.add(errorCode);
-                    compl.done();
-                }
-            });
-        }).run(new NoErrorCompletion(completion) {
-            @Override
-            public void done() {
-                if(errs.size() == stepCount.size()){
-                    completion.fail(errs.get(0));
-                }else {
-                    completion.success();
-                }
+            @StepRunCondition(stepLimit = 100)
+            protected void call(List<HostInventory> stepHosts, Completion completion) {
+                pingFilterStep(stepHosts, inv, completion);
             }
-        });
+        }.run(completion);
     }
 
-    private void pingFilterStep(PrimaryStorageInventory inv, int startStep, int stepLimit, final Completion completion){
-        List<String> hostUuids = CollectionUtils.transformToList(nfsFactory.getConnectedHostForOperation(inv, startStep, stepLimit),
-                new Function<String, HostInventory>() {
-            @Override
-            public String call(HostInventory arg) {
-                return arg.getUuid();
-            }
-        });
-
-        if(hostUuids.size() == 0){
-            completion.fail(operr("no host accessed to the nfs[uuid:%s]", inv.getUuid()));
-            return;
-        }
-        doPing(hostUuids, inv, new Completion(completion) {
+    private void pingFilterStep(List<HostInventory> hosts, PrimaryStorageInventory inv, final Completion completion){
+        doPing(hosts.stream().map(HostInventory::getUuid).collect(Collectors.toList()), inv, new Completion(completion) {
             @Override
             public void success() {
                 completion.success();
@@ -413,20 +378,26 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             bus.send(msg, new CloudBusCallBack(compl) {
                 @Override
                 public void run(MessageReply reply) {
-                    NfsPrimaryStorageAgentResponse rsp = !reply.isSuccess() ? null :
-                            ((KVMHostAsyncHttpCallReply) reply).toResponse(NfsPrimaryStorageAgentResponse.class);
-                    if (!reply.isSuccess() || !rsp.isSuccess()) {
-                        ErrorCode err = operr("failed to ping nfs primary storage[uuid:%s] from host[uuid:%s],because %s. " +
-                                        "disconnect this host-ps connection",
-                                psInv.getUuid(), huuid, reply.isSuccess() ? rsp.getError() : reply.getError());
-                        nfsFactory.updateNfsHostStatus(psInv.getUuid(), huuid, PrimaryStorageHostStatus.Disconnected);
-                        logger.warn(err.toString());
-                        errs.add(err);
-                        compl.done();
+                    if (reply.isSuccess()) {
+                        NfsPrimaryStorageAgentResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(NfsPrimaryStorageAgentResponse.class);
+                        if (rsp.isSuccess()) {
+                            nfsFactory.updateNfsHostStatus(psInv.getUuid(), huuid, PrimaryStorageHostStatus.Connected);
+                        } else {
+                            ErrorCode err = operr("failed to ping nfs primary storage[uuid:%s] from host[uuid:%s],because %s. " +
+                                            "disconnect this host-ps connection",
+                                    psInv.getUuid(), huuid, reply.isSuccess() ? rsp.getError() : reply.getError());
+                            errs.add(err);
+                            PrimaryStorageHostStatus old = Q.New(PrimaryStorageHostRefVO.class).eq(PrimaryStorageHostRefVO_.primaryStorageUuid, psInv.getUuid()).
+                                    eq(PrimaryStorageHostRefVO_.hostUuid, huuid).select(PrimaryStorageHostRefVO_.status).findValue();
+                            if (old == PrimaryStorageHostStatus.Connected) {
+                                nfsFactory.updateNfsHostStatus(psInv.getUuid(), huuid, PrimaryStorageHostStatus.Disconnected);
+                                sendWarnning(huuid, psInv);
+                            }
+                        }
                     } else {
-                        compl.allDone();
-                        nfsFactory.updateNfsHostStatus(psInv.getUuid(), huuid, PrimaryStorageHostStatus.Connected);
+                        errs.add(reply.getError());
                     }
+                    compl.done();
                 }
             });
         }).run(new NoErrorCompletion(completion) {

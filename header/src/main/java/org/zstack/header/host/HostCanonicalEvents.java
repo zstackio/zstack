@@ -10,6 +10,8 @@ public class HostCanonicalEvents {
     public static final String HOST_STATUS_CHANGED_PATH = "/host/status/change";
     public static final String HOST_DELETED_PATH = "/host/delete";
     public static final String HOST_DISCONNECTED_PATH = "/host/disconnected";
+    public static final String HOST_CHECK_MOUNT_FAULT = "/host/mount/path/fault";
+    public static final String HOST_CHECK_INITIALIZED_FAILED = "/host/check/initialized/falied";
 
     public static class HostDisconnectedData {
         public String hostUuid;
@@ -92,5 +94,13 @@ public class HostCanonicalEvents {
         public void setInventory(HostInventory inventory) {
             this.inventory = inventory;
         }
+    }
+
+    @NeedJsonSchema
+    public static class HostMountData {
+        public String hostUuid;
+        public String psUuid;
+        public String details;
+        public Long eventTime = System.currentTimeMillis();
     }
 }

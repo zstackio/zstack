@@ -79,4 +79,8 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
     abstract List<Flow> createMigrateBitsVolumeFlow(MigrateBitsStruct struct);
 
     abstract void deleteBits(String path, String hostUuid, Completion completion);
+
+    abstract void checkHostAttachedPSMountPath(String hostUuid, Completion completion);
+
+    abstract void initializeHostAttachedPSMountPath(String hostUuid, Completion completion);
 }

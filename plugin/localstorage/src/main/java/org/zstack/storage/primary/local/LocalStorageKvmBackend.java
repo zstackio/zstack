@@ -29,8 +29,11 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.*;
+import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageStatus;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
@@ -43,7 +46,10 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
@@ -644,6 +650,18 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         List<String> referencePaths;
     }
 
+    public static class CheckInitializedFileCmd extends AgentCommand {
+        public String filePath;
+    }
+
+    public static class CheckInitializedFileRsp extends AgentResponse {
+        public boolean existed = true;
+    }
+
+    public static class CreateInitializedFileCmd extends AgentCommand {
+        public String filePath;
+    }
+
     public static final String INIT_PATH = "/localstorage/init";
     public static final String GET_PHYSICAL_CAPACITY_PATH = "/localstorage/getphysicalcapacity";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/localstorage/volume/createempty";
@@ -664,6 +682,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String GET_VOLUME_SIZE = "/localstorage/volume/getsize";
     public static final String GET_BASE_IMAGE_PATH = "/localstorage/volume/getbaseimagepath";
     public static final String GET_QCOW2_REFERENCE = "/localstorage/getqcow2reference";
+    public static final String CHECK_INITIALIZED_FILE = "/localstorage/check/initializedfile";
+    public static final String CREATE_INITIALIZED_FILE = "/localstorage/create/initializedfile";
 
     public LocalStorageKvmBackend() {
     }
@@ -2854,5 +2874,55 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
         reply.setSnapshotInstallPath(makeSnapshotInstallPath(msg.getVolumeInventory(), msg.getSnapshotUuid()));
         completion.success(reply);
+    }
+
+    @Override
+    void checkHostAttachedPSMountPath(String hostUuid, Completion completion) {
+        CheckInitializedFileCmd cmd = new CheckInitializedFileCmd();
+        cmd.uuid = self.getUuid();
+        cmd.filePath = makeInitializedFilePath();
+        cmd.storagePath = self.getUrl();
+
+        // check flag doesn't care about host status
+        httpCall(CHECK_INITIALIZED_FILE, hostUuid, cmd, true, CheckInitializedFileRsp.class, new ReturnValueCompletion<CheckInitializedFileRsp>(completion) {
+            @Override
+            public void success(CheckInitializedFileRsp rsp) {
+                if (!rsp.existed) {
+                    completion.fail(operr("cannot find flag file [%s] on host [%s], it might not mount correct path", makeInitializedFilePath(), hostUuid));
+                } else {
+                    completion.success();
+                }
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void initializeHostAttachedPSMountPath(String hostUuid, Completion completion) {
+        CreateInitializedFileCmd cmd = new CreateInitializedFileCmd();
+        cmd.uuid = self.getUuid();
+        cmd.filePath = makeInitializedFilePath();
+        cmd.storagePath = self.getUrl();
+
+        // create flag doesn't care about host status
+        httpCall(CREATE_INITIALIZED_FILE, hostUuid, cmd, true, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(completion) {
+            @Override
+            public void success(AgentResponse rsp) {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    private String makeInitializedFilePath() {
+        return String.format("%s/%s-initialized-file", self.getMountPath(), self.getUuid());
     }
 }
