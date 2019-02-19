@@ -10,6 +10,7 @@ import java.util.Date;
 public class IdentityCanonicalEvents {
     public static final String ACCOUNT_DELETED_PATH = "/account/delete";
     public static final String USER_DELETED_PATH = "/user/delete";
+    public static final String ACCOUNT_LOGIN_PATH = "/account/login";
 
     @NeedJsonSchema
     public static class AccountDeletedData {
@@ -70,6 +71,19 @@ public class IdentityCanonicalEvents {
 
         public void setDate(Date date) {
             this.date = date;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class AccountLoginData {
+        private AccountInventory account;
+
+        public AccountInventory getAccount() {
+            return account;
+        }
+
+        public void setAccount(AccountInventory account) {
+            this.account = account;
         }
     }
 }
