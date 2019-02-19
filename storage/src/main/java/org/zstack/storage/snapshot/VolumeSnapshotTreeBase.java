@@ -1417,6 +1417,7 @@ public class VolumeSnapshotTreeBase {
                             StorageTrashSpec spec = new StorageTrashSpec(volume.getUuid(), VolumeVO.class.getSimpleName(),
                                     getSelfInventory().getPrimaryStorageUuid(), PrimaryStorageVO.class.getSimpleName(),
                                     oldVolumeInstallPath, volume.getSize());
+                            spec.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(volume.getFormat()).toString());
                             labelKey = trash.createTrash(TrashType.RevertVolume, spec).getLabelKey();
                         }
                         trigger.next();
