@@ -183,9 +183,8 @@ public class SQLConditionBuilder {
         boolean reserve = TAG_FALSE_OP.containsKey(operator);
 
         String op = reserve ? TAG_FALSE_OP.get(operator) : operator;
-        String subCondition = String.format("pattern.uuid %s ", op + (value == null ? "" : value));
-        String filterResourceUuidSQL = String.format("SELECT utag.resourceUuid FROM UserTagVO utag, TagPatternVO pattern" +
-                " WHERE %s and utag.tagPatternUuid = pattern.uuid", subCondition);
+        String subCondition = String.format("tagPatternUuid %s ", op + (value == null ? "" : value));
+        String filterResourceUuidSQL = String.format("SELECT distinct resourceUuid FROM UserTagVO WHERE %s", subCondition);
 
         String weather_not_in = reserve ? "NOT" : "";
         if (nestedQuery) {
