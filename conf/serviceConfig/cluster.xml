@@ -17,18 +17,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.cluster.APIListClusterMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.cluster.APISearchClusterMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.cluster.APIGetClusterMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.cluster.APIUpdateClusterMsg</name>
     </message>
 

@@ -107,20 +107,12 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateL3NetworkMsg) {
             handle((APICreateL3NetworkMsg) msg);
-        } else if (msg instanceof APIListL3NetworkMsg) {
-            handle((APIListL3NetworkMsg) msg);
         } else if (msg instanceof APISetL3NetworkMtuMsg) {
             handle((APISetL3NetworkMtuMsg) msg);
         } else if (msg instanceof APIGetL3NetworkMtuMsg) {
             handle((APIGetL3NetworkMtuMsg) msg);
         } else if (msg instanceof L3NetworkMessage) {
             passThrough((L3NetworkMessage) msg);
-        } else if (msg instanceof APIListIpRangeMsg) {
-            handle((APIListIpRangeMsg) msg);
-        } else if (msg instanceof APISearchL3NetworkMsg) {
-            handle((APISearchL3NetworkMsg) msg);
-        } else if (msg instanceof APIGetL3NetworkMsg) {
-            handle((APIGetL3NetworkMsg) msg);
         } else if (msg instanceof APIGetL3NetworkTypesMsg) {
             handle((APIGetL3NetworkTypesMsg) msg);
         } else if (msg instanceof APIGetIpAddressCapacityMsg) {
@@ -256,30 +248,6 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         bus.reply(msg, reply);
     }
 
-    private void handle(APIGetL3NetworkMsg msg) {
-        GetQuery q = new GetQuery();
-        String res = q.getAsString(msg, L3NetworkInventory.class);
-        APIGetL3NetworkReply reply = new APIGetL3NetworkReply();
-        reply.setInventory(res);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APISearchL3NetworkMsg msg) {
-        SearchQuery<L3NetworkInventory> sq = SearchQuery.create(msg, L3NetworkInventory.class);
-        String content = sq.listAsString();
-        APISearchL3NetworkReply reply = new APISearchL3NetworkReply();
-        reply.setContent(content);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIListIpRangeMsg msg) {
-        List<IpRangeVO> vos = dl.listByApiMessage(msg, IpRangeVO.class);
-        List<IpRangeInventory> invs = IpRangeInventory.valueOf(vos);
-        APIListIpRangeReply reply = new APIListIpRangeReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
-    }
-
     private void passThrough(String l3NetworkUuid, Message msg) {
         L3NetworkVO vo = dbf.findByUuid(l3NetworkUuid, L3NetworkVO.class);
         if (vo == null && allowedMessageAfterSoftDeletion.contains(msg.getClass())) {
@@ -303,13 +271,6 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         passThrough(msg.getL3NetworkUuid(), (Message) msg);
     }
 
-    private void handle(APIListL3NetworkMsg msg) {
-        List<L3NetworkVO> vos = dl.listByApiMessage(msg, L3NetworkVO.class);
-        List<L3NetworkInventory> invs = L3NetworkInventory.valueOf(vos);
-        APIListL3NetworkReply reply = new APIListL3NetworkReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
-    }
 
     private void handle(APICreateL3NetworkMsg msg) {
         SimpleQuery<L2NetworkVO> query = dbf.createQuery(L2NetworkVO.class);

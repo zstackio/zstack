@@ -8,10 +8,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.network.l2.APIListL2NetworkMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.network.l2.APIDeleteL2NetworkMsg</name>
     </message>
 
@@ -24,23 +20,7 @@
     </message>
 
     <message>
-        <name>org.zstack.header.network.l2.APISearchL2NetworkMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.network.l2.APIGetL2NetworkMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.network.l2.APICreateL2VlanNetworkMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.network.l2.APISearchL2VlanNetworkMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.network.l2.APIGetL2VlanNetworkMsg</name>
     </message>
 
     <message>

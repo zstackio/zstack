@@ -416,11 +416,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private void handleApiMessage(APIMessage msg) {
-        if (msg instanceof APISearchVirtualRouterOffingMsg) {
-            handle((APISearchVirtualRouterOffingMsg)msg);
-        } else if (msg instanceof APIGetVirtualRouterOfferingMsg) {
-            handle((APIGetVirtualRouterOfferingMsg) msg);
-        } else if (msg instanceof APIUpdateVirtualRouterOfferingMsg) {
+        if (msg instanceof APIUpdateVirtualRouterOfferingMsg) {
             handle((APIUpdateVirtualRouterOfferingMsg) msg);
         } else if (msg instanceof APIGetAttachablePublicL3ForVRouterMsg) {
             handle((APIGetAttachablePublicL3ForVRouterMsg) msg);
@@ -526,22 +522,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         APIUpdateInstanceOfferingEvent evt = new APIUpdateInstanceOfferingEvent(msg.getId());
         evt.setInventory(VirtualRouterOfferingInventory.valueOf(dbf.reload(ovo)));
         bus.publish(evt);
-    }
-
-    private void handle(APIGetVirtualRouterOfferingMsg msg) {
-        GetQuery q = new GetQuery();
-        String res = q.getAsString(msg, VirtualRouterOfferingInventory.class);
-        APIGetVirtualRouterOfferingReply reply = new APIGetVirtualRouterOfferingReply();
-        reply.setInventory(res);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APISearchVirtualRouterOffingMsg msg) {
-        SearchQuery<VirtualRouterOfferingInventory> q = SearchQuery.create(msg, VirtualRouterOfferingInventory.class);
-        APISearchVirtualRouterOffingReply reply = new APISearchVirtualRouterOffingReply();
-        String res = q.listAsString();
-        reply.setContent(res);
-        bus.reply(msg, reply);
     }
 
     @Override

@@ -12,10 +12,6 @@
     </message>
 
     <message>
-        <name>org.zstack.network.service.portforwarding.APIListPortForwardingRuleMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.network.service.portforwarding.APIQueryPortForwardingRuleMsg</name>
         <serviceId>query</serviceId>
     </message>

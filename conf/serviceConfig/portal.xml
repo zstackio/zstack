@@ -3,10 +3,6 @@
     <id>managementNode</id>
 
     <message>
-        <name>org.zstack.header.managementnode.APIListManagementNodeMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.managementnode.APIQueryManagementNodeMsg</name>
         <serviceId>query</serviceId>
     </message>

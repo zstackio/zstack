@@ -149,8 +149,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             handle((APICreatePortForwardingRuleMsg) msg);
         } else if (msg instanceof APIDeletePortForwardingRuleMsg) {
             handle((APIDeletePortForwardingRuleMsg) msg);
-        } else if (msg instanceof APIListPortForwardingRuleMsg) {
-            handle((APIListPortForwardingRuleMsg) msg);
         } else if (msg instanceof APIAttachPortForwardingRuleMsg) {
             handle((APIAttachPortForwardingRuleMsg) msg);
         } else if (msg instanceof APIDetachPortForwardingRuleMsg) {
@@ -451,13 +449,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         });
     }
 
-    private void handle(APIListPortForwardingRuleMsg msg) {
-        List<PortForwardingRuleVO> vos = dbf.listByApiMessage(msg, PortForwardingRuleVO.class);
-        List<PortForwardingRuleInventory> invs = PortForwardingRuleInventory.valueOf(vos);
-        APIListPortForwardingRuleReply reply = new APIListPortForwardingRuleReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
-    }
 
     private boolean isNeedRemoveVip(PortForwardingRuleInventory inv) {
         SimpleQuery q = dbf.createQuery(PortForwardingRuleVO.class);

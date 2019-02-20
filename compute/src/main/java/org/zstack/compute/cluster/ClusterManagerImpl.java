@@ -53,31 +53,9 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateClusterMsg) {
             handle((APICreateClusterMsg) msg);
-        } else if (msg instanceof APIListClusterMsg) {
-            handle((APIListClusterMsg) msg);
-        } else if (msg instanceof APISearchClusterMsg) {
-            handle((APISearchClusterMsg) msg);
-        } else if (msg instanceof APIGetClusterMsg) {
-            handle((APIGetClusterMsg) msg);
         } else if (msg instanceof ClusterMessage) {
             passThrough((ClusterMessage) msg);
         }
-    }
-
-    private void handle(APIGetClusterMsg msg) {
-	    GetQuery q = new GetQuery();
-	    String res = q.getAsString(msg, ClusterInventory.class);
-	    APIGetClusterReply reply = new APIGetClusterReply();
-	    reply.setInventory(res);
-	    bus.reply(msg, reply);
-    }
-
-    private void handle(APISearchClusterMsg msg) {
-	    SearchQuery<ClusterInventory> query = SearchQuery.create(msg, ClusterInventory.class);
-	    String ret = query.listAsString();
-	    APISearchClusterReply reply = new APISearchClusterReply();
-	    reply.setContent(ret);
-	    bus.reply(msg, reply);
     }
 
     private void passThrough(ClusterMessage msg) {
@@ -98,15 +76,6 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
 		cluster.handleMessage((Message) msg);
 	}
 
-
-	private void handle(APIListClusterMsg msg) {
-		APIListClusterReply reply = new APIListClusterReply();
-
-		List<ClusterVO> vos = dl.listByApiMessage(msg, ClusterVO.class);
-		List<ClusterInventory> invs = ClusterInventory.valueOf(vos);
-		reply.setInventories(invs);
-		bus.reply(msg, reply);
-	}
 
 	private void doCreateCluster(CreateClusterMessage msg, ReturnValueCompletion<ClusterInventory> completion) {
 		String clusterType = msg.getType();

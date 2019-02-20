@@ -16,14 +16,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.zone.APIListZonesMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.zone.APISearchZoneMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.zone.APIGetZoneMsg</name>
     </message>
 

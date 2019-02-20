@@ -739,8 +739,6 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
             handle((APIDeleteSearchIndexMsg) msg);
         } else if (msg instanceof APICreateSearchIndexMsg) {
             handle((APICreateSearchIndexMsg) msg);
-        } else if (msg instanceof APISearchGenerateSqlTriggerMsg) {
-            handle((APISearchGenerateSqlTriggerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -961,45 +959,6 @@ public class InventoryIndexManagerImpl extends AbstractService implements Invent
             for (SqlTrigger stt : sts.triggers()) {
                 doGenerateSqlTriggerText(stt, clazz, sb);
             }
-        }
-    }
-
-    private void handle(APISearchGenerateSqlTriggerMsg msg) {
-        String resultPath = msg.getResultPath();
-        if (resultPath == null) {
-            resultPath = PathUtil.join(System.getProperty("user.home"), "zstack-sql-trigger.sql");
-        }
-
-        try {
-            ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(true);
-            scanner.addIncludeFilter(new AnnotationTypeFilter(SqlTrigger.class));
-            scanner.addIncludeFilter(new AnnotationTypeFilter(SqlTriggers.class));
-            scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
-            for (String pkg : getBasePkgNames()) {
-                for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
-                    Class<?> triggerClass = Class.forName(bd.getBeanClassName());
-                    generateParentSqlTriggerInheritance(triggerClass);
-                }
-            }
-
-            StringBuilder sb = new StringBuilder("DELIMITER |\n");
-            scanner = new ClassPathScanningCandidateComponentProvider(true);
-            scanner.addIncludeFilter(new AnnotationTypeFilter(SqlTrigger.class));
-            scanner.addIncludeFilter(new AnnotationTypeFilter(SqlTriggers.class));
-            scanner.addExcludeFilter(new AnnotationTypeFilter(Controller.class));
-            for (String pkg : getBasePkgNames()) {
-                for (BeanDefinition bd : scanner.findCandidateComponents(pkg)) {
-                    Class<?> triggerClass = Class.forName(bd.getBeanClassName());
-                    generateSqlTriggerText(triggerClass, sb);
-                }
-            }
-
-            FileUtils.writeStringToFile(new File(resultPath), sb.toString());
-            APISearchGenerateSqlTriggerEvent evt = new APISearchGenerateSqlTriggerEvent(msg.getId());
-            bus.publish(evt);
-        } catch (Exception e) {
-            bus.logExceptionWithMessageDump(msg, e);
-            bus.replyErrorByMessageType(msg, e);
         }
     }
 

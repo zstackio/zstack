@@ -116,12 +116,6 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 			handle((APIAttachNetworkServiceProviderToL2NetworkMsg) msg);
 		} else if (msg instanceof APIDetachNetworkServiceProviderFromL2NetworkMsg) {
 			handle((APIDetachNetworkServiceProviderFromL2NetworkMsg)msg);
-		} else if (msg instanceof APIListNetworkServiceProviderMsg) {
-			handle((APIListNetworkServiceProviderMsg)msg);
-		} else if (msg instanceof APISearchNetworkServiceProviderMsg) {
-		    handle((APISearchNetworkServiceProviderMsg)msg);
-		} else if (msg instanceof APIGetNetworkServiceProviderMsg) {
-		    handle((APIGetNetworkServiceProviderMsg) msg);
 		} else if (msg instanceof APIQueryNetworkServiceProviderMsg) {
 		    handle((APIQueryNetworkServiceProviderMsg) msg);
         } else if (msg instanceof APIGetNetworkServiceTypesMsg) {
@@ -157,30 +151,6 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 	    reply.setInventories(invs);
 	    bus.reply(msg, reply);
     }
-
-    private void handle(APIGetNetworkServiceProviderMsg msg) {
-	    GetQuery q = new GetQuery();
-	    String res = q.getAsString(msg, NetworkServiceProviderInventory.class);
-	    APIGetNetworkServiceProviderReply reply = new APIGetNetworkServiceProviderReply();
-	    reply.setInventory(res);
-	    bus.reply(msg, reply);
-    }
-
-    private void handle(APISearchNetworkServiceProviderMsg msg) {
-	    SearchQuery<NetworkServiceProviderInventory> q = SearchQuery.create(msg, NetworkServiceProviderInventory.class);
-	    APISearchNetworkServiceProviderReply reply = new APISearchNetworkServiceProviderReply();
-	    String res = q.listAsString();
-	    reply.setContent(res);
-	    bus.reply(msg, reply);
-    }
-
-    private void handle(APIListNetworkServiceProviderMsg msg) {
-		List<NetworkServiceProviderVO> vos = dl.listByApiMessage(msg, NetworkServiceProviderVO.class);
-		List<NetworkServiceProviderInventory> invs = NetworkServiceProviderInventory.valueOf(vos);
-		APIListNetworkServiceProviderReply reply = new APIListNetworkServiceProviderReply();
-		reply.setInventories(invs);
-		bus.reply(msg, reply);
-	}
 
 	private void handle(APIDetachNetworkServiceProviderFromL2NetworkMsg msg) {
 		NetworkServiceProviderVO vo = dbf.findByUuid(msg.getNetworkServiceProviderUuid(), NetworkServiceProviderVO.class);

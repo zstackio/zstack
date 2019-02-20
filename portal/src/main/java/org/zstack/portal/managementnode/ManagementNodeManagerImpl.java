@@ -203,18 +203,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     }
 
     private void handleApiMessage(APIMessage msg) {
-        if (msg instanceof APIListManagementNodeMsg) {
-            handle((APIListManagementNodeMsg) msg);
-        } else {
-            bus.dealWithUnknownMessage(msg);
-        }
-    }
-
-    private void handle(APIListManagementNodeMsg msg) {
-        List<ManagementNodeVO> vos = dbf.listAll(ManagementNodeVO.class);
-        APIListManagementNodeReply reply = new APIListManagementNodeReply();
-        reply.setInventories(ManagementNodeInventory.valueOf(vos));
-        bus.reply(msg, reply);
+        bus.dealWithUnknownMessage(msg);
     }
 
     private void handleLocalMessage(Message msg) {

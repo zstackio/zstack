@@ -715,8 +715,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateSecurityGroupMsg) {
             handle((APICreateSecurityGroupMsg) msg);
-        } else if (msg instanceof APIListSecurityGroupMsg) {
-            handle((APIListSecurityGroupMsg) msg);
         } else if (msg instanceof APIAddSecurityGroupRuleMsg) {
             handle((APIAddSecurityGroupRuleMsg) msg);
         } else if (msg instanceof APIAddVmNicToSecurityGroupMsg) {
@@ -727,8 +725,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             handle((APIDeleteSecurityGroupMsg) msg);
         } else if (msg instanceof APIDeleteVmNicFromSecurityGroupMsg) {
             handle((APIDeleteVmNicFromSecurityGroupMsg) msg);
-        } else if (msg instanceof APIListVmNicInSecurityGroupMsg) {
-            handle((APIListVmNicInSecurityGroupMsg) msg);
         } else if (msg instanceof APIAttachSecurityGroupToL3NetworkMsg) {
             handle((APIAttachSecurityGroupToL3NetworkMsg) msg);
         }  else if (msg instanceof APIChangeSecurityGroupStateMsg) {
@@ -929,14 +925,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         SecurityGroupInventory sginv = SecurityGroupInventory.valueOf(sgvo);
         evt.setInventory(sginv);
         bus.publish(evt);
-    }
-
-    private void handle(APIListVmNicInSecurityGroupMsg msg) {
-        List<VmNicSecurityGroupRefVO> vos = dl.listByApiMessage(msg, VmNicSecurityGroupRefVO.class);
-        List<VmNicSecurityGroupRefInventory> invs = VmNicSecurityGroupRefInventory.valueOf(vos);
-        APIListVmNicInSecurityGroupReply reply = new APIListVmNicInSecurityGroupReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
     }
 
     private void removeNicFromSecurityGroup(String sgUuid, List<String> vmNicUuids) {
@@ -1322,14 +1310,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         evt.setInventory(SecurityGroupInventory.valueOf(sgvo));
         logger.debug(String.format("successfully add rules to security group[uuid:%s, name:%s]:\n%s", sgvo.getUuid(), sgvo.getName(), JSONObjectUtil.toJsonString(msg.getRules())));
         bus.publish(evt);
-    }
-
-    private void handle(APIListSecurityGroupMsg msg) {
-        List<SecurityGroupVO> vos = dl.listByApiMessage(msg, SecurityGroupVO.class);
-        List<SecurityGroupInventory> invs = SecurityGroupInventory.valueOf(vos);
-        APIListSecurityGroupReply reply = new APIListSecurityGroupReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
     }
 
     private void handle(APICreateSecurityGroupMsg msg) {

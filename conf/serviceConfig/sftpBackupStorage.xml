@@ -9,14 +9,6 @@
     </message>
 
     <message>
-        <name>org.zstack.storage.backup.sftp.APISearchSftpBackupStorageMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.storage.backup.sftp.APIGetSftpBackupStorageMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.storage.backup.sftp.APIReconnectSftpBackupStorageMsg</name>
         <interceptor>BackupStorageApiInterceptor</interceptor>
     </message>

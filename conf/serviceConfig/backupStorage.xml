@@ -12,10 +12,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.storage.backup.APIListBackupStorageMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.storage.backup.APIDeleteBackupStorageMsg</name>
     </message>
 
@@ -29,14 +25,6 @@
 
     <message>
         <name>org.zstack.header.storage.backup.APIDetachBackupStorageFromZoneMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.storage.backup.APISearchBackupStorageMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.storage.backup.APIGetBackupStorageMsg</name>
     </message>
 
     <message>

@@ -102,12 +102,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIAddPrimaryStorageMsg) {
             handle((APIAddPrimaryStorageMsg) msg);
-        } else if (msg instanceof APIListPrimaryStorageMsg) {
-            handle((APIListPrimaryStorageMsg) msg);
-        } else if (msg instanceof APISearchPrimaryStorageMsg) {
-            handle((APISearchPrimaryStorageMsg) msg);
-        } else if (msg instanceof APIGetPrimaryStorageMsg) {
-            handle((APIGetPrimaryStorageMsg) msg);
         } else if (msg instanceof PrimaryStorageMessage) {
             passThrough((PrimaryStorageMessage) msg);
         } else if (msg instanceof APIGetPrimaryStorageTypesMsg) {
@@ -190,30 +184,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         APIGetPrimaryStorageTypesReply reply = new APIGetPrimaryStorageTypesReply();
         List<String> ret = new ArrayList<>(PrimaryStorageType.getAllTypeNames());
         reply.setPrimaryStorageTypes(ret);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIGetPrimaryStorageMsg msg) {
-        GetQuery q = new GetQuery();
-        String res = q.getAsString(msg, PrimaryStorageInventory.class);
-        APIGetPrimaryStorageReply reply = new APIGetPrimaryStorageReply();
-        reply.setInventory(res);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APISearchPrimaryStorageMsg msg) {
-        SearchQuery<PrimaryStorageInventory> sq = SearchQuery.create(msg, PrimaryStorageInventory.class);
-        String content = sq.listAsString();
-        APISearchPrimaryStorageReply reply = new APISearchPrimaryStorageReply();
-        reply.setContent(content);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIListPrimaryStorageMsg msg) {
-        List<PrimaryStorageVO> vos = dl.listByApiMessage(msg, PrimaryStorageVO.class);
-        List<PrimaryStorageInventory> invs = PrimaryStorageInventory.valueOf(vos);
-        APIListPrimaryStorageReply reply = new APIListPrimaryStorageReply();
-        reply.setInventories(invs);
         bus.reply(msg, reply);
     }
 
