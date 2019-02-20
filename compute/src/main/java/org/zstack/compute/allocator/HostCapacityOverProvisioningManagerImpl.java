@@ -1,5 +1,10 @@
 package org.zstack.compute.allocator;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.core.config.resourceconfig.ResourceConfig;
+import org.zstack.core.config.resourceconfig.ResourceConfigFacade;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
 
 import java.util.Map;
@@ -11,6 +16,19 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HostCapacityOverProvisioningManagerImpl implements HostCapacityOverProvisioningManager {
     private double globalMemoryRatio = 1;
     private ConcurrentHashMap<String, Double> hostMemoryRatio = new ConcurrentHashMap<String, Double>();
+    private GlobalConfig globalConfig;
+
+    @Autowired
+    GlobalConfigFacade gcf;
+
+    @Autowired
+    ResourceConfigFacade rcf;
+
+    @Override
+    public void setGlobalConfig(String category, String name) {
+        globalConfig = gcf.getAllConfig().get(GlobalConfig.produceIdentity(category, name));
+        globalMemoryRatio = globalConfig.value(Double.class);
+    }
 
     @Override
     public void setMemoryGlobalRatio(double ratio) {
@@ -35,8 +53,14 @@ public class HostCapacityOverProvisioningManagerImpl implements HostCapacityOver
     @Override
     public double getMemoryRatio(String hostUuid) {
         Double ratio =  hostMemoryRatio.get(hostUuid);
-        ratio = ratio == null ? globalMemoryRatio : ratio;
-        return ratio;
+        if (ratio != null) {
+            return ratio;
+        }
+        if (globalConfig != null) {
+            return rcf.getResourceConfigValue(globalConfig, hostUuid, Double.class);
+        } else {
+            return globalMemoryRatio;
+        }
     }
 
     @Override

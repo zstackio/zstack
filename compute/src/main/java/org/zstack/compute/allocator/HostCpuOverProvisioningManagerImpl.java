@@ -4,10 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.config.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.HostCpuOverProvisioningManager;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.RecalculateHostCapacityMsg;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
@@ -30,6 +34,8 @@ public class HostCpuOverProvisioningManagerImpl implements HostCpuOverProvisioni
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     @Override
     public void setGlobalRatio(int ratio) {
@@ -113,7 +119,8 @@ public class HostCpuOverProvisioningManagerImpl implements HostCpuOverProvisioni
     @Override
     public int getRatio(String hostUuid) {
         Integer r = ratios.get(hostUuid);
-        return r == null ? getGlobalRatio() : r;
+        // TODO: init from db, not get from db every time.
+        return r == null ? rcf.getResourceConfigValue(HostGlobalConfig.HOST_CPU_OVER_PROVISIONING_RATIO, hostUuid, Integer.class) : r;
     }
 
     @Override

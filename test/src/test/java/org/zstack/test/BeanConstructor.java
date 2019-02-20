@@ -26,6 +26,7 @@ public class BeanConstructor {
             "<import resource=\"springConfigXml/DatabaseFacade.xml\" />",
             "<import resource=\"springConfigXml/JobQueueFacade.xml\" />",
             "<import resource=\"springConfigXml/GlobalConfigFacade.xml\" />",
+            "<import resource=\"springConfigXml/resourceConfig.xml\" />",
             "<import resource=\"springConfigXml/ProgressBar.xml\" />",
             "<import resource=\"springConfigXml/RESTFacade.xml\" />",
             "<import resource=\"springConfigXml/QueryFacade.xml\" />",
