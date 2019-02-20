@@ -1,5 +1,8 @@
 package org.zstack.core.db;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.util.Strings;
+import org.springframework.security.access.method.P;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.vo.EntityGraph;
@@ -46,25 +49,36 @@ public class DBGraph {
         public EntityVertex next;
         public EntityVertex previous;
 
-        public String toSQL(String field) {
-            return makeSQL(this, field);
+        public String toSQL(String field, SimpleQuery.Op op, String value) {
+            return makeSQL(this, field, op, value);
         }
 
-        private String makeSQL(EntityVertex vertex, String field) {
-            if (vertex.next == null) {
+        private static String makeSQL(EntityVertex vertex, String field, SimpleQuery.Op op, String val) {
+            List<String> from = new ArrayList<>();
+            List<String> conditions = new ArrayList<>();
+            while (true) {
                 String entity = String.format("%s_", vertex.entityClass.getSimpleName());
                 String vo = vertex.entityClass.getSimpleName();
-                String key = vertex.previous.dstKey;
-                return String.format("(SELECT %s.%s FROM %s %s WHERE %s.%s %%s %%s)",
-                        entity, key, vo, entity, entity, field);
-            }
+                from.add(vo + " " + entity);
 
-            String value = makeSQL(vertex.next, field);
-            String entity = String.format("%s_", vertex.entityClass.getSimpleName());
-            String vo = vertex.entityClass.getSimpleName();
-            String primaryKey = vertex.previous != null ? vertex.previous.dstKey : EntityMetadata.getPrimaryKeyField(vertex.entityClass).getName();
-            return String.format("(SELECT %s.%s FROM %s %s WHERE %s.%s IN %s)",
-                    entity, primaryKey, vo, entity, entity, vertex.srcKey, value);
+                if (vertex.previous == null) {
+                    conditions.add(String.format("%s.%s %s %s", entity, field, op.toString(), val));
+                } else {
+                    conditions.add(String.format("%s.%s = %s.%s",
+                            String.format("%s_", vertex.previous.entityClass.getSimpleName()), vertex.previous.srcKey,
+                            entity, vertex.previous.dstKey));
+                }
+
+                if (vertex.next != null) {
+                    vertex = vertex.next;
+                    continue;
+                }
+
+                String primaryKey = vertex.previous != null ? vertex.previous.dstKey : EntityMetadata.getPrimaryKeyField(vertex.entityClass).getName();
+                return String.format("select %s.%s from %s where %s", entity, primaryKey,
+                        StringUtils.join(from, ", "),
+                        StringUtils.join(conditions, " and "));
+            }
         }
 
         @Override

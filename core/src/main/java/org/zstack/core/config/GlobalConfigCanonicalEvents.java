@@ -20,6 +20,10 @@ public class GlobalConfigCanonicalEvents {
             this.oldValue = oldValue;
         }
 
+        /**
+            new value should be read from database to prevent from dirty read when multi nodes
+         */
+        @Deprecated
         public String getNewValue() {
             return newValue;
         }

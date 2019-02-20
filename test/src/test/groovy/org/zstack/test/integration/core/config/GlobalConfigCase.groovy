@@ -2,6 +2,7 @@ package org.zstack.test.integration.core.config
 
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.EventFacade
+import org.zstack.core.config.GlobalConfig
 import org.zstack.core.config.GlobalConfigCanonicalEvents
 import org.zstack.core.config.GlobalConfigFacadeImpl
 import org.zstack.core.config.GlobalConfigVO
@@ -180,13 +181,19 @@ class GlobalConfigCase extends SubCase {
         EventFacade evtf = bean(EventFacade.class)
         String name = KVMGlobalConfig.LIBVIRT_CACHE_MODE.name
 
+        SQL.New(GlobalConfigVO.class).eq(GlobalConfigVO_.category, "kvm")
+                .eq(GlobalConfigVO_.@name, "vm.cacheMode")
+                .set(GlobalConfigVO_.value, "writeback")
+                .update()
+
         GlobalConfigCanonicalEvents.UpdateEvent d = new GlobalConfigCanonicalEvents.UpdateEvent()
         d.oldValue = KVMGlobalConfig.LIBVIRT_CACHE_MODE.value()
-        d.newValue = "writeback"
+        d.newValue = "writethrough"
         evtf.fire(makeUpdateEventPath(KVMGlobalConfig.CATEGORY, name), d)
 
         retryInSecs {
-            assert KVMGlobalConfig.LIBVIRT_CACHE_MODE.value() == d.newValue
+            // get from db not from event.
+            assert KVMGlobalConfig.LIBVIRT_CACHE_MODE.value() == "writeback"
         }
     }
 

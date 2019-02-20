@@ -77,3 +77,67 @@ CREATE TABLE `BaremetalBondingVO` (
 
 ALTER TABLE `BaremetalInstanceVO` ADD COLUMN `templateUuid` varchar(32) DEFAULT NULL;
 ALTER TABLE `BaremetalInstanceVO` ADD CONSTRAINT `fkBaremetalInstanceVOPreconfigurationTemplateVO` FOREIGN KEY (`templateUuid`) REFERENCES `PreconfigurationTemplateVO` (`uuid`) ON DELETE SET NULL;
+
+CREATE TABLE `ResourceConfigVO` (
+    `uuid`         VARCHAR(32)  NOT NULL UNIQUE,
+    `name`         VARCHAR(255) NOT NULL,
+    `description`  VARCHAR(1024) DEFAULT NULL,
+    `category`     VARCHAR(64)  NOT NULL,
+    `value`        TEXT         NOT NULL,
+    `resourceUuid` VARCHAR(32)  NOT NULL,
+    `resourceType` VARCHAR(256) NOT NULL,
+    `lastOpDate`   TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`   TIMESTAMP,
+    PRIMARY KEY (`uuid`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+ALTER TABLE ResourceConfigVO ADD CONSTRAINT fkResourceConfigVOResourceVO FOREIGN KEY (`resourceUuid`) REFERENCES `ResourceVO` (uuid) ON DELETE CASCADE;
+
+DELIMITER $$
+CREATE PROCEDURE migrateReserveMemTagVO()
+    BEGIN
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE tag VARCHAR(64);
+        DECLARE resourceUuid VARCHAR(32);
+        DECLARE resourceType VARCHAR(32);
+        DECLARE resourceConfigUuid VARCHAR(32);
+        DECLARE des VARCHAR(1024);
+        DECLARE cur1 CURSOR FOR SELECT DISTINCT stag.tag, stag.resourceUuid, stag.resourceType FROM zstack.SystemTagVO stag WHERE stag.tag LIKE 'reservedMemory::%';
+        DECLARE cur2 CURSOR FOR SELECT DISTINCT stag.tag, stag.resourceUuid, stag.resourceType FROM zstack.SystemTagVO stag WHERE stag.tag LIKE 'host::reservedMemory::%';
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+        SET des = 'The memory capacity reserved on all KVM hosts. ZStack KVM agent is a python web server that needs some memory capacity to run. this value reserves a portion of memory for the agent as well as other host applications. The value can be overridden by system tag on individual host, cluster and zone level';
+
+        OPEN cur1;
+        read_loop: LOOP
+            FETCH cur1 INTO tag, resourceUuid, resourceType;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            SET resourceConfigUuid = (REPLACE(UUID(), '-', ''));
+            INSERT ResourceConfigVO(uuid, name, description, category, value, resourceUuid, resourceType, createDate, lastOpDate)
+            VALUES (resourceConfigUuid, 'reservedMemory', des, 'kvm', substring(tag, LENGTH('reservedMemory::') + 1), resourceUuid ,resourceType, NOW(), NOW());
+
+        END LOOP;
+        CLOSE cur1;
+
+        SET done = FALSE;
+        OPEN cur2;
+        read_loop: LOOP
+            FETCH cur2 INTO tag, resourceUuid, resourceType;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            SET resourceConfigUuid = (REPLACE(UUID(), '-', ''));
+            INSERT ResourceConfigVO(uuid, name, description, category, value, resourceUuid, resourceType, createDate, lastOpDate)
+            VALUES (resourceConfigUuid, 'reservedMemory', des, 'kvm', substring(tag, LENGTH('host::reservedMemory::') + 1), resourceUuid ,resourceType, NOW(), NOW());
+
+        END LOOP;
+        CLOSE cur2;
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+call migrateReserveMemTagVO();
+DROP PROCEDURE IF EXISTS migrateReserveMemTagVO;

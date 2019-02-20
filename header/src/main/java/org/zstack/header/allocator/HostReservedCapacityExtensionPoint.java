@@ -5,5 +5,5 @@ package org.zstack.header.allocator;
 public interface HostReservedCapacityExtensionPoint {
     String getHypervisorTypeForHostReserveCapacityExtension();
 
-    ReservedHostCapacity getReservedHostCapacity();
+    ReservedHostCapacity getReservedHostCapacity(String hostUuid);
 }

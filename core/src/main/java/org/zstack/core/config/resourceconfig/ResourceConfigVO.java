@@ -1,5 +1,7 @@
 package org.zstack.core.config.resourceconfig;
 
+import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ToInventory;
 
 import javax.persistence.*;
@@ -13,6 +15,7 @@ public class ResourceConfigVO implements ToInventory {
     private String uuid;
 
     @Column
+    @ForeignKey(parentEntityClass = ResourceVO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
     private String resourceUuid;
 
     @Column

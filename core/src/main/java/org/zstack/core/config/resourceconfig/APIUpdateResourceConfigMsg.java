@@ -4,17 +4,20 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.vo.ResourceVO;
+
+import javax.annotation.Resource;
 
 @RestRequest(path = "/resource-configurations/{category}/{name}/{resourceUuid}/actions",
         method = HttpMethod.PUT,
         isAction = true,
         responseClass = APIUpdateResourceConfigEvent.class)
-public class APIUpdateResourceConfigMsg extends APIMessage {
+public class APIUpdateResourceConfigMsg extends APIMessage implements ResourceConfigMessage {
     @APIParam
     private String category;
     @APIParam
     private String name;
-    @APIParam
+    @APIParam(checkAccount = true, resourceType = ResourceVO.class, operationTarget = true)
     private String resourceUuid;
     @APIParam
     private String value;
@@ -27,6 +30,7 @@ public class APIUpdateResourceConfigMsg extends APIMessage {
         this.resourceUuid = resourceUuid;
     }
 
+    @Override
     public String getCategory() {
         return category;
     }
@@ -35,6 +39,7 @@ public class APIUpdateResourceConfigMsg extends APIMessage {
         this.category = category;
     }
 
+    @Override
     public String getName() {
         return name;
     }

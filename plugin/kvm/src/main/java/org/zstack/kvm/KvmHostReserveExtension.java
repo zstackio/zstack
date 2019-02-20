@@ -1,7 +1,9 @@
 package org.zstack.kvm;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.config.resourceconfig.ResourceConfigFacade;
 import org.zstack.header.Component;
 import org.zstack.header.allocator.HostReservedCapacityExtensionPoint;
 import org.zstack.header.allocator.ReservedHostCapacity;
@@ -11,13 +13,21 @@ import org.zstack.utils.SizeUtils;
  */
 public class KvmHostReserveExtension implements HostReservedCapacityExtensionPoint, Component {
     private ReservedHostCapacity reserve = new ReservedHostCapacity();
+
+    @Autowired
+    ResourceConfigFacade rcf;
+
     @Override
     public String getHypervisorTypeForHostReserveCapacityExtension() {
         return KVMConstant.KVM_HYPERVISOR_TYPE;
     }
 
     @Override
-    public ReservedHostCapacity getReservedHostCapacity() {
+    public ReservedHostCapacity getReservedHostCapacity(String hostUuid) {
+        ReservedHostCapacity hc = new ReservedHostCapacity();
+        hc.setReservedCpuCapacity(reserve.getReservedCpuCapacity());
+        String reserveMem = rcf.getResourceConfigValue(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY, hostUuid, String.class);
+        hc.setReservedMemoryCapacity(SizeUtils.sizeStringToBytes(reserveMem));
         return reserve;
     }
 
