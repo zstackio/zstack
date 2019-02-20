@@ -43,37 +43,40 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
         sb.append(String.format("\nTASK QUEUE NUMBER: %s\n", chainTasks.size()));
         List<String> asyncTasks = new ArrayList<>();
         long now = System.currentTimeMillis();
-        for (Map.Entry<String, ChainTaskQueueWrapper> e : chainTasks.entrySet()) {
-            StringBuilder tb = new StringBuilder(String.format("\nQUEUE SYNC SIGNATURE: %s", e.getKey()));
-            ChainTaskQueueWrapper w = e.getValue();
-            tb.append(String.format("\nRUNNING TASK NUMBER: %s", w.runningQueue.size()));
-            tb.append(String.format("\nPENDING TASK NUMBER: %s", w.pendingQueue.size()));
-            tb.append(String.format("\nASYNC LEVEL: %s", w.maxThreadNum));
+        synchronized (chainTasks) {
+            for (Map.Entry<String, ChainTaskQueueWrapper> e : chainTasks.entrySet()) {
+                StringBuilder tb = new StringBuilder(String.format("\nQUEUE SYNC SIGNATURE: %s", e.getKey()));
+                ChainTaskQueueWrapper w = e.getValue();
+                tb.append(String.format("\nRUNNING TASK NUMBER: %s", w.runningQueue.size()));
+                tb.append(String.format("\nPENDING TASK NUMBER: %s", w.pendingQueue.size()));
+                tb.append(String.format("\nASYNC LEVEL: %s", w.maxThreadNum));
 
-            int index = 0;
-            for (Object obj : w.runningQueue) {
-                ChainFuture cf = (ChainFuture) obj;
-                long execTime = TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartExecutionTimeInMills());
-                long pendingTime = TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartPendingTimeInMills()) - execTime;
+                int index = 0;
+                for (Object obj : w.runningQueue) {
+                    ChainFuture cf = (ChainFuture) obj;
+                    long execTime = TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartExecutionTimeInMills());
+                    long pendingTime = TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartPendingTimeInMills()) - execTime;
 
-                tb.append(String.format("\nRUNNING TASK[NAME: %s, CLASS: %s, PENDING TIME: %s sec, EXECUTION TIME: %s secs, INDEX: %s] %s",
-                        cf.getTask().getName(), cf.getTask().getClass(),
-                        pendingTime,
-                        execTime, index++,
-                        getChainContext(cf.getTask())
-                ));
+                    tb.append(String.format("\nRUNNING TASK[NAME: %s, CLASS: %s, PENDING TIME: %s sec, EXECUTION TIME: %s secs, INDEX: %s] %s",
+                            cf.getTask().getName(), cf.getTask().getClass(),
+                            pendingTime,
+                            execTime, index++,
+                            getChainContext(cf.getTask())
+                    ));
+                }
+
+                for (Object obj : w.pendingQueue) {
+                    ChainFuture cf = (ChainFuture) obj;
+                    tb.append(String.format("\nPENDING TASK[NAME: %s, CLASS: %s PENDING TIME: %s secs, INDEX: %s] %s",
+                            cf.getTask().getName(), cf.getTask().getClass(),
+                            TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartPendingTimeInMills()), index++,
+                            getChainContext(cf.getTask())
+                    ));
+                }
+                asyncTasks.add(tb.toString());
             }
-
-            for (Object obj : w.pendingQueue) {
-                ChainFuture cf = (ChainFuture) obj;
-                tb.append(String.format("\nPENDING TASK[NAME: %s, CLASS: %s PENDING TIME: %s secs, INDEX: %s] %s",
-                        cf.getTask().getName(), cf.getTask().getClass(),
-                        TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartPendingTimeInMills()), index++,
-                        getChainContext(cf.getTask())
-                ));
-            }
-            asyncTasks.add(tb.toString());
         }
+
         sb.append(StringUtils.join(asyncTasks, "\n"));
         sb.append("\n================= END TASK QUEUE DUMP ==================\n");
         _threadFacade.printThreadsAndTasks();
