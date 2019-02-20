@@ -4,9 +4,6 @@ import org.apache.commons.codec.binary.Base64;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import okhttp3.*;
-import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
-import org.zstack.utils.logging.CLogger;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -25,7 +22,6 @@ import java.util.regex.Pattern;
  * Created by xing5 on 2016/12/9.
  */
 public class ZSClient {
-    private static final CLogger logger = Utils.getLogger(ZSClient.class);
     private static OkHttpClient http = new OkHttpClient();
 
     static final Gson gson;
