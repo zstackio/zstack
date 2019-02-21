@@ -1393,7 +1393,7 @@ ${txt}
         RestResponse at
 
         List<String> imports = []
-        Map<String, Field> fsToAdd = [:]
+        Map<String, Object> fsToAdd = [:]
         List<String> fieldStrings = []
 
         ApiResponseDocTemplate(Class responseClass) {
@@ -1407,10 +1407,45 @@ ${txt}
             }
         }
 
+        def getAllFieldsAndEnums(Class clazz) {
+            List<Object> allValues = new ArrayList<Object>()
+
+            while (true) {
+                if (Enum.class.isAssignableFrom(clazz)) {
+                    Enum[] es = clazz.getEnumConstants()
+
+                    if (es != null) {
+                        Collections.addAll(allValues, es)
+                    }
+                } else {
+                    Field[] fs = clazz.getDeclaredFields()
+                    Collections.addAll(allValues, fs)
+                }
+
+                clazz = clazz.getSuperclass()
+
+                if (clazz == Object.class) {
+                    break
+                }
+            }
+
+            return allValues
+        }
+
         def findFieldsForNormalClass() {
-            List<Field> allFields = FieldUtils.getAllFields(responseClass)
-            allFields = allFields.findAll { !it.isAnnotationPresent(APINoSee.class) && !Modifier.isStatic(it.modifiers) }
-            allFields.each { fsToAdd[it.name] = it }
+            List<Object> allAttributes = getAllFieldsAndEnums(responseClass)
+            allAttributes = allAttributes.findAll {
+                if (it instanceof Field && !it.isAnnotationPresent(APINoSee.class) && !Modifier.isStatic(it.modifiers)) {
+                    return true
+                } else return it instanceof Enum
+            }
+            allAttributes.each {
+                if (it instanceof Field) {
+                    fsToAdd[it.name] = it
+                } else if (it instanceof Enum) {
+                    fsToAdd[it.toString()] = it
+                }
+            }
         }
 
         def findFieldsForRestResponse() {
@@ -1470,27 +1505,34 @@ ${txt}
 
         String fields() {
             fsToAdd.each { k, v ->
-                System.out.println("generating field ${responseClass.name}.${k} ${v.type.name}")
 
-                if (PRIMITIVE_TYPES.contains(v.type)) {
-                    fieldStrings.add(createField(k, "", v.type.simpleName))
-                } else if (v.type.name.startsWith("java.")) {
-                    if (Collection.class.isAssignableFrom(v.type) || Map.class.isAssignableFrom(v.type)) {
-                        Class gtype = FieldUtils.getGenericType(v)
 
-                        if (gtype == null || gtype.name.startsWith("java.")) {
-                            fieldStrings.add(createField(k, "", v.type.simpleName))
+                if (v instanceof Enum) {
+                    System.out.println("generating enum ${responseClass.name}.${k} ${v.class.getSimpleName()}")
+                    fieldStrings.add(createField(k, "", v.class.getSimpleName()))
+                } else if (v instanceof Field) {
+                    System.out.println("generating field ${responseClass.name}.${k} ${v.type.name}")
+                    if (PRIMITIVE_TYPES.contains(v.type)) {
+                        fieldStrings.add(createField(k, "", v.type.simpleName))
+                    } else if (v.type.name.startsWith("java.")) {
+                        if (Collection.class.isAssignableFrom(v.type) || Map.class.isAssignableFrom(v.type)) {
+                            Class gtype = FieldUtils.getGenericType(v)
+
+                            if (gtype == null || gtype.name.startsWith("java.")) {
+                                fieldStrings.add(createField(k, "", v.type.simpleName))
+                            } else {
+                                fieldStrings.add(createRef(k, "${responseClass.canonicalName}.${v.name}", null, v.type.simpleName, gtype))
+                            }
                         } else {
-                            fieldStrings.add(createRef(k, "${responseClass.canonicalName}.${v.name}", null, v.type.simpleName, gtype))
+                            // java time but not primitive, needs import
+                            imports.add("import ${v.type.name}")
+                            fieldStrings.add(createField(k, "", v.type.simpleName))
                         }
                     } else {
-                        // java time but not primitive, needs import
-                        imports.add("import ${v.type.name}")
-                        fieldStrings.add(createField(k, "", v.type.simpleName))
+                        fieldStrings.add(createRef("${k}", "${responseClass.canonicalName}.${v.name}", null, v.type.simpleName, v.type))
                     }
-                } else {
-                    fieldStrings.add(createRef("${k}", "${responseClass.canonicalName}.${v.name}", null, v.type.simpleName, v.type))
                 }
+
             }
 
             return fieldStrings.join("\n")
