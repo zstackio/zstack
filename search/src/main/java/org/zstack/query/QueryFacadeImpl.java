@@ -378,7 +378,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         if (c.getValue() == null) {
             return String.format("%s %s", c.getName(), c.getOp());
         } else if (op == QueryOp.IN || op == QueryOp.NOT_IN) {
-            List<String> values = new ArrayList<>();
+            Set<String> values = new HashSet<>();
             for (String v : c.getValue().split(",")) {
                 values.add(String.format("'%s'", v));
             }
@@ -421,7 +421,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         sb.add(msg.getFields() == null || msg.getFields().isEmpty() ? ZQL.queryTargetNameFromInventoryClass(targetInventoryClass) : ZQL.queryTargetNameFromInventoryClass(targetInventoryClass) + "." + StringUtils.join(msg.getFields(), ","));
 
         if (msg.getConditions() != null && !msg.getConditions().isEmpty()) {
-            List<String> conds = new ArrayList<>();
+            Set<String> conds = new HashSet<>();
             msg.getConditions().forEach(c -> {
                 conds.add(toZQLConditionString(c));
             });
