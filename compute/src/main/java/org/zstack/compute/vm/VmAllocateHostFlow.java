@@ -100,9 +100,7 @@ public class VmAllocateHostFlow implements Flow {
         if (spec.getVmInventory().getClusterUuid() != null) {
             msg.setClusterUuid(spec.getVmInventory().getClusterUuid());
         }
-        if (spec.getVmInventory().getHostUuid() != null) {
-            msg.setHostUuid(spec.getVmInventory().getHostUuid());
-        }
+        msg.setHostUuid(spec.getRequiredHostUuid());
         if (spec.getHostAllocatorStrategy() != null) {
             msg.setAllocatorStrategy(spec.getHostAllocatorStrategy());
         } else {

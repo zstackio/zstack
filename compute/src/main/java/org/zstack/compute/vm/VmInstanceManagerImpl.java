@@ -852,7 +852,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vo.setName(msg.getName());
         vo.setClusterUuid(msg.getClusterUuid());
         vo.setDescription(msg.getDescription());
-        vo.setHostUuid(msg.getHostUuid());
         vo.setImageUuid(msg.getImageUuid());
         vo.setInstanceOfferingUuid(instanceOfferingUuid);
         vo.setState(VmInstanceState.Created);
@@ -922,6 +921,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             return;
         }
 
+        smsg.setHostUuid(msg.getHostUuid());
         smsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         smsg.setL3NetworkUuids(msg.getL3NetworkUuids());
         smsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());

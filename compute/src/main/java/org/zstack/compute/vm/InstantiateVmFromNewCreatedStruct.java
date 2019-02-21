@@ -16,6 +16,7 @@ public class InstantiateVmFromNewCreatedStruct {
     private VmCreationStrategy strategy = VmCreationStrategy.InstantStart;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
+    private String requiredHostUuid;
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
@@ -79,6 +80,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
         struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
+        struct.setRequiredHostUuid(msg.getHostUuid());
         return struct;
     }
 
@@ -92,6 +94,7 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
         struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
+        struct.setRequiredHostUuid(msg.getHostUuid());
         return struct;
     }
 
@@ -110,5 +113,13 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setPrimaryStorageUuidForDataVolume(String primaryStorageUuidForDataVolume) {
         this.primaryStorageUuidForDataVolume = primaryStorageUuidForDataVolume;
+    }
+
+    public String getRequiredHostUuid() {
+        return requiredHostUuid;
+    }
+
+    public void setRequiredHostUuid(String requiredHostUuid) {
+        this.requiredHostUuid = requiredHostUuid;
     }
 }
