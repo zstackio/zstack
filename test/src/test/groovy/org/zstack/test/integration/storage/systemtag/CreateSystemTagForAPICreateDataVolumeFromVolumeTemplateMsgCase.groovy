@@ -64,7 +64,6 @@ class CreateSystemTagForAPICreateDataVolumeFromVolumeTemplateMsgCase extends Sub
                         name = "l3"
 
 
-
                         ip {
                             startIp = "192.168.100.10"
                             endIp = "192.168.100.100"
@@ -158,12 +157,21 @@ class CreateSystemTagForAPICreateDataVolumeFromVolumeTemplateMsgCase extends Sub
         assert VolumeConstant.VOLUME_FORMAT_RAW == img.getFormat()
 
         // create volume from template with system tags
+        expect(AssertionError.class) {
+            createDataVolumeFromVolumeTemplate {
+                imageUuid = img.uuid
+                name = "new-1"
+                primaryStorageUuid = ps.uuid
+                systemTags = ["ephemeral::shareable".toString(),
+                              "capability::virtio-scsi".toString()]
+            }
+        }
+
         VolumeInventory dataVolume = createDataVolumeFromVolumeTemplate {
             imageUuid = img.uuid
             name = "new"
             primaryStorageUuid = ps.uuid
-            systemTags = ["ephemeral::shareable".toString(),
-                          "capability::virtio-scsi".toString()]
+            systemTags = ["capability::virtio-scsi".toString()]
         } as VolumeInventory
 
         // check tags
@@ -171,7 +179,6 @@ class CreateSystemTagForAPICreateDataVolumeFromVolumeTemplateMsgCase extends Sub
             delegate.conditions = ["resourceUuid=${dataVolume.getUuid()}".toString()]
         } as List<SystemTagInventory>
 
-        // exclude ephemeral tag, so it's 2-1=1
         assert tags.size() == 1
         assert tags.get(0).getTag() == "capability::virtio-scsi".toString()
 

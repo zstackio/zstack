@@ -20,6 +20,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountResourceRefInventory;
 import org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint;
 import org.zstack.header.image.*;
@@ -721,7 +722,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     VolumeFactory.class);
             if (exts.size() > 1) {
                 throw new OperationFailureException(operr("there should not be more than one %s implementation.",
-                                VolumeFactory.class.getSimpleName()));
+                        VolumeFactory.class.getSimpleName()));
             }
         }
 
