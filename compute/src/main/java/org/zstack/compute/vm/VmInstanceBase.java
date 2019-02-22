@@ -4976,6 +4976,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setRequiredPrimaryStorageUuidForDataVolume(struct.getPrimaryStorageUuidForDataVolume());
         spec.setDataVolumeSystemTags(struct.getDataVolumeSystemTags());
         spec.setRootVolumeSystemTags(struct.getRootVolumeSystemTags());
+        spec.setRequiredHostUuid(struct.getRequiredHostUuid());
 
         spec.setVmInventory(getSelfInventory());
         if (struct.getL3NetworkUuids() != null && !struct.getL3NetworkUuids().isEmpty()) {
@@ -5048,7 +5049,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         spec.getImageSpec().setInventory(ImageInventory.valueOf(imvo));
         spec.setCurrentVmOperation(VmOperation.NewCreate);
-        if (self.getClusterUuid() != null || self.getHostUuid() != null) {
+        if (self.getClusterUuid() != null || struct.getRequiredHostUuid() != null) {
             spec.setHostAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
         }
         buildHostname(spec);

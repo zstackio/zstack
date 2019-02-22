@@ -9,6 +9,7 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
     private List<VmNicSpec> l3NetworkUuids;
     private List<String> dataDiskOfferingUuids;
     private String rootDiskOfferingUuid;
+    private String hostUuid;
     private String primaryStorageUuidForRootVolume;
     private String primaryStorageUuidForDataVolume;
     private String strategy;
@@ -90,5 +91,13 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
 
     public void setDataVolumeSystemTags(List<String> dataVolumeSystemTags) {
         this.dataVolumeSystemTags = dataVolumeSystemTags;
+    }
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
     }
 }

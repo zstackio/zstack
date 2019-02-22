@@ -58,7 +58,6 @@ class MigrateTwiceHostCase extends SubCase{
         }
 
         VmInstanceVO vmvo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
-        assert vmvo.hostUuid == host2.uuid
         assert vmvo.lastHostUuid == host2.uuid
 
     }
