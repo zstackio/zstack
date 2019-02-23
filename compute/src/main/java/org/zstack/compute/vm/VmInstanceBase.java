@@ -5689,10 +5689,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                self = changeVmStateInDb(VmInstanceStateEvent.stopped, ()->{
-                    self.setLastHostUuid(self.getHostUuid());
-                    self.setHostUuid(null);
-                });
+                self = changeVmStateInDb(VmInstanceStateEvent.stopped);
                 VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                 extEmitter.afterStopVm(inv);
                 completion.success();
