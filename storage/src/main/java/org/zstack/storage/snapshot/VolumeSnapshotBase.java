@@ -8,25 +8,23 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.workflow.*;
+import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.*;
-import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.primary.DeleteSnapshotOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.IncreasePrimaryStorageCapacityMsg;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus.StatusEvent;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.*;
+import java.util.Map;
 
 /**
  */
@@ -60,10 +58,10 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
     private void handleLocalMessage(Message msg) {
         if (msg instanceof VolumeSnapshotPrimaryStorageDeletionMsg) {
             handle((VolumeSnapshotPrimaryStorageDeletionMsg) msg);
-        } else if (msg instanceof BackupVolumeSnapshotMsg) {
-            handle((BackupVolumeSnapshotMsg) msg);
-        } else if (msg instanceof VolumeSnapshotBackupStorageDeletionMsg) {
-            handle((VolumeSnapshotBackupStorageDeletionMsg) msg);
+//        } else if (msg instanceof BackupVolumeSnapshotMsg) {
+//            handle((BackupVolumeSnapshotMsg) msg);
+//        } else if (msg instanceof VolumeSnapshotBackupStorageDeletionMsg) {
+//            handle((VolumeSnapshotBackupStorageDeletionMsg) msg);
         } else if (msg instanceof ChangeVolumeSnapshotStatusMsg) {
             handle((ChangeVolumeSnapshotStatusMsg) msg);
         } else {
@@ -79,6 +77,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
         bus.reply(msg, reply);
     }
 
+/*
     private void handle(final VolumeSnapshotBackupStorageDeletionMsg msg) {
         final VolumeSnapshotBackupStorageDeletionReply reply = new VolumeSnapshotBackupStorageDeletionReply();
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -200,6 +199,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
             }
         });
     }
+*/
 
     private void changeStatus(VolumeSnapshotStatus.StatusEvent event) {
         self.setStatus(self.getStatus().nextState(event));

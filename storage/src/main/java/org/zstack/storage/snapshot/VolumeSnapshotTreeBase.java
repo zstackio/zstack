@@ -871,8 +871,8 @@ public class VolumeSnapshotTreeBase {
             handle((APIDeleteVolumeSnapshotMsg) msg);
         } else if (msg instanceof APIRevertVolumeFromSnapshotMsg) {
             handle((APIRevertVolumeFromSnapshotMsg) msg);
-        } else if (msg instanceof APIBackupVolumeSnapshotMsg) {
-            handle((APIBackupVolumeSnapshotMsg) msg);
+//        } else if (msg instanceof APIBackupVolumeSnapshotMsg) {
+//            handle((APIBackupVolumeSnapshotMsg) msg);
         } else if (msg instanceof APIDeleteVolumeSnapshotFromBackupStorageMsg) {
             handle((APIDeleteVolumeSnapshotFromBackupStorageMsg) msg);
         } else if (msg instanceof APIUpdateVolumeSnapshotMsg) {
@@ -1064,6 +1064,7 @@ public class VolumeSnapshotTreeBase {
         }).start();
     }
 
+/*
     private void handle(final APIBackupVolumeSnapshotMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -1279,7 +1280,7 @@ public class VolumeSnapshotTreeBase {
             }
         }).start();
     }
-
+*/
 
     private void handle(final APIRevertVolumeFromSnapshotMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {

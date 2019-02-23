@@ -140,8 +140,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         bus.reply(msg, reply);
     }
 
-
-
+/*
     private void handle(APIGetVolumeSnapshotTreeMsg msg) {
         APIGetVolumeSnapshotTreeReply reply = new APIGetVolumeSnapshotTreeReply();
         if (msg.getTreeUuid() != null) {
@@ -185,7 +184,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
         bus.reply(msg, reply);
     }
-
+*/
 
     @Transactional
     private VolumeSnapshotStruct newChain(VolumeSnapshotVO vo, boolean fullsnapshot) {
@@ -665,13 +664,13 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 //    }
 
     private void handleApiMessage(APIMessage msg) {
-        if (msg instanceof APIGetVolumeSnapshotTreeMsg) {
-            handle((APIGetVolumeSnapshotTreeMsg) msg);
+//        if (msg instanceof APIGetVolumeSnapshotTreeMsg) {
+//            handle((APIGetVolumeSnapshotTreeMsg) msg);
 //        } else if (msg instanceof APICreateVolumeSnapshotSchedulerJobMsg) {
 //            handle((APICreateVolumeSnapshotSchedulerJobMsg) msg);
-        } else {
+//        } else {
             bus.dealWithUnknownMessage(msg);
-        }
+//        }
     }
 
     @Override
