@@ -717,20 +717,13 @@ public class Api implements CloudBusEventListener {
         return JSONObjectUtil.rehashObject(res.value.inventory, ImageInventory.class);
     }
 
-    public List<ImageInventory> listImage(List<String> uuids) throws ApiSenderException {
+    public List<ImageInventory> listImage(List<String> uuids) {
         return listImage(0, -1, uuids);
     }
 
-    public List<ImageInventory> listImage(int offset, int length, List<String> uuids) throws ApiSenderException {
-        APIListImageMsg msg = new APIListImageMsg(uuids);
-        msg.setSession(adminSession);
-        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setOffset(offset);
-        msg.setLength(length);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIListImageReply reply = sender.call(msg, APIListImageReply.class);
-        return reply.getInventories();
+    public List<ImageInventory> listImage(int offset, int length, List<String> uuids) {
+        List<ImageVO> images = dbf.listAll(offset, length, ImageVO.class);
+        return ImageInventory.valueOf(images);
     }
 
     public InstanceOfferingInventory changeInstanceOfferingState(String uuid, InstanceOfferingStateEvent sevt) throws ApiSenderException {
@@ -874,18 +867,6 @@ public class Api implements CloudBusEventListener {
         throwExceptionIfNeed(res.error);
 
         return JSONObjectUtil.rehashObject(res.value.inventory, VolumeInventory.class);
-    }
-
-    public List<VolumeInventory> listVolume(int offset, int length, List<String> uuids) throws ApiSenderException {
-        APIListVolumeMsg msg = new APIListVolumeMsg(uuids);
-        msg.setSession(adminSession);
-        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setOffset(offset);
-        msg.setLength(length);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIListVolumeReply reply = sender.call(msg, APIListVolumeReply.class);
-        return reply.getInventories();
     }
 
     public void deleteDataVolume(String uuid) throws ApiSenderException {

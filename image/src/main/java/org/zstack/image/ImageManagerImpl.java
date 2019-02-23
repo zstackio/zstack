@@ -41,7 +41,6 @@ import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.header.search.SearchOp;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
@@ -54,7 +53,6 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
-import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
@@ -79,7 +77,7 @@ import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.Constants.THREAD_CONTEXT_API;
 import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
-import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionDSL.list;
 
 public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint,
         ReportQuotaExtensionPoint, ResourceOwnerPreChangeExtensionPoint {
@@ -161,12 +159,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     private void handleApiMessage(Message msg) {
         if (msg instanceof APIAddImageMsg) {
             handle((APIAddImageMsg) msg);
-        } else if (msg instanceof APIListImageMsg) {
-            handle((APIListImageMsg) msg);
-        } else if (msg instanceof APISearchImageMsg) {
-            handle((APISearchImageMsg) msg);
-        } else if (msg instanceof APIGetImageMsg) {
-            handle((APIGetImageMsg) msg);
         } else if (msg instanceof APICreateRootVolumeTemplateFromRootVolumeMsg) {
             handle((APICreateRootVolumeTemplateFromRootVolumeMsg) msg);
         } else if (msg instanceof APICreateRootVolumeTemplateFromVolumeSnapshotMsg) {
@@ -456,35 +448,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         CreateRootVolumeTemplateFromRootVolumeData data = new CreateRootVolumeTemplateFromRootVolumeData(msg);
         BeanUtils.copyProperties(msg, data);
         handleCreateRootVolumeTemplateFromRootVolumeMsg(data, new APICreateRootVolumeTemplateFromRootVolumeEvent(msg.getId()));
-    }
-
-    private void handle(APIGetImageMsg msg) {
-        SearchQuery<ImageInventory> sq = new SearchQuery(ImageInventory.class);
-        sq.addAccountAsAnd(msg);
-        sq.add("uuid", SearchOp.AND_EQ, msg.getUuid());
-        List<ImageInventory> invs = sq.list();
-        APIGetImageReply reply = new APIGetImageReply();
-        if (!invs.isEmpty()) {
-            reply.setInventory(JSONObjectUtil.toJsonString(invs.get(0)));
-        }
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APISearchImageMsg msg) {
-        SearchQuery<ImageInventory> sq = SearchQuery.create(msg, ImageInventory.class);
-        sq.addAccountAsAnd(msg);
-        String content = sq.listAsString();
-        APISearchImageReply reply = new APISearchImageReply();
-        reply.setContent(content);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIListImageMsg msg) {
-        List<ImageVO> vos = dbf.listAll(ImageVO.class);
-        List<ImageInventory> invs = ImageInventory.valueOf(vos);
-        APIListImageReply reply = new APIListImageReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
     }
 
     private static boolean isUpload(final String url) {

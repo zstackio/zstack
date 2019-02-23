@@ -10,18 +10,16 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.storage.backup.BackupStorageZoneRefVO;
-import org.zstack.header.storage.backup.BackupStorageZoneRefVO_;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
-import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.volume.*;
-
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
+import org.zstack.header.volume.VolumeStatus;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 
 import javax.persistence.Tuple;
 import java.util.List;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -59,10 +57,10 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             validate((APIDeleteVolumeSnapshotFromBackupStorageMsg) msg);
         } else if (msg instanceof APICreateVolumeSnapshotMsg) {
             validate((APICreateVolumeSnapshotMsg) msg);
-        } else if (msg instanceof APIGetVolumeSnapshotTreeMsg) {
-            validate((APIGetVolumeSnapshotTreeMsg) msg);
-        } else if (msg instanceof APIBackupVolumeSnapshotMsg) {
-            validate((APIBackupVolumeSnapshotMsg) msg);
+//        } else if (msg instanceof APIGetVolumeSnapshotTreeMsg) {
+//            validate((APIGetVolumeSnapshotTreeMsg) msg);
+//        } else if (msg instanceof APIBackupVolumeSnapshotMsg) {
+//            validate((APIBackupVolumeSnapshotMsg) msg);
         }
 
         setServiceId(msg);
@@ -70,6 +68,7 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
         return msg;
     }
 
+/*
     private void validate(APIBackupVolumeSnapshotMsg msg) {
         SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
         q.select(VolumeSnapshotVO_.primaryStorageUuid);
@@ -107,6 +106,7 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("either volumeUuid or treeUuid must be set"));
         }
     }
+*/
 
     private void validate(APICreateVolumeSnapshotMsg msg) {
         SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);

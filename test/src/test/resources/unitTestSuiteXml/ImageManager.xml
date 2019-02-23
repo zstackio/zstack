@@ -8,7 +8,6 @@
 	<TestCase class="org.zstack.test.image.TestDeleteImage"/>
     <TestCase class="org.zstack.test.image.TestDeleteImage2"/>
     <TestCase class="org.zstack.test.image.TestChangeImageState"/>
-	<TestCase class="org.zstack.test.image.TestListImage"/>
 	<TestCase class="org.zstack.test.image.TestAddImageFailure"/>
 	<TestCase class="org.zstack.test.image.TestQueryImage"/>
 	<TestCase class="org.zstack.test.image.TestCreateTemplateFromRootVolume"/>

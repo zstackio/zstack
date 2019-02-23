@@ -8,19 +8,7 @@
     </message>
 
     <message>
-        <name>org.zstack.header.image.APIListImageMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.image.APIDeleteImageMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.image.APISearchImageMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.image.APIGetImageMsg</name>
     </message>
 
     <message>
