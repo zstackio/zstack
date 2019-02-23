@@ -876,18 +876,6 @@ public class Api implements CloudBusEventListener {
         return JSONObjectUtil.rehashObject(res.value.inventory, VolumeInventory.class);
     }
 
-    public List<VolumeInventory> listVolume(int offset, int length, List<String> uuids) throws ApiSenderException {
-        APIListVolumeMsg msg = new APIListVolumeMsg(uuids);
-        msg.setSession(adminSession);
-        msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
-        msg.setOffset(offset);
-        msg.setLength(length);
-        ApiSender sender = new ApiSender();
-        sender.setTimeout(timeout);
-        APIListVolumeReply reply = sender.call(msg, APIListVolumeReply.class);
-        return reply.getInventories();
-    }
-
     public void deleteDataVolume(String uuid) throws ApiSenderException {
         deleteDataVolume(uuid, null);
     }

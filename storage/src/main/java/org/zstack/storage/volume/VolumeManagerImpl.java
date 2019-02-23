@@ -3,7 +3,10 @@ package org.zstack.storage.volume;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
@@ -20,7 +23,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountResourceRefInventory;
 import org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint;
 import org.zstack.header.image.*;
@@ -28,7 +30,6 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.search.SearchOp;
 import org.zstack.header.storage.backup.BackupStorageState;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.primary.*;
@@ -41,14 +42,12 @@ import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
-import org.zstack.search.SearchQuery;
 import org.zstack.storage.primary.PrimaryStorageDeleteBitGC;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -71,8 +70,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private DbEntityLister dl;
     @Autowired
     private AccountManager acntMgr;
     @Autowired
@@ -515,12 +512,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateDataVolumeMsg) {
             handle((APICreateDataVolumeMsg) msg);
-        } else if (msg instanceof APIListVolumeMsg) {
-            handle((APIListVolumeMsg) msg);
-        } else if (msg instanceof APISearchVolumeMsg) {
-            handle((APISearchVolumeMsg) msg);
-        } else if (msg instanceof APIGetVolumeMsg) {
-            handle((APIGetVolumeMsg) msg);
         } else if (msg instanceof APICreateDataVolumeFromVolumeSnapshotMsg) {
             handle((APICreateDataVolumeFromVolumeSnapshotMsg) msg);
         } else if (msg instanceof APICreateDataVolumeFromVolumeTemplateMsg) {
@@ -569,36 +560,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             }
         });
     }
-
-    private void handle(APIGetVolumeMsg msg) {
-        SearchQuery<VolumeInventory> q = new SearchQuery(VolumeInventory.class);
-        q.addAccountAsAnd(msg);
-        q.add("uuid", SearchOp.AND_EQ, msg.getUuid());
-        List<VolumeInventory> invs = q.list();
-        APIGetVolumeReply reply = new APIGetVolumeReply();
-        if (!invs.isEmpty()) {
-            reply.setInventory(JSONObjectUtil.toJsonString(invs.get(0)));
-        }
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APISearchVolumeMsg msg) {
-        SearchQuery<VolumeInventory> q = SearchQuery.create(msg, VolumeInventory.class);
-        q.addAccountAsAnd(msg);
-        String res = q.listAsString();
-        APISearchVolumeReply reply = new APISearchVolumeReply();
-        reply.setContent(res);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIListVolumeMsg msg) {
-        List<VolumeVO> vos = dl.listByApiMessage(msg, VolumeVO.class);
-        List<VolumeInventory> invs = VolumeInventory.valueOf(vos);
-        APIListVolumeReply reply = new APIListVolumeReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
-    }
-
 
     private void handle(APICreateDataVolumeMsg msg) {
         APICreateDataVolumeEvent evt = new APICreateDataVolumeEvent(msg.getId());

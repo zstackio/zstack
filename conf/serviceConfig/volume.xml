@@ -12,18 +12,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.volume.APIListVolumeMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.volume.APISearchVolumeMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.volume.APIGetVolumeMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.volume.APIQueryVolumeMsg</name>
         <serviceId>query</serviceId>
     </message>
