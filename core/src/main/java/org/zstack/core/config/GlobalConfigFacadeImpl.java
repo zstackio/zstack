@@ -16,6 +16,7 @@ import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.StringTemplate;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
@@ -30,7 +31,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 
@@ -143,11 +143,13 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             Map<String, GlobalConfig> configsFromXml = new HashMap<String, GlobalConfig>();
             Map<String, GlobalConfig> configsFromDatabase = new HashMap<String, GlobalConfig>();
             List<Field> globalConfigFields = new ArrayList<Field>();
+            Map<String, String> propertiesMap = new HashMap<>();
 
             void init() {
                 GLock lock = new GLock(GlobalConfigConstant.LOCK, 320);
                 lock.lock();
                 try {
+                    loadSystemProperties();
                     parseGlobalConfigFields();
                     loadConfigFromXml();
                     loadConfigFromJava();
@@ -169,6 +171,17 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     throw new CloudRuntimeException(e);
                 } finally {
                     lock.unlock();
+                }
+            }
+
+            private void loadSystemProperties() {
+                boolean noTrim = System.getProperty("DoNotTrimPropertyFile") != null;
+                for (final String name: System.getProperties().stringPropertyNames()) {
+                    String value = System.getProperty(name);
+                    if (!noTrim) {
+                        value = value.trim();
+                    }
+                    propertiesMap.put(name, value);
                 }
             }
 
@@ -210,13 +223,15 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         if (d == null) {
                             continue;
                         }
+                        // substitute system properties in defaultValue
+                        String defaultValue = StringTemplate.substitute(d.defaultValue(), propertiesMap);
 
                         GlobalConfig c = new GlobalConfig();
                         c.setCategory(config.getCategory());
                         c.setName(config.getName());
                         c.setDescription(d.description());
-                        c.setDefaultValue(d.defaultValue());
-                        c.setValue(d.defaultValue());
+                        c.setDefaultValue(defaultValue);
+                        c.setValue(defaultValue);
                         c.setType(d.type().getName());
                         if (!"".equals(d.validatorRegularExpression())) {
                             c.setValidatorRegularExpression(d.validatorRegularExpression());
@@ -492,11 +507,16 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     String category = c.getCategory();
                     category = category == null ? OTHER_CATEGORY : category;
                     c.setCategory(category);
-                    if (c.getValue() == null) {
-                        c.setValue(c.getDefaultValue());
-                    }
+                    // substitute system properties in value and defaultValue
                     if (c.getDefaultValue() == null) {
                         throw new IllegalArgumentException(String.format("GlobalConfig[category:%s, name:%s] must have a default value", c.getCategory(), c.getName()));
+                    } else {
+                        c.setDefaultValue(StringTemplate.substitute(c.getDefaultValue(), propertiesMap));
+                    }
+                    if (c.getValue() == null) {
+                        c.setValue(c.getDefaultValue());
+                    } else {
+                        c.setValue(StringTemplate.substitute(c.getValue(), propertiesMap));
                     }
                     GlobalConfig config = GlobalConfig.valueOf(c);
                     if (configsFromXml.containsKey(config.getIdentity())) {
