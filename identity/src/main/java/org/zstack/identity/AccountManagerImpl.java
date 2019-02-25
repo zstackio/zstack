@@ -1743,7 +1743,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             throw new ApiMessageInterceptionException(argerr("The account name cannot be the same as the password"));
         }
 
-        String validateResult = PasswordStrengthUtils.checkPasswordStrength(password);
+        String strengthLevel = IdentityGlobalConfig.ACCOUNT_PASSWORD_STRENGTH_LEVEL.value();
+        String validateResult = PasswordStrengthUtils.checkPasswordStrength(password, PasswordStrengthLevel.valueOf(strengthLevel));
         if (validateResult != null) {
             throw new ApiMessageInterceptionException(argerr(validateResult));
         }

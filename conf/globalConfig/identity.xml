@@ -41,4 +41,11 @@
 		<defaultValue>90</defaultValue>
 		<category>identity</category>
 	</config>
+
+	<config>
+		<name>account.password.strength.level</name>
+		<description>validValues: "weak", "medium", "strong"</description>
+		<defaultValue>weak</defaultValue>
+		<category>identity</category>
+	</config>
 </globalConfig>

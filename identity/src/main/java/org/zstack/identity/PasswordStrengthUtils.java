@@ -15,15 +15,24 @@ public class PasswordStrengthUtils {
             "aaa111","123qwe","qwerty","qweasd","admin","password","p@ssword","passwd"
             ,"iloveyou","5201314");
 
-    public static String checkPasswordStrength(String password) {
+    public static String checkPasswordStrength(String password, PasswordStrengthLevel level) {
         int minLength = 6;
+        int nonWeakPasswordLength = 8;
 
         if (password.length() < minLength ) {
-            return String.format("Password cannot be less than 6 digits in length", minLength);
+            return String.format("Password cannot be less than %s digits in length", minLength);
         }
 
         if (Weak_Password_Dictionary.contains(password)) {
             return String.format("Password[%s] is a common weak password", password);
+        }
+
+        if (level == PasswordStrengthLevel.weak) {
+            return null;
+        }
+
+        if (password.length() < 8) {
+            return String.format("Password cannot be less than %s digits in length", nonWeakPasswordLength);
         }
 
         //total score of password
@@ -48,10 +57,25 @@ public class PasswordStrengthUtils {
             iPasswordScore ++;
         }
 
-        if (iPasswordScore < 2) {
-            return "Letters, numbers, and punctuation include at least 2";
+        if (level == PasswordStrengthLevel.medium) {
+            if (iPasswordScore < 2) {
+                return "Letters, numbers, and punctuation include at least 2";
+            }
+            return null;
+        }
+
+        if (level == PasswordStrengthLevel.strong) {
+            if (iPasswordScore < 3) {
+                return "Must contain letters, numbers, punctuation";
+            }
+
+            return null;
         }
 
         return null;
+    }
+
+    public static String checkPasswordStrength(String password) {
+        return checkPasswordStrength(password, PasswordStrengthLevel.strong);
     }
 }
