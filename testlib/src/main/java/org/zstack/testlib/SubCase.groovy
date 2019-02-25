@@ -25,6 +25,11 @@ abstract class SubCase extends Test implements Case {
     }
 
     @Override
+    protected void configProperty() {
+        configSkipMNExit()
+    }
+
+    @Override
     protected void runSubCases() {
         throw new Exception("runSubCases() cannot be called in a SubCase")
     }

@@ -1,6 +1,7 @@
 package org.zstack.testlib
 
 import okhttp3.OkHttpClient
+import org.apache.commons.lang.StringUtils
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.CloudBusImpl2
@@ -420,6 +421,7 @@ abstract class Test implements ApiHelper, Retry {
     @org.junit.Test
     final void doTest() {
         try {
+            configProperty()
             prepare()
             nextPhase()
             test()
@@ -763,6 +765,19 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
 
             throw new Exception("expected to get a Throwable of ${lst.collect { it.name }} but got ${t.class.name}")
 
+        }
+    }
+
+    protected void configProperty() {
+        return
+    }
+
+    protected void configSkipMNExit() {
+        String skipMNExit = System.getProperty("skipMNExit")
+        if (StringUtils.isEmpty(skipMNExit)) {
+            System.setProperty(Platform.SKIP_STOP, Boolean.TRUE.toString())
+        } else if (skipMNExit.equalsIgnoreCase(Boolean.TRUE.toString())) {
+            System.setProperty(Platform.SKIP_STOP, Boolean.TRUE.toString())
         }
     }
 }

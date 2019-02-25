@@ -1,5 +1,6 @@
 package org.zstack.portal.managementnode;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -261,6 +262,12 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 logger.debug(String.format("JVM shutdown hook is called[reason: %s], start stopping management node", reason));
             } else {
                 logger.debug("JVM shutdown hook is called, start stopping management node");
+            }
+
+            String skipStop = System.getProperty(Platform.SKIP_STOP);
+            if (!StringUtils.isEmpty(skipStop) && skipStop.equalsIgnoreCase(Boolean.TRUE.toString())) {
+                logger.debug("Exit directly, skip the managementNode exit");
+                return;
             }
 
             stop();

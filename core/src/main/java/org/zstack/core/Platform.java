@@ -814,6 +814,8 @@ public class Platform {
 
     public static final String EXIT_REASON = "zstack.quit.reason";
 
+    public static final String SKIP_STOP = "skip.mn.exit";
+
     public static void exit(String reason) {
         new BootErrorLog().write(reason);
         System.setProperty(EXIT_REASON, reason);
