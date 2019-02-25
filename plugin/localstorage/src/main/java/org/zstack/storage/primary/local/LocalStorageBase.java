@@ -3,7 +3,6 @@ package org.zstack.storage.primary.local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.VolumeMigrationTargetHostFilter;
-import org.zstack.compute.vm.VmInstanceBase;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
@@ -59,13 +58,9 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.inerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created by frank on 6/30/2015.
@@ -409,6 +404,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 if (struct.isVmStateChanged()) {
+                    VmInstanceConstant.ignoreSyncVmsMap.remove(struct.getVmUuid(), "VolumeMigrate");
                     ChangeVmStateMsg rollbackMsg = new ChangeVmStateMsg();
                     rollbackMsg.setStateEvent(struct.getVmOriginState());
                     rollbackMsg.setVmInstanceUuid(struct.getVmUuid());
@@ -428,7 +424,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
             public void run(FlowTrigger trigger, Map data) {
                 String __name__ = "migrate-volume-on-local-storage";
 
-                VmInstanceBase.volumeMigrateQueue.add(struct.getVmUuid());
+                if (struct.isRootVolume) {
+                    VmInstanceConstant.ignoreSyncVmsMap.putIfAbsent(struct.getVmUuid(), "VolumeMigrate");
+                }
+
                 MigrateVolumeOnLocalStorageMsg mmsg = new MigrateVolumeOnLocalStorageMsg();
                 mmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                 mmsg.setDestHostUuid(msg.getDestHostUuid());
@@ -471,12 +470,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
             public void run(FlowTrigger trigger, Map data) {
                 String __name__ = "change-vm-state-to-volume-migrated";
 
-                VmInstanceBase.volumeMigrateQueue.remove(struct.getVmUuid());
                 if (!struct.isRootVolume) {
                     trigger.next();
                     return;
                 }
-
+                VmInstanceConstant.ignoreSyncVmsMap.remove(struct.getVmUuid(), "VolumeMigrate");
                 ChangeVmStateMsg cmsg = new ChangeVmStateMsg();
                 cmsg.setStateEvent(VmInstanceStateEvent.volumeMigrated.toString());
                 cmsg.setVmInstanceUuid(struct.getVmUuid());
@@ -525,7 +523,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                VmInstanceBase.volumeMigrateQueue.remove(struct.getVmUuid());
                 evt.setError(errCode);
                 bus.publish(evt);
             }

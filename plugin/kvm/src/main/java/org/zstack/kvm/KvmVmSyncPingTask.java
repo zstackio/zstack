@@ -122,22 +122,23 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                     completion.fail(reply.getError());
                     return;
                 }
-
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 VmSyncResponse ret = r.toResponse(VmSyncResponse.class);
                 if (ret.isSuccess()) {
-                    Map<String, VmInstanceState> states = new HashMap<String, VmInstanceState>(ret.getStates().size());
-                    Set<String> vmsToSkipSet = new HashSet<>(vmsToSkip.keySet());
+                    Map<String, VmInstanceState> states = new HashMap<>(ret.getStates().size());
+                    Set<String> vmsToSkipSetHostSide = new HashSet<>(vmsToSkip.keySet());
                     Collection<String> vmUuidsInDeleteVmGC = DeleteVmGC.queryVmInGC(host.getUuid(), ret.getStates().keySet());
 
+                    logger.debug(String.valueOf(ret.getStates().size()));
                     for (Map.Entry<String, String> e : ret.getStates().entrySet()) {
                         if (logger.isTraceEnabled()) {
                             logger.trace(String.format("state from vmsync vm %s state %s", e.getKey(), e.getValue()));
                         }
                         if (vmUuidsInDeleteVmGC != null && vmUuidsInDeleteVmGC.contains(e.getKey())) {
                             /*the vm has been deleted and recovered that no resource, so skip to trace */
-                            vmsToSkipSet.add(e.getKey());
+                            vmsToSkipSetHostSide.add(e.getKey());
                         }
+
                         VmInstanceState state = KvmVmState.valueOf(e.getValue()).toVmInstanceState();
                         if (state == VmInstanceState.Running || state == VmInstanceState.Paused || state == VmInstanceState.Unknown) {
                             states.put(e.getKey(), state);
@@ -145,7 +146,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
                     }
 
-                    reportVmState(host.getUuid(), states, vmsToSkipSet);
+                    reportVmState(host.getUuid(), states, vmsToSkipSetHostSide);
                     completion.success();
                 } else {
                     ErrorCode errorCode = operr("unable to do vm sync on host[uuid:%s, ip:%s] because %s", host.getUuid(), host.getManagementIp(), ret.getError());
@@ -188,6 +189,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                             chain.next();
                             return;
                         }
+
                         VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
                         msg.setVmStateAtTracingMoment(stateInDb);
                         msg.setVmInstanceUuid(cmd.vmUuid);
