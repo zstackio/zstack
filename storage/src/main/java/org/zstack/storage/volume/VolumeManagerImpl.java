@@ -601,11 +601,11 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 dbf.getEntityManager().persist(finalVo1);
                 dbf.getEntityManager().flush();
                 dbf.getEntityManager().refresh(finalVo1);
-                tagMgr.createTagsFromAPICreateMessage(msg, finalVo1.getUuid(), VolumeVO.class.getSimpleName());
                 return finalVo1;
             }
         }.execute();
 
+        tagMgr.createTagsFromAPICreateMessage(msg, finalVo1.getUuid(), VolumeVO.class.getSimpleName());
         for (CreateDataVolumeExtensionPoint ext : exts) {
             ext.afterCreateVolume(vo);
         }
