@@ -2,6 +2,9 @@ package org.zstack.header.vm;
 
 import org.zstack.header.configuration.PythonClass;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 @PythonClass
 public interface VmInstanceConstant {
     String SERVICE_ID = "vmInstance";
@@ -61,4 +64,6 @@ public interface VmInstanceConstant {
 
     String EMPTY_CDROM = "empty";
     String NONE_CDROM = "none";
+
+    public static Map<String, String> ignoreSyncVmsMap = new ConcurrentHashMap<>();
 }

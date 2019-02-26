@@ -45,13 +45,13 @@ public abstract class VmTracer {
 
     private class Tracer {
         String hostUuid;
-        Set<String> vmsToSkip;
+        Set<String> vmsToSkipHostSide;
         Map<String, VmInstanceState> hostSideStates;
         Map<String, VmInstanceState> mgmtSideStates;
 
         @Transactional(readOnly = true)
         private void buildManagementServerSideVmStates() {
-            mgmtSideStates = new HashMap<String, VmInstanceState>();
+            mgmtSideStates = new HashMap<>();
             String sql = "select vm.uuid, vm.state from VmInstanceVO vm where vm.hostUuid = :huuid or (vm.hostUuid is null and vm.lastHostUuid = :huuid)" +
                     " and vm.state not in (:vmstates)";
             TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
@@ -71,7 +71,7 @@ public abstract class VmTracer {
             for (Map.Entry<String, VmInstanceState> e : hostSideStates.entrySet()) {
                 String vmUuid = e.getKey();
 
-                if (vmsToSkip != null && vmsToSkip.contains(vmUuid)) {
+                if (vmsToSkipHostSide != null && vmsToSkipHostSide.contains(vmUuid)) {
                     continue;
                 }
 
@@ -153,7 +153,7 @@ public abstract class VmTracer {
         }
     }
 
-    protected void reportVmState(final String hostUuid, final Map<String, VmInstanceState> vmStates, final Set<String> vmsToSkip) {
+    protected void reportVmState(final String hostUuid, final Map<String, VmInstanceState> vmStates, final Set<String> vmsToSkipHostSide) {
         if (logger.isTraceEnabled()) {
             for (Map.Entry<String, VmInstanceState> e : vmStates.entrySet()) {
                 logger.trace(String.format("reportVmState vm: %s, state: %s", e.getKey(), e.getValue().toString()));
@@ -192,7 +192,7 @@ public abstract class VmTracer {
                 Tracer t = new Tracer();
                 t.hostUuid = hostUuid;
                 t.hostSideStates = vmStates;
-                t.vmsToSkip = vmsToSkip;
+                t.vmsToSkipHostSide = vmsToSkipHostSide;
                 t.trace();
                 return null;
             }

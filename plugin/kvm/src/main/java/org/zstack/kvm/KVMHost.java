@@ -23,6 +23,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ChainTask;
@@ -1877,8 +1879,19 @@ public class KVMHost extends HostBase implements Host {
         return vol.getInstallPath().startsWith("iscsi") ? VolumeTO.ISCSI : VolumeTO.FILE;
     }
 
+    @Deferred
     private void startVm(final VmInstanceSpec spec, final NeedReplyMessage msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
+
+        VmInstanceConstant.ignoreSyncVmsMap.putIfAbsent(spec.getVmInventory().getUuid(), "Start");
+        Defer.guard(() -> {
+            VmInstanceConstant.ignoreSyncVmsMap.remove(spec.getVmInventory().getUuid(), "Start");
+        });
+
+        Defer.defer(() -> {
+            VmInstanceConstant.ignoreSyncVmsMap.remove(spec.getVmInventory().getUuid(), "Start");
+        });
+
         final StartVmCmd cmd = new StartVmCmd();
 
         boolean virtio;

@@ -106,9 +106,6 @@ public class VmInstanceBase extends AbstractVmInstance {
     @Autowired
     private HostAllocatorManager hostAllocatorMgr;
 
-    // volume migrating is running, it was empty when mn restarted
-    public static List<String> volumeMigrateQueue = new ArrayList<>();
-
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
     protected String syncThreadName;
@@ -953,6 +950,13 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void handle(final VmStateChangedOnHostMsg msg) {
         logger.debug(String.format("get VmStateChangedOnHostMsg for vm[uuid:%s], on host[uuid:%s], which tracing state is [%s]" +
                 " and current state on host is [%s]", msg.getVmInstanceUuid(), msg.getHostUuid(), msg.getVmStateAtTracingMoment(), msg.getStateOnHost()));
+        if (VmInstanceConstant.ignoreSyncVmsMap.get(msg.getVmInstanceUuid()) != null) {
+            VmStateChangedOnHostReply reply = new VmStateChangedOnHostReply();
+            reply.setError(operr("ignoreSyncVmsMap: [%s] contains vmUuid: [%s], change vm state failed because vm was in %s processing",
+                    VmInstanceConstant.ignoreSyncVmsMap.toString(), msg.getVmInstanceUuid(), VmInstanceConstant.ignoreSyncVmsMap.get(msg.getVmInstanceUuid())));
+            bus.reply(msg, reply);
+            return;
+        }
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -1087,16 +1091,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             bus.reply(msg, reply);
             completion.done();
             return;
-        }
-
-        // if vm was in VolumeMigrating state, then Stopped msg would be ignore
-        if (originalState == VmInstanceState.VolumeMigrating && (currentState == VmInstanceState.Stopped || currentState == VmInstanceState.Paused)) {
-            // vm is volumemigrating
-            if (volumeMigrateQueue.contains(msg.getVmInstanceUuid())) {
-                bus.reply(msg, reply);
-                completion.done();
-                return;
-            }
         }
 
         final Runnable fireEvent = () -> {
