@@ -24,5 +24,6 @@ public class IdentityGlobalConfig {
     @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 3650)
     public static GlobalConfig ACCOUNT_PASSWORD_EXPIRATION_TIME = new GlobalConfig(CATEGORY, "account.password.expirationTime");
 
-
+    @GlobalConfigValidation(validValues = {"weak", "medium", "strong"})
+    public static GlobalConfig ACCOUNT_PASSWORD_STRENGTH_LEVEL = new GlobalConfig(CATEGORY, "account.password.strength.level");
 }
