@@ -16,6 +16,7 @@ public class CephToCephMigrateVolumeSegmentMsg extends NeedReplyMessage implemen
     private String dstMonSshPassword;
     private int dstMonSshPort;
     private String primaryStorageUuid;
+    private boolean isXsky;
 
     public String getParentUuid() {
         return parentUuid;
@@ -88,5 +89,13 @@ public class CephToCephMigrateVolumeSegmentMsg extends NeedReplyMessage implemen
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
+    }
+
+    public boolean isXsky() {
+        return isXsky;
+    }
+
+    public void setXsky(boolean xsky) {
+        isXsky = xsky;
     }
 }
