@@ -792,17 +792,30 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             @Override
             public VirtualRouterVmInventory call() {
                 VirtualRouterVmVO vr = findVR();
-                if (vr != null && !VmInstanceState.Running.equals(vr.getState())) {
-                    throw new OperationFailureException(operr("virtual router[uuid:%s] for l3 network[uuid:%s] is not in Running state, current state is %s. We don't have HA feature now(it's coming soon), please restart it from UI and then try starting this vm again",
-                                    vr.getUuid(), l3Nw.getUuid(), vr.getState()));
-                }
-
                 return vr == null ? null : new VirtualRouterVmInventory(vr);
             }
         }.call();
 
         if (vr != null) {
-            completion.success(vr);
+            if (!VmInstanceState.Running.toString().equals(vr.getState())) {
+                HaStartVmInstanceMsg msg = new HaStartVmInstanceMsg();
+                String vmUuid = vr.getUuid();
+                msg.setVmInstanceUuid(vmUuid);
+                msg.setJudgerClassName(HaStartVirtualRouterVmJudger.class.getName());
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
+                bus.send(msg, new CloudBusCallBack(completion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            completion.success(new VirtualRouterVmInventory(dbf.findByUuid(vr.getUuid(), VirtualRouterVmVO.class)));
+                        } else {
+                            completion.fail(reply.getError());
+                        }
+                    }
+                });
+            } else {
+                completion.success(vr);
+            }
             return;
         }
 
