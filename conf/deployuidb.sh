@@ -29,7 +29,7 @@ EOF
 rm -rf $flyway_sql
 mkdir -p $flyway_sql
 
-ui_schema_path="/usr/local/zstack/zstack-ui/tmp/WEB-INF/classes/db/migration/"
+ui_schema_path=`echo ~zstack`"/zstack-ui/tmp/WEB-INF/classes/db/migration/"
 if [ -d $ui_schema_path ]; then
     cp $ui_schema_path/* $flyway_sql
     url="jdbc:mysql://$host:$port/zstack_ui"
