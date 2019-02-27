@@ -10,6 +10,7 @@ public class VmStateChangedOnHostMsg extends NeedReplyMessage implements VmInsta
     private String vmInstanceUuid;
     private String hostUuid;
     private String stateOnHost;
+    private boolean fromSync = false;
 
     public VmStateChangedOnHostMsg() { }
 
@@ -44,5 +45,13 @@ public class VmStateChangedOnHostMsg extends NeedReplyMessage implements VmInsta
 
     public void setStateOnHost(VmInstanceState stateOnHost) {
         this.stateOnHost = stateOnHost.toString();
+    }
+
+    public boolean isFromSync() {
+        return fromSync;
+    }
+
+    public void setFromSync(boolean fromSync) {
+        this.fromSync = fromSync;
     }
 }

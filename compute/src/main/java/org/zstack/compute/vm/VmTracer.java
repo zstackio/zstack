@@ -94,6 +94,7 @@ public abstract class VmTracer {
             msg.setVmInstanceUuid(vmUuid);
             msg.setStateOnHost(actualState);
             msg.setHostUuid(hostUuid);
+            msg.setFromSync(true);
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
             bus.send(msg);
         }
@@ -142,6 +143,7 @@ public abstract class VmTracer {
             msg.setHostUuid(hostUuid);
             msg.setVmInstanceUuid(vmUuid);
             msg.setStateOnHost(VmInstanceState.Stopped);
+            msg.setFromSync(true);
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
             bus.send(msg);
         }
