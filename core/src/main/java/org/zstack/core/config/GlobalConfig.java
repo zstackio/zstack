@@ -15,11 +15,13 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TypeUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.StringTemplate;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +49,18 @@ public class GlobalConfig {
     private transient List<GlobalConfigUpdateExtensionPoint> localUpdateExtensions = new ArrayList<>();
     private transient List<GlobalConfigBeforeUpdateExtensionPoint> localBeforeUpdateExtensions = new ArrayList<>();
     private GlobalConfigDef configDef;
+
+    private static Map<String, String> propertiesMap = new HashMap<>();
+    static {
+        boolean noTrim = System.getProperty("DoNotTrimPropertyFile") != null;
+        for (final String name : System.getProperties().stringPropertyNames()) {
+            String value = System.getProperty(name);
+            if (!noTrim) {
+                value = value.trim();
+            }
+            propertiesMap.put(name, value);
+        }
+    }
 
     @Autowired
     private DatabaseFacade dbf;
@@ -296,6 +310,9 @@ public class GlobalConfig {
     }
 
     private void update(String newValue, boolean localUpdate) {
+        // substitute system properties in newValue
+        newValue = StringTemplate.substitute(newValue, propertiesMap);
+
         validate(newValue);
 
         SimpleQuery<GlobalConfigVO> q = dbf.createQuery(GlobalConfigVO.class);
