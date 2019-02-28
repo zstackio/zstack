@@ -1,19 +1,18 @@
 package org.zstack.network.service;
 
+import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.network.service.NetworkServiceSnatBackend;
 import org.zstack.header.network.service.SnatStruct;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicHelper;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicSpec;
+import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -104,6 +103,17 @@ public class SnatExtension extends AbstractNetworkServiceExtension implements Co
         return struct;
     }
 
+    private boolean isVirtualRouterCreated(L3NetworkInventory l3) {
+        /* this case should not happen */
+        if (l3.getIpRanges() == null || l3.getIpRanges().isEmpty()) {
+            return false;
+        }
+
+        String gateway = l3.getIpRanges().get(0).getGateway();
+        return Q.New(VmNicVO.class).eq(VmNicVO_.l3NetworkUuid, l3.getUuid())
+                .eq(VmNicVO_.ip, gateway).isExists();
+    }
+
     private Map<NetworkServiceSnatBackend, List<SnatStruct>> workoutSnat(VmInstanceSpec spec) {
         Map<NetworkServiceSnatBackend, List<SnatStruct>> map = new HashMap<NetworkServiceSnatBackend, List<SnatStruct>>();
         Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.SNAT,
@@ -114,6 +124,10 @@ public class SnatExtension extends AbstractNetworkServiceExtension implements Co
             List<SnatStruct> lst = new ArrayList<SnatStruct>();
 
             for (L3NetworkInventory l3 : e.getValue()) {
+                if (isVirtualRouterCreated(l3)) {
+                    /* when the router is already created, don't apply snat again.*/
+                    continue;
+                }
                 lst.add(makeSnatStruct(spec, l3));
             }
 
