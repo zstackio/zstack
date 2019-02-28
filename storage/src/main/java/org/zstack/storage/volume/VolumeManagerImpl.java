@@ -858,5 +858,11 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     .set(VolumeVO_.status, VolumeStatus.Deleted)
                     .update();
         }
+        if (oldState == VmInstanceState.VolumeMigrating && newState == VmInstanceState.Stopped && vm != null && vm.getRootVolumeUuid() != null) {
+            // maybe restart mn, and we need restore from VolumeMigrating state
+            SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, vm.getRootVolumeUuid()).eq(VolumeVO_.status, VolumeStatus.Migrating)
+                    .set(VolumeVO_.status, VolumeStatus.Ready)
+                    .update();
+        }
     }
 }
