@@ -404,7 +404,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 if (struct.isVmStateChanged()) {
-                    VmInstanceConstant.ignoreSyncVmsMap.remove(struct.getVmUuid(), "VolumeMigrate");
                     ChangeVmStateMsg rollbackMsg = new ChangeVmStateMsg();
                     rollbackMsg.setStateEvent(struct.getVmOriginState());
                     rollbackMsg.setVmInstanceUuid(struct.getVmUuid());
@@ -425,7 +424,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 String __name__ = "migrate-volume-on-local-storage";
 
                 if (struct.isRootVolume) {
-                    VmInstanceConstant.ignoreSyncVmsMap.putIfAbsent(struct.getVmUuid(), "VolumeMigrate");
                 }
 
                 MigrateVolumeOnLocalStorageMsg mmsg = new MigrateVolumeOnLocalStorageMsg();
@@ -474,7 +472,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     trigger.next();
                     return;
                 }
-                VmInstanceConstant.ignoreSyncVmsMap.remove(struct.getVmUuid(), "VolumeMigrate");
                 ChangeVmStateMsg cmsg = new ChangeVmStateMsg();
                 cmsg.setStateEvent(VmInstanceStateEvent.volumeMigrated.toString());
                 cmsg.setVmInstanceUuid(struct.getVmUuid());

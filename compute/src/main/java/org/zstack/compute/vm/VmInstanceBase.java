@@ -950,17 +950,14 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void handle(final VmStateChangedOnHostMsg msg) {
         logger.debug(String.format("get VmStateChangedOnHostMsg for vm[uuid:%s], on host[uuid:%s], which tracing state is [%s]" +
                 " and current state on host is [%s]", msg.getVmInstanceUuid(), msg.getHostUuid(), msg.getVmStateAtTracingMoment(), msg.getStateOnHost()));
-        if (VmInstanceConstant.ignoreSyncVmsMap.get(msg.getVmInstanceUuid()) != null) {
-            VmStateChangedOnHostReply reply = new VmStateChangedOnHostReply();
-            reply.setError(operr("ignoreSyncVmsMap: [%s] contains vmUuid: [%s], change vm state failed because vm was in %s processing",
-                    VmInstanceConstant.ignoreSyncVmsMap.toString(), msg.getVmInstanceUuid(), VmInstanceConstant.ignoreSyncVmsMap.get(msg.getVmInstanceUuid())));
-            bus.reply(msg, reply);
-            return;
-        }
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return String.format("change-vm-state-%s", syncThreadName);
+                if (msg.isFromSync()) {
+                    return syncThreadName;
+                } else {
+                    return String.format("change-vm-state-%s", syncThreadName);
+                }
             }
 
             @Override
@@ -4896,6 +4893,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.starting);
+
+        logger.debug("we keep vm state on 'Starting' until startVm over or restart mn.");
 
         extEmitter.beforeStartVm(VmInstanceInventory.valueOf(self));
 
