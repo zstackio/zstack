@@ -291,8 +291,6 @@ public class ZSClient {
 
             StringBuilder sb = new StringBuilder();
             sb.append(info.httpMethod).append("\n");
-            sb.append("\n");
-            sb.append("application/json; charset=UTF-8").append("\n");
             sb.append(dateStr).append("\n").append("/v1").append(path);
 
             Mac mac = Mac.getInstance(Constants.ACCESS_KEY_ALGORITHM);
@@ -300,7 +298,6 @@ public class ZSClient {
             mac.init(secret);
             String sign = new String(Base64.encodeBase64(mac.doFinal(sb.toString().getBytes())));
             reqBuilder.addHeader(Constants.HEADER_DATE, dateStr);
-            reqBuilder.addHeader(Constants.HEADER_CONTENT_TYPE, "application/json; charset=UTF-8");
             reqBuilder.addHeader(Constants.HEADER_AUTHORIZATION, String.format("%s %s:%s", Constants.ACCESS_KEY_OAUTH, accessKeyId, sign));
         }
 
