@@ -7,7 +7,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.UsedIpVO;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmNicVO;
@@ -141,20 +140,6 @@ public class APICreateEipMsg extends APICreateMessage implements APIAuditor {
         msg.setVmNicUuid(uuid());
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Created").resource(((APICreateEipEvent)evt).getInventory().getUuid(), EipVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 
     @Override

@@ -6,7 +6,6 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmNicVO;
@@ -222,20 +221,6 @@ public class APICreatePortForwardingRuleMsg extends APICreateMessage implements 
         msg.setProtocolType("TCP");
         msg.setVmNicUuid(uuid());
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Created").resource(((APICreatePortForwardingRuleEvent)evt).getInventory().getUuid(),PortForwardingRuleVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 
     @Override

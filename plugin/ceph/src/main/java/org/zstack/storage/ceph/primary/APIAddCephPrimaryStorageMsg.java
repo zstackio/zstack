@@ -2,7 +2,6 @@ package org.zstack.storage.ceph.primary;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.*;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageEvent;
 import org.zstack.header.storage.primary.APIAddPrimaryStorageMsg;
@@ -88,18 +87,5 @@ public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
         msg.setZoneUuid(uuid());
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Added").resource(((APIAddPrimaryStorageEvent)evt).getInventory().getUuid(), PrimaryStorageVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 }

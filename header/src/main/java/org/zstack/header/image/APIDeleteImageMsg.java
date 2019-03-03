@@ -6,7 +6,6 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 
@@ -63,17 +62,4 @@ public class APIDeleteImageMsg extends APIDeleteMessage implements ImageMessage 
 
         return msg;
     }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("Deleted").resource(uuid, ImageVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-            }
-        };
-    }
-
 }

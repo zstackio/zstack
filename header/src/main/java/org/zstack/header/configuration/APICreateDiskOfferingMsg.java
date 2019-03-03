@@ -6,7 +6,6 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
@@ -89,20 +88,6 @@ public class APICreateDiskOfferingMsg extends APICreateMessage implements APIAud
         msg.setDiskSize(100);
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Creating").resource(((APICreateDiskOfferingEvent)evt).getInventory().getUuid(), DiskOfferingVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 
     @Override

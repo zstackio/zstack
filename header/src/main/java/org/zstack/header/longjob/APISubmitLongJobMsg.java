@@ -6,7 +6,6 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.other.APILongJobAuditor;
 import org.zstack.header.rest.APINoSee;
@@ -95,21 +94,6 @@ public class APISubmitLongJobMsg extends APICreateMessage implements APILongJobA
         msg.setJobData("{\"volumeUuid\":\"45a53d3d93384433add8ead7616586cf\", \"dstPrimaryStorageUuid\":\"70a0618804864b3dabe8be9824c8028c\"}");
         msg.setTargetResourceUuid("45a53d3d93384433add8ead7616586cf");
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    String uuid = ((APISubmitLongJobEvent)evt).getInventory().getUuid();
-                    ntfy("Submitted long job[uuid:%s] for %s", uuid, jobName)
-                            .resource(uuid, LongJobVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 
     private String getResourceUuid(LongJob job) {

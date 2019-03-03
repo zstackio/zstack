@@ -31,7 +31,6 @@ class BeanConstructor {
             "encrypt.xml",
             "rest.xml",
             "Progress.xml",
-            "notification.xml",
             "externalService.xml"
     ]
 

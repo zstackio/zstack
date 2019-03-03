@@ -5,7 +5,6 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -38,20 +37,6 @@ public class APIDeleteVmConsolePasswordMsg extends APIMessage implements VmInsta
         APIDeleteVmConsolePasswordMsg msg = new APIDeleteVmConsolePasswordMsg();
         msg.uuid = uuid();
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Console password deleted").resource(uuid, VmInstanceVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 }
 

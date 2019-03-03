@@ -6,7 +6,6 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
@@ -105,20 +104,6 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
         msg.setProtocol(LoadBalancerConstants.LB_PROTOCOL_HTTP);
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Created").resource(((APICreateLoadBalancerListenerEvent)evt).getInventory().getUuid(),LoadBalancerListenerVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 
     @Override

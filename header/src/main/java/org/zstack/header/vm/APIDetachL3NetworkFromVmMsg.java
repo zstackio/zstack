@@ -6,14 +6,9 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
-import org.zstack.header.other.APIMultiAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by frank on 7/18/2015.
@@ -55,20 +50,6 @@ public class APIDetachL3NetworkFromVmMsg extends APIMessage implements VmInstanc
         APIDetachL3NetworkFromVmMsg msg = new APIDetachL3NetworkFromVmMsg();
         msg.vmNicUuid = uuid();
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Detached").resource(vmNicUuid, VmNicVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 
     @Override

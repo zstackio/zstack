@@ -7,11 +7,9 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
-import org.zstack.utils.network.IPv6Constants;
 
 /**
  * @api create l3Network
@@ -156,20 +154,6 @@ public class APICreateL3NetworkMsg extends APICreateMessage implements APIAudito
         msg.setCategory(L3NetworkCategory.Private.toString());
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Created").resource(((APICreateL3NetworkEvent)evt).getInventory().getUuid(), L3NetworkVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 
     @Override

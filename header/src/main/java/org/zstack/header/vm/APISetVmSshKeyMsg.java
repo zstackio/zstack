@@ -6,7 +6,6 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -51,17 +50,5 @@ public class APISetVmSshKeyMsg extends APIMessage implements VmInstanceMessage {
         msg.setUuid(uuid());
         msg.setSshKey("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCaaV5YUvz9nx54+pvxIe5L5uQFHFQsvpwRdVRfMObIgWgcliB9vl4hMCPHXfaKqJD79jBpwJWpUBPebKF7vgevWqFJeUgR/LBHTfOnRrEjVsSzanaGGzfjbrwMHdZ5YJVhDTE376+OuXz1Wu5M1mwcarJpcanmqNgyz8YhYjc50xKDusDVvtpLKxdC6WvhR0+7gaDJKkukip1Up8doOUeNUe2cObJfMoOgi2lNrtKorGp1O7Nv+mdTflboYizgQOCFReiW/1ipPjX06OMZZ3Tsx3ZwBib5ocDpLV9CjONvnDBygWb30wydVoUSp1hKIzlWPkfyWHjxCf9pvLcHGUXZ root@10-0-98-199");
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("set ssh key").resource(uuid, VmInstanceVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-            }
-        };
     }
 }

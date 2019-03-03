@@ -6,16 +6,13 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 
-import javax.persistence.Tuple;
 import java.util.Arrays;
 import java.util.List;
 
@@ -68,37 +65,6 @@ public class APIRemoveVmNicFromLoadBalancerMsg extends APIMessage implements Loa
         msg.setVmNicUuids(Arrays.asList(uuid()));
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Removed vm nics[uuid:%s]", vmNicUuids).resource(loadBalancerUuid,LoadBalancerVO.class.getSimpleName())
-                            .context("nicUuids", vmNicUuids)
-                            .messageAndEvent(that, evt).done();
-
-
-                    for (String vmNicUuid : vmNicUuids) {
-                        String vmInstanceUuid = Q.New(VmNicVO.class)
-                                .select(VmNicVO_.vmInstanceUuid)
-                                .eq(VmNicVO_.uuid, vmNicUuid).findValue();
-                        ntfy("Removed load balancer[uuid:%s]", loadBalancerUuid).resource(vmInstanceUuid, VmInstanceVO.class.getSimpleName())
-                                .context("loadBalancerUuid", loadBalancerUuid)
-                                .messageAndEvent(that, evt).done();
-
-
-                        ntfy("Removed from the nic[uuid:%s]", vmNicUuid)
-                                .resource(listenerUuid, LoadBalancerListenerVO.class.getSimpleName())
-                                .context("vmNicUuid", vmNicUuid)
-                                .messageAndEvent(that, evt).done();
-                    }
-                }
-            }
-        };
     }
 
     @Override

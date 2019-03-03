@@ -5,7 +5,6 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -45,19 +44,4 @@ public class APIChangePortForwardingRuleStateMsg extends APIMessage {
         msg.setStateEvent(PortForwardingRuleStateEvent.disable.toString());
         return msg;
     }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Changed").resource(uuid,PortForwardingRuleVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
-    }
-
 }

@@ -612,7 +612,7 @@ class EnvSpec implements Node, ApiHelper {
                               "NetworkServiceTypeVO", "VmInstanceSequenceNumberVO",
                               "BaremetalInstanceSequenceNumberVO", "BaremetalImageCacheVO",
                               "GarbageCollectorVO",
-                              "TaskProgressVO", "NotificationVO", "TaskStepVO",
+                              "TaskProgressVO", "TaskStepVO",
                               "DataVolumeUsageVO", "RootVolumeUsageVO", "VmUsageVO", "GpuUsageVO",
                               "ResourceVO","SecurityGroupSequenceNumberVO","SnapShotUsageVO", "MediaVO",
                               "CaptchaVO", "LoginAttemptsVO", "ElaborationVO"]) {
@@ -759,7 +759,6 @@ class EnvSpec implements Node, ApiHelper {
 
             callDeleteOnResourcesNeedDeletion()
 
-            SQL.New(NotificationVO.class).hardDelete()
             SQL.New(TaskProgressVO.class).hardDelete()
             SQL.New(SessionVO.class).hardDelete()
             SQL.New(ElaborationVO.class).hardDelete()

@@ -6,7 +6,6 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 @Action(category = ConfigurationConstant.ACTION_CATEGORY)
@@ -46,17 +45,4 @@ public class APIDeleteDiskOfferingMsg extends APIDeleteMessage implements DiskOf
 
         return msg;
     }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("Deleting").resource(uuid, DiskOfferingVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-            }
-        };
-    }
-
 }

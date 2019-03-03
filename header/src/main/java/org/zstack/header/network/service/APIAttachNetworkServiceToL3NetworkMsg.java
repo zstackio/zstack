@@ -8,7 +8,6 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.L3NetworkMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.*;
@@ -95,23 +94,4 @@ public class APIAttachNetworkServiceToL3NetworkMsg extends APIMessage implements
 
         return msg;
     }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                List<String> services = new ArrayList<>();
-                for (List<String> lst : networkServices.values()) {
-                    services.addAll(lst);
-                }
-
-                ntfy("Attached network services[%s]", services)
-                        .resource(l3NetworkUuid, L3NetworkVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-            }
-        };
-    }
-
 }

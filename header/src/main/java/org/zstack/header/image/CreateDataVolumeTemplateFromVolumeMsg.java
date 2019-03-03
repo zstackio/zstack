@@ -2,12 +2,7 @@ package org.zstack.header.image;
 
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.*;
-import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.other.APIAuditor;
-import org.zstack.header.storage.backup.BackupStorageVO;
-import org.zstack.header.volume.VolumeVO;
 
-import java.util.Collections;
 import java.util.List;
 
 

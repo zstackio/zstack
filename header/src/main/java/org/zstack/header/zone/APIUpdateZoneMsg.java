@@ -4,7 +4,6 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -60,18 +59,4 @@ public class APIUpdateZoneMsg extends APIMessage implements ZoneMessage {
         msg.setUuid(uuid());
         return msg;
     }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("updated")
-                        .resource(uuid,ZoneVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-            }
-        };
-    }
-
 }

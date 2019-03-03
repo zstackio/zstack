@@ -5,7 +5,6 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -48,17 +47,5 @@ public class APISetL3NetworkMtuMsg extends APIMessage implements L3NetworkMessag
         msg.setMtu(9216);
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("Set mtu[%s]", mtu).resource(l3NetworkUuid, L3NetworkVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-            }
-        };
     }
 }

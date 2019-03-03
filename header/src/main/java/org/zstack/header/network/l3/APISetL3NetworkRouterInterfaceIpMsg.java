@@ -5,7 +5,6 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 @Action(category = L3NetworkConstant.ACTION_CATEGORY)
@@ -44,17 +43,5 @@ public class APISetL3NetworkRouterInterfaceIpMsg extends APIMessage implements L
         msg.setRouterInterfaceIp("192.168.10.2");
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("Set router interface ip[%s]", routerInterfaceIp).resource(l3NetworkUuid, L3NetworkVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-            }
-        };
     }
 }

@@ -3,7 +3,6 @@ package org.zstack.header.image;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.*;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -100,21 +99,6 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
         msg.setBackupStorageUuids(Collections.singletonList(uuid()));
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Created from a root volume[uuid:%s]", rootVolumeUuid).resource(((APICreateRootVolumeTemplateFromRootVolumeEvent) evt).getInventory().getUuid(),
-                            ImageVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 
     @Override

@@ -1739,29 +1739,6 @@ class PrometheusQueryLabelValuesAction(AbstractAction):
         self.userTags = None
         self.sessionId = None
 
-
-class DeleteNotificationsAction(AbstractAction):
-    HTTP_METHOD = 'DELETE'
-    PATH = '/notifications'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = ''
-
-    PARAMS = {
-        'uuids': ParamAnnotation(required=True,non_empty=True,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(DeleteNotificationsAction, self).__init__()
-        self.uuids = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class ChangeVipStateAction(AbstractAction):
     HTTP_METHOD = 'PUT'
     PATH = '/vips/{uuid}/actions'
@@ -1985,30 +1962,6 @@ class QueryConnectionAccessPointFromLocalAction(QueryAction):
         self.sortBy = None
         self.sortDirection = None
         self.fields = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
-class UpdateNotificationsStatusAction(AbstractAction):
-    HTTP_METHOD = 'PUT'
-    PATH = '/notifications/actions'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'updateNotificationsStatus'
-
-    PARAMS = {
-        'uuids': ParamAnnotation(required=True,non_empty=True,null_elements=False,empty_string=True,no_trim=False),
-        'status': ParamAnnotation(required=True,valid_values=['Unread','Read'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(UpdateNotificationsStatusAction, self).__init__()
-        self.uuids = None
-        self.status = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
@@ -9777,45 +9730,6 @@ class GetIpAddressCapacityAction(AbstractAction):
         self.userTags = None
         self.sessionId = None
 
-
-class QueryNotificationSubscriptionAction(QueryAction):
-    HTTP_METHOD = 'GET'
-    PATH = '/notifications/subscriptions'
-    NEED_SESSION = True
-    NEED_POLL = False
-    PARAM_NAME = ''
-
-    PARAMS = {
-        'conditions': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'limit': ParamAnnotation(),
-        'start': ParamAnnotation(),
-        'count': ParamAnnotation(),
-        'groupBy': ParamAnnotation(),
-        'replyWithCount': ParamAnnotation(),
-        'sortBy': ParamAnnotation(),
-        'sortDirection': ParamAnnotation(required=False,valid_values=['asc','desc'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'fields': ParamAnnotation(),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(QueryNotificationSubscriptionAction, self).__init__()
-        self.conditions = None
-        self.limit = None
-        self.start = None
-        self.count = None
-        self.groupBy = None
-        self.replyWithCount = None
-        self.sortBy = None
-        self.sortDirection = None
-        self.fields = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class GetOssBucketNameFromRemoteAction(AbstractAction):
     HTTP_METHOD = 'GET'
     PATH = '/hybrid/oss/remote'
@@ -12188,45 +12102,6 @@ class StopBaremetalPxeServerAction(AbstractAction):
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
-
-
-class QueryNotificationAction(QueryAction):
-    HTTP_METHOD = 'GET'
-    PATH = '/notifications'
-    NEED_SESSION = True
-    NEED_POLL = False
-    PARAM_NAME = ''
-
-    PARAMS = {
-        'conditions': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'limit': ParamAnnotation(),
-        'start': ParamAnnotation(),
-        'count': ParamAnnotation(),
-        'groupBy': ParamAnnotation(),
-        'replyWithCount': ParamAnnotation(),
-        'sortBy': ParamAnnotation(),
-        'sortDirection': ParamAnnotation(required=False,valid_values=['asc','desc'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'fields': ParamAnnotation(),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(QueryNotificationAction, self).__init__()
-        self.conditions = None
-        self.limit = None
-        self.start = None
-        self.count = None
-        self.groupBy = None
-        self.replyWithCount = None
-        self.sortBy = None
-        self.sortDirection = None
-        self.fields = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
 
 class CheckIpAvailabilityAction(AbstractAction):
     HTTP_METHOD = 'GET'
@@ -15293,28 +15168,6 @@ class RecoverImageAction(AbstractAction):
         self.sessionId = None
 
 
-class DeleteNotificationsAction(AbstractAction):
-    HTTP_METHOD = 'DELETE'
-    PATH = '/notifications'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = ''
-
-    PARAMS = {
-        'uuids': ParamAnnotation(required=True,non_empty=True,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(DeleteNotificationsAction, self).__init__()
-        self.uuids = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class DeleteBaremetalPxeServerAction(AbstractAction):
     HTTP_METHOD = 'DELETE'
     PATH = '/baremetal/pxeserver/{uuid}'
@@ -15479,33 +15332,6 @@ class QueryNetworkServiceL3NetworkRefAction(QueryAction):
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
-
-
-class CreateNotificationMediaAction(AbstractAction):
-    HTTP_METHOD = 'POST'
-    PATH = '/monitoring/notifications'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = ''
-
-    PARAMS = {
-        'name': ParamAnnotation(required=True,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'description': ParamAnnotation(required=False,max_length=2048,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'resourceUuid': ParamAnnotation(),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(CreateNotificationMediaAction, self).__init__()
-        self.name = None
-        self.description = None
-        self.resourceUuid = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
 
 class QueryResourcePriceAction(QueryAction):
     HTTP_METHOD = 'GET'
@@ -16761,44 +16587,6 @@ class DeleteAliyunKeySecretAction(AbstractAction):
         self.sessionId = None
 
 
-class QueryNotificationAction(QueryAction):
-    HTTP_METHOD = 'GET'
-    PATH = '/notifications'
-    NEED_SESSION = True
-    NEED_POLL = False
-    PARAM_NAME = ''
-
-    PARAMS = {
-        'conditions': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'limit': ParamAnnotation(),
-        'start': ParamAnnotation(),
-        'count': ParamAnnotation(),
-        'groupBy': ParamAnnotation(),
-        'replyWithCount': ParamAnnotation(),
-        'sortBy': ParamAnnotation(),
-        'sortDirection': ParamAnnotation(required=False,valid_values=['asc','desc'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'fields': ParamAnnotation(),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(QueryNotificationAction, self).__init__()
-        self.conditions = None
-        self.limit = None
-        self.start = None
-        self.count = None
-        self.groupBy = None
-        self.replyWithCount = None
-        self.sortBy = None
-        self.sortDirection = None
-        self.fields = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class QueryLoadBalancerListenerAction(QueryAction):
     HTTP_METHOD = 'GET'
     PATH = '/load-balancers/listeners'
@@ -17000,30 +16788,6 @@ class CreateDataVolumeFromVolumeTemplateAction(AbstractAction):
         self.primaryStorageUuid = None
         self.hostUuid = None
         self.resourceUuid = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
-class UpdateNotificationsStatusAction(AbstractAction):
-    HTTP_METHOD = 'PUT'
-    PATH = '/notifications/actions'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'updateNotificationsStatus'
-
-    PARAMS = {
-        'uuids': ParamAnnotation(required=True,non_empty=True,null_elements=False,empty_string=True,no_trim=False),
-        'status': ParamAnnotation(required=True,valid_values=['Unread','Read'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(UpdateNotificationsStatusAction, self).__init__()
-        self.uuids = None
-        self.status = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
@@ -19266,44 +19030,6 @@ class ResumeVmInstanceAction(AbstractAction):
     def __init__(self):
         super(ResumeVmInstanceAction, self).__init__()
         self.uuid = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
-class QueryNotificationSubscriptionAction(QueryAction):
-    HTTP_METHOD = 'GET'
-    PATH = '/notifications/subscriptions'
-    NEED_SESSION = True
-    NEED_POLL = False
-    PARAM_NAME = ''
-
-    PARAMS = {
-        'conditions': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'limit': ParamAnnotation(),
-        'start': ParamAnnotation(),
-        'count': ParamAnnotation(),
-        'groupBy': ParamAnnotation(),
-        'replyWithCount': ParamAnnotation(),
-        'sortBy': ParamAnnotation(),
-        'sortDirection': ParamAnnotation(required=False,valid_values=['asc','desc'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'fields': ParamAnnotation(),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(QueryNotificationSubscriptionAction, self).__init__()
-        self.conditions = None
-        self.limit = None
-        self.start = None
-        self.count = None
-        self.groupBy = None
-        self.replyWithCount = None
-        self.sortBy = None
-        self.sortDirection = None
-        self.fields = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None

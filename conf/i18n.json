@@ -1399,16 +1399,6 @@
     "fileName": "src/zstack/./core/src/main/java/org/zstack/core/gc/GarbageCollectorManagerImpl.java"
   },
   {
-    "raw": "%s is not a valid URL",
-    "en_US": "{0} is not a valid URL",
-    "zh_CN": "{0}不是一个有效的URL",
-    "arguments": [
-      "newValue"
-    ],
-    "line": 243,
-    "fileName": "src/zstack/./core/src/main/java/org/zstack/core/notification/NotificationManager.java"
-  },
-  {
     "raw": "parameter apiId[%s] is not a valid uuid.",
     "en_US": "parameter apiId[{0}] is not a valid uuid.",
     "zh_CN": "参数apiId[{0}]不是一个有效的UUID",
