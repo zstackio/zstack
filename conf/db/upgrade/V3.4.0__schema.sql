@@ -208,3 +208,38 @@ CREATE TABLE `ResourceUsageVO` (
 ) ENGINE=INNODB DEFAULT CHARSET=UTF8;
 
 INSERT INTO AccountResourceRefVO (`accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`) SELECT "36c27e8ff05c4780bf6d2fa65700f22e", "36c27e8ff05c4780bf6d2fa65700f22e", t.uuid, "L2NetworkVO", 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP() FROM L2NetworkVO t where t.type in ("L2VlanNetwork", "L2NoVlanNetwork");
+
+ALTER TABLE `AlarmVO` ADD COLUMN `enableRecovery` boolean NOT NULL DEFAULT FALSE;
+ALTER TABLE `SNSTextTemplateVO` ADD COLUMN  `recoveryTemplate` text DEFAULT NULL;
+
+DROP PROCEDURE IF EXISTS initializeRecoveryTemplate;
+DELIMITER $$
+CREATE PROCEDURE initializeRecoveryTemplate()
+		BEGIN
+				DECLARE done INT DEFAULT FALSE;
+			  DECLARE uuid VARCHAR(32);
+			  DECLARE applicationPlatformType VARCHAR(128);
+				DECLARE cur CURSOR FOR SELECT v.uuid,v.applicationPlatformType FROM SNSTextTemplateVO v WHERE v.recoveryTemplate IS NULL or v.recoveryTemplate = '';
+				DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+			  OPEN cur;
+				read_loop: LOOP
+						FETCH cur INTO uuid,applicationPlatformType;
+						IF done THEN
+								LEAVE read_loop;
+						END IF;
+
+						IF applicationPlatformType = 'DingTalk' THEN
+						    UPDATE SNSTextTemplateVO v SET v.recoveryTemplate = replace('# 报警器 %{ALARM_NAME} %{TITLE_ALARM_RESOURCE_NAME} 状态改变成 %{ALARM_CURRENT_STATUS}\n## 报警恢复详情:\n- UUID: %{ALARM_UUID}\n- 资源名字空间: %{ALARM_NAMESPACE}\n- 恢复条件: %{ALARM_METRIC} %{ALARM_COMPARISON_OPERATOR_REVERSE} %{ALARM_THRESHOLD}\n- 先前状态: %{ALARM_PREVIOUS_STATUS}\n- 当前值: %{ALARM_CURRENT_VALUE}\n- 报警资源UUID: %{ALARM_RESOURCE_ID}\n- 报警资源名称: %{ALARM_RESOURCE_NAME}', '%', '$') WHERE v.uuid = uuid;
+            END IF;
+
+						IF applicationPlatformType = 'Email' THEN
+						    UPDATE SNSTextTemplateVO v SET v.recoveryTemplate = replace('报警器 %{ALARM_NAME} %{TITLE_ALARM_RESOURCE_NAME} 状态改变成 %{ALARM_CURRENT_STATUS}\n报警恢复详情:\nUUID: %{ALARM_UUID}\n资源名字空间: %{ALARM_NAMESPACE}\n恢复条件: %{ALARM_METRIC} %{ALARM_COMPARISON_OPERATOR_REVERSE} %{ALARM_THRESHOLD}\n先前状态: %{ALARM_PREVIOUS_STATUS}\n当前值: %{ALARM_CURRENT_VALUE}\n报警资源UUID: %{ALARM_RESOURCE_ID}\n报警资源名称: %{ALARM_RESOURCE_NAME}' , '%', '$') WHERE v.uuid = uuid;
+            END IF;
+				END LOOP;
+				CLOSE cur;
+				SELECT CURTIME();
+		END $$
+DELIMITER;
+
+call initializeRecoveryTemplate();
+DROP PROCEDURE IF EXISTS initializeRecoveryTemplate;

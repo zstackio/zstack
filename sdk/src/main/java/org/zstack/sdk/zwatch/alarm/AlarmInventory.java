@@ -102,6 +102,14 @@ public class AlarmInventory  {
         return this.state;
     }
 
+    public boolean enableRecovery;
+    public void setEnableRecovery(boolean enableRecovery) {
+        this.enableRecovery = enableRecovery;
+    }
+    public boolean getEnableRecovery() {
+        return this.enableRecovery;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

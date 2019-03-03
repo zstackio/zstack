@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.*;
+import org.zstack.appliancevm.ApplianceVmCanonicalEvents.ApplianceVmStatusChangedData;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
@@ -376,6 +377,8 @@ public class VirtualRouter extends ApplianceVmBase {
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
+                fireDisconnectedCanonicalEvent(operr("appliance vm %s reconnect failed",
+                        getSelf().getUuid()));
                 trigger.rollback();
             }
         }).then(new NoRollbackFlow() {
