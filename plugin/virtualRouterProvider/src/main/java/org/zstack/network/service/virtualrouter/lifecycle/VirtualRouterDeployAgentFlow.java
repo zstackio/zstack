@@ -14,6 +14,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -227,9 +228,9 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
             runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
         }
         final VmNicInventory fmgmtNic = mgmtNic;
-        runner.run(new Completion(chain) {
+        runner.run(new ReturnValueCompletion<Boolean>(chain) {
             @Override
-            public void success() {
+            public void success(Boolean deployed) {
                 continueConnect(fmgmtNic, data, chain);
             }
 

@@ -15,4 +15,6 @@ public interface AnsibleConstant {
     public static String IMPORT_PUBLIC_KEY_SCRIPT_PATH = "ansible/import_public_key.sh";
     public static String RSA_PUBLIC_KEY = "ansible/rsaKeys/id_rsa.pub";
     public static String RSA_PRIVATE_KEY = "ansible/rsaKeys/id_rsa";
+
+    public static String KVM_AGENT_NAME = "zstack-kvmagent";
 }

@@ -191,9 +191,9 @@ public class CephBackupStorageMonBase extends CephMonBase {
                                 }
                                 runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
                             }
-                            runner.run(new Completion(trigger) {
+                            runner.run(new ReturnValueCompletion<Boolean>(trigger) {
                                 @Override
-                                public void success() {
+                                public void success(Boolean deployed) {
                                     trigger.next();
                                 }
 

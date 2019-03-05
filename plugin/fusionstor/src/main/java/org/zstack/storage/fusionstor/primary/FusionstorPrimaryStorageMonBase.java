@@ -152,9 +152,9 @@ public class FusionstorPrimaryStorageMonBase extends FusionstorMonBase {
                             runner.setAgentPort(FusionstorGlobalProperty.PRIMARY_STORAGE_AGENT_PORT);
                             runner.setPlayBookName(FusionstorGlobalProperty.PRIMARY_STORAGE_PLAYBOOK_NAME);
                             runner.putArgument("pkg_fusionstorpagent", FusionstorGlobalProperty.PRIMARY_STORAGE_PACKAGE_NAME);
-                            runner.run(new Completion(trigger) {
+                            runner.run(new ReturnValueCompletion<Boolean>(trigger) {
                                 @Override
-                                public void success() {
+                                public void success(Boolean deployed) {
                                     trigger.next();
                                 }
 

@@ -145,4 +145,12 @@
         <type>java.lang.Integer</type>
         <defaultValue>2</defaultValue>
     </config>
+
+    <config>
+        <category>kvm</category>
+        <name>restartagentwhenfakedead</name>
+        <description>restart agent directly if it might be fake dead</description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>true</defaultValue>
+    </config>
 </globalConfig>

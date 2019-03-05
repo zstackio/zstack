@@ -19,6 +19,7 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
@@ -195,9 +196,9 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
             }
             runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
         }
-        runner.run(new Completion(trigger) {
+        runner.run(new ReturnValueCompletion<Boolean>(trigger) {
             @Override
-            public void success() {
+            public void success(Boolean deployed) {
                 continueConnect(url, apvmUuid, trigger);
             }
 

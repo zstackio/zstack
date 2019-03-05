@@ -23,6 +23,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.console.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -176,9 +177,9 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                         }
                         runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
                     }
-                    runner.run(new Completion(completion, chain) {
+                    runner.run(new ReturnValueCompletion<Boolean>(completion, chain) {
                         @Override
-                        public void success() {
+                        public void success(Boolean deployed) {
                             finalVo.setStatus(ConsoleProxyAgentStatus.Connected);
                             dbf.update(finalVo);
 
