@@ -11,6 +11,7 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private List<String> requiredClusterUuids;
     private String requiredHostUuid;
     private String requiredPrimaryStorageUuid;
+    private String backupStorageUuid;
     private List<String> possiblePrimaryStorageTypes;
     private List<String> excludePrimaryStorageTypes;
 
@@ -182,5 +183,13 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
+    }
+
+    public String getBackupStorageUuid() {
+        return backupStorageUuid;
+    }
+
+    public void setBackupStorageUuid(String backupStorageUuid) {
+        this.backupStorageUuid = backupStorageUuid;
     }
 }
