@@ -33,9 +33,12 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
-import java.util.*;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -89,6 +92,14 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
             @Override
             public void success(final VirtualRouterVmInventory vr) {
+                /*
+                 * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
+                 */
+                if ( VirtualRouterSystemTags.VR_DISABLE_NETWORK_SERVICE_SNAT.hasTag(vr.getUuid())) {
+                    completion.success();
+                    return;
+                }
+
                 final VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
                 VmNicInventory privateNic = CollectionUtils.find(vr.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
                     @Override
@@ -166,6 +177,14 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
 
         final SnatStruct struct = it.next();
         final VirtualRouterVmInventory vr = vrMgr.getVirtualRouterVm(struct.getL3Network());
+        /*
+         * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
+         * */
+        if ( VirtualRouterSystemTags.VR_DISABLE_NETWORK_SERVICE_SNAT.hasTag(vr.getUuid())) {
+            releaseSnat(it, vmInstanceInventory, completion);
+            return;
+        }
+
         VmNicInventory privateNic = CollectionUtils.find(vr.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
             @Override
             public VmNicInventory call(VmNicInventory arg) {
@@ -294,6 +313,14 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         DebugUtils.Assert(vrVO != null,
                 String.format("can not find virtual router[uuid: %s] for nic[uuid: %s, ip: %s, l3NetworkUuid: %s]",
                         nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), nic.getL3NetworkUuid()));
+
+        /*
+         * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
+         * */
+        if ( VirtualRouterSystemTags.VR_DISABLE_NETWORK_SERVICE_SNAT.hasTag(vrVO.getUuid())) {
+            completion.success();
+            return;
+        }
 
         VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
 
