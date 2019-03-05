@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>resourceConfig</id>
+    <interceptor>ResourceConfigApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.core.config.resourceconfig.APIUpdateResourceConfigMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.core.config.resourceconfig.APIDeleteResourceConfigMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.core.config.resourceconfig.APIQueryResourceConfigMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.core.config.resourceconfig.APIGetResourceBindableConfigMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.core.config.resourceconfig.APIGetResourceConfigMsg</name>
+    </message>
+
+</service>

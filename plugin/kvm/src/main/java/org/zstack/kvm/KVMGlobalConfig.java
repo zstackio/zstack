@@ -3,6 +3,10 @@ package org.zstack.kvm;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.core.config.resourceconfig.BindResourceConfig;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.zone.ZoneVO;
 
 /**
  */
@@ -15,6 +19,7 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation(numberGreaterThan = -1)
     public static GlobalConfig RESERVED_CPU_CAPACITY = new GlobalConfig(CATEGORY, "reservedCpu");
     @GlobalConfigValidation
+    @BindResourceConfig({HostVO.class, ClusterVO.class, ZoneVO.class})
     public static GlobalConfig RESERVED_MEMORY_CAPACITY = new GlobalConfig(CATEGORY, "reservedMemory");
     @GlobalConfigValidation(inNumberRange = {0, 1024})
     public static GlobalConfig MAX_DATA_VOLUME_NUM = new GlobalConfig(CATEGORY, "dataVolume.maxNum");

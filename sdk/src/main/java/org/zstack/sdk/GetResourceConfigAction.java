@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateDataVolumeAction extends AbstractAction {
+public class GetResourceConfigAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateDataVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateDataVolumeResult value;
+        public org.zstack.sdk.GetResourceConfigResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,14 @@ public class CreateDataVolumeAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String category;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String diskOfferingUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public long diskSize = 0;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String primaryStorageUuid;
-
-    @Param(required = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -61,12 +49,6 @@ public class CreateDataVolumeAction extends AbstractAction {
     @Param(required = false)
     public String accessKeySecret;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -75,8 +57,8 @@ public class CreateDataVolumeAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateDataVolumeResult value = res.getResult(org.zstack.sdk.CreateDataVolumeResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateDataVolumeResult() : value; 
+        org.zstack.sdk.GetResourceConfigResult value = res.getResult(org.zstack.sdk.GetResourceConfigResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetResourceConfigResult() : value; 
 
         return ret;
     }
@@ -105,11 +87,11 @@ public class CreateDataVolumeAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/volumes/data";
+        info.httpMethod = "GET";
+        info.path = "/resource-configurations/{resourceUuid}/{category}/{name}";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

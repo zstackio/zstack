@@ -17,7 +17,7 @@ public class SimulatorHostReservedCapacityExtension implements HostReservedCapac
     }
 
     @Override
-    public ReservedHostCapacity getReservedHostCapacity() {
+    public ReservedHostCapacity getReservedHostCapacity(String hostUuid) {
         ReservedHostCapacity c = new ReservedHostCapacity();
         c.setReservedMemoryCapacity(SizeUtils.sizeStringToBytes(reservedMemory));
         c.setReservedCpuCapacity(SizeUtils.sizeStringToBytes(reservedCpu));
