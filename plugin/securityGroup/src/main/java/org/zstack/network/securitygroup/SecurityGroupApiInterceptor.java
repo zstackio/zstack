@@ -127,7 +127,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
 
         L3NetworkVO l3Vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         SecurityGroupVO sgVo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
-        if (l3Vo != null && sgVo != null && sgVo.getIpVersion() != l3Vo.getIpVersion()) {
+        if (l3Vo != null && sgVo != null && !sgVo.getIpVersion().equals(l3Vo.getIpVersion())) {
             throw new ApiMessageInterceptionException(argerr("the L3 network[uuid:%s] ipVersion [%d] is different from securityGroup [uuid:%s] ipVersion [%d]",
                     msg.getL3NetworkUuid(), l3Vo.getIpVersion(), msg.getSecurityGroupUuid(), sgVo.getIpVersion()));
 
@@ -279,7 +279,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s]. rule dump: %s", ao.getAllowedCidr(), JSONObjectUtil.toJsonString(ao)));
             }
 
-            if (sgVo.getIpVersion() != ao.getIpVersion()) {
+            if (!sgVo.getIpVersion().equals(ao.getIpVersion())) {
                 throw new ApiMessageInterceptionException(argerr("security group rule ipVersion [%d] is different from security group version [%d]",
                         sgVo.getIpVersion(), ao.getIpVersion()));
             }
@@ -341,7 +341,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         if (msg.getRemoteSecurityGroupUuids() != null) {
             for (String rsgUuid : msg.getRemoteSecurityGroupUuids()) {
                 SecurityGroupVO rsgVo = dbf.findByUuid(rsgUuid, SecurityGroupVO.class);
-                if (rsgVo.getIpVersion() != sgVo.getIpVersion()) {
+                if (!rsgVo.getIpVersion().equals(sgVo.getIpVersion())) {
                     throw new ApiMessageInterceptionException(argerr("remote security group ipVersion [%d] is different from security group version [%d]",
                             rsgVo.getIpVersion(), sgVo.getIpVersion()));
                 }
