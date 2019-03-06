@@ -4,12 +4,13 @@ import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.Platform;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
@@ -19,6 +20,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
+import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshException;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
@@ -254,7 +256,7 @@ public class AnsibleRunner {
         res.raiseExceptionIfFailed();
     }
 
-    private void callAnsible(final Completion completion) {
+    private void callAnsible(final ReturnValueCompletion<Boolean> completion) {
         RunAnsibleMsg msg = new RunAnsibleMsg();
         msg.setTargetIp(targetIp);
         msg.setPrivateKeyFile(privKeyFile);
@@ -277,7 +279,7 @@ public class AnsibleRunner {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    completion.success();
+                    completion.success(true);
                 } else {
                     cleanup();
                     completion.fail(reply.getError());
@@ -350,10 +352,10 @@ public class AnsibleRunner {
         }
     }
 
-    public void run(Completion completion) {
+    public void run(ReturnValueCompletion<Boolean> completion) {
         try {
             if (!isNeedRun()) {
-                completion.success();
+                completion.success(false);
                 return;
             }
 
@@ -375,6 +377,18 @@ public class AnsibleRunner {
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
+    }
+
+    public void restartAgent(String agentName, Completion completion) {
+        String script = String.format("sudo bash /etc/init.d/%s restart\n", agentName);
+
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            logger.debug("skip restartAgent as it's unittest");
+        } else {
+            new Ssh().shell(script).setTimeout(30).setPrivateKey(asf.getPrivateKey()).setUsername(username).setHostname(targetIp)
+                    .setPort(sshPort).setPassword(password).runErrorByExceptionAndClose();
+        }
+        completion.success();
     }
 
     public List<AnsibleChecker> getCheckers() {

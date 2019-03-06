@@ -18,6 +18,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -249,10 +250,10 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
             }
             runner.setTargetIp(msg.getIp());
             runner.setPlayBookPath(tmpAgentYaml.getAbsolutePath());
-            runner.run(new Completion(msg, noErrorCompletion) {
+            runner.run(new ReturnValueCompletion<Boolean>(msg, noErrorCompletion) {
                 @Override
                 @Deferred
-                public void success() {
+                public void success(Boolean deployed) {
                     Defer.defer(new Runnable() {
                         @Override
                         public void run() {

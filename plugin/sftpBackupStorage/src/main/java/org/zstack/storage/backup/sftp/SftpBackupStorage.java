@@ -365,9 +365,9 @@ public class SftpBackupStorage extends BackupStorageBase {
             }
             runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
         }
-        runner.run(new Completion(complete) {
+        runner.run(new ReturnValueCompletion<Boolean>(complete) {
             @Override
-            public void success() {
+            public void success(Boolean deployed) {
                 continueConnect(complete);
             }
 
