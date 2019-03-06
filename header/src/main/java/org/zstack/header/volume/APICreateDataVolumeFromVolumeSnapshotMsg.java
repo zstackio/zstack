@@ -3,8 +3,6 @@ package org.zstack.header.volume;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.*;
-import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.notification.NotificationConstant;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
@@ -112,20 +110,6 @@ public class APICreateDataVolumeFromVolumeSnapshotMsg extends APICreateMessage i
         msg.setVolumeSnapshotUuid(uuid());
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy(NotificationConstant.Volume.CREATED_FROM_SNAPSHOT, volumeSnapshotUuid).resource(((APICreateDataVolumeFromVolumeSnapshotEvent) evt).getInventory().getUuid(), VolumeVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 
     @Override

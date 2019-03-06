@@ -17,7 +17,7 @@ import org.zstack.core.asyncbatch.While
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.DatabaseFacadeImpl
 import org.zstack.core.db.SQL
-import org.zstack.core.notification.NotificationVO
+
 import org.zstack.header.core.NoErrorCompletion
 import org.zstack.header.core.progress.TaskProgressVO
 import org.zstack.header.core.workflow.WhileCompletion
@@ -612,7 +612,7 @@ class EnvSpec implements Node, ApiHelper {
                               "NetworkServiceTypeVO", "VmInstanceSequenceNumberVO",
                               "BaremetalInstanceSequenceNumberVO", "BaremetalImageCacheVO",
                               "GarbageCollectorVO",
-                              "TaskProgressVO", "NotificationVO", "TaskStepVO",
+                              "TaskProgressVO", "TaskStepVO",
                               "DataVolumeUsageVO", "RootVolumeUsageVO", "VmUsageVO", "GpuUsageVO",
                               "ResourceVO","SecurityGroupSequenceNumberVO","SnapShotUsageVO", "MediaVO",
                               "CaptchaVO", "LoginAttemptsVO", "ElaborationVO"]) {
@@ -759,7 +759,6 @@ class EnvSpec implements Node, ApiHelper {
 
             callDeleteOnResourcesNeedDeletion()
 
-            SQL.New(NotificationVO.class).hardDelete()
             SQL.New(TaskProgressVO.class).hardDelete()
             SQL.New(SessionVO.class).hardDelete()
             SQL.New(ElaborationVO.class).hardDelete()

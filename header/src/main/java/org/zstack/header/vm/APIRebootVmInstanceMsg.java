@@ -5,7 +5,6 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -64,17 +63,5 @@ public class APIRebootVmInstanceMsg extends APIMessage implements VmInstanceMess
         APIRebootVmInstanceMsg msg = new APIRebootVmInstanceMsg();
         msg.setUuid(uuid());
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("Rebooted").resource(uuid, VmInstanceVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-            }
-        };
     }
 }

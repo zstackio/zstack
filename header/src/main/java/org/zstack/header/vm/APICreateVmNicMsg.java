@@ -7,7 +7,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
@@ -52,20 +51,6 @@ public class APICreateVmNicMsg extends APICreateMessage implements APIAuditor {
         APICreateVmNicMsg msg = new APICreateVmNicMsg();
         msg.setL3NetworkUuid(uuid());
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Created").resource(((APICreateVmNicEvent) evt).getInventory().getUuid(), VmNicVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 
     @Override

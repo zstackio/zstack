@@ -7,8 +7,6 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
-import org.zstack.header.notification.NotificationConstant;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
@@ -123,20 +121,6 @@ public class APICreateDataVolumeMsg extends APICreateMessage implements APIAudit
         msg.setName("test-volume");
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy(NotificationConstant.CREATE_OPERATE_NOTIFICATION_CONTENT).resource(((APICreateDataVolumeEvent) evt).getInventory().getUuid(), VolumeVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 
     @Override

@@ -6,7 +6,6 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
 
@@ -72,17 +71,4 @@ public class APIAddIpRangeByNetworkCidrMsg extends APICreateMessage implements L
 
         return msg;
     }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("Added an IP range[%s]", networkCidr).resource(l3NetworkUuid, L3NetworkVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-            }
-        };
-    }
-
 }

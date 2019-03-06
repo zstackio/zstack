@@ -1,12 +1,10 @@
 package org.zstack.header.host;
 
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 import static org.zstack.header.message.APIDeleteMessage.DeletionMode.Permissive;
@@ -76,17 +74,4 @@ public class APIDeleteHostMsg extends APIDeleteMessage implements HostMessage {
         msg.setDeletionMode(Permissive);
         return msg;
     }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("Deleted").resource(uuid, HostVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-            }
-        };
-    }
-
 }

@@ -6,7 +6,6 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.other.APIMultiAuditor;
 import org.zstack.header.rest.APINoSee;
@@ -89,46 +88,6 @@ public class APIDetachEipMsg extends APIMessage implements EipMessage, APIMultiA
         msg.setUuid(uuid());
 
         return msg;
-    }
-
-    
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-        
-        return new ApiNotification() {
-            String ip;
-            String vmUuid;
-            String vmNicUuid;
-            String eip;
-
-            @Override
-            public void before() {
-                Tuple tuple = SQL.New("select nic.ip, nic.vmInstanceUuid, nic.uuid, eip.vipIp from VmNicVO nic, EipVO eip" +
-                        " where eip.vmNicUuid = nic.uuid and eip.uuid = :uuid", Tuple.class)
-                        .param("uuid", getEipUuid()).find();
-                ip = tuple.get(0, String.class);
-                vmUuid = tuple.get(1, String.class);
-                vmNicUuid = tuple.get(2, String.class);
-                eip = tuple.get(3, String.class);
-            }
-
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("detached from a nic[ip:%s] of the VM[uuid:%s]", ip, vmUuid)
-                        .resource(getUuid(), EipVO.class.getSimpleName())
-                        .context("vmUuid", vmUuid)
-                        .context("vmNicUuid", vmNicUuid)
-                        .messageAndEvent(that, evt)
-                        .done();
-
-                ntfy("detached an EIP[%s] from the nic[ip:%s]", eip, ip)
-                        .resource(vmUuid, VmInstanceVO.class.getSimpleName())
-                        .context("eipUuid", getEipUuid())
-                        .context("vmNicUuid", vmNicUuid)
-                        .messageAndEvent(that, evt)
-                        .done();
-            }
-        };
     }
 
     @Override

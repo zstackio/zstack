@@ -10,7 +10,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.notification.N;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -30,12 +29,11 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
-
-import static org.zstack.core.Platform.operr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -243,10 +241,6 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    N.New(VmInstanceVO.class, vm.getUuid()).warn_(
-                            "failed to delete a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s], %s",
-                            vm.getUuid(), vo.getTargetHostname(), vo.getTargetPort(), vo.getProxyHostname(), vo.getProxyPort(), errorCode.toString());
-
                     logger.warn(String.format("failed to delete a console proxy[vmUuid:%s, host IP: %s, host port: %s, proxy IP: %s, proxy port: %s], %s",
                             vm.getUuid(), vo.getTargetHostname(), vo.getTargetPort(), vo.getProxyHostname(), vo.getProxyPort(), errorCode.toString()));
                     latch.ack();

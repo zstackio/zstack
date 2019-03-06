@@ -6,7 +6,6 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
@@ -255,19 +254,5 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage {
         rule.setProtocol("TCP");
         msg.setRules(asList(rule));
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Added").resource(((APIAddSecurityGroupRuleEvent)evt).getInventory().getUuid(),SecurityGroupRuleVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 }

@@ -6,7 +6,6 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
@@ -79,43 +78,6 @@ public class APIDetachPortForwardingRuleMsg extends APIMessage implements APIAud
         APIDetachPortForwardingRuleMsg msg = new APIDetachPortForwardingRuleMsg();
         msg.setUuid(uuid());
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            String ip;
-            String vmUuid;
-            String vmNicUuid;
-
-            @Override
-            public void before() {
-                Tuple tuple = SQL.New("select nic.ip, nic.vmInstanceUuid, nic.uuid from VmNicVO nic, PortForwardingRuleVO pfr" +
-                        " where pfr.vmNicUuid = nic.uuid and pfr.uuid = :uuid", Tuple.class)
-                        .param("uuid", getUuid()).find();
-                ip = tuple.get(0, String.class);
-                vmUuid = tuple.get(1, String.class);
-                vmNicUuid = tuple.get(2, String.class);
-            }
-
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("Detached from a nic[ip:%s] of the VM[uuid:%s]", ip, vmUuid)
-                        .resource(getUuid(), PortForwardingRuleVO.class.getSimpleName())
-                        .context("vmUuid", vmUuid)
-                        .context("vmNicUuid", vmNicUuid)
-                        .messageAndEvent(that, evt)
-                        .done();
-
-                ntfy("Detached a port forwarding rule[%s] from the nic[ip:%s]", getUuid(), ip)
-                        .resource(vmUuid, VmInstanceVO.class.getSimpleName())
-                        .context("portforwardingRuleUuid", getUuid())
-                        .context("vmNicUuid", vmNicUuid)
-                        .messageAndEvent(that, evt)
-                        .done();
-            }
-        };
     }
 
     @Override

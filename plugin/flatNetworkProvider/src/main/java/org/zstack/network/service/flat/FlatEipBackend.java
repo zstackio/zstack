@@ -8,7 +8,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.notification.N;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
@@ -44,7 +43,6 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -57,8 +55,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.core.Platform.*;
 
 /**
  * Created by xing5 on 2016/4/4.
@@ -144,8 +142,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
             @Override
             public void fail(ErrorCode errorCode) {
-                N.New(VmInstanceVO.class, inv.getUuid()).warn_("after migration, failed to apply EIPs[uuids:%s] to the vm[uuid:%s, name:%s] on the destination host[uuid:%s], %s",
-                        eips.stream().map(e -> e.vip).collect(Collectors.toList()), inv.getUuid(), inv.getName(), inv.getHostUuid(), errorCode);
+                logger.warn(String.format("after migration, failed to apply EIPs[uuids:%s] to the vm[uuid:%s, name:%s] on the destination host[uuid:%s], %s",
+                        eips.stream().map(e -> e.vip).collect(Collectors.toList()), inv.getUuid(), inv.getName(), inv.getHostUuid(), errorCode));
             }
         });
     }
@@ -296,9 +294,9 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            N.New(VmInstanceVO.class, vm.getUuid()).warn_("after migration, failed to apply EIPs[uuids:%s] to the vm[uuid:%s, name:%s] on the destination host[uuid:%s], %s." +
+                            logger.warn(String.format("after migration, failed to apply EIPs[uuids:%s] to the vm[uuid:%s, name:%s] on the destination host[uuid:%s], %s." +
                                             "You may need to reboot the VM to resolve the issue",
-                                    eips.stream().map(e -> e.vip).collect(Collectors.toList()), vm.getUuid(), vm.getName(), applyHostUuidForRollback, errorCode);
+                                    eips.stream().map(e -> e.vip).collect(Collectors.toList()), vm.getUuid(), vm.getName(), applyHostUuidForRollback, errorCode));
                         }
                     });
                 }

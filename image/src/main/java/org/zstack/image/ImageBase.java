@@ -14,7 +14,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.notification.N;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -34,15 +33,9 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.message.*;
 import org.zstack.header.storage.backup.*;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
-import org.zstack.header.tag.TagInventory;
 import org.zstack.header.vm.DetachIsoFromVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
-import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -54,7 +47,6 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
@@ -288,7 +280,7 @@ public class ImageBase implements Image {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    N.New(BackupStorageVO.class, bsUuid).warn_("failed to return capacity[%s] to the backup storage[uuid:%s], %s", size, bsUuid, reply.getError());
+                    logger.warn(String.format("failed to return capacity[%s] to the backup storage[uuid:%s], %s", size, bsUuid, reply.getError()));
                 }
             }
         });

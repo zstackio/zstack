@@ -5,7 +5,6 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -86,24 +85,5 @@ public class APIAttachPrimaryStorageToClusterMsg extends APIMessage implements P
         msg.setClusterUuid(uuid());
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Attached to cluster[uuid:%s]", clusterUuid).resource(primaryStorageUuid, PrimaryStorageVO.class.getSimpleName())
-                            .context("clusterUuid", clusterUuid)
-                            .messageAndEvent(that, evt).done();
-
-                    ntfy("Attached to primary storage[uuid:%s]", primaryStorageUuid).resource(clusterUuid, ClusterVO.class.getSimpleName())
-                            .context("primaryStorageUuid", primaryStorageUuid)
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 }

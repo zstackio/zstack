@@ -7,7 +7,6 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -50,19 +49,5 @@ public class APIDeleteExportedImageFromBackupStorageMsg extends APIMessage imple
         msg.setImageUuid(uuid());
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("Deleted an exported image[uuid:%s]", imageUuid)
-                        .resource(backupStorageUuid, BackupStorageVO.class.getSimpleName())
-                        .context("imageUuid", imageUuid)
-                        .messageAndEvent(that, evt).done();
-            }
-        };
     }
 }

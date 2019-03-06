@@ -15,7 +15,6 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.notification.N;
 import org.zstack.header.Component;
 import org.zstack.header.cluster.ClusterUpdateOSExtensionPoint;
 import org.zstack.header.cluster.ClusterVO;
@@ -50,12 +49,12 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
 
-import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
 
 public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint,
@@ -329,11 +328,10 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
                             .eq(PrimaryStorageHostRefVO_.hostUuid, huuid)
                             .set(PrimaryStorageHostRefVO_.status, newStatus)
                             .update();
-
                 }
-
-                N.New(HostVO.class, huuid).info_("change status between primary storage[uuid:%s] and host[uuid:%s] from %s to %s in db",
-                        psUuid, huuid, oldStatus == null ? "unknown" : oldStatus.toString(), newStatus.toString());
+                logger.debug(String.format(
+                        "change status between primary storage[uuid:%s] and host[uuid:%s] from %s to %s in db",
+                        psUuid, huuid, oldStatus == null ? "unknown" : oldStatus.toString(), newStatus.toString()));
 
 
                 data.setHostUuid(huuid);

@@ -4,7 +4,6 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 @RestRequest(
@@ -55,17 +54,5 @@ public class APIUpdateGlobalConfigMsg extends APIMessage {
         msg.setName("scheduler.num");
         msg.setValue("90");
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("Updating a global configuration[category:%s, name:%s]", category, name)
-                        .resource(null, GlobalConfigVO.class.getSimpleName())
-                        .messageAndEvent(that, evt).done();
-            }
-        };
     }
 }

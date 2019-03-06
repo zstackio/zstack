@@ -18,7 +18,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.notification.N;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -59,6 +58,7 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -72,7 +72,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.Constants.THREAD_CONTEXT_API;
@@ -627,8 +626,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    N.New(ImageVO.class, imageUuid).warn_("failed to expunge the image[uuid:%s] on the backup storage[uuid:%s], will try it later. %s",
-                                            imageUuid, bsUuid, reply.getError());
+                                    logger.debug(String.format("failed to expunge the image[uuid:%s] on the backup storage[uuid:%s], will try it later. %s",
+                                            imageUuid, bsUuid, reply.getError()));
                                 }
                             }
                         });
@@ -976,12 +975,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     }
                 }.execute();
 
-                N.New(ImageVO.class, imageUuid).info_("added image [name: %s, uuid: %s]", name, imageUuid);
+                logger.debug(String.format("added image [name: %s, uuid: %s]", name, imageUuid));
             }
 
             private void markFailure(ErrorCode reason) {
-                N.New(ImageVO.class, imageUuid).error_("upload image [name: %s, uuid: %s] failed: %s",
-                        name, imageUuid, reason.toString());
+                logger.error(String.format("upload image [name: %s, uuid: %s] failed: %s",
+                        name, imageUuid, reason.toString()));
 
                 // Note, the handler of ImageDeletionMsg will deal with storage capacity.
                 ImageDeletionMsg msg = new ImageDeletionMsg();

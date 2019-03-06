@@ -4,10 +4,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.notification.ApiNotification;
-
-import java.lang.reflect.Field;
-import java.util.List;
 
 public class APIAttachNetworkServiceProviderToL2NetworkMsg extends APIMessage {
     @APIParam
@@ -38,19 +34,4 @@ public class APIAttachNetworkServiceProviderToL2NetworkMsg extends APIMessage {
         msg.setL2NetworkUuid(uuid());
         return msg;
     }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Attached network service provider[uuid:%s]",networkServiceProviderUuid).resource(l2NetworkUuid, L2NetworkVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
-    }
-
 }

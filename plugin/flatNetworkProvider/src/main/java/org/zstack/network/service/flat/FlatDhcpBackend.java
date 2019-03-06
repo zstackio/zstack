@@ -11,7 +11,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.notification.N;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -23,7 +22,6 @@ import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
 import org.zstack.header.message.APIMessage;
@@ -57,8 +55,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.*;
 
 /**
@@ -788,9 +785,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            N.New(VmInstanceVO.class, vm.getUuid()).warn_("failed to re-apply DHCP configuration of" +
+                            logger.warn(String.format("failed to re-apply DHCP configuration of" +
                                     " the vm[uuid:%s] to the host[uuid:%s], %s. You may need to reboot the VM to" +
-                                    " make the DHCP works",  vm.getUuid(), applyHostUuidForRollback, errorCode);
+                                    " make the DHCP works",  vm.getUuid(), applyHostUuidForRollback, errorCode));
                         }
                     });
                 }

@@ -5,7 +5,6 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -85,24 +84,4 @@ public class APIDetachPrimaryStorageFromClusterMsg extends APIMessage implements
 
         return msg;
     }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Detached from cluster[uuid:%s]", clusterUuid).resource(primaryStorageUuid, PrimaryStorageVO.class.getSimpleName())
-                            .context("clusterUuid", clusterUuid)
-                            .messageAndEvent(that, evt).done();
-
-                    ntfy("Detached from primary storage[uuid:%s]", primaryStorageUuid).resource(clusterUuid, ClusterVO.class.getSimpleName())
-                            .context("primaryStorageUuid", primaryStorageUuid)
-                            .messageAndEvent(that,evt).done();
-                }
-            }
-        };
-    }
-
 }

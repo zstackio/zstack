@@ -4,7 +4,6 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -59,19 +58,5 @@ public class APIUpdateQuotaMsg extends APIMessage implements AccountMessage {
         msg.setIdentityUuid(uuid());
         msg.setValue(20);
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                ntfy("Updating a quota").resource(identityUuid, AccountVO.class.getSimpleName())
-                        .context("quotaName", name)
-                        .context("quotaValue", value)
-                        .messageAndEvent(that, evt).done();
-            }
-        };
     }
 }

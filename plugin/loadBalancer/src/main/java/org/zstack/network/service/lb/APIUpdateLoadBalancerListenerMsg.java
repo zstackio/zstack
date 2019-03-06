@@ -2,14 +2,11 @@ package org.zstack.network.service.lb;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.tag.TagResourceType;
 
 /**
  * Created by camile on 5/19/2017.
@@ -77,19 +74,5 @@ public class APIUpdateLoadBalancerListenerMsg extends APIMessage implements Load
         msg.setDescription("desc info");
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Update loadBalancer listener").resource(((APIUpdateLoadBalancerListenerEvent)evt).getInventory().getUuid(),LoadBalancerListenerVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 }

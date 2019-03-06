@@ -2,12 +2,10 @@ package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.image.Image;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
@@ -52,25 +50,6 @@ public class APIAttachIsoToVmInstanceMsg extends APIMessage implements VmInstanc
         msg.vmInstanceUuid = uuid();
         msg.isoUuid = uuid();
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Attached ISO[uuid:%s]", isoUuid).resource(vmInstanceUuid , VmInstanceVO.class.getSimpleName())
-                            .context("isoUuid", isoUuid)
-                            .messageAndEvent(that, evt).done();
-
-                    ntfy("Attached to vm[uuid:%s]", vmInstanceUuid).resource(isoUuid, ImageVO.class.getSimpleName())
-                            .context("vmInstanceUuid", vmInstanceUuid)
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 
     public String getCdRomUuid() {

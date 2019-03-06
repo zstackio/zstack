@@ -6,7 +6,6 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
@@ -15,7 +14,6 @@ import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 
 import javax.persistence.Tuple;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -70,46 +68,6 @@ public class APIAddVmNicToLoadBalancerMsg extends APIMessage implements LoadBala
         msg.setLoadBalancerUuid(uuid());
 
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    for (String vmNicUuid : vmNicUuids) {
-                        Tuple t = Q.New(VmNicVO.class)
-                                .select(VmNicVO_.vmInstanceUuid, VmNicVO_.ip)
-                                .eq(VmNicVO_.uuid, vmNicUuid).findTuple();
-
-
-                        String vmUuid = t.get(0, String.class);
-                        String ip = t.get(1, String.class);
-
-                        ntfy("Added load balancer[uuid:%s]", loadBalancerUuid)
-                                .resource(loadBalancerUuid, LoadBalancerVO.class.getSimpleName())
-                                .context("vmNicUuid", vmNicUuid)
-                                .context("vmUuid", vmUuid)
-                                .messageAndEvent(that, evt).done();
-
-                        ntfy("Add a load balancer[%s] to the nic[ip:%s]", loadBalancerUuid, ip)
-                                .context("loadBalancerUuid", loadBalancerUuid)
-                                .resource(vmUuid, VmInstanceVO.class.getSimpleName())
-                                .messageAndEvent(that, evt).done();
-
-                        ntfy("Added to the nic[ip:%s]", vmUuid, ip)
-                                .resource(listenerUuid, LoadBalancerListenerVO.class.getSimpleName())
-                                .context("vmUuid", vmUuid)
-                                .messageAndEvent(that, evt).done();
-                    }
-
-
-
-                }
-            }
-        };
     }
 
     @Override

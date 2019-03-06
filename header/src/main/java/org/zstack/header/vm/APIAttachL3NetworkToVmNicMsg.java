@@ -6,7 +6,6 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 
 @Action(category = VmInstanceConstant.ACTION_CATEGORY)
@@ -59,19 +58,5 @@ public class APIAttachL3NetworkToVmNicMsg extends APIMessage {
         msg.vmNicUuid = uuid();
         msg.l3NetworkUuid = uuid();
         return msg;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Attached an l3 network[uuid:%s]", l3NetworkUuid).resource(vmNicUuid , VmNicVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 }

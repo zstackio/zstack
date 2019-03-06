@@ -6,7 +6,6 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
@@ -92,34 +91,4 @@ public class APIAttachPortForwardingRuleMsg extends APIMessage {
         msg.setRuleUuid(uuid());
         return msg;
     }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    Tuple t = Q.New(VmNicVO.class)
-                            .select(VmNicVO_.vmInstanceUuid, VmNicVO_.ip)
-                            .eq(VmNicVO_.uuid, vmNicUuid).findTuple();
-
-                    String vmUuid = t.get(0, String.class);
-                    String ip = t.get(1, String.class);
-
-                    ntfy("Attached port forwarding Rule[uuid:%s]", ruleUuid)
-                            .resource(ruleUuid, PortForwardingRuleVO.class.getSimpleName())
-                            .context("vmNicUuid", vmNicUuid)
-                            .context("vmUuid", vmUuid)
-                            .messageAndEvent(that, evt).done();
-
-                    ntfy("Attached a port forwarding rule[%s] to the nic[%s]", ruleUuid, vmNicUuid)
-                            .context("ruleUuid", ruleUuid)
-                            .resource(vmUuid, VmInstanceVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
-    }
-
 }

@@ -5,7 +5,6 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.notification.ApiNotification;
 import org.zstack.header.other.APIAuditor;
 
 public abstract class APIAddHostMsg extends APICreateMessage implements AddHostMessage, APIAuditor {
@@ -63,20 +62,6 @@ public abstract class APIAddHostMsg extends APICreateMessage implements AddHostM
 
     public void setClusterUuid(String clusterUuid) {
         this.clusterUuid = clusterUuid;
-    }
-
-    public ApiNotification __notification__() {
-        APIMessage that = this;
-
-        return new ApiNotification() {
-            @Override
-            public void after(APIEvent evt) {
-                if (evt.isSuccess()) {
-                    ntfy("Added").resource(((APIAddHostEvent)evt).getInventory().getUuid(), HostVO.class.getSimpleName())
-                            .messageAndEvent(that, evt).done();
-                }
-            }
-        };
     }
 
     public Result audit(APIMessage msg, APIEvent rsp) {

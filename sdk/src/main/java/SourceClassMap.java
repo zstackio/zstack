@@ -56,8 +56,6 @@ public class SourceClassMap {
 			put("org.zstack.core.errorcode.ElaborationCheckResult", "org.zstack.sdk.ElaborationCheckResult");
 			put("org.zstack.core.errorcode.ElaborationContent", "org.zstack.sdk.ElaborationContent");
 			put("org.zstack.core.gc.GarbageCollectorInventory", "org.zstack.sdk.GarbageCollectorInventory");
-			put("org.zstack.core.notification.NotificationInventory", "org.zstack.sdk.NotificationInventory");
-			put("org.zstack.core.notification.NotificationSubscriptionInventory", "org.zstack.sdk.NotificationSubscriptionInventory");
 			put("org.zstack.header.affinitygroup.AffinityGroupInventory", "org.zstack.sdk.AffinityGroupInventory");
 			put("org.zstack.header.affinitygroup.AffinityGroupUsageInventory", "org.zstack.sdk.AffinityGroupUsageInventory");
 			put("org.zstack.header.aliyun.AliyunOssException", "org.zstack.sdk.AliyunOssException");
@@ -528,8 +526,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.NasProtocolType", "org.zstack.nas.NasProtocolType");
 			put("org.zstack.sdk.NetworkServiceL3NetworkRefInventory", "org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.sdk.NetworkServiceProviderInventory", "org.zstack.header.network.service.NetworkServiceProviderInventory");
-			put("org.zstack.sdk.NotificationInventory", "org.zstack.core.notification.NotificationInventory");
-			put("org.zstack.sdk.NotificationSubscriptionInventory", "org.zstack.core.notification.NotificationSubscriptionInventory");
 			put("org.zstack.sdk.OssBucketInventory", "org.zstack.header.aliyun.oss.OssBucketInventory");
 			put("org.zstack.sdk.OssBucketProperty", "org.zstack.header.aliyun.oss.OssBucketProperty");
 			put("org.zstack.sdk.PciDeviceInventory", "org.zstack.pciDevice.PciDeviceInventory");

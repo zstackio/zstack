@@ -9,10 +9,10 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
-import org.zstack.core.notification.N;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
@@ -31,11 +31,14 @@ import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkDetachStruct;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.cdrom.VmCdRomInventory;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
-import org.zstack.header.volume.*;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageDetachStruct;
+import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.CollectionUtils;
@@ -200,8 +203,6 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    N.New(VmInstanceVO.class, msg.getVmInstanceUuid()).warn_("unable to detach a nic[uuid:%s] from the vm[uuid:%s], %s",
-                            msg.getVmNicUuid(), msg.getVmInstanceUuid(), reply.getError());
                     logger.warn(String.format("failed to detach nic[uuid:%s] from the vm[uuid:%s], %s",
                             msg.getVmNicUuid(), msg.getVmInstanceUuid(), reply.getError()));
                 } else {
