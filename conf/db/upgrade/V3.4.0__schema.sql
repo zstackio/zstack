@@ -116,6 +116,4 @@ DELIMITER;
 call cleanExpireVmUsageVO();
 DROP PROCEDURE IF EXISTS cleanExpireVmUsageVO;
 
-DROP TABLE IF EXISTS NotificationSubscriptionVO;
-DROP TABLE IF EXISTS NotificationVO;
 
