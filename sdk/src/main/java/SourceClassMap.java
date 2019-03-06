@@ -308,6 +308,9 @@ public class SourceClassMap {
 			put("org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonInventory", "org.zstack.sdk.FusionstorPrimaryStorageMonInventory");
 			put("org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity", "org.zstack.sdk.HostDiskCapacity");
 			put("org.zstack.storage.primary.local.LocalStorageResourceRefInventory", "org.zstack.sdk.LocalStorageResourceRefInventory");
+			put("org.zstack.storage.primary.ministorage.MiniStorageHostRefInventory", "org.zstack.sdk.MiniStorageHostRefInventory");
+			put("org.zstack.storage.primary.ministorage.MiniStorageInventory", "org.zstack.sdk.MiniStorageInventory");
+			put("org.zstack.storage.primary.ministorage.MiniStorageType", "org.zstack.sdk.MiniStorageType");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockCandidateStruct", "org.zstack.sdk.SharedBlockCandidateStruct");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockGroupPrimaryStorageHostRefInventory", "org.zstack.sdk.SharedBlockGroupPrimaryStorageHostRefInventory");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockGroupPrimaryStorageInventory", "org.zstack.sdk.SharedBlockGroupPrimaryStorageInventory");
@@ -528,6 +531,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LongJobState", "org.zstack.header.longjob.LongJobState");
 			put("org.zstack.sdk.ManagementNodeInventory", "org.zstack.header.managementnode.ManagementNodeInventory");
 			put("org.zstack.sdk.MediaInventory", "org.zstack.monitoring.media.MediaInventory");
+			put("org.zstack.sdk.MiniStorageHostRefInventory", "org.zstack.storage.primary.ministorage.MiniStorageHostRefInventory");
+			put("org.zstack.sdk.MiniStorageInventory", "org.zstack.storage.primary.ministorage.MiniStorageInventory");
+			put("org.zstack.sdk.MiniStorageType", "org.zstack.storage.primary.ministorage.MiniStorageType");
 			put("org.zstack.sdk.MonitorTriggerActionInventory", "org.zstack.monitoring.actions.MonitorTriggerActionInventory");
 			put("org.zstack.sdk.MonitorTriggerInventory", "org.zstack.monitoring.MonitorTriggerInventory");
 			put("org.zstack.sdk.NasFileSystemInventory", "org.zstack.nas.NasFileSystemInventory");

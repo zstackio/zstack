@@ -372,7 +372,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     }
     
-    private void updatePrimaryStorageHostStatus(List<String> psUuids, String hostUuid, PrimaryStorageHostStatus newStatus, ErrorCode reason){
+    protected void updatePrimaryStorageHostStatus(List<String> psUuids, String hostUuid, PrimaryStorageHostStatus newStatus, ErrorCode reason){
         List<PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData> datas = new ArrayList<>();
 
         new SQLBatch(){
