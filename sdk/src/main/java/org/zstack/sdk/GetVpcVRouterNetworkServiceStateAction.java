@@ -46,12 +46,6 @@ public class GetVpcVRouterNetworkServiceStateAction extends AbstractAction {
     @Param(required = false)
     public String accessKeySecret;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -93,7 +87,7 @@ public class GetVpcVRouterNetworkServiceStateAction extends AbstractAction {
         info.httpMethod = "GET";
         info.path = "/vpc/virtual-routers/{uuid}/networkservicestate";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }
