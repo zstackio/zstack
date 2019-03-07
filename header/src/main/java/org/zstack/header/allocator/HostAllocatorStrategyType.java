@@ -4,6 +4,7 @@ import java.util.*;
 
 public class HostAllocatorStrategyType {
     private static Map<String, HostAllocatorStrategyType> types = Collections.synchronizedMap(new HashMap<String, HostAllocatorStrategyType>());
+    private static final HostAllocatorStrategyType defaultStrategy = new HostAllocatorStrategyType(HostAllocatorConstant.DEFAULT_HOST_ALLOCATOR_STRATEGY_TYPE);
     private final String typeName;
     private final boolean exposed;
 
@@ -23,10 +24,15 @@ public class HostAllocatorStrategyType {
 
     public static HostAllocatorStrategyType valueOf(String typeName) {
         HostAllocatorStrategyType type = types.get(typeName);
-        if (type == null) {
-            throw new IllegalArgumentException("HostAllocatorStrategy type: " + typeName + " was not registered by any HostAllocatorStrategyFactory");
+        if (type != null) {
+            return type;
         }
-        return type;
+
+        if (typeName == null) {
+            return defaultStrategy;
+        }
+
+        throw new IllegalArgumentException("HostAllocatorStrategy type: " + typeName + " was not registered by any HostAllocatorStrategyFactory");
     }
 
     @Override
@@ -36,7 +42,7 @@ public class HostAllocatorStrategyType {
 
     @Override
     public boolean equals(Object t) {
-        if (t == null || !(t instanceof HostAllocatorStrategyType)) {
+        if (!(t instanceof HostAllocatorStrategyType)) {
             return false;
         }
 

@@ -624,6 +624,20 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private void validateRootDiskOffering(ImageMediaType imgFormat, APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {
+        if (imgFormat == ImageMediaType.ISO) {
+            if (msg.getRootDiskOfferingUuid() == null) {
+                if (msg.getRootDiskSize() == null) {
+                    throw new ApiMessageInterceptionException(argerr("image mediaType is ISO but missing root disk settings"));
+                }
+
+                if (msg.getRootDiskSize() < 0) {
+                    throw new ApiMessageInterceptionException(operr("Unexpected root disk settings"));
+                }
+            }
+        }
+    }
+
     private void validateInstanceSettings(APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {
         final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
 
@@ -688,9 +702,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is of mediaType: %s, only RootVolumeTemplate and ISO can be used to create vm", msg.getImageUuid(), imgFormat));
         }
 
-        if (imgFormat == ImageMediaType.ISO && msg.getRootDiskOfferingUuid() == null) {
-            throw new ApiMessageInterceptionException(argerr("rootDiskOfferingUuid cannot be null when image mediaType is ISO"));
-        }
+        validateRootDiskOffering(imgFormat, msg);
 
         boolean isSystemImage = imgt.get(1, Boolean.class);
         if (isSystemImage && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
