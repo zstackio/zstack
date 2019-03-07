@@ -492,7 +492,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                 throw new ApiMessageInterceptionException(argerr(e.getMessage()));
             }
 
-            if (!QueryOp.NOT_NULL.equals(cond.getOp()) && !QueryOp.IS_NULL.equals(cond.getOp()) && cond.getValue() == null) {
+            if (!QueryOp.NOT_NULL.toString().equals(cond.getOp()) && !QueryOp.IS_NULL.toString().equals(cond.getOp()) && cond.getValue() == null) {
                 throw new ApiMessageInterceptionException(argerr("'value' of query condition %s cannot be null",
                                 JSONObjectUtil.toJsonString(cond)));
             }
