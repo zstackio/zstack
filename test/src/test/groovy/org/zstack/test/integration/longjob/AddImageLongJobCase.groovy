@@ -124,7 +124,8 @@ class AddImageLongJobCase extends SubCase {
         int newSize = Q.New(ImageVO.class).count().intValue()
         assert newSize > oldSize
         assert 1 == flag
-        assert (long) timeout == TimeUtils.parseTimeInMillis("72h")
+        assert (long) timeout <= TimeUtils.parseTimeInMillis("72h")
+        assert (long) timeout + TimeUtils.parseTimeInMillis("1m") > TimeUtils.parseTimeInMillis("72h")
 
         env.cleanAfterSimulatorHandlers()
     }
@@ -158,7 +159,8 @@ class AddImageLongJobCase extends SubCase {
 
         assert null != dbFindByUuid(uuid, ImageVO.class)
         // timeout should be 3h from global property
-        assert timeout == TimeUtils.parseTimeInMillis("3h")
+        assert timeout <= TimeUtils.parseTimeInMillis("3h")
+        assert timeout + TimeUtils.parseTimeInMillis("1m") > TimeUtils.parseTimeInMillis("3h")
 
         env.cleanMessageHandlers()
     }
@@ -206,7 +208,8 @@ class AddImageLongJobCase extends SubCase {
         }
 
         assert null != dbFindByUuid(uuid, ImageVO.class)
-        assert timeout == TimeUtils.parseTimeInMillis("72h")
+        assert (long) timeout <= TimeUtils.parseTimeInMillis("72h")
+        assert (long) timeout + TimeUtils.parseTimeInMillis("1m") > TimeUtils.parseTimeInMillis("72h")
 
         env.cleanMessageHandlers()
     }
@@ -269,7 +272,8 @@ class AddImageLongJobCase extends SubCase {
         }
 
         assert null != dbFindByUuid(uuid, ImageVO.class)
-        assert timeout == 38000000
+        assert timeout <= 38000000
+        assert timeout + TimeUtils.parseTimeInMillis("1m") > 38000000
 
         env.cleanMessageHandlers()
     }
