@@ -13,12 +13,10 @@ import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.thread.SyncThreadSignature;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -39,13 +37,11 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 
-import static org.zstack.core.Platform.err;
+import java.util.*;
+
 import static org.zstack.core.Platform.operr;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.ADDITIONAL_PUBLIC_NIC_MASK;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.GUEST_NIC_MASK;
-
-import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  */
@@ -373,16 +369,13 @@ public class VirtualRouter extends ApplianceVmBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                getSelf().setStatus(ApplianceVmStatus.Connecting);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Connecting);
                 trigger.next();
             }
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
-                self = dbf.reload(self);
-                getSelf().setStatus(ApplianceVmStatus.Disconnected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
                 trigger.rollback();
             }
         }).then(new NoRollbackFlow() {
@@ -390,9 +383,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                self = dbf.reload(self);
-                getSelf().setStatus(ApplianceVmStatus.Connected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Connected);
                 trigger.next();
             }
         }).done(new FlowDoneHandler(completion) {

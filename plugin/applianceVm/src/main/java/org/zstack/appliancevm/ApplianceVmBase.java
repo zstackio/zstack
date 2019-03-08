@@ -39,8 +39,6 @@ import org.zstack.utils.RangeSet.Range;
 import org.zstack.utils.function.Function;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
@@ -410,8 +408,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                getSelf().setStatus(ApplianceVmStatus.Disconnected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
                 trigger.next();
             }
 
@@ -457,8 +454,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             ApplianceVmStatus originStatus = getSelf().getStatus();
 
             public void run(FlowTrigger trigger, Map data) {
-                getSelf().setStatus(ApplianceVmStatus.Disconnected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
                 trigger.next();
             }
 
@@ -514,16 +510,13 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                getSelf().setStatus(ApplianceVmStatus.Disconnected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
                 trigger.next();
             }
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
-                self = dbf.reload(self);
-                getSelf().setStatus(ApplianceVmStatus.Disconnected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
                 trigger.rollback();
             }
         });
@@ -545,8 +538,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                getSelf().setStatus(ApplianceVmStatus.Connected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Connected);
                 trigger.next();
             }
         });
@@ -565,16 +557,13 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                getSelf().setStatus(ApplianceVmStatus.Connecting);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Connecting);
                 trigger.next();
             }
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
-                self = dbf.reload(self);
-                getSelf().setStatus(ApplianceVmStatus.Disconnected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
                 trigger.rollback();
             }
         });
@@ -596,8 +585,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                getSelf().setStatus(ApplianceVmStatus.Connected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Connected);
                 trigger.next();
             }
         });
@@ -707,9 +695,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
                     // must reload here, otherwise it will override changes created by previous flows
-                    self = dbf.reload(self);
-                    getSelf().setStatus(ApplianceVmStatus.Connected);
-                    dbf.update(self);
+                    changeApplianceVmStatus(ApplianceVmStatus.Connected);
                     trigger.next();
                 }
             });
@@ -765,5 +751,12 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
     @Override
     protected void selectDefaultL3(VmNicInventory nic) {
         return;
+    }
+
+    protected void changeApplianceVmStatus(ApplianceVmStatus newStatus) {
+        self = dbf.reload(self);
+        logger.debug(String.format("ApplianceVm [%s] changed status, old status: [%s], new status: [%s]", self.getUuid(), getInventory().getStatus().toString(), newStatus.toString()));
+        getSelf().setStatus(newStatus);
+        self = dbf.updateAndRefresh(self);
     }
 }
