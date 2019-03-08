@@ -19,6 +19,8 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="Timer" class="org.zstack.core.timeout.TimeHelper"/>
+
     <bean id="DeadMessageManager" class="org.zstack.core.cloudbus.DeadMessageManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" order="999"/>
