@@ -2,6 +2,7 @@ package org.zstack.utils;
 
 import org.apache.commons.lang.time.StopWatch;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -326,5 +327,9 @@ public class ShellUtils {
         runner.baseDir = baseDir;
         runner.withSudo = withSudo;
         return runner.run();
+    }
+
+    public static String getScriptsPath(String scriptName) {
+        return PathUtil.findFileOnClassPath(scriptName, true).getAbsolutePath();
     }
 }
