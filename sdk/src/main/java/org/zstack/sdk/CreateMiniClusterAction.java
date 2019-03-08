@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateDataVolumeAction extends AbstractAction {
+public class CreateMiniClusterAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateDataVolumeAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateDataVolumeResult value;
+        public org.zstack.sdk.CreateClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,20 +25,29 @@ public class CreateDataVolumeAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String zoneUuid;
+
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
+
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List hostManagementIps;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String username = "root";
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public int sshPort = 22;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String diskOfferingUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public long diskSize = 0;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String primaryStorageUuid;
+    @Param(required = true, validValues = {"KVM","Simulator"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hypervisorType;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -75,8 +84,8 @@ public class CreateDataVolumeAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateDataVolumeResult value = res.getResult(org.zstack.sdk.CreateDataVolumeResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateDataVolumeResult() : value; 
+        org.zstack.sdk.CreateClusterResult value = res.getResult(org.zstack.sdk.CreateClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateClusterResult() : value; 
 
         return ret;
     }
@@ -106,7 +115,7 @@ public class CreateDataVolumeAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/volumes/data";
+        info.path = "/mini-clusters";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
