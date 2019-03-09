@@ -14,7 +14,6 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
@@ -249,5 +248,9 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
         }
         logger.debug("add vyos password to vrouter");
         info.put(VyosConstants.BootstrapInfoKey.vyosPassword.toString(), VirtualRouterGlobalConfig.VYOS_PASSWORD.value());
+
+        if (VyosGlobalConfig.CONFIG_FIREWALL_WITH_IPTABLES.value(Boolean.class)) {
+            info.put(VyosConstants.REPLACE_FIREWALL_WITH_IPTBALES, true);
+        }
     }
 }

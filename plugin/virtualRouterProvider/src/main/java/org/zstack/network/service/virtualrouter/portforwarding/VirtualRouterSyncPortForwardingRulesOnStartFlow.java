@@ -100,6 +100,7 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
         for (Tuple t : privateIps) {
             String ruleUuid = t.get(0, String.class);
             PortForwardingRuleTO to = new PortForwardingRuleTO();
+            to.setUuid(ruleUuid);
             to.setPrivateIp(t.get(1, String.class));
             
             PortForwardingRuleVO ruleVO = ruleMap.get(ruleUuid);

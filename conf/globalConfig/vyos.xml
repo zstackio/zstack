@@ -7,4 +7,11 @@
         <type>java.lang.String</type>
         <defaultValue>reject</defaultValue>
     </config>
+    <config>
+        <category>vyos</category>
+        <name>configure.firewall.with.iptables</name>
+        <description>use iptables directly instead of Vyos firewall configuration</description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>false</defaultValue>
+    </config>
 </globalConfig>
