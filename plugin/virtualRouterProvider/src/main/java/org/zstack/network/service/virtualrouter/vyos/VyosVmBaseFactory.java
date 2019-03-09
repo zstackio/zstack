@@ -7,6 +7,7 @@ import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
+import org.zstack.core.config.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -14,7 +15,6 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
@@ -52,6 +52,8 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
     private DatabaseFacade dbf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private List<String> vyosPostCreateFlows;
     private List<String> vyosPostStartFlows;
@@ -249,5 +251,11 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
         }
         logger.debug("add vyos password to vrouter");
         info.put(VyosConstants.BootstrapInfoKey.vyosPassword.toString(), VirtualRouterGlobalConfig.VYOS_PASSWORD.value());
+
+        /* vrouter only has 1 private network */
+        List<String> l3Uuids = (List<String>)info.get(ApplianceVmConstant.BootstrapParams.additionalL3Uuids.toString());
+        if (rcf.getResourceConfigValue(VyosGlobalConfig.CONFIG_FIREWALL_WITH_IPTABLES, l3Uuids.get(0), Boolean.class)) {
+            info.put(VyosConstants.REPLACE_FIREWALL_WITH_IPTBALES, true);
+        }
     }
 }

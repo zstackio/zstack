@@ -82,6 +82,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
                 struct.getGuestL3Network().getUuid(), vr.getUuid(), vr.getName()));
 
         PortForwardingRuleTO to = new PortForwardingRuleTO();
+        to.setUuid(struct.getRule().getUuid());
         to.setAllowedCidr(struct.getRule().getAllowedCidr());
         to.setPrivateIp(struct.getGuestIp());
         to.setPrivateMac(privateMac);
@@ -295,6 +296,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
         for (Tuple t : pfs) {
             PortForwardingRuleVO pf = t.get(0, PortForwardingRuleVO.class);
             PortForwardingRuleTO to = new PortForwardingRuleTO();
+            to.setUuid(pf.getUuid());
             to.setAllowedCidr(pf.getAllowedCidr());
             to.setPrivateIp(t.get(1, String.class));
             to.setPrivateMac(
