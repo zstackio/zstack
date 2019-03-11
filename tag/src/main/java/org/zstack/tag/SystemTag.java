@@ -119,6 +119,19 @@ public class SystemTag {
         return q.isExists();
     }
 
+    public List<String> filterResourceHasTag(Collection<String> resourceUuids) {
+        if (resourceUuids.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
+        q.add(SystemTagVO_.resourceType, Op.EQ, resourceClass.getSimpleName());
+        q.add(SystemTagVO_.resourceUuid, Op.IN, resourceUuids);
+        q.add(SystemTagVO_.tag, useOp(), useTagFormat());
+        q.select(SystemTagVO_.resourceUuid);
+        return q.listValue();
+    }
+
     public void copy(String srcUuid, Class srcClass, String dstUuid, Class dstClass) {
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.add(SystemTagVO_.resourceType, Op.EQ, srcClass.getSimpleName());

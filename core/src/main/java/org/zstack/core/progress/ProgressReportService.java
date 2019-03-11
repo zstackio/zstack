@@ -526,6 +526,17 @@ public class ProgressReportService extends AbstractService implements Management
         return TaskProgressRange.valueOf(stage);
     }
 
+    public static List<TaskProgressRange> splitTaskStage(TaskProgressRange stage, List<? extends Number> weight) {
+        List<TaskProgressRange> results = new ArrayList<>();
+        double total = weight.stream().mapToDouble(Number::doubleValue).sum();
+        int range = stage.getEnd() - stage.getStart();
+        double end = stage.getStart();
+        for (Number w : weight) {
+            results.add(new TaskProgressRange((int)end, (int)(end += (w.doubleValue() / total * range))));
+        }
+        return results;
+    }
+
 
     private static TaskProgressRange transformSubStage(TaskProgressRange parentStage, TaskProgressRange subStage){
         float ratio = (float)(parentStage.getEnd() - parentStage.getStart())/100;
