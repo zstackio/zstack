@@ -26,10 +26,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.configuration.DiskOfferingVO;
-import org.zstack.header.configuration.DiskOfferingVO_;
-import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.configuration.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeNoErrorCompletion;
@@ -924,7 +921,22 @@ public class VmInstanceManagerImpl extends AbstractService implements
         smsg.setHostUuid(msg.getHostUuid());
         smsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         smsg.setL3NetworkUuids(msg.getL3NetworkUuids());
-        smsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
+
+        if (msg.getRootDiskOfferingUuid() != null) {
+            smsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
+        } else if (msg.getRootDiskSize() > 0) {
+            DiskOfferingVO dvo = new DiskOfferingVO();
+            dvo.setUuid(Platform.getUuid());
+            dvo.setAccountUuid(msg.getAccountUuid());
+            dvo.setDiskSize(msg.getRootDiskSize());
+            dvo.setName("for-create-vm-" + vo.getUuid());
+            dvo.setType("DefaultDiskOfferingType");
+            dvo.setState(DiskOfferingState.Enabled);
+            dvo.setAllocatorStrategy(PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
+            dbf.persist(dvo);
+            smsg.setRootDiskOfferingUuid(dvo.getUuid());
+        }
+
         smsg.setVmInstanceInventory(VmInstanceInventory.valueOf(vo));
         smsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         smsg.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
@@ -937,6 +949,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
             @Override
             public void run(MessageReply reply) {
                 try {
+                    if (msg.getRootDiskOfferingUuid() == null && smsg.getRootDiskOfferingUuid() != null) {
+                        dbf.removeByPrimaryKey(smsg.getRootDiskOfferingUuid(), DiskOfferingVO.class);
+                    }
+
                     if (reply.isSuccess()) {
                         InstantiateNewCreatedVmInstanceReply r = (InstantiateNewCreatedVmInstanceReply) reply;
                         completion.success(r.getVmInventory());
@@ -1043,6 +1059,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setL3NetworkUuids(getVmNicSpecsFromAPICreateVmInstanceMsg(msg));
         cmsg.setType(msg.getType());
         cmsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
+        if (msg.getRootDiskSize() != null) {
+            cmsg.setRootDiskSize(msg.getRootDiskSize());
+        }
         cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         cmsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         cmsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
