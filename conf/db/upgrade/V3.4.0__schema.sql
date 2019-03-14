@@ -117,3 +117,4 @@ call cleanExpireVmUsageVO();
 DROP PROCEDURE IF EXISTS cleanExpireVmUsageVO;
 
 
+ALTER TABLE VpcVpnGatewayVO CHANGE endDate endDate datetime NOT NULL;
