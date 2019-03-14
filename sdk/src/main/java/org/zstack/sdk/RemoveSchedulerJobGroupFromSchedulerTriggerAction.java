@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateMiniClusterAction extends AbstractAction {
+public class RemoveSchedulerJobGroupFromSchedulerTriggerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateMiniClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateMiniClusterResult value;
+        public org.zstack.sdk.RemoveSchedulerJobGroupFromSchedulerTriggerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,34 +26,10 @@ public class CreateMiniClusterAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
+    public java.lang.String schedulerJobGroupUuid;
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List hostManagementIps;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String username = "root";
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
-    public int sshPort = 22;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, validValues = {"KVM","Simulator"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hypervisorType;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String schedulerTriggerUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -83,9 +59,9 @@ public class CreateMiniClusterAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
-        org.zstack.sdk.CreateMiniClusterResult value = res.getResult(org.zstack.sdk.CreateMiniClusterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateMiniClusterResult() : value;
+        
+        org.zstack.sdk.RemoveSchedulerJobGroupFromSchedulerTriggerResult value = res.getResult(org.zstack.sdk.RemoveSchedulerJobGroupFromSchedulerTriggerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RemoveSchedulerJobGroupFromSchedulerTriggerResult() : value; 
 
         return ret;
     }
@@ -114,11 +90,11 @@ public class CreateMiniClusterAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/mini-clusters";
+        info.httpMethod = "DELETE";
+        info.path = "/scheduler/jobgroups/{schedulerJobGroupUuid}/scheduler/triggers/{schedulerTriggerUuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
