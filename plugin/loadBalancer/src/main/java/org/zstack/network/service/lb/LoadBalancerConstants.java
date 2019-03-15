@@ -53,4 +53,20 @@ public class LoadBalancerConstants {
         LOAD_BALANCER_VO,
     }
 
+    public static final int CONNECTION_IDLE_TIMEOUT_MIN = 0;
+    public static final int CONNECTION_IDLE_TIMEOUT_MAX = Integer.MAX_VALUE;
+
+    public static final int MAXIMUM_CONNECTION_MIN = 0;
+    public static final int MAXIMUM_CONNECTION_MAX = (int)MAX_CONNECTION_LIMIT;
+
+    public static final int HEALTH_CHECK_THRESHOLD_MIN = 1;
+    public static final int HEALTH_CHECK_THRESHOLD_MAX = Integer.MAX_VALUE;
+
+    public static final int UNHEALTH_CHECK_THRESHOLD_MIN = 1;
+    public static final int UNHEALTH_CHECK_THRESHOLD_MAX = Integer.MAX_VALUE;
+
+    public static final int HEALTH_CHECK_INTERVAL_MIN = 1;
+    public static final int HEALTH_CHECK_INTERVAL_MAX = Integer.MAX_VALUE;
+
+    public static final String HEALTH_CHECK_TARGET_DEFAULT = "default";
 }

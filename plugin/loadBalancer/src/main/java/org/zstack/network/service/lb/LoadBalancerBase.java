@@ -50,6 +50,8 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created by frank on 8/8/2015.
@@ -543,6 +545,8 @@ public class LoadBalancerBase {
             handle((APIAddCertificateToLoadBalancerListenerMsg) msg);
         } else if (msg instanceof APIRemoveCertificateFromLoadBalancerListenerMsg) {
             handle((APIRemoveCertificateFromLoadBalancerListenerMsg) msg);
+        } else if (msg instanceof APIChangeLoadBalancerListenerMsg) {
+            handle((APIChangeLoadBalancerListenerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1335,6 +1339,99 @@ public class LoadBalancerBase {
             @Override
             public String getName() {
                 return "update-lb-listener";
+            }
+        });
+    }
+
+    private void handle(APIChangeLoadBalancerListenerMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                APIChangeLoadBalancerListenerEvent evt = new APIChangeLoadBalancerListenerEvent(msg.getId());
+                LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getUuid(), LoadBalancerListenerVO.class);
+
+                if (msg.getBalancerAlgorithm() != null) {
+                    LoadBalancerSystemTags.BALANCER_ALGORITHM.update(msg.getUuid(),
+                            LoadBalancerSystemTags.BALANCER_ALGORITHM.instantiateTag(map(
+                                    e(LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN, msg.getBalancerAlgorithm())
+                            )));
+                }
+
+                if (msg.getConnectionIdleTimeout() != null) {
+                    LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.update(msg.getUuid(),
+                            LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.instantiateTag(map(
+                                    e(LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT_TOKEN, msg.getConnectionIdleTimeout())
+                            )));
+                }
+
+                if (msg.getHealthCheckInterval() != null) {
+                    LoadBalancerSystemTags.HEALTH_INTERVAL.update(msg.getUuid(),
+                            LoadBalancerSystemTags.HEALTH_INTERVAL.instantiateTag(map(
+                                    e(LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN, msg.getHealthCheckInterval())
+                            )));
+                }
+
+                if (msg.getHealthCheckTarget() != null) {
+                    String target = msg.getHealthCheckTarget();
+
+                    if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(lblVo.getProtocol())) {
+                        target = String.format("udp:%s", target);
+                    } else {
+                        target = String.format("tcp:%s", target);
+                    }
+
+                    LoadBalancerSystemTags.HEALTH_TARGET.update(msg.getUuid(),
+                            LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(map(
+                                    e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, target))
+                            ));
+                }
+
+                if (msg.getHealthyThreshold() != null) {
+                    LoadBalancerSystemTags.HEALTHY_THRESHOLD.update(msg.getUuid(),
+                            LoadBalancerSystemTags.HEALTHY_THRESHOLD.instantiateTag(map(
+                                    e(LoadBalancerSystemTags.HEALTHY_THRESHOLD_TOKEN, msg.getHealthyThreshold())
+                            )));
+                }
+
+                if (msg.getUnhealthyThreshold() != null) {
+                    LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.update(msg.getUuid(),
+                            LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.instantiateTag(map(
+                                    e(LoadBalancerSystemTags.UNHEALTHY_THRESHOLD_TOKEN, msg.getUnhealthyThreshold())
+                            )));
+                }
+
+                if (msg.getMaxConnection() != null) {
+                    LoadBalancerSystemTags.MAX_CONNECTION.update(msg.getUuid(),
+                            LoadBalancerSystemTags.MAX_CONNECTION.instantiateTag(map(
+                                    e(LoadBalancerSystemTags.MAX_CONNECTION_TOKEN, msg.getMaxConnection())
+                            )));
+                }
+
+                RefreshLoadBalancerMsg msg = new RefreshLoadBalancerMsg();
+                msg.setUuid(lblVo.getLoadBalancerUuid());
+                bus.makeLocalServiceId(msg, LoadBalancerConstants.SERVICE_ID);
+                bus.send(msg, new CloudBusCallBack(new NopeCompletion()) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.warn(String.format( "update listener [uuid:%s] failed", lblVo.getUuid()));
+                        }
+                    }
+                });
+
+                evt.setInventory( LoadBalancerListenerInventory.valueOf(lblVo));
+                bus.publish(evt);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "change-lb-listener";
             }
         });
     }

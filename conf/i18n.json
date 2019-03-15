@@ -4264,6 +4264,16 @@
     "fileName": "src/zstack/./plugin/loadBalancer/src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
+    "raw": "healthCheck target [%s] error, it must be \u0027default\u0027 or number between[1~65535] ",
+    "en_US": "healthCheck target [{0}] error, it must be \u0027default\u0027 or number between[1~65535] ",
+    "zh_CN": "健康检查端口[{0}]错误,值必须是'default'或者数字[1~65535]",
+    "arguments": [
+      "target"
+    ],
+    "line": 357,
+    "fileName": "src/zstack/./plugin/loadBalancer/src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
     "raw": "the L3 network of vm nic[uuid:%s] doesn\u0027t have load balancer service enabled",
     "en_US": "the L3 network of vm nic[uuid:{0}] doesn\u0027t have load balancer service enabled",
     "zh_CN": "虚拟机网卡[uuid:{0}]的L3网络没有启用负载均衡服务",
