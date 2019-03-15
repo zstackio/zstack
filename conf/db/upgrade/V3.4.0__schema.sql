@@ -302,3 +302,58 @@ CREATE TABLE `zstack`.`SchedulerJobGroupSchedulerTriggerRefVO` (
     CONSTRAINT `fkSchedulerJobGroupSchedulerTriggerRefVOSchedulerJobVO` FOREIGN KEY (`schedulerJobGroupUuid`) REFERENCES `SchedulerJobGroupVO` (`uuid`),
     CONSTRAINT `fkSchedulerJobGroupSchedulerTriggerRefVOSchedulerTriggerVO` FOREIGN KEY (`schedulerTriggerUuid`) REFERENCES `SchedulerTriggerVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP PROCEDURE IF EXISTS migrateSchedulerJob;
+
+DELIMITER $$
+CREATE PROCEDURE migrateSchedulerJob()
+    BEGIN
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE triggerUuid VARCHAR(32);
+        DECLARE groupUuid VARCHAR(32);
+        DECLARE legacyJobUuid VARCHAR(32);
+        DECLARE legacyJobName VARCHAR(255);
+        DECLARE legacyJobDescription VARCHAR(2048);
+        DECLARE legacyJobClassName VARCHAR(255);
+        DECLARE legacyJobData TEXT;
+        DECLARE legacyJobstate VARCHAR(255);
+        DEClARE cur CURSOR FOR SELECT uuid, name, description, jobClassName, jobData, state from SchedulerJobVO
+        where jobClassName in ('org.zstack.storage.backup.CreateVolumeBackupJob', 'org.zstack.storage.backup.CreateVmBackupJob');
+        DEClARE tcur CURSOR FOR SELECT schedulerTriggerUuid from SchedulerJobSchedulerTriggerRefVO where schedulerJobUuid = legacyJobUuid;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        insert_group_loop: LOOP
+            FETCH cur INTO legacyJobUuid, legacyJobName, legacyJobDescription, legacyJobClassName, legacyJobData, legacyJobstate;
+            IF done THEN
+                LEAVE insert_group_loop;
+            END IF;
+
+            SET groupUuid = (REPLACE(UUID(), '-', ''));
+            INSERT INTO zstack.SchedulerJobGroupVO(uuid, name, description, jobClassName, jobData, state, lastOpDate, createDate)
+            VALUES(groupUuid, legacyJobName, legacyJobDescription, legacyJobClassName, legacyJobData, legacyJobstate, NOW(), NOW());
+
+            INSERT INTO zstack.SchedulerJobGroupJobRefVO(schedulerJobUuid, schedulerJobGroupUuid, lastOpDate, createDate)
+            VALUES(legacyJobUuid, groupUuid, NOW(), NOW());
+
+            OPEN tcur;
+            migrate_ref_loop: LOOP
+                FETCH tcur INTO triggerUuid;
+                IF done THEN
+                    LEAVE migrate_ref_loop;
+                END IF;
+
+                INSERT INTO zstack.SchedulerJobGroupSchedulerTriggerRefVO(schedulerJobGroupUuid, schedulerTriggerUuid, lastOpDate, createDate)
+                VALUES (groupUuid, triggerUuid, NOW(), NOW());
+
+            END LOOP;
+            CLOSE tcur;
+
+            DELETE FROM zstack.SchedulerJobSchedulerTriggerRefVO where schedulerJobUuid = legacyJobUuid;
+            SET done = FALSE;
+        END LOOP;
+        CLOSE cur;
+    END $$
+DELIMITER ;
+
+call migrateSchedulerJob();
+DROP PROCEDURE IF EXISTS migrateSchedulerJob;
