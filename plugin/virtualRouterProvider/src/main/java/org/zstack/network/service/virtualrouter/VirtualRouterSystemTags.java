@@ -28,4 +28,6 @@ public class VirtualRouterSystemTags {
     public static PatternedSystemTag DEDICATED_ROLE_VR = new PatternedSystemTag("dedicatedRole", VmInstanceVO.class);
 
     public static SystemTag VYOS_OFFERING = new PatternedSystemTag("vrouter", InstanceOfferingVO.class);
+    public static PatternedSystemTag VR_DISABLE_NETWORK_SERVICE_SNAT =
+            new PatternedSystemTag(String.format("disabledService::SNAT"), VirtualRouterVmVO.class);
 }
