@@ -151,4 +151,22 @@ public class PatternedSystemTag extends SystemTag {
         svo.setTag(getTag(srcUuid, srcResourceClass));
         dbf.persistAndRefresh(svo);
     }
+
+    public boolean updateTagByToken(String resourceUuid, String tokenName, String newTag) {
+        SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
+        q.add(SystemTagVO_.resourceUuid, Op.EQ, resourceUuid);
+        q.add(SystemTagVO_.resourceType, Op.EQ, getResourceClass().getSimpleName());
+        q.add(SystemTagVO_.tag, Op.LIKE, useTagFormat());
+        SystemTagVO vo = q.find();
+
+        String oldTag = getTokenByResourceUuid(resourceUuid, tokenName);
+        if (vo == null || oldTag == null) {
+            return false;
+        }
+
+        vo.setTag(vo.getTag().replace(oldTag, newTag));
+        dbf.updateAndRefresh(vo);
+
+        return true;
+    }
 }
