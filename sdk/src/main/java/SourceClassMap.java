@@ -175,6 +175,7 @@ public class SourceClassMap {
 			put("org.zstack.header.storage.primary.ImageCacheInventory", "org.zstack.sdk.ImageCacheInventory");
 			put("org.zstack.header.storage.primary.PrimaryStorageHostStatus", "org.zstack.sdk.PrimaryStorageHostStatus");
 			put("org.zstack.header.storage.primary.PrimaryStorageInventory", "org.zstack.sdk.PrimaryStorageInventory");
+			put("org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotStruct", "org.zstack.sdk.BatchDeleteVolumeSnapshotStruct");
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageRefInventory", "org.zstack.sdk.VolumeSnapshotBackupStorageRefInventory");
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotInventory", "org.zstack.sdk.VolumeSnapshotInventory");
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotTree$SnapshotLeafInventory", "org.zstack.sdk.SnapshotLeafInventory");
@@ -418,6 +419,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BaremetalNicInventory", "org.zstack.header.baremetal.network.BaremetalNicInventory");
 			put("org.zstack.sdk.BaremetalPxeServerInventory", "org.zstack.header.baremetal.pxeserver.BaremetalPxeServerInventory");
 			put("org.zstack.sdk.BaremetalVlanNicInventory", "org.zstack.header.baremetal.network.BaremetalVlanNicInventory");
+			put("org.zstack.sdk.BatchDeleteVolumeSnapshotStruct", "org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotStruct");
 			put("org.zstack.sdk.CephBackupStorageInventory", "org.zstack.storage.ceph.backup.CephBackupStorageInventory");
 			put("org.zstack.sdk.CephBackupStorageMonInventory", "org.zstack.storage.ceph.backup.CephBackupStorageMonInventory");
 			put("org.zstack.sdk.CephPrimaryStorageInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageInventory");

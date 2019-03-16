@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -17,6 +18,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -47,6 +49,7 @@ import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -119,6 +122,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             handle((MarkRootVolumeAsSnapshotMsg) msg);
         } else if (msg instanceof AskVolumeSnapshotStructMsg) {
             handle((AskVolumeSnapshotStructMsg) msg);
+        } else if (msg instanceof BatchDeleteVolumeSnapshotMsg) {
+            handle((BatchDeleteVolumeSnapshotMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -138,6 +143,156 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         VolumeSnapshotReportPrimaryStorageCapacityUsageReply reply = new VolumeSnapshotReportPrimaryStorageCapacityUsageReply();
         reply.setUsedSize(size == null ? 0 : size);
         bus.reply(msg, reply);
+    }
+
+    //TODO(weiw): it's better to fire cascade for every snapshot rather than use underhood local msg,
+    //  but it needs refactor existing cascade code to avoid multiple overlay msg
+    private void handle(BatchDeleteVolumeSnapshotMsg msg) {
+        BatchDeleteVolumeSnapshotReply reply = new BatchDeleteVolumeSnapshotReply();
+        List<BatchDeleteVolumeSnapshotStruct> results = Collections.synchronizedList(new ArrayList());
+        Map<String, List<String>> ancestorMap = getAncestorSnapshots(msg.getUuids());
+        new While<>(ancestorMap.keySet()).each((uuid, whileCompletion) -> {
+            VolumeSnapshotDeletionMsg vmsg = new VolumeSnapshotDeletionMsg();
+            vmsg.setSnapshotUuid(uuid);
+            vmsg.setVolumeUuid(msg.getVolumeUuid());
+            vmsg.setDbOnly(false);
+            vmsg.setVolumeDeletion(false);
+
+            String treeUuid = Q.New(VolumeSnapshotVO.class)
+                    .select(VolumeSnapshotVO_.treeUuid)
+                    .eq(VolumeSnapshotVO_.uuid, uuid).findValue();
+            vmsg.setTreeUuid(treeUuid);
+            bus.makeTargetServiceIdByResourceUuid(vmsg, VolumeSnapshotConstant.SERVICE_ID, vmsg.getSnapshotUuid());
+            bus.send(vmsg, new CloudBusCallBack(whileCompletion) {
+                @Override
+                public void run(MessageReply reply) {
+                    BatchDeleteVolumeSnapshotStruct result = new BatchDeleteVolumeSnapshotStruct();
+                    result.setSnapshotUuid(uuid);
+                    if (!reply.isSuccess()) {
+                        result.setSuccess(false);
+                        result.setError(reply.getError());
+                    } else {
+                        result.setSuccess(true);
+                    }
+                    results.add(result);
+                    if (ancestorMap.get(uuid) == null && ancestorMap.get(uuid).isEmpty()) {
+                        whileCompletion.done();
+                        return;
+                    }
+
+                    for (String uuid : ancestorMap.get(uuid)) {
+                        BatchDeleteVolumeSnapshotStruct r = new BatchDeleteVolumeSnapshotStruct();
+                        r.setSnapshotUuid(uuid);
+                        r.setSuccess(result.isSuccess());
+                        r.setError(result.getError());
+                        results.add(r);
+                    }
+                    whileCompletion.done();
+                }
+            });
+        }).run(new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                reply.setResults(results);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private class SnapshotAncestorStruct {
+        private List<String> ancestors;
+        private boolean child = false;
+
+        public List<String> getAncestors() {
+            return ancestors;
+        }
+
+        public void setAncestors(List<String> ancestors) {
+            this.ancestors = ancestors;
+        }
+
+        public boolean isChild() {
+            return child;
+        }
+
+        public void setChild(boolean child) {
+            this.child = child;
+        }
+    }
+
+    private Map<String, List<String>> getAncestorSnapshots(List<String> snapshotUuids) {
+        Map<String, List<String>> result = new HashMap<>();
+        Map<String, SnapshotAncestorStruct> snapshotAncestors = new HashMap();
+        for (String snapshotUuid : snapshotUuids) {
+            SnapshotAncestorStruct snapshotAncestor = new SnapshotAncestorStruct();
+            List<String> t = getSnapshotAncestors(snapshotUuid);
+            if (t.size() == 1) {
+                snapshotAncestor.setAncestors(new ArrayList<>());
+            } else {
+                t.remove(snapshotUuid);
+                snapshotAncestor.setAncestors(t);
+            }
+
+            logger.debug(String.format("got ancestors %s of snapshot[uuid: %s]", snapshotAncestor.getAncestors(), snapshotUuid));
+            snapshotAncestors.put(snapshotUuid, snapshotAncestor);
+        }
+
+        for (String snapshotUuid : snapshotUuids) {
+            if (snapshotUuids.parallelStream().anyMatch(s -> snapshotAncestors.get(snapshotUuid).getAncestors().contains(s))) {
+                snapshotAncestors.get(snapshotUuid).setChild(true);
+            }
+        }
+
+        Integer count = 0;
+        for (String root: snapshotAncestors.entrySet().parallelStream().filter(e -> !e.getValue().isChild()).map(e -> e.getKey()).collect(Collectors.toList())) {
+            List<String> children = snapshotAncestors.entrySet().stream().filter(e -> e.getValue().getAncestors().contains(root)).map(e -> e.getKey()).collect(Collectors.toList());
+            logger.debug(String.format("get root snapshot: %s and its children: %s", root, children));
+            result.put(root, children);
+            count += 1 + children.size();
+        }
+        DebugUtils.Assert(count == snapshotUuids.size(), String.format("count of snapshotAncestors[%s] not equals to snapshots[%s]", count, snapshotUuids.size()));
+        return result;
+    }
+
+    private List<String> getSnapshotAncestors(String snapshotUuid) {
+        String parentUuid = Q.New(VolumeSnapshotVO.class)
+                .select(VolumeSnapshotVO_.parentUuid).eq(VolumeSnapshotVO_.uuid, snapshotUuid).findValue();
+        if (parentUuid == null || parentUuid.length() == 0) {
+            return Arrays.asList(snapshotUuid);
+        }  else {
+            List<String> r = new ArrayList<>();
+            r.add(snapshotUuid);
+            r.addAll(getSnapshotAncestors(parentUuid));
+            return r;
+        }
+    }
+
+    private void handle(APIBatchDeleteVolumeSnapshotMsg msg) {
+        APIBatchDeleteVolumeSnapshotEvent event = new APIBatchDeleteVolumeSnapshotEvent(msg.getId());
+        BatchDeleteVolumeSnapshotMsg bmsg = new BatchDeleteVolumeSnapshotMsg();
+        bmsg.setUuids(msg.getUuids());
+        bmsg.setVolumeUuid(msg.getVolumeUuid());
+        bus.makeTargetServiceIdByResourceUuid(bmsg, VolumeSnapshotConstant.SERVICE_ID, msg.getVolumeUuid());
+
+        VolumeSnapshotOverlayMsg omsg = new VolumeSnapshotOverlayMsg();
+        omsg.setMessage(bmsg);
+        omsg.setVolumeUuid(msg.getVolumeUuid());
+        bus.makeTargetServiceIdByResourceUuid(omsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
+
+        bus.send(omsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    event.setSuccess(false);
+                    bus.publish(event);
+                    return;
+                }
+
+                BatchDeleteVolumeSnapshotReply r = reply.castReply();
+                event.setResults(r.getResults());
+                bus.publish(event);
+            }
+        });
     }
 
 /*
@@ -666,11 +821,13 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     private void handleApiMessage(APIMessage msg) {
 //        if (msg instanceof APIGetVolumeSnapshotTreeMsg) {
 //            handle((APIGetVolumeSnapshotTreeMsg) msg);
+        if (msg instanceof APIBatchDeleteVolumeSnapshotMsg) {
+            handle((APIBatchDeleteVolumeSnapshotMsg) msg);
 //        } else if (msg instanceof APICreateVolumeSnapshotSchedulerJobMsg) {
 //            handle((APICreateVolumeSnapshotSchedulerJobMsg) msg);
-//        } else {
+        } else {
             bus.dealWithUnknownMessage(msg);
-//        }
+        }
     }
 
     @Override
