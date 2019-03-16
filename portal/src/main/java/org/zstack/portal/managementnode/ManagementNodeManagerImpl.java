@@ -789,7 +789,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 // check if any node missing in our hash ring
                 nodesInDb.forEach(n -> {
-                    if (n.getUuid().equals(node().getUuid())) {
+                    if (n.getUuid().equals(node().getUuid()) || suspects.contains(n)) {
                         return;
                     }
 
