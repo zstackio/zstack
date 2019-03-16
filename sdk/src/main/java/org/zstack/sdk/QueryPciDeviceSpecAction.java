@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetVolumeQosAction extends AbstractAction {
+public class QueryPciDeviceSpecAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetVolumeQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetVolumeQosResult value;
+        public org.zstack.sdk.QueryPciDeviceSpecResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,6 @@ public class GetVolumeQosAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean forceSync = false;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
 
 
     private Result makeResult(ApiResult res) {
@@ -54,8 +34,8 @@ public class GetVolumeQosAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetVolumeQosResult value = res.getResult(org.zstack.sdk.GetVolumeQosResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetVolumeQosResult() : value; 
+        org.zstack.sdk.QueryPciDeviceSpecResult value = res.getResult(org.zstack.sdk.QueryPciDeviceSpecResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryPciDeviceSpecResult() : value; 
 
         return ret;
     }
@@ -85,7 +65,7 @@ public class GetVolumeQosAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/volumes/{uuid}/qos";
+        info.path = "/pci-device/pci-device-specs";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

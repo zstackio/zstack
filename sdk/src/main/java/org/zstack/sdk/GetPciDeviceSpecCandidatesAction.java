@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetVolumeQosAction extends AbstractAction {
+public class GetPciDeviceSpecCandidatesAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetVolumeQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetVolumeQosResult value;
+        public org.zstack.sdk.GetPciDeviceSpecCandidatesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,8 @@ public class GetVolumeQosAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean forceSync = false;
+    public java.lang.String type;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -54,8 +51,8 @@ public class GetVolumeQosAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetVolumeQosResult value = res.getResult(org.zstack.sdk.GetVolumeQosResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetVolumeQosResult() : value; 
+        org.zstack.sdk.GetPciDeviceSpecCandidatesResult value = res.getResult(org.zstack.sdk.GetPciDeviceSpecCandidatesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetPciDeviceSpecCandidatesResult() : value; 
 
         return ret;
     }
@@ -85,7 +82,7 @@ public class GetVolumeQosAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/volumes/{uuid}/qos";
+        info.path = "/pci-device/pci-device-specs/candidates";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
