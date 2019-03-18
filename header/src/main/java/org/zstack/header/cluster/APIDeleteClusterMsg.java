@@ -42,7 +42,7 @@ public class APIDeleteClusterMsg extends APIDeleteMessage implements ClusterMess
     /**
      * @desc cluster uuid
      */
-    @APIParam
+    @APIParam(resourceType = ClusterVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     public APIDeleteClusterMsg() {
