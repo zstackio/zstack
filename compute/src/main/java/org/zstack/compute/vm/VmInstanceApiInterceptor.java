@@ -631,7 +631,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr("image mediaType is ISO but missing root disk settings"));
                 }
 
-                if (msg.getRootDiskSize() < 0) {
+                if (msg.getRootDiskSize() <= 0) {
                     throw new ApiMessageInterceptionException(operr("Unexpected root disk settings"));
                 }
             }
@@ -646,7 +646,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(operr("Missing CPU/memory settings"));
             }
 
-            if (msg.getCpuNum() < 0 || msg.getMemorySize() < 0) {
+            if (msg.getCpuNum() <= 0 || msg.getMemorySize() <= 0) {
                 throw new ApiMessageInterceptionException(operr("Unexpected CPU/memory settings"));
             }
 
