@@ -665,113 +665,6 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class VolumeTO {
-        public static final String FILE = "file";
-        public static final String ISCSI = "iscsi";
-        public static final String CEPH = "ceph";
-        public static final String FUSIONSTOR = "fusionstor";
-        public static final String SHAREDBLOCK = "sharedblock";
-        public static final String SCSILUN = "scsilun";
-        public static final String BLOCK = "block";
-
-        private String installPath;
-        private int deviceId;
-        private String deviceType = FILE;
-        private String volumeUuid;
-        private boolean useVirtio;
-        private boolean useVirtioSCSI;
-        private boolean shareable;
-        private String cacheMode = "none";
-        private String wwn;
-
-        public VolumeTO() {
-        }
-
-        public VolumeTO(VolumeTO other) {
-            this.installPath = other.installPath;
-            this.deviceId = other.deviceId;
-            this.deviceType = other.deviceType;
-            this.volumeUuid = other.volumeUuid;
-            this.useVirtio = other.useVirtio;
-            this.useVirtioSCSI = other.useVirtioSCSI;
-            this.cacheMode = other.cacheMode;
-            this.wwn = other.wwn;
-            this.shareable = other.shareable;
-        }
-
-        public boolean isShareable() {
-            return shareable;
-        }
-
-        public void setShareable(boolean shareable) {
-            this.shareable = shareable;
-        }
-
-        public String getWwn() {
-            return wwn;
-        }
-
-        public void setWwn(String wwn) {
-            this.wwn = wwn;
-        }
-
-        public boolean isUseVirtioSCSI() {
-            return useVirtioSCSI;
-        }
-
-        public void setUseVirtioSCSI(boolean useVirtioSCSI) {
-            this.useVirtioSCSI = useVirtioSCSI;
-        }
-
-        public boolean isUseVirtio() {
-            return useVirtio;
-        }
-
-        public void setUseVirtio(boolean useVirtio) {
-            this.useVirtio = useVirtio;
-        }
-
-        public String getVolumeUuid() {
-            return volumeUuid;
-        }
-
-        public void setVolumeUuid(String volumeUuid) {
-            this.volumeUuid = volumeUuid;
-        }
-
-        public String getDeviceType() {
-            return deviceType;
-        }
-
-        public void setDeviceType(String deviceType) {
-            this.deviceType = deviceType;
-        }
-
-        public String getInstallPath() {
-            return installPath;
-        }
-
-        public void setInstallPath(String installPath) {
-            this.installPath = installPath;
-        }
-
-        public int getDeviceId() {
-            return deviceId;
-        }
-
-        public void setDeviceId(int deviceId) {
-            this.deviceId = deviceId;
-        }
-
-        public String getCacheMode() {
-            return cacheMode;
-        }
-
-        public void setCacheMode(String cacheMode) {
-            this.cacheMode = cacheMode;
-        }
-    }
-
     public static class DetachDataVolumeCmd extends AgentCommand {
         private VolumeTO volume;
         private String vmInstanceUuid;
@@ -1780,7 +1673,7 @@ public class KVMAgentCommands {
 
     public static class MergeSnapshotCmd extends AgentCommand {
         private String vmUuid;
-        private int deviceId;
+        private VolumeTO volume;
         private String srcPath;
         private String destPath;
         private boolean fullRebase;
@@ -1801,14 +1694,6 @@ public class KVMAgentCommands {
             this.vmUuid = vmUuid;
         }
 
-        public int getDeviceId() {
-            return deviceId;
-        }
-
-        public void setDeviceId(int deviceId) {
-            this.deviceId = deviceId;
-        }
-
         public String getSrcPath() {
             return srcPath;
         }
@@ -1824,12 +1709,20 @@ public class KVMAgentCommands {
         public void setDestPath(String destPath) {
             this.destPath = destPath;
         }
+
+        public VolumeTO getVolume() {
+            return volume;
+        }
+
+        public void setVolume(VolumeTO volume) {
+            this.volume = volume;
+        }
     }
 
     public static class TakeSnapshotCmd extends AgentCommand {
         private String vmUuid;
         private String volumeUuid;
-        private int deviceId;
+        private VolumeTO volume;
         private String installPath;
         private boolean fullSnapshot;
         private String volumeInstallPath;
@@ -1868,14 +1761,6 @@ public class KVMAgentCommands {
             this.vmUuid = vmUuid;
         }
 
-        public int getDeviceId() {
-            return deviceId;
-        }
-
-        public void setDeviceId(int deviceId) {
-            this.deviceId = deviceId;
-        }
-
         public String getInstallPath() {
             return installPath;
         }
@@ -1898,6 +1783,14 @@ public class KVMAgentCommands {
 
         public void setNewVolumeUuid(String newVolumeUuid) {
             this.newVolumeUuid = newVolumeUuid;
+        }
+
+        public VolumeTO getVolume() {
+            return volume;
+        }
+
+        public void setVolume(VolumeTO volume) {
+            this.volume = volume;
         }
     }
 

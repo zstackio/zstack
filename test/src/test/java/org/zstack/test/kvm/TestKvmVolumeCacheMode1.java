@@ -12,7 +12,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.kvm.KVMAgentCommands.AttachDataVolumeCmd;
 import org.zstack.kvm.KVMAgentCommands.StartVmCmd;
-import org.zstack.kvm.KVMAgentCommands.VolumeTO;
+import org.zstack.kvm.VolumeTO;
 import org.zstack.kvm.KVMGlobalConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;

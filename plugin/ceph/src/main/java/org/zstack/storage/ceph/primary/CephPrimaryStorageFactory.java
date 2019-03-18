@@ -471,6 +471,11 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     }
 
     @Override
+    public VolumeTO convertVolumeIfNeed(KVMHostInventory host, VolumeInventory inventory, VolumeTO to) {
+        return convertVolumeToCephIfNeeded(inventory, to);
+    }
+
+    @Override
     public void beforeAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, AttachDataVolumeCmd cmd, Map data) {
         cmd.setVolume(convertVolumeToCephIfNeeded(volume, cmd.getVolume()));
     }
