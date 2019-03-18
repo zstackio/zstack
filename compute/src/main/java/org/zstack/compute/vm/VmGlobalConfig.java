@@ -3,7 +3,9 @@ package org.zstack.compute.vm;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.core.config.resourceconfig.BindResourceConfig;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceVO;
 
 @GlobalConfigDefinition
 public class VmGlobalConfig {
@@ -26,6 +28,7 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"off","all", "filter"})
     public static GlobalConfig VM_SPICE_STREAMING_MODE= new GlobalConfig(CATEGORY, "spiceStreamingMode");
     @GlobalConfigValidation
+    @BindResourceConfig(value = {VmInstanceVO.class})
     public static GlobalConfig NUMA = new GlobalConfig(CATEGORY, "numa");
     @GlobalConfigValidation
     public static GlobalConfig VM_BOOT_MENU = new GlobalConfig(CATEGORY, "bootMenu");
@@ -34,6 +37,7 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig VM_PORT_OFF = new GlobalConfig(CATEGORY, "vmPortOff");
     @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig(value = {VmInstanceVO.class})
     public static GlobalConfig EMULATE_HYPERV = new GlobalConfig(CATEGORY, "emulateHyperV");
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig ADDITIONAL_QMP = new GlobalConfig(CATEGORY, "additionalQmp");
