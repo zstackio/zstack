@@ -6,6 +6,8 @@ import java.util.Map;
  * Created by frank on 10/19/2015.
  */
 public interface PrimaryStorageOverProvisioningManager {
+    void setGlobalConfig(String category, String name);
+
     void setGlobalRatio(double ratio);
 
     double getGlobalRatio();

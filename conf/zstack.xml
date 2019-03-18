@@ -55,6 +55,7 @@
     <import resource="springConfigXml/fusionstor.xml"/>
     <import resource="springConfigXml/gc.xml"/>
     <import resource="springConfigXml/GlobalConfigFacade.xml"/>
+    <import resource="springConfigXml/resourceConfig.xml"/>
     <import resource="springConfigXml/HostAllocatorManager.xml"/>
     <import resource="springConfigXml/HostManager.xml"/>
     <import resource="springConfigXml/ImageManager.xml"/>
