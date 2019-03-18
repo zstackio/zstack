@@ -181,3 +181,23 @@ call migrateReserveMemTagVO();
 DROP PROCEDURE IF EXISTS migrateReserveMemTagVO;
 
 ALTER TABLE VpcVpnGatewayVO CHANGE endDate endDate datetime NOT NULL;
+
+CREATE TABLE `ResourceUsageVO` (
+  `id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `accountUuid`  VARCHAR(32) NOT NULL,
+  `resourceType` VARCHAR(32) NOT NULL,
+  `resourceUuid` VARCHAR(32) NOT NULL,
+  `resourceName` VARCHAR(255) NOT NULL,
+  `spending`     DOUBLE NOT NULL,
+  `spendingDate`  DATE NOT NULL,
+  `spendingStart` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `spendingEnd`   TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastOpDate` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `createDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `idxResourceUsageVOaccountUuid` (`accountUuid`),
+  INDEX `idxResourceUsageVOspendingDate` (`spendingDate`),
+  INDEX `idxResourceUsageVOresourceUuid` (`resourceUuid`),
+  INDEX `idxResourceUsageVOtypeDate` (`resourceType`,`spendingDate`),
+  UNIQUE `idxResourceUsageVOuuidDate` (`resourceType`,`resourceUuid`,`spendingDate`)
+) ENGINE=INNODB DEFAULT CHARSET=UTF8;
