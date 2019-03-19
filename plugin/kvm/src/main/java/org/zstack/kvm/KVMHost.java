@@ -20,6 +20,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.ansible.*;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -103,6 +104,8 @@ public class KVMHost extends HostBase implements Host {
     private ThreadFacade thdf;
     @Autowired
     private AnsibleFacade asf;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private KVMHostContext context;
 
@@ -1148,7 +1151,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
                         cmd.setVmUuid(vmUuid);
                         cmd.setAutoConverge(KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.value(Boolean.class));
-                        cmd.setUseNuma(VmGlobalConfig.NUMA.value(Boolean.class));
+                        cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
                         cmd.setTimeout(timeoutManager.getTimeout());
 
                         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(migrateVmPath);
@@ -1900,7 +1903,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
         cmd.setKvmHiddenState(VmGlobalConfig.KVM_HIDDEN_STATE.value(Boolean.class));
         cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
-        cmd.setEmulateHyperV(VmGlobalConfig.EMULATE_HYPERV.value(Boolean.class));
+        cmd.setEmulateHyperV(rcf.getResourceConfigValue(VmGlobalConfig.EMULATE_HYPERV, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setAdditionalQmp(VmGlobalConfig.ADDITIONAL_QMP.value(Boolean.class));
         cmd.setApplianceVm(spec.getVmInventory().getType().equals("ApplianceVm"));
         cmd.setSystemSerialNumber(makeAndSaveVmSystemSerialNumber(spec.getVmInventory().getUuid()));
@@ -1963,7 +1966,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setConsolePassword(spec.getConsolePassword());
         cmd.setUsbRedirect(spec.getUsbRedirect());
         cmd.setVDIMonitorNumber(Integer.valueOf(spec.getVDIMonitorNumber()));
-        cmd.setUseNuma(VmGlobalConfig.NUMA.value(Boolean.class));
+        cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setVmPortOff(VmGlobalConfig.VM_PORT_OFF.value(Boolean.class));
         cmd.setConsoleMode("vnc");
         cmd.setTimeout(TimeUnit.MINUTES.toSeconds(5));
@@ -2456,7 +2459,7 @@ public class KVMHost extends HostBase implements Host {
     private void recreateInherentTag(SystemTag tag, String token, String value) {
         recreateTag(tag, token, value, true);
     }
-    
+
     private void recreateTag(SystemTag tag, String token, String value, boolean inherent) {
         SystemTagCreator creator = tag.newSystemTagCreator(self.getUuid());
         Optional.ofNullable(token).ifPresent(it -> creator.setTagByTokens(Collections.singletonMap(token, value)));
