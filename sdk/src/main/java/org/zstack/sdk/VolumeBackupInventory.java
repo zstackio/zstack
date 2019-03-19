@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.BackupMode;
+
 public class VolumeBackupInventory  {
 
     public java.lang.String uuid;
