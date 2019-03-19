@@ -68,4 +68,12 @@ public class SchedulerJobGroupInventory  {
         return this.triggersUuid;
     }
 
+    public java.util.List jobsUuid;
+    public void setJobsUuid(java.util.List jobsUuid) {
+        this.jobsUuid = jobsUuid;
+    }
+    public java.util.List getJobsUuid() {
+        return this.jobsUuid;
+    }
+
 }

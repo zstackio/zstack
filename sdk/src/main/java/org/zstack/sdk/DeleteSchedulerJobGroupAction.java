@@ -12,7 +12,7 @@ public class DeleteSchedulerJobGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteSchedulerJobResult value;
+        public org.zstack.sdk.DeleteSchedulerJobGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -60,8 +60,8 @@ public class DeleteSchedulerJobGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteSchedulerJobResult value = res.getResult(org.zstack.sdk.DeleteSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteSchedulerJobResult() : value; 
+        org.zstack.sdk.DeleteSchedulerJobGroupResult value = res.getResult(org.zstack.sdk.DeleteSchedulerJobGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteSchedulerJobGroupResult() : value; 
 
         return ret;
     }
