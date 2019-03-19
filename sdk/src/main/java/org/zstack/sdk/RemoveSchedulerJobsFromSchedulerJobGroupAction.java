@@ -91,7 +91,7 @@ public class RemoveSchedulerJobsFromSchedulerJobGroupAction extends AbstractActi
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/scheduler/jobgroups/{schedulerJobGroupUuid}/job/{schedulerJobUuids}";
+        info.path = "/scheduler/jobgroups/{schedulerJobGroupUuid}/job";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

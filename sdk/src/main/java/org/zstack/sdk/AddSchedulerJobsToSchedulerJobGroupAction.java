@@ -91,7 +91,7 @@ public class AddSchedulerJobsToSchedulerJobGroupAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/scheduler/jobgroups/{schedulerJobGroupUuid}/job/{schedulerJobUuids}";
+        info.path = "/scheduler/jobgroups/{schedulerJobGroupUuid}/job";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
