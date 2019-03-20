@@ -36,6 +36,7 @@ import org.zstack.header.rest.RestAuthenticationParams;
 import org.zstack.header.rest.RestAuthenticationType;
 import org.zstack.header.rest.RestException;
 import org.zstack.header.vo.*;
+import org.zstack.identity.rbac.PolicyCreationExtensionPoint;
 import org.zstack.identity.rbac.PolicyUtils;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
@@ -1759,6 +1760,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void validate(APICreatePolicyMsg msg) {
+        boolean sessionAccessToAdminActions = new CheckIfSessionCanOperationAdminPermission().check(msg.getSession());
+
         for (PolicyStatement s : msg.getStatements()) {
             if (s.getEffect() == null) {
                 throw new ApiMessageInterceptionException(argerr("a statement must have effect field. Invalid statement[%s]", JSONObjectUtil.toJsonString(s)));
@@ -1771,14 +1774,16 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                                 JSONObjectUtil.toJsonString(s)));
             }
 
-            if (!isAdmin(msg.getSession())) {
-                if (s.getActions() != null) {
-                    s.getActions().forEach(as -> {
-                        if (PolicyUtils.isAdminOnlyAction(as)) {
-                            throw new OperationFailureException(err(IdentityErrors.PERMISSION_DENIED, "normal accounts can't create admin-only action polices[%s]", as));
-                        }
-                    });
-                }
+            if (sessionAccessToAdminActions) {
+                continue;
+            }
+
+            if (s.getActions() != null) {
+                s.getActions().forEach(as -> {
+                    if (PolicyUtils.isAdminOnlyAction(as)) {
+                        throw new OperationFailureException(err(IdentityErrors.PERMISSION_DENIED, "normal accounts can't create admin-only action polices[%s]", as));
+                    }
+                });
             }
         }
     }
