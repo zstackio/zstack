@@ -1,7 +1,6 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 
-import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.network.l2.L2NetworkEO;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.tag.AutoDeleteTag;
@@ -22,7 +21,7 @@ import java.util.Set;
 @PrimaryKeyJoinColumn(name = "uuid", referencedColumnName = "uuid")
 @EO(EOClazz = L2NetworkEO.class, needView = false)
 @AutoDeleteTag
-public class VxlanNetworkPoolVO extends L2NetworkVO implements OwnedByAccount {
+public class VxlanNetworkPoolVO extends L2NetworkVO {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "poolUuid", insertable = false, updatable = false)
     @NoView
@@ -37,20 +36,6 @@ public class VxlanNetworkPoolVO extends L2NetworkVO implements OwnedByAccount {
     @JoinColumn(name = "l2NetworkUuid", insertable = false, updatable = false)
     @NoView
     private Set<VniRangeVO> attachedVniRanges = new HashSet<>();
-
-    @Transient
-    private String accountUuid;
-
-    @Override
-    public String getAccountUuid() {
-        return accountUuid;
-    }
-
-    @Override
-    public void setAccountUuid(String accountUuid) {
-        this.accountUuid = accountUuid;
-    }
-
 
     public VxlanNetworkPoolVO() {
     }
