@@ -325,7 +325,9 @@ public class SourceClassMap {
 			put("org.zstack.ticket.entity.TicketStatusHistoryInventory", "org.zstack.sdk.ticket.entity.TicketStatusHistoryInventory");
 			put("org.zstack.ticket.iam2.entity.IAM2TicketFlowCollectionInventory", "org.zstack.sdk.ticket.iam2.entity.IAM2TicketFlowCollectionInventory");
 			put("org.zstack.ticket.iam2.entity.IAM2TicketFlowInventory", "org.zstack.sdk.ticket.iam2.entity.IAM2TicketFlowInventory");
+			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory", "org.zstack.sdk.TwoFactorAuthenticationInventory");
 			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory", "org.zstack.sdk.TwoFactorAuthenticationSecretInventory");
+			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretStatus", "org.zstack.sdk.TwoFactorAuthenticationSecretStatus");
 			put("org.zstack.usbDevice.UsbDeviceInventory", "org.zstack.sdk.UsbDeviceInventory");
 			put("org.zstack.usbDevice.UsbDeviceState", "org.zstack.sdk.UsbDeviceState");
 			put("org.zstack.v2v.V2VConversionHostInventory", "org.zstack.sdk.V2VConversionHostInventory");
@@ -607,7 +609,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TagPatternInventory", "org.zstack.header.tag.TagPatternInventory");
 			put("org.zstack.sdk.TagPatternType", "org.zstack.header.tag.TagPatternType");
 			put("org.zstack.sdk.TaskProgressInventory", "org.zstack.header.core.progress.TaskProgressInventory");
+			put("org.zstack.sdk.TwoFactorAuthenticationInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory");
+			put("org.zstack.sdk.TwoFactorAuthenticationSecretStatus", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretStatus");
 			put("org.zstack.sdk.UsbDeviceInventory", "org.zstack.usbDevice.UsbDeviceInventory");
 			put("org.zstack.sdk.UsbDeviceState", "org.zstack.usbDevice.UsbDeviceState");
 			put("org.zstack.sdk.UsedIpInventory", "org.zstack.header.network.l3.UsedIpInventory");
