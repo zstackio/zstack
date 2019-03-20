@@ -12,7 +12,7 @@ public class CreateMiniClusterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateClusterResult value;
+        public org.zstack.sdk.CreateMiniClusterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -84,8 +84,8 @@ public class CreateMiniClusterAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateClusterResult value = res.getResult(org.zstack.sdk.CreateClusterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateClusterResult() : value; 
+        org.zstack.sdk.CreateMiniClusterResult value = res.getResult(org.zstack.sdk.CreateMiniClusterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateMiniClusterResult() : value; 
 
         return ret;
     }
