@@ -277,6 +277,7 @@ CREATE TABLE `zstack`.`SchedulerJobGroupVO` (
     `uuid` VARCHAR(32) NOT NULL UNIQUE,
     `name` VARCHAR(255) NOT NULL,
     `description` VARCHAR(2048) DEFAULT NULL,
+    `jobType` VARCHAR(32),
     `jobClassName` varchar(255),
     `jobData` text,
     `state` varchar(255),
