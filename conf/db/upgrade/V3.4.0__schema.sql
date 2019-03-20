@@ -304,8 +304,6 @@ CREATE TABLE `zstack`.`SchedulerJobGroupSchedulerTriggerRefVO` (
     CONSTRAINT `fkSchedulerJobGroupSchedulerTriggerRefVOSchedulerTriggerVO` FOREIGN KEY (`schedulerTriggerUuid`) REFERENCES `SchedulerTriggerVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-DROP PROCEDURE IF EXISTS migrateSchedulerJob;
-
 DELIMITER $$
 CREATE PROCEDURE migrateSchedulerJob()
     BEGIN
@@ -318,6 +316,8 @@ CREATE PROCEDURE migrateSchedulerJob()
         DECLARE legacyJobClassName VARCHAR(255);
         DECLARE legacyJobData TEXT;
         DECLARE legacyJobstate VARCHAR(255);
+        DECLARE legacyJobAccountUuid VARCHAR(32);
+        DECLARE groupJobType VARCHAR(32);
         DEClARE cur CURSOR FOR SELECT uuid, name, description, jobClassName, jobData, state from SchedulerJobVO
         where jobClassName in ('org.zstack.storage.backup.CreateVolumeBackupJob', 'org.zstack.storage.backup.CreateVmBackupJob');
         DEClARE tcur CURSOR FOR SELECT schedulerTriggerUuid from SchedulerJobSchedulerTriggerRefVO where schedulerJobUuid = legacyJobUuid;
@@ -329,9 +329,20 @@ CREATE PROCEDURE migrateSchedulerJob()
                 LEAVE insert_group_loop;
             END IF;
 
+            IF legacyJobClassName = 'org.zstack.storage.backup.CreateVolumeBackupJob' THEN
+                SET groupJobType = 'volumeBackup';
+            ELSE
+                SET groupJobType = 'vmBackup';
+            END IF;
+
+            SELECT DISTINCT accountUuid INTO legacyJobAccountUuid FROM AccountResourceRefVO WHERE resourceUuid = legacyJobUuid;
             SET groupUuid = (REPLACE(UUID(), '-', ''));
-            INSERT INTO zstack.SchedulerJobGroupVO(uuid, name, description, jobClassName, jobData, state, lastOpDate, createDate)
-            VALUES(groupUuid, legacyJobName, legacyJobDescription, legacyJobClassName, legacyJobData, legacyJobstate, NOW(), NOW());
+            INSERT INTO zstack.SchedulerJobGroupVO(uuid, name, description, jobClassName, jobData, jobType, state, lastOpDate, createDate)
+            VALUES(groupUuid, legacyJobName, legacyJobDescription, legacyJobClassName, legacyJobData, groupJobType, legacyJobstate, NOW(), NOW());
+            INSERT INTO zstack.ResourceVO(uuid, resourceName, resourceType, concreteResourceType)
+            VALUES(groupUuid, legacyJobName, 'SchedulerJobGroupVO', 'org.zstack.header.scheduler.SchedulerJobGroupVO');
+            INSERT INTO zstack.AccountResourceRefVO (accountUuid, ownerAccountUuid, resourceUuid, resourceType, permission, isShared, lastOpDate, createDate)
+            VALUES(legacyJobAccountUuid, legacyJobAccountUuid, groupUuid, 'SchedulerJobGroupVO', 2, 0,  NOW(), NOW());
 
             INSERT INTO zstack.SchedulerJobGroupJobRefVO(schedulerJobUuid, schedulerJobGroupUuid, lastOpDate, createDate)
             VALUES(legacyJobUuid, groupUuid, NOW(), NOW());
