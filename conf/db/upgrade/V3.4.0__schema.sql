@@ -310,6 +310,8 @@ CREATE PROCEDURE migrateSchedulerJob()
         DECLARE done INT DEFAULT FALSE;
         DECLARE triggerUuid VARCHAR(32);
         DECLARE groupUuid VARCHAR(32);
+        DECLARE volumeType VARCHAR(32);
+        DECLARE volumeUuid VARCHAR(32);
         DECLARE legacyJobUuid VARCHAR(32);
         DECLARE legacyJobName VARCHAR(255);
         DECLARE legacyJobDescription VARCHAR(2048);
@@ -318,19 +320,24 @@ CREATE PROCEDURE migrateSchedulerJob()
         DECLARE legacyJobstate VARCHAR(255);
         DECLARE legacyJobAccountUuid VARCHAR(32);
         DECLARE groupJobType VARCHAR(32);
-        DEClARE cur CURSOR FOR SELECT uuid, name, description, jobClassName, jobData, state from SchedulerJobVO
+        DEClARE cur CURSOR FOR SELECT uuid, name, description, jobClassName, jobData, state, targetResourceUuid from SchedulerJobVO
         where jobClassName in ('org.zstack.storage.backup.CreateVolumeBackupJob', 'org.zstack.storage.backup.CreateVmBackupJob');
         DEClARE tcur CURSOR FOR SELECT schedulerTriggerUuid from SchedulerJobSchedulerTriggerRefVO where schedulerJobUuid = legacyJobUuid;
         DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
         OPEN cur;
         insert_group_loop: LOOP
-            FETCH cur INTO legacyJobUuid, legacyJobName, legacyJobDescription, legacyJobClassName, legacyJobData, legacyJobstate;
+            FETCH cur INTO legacyJobUuid, legacyJobName, legacyJobDescription, legacyJobClassName, legacyJobData, legacyJobstate, volumeUuid;
             IF done THEN
                 LEAVE insert_group_loop;
             END IF;
 
             IF legacyJobClassName = 'org.zstack.storage.backup.CreateVolumeBackupJob' THEN
-                SET groupJobType = 'volumeBackup';
+                SELECT `type` INTO volumeType FROM `VolumeVO` WHERE `uuid` = volumeUuid;
+                IF volumeType = 'Root' THEN
+                    SET groupJobType = 'rootVolumeBackup';
+                ELSE
+                    SET groupJobType = 'volumeBackup';
+                END IF;
             ELSE
                 SET groupJobType = 'vmBackup';
             END IF;
