@@ -1,10 +1,13 @@
 package org.zstack.test.integration.network.l3network
 
 import org.zstack.header.network.l3.L3NetworkCategory
+import org.zstack.network.l3.IpNotAvailabilityReason
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.*
+
+import static java.util.Arrays.asList
 
 
 /**
@@ -37,8 +40,10 @@ class IpRangeCase extends SubCase {
     }
 
     void testAddIpRangeToDifferentL3ButSameL2() {
+        InstanceOfferingSpec  ioSpec= env.specByName("instanceOffering")
         L3NetworkInventory l3 = env.inventoryByName("l3")
         L3NetworkInventory l3_1 = env.inventoryByName("l3-1")
+        ImageSpec iSpec = env.specByName("image1")
 
         expect (AssertionError.class) {
             addIpRangeByNetworkCidr {
@@ -113,6 +118,45 @@ class IpRangeCase extends SubCase {
                 netmask = "255.0.0.0"
             }
         }
+
+        CheckIpAvailabilityAction check = new CheckIpAvailabilityAction()
+        check.ip = "10.0.1.1"
+        check.l3NetworkUuid = l3_3.getUuid()
+        check.sessionId = adminSession()
+        CheckIpAvailabilityAction.Result res = check.call()
+        assert res.value.available == false
+        assert res.value.reason == IpNotAvailabilityReason.GATEWAY.toi18nString()
+
+        check = new CheckIpAvailabilityAction()
+        check.ip = "10.0.1.2"
+        check.l3NetworkUuid = l3_3.getUuid()
+        check.sessionId = adminSession()
+        res = check.call()
+        assert res.value.available == false
+        assert res.value.reason == IpNotAvailabilityReason.NO_IN_RANGE.toi18nString()
+
+        check = new CheckIpAvailabilityAction()
+        check.ip = "10.0.1.120"
+        check.l3NetworkUuid = l3_3.getUuid()
+        check.sessionId = adminSession()
+        res = check.call()
+        assert res.value.available == true
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = ioSpec.inventory.uuid
+            imageUuid = iSpec.inventory.uuid
+            l3NetworkUuids = asList((l3_3.uuid))
+        }
+        VmNicInventory nic = vm.getVmNics().get(0)
+
+        check = new CheckIpAvailabilityAction()
+        check.ip = nic.ip
+        check.l3NetworkUuid = l3_3.getUuid()
+        check.sessionId = adminSession()
+        res = check.call()
+        assert res.value.available == false
+        assert res.value.reason == IpNotAvailabilityReason.USED.toi18nString()
     }
 }
 

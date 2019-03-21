@@ -1523,7 +1523,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                 CheckIpAvailabilityReply cr = r.castReply();
                 if (!cr.isAvailable()) {
-                    throw new ApiMessageInterceptionException(operr("IP[%s] is not available on the L3 network[uuid:%s]", ip, l3Uuid));
+                    throw new ApiMessageInterceptionException(operr("IP[%s] is not available on the L3 network[uuid:%s] because: %s", ip, l3Uuid, cr.getReason()));
                 }
             }
 
