@@ -44,13 +44,13 @@ public class TagSubQueryExtension extends AbstractMysqlQuerySubQueryExtension {
     }
 
     private String reverseOpIfNeed(QueryCondition cond) {
-        if (QueryOp.NOT_EQ.toString().equals(cond.getOp())) {
+        if (QueryOp.NOT_EQ.equals(cond.getOp())) {
             return QueryOp.EQ.toString();
-        } else if (QueryOp.NOT_IN.toString().equals(cond.getOp())) {
+        } else if (QueryOp.NOT_IN.equals(cond.getOp())) {
             return QueryOp.IN.toString();
-        } else if (QueryOp.IS_NULL.toString().equals(cond.getOp())) {
+        } else if (QueryOp.IS_NULL.equals(cond.getOp())) {
             return QueryOp.NOT_NULL.toString();
-        } else if (QueryOp.NOT_LIKE.toString().equals(cond.getOp())) {
+        } else if (QueryOp.NOT_LIKE.equals(cond.getOp())) {
             return QueryOp.LIKE.toString();
         } else {
             return cond.getOp();
@@ -58,7 +58,7 @@ public class TagSubQueryExtension extends AbstractMysqlQuerySubQueryExtension {
     }
 
     private String buildCondition(String field, QueryCondition cond) {
-        if (QueryOp.IN.toString().equals(cond.getOp()) || QueryOp.NOT_IN.toString().equals(cond.getOp())) {
+        if (QueryOp.IN.equals(cond.getOp()) || QueryOp.NOT_IN.equals(cond.getOp())) {
             String[] values = cond.getValue().split(",");
             List<String> vals = new ArrayList<String>();
             for (String val : values) {
@@ -66,7 +66,7 @@ public class TagSubQueryExtension extends AbstractMysqlQuerySubQueryExtension {
             }
 
             return String.format("%s %s (%s)", field, reverseOpIfNeed(cond), StringUtils.join(vals, ","));
-        } else if (QueryOp.IS_NULL.toString().equals(cond.getOp()) || QueryOp.NOT_NULL.toString().equals(cond.getOp())) {
+        } else if (QueryOp.IS_NULL.equals(cond.getOp()) || QueryOp.NOT_NULL.equals(cond.getOp())) {
             return String.format("%s %s", field, reverseOpIfNeed(cond));
         } else {
             return String.format("%s %s '%s'", field, reverseOpIfNeed(cond), cond.getValue());
