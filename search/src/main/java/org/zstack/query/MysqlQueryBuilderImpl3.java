@@ -382,11 +382,11 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
         }
 
         Object normalizeValue() {
-            if (QueryOp.IS_NULL.toString().equals(op) || QueryOp.NOT_NULL.toString().equals(op)) {
+            if (QueryOp.IS_NULL.equals(op) || QueryOp.NOT_NULL.equals(op)) {
                 return null;
             }
 
-            if (QueryOp.IN.toString().equals(op) || QueryOp.NOT_IN.toString().equals(op)) {
+            if (QueryOp.IN.equals(op) || QueryOp.NOT_IN.equals(op)) {
                 List<Object> ret = new ArrayList();
                 for (String it : value.split(",")) {
                     ret.add(doNormalizeValue(it.trim()));
