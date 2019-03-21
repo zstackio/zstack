@@ -44,6 +44,7 @@ public class ResourceConfigCanonicalEvents {
     public static class DeleteEvent {
         private String oldValue;
         private String resourceUuid;
+        private String resourceType;
 
         public String getOldValue() {
             return oldValue;
@@ -59,6 +60,14 @@ public class ResourceConfigCanonicalEvents {
 
         public void setResourceUuid(String resourceUuid) {
             this.resourceUuid = resourceUuid;
+        }
+
+        public String getResourceType() {
+            return resourceType;
+        }
+
+        public void setResourceType(String resourceType) {
+            this.resourceType = resourceType;
         }
     }
 }

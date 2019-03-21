@@ -7,6 +7,7 @@ import org.zstack.header.message.NeedReplyMessage;
  */
 public class RecalculateHostCapacityMsg extends NeedReplyMessage {
     private String zoneUuid;
+    private String clusterUuid;
     private String hostUuid;
 
     public String getHostUuid() {
@@ -23,5 +24,13 @@ public class RecalculateHostCapacityMsg extends NeedReplyMessage {
 
     public void setZoneUuid(String zoneUuid) {
         this.zoneUuid = zoneUuid;
+    }
+
+    public String getClusterUuid() {
+        return clusterUuid;
+    }
+
+    public void setClusterUuid(String clusterUuid) {
+        this.clusterUuid = clusterUuid;
     }
 }
