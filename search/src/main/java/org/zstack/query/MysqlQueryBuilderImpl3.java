@@ -248,7 +248,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
 
             QueryCondition typeCondition = null;
             for (QueryCondition cond : msg.getConditions()) {
-                if (QueryOp.EQ.toString().equals(cond.getOp()) && inventoryTypeField.getName().equals(cond.getName())) {
+                if (QueryOp.EQ.equals(cond.getOp()) && inventoryTypeField.getName().equals(cond.getName())) {
                     typeCondition = cond;
                     break;
                 }
@@ -406,14 +406,14 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
         private String formatSql(String entityName, String attr, String op) {
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("%s.%s", entityName, attr));
-            if (QueryOp.IN.toString().equals(op)) {
+            if (QueryOp.IN.equals(op)) {
                 sb.append(String.format(" in (:%s)", attrValueName));
-            } else if (QueryOp.NOT_IN.toString().equals(op)) {
+            } else if (QueryOp.NOT_IN.equals(op)) {
                 sb.append(String.format(" not in (:%s)", attrValueName));
-            } else if (QueryOp.IS_NULL.toString().equals(op)) {
+            } else if (QueryOp.IS_NULL.equals(op)) {
                 sb.append(" is null");
                 attrValueName = null;
-            } else if (QueryOp.NOT_NULL.toString().equals(op)) {
+            } else if (QueryOp.NOT_NULL.equals(op)) {
                 sb.append(" is not null");
                 attrValueName = null;
             } else {
@@ -479,7 +479,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                 var.put("foreignKey", foreignKey);
                 var.put("foreignVO", foreignVOClass.getSimpleName());
 
-                if (QueryOp.NOT_IN.toString().equals(op)) {
+                if (QueryOp.NOT_IN.equals(op)) {
                     // NOT_IN needs special handle
                     op = QueryOp.IN.toString();
                     var.put("condition", formatSql(foreignVOClass.getSimpleName().toLowerCase(), refName, op));
@@ -528,13 +528,13 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             }
 
             private String reverseOpIfNeed(QueryCondition cond) {
-                if (QueryOp.NOT_EQ.toString().equals(cond.getOp())) {
+                if (QueryOp.NOT_EQ.equals(cond.getOp())) {
                     return QueryOp.EQ.toString();
-                } else if (QueryOp.NOT_IN.toString().equals(cond.getOp())) {
+                } else if (QueryOp.NOT_IN.equals(cond.getOp())) {
                     return QueryOp.IN.toString();
-                } else if (QueryOp.IS_NULL.toString().equals(cond.getOp())) {
+                } else if (QueryOp.IS_NULL.equals(cond.getOp())) {
                     return QueryOp.NOT_NULL.toString();
-                } else if (QueryOp.NOT_LIKE.toString().equals(cond.getOp())) {
+                } else if (QueryOp.NOT_LIKE.equals(cond.getOp())) {
                     return QueryOp.LIKE.toString();
                 } else {
                     return cond.getOp();
@@ -542,7 +542,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             }
 
             private String buildCondition(String field, QueryCondition cond) {
-                if (QueryOp.IN.toString().equals(cond.getOp()) || QueryOp.NOT_IN.toString().equals(cond.getOp())) {
+                if (QueryOp.IN.equals(cond.getOp()) || QueryOp.NOT_IN.equals(cond.getOp())) {
                     String[] values = cond.getValue().split(",");
                     List<String> vals = new ArrayList<String>();
                     for (String val : values) {
@@ -550,7 +550,7 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                     }
 
                     return String.format("%s %s (%s)", field, reverseOpIfNeed(cond), StringUtils.join(vals, ","));
-                } else if (QueryOp.IS_NULL.toString().equals(cond.getOp()) || QueryOp.NOT_NULL.toString().equals(cond.getOp())) {
+                } else if (QueryOp.IS_NULL.equals(cond.getOp()) || QueryOp.NOT_NULL.equals(cond.getOp())) {
                     return String.format("%s %s", field, reverseOpIfNeed(cond));
                 } else {
                     return String.format("%s %s '%s'", field, reverseOpIfNeed(cond), cond.getValue());
