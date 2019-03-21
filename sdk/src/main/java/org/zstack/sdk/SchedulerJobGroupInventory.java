@@ -52,6 +52,14 @@ public class SchedulerJobGroupInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.String jobType;
+    public void setJobType(java.lang.String jobType) {
+        this.jobType = jobType;
+    }
+    public java.lang.String getJobType() {
+        return this.jobType;
+    }
+
     public java.lang.String jobData;
     public void setJobData(java.lang.String jobData) {
         this.jobData = jobData;

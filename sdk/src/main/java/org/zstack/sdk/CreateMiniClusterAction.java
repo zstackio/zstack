@@ -84,6 +84,7 @@ public class CreateMiniClusterAction extends AbstractAction {
             return ret;
         }
 
+
         org.zstack.sdk.CreateMiniClusterResult value = res.getResult(org.zstack.sdk.CreateMiniClusterResult.class);
         ret.value = value == null ? new org.zstack.sdk.CreateMiniClusterResult() : value;
 

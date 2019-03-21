@@ -4,12 +4,12 @@ package org.zstack.sdk;
 
 public class SchedulerJobGroupJobRefInventory  {
 
-    public java.lang.String getSchedulerJobGroupUuid;
-    public void setGetSchedulerJobGroupUuid(java.lang.String getSchedulerJobGroupUuid) {
-        this.getSchedulerJobGroupUuid = getSchedulerJobGroupUuid;
+    public java.lang.String schedulerJobGroupUuid;
+    public void setSchedulerJobGroupUuid(java.lang.String schedulerJobGroupUuid) {
+        this.schedulerJobGroupUuid = schedulerJobGroupUuid;
     }
-    public java.lang.String getGetSchedulerJobGroupUuid() {
-        return this.getSchedulerJobGroupUuid;
+    public java.lang.String getSchedulerJobGroupUuid() {
+        return this.schedulerJobGroupUuid;
     }
 
     public java.lang.String schedulerJobUuid;
