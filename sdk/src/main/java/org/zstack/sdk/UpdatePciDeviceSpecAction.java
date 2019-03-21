@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetVolumeQosAction extends AbstractAction {
+public class UpdatePciDeviceSpecAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetVolumeQosAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetVolumeQosResult value;
+        public org.zstack.sdk.UpdatePciDeviceSpecResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,8 +28,17 @@ public class GetVolumeQosAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean forceSync = false;
+    public java.lang.String romContent;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String romVersion;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -46,6 +55,12 @@ public class GetVolumeQosAction extends AbstractAction {
     @Param(required = false)
     public String accessKeySecret;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -54,8 +69,8 @@ public class GetVolumeQosAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetVolumeQosResult value = res.getResult(org.zstack.sdk.GetVolumeQosResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetVolumeQosResult() : value; 
+        org.zstack.sdk.UpdatePciDeviceSpecResult value = res.getResult(org.zstack.sdk.UpdatePciDeviceSpecResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdatePciDeviceSpecResult() : value; 
 
         return ret;
     }
@@ -84,11 +99,11 @@ public class GetVolumeQosAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/volumes/{uuid}/qos";
+        info.httpMethod = "PUT";
+        info.path = "/pci-device/pci-device-specs/{uuid}/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "updatePciDeviceSpec";
         return info;
     }
 
