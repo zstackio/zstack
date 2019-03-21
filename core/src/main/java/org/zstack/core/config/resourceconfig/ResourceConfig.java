@@ -155,6 +155,8 @@ public class ResourceConfig {
         String oldValue = originValue == null ? globalConfig.value() : originValue;
 
         if (localUpdate) {
+            globalConfig.getValidators().forEach(it ->
+                    it.validateGlobalConfig(globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
             updateValueInDb(resourceUuid, resourceType, newValue);
             localUpdateExtensions.forEach(it -> it.updateResourceConfig(this, resourceUuid, resourceType, oldValue, newValue));
         }
