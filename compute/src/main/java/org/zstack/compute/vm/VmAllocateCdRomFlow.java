@@ -50,7 +50,7 @@ public class VmAllocateCdRomFlow implements Flow {
 
         List<Integer> deviceIds = cdRomSpecs.stream().map(CdRomSpec::getDeviceId).distinct().collect(Collectors.toList());
         if (deviceIds.size() < cdRomSpecs.size()) {
-            trigger.fail(operr("vm[uuid:%s] cdRom deviceId repetition"));
+            trigger.fail(operr("vm[uuid:%s] cdRom deviceId repetition",spec.getVmInventory().getUuid()));
             return;
         }
 

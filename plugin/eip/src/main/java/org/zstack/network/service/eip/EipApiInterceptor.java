@@ -198,7 +198,7 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         UsedIpVO guestIp = dbf.findByUuid(guestIpUuid, UsedIpVO.class);
         IpRangeVO guestRange = dbf.findByUuid(guestIp.getIpRangeUuid(), IpRangeVO.class);
 
-        if (vipIp.getIpVersion() != guestIp.getIpVersion()) {
+        if (!vipIp.getIpVersion().equals(guestIp.getIpVersion())) {
             throw new ApiMessageInterceptionException(operr("vip ipVersion [%d] is different from guestIp ipVersion [%d].",
                     vipIp.getIpVersion(), guestIp.getIpVersion()));
         }

@@ -45,7 +45,6 @@ public class FusionstorPrimaryStorageVmMigrationExtension implements VmInstanceM
     }
 
     private CLogger logger = Utils.getLogger(FusionstorPrimaryStorageVmMigrationExtension.class);
-    private Map<String, List<VolumeInventory>> vmVolumes = new ConcurrentHashMap<String, List<VolumeInventory>>();
 
     @Autowired
     private CloudBus bus;
