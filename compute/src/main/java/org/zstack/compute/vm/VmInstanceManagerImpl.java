@@ -648,7 +648,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
             amsg.setRequiredClusterUuids(clusterUuids);
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
             amsg.setDiskOfferingUuid(dinv.getUuid());
-            amsg.setPossiblePrimaryStorageTypes(new ArrayList<>(psTypes));
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);
         }
