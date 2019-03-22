@@ -289,7 +289,7 @@ public class GlobalConfig {
         validate(value);
     }
 
-    private void validate(String newValue) {
+    public void validate(String newValue) {
         for  (GlobalConfigValidatorExtensionPoint ext : validators) {
             ext.validateGlobalConfig(category, name, value, newValue);
         }

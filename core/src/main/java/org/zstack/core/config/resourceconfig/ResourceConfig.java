@@ -72,21 +72,13 @@ public class ResourceConfig {
     }
 
     public void updateValue(String resourceUuid, String newValue) {
-        String resourceType = Q.New(ResourceVO.class).eq(ResourceVO_.uuid, resourceUuid).select(ResourceVO_.resourceType).findValue();
-        if (resourceType == null) {
-            throw new OperationFailureException(operr("cannot find resource[uuid: %s]", resourceUuid));
-        }
-
-        if (!configGetter.containsKey(resourceType)) {
-            throw new OperationFailureException(operr("ResourceConfig [category:%s, name:%s]" +
-                    " cannot bind to resourceType: %s", globalConfig.getCategory(), globalConfig.getName(), resourceType));
-        }
-
+        String resourceType = getResourceType(resourceUuid);
         updateValue(resourceUuid, resourceType, newValue, true);
     }
 
     public void deleteValue(String resourceUuid) {
-        deleteValue(resourceUuid, true);
+        String resourceType = getResourceType(resourceUuid);
+        deleteValue(resourceUuid, resourceType, true);
     }
 
     public <T> T defaultValue(Class<T> clz) {
@@ -141,8 +133,7 @@ public class ResourceConfig {
                 }
 
                 DeleteEvent evt = (DeleteEvent)data;
-
-                deleteValue(evt.getResourceUuid(), false);
+                deleteValue(evt.getResourceUuid(), evt.getResourceType(), false);
                 logger.info(String.format("ResourceConfig[resourceUuid: %s category: %s, name: %s] was deleted from" +
                                 " other management node[uuid:%s], in line with that change, deleted ours.",
                         evt.getResourceUuid(), globalConfig.getCategory(), globalConfig.getName(), nodeUuid));
@@ -164,11 +155,13 @@ public class ResourceConfig {
         String oldValue = originValue == null ? globalConfig.value() : originValue;
 
         if (localUpdate) {
+            globalConfig.getValidators().forEach(it ->
+                    it.validateGlobalConfig(globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
             updateValueInDb(resourceUuid, resourceType, newValue);
-            localUpdateExtensions.forEach(it -> it.updateResourceConfig(this, resourceUuid, oldValue, newValue));
+            localUpdateExtensions.forEach(it -> it.updateResourceConfig(this, resourceUuid, resourceType, oldValue, newValue));
         }
 
-        updateExtensions.forEach(it -> it.updateResourceConfig(this, resourceUuid, oldValue, newValue));
+        updateExtensions.forEach(it -> it.updateResourceConfig(this, resourceUuid, resourceType, oldValue, newValue));
 
         if (localUpdate) {
             UpdateEvent evt = new UpdateEvent();
@@ -177,30 +170,31 @@ public class ResourceConfig {
             evtf.fire(makeUpdateEventPath(), evt);
         }
 
-        logger.debug(String.format("updated resource config[resourceUuid:%s, category:%s, name:%s]: %s to %s",
-                resourceUuid, globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
+        logger.debug(String.format("updated resource config[resourceUuid:%s, resourceType:%s, category:%s, name:%s]: %s to %s",
+                resourceUuid, resourceType, globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
     }
 
-    private void deleteValue(String resourceUuid, boolean localDelete) {
+    private void deleteValue(String resourceUuid, String resourceType, boolean localDelete) {
         String originValue = loadConfigValue(resourceUuid);
         String oldValue = originValue == null ? globalConfig.value() : originValue;
 
         if (localDelete) {
             deleteInDb(resourceUuid);
-            localDeleteExtensions.forEach(it -> it.deleteResourceConfig(this, resourceUuid, originValue));
+            localDeleteExtensions.forEach(it -> it.deleteResourceConfig(this, resourceUuid, resourceType, originValue));
         }
 
-        deleteExtensions.forEach(it -> it.deleteResourceConfig(this, resourceUuid, originValue));
+        deleteExtensions.forEach(it -> it.deleteResourceConfig(this, resourceUuid, resourceType, originValue));
 
         if (localDelete) {
             DeleteEvent evt = new DeleteEvent();
             evt.setResourceUuid(resourceUuid);
+            evt.setResourceType(resourceType);
             evt.setOldValue(oldValue);
             evtf.fire(makeDeleteEventPath(), evt);
         }
 
-        logger.debug(String.format("deleted resource config[resourceUuid:%s, category:%s, name:%s]",
-                resourceUuid, globalConfig.getCategory(), globalConfig.getName()));
+        logger.debug(String.format("deleted resource config[resourceUuid:%s, resourceType:%s, category:%s, name:%s]",
+                resourceUuid, resourceType, globalConfig.getCategory(), globalConfig.getName()));
     }
 
 
@@ -319,6 +313,19 @@ public class ResourceConfig {
                 .eq(ResourceConfigVO_.name, globalConfig.getName())
                 .eq(ResourceConfigVO_.category, globalConfig.getCategory())
                 .delete();
+    }
+
+    private String getResourceType(String resourceUuid) {
+        String resourceType = Q.New(ResourceVO.class).eq(ResourceVO_.uuid, resourceUuid).select(ResourceVO_.resourceType).findValue();
+        if (resourceType == null) {
+            throw new OperationFailureException(operr("cannot find resource[uuid: %s]", resourceUuid));
+        }
+
+        if (!configGetter.containsKey(resourceType)) {
+            throw new OperationFailureException(operr("ResourceConfig [category:%s, name:%s]" +
+                    " cannot bind to resourceType: %s", globalConfig.getCategory(), globalConfig.getName(), resourceType));
+        }
+        return resourceType;
     }
 
     private String makeUpdateEventPath() {
