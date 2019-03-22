@@ -1057,12 +1057,13 @@
     "fileName": "src/zstack/./compute/src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
-    "raw": "IP[%s] is not available on the L3 network[uuid:%s]",
-    "en_US": "IP[{0}] is not available on the L3 network[uuid:{1}]",
-    "zh_CN": "在L3网络[uuid:{1}]中，IP[{0}]不可用",
+    "raw": "IP[%s] is not available on the L3 network[uuid:%s] because: %s",
+    "en_US": "IP[{0}] is not available on the L3 network[uuid:{1}] because: {{2}}",
+    "zh_CN": "在L3网络[uuid:{1}]中，IP[{0}]不可用, 因为{{2}}",
     "arguments": [
       "ip",
-      "l3Uuid"
+      "l3Uuid",
+      "cr.getReason()"
     ],
     "line": 1489,
     "fileName": "src/zstack/./compute/src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
@@ -16961,6 +16962,30 @@
     "arguments": [],
     "line": 29,
     "fileName": "src/main/java/org/zstack/zwatch/ruleengine/ComparisonOperator.java"
+  },
+  {
+    "raw": "it is gateway",
+    "en_US": "it is gateway",
+    "zh_CN": "网关不能分配",
+    "arguments": [],
+    "line": 23,
+    "fileName": "src/main/java/org/zstack/network/l3/IpNotAvailabilityReason.java"
+  },
+  {
+    "raw": "it is not in this range",
+    "en_US": "it is not in this range",
+    "zh_CN": "不在IP地址范围内",
+    "arguments": [],
+    "line": 25,
+    "fileName": "src/main/java/org/zstack/network/l3/IpNotAvailabilityReason.java"
+  },
+  {
+    "raw": "it is used",
+    "en_US": "it is used",
+    "zh_CN": "被占用",
+    "arguments": [],
+    "line": 27,
+    "fileName": "src/main/java/org/zstack/network/l3/IpNotAvailabilityReason.java"
   },
   {
     "raw": "there is no available ipRange on L3 network [%s]",
