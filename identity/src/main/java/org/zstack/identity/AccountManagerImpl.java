@@ -482,12 +482,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             }
         }
 
-        SessionInventory session = getSession(vo.getUuid(), vo.getUuid());
-        IdentityCanonicalEvents.AccountLoginData data = new IdentityCanonicalEvents.AccountLoginData();
-        data.setAccount(AccountInventory.valueOf(vo));
-        evtf.fire(IdentityCanonicalEvents.ACCOUNT_LOGIN_PATH, data);
-
-        reply.setInventory(session);
+        reply.setInventory(getSession(struct.getAccountUuid(), struct.getUserUuid()));
         bus.reply(msg, reply);
     }
 
