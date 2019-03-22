@@ -49,6 +49,9 @@ public class UpdateAlarmAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {-1L,2147483647L}, noTrim = false)
     public java.lang.Integer repeatCount;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean enableRecovery;
+
     @Param(required = false)
     public java.util.List systemTags;
 

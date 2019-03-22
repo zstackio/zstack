@@ -61,6 +61,9 @@ public class CreateAlarmAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type = "Any";
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean enableRecovery = false;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
