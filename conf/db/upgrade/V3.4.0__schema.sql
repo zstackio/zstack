@@ -116,7 +116,7 @@ CREATE PROCEDURE cleanExpireVmUsageVO()
 				CLOSE cur;
 				SELECT CURTIME();
 		END $$
-DELIMITER;
+DELIMITER ;
 
 call cleanExpireVmUsageVO();
 DROP PROCEDURE IF EXISTS cleanExpireVmUsageVO;
@@ -239,7 +239,7 @@ CREATE PROCEDURE initializeRecoveryTemplate()
 				CLOSE cur;
 				SELECT CURTIME();
 		END $$
-DELIMITER;
+DELIMITER ;
 
 call initializeRecoveryTemplate();
 DROP PROCEDURE IF EXISTS initializeRecoveryTemplate;
