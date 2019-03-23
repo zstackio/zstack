@@ -16996,5 +16996,15 @@
     ],
     "line": 79,
     "fileName": "# at: src/main/java/org/zstack/compute/vm/VmAllocateNicFlow.java"
+  },
+  {
+    "raw": "Addon license for product:%s has been expired, please renew it",
+    "en_US": "Addon license for product:{0} has been expired, please renew it",
+    "zh_CN": "{0}许可证过期，请重新申请",
+    "arguments": [
+      "e.getValue()"
+    ],
+    "line": 2178,
+    "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   }
 ]
