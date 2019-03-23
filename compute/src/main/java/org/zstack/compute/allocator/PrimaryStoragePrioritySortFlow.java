@@ -3,30 +3,20 @@ package org.zstack.compute.allocator;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.allocator.AbstractHostSortorFlow;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.image.ImageBackupStorageRefVO;
-import org.zstack.header.image.ImageBackupStorageRefVO_;
 import org.zstack.header.image.ImageVO;
-import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint;
-import org.zstack.header.storage.backup.BackupStorageVO;
-import org.zstack.utils.CollectionDSL;
+import org.zstack.header.storage.backup.*;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
-import javax.persistence.criteria.CriteriaBuilder;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static org.zstack.utils.CollectionUtils.distinctByKey;
 
 /**
  * Created by mingjian.deng on 2017/10/31.
@@ -36,13 +26,13 @@ import static org.zstack.utils.CollectionUtils.distinctByKey;
 public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
     private static CLogger logger = Utils.getLogger(PrimaryStoragePrioritySortFlow.class);
     @Autowired
-    private PluginRegistry pluginRgty;
+    private CloudBus bus;
     @Autowired
     protected DatabaseFacade dbf;
+    @Autowired
+    protected PrimaryStoragePriorityGetter priorityGetter;
 
     private boolean skip = true;
-
-    private static int defaultPriroty = 10;
 
     @Override
     public void sort() {
@@ -53,28 +43,13 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
             return;
         }
 
-        List<String> bsUuids = Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, spec.getImage().getUuid()).
-                select(ImageBackupStorageRefVO_.backupStorageUuid).listValues();
+        PrimaryStoragePriorityGetter.PrimaryStoragePriority priority =
+                priorityGetter.getPrimaryStoragePriority(spec.getImage().getUuid(), spec.getRequiredBackupStorageUuid());
 
-        DebugUtils.Assert(bsUuids.size() > 0, String.format("imageUuid [%s] not in any BackupStorage", spec.getImage().getUuid()));
-        //TODO: we suppose imageUuid is only in 1 bs, if it could be in 2 or more bss, then we should improve the bellow code
-        BackupStorageInventory bs = BackupStorageInventory.valueOf(dbf.findByUuid(bsUuids.get(0), BackupStorageVO.class));
-
-
-        List<PriorityMap> priMap = new ArrayList<>();
-        for (BackupStoragePrimaryStorageExtensionPoint ext : pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class)) {
-            priMap.addAll(formatPriority(ext.getPrimaryStoragePriorityMap(bs, spec.getImage())));
-        }
-
-        priMap = priMap.stream()
-                .sorted(Comparator.comparingInt(it -> it.priority))
-                .filter(distinctByKey(it -> it.PS))
-                .collect(Collectors.toList());
-
-        adjustCandidates(priMap);
+        adjustCandidates(priority.psPriority, priority.defaultPriority);
     }
 
-    private void adjustCandidates(List<PriorityMap> priMap) {
+    private void adjustCandidates(List<PrimaryStoragePriorityGetter.PriorityMap> priMap, int defaultPriority) {
         if (priMap.size() == 0) {
             prepareForNext(candidates);
             return;
@@ -96,14 +71,14 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
                 " and pr.uuid=ref.primaryStorageUuid " +
                 " group by h.uuid", Tuple.class)
                 .param("huuids", candidates.stream().map(HostInventory::getUuid).collect(Collectors.toList()))
-                .param("defaultPriority", defaultPriroty)
+                .param("defaultPriority", defaultPriority)
                 .list();
 
         Map<String, Integer> hostPriority = new HashMap<>();
         Integer topPriority = ts.stream()
                 .peek(it -> hostPriority.put(it.get(1, String.class), it.get(0, Integer.class)))
                 .mapToInt(it -> it.get(0, Integer.class))
-                .min().orElse(defaultPriroty);
+                .min().orElse(defaultPriority);
 
         // sort by priority
         List<HostInventory> sorted = candidates.stream()
@@ -118,20 +93,6 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
 
         logger.debug(String.format("subCandidates: %s",subCandidates.stream().map(HostInventory::getName).collect(Collectors.toList())));
         logger.debug(String.format("after PrimaryStoragePrioritySortFlow adjustCandidates: %s", candidates.stream().map(HostInventory::getName).collect(Collectors.toList())));
-    }
-
-    class PriorityMap {
-        String PS;
-        Integer priority;
-    }
-
-    @SuppressWarnings("unchecked")
-    // priorityStr format is: [{"PS":"Ceph", "priority":"5"},{"PS":"LocalStorage", "priority":"10"}]
-    private List<PriorityMap> formatPriority(final String priorityStr) {
-        if (priorityStr != null) {
-            return JSONObjectUtil.toCollection(priorityStr, ArrayList.class, PriorityMap.class);
-        }
-        return new ArrayList<>();
     }
 
     private void prepareForNext(List<HostInventory> hosts) {

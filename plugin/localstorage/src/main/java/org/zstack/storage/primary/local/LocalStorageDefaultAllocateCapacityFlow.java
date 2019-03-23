@@ -38,10 +38,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -147,6 +144,8 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         if (spec.getImageSpec() != null) {
             rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+            Optional.ofNullable(spec.getImageSpec().getSelectedBackupStorage())
+                    .ifPresent(it -> rmsg.setBackupStorageUuid(it.getBackupStorageUuid()));
         }
         rmsg.setRequiredPrimaryStorageUuid(localStorageUuid);
         rmsg.setRequiredHostUuid(spec.getDestHost().getUuid());

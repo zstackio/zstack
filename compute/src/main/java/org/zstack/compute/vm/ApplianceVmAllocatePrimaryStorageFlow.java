@@ -31,10 +31,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
@@ -79,6 +76,8 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
             rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
             if (spec.getImageSpec() != null) {
                 rmsg.setImageUuid(spec.getImageSpec().getInventory().getUuid());
+                Optional.ofNullable(spec.getImageSpec().getSelectedBackupStorage())
+                        .ifPresent(it -> rmsg.setBackupStorageUuid(it.getBackupStorageUuid()));
             }
             rmsg.setSize(iminv.getSize());
             rmsg.setRequiredHostUuid(destHost.getUuid());
