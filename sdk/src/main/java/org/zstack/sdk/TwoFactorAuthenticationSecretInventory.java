@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.TwoFactorAuthenticationSecretStatus;
 
 public class TwoFactorAuthenticationSecretInventory  {
 
@@ -36,6 +36,14 @@ public class TwoFactorAuthenticationSecretInventory  {
         return this.resourceType;
     }
 
+    public TwoFactorAuthenticationSecretStatus status;
+    public void setStatus(TwoFactorAuthenticationSecretStatus status) {
+        this.status = status;
+    }
+    public TwoFactorAuthenticationSecretStatus getStatus() {
+        return this.status;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
@@ -50,6 +58,22 @@ public class TwoFactorAuthenticationSecretInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
+    }
+
+    public java.lang.String userUuid;
+    public void setUserUuid(java.lang.String userUuid) {
+        this.userUuid = userUuid;
+    }
+    public java.lang.String getUserUuid() {
+        return this.userUuid;
+    }
+
+    public java.lang.String userType;
+    public void setUserType(java.lang.String userType) {
+        this.userType = userType;
+    }
+    public java.lang.String getUserType() {
+        return this.userType;
     }
 
 }

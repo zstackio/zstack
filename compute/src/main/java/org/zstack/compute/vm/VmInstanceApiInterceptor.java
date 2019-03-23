@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.config.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -58,6 +59,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof VmInstanceMessage) {
@@ -158,7 +161,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).find();
                 InstanceOfferingVO instanceOfferingVO = Q.New(InstanceOfferingVO.class).eq(InstanceOfferingVO_.uuid, msg.getInstanceOfferingUuid()).find();
 
-                if (!VmGlobalConfig.NUMA.value(Boolean.class) && !VmInstanceState.Stopped.equals(vo.getState())) {
+                boolean numa = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, msg.getVmInstanceUuid(), Boolean.class);
+                if (!numa && !VmInstanceState.Stopped.equals(vo.getState())) {
                     throw new ApiMessageInterceptionException(argerr(
                             "the VM cannot do online cpu/memory update because it is not of NUMA architecture. Please stop the VM then do the cpu/memory update again"
                     ));
@@ -196,7 +200,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
 
                 VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
-                if (!VmGlobalConfig.NUMA.value(Boolean.class) && !VmInstanceState.Stopped.equals(vmState)) {
+                boolean numa = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, msg.getUuid(), Boolean.class);
+                if (!numa && !VmInstanceState.Stopped.equals(vmState)) {
                     throw new ApiMessageInterceptionException(argerr(
                             "the VM cannot do online cpu/memory update because it is not of NUMA architecture. Please stop the VM then do the cpu/memory update again"
                     ));
@@ -624,6 +629,20 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private void validateRootDiskOffering(ImageMediaType imgFormat, APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {
+        if (imgFormat == ImageMediaType.ISO) {
+            if (msg.getRootDiskOfferingUuid() == null) {
+                if (msg.getRootDiskSize() == null) {
+                    throw new ApiMessageInterceptionException(argerr("image mediaType is ISO but missing root disk settings"));
+                }
+
+                if (msg.getRootDiskSize() <= 0) {
+                    throw new ApiMessageInterceptionException(operr("Unexpected root disk settings"));
+                }
+            }
+        }
+    }
+
     private void validateInstanceSettings(APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {
         final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
 
@@ -632,7 +651,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(operr("Missing CPU/memory settings"));
             }
 
-            if (msg.getCpuNum() < 0 || msg.getMemorySize() < 0) {
+            if (msg.getCpuNum() <= 0 || msg.getMemorySize() <= 0) {
                 throw new ApiMessageInterceptionException(operr("Unexpected CPU/memory settings"));
             }
 
@@ -688,9 +707,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is of mediaType: %s, only RootVolumeTemplate and ISO can be used to create vm", msg.getImageUuid(), imgFormat));
         }
 
-        if (imgFormat == ImageMediaType.ISO && msg.getRootDiskOfferingUuid() == null) {
-            throw new ApiMessageInterceptionException(argerr("rootDiskOfferingUuid cannot be null when image mediaType is ISO"));
-        }
+        validateRootDiskOffering(imgFormat, msg);
 
         boolean isSystemImage = imgt.get(1, Boolean.class);
         if (isSystemImage && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {

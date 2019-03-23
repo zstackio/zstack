@@ -36,7 +36,9 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.*;
+import org.zstack.header.storage.snapshot.AfterTakeLiveSnapshotsOnVolumes;
 import org.zstack.kvm.KVMConstant;
+import org.zstack.header.storage.snapshot.TakeVolumesSnapshotOnKvmReply;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -723,7 +725,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         List<VmInstanceVO> candidatesCopy = Lists.newArrayList(candidates);
         for (VmInstanceVO vo : candidates) {
             PrimaryStorageVO psVo = dbf.findByUuid(vo.getRootVolume().getPrimaryStorageUuid(), PrimaryStorageVO.class);
-            if (LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(psVo.getType()) && VolumeStatus.NotInstantiated.equals(vol.getStatus())) {
+            if (LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(psVo.getType()) && VolumeStatus.NotInstantiated.toString().equals(vol.getStatus())) {
                 String volumeUuid = vo.getRootVolumeUuid();
                 VolumeVO rootVolumeVO = dbf.findByUuid(volumeUuid, VolumeVO.class);
                 boolean avaliableHost = Q.New(LocalStorageHostRefVO.class)

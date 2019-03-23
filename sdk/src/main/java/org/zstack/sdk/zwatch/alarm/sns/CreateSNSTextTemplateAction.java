@@ -37,6 +37,9 @@ public class CreateSNSTextTemplateAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String template;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String recoveryTemplate;
+
     @Param(required = false)
     public java.lang.Boolean defaultTemplate;
 

@@ -8,6 +8,8 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.config.resourceconfig.ResourceConfig;
+import org.zstack.core.config.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
@@ -15,6 +17,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.*;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
+import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
@@ -37,6 +40,7 @@ import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
+import org.zstack.header.zone.ZoneVO;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Bucket;
 import org.zstack.utils.CollectionUtils;
@@ -79,6 +83,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private HostCpuOverProvisioningManager cpuRatioMgr;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private Map<Class, HostBaseExtensionFactory> hostBaseExtensionFactories = new HashMap<>();
     private List<HostExtensionManager> hostExtensionManagers = new ArrayList<>();
@@ -547,6 +553,25 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 cpuRatioMgr.setGlobalRatio(newConfig.value(Integer.class));
             }
         });
+
+        ResourceConfig cpuConfig = rcf.getResourceConfig(HostGlobalConfig.HOST_CPU_OVER_PROVISIONING_RATIO.getIdentity());
+        cpuConfig.installLocalUpdateExtension((config, resourceUuid, resourceType, oldValue, newValue) ->
+                recalculateHostCapacity(resourceUuid, resourceType));
+        cpuConfig.installLocalDeleteExtension((config, resourceUuid, resourceType, originValue) ->
+                recalculateHostCapacity(resourceUuid, resourceType));
+    }
+
+    private void recalculateHostCapacity(String resourceUuid, String resourceType) {
+        RecalculateHostCapacityMsg msg = new RecalculateHostCapacityMsg();
+        bus.makeTargetServiceIdByResourceUuid(msg, HostAllocatorConstant.SERVICE_ID, resourceUuid);
+        if (resourceType.equals(ZoneVO.class.getSimpleName())) {
+            msg.setZoneUuid(resourceUuid);
+        } else if (resourceType.equals(ClusterVO.class.getSimpleName())) {
+            msg.setClusterUuid(resourceUuid);
+        } else if (resourceType.equals(HostVO.class.getSimpleName())) {
+            msg.setHostUuid(resourceUuid);
+        }
+        bus.send(msg);
     }
 
     @Override

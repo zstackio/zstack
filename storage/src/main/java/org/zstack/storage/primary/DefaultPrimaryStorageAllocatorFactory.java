@@ -13,7 +13,9 @@ public class DefaultPrimaryStorageAllocatorFactory implements PrimaryStorageAllo
             PrimaryStorageConstant.DEFAULT_PRIMARY_STORAGE_ALLOCATION_STRATEGY_TYPE);
     private DefaultPrimaryStorageAllocatorStrategy strategy;
     private List<String> allocatorFlowNames;
-    private FlowChainBuilder builder = new FlowChainBuilder();
+    private List<String> sortFlowNames;
+    private FlowChainBuilder allocateBuilder = new FlowChainBuilder();
+    private FlowChainBuilder sortBuilder = new FlowChainBuilder();
 
     @Override
     public List<String> getAllocatorFlowNames() {
@@ -22,6 +24,14 @@ public class DefaultPrimaryStorageAllocatorFactory implements PrimaryStorageAllo
 
     public void setAllocatorFlowNames(List<String> allocatorFlowNames) {
         this.allocatorFlowNames = allocatorFlowNames;
+    }
+
+    public List<String> getSortFlowNames() {
+        return sortFlowNames;
+    }
+
+    public void setSortFlowNames(List<String> sortFlowNames) {
+        this.sortFlowNames = sortFlowNames;
     }
 
     @Override
@@ -36,8 +46,9 @@ public class DefaultPrimaryStorageAllocatorFactory implements PrimaryStorageAllo
 
     @Override
     public boolean start() {
-        builder.setFlowClassNames(allocatorFlowNames).construct();
-        strategy = new DefaultPrimaryStorageAllocatorStrategy(builder);
+        allocateBuilder.setFlowClassNames(allocatorFlowNames).construct();
+        sortBuilder.setFlowClassNames(sortFlowNames).construct();
+        strategy = new DefaultPrimaryStorageAllocatorStrategy(allocateBuilder, sortBuilder);
         return true;
     }
 

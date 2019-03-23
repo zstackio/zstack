@@ -13,6 +13,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.ComponentLoaderImpl;
 import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.core.config.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DatabaseGlobalProperty;
 import org.zstack.core.db.Q;
@@ -517,6 +518,11 @@ public class Platform {
         if (gcf != null) {
             ((Component)gcf).start();
         }
+        ResourceConfigFacade rcf = loader.getComponent(ResourceConfigFacade.class);
+        if (rcf != null) {
+            ((Component)rcf).start();
+        }
+
         bus = loader.getComponentNoExceptionWhenNotExisting(CloudBus.class);
         if (bus != null)  {
             bus.start();
@@ -743,7 +749,7 @@ public class Platform {
 
     public static ErrorCode err(Enum errCode, ErrorCode cause, String fmt, Object...args) {
         ErrorFacade errf = getComponentLoader().getComponent(ErrorFacade.class);
-        String details = null;
+        String details;
         try {
             details = String.format(fmt, args);
         } catch (Exception e) {
@@ -752,11 +758,13 @@ public class Platform {
             details = fmt;
         }
         ErrorCode result = errf.instantiateErrorCode(errCode, details, cause);
-        try {
-            result.setElaboration(elaborate(errCode, result.getDescription(), fmt, args));
-        } catch (Throwable e) {
-            logger.warn("exception happened when found elaboration");
-            logger.warn(e.getMessage());
+        if (CoreGlobalProperty.ENABLE_ELABORATION) {
+            try {
+                result.setElaboration(elaborate(errCode, result.getDescription(), fmt, args));
+            } catch (Throwable e) {
+                logger.warn("exception happened when found elaboration");
+                logger.warn(e.getMessage());
+            }
         }
 
         return result;

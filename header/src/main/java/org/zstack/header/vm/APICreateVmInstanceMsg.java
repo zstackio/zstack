@@ -119,6 +119,10 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
      */
     @APIParam(required = false, resourceType = DiskOfferingVO.class, checkAccount = true)
     private String rootDiskOfferingUuid;
+
+    @APIParam(required = false)
+    private Long rootDiskSize;
+
     /**
      * @desc disk offering uuid for data volumes. See :ref:`DiskOfferingInventory`
      */
@@ -291,6 +295,14 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setRootDiskOfferingUuid(String rootDiskOfferingUuid) {
         this.rootDiskOfferingUuid = rootDiskOfferingUuid;
+    }
+
+    public Long getRootDiskSize() {
+        return rootDiskSize;
+    }
+
+    public void setRootDiskSize(Long rootDiskSize) {
+        this.rootDiskSize = rootDiskSize;
     }
 
     public String getPrimaryStorageUuidForRootVolume() {

@@ -1057,12 +1057,13 @@
     "fileName": "src/zstack/./compute/src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
   },
   {
-    "raw": "IP[%s] is not available on the L3 network[uuid:%s]",
-    "en_US": "IP[{0}] is not available on the L3 network[uuid:{1}]",
-    "zh_CN": "在L3网络[uuid:{1}]中，IP[{0}]不可用",
+    "raw": "IP[%s] is not available on the L3 network[uuid:%s] because: %s",
+    "en_US": "IP[{0}] is not available on the L3 network[uuid:{1}] because: {{2}}",
+    "zh_CN": "在L3网络[uuid:{1}]中，IP[{0}]不可用, 因为{{2}}",
     "arguments": [
       "ip",
-      "l3Uuid"
+      "l3Uuid",
+      "cr.getReason()"
     ],
     "line": 1489,
     "fileName": "src/zstack/./compute/src/main/java/org/zstack/compute/vm/VmInstanceManagerImpl.java"
@@ -4261,6 +4262,16 @@
       "msg.getListenerUuid()"
     ],
     "line": 315,
+    "fileName": "src/zstack/./plugin/loadBalancer/src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "healthCheck target [%s] error, it must be \u0027default\u0027 or number between[1~65535] ",
+    "en_US": "healthCheck target [{0}] error, it must be \u0027default\u0027 or number between[1~65535] ",
+    "zh_CN": "健康检查端口[{0}]错误,值必须是'default'或者数字[1~65535]",
+    "arguments": [
+      "target"
+    ],
+    "line": 357,
     "fileName": "src/zstack/./plugin/loadBalancer/src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -16953,6 +16964,30 @@
     "fileName": "src/main/java/org/zstack/zwatch/ruleengine/ComparisonOperator.java"
   },
   {
+    "raw": "it is gateway",
+    "en_US": "it is gateway",
+    "zh_CN": "网关不能分配",
+    "arguments": [],
+    "line": 23,
+    "fileName": "src/main/java/org/zstack/network/l3/IpNotAvailabilityReason.java"
+  },
+  {
+    "raw": "it is not in this range",
+    "en_US": "it is not in this range",
+    "zh_CN": "不在IP地址范围内",
+    "arguments": [],
+    "line": 25,
+    "fileName": "src/main/java/org/zstack/network/l3/IpNotAvailabilityReason.java"
+  },
+  {
+    "raw": "it is used",
+    "en_US": "it is used",
+    "zh_CN": "被占用",
+    "arguments": [],
+    "line": 27,
+    "fileName": "src/main/java/org/zstack/network/l3/IpNotAvailabilityReason.java"
+  },
+  {
     "raw": "there is no available ipRange on L3 network [%s]",
     "en_US": "there is no available ipRange on L3 network [{0}]",
     "zh_CN": "L3网络[{0}]中没有可用的网络段",
@@ -16961,5 +16996,15 @@
     ],
     "line": 79,
     "fileName": "# at: src/main/java/org/zstack/compute/vm/VmAllocateNicFlow.java"
+  },
+  {
+    "raw": "Addon license for product:%s has been expired, please renew it",
+    "en_US": "Addon license for product:{0} has been expired, please renew it",
+    "zh_CN": "{0}许可证过期，请重新申请",
+    "arguments": [
+      "e.getValue()"
+    ],
+    "line": 2178,
+    "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
   }
 ]

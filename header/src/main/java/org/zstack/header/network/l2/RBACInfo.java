@@ -9,7 +9,12 @@ public class RBACInfo implements RBACDescription {
                 .name("l2")
                 .targetResources(L2NetworkVO.class)
                 .adminOnlyAPIs("org.zstack.header.network.l2.**")
-                .normalAPIs(APIUpdateL2NetworkMsg.class)
+                .normalAPIs(
+                        APIUpdateL2NetworkMsg.class,
+                        APIGetL2NetworkTypesMsg.class,
+                        APIQueryL2NetworkMsg.class,
+                        APIQueryL2VlanNetworkMsg.class
+                )
                 .build();
     }
 

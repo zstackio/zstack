@@ -44,6 +44,14 @@ public class SNSTextTemplateInventory  {
         return this.template;
     }
 
+    public java.lang.String recoveryTemplate;
+    public void setRecoveryTemplate(java.lang.String recoveryTemplate) {
+        this.recoveryTemplate = recoveryTemplate;
+    }
+    public java.lang.String getRecoveryTemplate() {
+        return this.recoveryTemplate;
+    }
+
     public java.lang.Boolean defaultTemplate;
     public void setDefaultTemplate(java.lang.Boolean defaultTemplate) {
         this.defaultTemplate = defaultTemplate;

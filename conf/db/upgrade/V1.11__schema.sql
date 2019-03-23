@@ -349,7 +349,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ----------------------------
 CREATE TABLE `HybridAccountVO` (
   `uuid` varchar(32) UNIQUE NOT NULL,
-  `name` varchar(32) UNIQUE NOT NULL,
+  `name` varchar(255) UNIQUE NOT NULL,
   `accountUuid` varchar(32) NOT NULL,
   `userUuid` varchar(32) DEFAULT NULL,
   `type` varchar(32) NOT NULL,

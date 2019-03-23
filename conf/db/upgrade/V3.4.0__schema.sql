@@ -1,3 +1,8 @@
+ALTER TABLE `zstack`.`TwoFactorAuthenticationSecretVO` ADD COLUMN `status` varchar(255) NOT NULL DEFAULT "NewCreated";
+INSERT IGNORE INTO ResourceVO (uuid, resourceType) SELECT t.uuid, "TwoFactorAuthenticationSecretVO" FROM TwoFactorAuthenticationSecretVO t;
+ALTER TABLE `zstack`.`TwoFactorAuthenticationSecretVO` CHANGE `resourceUuid` `userUuid` VARCHAR(32) NOT NULL;
+ALTER TABLE `zstack`.`TwoFactorAuthenticationSecretVO` CHANGE `resourceType` `userType` VARCHAR(256) NOT NULL;
+
 # Add primary key to PrimaryStorageHostRefVO and make SharedBlockGroupPrimaryStorageHostRefVO inherit it
 
 ALTER TABLE PrimaryStorageHostRefVO ADD id BIGINT UNSIGNED NOT NULL UNIQUE AUTO_INCREMENT;
@@ -78,6 +83,31 @@ CREATE TABLE `BaremetalBondingVO` (
 ALTER TABLE `BaremetalInstanceVO` ADD COLUMN `templateUuid` varchar(32) DEFAULT NULL;
 ALTER TABLE `BaremetalInstanceVO` ADD CONSTRAINT `fkBaremetalInstanceVOPreconfigurationTemplateVO` FOREIGN KEY (`templateUuid`) REFERENCES `PreconfigurationTemplateVO` (`uuid`) ON DELETE SET NULL;
 
+CREATE TABLE `RouterAreaVO` (
+    `uuid` VARCHAR(32) NOT NULL UNIQUE COMMENT 'area uuid',
+    `areaId` VARCHAR(64) NOT NULL COMMENT 'area id 32bit with IPv4 address style',
+    `type` VARCHAR(16) NOT NULL DEFAULT 'Standard',
+    `authentication` VARCHAR(16) NOT NULL DEFAULT 'None',
+    `password` VARCHAR(16) DEFAULT NULL,
+    `keyId` int unsigned DEFAULT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `NetworkRouterAreaRefVO` (
+    `uuid` VARCHAR(32) NOT NULL UNIQUE,
+    `routerAreaUuid` VARCHAR(32) NOT NULL,
+    `vRouterUuid` VARCHAR(32) NOT NULL,
+    `l3NetworkUuid` VARCHAR(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT `fkNetworkRouterAreaRefVORouterAreaVO` FOREIGN KEY (`routerAreaUuid`) REFERENCES `RouterAreaVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkNetworkRouterAreaRefVOL3NetworkVO` FOREIGN KEY (`l3NetworkUuid`) REFERENCES `L3NetworkEO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkNetworkRouterAreaRefVOVpcRouterVmVO` FOREIGN KEY (`vRouterUuid`) REFERENCES `VpcRouterVmVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE INDEX idxVmUuid ON VmUsageVO(vmUuid) USING BTREE;
 
 DELIMITER $$
@@ -111,9 +141,130 @@ CREATE PROCEDURE cleanExpireVmUsageVO()
 				CLOSE cur;
 				SELECT CURTIME();
 		END $$
-DELIMITER;
+DELIMITER ;
 
 call cleanExpireVmUsageVO();
 DROP PROCEDURE IF EXISTS cleanExpireVmUsageVO;
 
+CREATE TABLE `ResourceConfigVO` (
+    `uuid`         VARCHAR(32)  NOT NULL UNIQUE,
+    `name`         VARCHAR(255) NOT NULL,
+    `description`  VARCHAR(1024) DEFAULT NULL,
+    `category`     VARCHAR(64)  NOT NULL,
+    `value`        TEXT         NOT NULL,
+    `resourceUuid` VARCHAR(32)  NOT NULL,
+    `resourceType` VARCHAR(256) NOT NULL,
+    `lastOpDate`   TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`   TIMESTAMP,
+    PRIMARY KEY (`uuid`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+ALTER TABLE ResourceConfigVO ADD CONSTRAINT fkResourceConfigVOResourceVO FOREIGN KEY (`resourceUuid`) REFERENCES `ResourceVO` (uuid) ON DELETE CASCADE;
 
+DELIMITER $$
+CREATE PROCEDURE migrateReserveMemTagVO()
+    BEGIN
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE tag VARCHAR(64);
+        DECLARE resourceUuid VARCHAR(32);
+        DECLARE resourceType VARCHAR(32);
+        DECLARE resourceConfigUuid VARCHAR(32);
+        DECLARE des VARCHAR(1024);
+        DECLARE cur1 CURSOR FOR SELECT DISTINCT stag.tag, stag.resourceUuid, stag.resourceType FROM zstack.SystemTagVO stag WHERE stag.tag LIKE 'reservedMemory::%';
+        DECLARE cur2 CURSOR FOR SELECT DISTINCT stag.tag, stag.resourceUuid, stag.resourceType FROM zstack.SystemTagVO stag WHERE stag.tag LIKE 'host::reservedMemory::%';
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+        SET des = 'The memory capacity reserved on all KVM hosts. ZStack KVM agent is a python web server that needs some memory capacity to run. this value reserves a portion of memory for the agent as well as other host applications. The value can be overridden by system tag on individual host, cluster and zone level';
+
+        OPEN cur1;
+        read_loop: LOOP
+            FETCH cur1 INTO tag, resourceUuid, resourceType;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            SET resourceConfigUuid = (REPLACE(UUID(), '-', ''));
+            INSERT ResourceConfigVO(uuid, name, description, category, value, resourceUuid, resourceType, createDate, lastOpDate)
+            VALUES (resourceConfigUuid, 'reservedMemory', des, 'kvm', substring(tag, LENGTH('reservedMemory::') + 1), resourceUuid ,resourceType, NOW(), NOW());
+
+        END LOOP;
+        CLOSE cur1;
+
+        SET done = FALSE;
+        OPEN cur2;
+        read_loop: LOOP
+            FETCH cur2 INTO tag, resourceUuid, resourceType;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            SET resourceConfigUuid = (REPLACE(UUID(), '-', ''));
+            INSERT ResourceConfigVO(uuid, name, description, category, value, resourceUuid, resourceType, createDate, lastOpDate)
+            VALUES (resourceConfigUuid, 'reservedMemory', des, 'kvm', substring(tag, LENGTH('host::reservedMemory::') + 1), resourceUuid ,resourceType, NOW(), NOW());
+
+        END LOOP;
+        CLOSE cur2;
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+call migrateReserveMemTagVO();
+DROP PROCEDURE IF EXISTS migrateReserveMemTagVO;
+
+ALTER TABLE VpcVpnGatewayVO CHANGE endDate endDate datetime NOT NULL;
+
+CREATE TABLE `ResourceUsageVO` (
+  `id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `accountUuid`  VARCHAR(32) NOT NULL,
+  `resourceType` VARCHAR(32) NOT NULL,
+  `resourceUuid` VARCHAR(32) NOT NULL,
+  `resourceName` VARCHAR(255) NOT NULL,
+  `spending`     DOUBLE NOT NULL,
+  `spendingDate`  DATE NOT NULL,
+  `spendingStart` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `spendingEnd`   TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastOpDate` TIMESTAMP NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `createDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `idxResourceUsageVOaccountUuid` (`accountUuid`),
+  INDEX `idxResourceUsageVOspendingDate` (`spendingDate`),
+  INDEX `idxResourceUsageVOresourceUuid` (`resourceUuid`),
+  INDEX `idxResourceUsageVOtypeDate` (`resourceType`,`spendingDate`),
+  UNIQUE `idxResourceUsageVOuuidDate` (`resourceType`,`resourceUuid`,`spendingDate`)
+) ENGINE=INNODB DEFAULT CHARSET=UTF8;
+
+INSERT INTO AccountResourceRefVO (`accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`) SELECT "36c27e8ff05c4780bf6d2fa65700f22e", "36c27e8ff05c4780bf6d2fa65700f22e", t.uuid, "L2NetworkVO", 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP() FROM L2NetworkVO t where t.type in ("L2VlanNetwork", "L2NoVlanNetwork");
+
+ALTER TABLE `AlarmVO` ADD COLUMN `enableRecovery` boolean NOT NULL DEFAULT FALSE;
+ALTER TABLE `SNSTextTemplateVO` ADD COLUMN  `recoveryTemplate` text DEFAULT NULL;
+
+DROP PROCEDURE IF EXISTS initializeRecoveryTemplate;
+DELIMITER $$
+CREATE PROCEDURE initializeRecoveryTemplate()
+		BEGIN
+				DECLARE done INT DEFAULT FALSE;
+			  DECLARE uuid VARCHAR(32);
+			  DECLARE applicationPlatformType VARCHAR(128);
+				DECLARE cur CURSOR FOR SELECT v.uuid,v.applicationPlatformType FROM SNSTextTemplateVO v WHERE v.recoveryTemplate IS NULL or v.recoveryTemplate = '';
+				DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+			  OPEN cur;
+				read_loop: LOOP
+						FETCH cur INTO uuid,applicationPlatformType;
+						IF done THEN
+								LEAVE read_loop;
+						END IF;
+
+						IF applicationPlatformType = 'DingTalk' THEN
+						    UPDATE SNSTextTemplateVO v SET v.recoveryTemplate = replace('# 报警器 %{ALARM_NAME} %{TITLE_ALARM_RESOURCE_NAME} 状态改变成 %{ALARM_CURRENT_STATUS}\n## 报警恢复详情:\n- UUID: %{ALARM_UUID}\n- 资源名字空间: %{ALARM_NAMESPACE}\n- 恢复条件: %{ALARM_METRIC} %{ALARM_COMPARISON_OPERATOR_REVERSE} %{ALARM_THRESHOLD}\n- 先前状态: %{ALARM_PREVIOUS_STATUS}\n- 当前值: %{ALARM_CURRENT_VALUE}\n- 报警资源UUID: %{ALARM_RESOURCE_ID}\n- 报警资源名称: %{ALARM_RESOURCE_NAME}', '%', '$') WHERE v.uuid = uuid;
+            END IF;
+
+						IF applicationPlatformType = 'Email' THEN
+						    UPDATE SNSTextTemplateVO v SET v.recoveryTemplate = replace('报警器 %{ALARM_NAME} %{TITLE_ALARM_RESOURCE_NAME} 状态改变成 %{ALARM_CURRENT_STATUS}\n报警恢复详情:\nUUID: %{ALARM_UUID}\n资源名字空间: %{ALARM_NAMESPACE}\n恢复条件: %{ALARM_METRIC} %{ALARM_COMPARISON_OPERATOR_REVERSE} %{ALARM_THRESHOLD}\n先前状态: %{ALARM_PREVIOUS_STATUS}\n当前值: %{ALARM_CURRENT_VALUE}\n报警资源UUID: %{ALARM_RESOURCE_ID}\n报警资源名称: %{ALARM_RESOURCE_NAME}' , '%', '$') WHERE v.uuid = uuid;
+            END IF;
+				END LOOP;
+				CLOSE cur;
+				SELECT CURTIME();
+		END $$
+DELIMITER ;
+
+call initializeRecoveryTemplate();
+DROP PROCEDURE IF EXISTS initializeRecoveryTemplate;

@@ -18,6 +18,7 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.volume.VolumeInventory;
 
+import java.util.List;
 import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -32,9 +33,11 @@ public class VmAttachVolumeOnHypervisorFlow implements Flow {
     @Override
     public void run(final FlowTrigger chain, Map ctx) {
         final VolumeInventory volume = (VolumeInventory) ctx.get(VmInstanceConstant.Params.AttachingVolumeInventory.toString());
+        final List<VolumeInventory> attachedDataVolumes = (List<VolumeInventory>) ctx.get(VmInstanceConstant.Params.AttachedDataVolumeInventories.toString());
         final VmInstanceSpec spec = (VmInstanceSpec) ctx.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         assert volume != null;
         assert spec != null;
+        assert attachedDataVolumes != null;
 
         if (spec.getVmInventory().getState().equals(VmInstanceState.Stopped.toString())) {
             chain.next();
@@ -49,6 +52,7 @@ public class VmAttachVolumeOnHypervisorFlow implements Flow {
         msg.setHostUuid(hostUuid);
         msg.setVmInventory(spec.getVmInventory());
         msg.setInventory(volume);
+        msg.setAttachedDataVolumes(attachedDataVolumes);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override

@@ -1,5 +1,6 @@
 package org.zstack.compute.allocator;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -76,6 +77,10 @@ public class HostStateAndHypervisorAllocatorFlow extends AbstractHostAllocatorFl
         }
 
         if (ret.isEmpty()) {
+            if (CollectionUtils.isEmpty(candidates)) {
+                fail(String.format("no host having state=Enabled status=Connected hypervisorType=%s found",
+                        spec.getHypervisorType()));
+            }
 
             String error;
             if (isNoConnectedHost()) {

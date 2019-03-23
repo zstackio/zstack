@@ -252,8 +252,6 @@ class AbstractAction(object):
         path = path[2].split("?")
 
         h = hmac.new(self.accessKeySecret, self.HTTP_METHOD + "\n"
-            + "\n"   # no header: Content_MD5
-            + "application/json\n"   # no header: Content_Type
             + date + "\n"
             + "/" + path[0], sha1)
         Signature = base64.b64encode(h.digest())

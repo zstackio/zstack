@@ -60,4 +60,10 @@
             <zstack:extension interface="org.zstack.header.Component" />
         </zstack:plugin>
     </bean>
+
+    <bean id="PrimaryStoragePriorityGetter" class="org.zstack.storage.backup.PrimaryStoragePriorityGetterImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.storage.backup.PrimaryStoragePriorityGetter"/>
+        </zstack:plugin>
+    </bean>
 </beans>

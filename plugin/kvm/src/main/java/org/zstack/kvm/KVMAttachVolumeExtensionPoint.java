@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Created by frank on 4/24/2015.
  */
-public interface KVMAttachVolumeExtensionPoint {
+public interface KVMAttachVolumeExtensionPoint extends KVMConvertVolumeExtensionPoint {
     void beforeAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, AttachDataVolumeCmd cmd, Map data);
 
     void afterAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, AttachDataVolumeCmd cmd);

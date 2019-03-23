@@ -45,7 +45,7 @@ public class ConfigurationApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateDiskOfferingMsg) msg);
         } else if (msg instanceof APICreateInstanceOfferingMsg) {
             validate((APICreateInstanceOfferingMsg) msg);
-        } else if (msg instanceof APICreateInstanceOfferingMsg) {
+        } else if (msg instanceof APIUpdateInstanceOfferingMsg) {
             validate((APIUpdateInstanceOfferingMsg) msg);
         } else if (msg instanceof APIDeleteDiskOfferingMsg) {
             validate((APIDeleteDiskOfferingMsg) msg);

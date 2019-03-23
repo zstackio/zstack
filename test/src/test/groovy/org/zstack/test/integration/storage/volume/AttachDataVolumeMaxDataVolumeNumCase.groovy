@@ -54,16 +54,25 @@ class AttachDataVolumeMaxDataVolumeNumCase extends SubCase {
     void attachMultiDataVolumestoVm() {
         def diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
 
+        KVMAgentCommands.AttachDataVolumeCmd cmd = null
+        env.afterSimulator(KVMConstant.KVM_ATTACH_VOLUME){rsp,HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body,KVMAgentCommands.AttachDataVolumeCmd.class)
+            return rsp
+        }
+
         for (int i = 0; i < MAX_DATA_VOLUME_NUMBER; i++){
             VolumeInventory dataVolume = createDataVolume {
                 name = 'test-vol'
                 diskOfferingUuid = diskOffering.uuid
+                systemTags = i % 2 == 0 ? ["capability::virtio-scsi"] : []
             } as VolumeInventory
 
             attachDataVolumeToVm {
                 vmInstanceUuid = vm.uuid
                 volumeUuid = dataVolume.uuid
             }
+
+            assert cmd.addons["attachedDataVolumes"].size() == i
         }
 
         assert Q.New(VolumeVO.class).eq(VolumeVO_.type, VolumeType.Data).eq(VolumeVO_.vmInstanceUuid, vm.uuid).count() == 24

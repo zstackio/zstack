@@ -178,8 +178,7 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(CheckIpAvailabilityMsg msg) {
-        CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
-        reply.setAvailable(checkIpAvailability(msg.getIp()));
+        CheckIpAvailabilityReply reply = checkIpAvailability(msg.getIp());
         bus.reply(msg, reply);
     }
 
@@ -338,7 +337,8 @@ public class L3BasicNetwork implements L3Network {
         }
     }
 
-    protected boolean checkIpAvailability(String ip) {
+    protected CheckIpAvailabilityReply checkIpAvailability(String ip) {
+        CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
         SimpleQuery<IpRangeVO> rq = dbf.createQuery(IpRangeVO.class);
         rq.select(IpRangeVO_.startIp, IpRangeVO_.endIp, IpRangeVO_.gateway);
         rq.add(IpRangeVO_.l3NetworkUuid, Op.EQ, self.getUuid());
@@ -363,18 +363,33 @@ public class L3BasicNetwork implements L3Network {
 
         if (!inRange || isGateway) {
             // not an IP of this L3 or is a gateway
-            return false;
+            reply.setAvailable(false);
+            if (isGateway) {
+                reply.setReason(IpNotAvailabilityReason.GATEWAY.toi18nString());
+            } else {
+                reply.setReason(IpNotAvailabilityReason.NO_IN_RANGE.toi18nString());
+            }
+            return reply;
         } else {
             SimpleQuery<UsedIpVO> q = dbf.createQuery(UsedIpVO.class);
             q.add(UsedIpVO_.l3NetworkUuid, Op.EQ, self.getUuid());
             q.add(UsedIpVO_.ip, Op.EQ, ip);
-            return !q.isExists();
+            if (q.isExists()) {
+                reply.setAvailable(false);
+                reply.setReason(IpNotAvailabilityReason.USED.toi18nString());
+            } else {
+                reply.setAvailable(true);
+            }
+
+            return reply;
         }
     }
 
     private void handle(APICheckIpAvailabilityMsg msg) {
         APICheckIpAvailabilityReply reply = new APICheckIpAvailabilityReply();
-        reply.setAvailable(checkIpAvailability(msg.getIp()));
+        CheckIpAvailabilityReply r = checkIpAvailability(msg.getIp());
+        reply.setAvailable(r.isAvailable());
+        reply.setReason(r.getReason());
         bus.reply(msg, reply);
     }
 

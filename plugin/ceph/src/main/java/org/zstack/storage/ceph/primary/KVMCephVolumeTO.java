@@ -1,6 +1,6 @@
 package org.zstack.storage.ceph.primary;
 
-import org.zstack.kvm.KVMAgentCommands.VolumeTO;
+import org.zstack.kvm.VolumeTO;
 
 import java.util.List;
 

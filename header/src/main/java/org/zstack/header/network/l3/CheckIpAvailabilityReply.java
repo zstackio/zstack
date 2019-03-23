@@ -7,6 +7,7 @@ import org.zstack.header.message.MessageReply;
  */
 public class CheckIpAvailabilityReply extends MessageReply {
     private boolean available;
+    private String reason;
 
     public boolean isAvailable() {
         return available;
@@ -14,5 +15,13 @@ public class CheckIpAvailabilityReply extends MessageReply {
 
     public void setAvailable(boolean available) {
         this.available = available;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 }

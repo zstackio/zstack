@@ -37,6 +37,9 @@ public class CreateVolumeBackupAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = false, validValues = {"full"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String mode;
+
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,9223372036854775807L}, numberRangeUnit = {"Bps", "Bps"}, noTrim = false)
     public java.lang.Long volumeReadBandwidth;
 

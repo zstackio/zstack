@@ -26,6 +26,8 @@ public interface CreateVmInstanceMessage {
 
     String getRootDiskOfferingUuid();
 
+    long getRootDiskSize();
+
     List<String> getDataDiskOfferingUuids();
 
     String getZoneUuid();

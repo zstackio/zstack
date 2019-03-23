@@ -7,7 +7,10 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.GlobalConfigCanonicalEvents.UpdateEvent;
+import org.zstack.core.config.resourceconfig.BindResourceConfig;
+import org.zstack.core.config.resourceconfig.ResourceConfig;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -66,6 +69,10 @@ public class GlobalConfig {
     private DatabaseFacade dbf;
     @Autowired
     private EventFacade evtf;
+
+    public EventFacade getEvtf() {
+        return evtf;
+    }
 
     @Override
     public String toString() {
@@ -282,7 +289,7 @@ public class GlobalConfig {
         validate(value);
     }
 
-    private void validate(String newValue) {
+    public void validate(String newValue) {
         for  (GlobalConfigValidatorExtensionPoint ext : validators) {
             ext.validateGlobalConfig(category, name, value, newValue);
         }
@@ -300,9 +307,13 @@ public class GlobalConfig {
                     return;
                 }
 
-                UpdateEvent evt = (UpdateEvent)data;
-                update(evt.getNewValue(), false);
+                String newValue = Q.New(GlobalConfigVO.class).select(GlobalConfigVO_.value)
+                        .eq(GlobalConfigVO_.category, category)
+                        .eq(GlobalConfigVO_.name, name)
+                        .findValue();
+                update(newValue, false);
 
+                UpdateEvent evt = (UpdateEvent)data;
                 logger.info(String.format("GlobalConfig[category: %s, name: %s] was updated in other management node[uuid:%s]," +
                         "in line with that change, updated ours. %s --> %s", category, name, nodeUuid, evt.getOldValue(), value));
             }
@@ -379,6 +390,10 @@ public class GlobalConfig {
 
         String newValue = val == null ? null : val.toString();
         update(newValue, true);
+    }
+
+    public ResourceConfig buildResourceConfig(BindResourceConfig info) {
+        return ResourceConfig.valueOf(this, info);
     }
 
     boolean isLinked() {

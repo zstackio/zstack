@@ -187,6 +187,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         vo.setPhysicalInterface(msg.getPhysicalInterface());
         vo.setType(type.toString());
         vo.setZoneUuid(msg.getZoneUuid());
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
         L2NetworkInventory inv = factory.createL2Network(vo, msg);
 
         tagMgr.createTagsFromAPICreateMessage(msg, inv.getUuid(), L2NetworkVO.class.getSimpleName());

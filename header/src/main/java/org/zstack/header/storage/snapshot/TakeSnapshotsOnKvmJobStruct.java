@@ -7,7 +7,7 @@ import java.io.Serializable;
  */
 public class TakeSnapshotsOnKvmJobStruct implements Serializable {
     private String volumeUuid;
-    private Integer deviceId;
+    private Object volume;
     private String installPath;
     private String vmInstanceUuid;
     private String previousInstallPath;
@@ -24,12 +24,12 @@ public class TakeSnapshotsOnKvmJobStruct implements Serializable {
         this.volumeUuid = volumeUuid;
     }
 
-    public Integer getDeviceId() {
-        return deviceId;
+    public void setVolume(Object volume) {
+        this.volume = volume;
     }
 
-    public void setDeviceId(Integer deviceId) {
-        this.deviceId = deviceId;
+    public Object getVolume() {
+        return volume;
     }
 
     public String getInstallPath() {

@@ -236,14 +236,10 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
 
         ArrayList<String> volumeUuids = new ArrayList<>();
         if (dataVolumeUuids != null && !dataVolumeUuids.isEmpty()) {
-            for (String uuid : dataVolumeUuids) {
-                volumeUuids.add(uuid);
-            }
+            volumeUuids.addAll(dataVolumeUuids);
         }
         if (rootVolumeUuids != null && !rootVolumeUuids.isEmpty()) {
-            for (String uuid : rootVolumeUuids) {
-                volumeUuids.add(uuid);
-            }
+            volumeUuids.addAll(rootVolumeUuids);
         }
 
         // skip empty volume uuid list
@@ -522,10 +518,13 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
         if (imgType == ImageConstant.ImageMediaType.RootVolumeTemplate) {
             allVolumeSizeAsked += imgSize;
         } else if (imgType == ImageConstant.ImageMediaType.ISO) {
-            if (msg.getRootDiskOfferingUuid() == null){
+            if (msg.getRootDiskOfferingUuid() != null) {
+                diskOfferingUuids.add(msg.getRootDiskOfferingUuid());
+            } else if (msg.getRootDiskSize() != null) {
+                allVolumeSizeAsked += msg.getRootDiskSize();
+            } else {
                 throw new ApiMessageInterceptionException(argerr("rootDiskOfferingUuid cannot be null when image mediaType is ISO"));
             }
-            diskOfferingUuids.add(msg.getRootDiskOfferingUuid());
         }
 
         HashMap<String, Long> diskOfferingCountMap = new HashMap<>();

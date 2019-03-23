@@ -1,5 +1,6 @@
 #!/bin/bash
-# usage: sudo bash checkimageforaliyun [path-for-image] [path-for-scripts]
+# usage tools: ssh ${guestip}; sudo bash checkaliyunimage -p [path-for-logs]
+# usage this scripts: sudo bash checkimageforaliyun [path-for-image] [path-for-scripts]
 set -e
 if test -z "$1"; then
   echo "must input image"

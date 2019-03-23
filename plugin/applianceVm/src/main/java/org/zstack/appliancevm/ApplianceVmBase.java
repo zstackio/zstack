@@ -39,8 +39,6 @@ import org.zstack.utils.RangeSet.Range;
 import org.zstack.utils.function.Function;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
@@ -410,8 +408,11 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                getSelf().setStatus(ApplianceVmStatus.Disconnected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
+                if (originStatus.equals(ApplianceVmStatus.Connected)) {
+                    fireDisconnectedCanonicalEvent(operr("appliance vm %s stopped",
+                            getSelf().getUuid()));
+                }
                 trigger.next();
             }
 
@@ -457,8 +458,11 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             ApplianceVmStatus originStatus = getSelf().getStatus();
 
             public void run(FlowTrigger trigger, Map data) {
-                getSelf().setStatus(ApplianceVmStatus.Disconnected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
+                if (originStatus.equals(ApplianceVmStatus.Connected)) {
+                fireDisconnectedCanonicalEvent(operr("appliance vm %s destroyed",
+                        getSelf().getUuid()));
+                }
                 trigger.next();
             }
 
@@ -511,19 +515,25 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         chain.setName(String.format("reboot-appliancevm-%s", inv.getUuid()));
         chain.insert(new Flow() {
             String __name__ = "change-appliancevm-status-to-disconnected";
+            ApplianceVmStatus originStatus = getSelf().getStatus();
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                getSelf().setStatus(ApplianceVmStatus.Disconnected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
+                if (originStatus.equals(ApplianceVmStatus.Connected)) {
+                    fireDisconnectedCanonicalEvent(operr("appliance vm %s reboot",
+                            getSelf().getUuid()));
+                }
                 trigger.next();
             }
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
-                self = dbf.reload(self);
-                getSelf().setStatus(ApplianceVmStatus.Disconnected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
+                if (originStatus.equals(ApplianceVmStatus.Connected)) {
+                    fireDisconnectedCanonicalEvent(operr("appliance vm %s reboot failed",
+                            getSelf().getUuid()));
+                }
                 trigger.rollback();
             }
         });
@@ -545,8 +555,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                getSelf().setStatus(ApplianceVmStatus.Connected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Connected);
                 trigger.next();
             }
         });
@@ -562,19 +571,21 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         chain.setName(String.format("start-appliancevm-%s", inv.getUuid()));
         chain.insert(new Flow() {
             String __name__ = "change-appliancevm-status-to-connecting";
+            ApplianceVmStatus originStatus = getSelf().getStatus();
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                getSelf().setStatus(ApplianceVmStatus.Connecting);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Connecting);
                 trigger.next();
             }
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
-                self = dbf.reload(self);
-                getSelf().setStatus(ApplianceVmStatus.Disconnected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
+                if (originStatus.equals(ApplianceVmStatus.Connected)) {
+                    fireDisconnectedCanonicalEvent(operr("appliance vm %s start failed",
+                            getSelf().getUuid()));
+                }
                 trigger.rollback();
             }
         });
@@ -596,8 +607,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                getSelf().setStatus(ApplianceVmStatus.Connected);
-                self = dbf.updateAndRefresh(self);
+                changeApplianceVmStatus(ApplianceVmStatus.Connected);
                 trigger.next();
             }
         });
@@ -707,9 +717,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
                     // must reload here, otherwise it will override changes created by previous flows
-                    self = dbf.reload(self);
-                    getSelf().setStatus(ApplianceVmStatus.Connected);
-                    dbf.update(self);
+                    changeApplianceVmStatus(ApplianceVmStatus.Connected);
                     trigger.next();
                 }
             });
@@ -765,5 +773,25 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
     @Override
     protected void selectDefaultL3(VmNicInventory nic) {
         return;
+    }
+
+    protected void changeApplianceVmStatus(ApplianceVmStatus newStatus) {
+        self = dbf.reload(self);
+        if (newStatus == getSelf().getStatus()) {
+            return;
+        }
+        ApplianceVmStatus oldStatus = getSelf().getStatus();
+        logger.debug(String.format("ApplianceVm [%s] changed status, old status: [%s], new status: [%s]", self.getUuid(), getInventory().getStatus(), newStatus.toString()));
+        getSelf().setStatus(newStatus);
+        self = dbf.updateAndRefresh(self);
+        ApplianceVmCanonicalEvents.ApplianceVmStatusChangedData d = new ApplianceVmCanonicalEvents.ApplianceVmStatusChangedData();
+        d.setApplianceVmUuid(self.getUuid());
+        d.setOldStatus(oldStatus.toString());
+        d.setNewStatus(newStatus.toString());
+        d.setInv((ApplianceVmInventory)getSelfInventory());
+        evtf.fire(ApplianceVmCanonicalEvents.APPLIANCEVM_STATUS_CHANGED_PATH, d);
+
+        logger.debug(String.format("the virtual router [uuid:%s, name:%s] changed status from %s to %s",
+                self.getUuid(), self.getName(), oldStatus.toString(), newStatus.toString()));
     }
 }

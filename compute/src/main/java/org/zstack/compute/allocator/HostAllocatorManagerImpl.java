@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -146,6 +147,10 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         final List<String> hostUuids = new ArrayList<>();
         if (msg.getHostUuid() != null) {
             hostUuids.add(msg.getHostUuid());
+        } else if (msg.getClusterUuid() != null) {
+            hostUuids.addAll(Q.New(HostVO.class).select(HostVO_.uuid)
+                    .eq(HostVO_.clusterUuid, msg.getClusterUuid())
+                    .listValues());
         } else {
             SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
             q.select(HostVO_.uuid);

@@ -22,6 +22,12 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "reason"
+		desc "原因"
+		type "String"
+		since "3.4"
+	}
+	field {
 		name "success"
 		desc "成功"
 		type "boolean"

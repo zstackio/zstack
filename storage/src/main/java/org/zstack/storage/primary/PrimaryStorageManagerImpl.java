@@ -412,6 +412,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         spec.setRequiredClusterUuids(msg.getRequiredClusterUuids());
         spec.setRequiredHostUuid(msg.getRequiredHostUuid());
         spec.setRequiredZoneUuid(msg.getRequiredZoneUuid());
+        spec.setBackupStorageUuid(msg.getBackupStorageUuid());
         spec.setRequiredPrimaryStorageUuid(msg.getRequiredPrimaryStorageUuid());
         spec.setTags(msg.getTags());
         spec.setAllocationMessage(msg);
