@@ -83,6 +83,31 @@ CREATE TABLE `BaremetalBondingVO` (
 ALTER TABLE `BaremetalInstanceVO` ADD COLUMN `templateUuid` varchar(32) DEFAULT NULL;
 ALTER TABLE `BaremetalInstanceVO` ADD CONSTRAINT `fkBaremetalInstanceVOPreconfigurationTemplateVO` FOREIGN KEY (`templateUuid`) REFERENCES `PreconfigurationTemplateVO` (`uuid`) ON DELETE SET NULL;
 
+CREATE TABLE `RouterAreaVO` (
+    `uuid` VARCHAR(32) NOT NULL UNIQUE COMMENT 'area uuid',
+    `areaId` VARCHAR(64) NOT NULL COMMENT 'area id 32bit with IPv4 address style',
+    `type` VARCHAR(16) NOT NULL DEFAULT 'Standard',
+    `authentication` VARCHAR(16) NOT NULL DEFAULT 'None',
+    `password` VARCHAR(16) DEFAULT NULL,
+    `keyId` int unsigned DEFAULT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `NetworkRouterAreaRefVO` (
+    `uuid` VARCHAR(32) NOT NULL UNIQUE,
+    `routerAreaUuid` VARCHAR(32) NOT NULL,
+    `vRouterUuid` VARCHAR(32) NOT NULL,
+    `l3NetworkUuid` VARCHAR(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT `fkNetworkRouterAreaRefVORouterAreaVO` FOREIGN KEY (`routerAreaUuid`) REFERENCES `RouterAreaVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkNetworkRouterAreaRefVOL3NetworkVO` FOREIGN KEY (`l3NetworkUuid`) REFERENCES `L3NetworkEO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkNetworkRouterAreaRefVOVpcRouterVmVO` FOREIGN KEY (`vRouterUuid`) REFERENCES `VpcRouterVmVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE INDEX idxVmUuid ON VmUsageVO(vmUuid) USING BTREE;
 
 DELIMITER $$

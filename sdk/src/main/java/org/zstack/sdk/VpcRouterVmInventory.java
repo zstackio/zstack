@@ -12,4 +12,12 @@ public class VpcRouterVmInventory extends org.zstack.sdk.VirtualRouterVmInventor
         return this.dns;
     }
 
+    public java.util.List routerAreaRef;
+    public void setRouterAreaRef(java.util.List routerAreaRef) {
+        this.routerAreaRef = routerAreaRef;
+    }
+    public java.util.List getRouterAreaRef() {
+        return this.routerAreaRef;
+    }
+
 }
