@@ -268,3 +268,6 @@ DELIMITER ;
 
 call initializeRecoveryTemplate();
 DROP PROCEDURE IF EXISTS initializeRecoveryTemplate;
+
+ALTER TABLE `SchedulerTriggerVO` MODIFY COLUMN `cron` varchar(255) DEFAULT NULL COMMENT 'interval in cron format';
+
