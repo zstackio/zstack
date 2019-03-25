@@ -31,13 +31,15 @@ public abstract class AbstractLocalExternalService implements LocalExternalServi
         Platform.exit(error);
     }
 
+    @Override
     public void stop() {
         Integer pid = getPID();
         if (pid != null) {
             Platform.killProcess(pid, 30);
+            logger.debug(String.format("[External Service] stopped %s", getName()));
+        } else {
+            logger.debug(String.format("[External Service] not found %s, skip stop it", getName()));
         }
-
-        logger.debug(String.format("[External Service] stopped %s", getName()));
     }
 
     protected void doActionIfServicePIDNotShowUpInTwoMinutes(Runnable runnable) {
