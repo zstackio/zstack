@@ -271,3 +271,5 @@ DROP PROCEDURE IF EXISTS initializeRecoveryTemplate;
 
 ALTER TABLE `SchedulerTriggerVO` MODIFY COLUMN `cron` varchar(255) DEFAULT NULL COMMENT 'interval in cron format';
 
+ALTER TABLE `HybridAccountVO` MODIFY `name` VARCHAR(255) UNIQUE NOT NULL;
+
