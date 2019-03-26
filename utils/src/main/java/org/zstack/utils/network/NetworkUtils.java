@@ -20,6 +20,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.zstack.utils.network.IPv6NetworkUtils.isIpv6Address;
+
 public class NetworkUtils {
     private static final CLogger logger = Utils.getLogger(NetworkUtils.class);
 
@@ -328,7 +330,7 @@ public class NetworkUtils {
             long s = ipv4StringToLong(startIp);
             long e = ipv4StringToLong(endIp);
             return (int) (e - s + 1);
-        } else if (IPv6NetworkUtils.isIpv6Address(startIp)) {
+        } else if (isIpv6Address(startIp)) {
             return (int)IPv6NetworkUtils.getIpv6RangeSize(startIp, endIp);
         } else {
             throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address or valid ipv6 address", startIp));
@@ -719,7 +721,7 @@ public class NetworkUtils {
     public static boolean isInRange(String ip, String startIp, String endIp) {
         if (isIpv4Address(ip)) {
             return isIpv4InRange(ip, startIp, endIp);
-        } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
+        } else if (isIpv6Address(ip)) {
             return IPv6NetworkUtils.isIpv6InRange(ip, startIp, endIp);
         } else {
             throw new IllegalArgumentException(String.format("%s is not a valid ipv4 address or valid ipv6 address", ip));
@@ -774,6 +776,14 @@ public class NetworkUtils {
             } catch (Exception e) {
                 throw e;
             }
+        }
+    }
+
+    public static boolean isValidIPAddress(String ip) {
+        if (isIpv4Address(ip)) {
+            return true;
+        } else {
+            return isIpv6Address(ip);
         }
     }
 }
