@@ -7,6 +7,7 @@ import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.flat.FlatUserdataBackend
 import org.zstack.network.service.userdata.UserdataConstant
+import org.zstack.network.service.userdata.UserdataGlobalConfig
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -123,6 +124,7 @@ class NoDhcpServiceCase extends SubCase {
 
 
     private void testSetUserdataSetWhenVmOperations() {
+        UserdataGlobalConfig.OPEN_USERDATA_SERVICE_BY_DEFAULT.updateValue(false)
         FlatUserdataBackend.ApplyUserdataCmd cmd = null
 
         def prepareDhcp = false
@@ -164,6 +166,16 @@ class NoDhcpServiceCase extends SubCase {
         destroyVmInstance {
             uuid = vm.uuid
         }
+
+        UserdataGlobalConfig.OPEN_USERDATA_SERVICE_BY_DEFAULT.updateValue(true)
+        vm = createVmInstance {
+            name = "vm"
+            imageUuid = env.inventoryByName("image").uuid
+            l3NetworkUuids = [l3.uuid]
+            instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
+            hostUuid = env.inventoryByName("kvm").uuid
+        }
+        assert cmd != null
     }
 
     @Override
