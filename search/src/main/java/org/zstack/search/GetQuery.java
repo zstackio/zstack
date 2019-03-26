@@ -37,7 +37,7 @@ public class GetQuery {
                         logger.trace(String.format("failed to call %s, 404 not found, the entity queryed doesn't exist", url));
                     } else if (rsp.getStatusLine().getStatusCode() != HttpStatus.SC_OK && rsp.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
                         String err = String.format("Failed to call , because: \nstatus line: %s\nbody: %s\n",
-                                url, rsp.getStatusLine(), EntityUtils.toString(rsp.getEntity()));
+                                 rsp.getStatusLine(), EntityUtils.toString(rsp.getEntity()));
                         logger.warn(err);
                         throw new IOException(err);
                     } else {

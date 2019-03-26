@@ -330,7 +330,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
 
         if (Q.New(LoadBalancerListenerCertificateRefVO.class).eq(LoadBalancerListenerCertificateRefVO_.listenerUuid, msg.getListenerUuid()).isExists()) {
             throw new ApiMessageInterceptionException(argerr("loadbalancer listener [uuid:%s] already had certificate",
-                    msg.getCertificateUuid(), msg.getListenerUuid()));
+                     msg.getListenerUuid()));
         }
 
         msg.setLoadBalancerUuid(vo.getLoadBalancerUuid());
