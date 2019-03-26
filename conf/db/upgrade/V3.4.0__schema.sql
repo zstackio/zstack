@@ -310,3 +310,22 @@ CREATE TABLE  `zstack`.`MiniStorageHostRefVO` (
     `availablePhysicalCapacity` BIGINT UNSIGNED DEFAULT 0,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `zstack`.`ImageReplicationGroupVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `name` VARCHAR(255) NOT NULL,
+    `description` VARCHAR(2048) DEFAULT NULL,
+    `state` varchar(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `zstack`.`ImageReplicationGroupBackupStorageRefVO` (
+    `backupStorageUuid` varchar(32) NOT NULL,
+    `replicationGroupUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`backupStorageUuid`),
+    CONSTRAINT `fkImageReplicationGroupBackupStorageRefVOBackupStorageEO` FOREIGN KEY (`backupStorageUuid`) REFERENCES `BackupStorageEO` (uuid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
