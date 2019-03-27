@@ -93,7 +93,6 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             amsg.setRequiredHostUuid(destHost.getUuid());
             amsg.setAllocationStrategy(dinv.getAllocatorStrategy());
             amsg.setDiskOfferingUuid(dinv.getUuid());
-            amsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
             bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
             msgs.add(amsg);
         }
