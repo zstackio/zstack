@@ -1,5 +1,6 @@
 package org.zstack.header.identity;
 
+import org.zstack.header.identity.role.RolePolicyRefVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
@@ -15,6 +16,9 @@ import java.sql.Timestamp;
 @EntityGraph(
         parents = {
                 @EntityGraph.Neighbour(type = AccountVO.class, myField = "accountUuid", targetField = "uuid")
+        },
+        friends = {
+                @EntityGraph.Neighbour(type = RolePolicyRefVO.class, myField = "uuid", targetField = "policyUuid"),
         }
 )
 public class PolicyVO extends ResourceVO implements OwnedByAccount {

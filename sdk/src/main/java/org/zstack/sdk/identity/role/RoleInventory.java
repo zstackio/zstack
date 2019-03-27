@@ -69,4 +69,12 @@ public class RoleInventory  {
         return this.statements;
     }
 
+    public java.util.List policies;
+    public void setPolicies(java.util.List policies) {
+        this.policies = policies;
+    }
+    public java.util.List getPolicies() {
+        return this.policies;
+    }
+
 }

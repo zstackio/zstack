@@ -46,6 +46,12 @@ public class UpdateLicenseAction extends AbstractAction {
     @Param(required = false)
     public String accessKeySecret;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -87,7 +93,7 @@ public class UpdateLicenseAction extends AbstractAction {
         info.httpMethod = "PUT";
         info.path = "/licenses/mn/{managementNodeUuid}/actions";
         info.needSession = true;
-        info.needPoll = false;
+        info.needPoll = true;
         info.parameterName = "updateLicense";
         return info;
     }

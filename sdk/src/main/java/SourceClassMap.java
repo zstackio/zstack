@@ -139,6 +139,7 @@ public class SourceClassMap {
 			put("org.zstack.header.identity.UserGroupInventory", "org.zstack.sdk.UserGroupInventory");
 			put("org.zstack.header.identity.UserInventory", "org.zstack.sdk.UserInventory");
 			put("org.zstack.header.identity.role.RoleInventory", "org.zstack.sdk.identity.role.RoleInventory");
+			put("org.zstack.header.identity.role.RolePolicyRefInventory", "org.zstack.sdk.identity.role.RolePolicyRefInventory");
 			put("org.zstack.header.identity.role.RolePolicyStatementInventory", "org.zstack.sdk.identity.role.RolePolicyStatementInventory");
 			put("org.zstack.header.identity.role.RoleState", "org.zstack.sdk.identity.role.RoleState");
 			put("org.zstack.header.identity.role.RoleStateEvent", "org.zstack.sdk.identity.role.RoleStateEvent");
@@ -698,6 +699,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.iam2.entity.StateEvent", "org.zstack.iam2.entity.StateEvent");
 			put("org.zstack.sdk.iam2.project.template.Template", "org.zstack.iam2.project.template.Template");
 			put("org.zstack.sdk.identity.role.RoleInventory", "org.zstack.header.identity.role.RoleInventory");
+			put("org.zstack.sdk.identity.role.RolePolicyRefInventory", "org.zstack.header.identity.role.RolePolicyRefInventory");
 			put("org.zstack.sdk.identity.role.RolePolicyStatementInventory", "org.zstack.header.identity.role.RolePolicyStatementInventory");
 			put("org.zstack.sdk.identity.role.RoleState", "org.zstack.header.identity.role.RoleState");
 			put("org.zstack.sdk.identity.role.RoleStateEvent", "org.zstack.header.identity.role.RoleStateEvent");

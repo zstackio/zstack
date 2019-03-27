@@ -1,7 +1,9 @@
 package org.zstack.header.identity.role;
 
 import org.zstack.header.identity.OwnedByAccount;
+import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.vo.BaseResource;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
@@ -13,6 +15,11 @@ import java.util.UUID;
 @Entity
 @Table
 @BaseResource
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = RolePolicyRefVO.class, myField = "uuid", targetField = "roleUuid"),
+        }
+)
 public class RoleVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String name;
@@ -31,6 +38,10 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "roleUuid", insertable = false, updatable = false)
     private Set<RolePolicyStatementVO> statements = new HashSet<>();
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "roleUuid", insertable = false, updatable = false)
+    private Set<RolePolicyRefVO> policies = new HashSet<>();
 
     @Transient
     private String accountUuid;
@@ -74,6 +85,14 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
 
     public void setStatements(Set<RolePolicyStatementVO> statements) {
         this.statements = statements;
+    }
+
+    public Set<RolePolicyRefVO> getPolicies() {
+        return policies;
+    }
+
+    public void setPolicies(Set<RolePolicyRefVO> policies) {
+        this.policies = policies;
     }
 
     public RoleType getType() {
