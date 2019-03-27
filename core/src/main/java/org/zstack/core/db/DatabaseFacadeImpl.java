@@ -57,6 +57,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
     class EntityInfo {
         Field voPrimaryKeyField;
+        boolean compositePrimaryKey = false;
         Field eoPrimaryKeyField;
         Field eoSoftDeleteColumn;
         Class eoClass;
@@ -65,6 +66,11 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
         EntityInfo(Class voClazz) {
             voClass = voClazz;
+
+            if (voClazz.isAnnotationPresent(IdClass.class)) {
+                compositePrimaryKey = true;
+            }
+
             voPrimaryKeyField = FieldUtils.getAnnotatedField(Id.class, voClass);
             DebugUtils.Assert(voPrimaryKeyField != null, String.format("%s has no primary key", voClass));
             voPrimaryKeyField.setAccessible(true);
@@ -83,6 +89,10 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
             buildInheritanceDeletionExtension();
             buildSoftDeletionCascade();
+        }
+
+        public boolean hasCompositePrimaryKey() {
+            return compositePrimaryKey;
         }
 
         private void buildSoftDeletionCascade() {
