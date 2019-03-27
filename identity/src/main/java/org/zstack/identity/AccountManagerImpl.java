@@ -444,18 +444,37 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private void handle(APILogInByAccountMsg msg) {
         APILogInReply reply = new APILogInReply();
 
+        AccountLoginStruct struct = null;
+
         SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
         q.add(AccountVO_.name, Op.EQ, msg.getAccountName());
         q.add(AccountVO_.password, Op.EQ, msg.getPassword());
         AccountVO vo = q.find();
-        if (vo == null) {
+
+        // if accountName/password not exists or specific type is set
+        // use extension to get login structure
+        if (vo == null || (msg.getAccountType() != null && !msg.getAccountType().equals(AccountConstant.LOGIN_TYPE))) {
+            for (AccountLoginExtensionPoint ext : pluginRgty.getExtensionList(AccountLoginExtensionPoint.class)) {
+                struct = ext.getLoginEntry(msg.getAccountName(), msg.getPassword(), msg.getAccountType());
+
+                if (struct != null) {
+                    break;
+                }
+            }
+        } else {
+            struct = new AccountLoginStruct();
+            struct.setAccountUuid(vo.getUuid());
+            struct.setUserUuid(vo.getUuid());
+        }
+
+        if (struct == null) {
             reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR, "wrong account name or password"));
             bus.reply(msg, reply);
             return;
         }
 
         for (AdditionalLoginExtensionPoint exp : pluginRgty.getExtensionList(AdditionalLoginExtensionPoint.class)){
-            if (!exp.authenticate(msg, vo.getUuid(), AccountVO.class.getSimpleName())) {
+            if (!exp.authenticate(msg, struct.getAccountUuid(), AccountVO.class.getSimpleName())) {
                 reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR, "additional authentication failed"));
                 bus.reply(msg, reply);
                 return;

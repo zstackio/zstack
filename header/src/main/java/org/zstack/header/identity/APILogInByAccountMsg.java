@@ -17,6 +17,8 @@ public class APILogInByAccountMsg extends APISessionMessage {
     @APIParam
     private String password;
     @APIParam(required = false)
+    private String accountType;
+    @APIParam(required = false)
     private String captchaUuid;
     @APIParam(required = false)
     private String verifyCode;
@@ -51,6 +53,14 @@ public class APILogInByAccountMsg extends APISessionMessage {
 
     public void setVerifyCode(String verifyCode) {
         this.verifyCode = verifyCode;
+    }
+
+    public String getAccountType() {
+        return accountType;
+    }
+
+    public void setAccountType(String accountType) {
+        this.accountType = accountType;
     }
 
     public static APILogInByAccountMsg __example__() {
