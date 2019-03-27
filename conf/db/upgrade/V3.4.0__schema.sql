@@ -300,7 +300,7 @@ CREATE TABLE `zstack`.`SchedulerJobGroupSchedulerTriggerRefVO` (
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
     PRIMARY KEY  (`schedulerJobGroupUuid`, `schedulerTriggerUuid`),
-    CONSTRAINT `fkSchedulerJobGroupSchedulerTriggerRefVOSchedulerJobVO` FOREIGN KEY (`schedulerJobGroupUuid`) REFERENCES `SchedulerJobGroupVO` (`uuid`),
+    CONSTRAINT `fkSchedulerJobGroupSchedulerTriggerRefVOSchedulerJobGroupVO` FOREIGN KEY (`schedulerJobGroupUuid`) REFERENCES `SchedulerJobGroupVO` (`uuid`),
     CONSTRAINT `fkSchedulerJobGroupSchedulerTriggerRefVOSchedulerTriggerVO` FOREIGN KEY (`schedulerTriggerUuid`) REFERENCES `SchedulerTriggerVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
