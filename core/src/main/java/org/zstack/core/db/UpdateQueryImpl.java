@@ -216,6 +216,7 @@ public class UpdateQueryImpl implements UpdateQuery {
         EntityInfo info = dbf.getEntityInfo(entityClass);
 
         DebugUtils.Assert(entityClass!=null, "entity class cannot be null");
+        DebugUtils.Assert(!info.hasCompositePrimaryKey(), "entity with composite primary key should use hardDelete()");
 
         StringBuilder sb = new StringBuilder(String.format("SELECT vo.%s FROM %s vo", info.voPrimaryKeyField.getName(),
                 entityClass.getSimpleName()));
