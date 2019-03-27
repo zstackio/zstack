@@ -4944,6 +4944,20 @@ public class VmInstanceBase extends AbstractVmInstance {
                 self = dbf.reload(self);
                 extEmitter.failedToStartVm(VmInstanceInventory.valueOf(self), errCode);
                 VmInstanceSpec spec = (VmInstanceSpec) data.get(Params.VmInstanceSpec.toString());
+
+                // update vm state to origin state before checking state
+                // avoid sending redundant vm state change event
+                // refer to: ZSTAC-18174
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        self.setState(originState);
+                        self.setHostUuid(vmHostUuid);
+                        self.setLastHostUuid(q(HostVO.class).eq(HostVO_.uuid, vmLastHostUuid).isExists() ? vmLastHostUuid : null);
+                        self = merge(self);
+                    }
+                }.execute();
+
                 if (HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
                     checkState(spec.getDestHost().getUuid(), new NoErrorCompletion(completion) {
                         @Override
@@ -4954,15 +4968,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
-                new SQLBatch() {
-                    @Override
-                    protected void scripts() {
-                        self.setState(originState);
-                        self.setHostUuid(vmHostUuid);
-                        self.setLastHostUuid(q(HostVO.class).eq(HostVO_.uuid, vmLastHostUuid).isExists() ? vmLastHostUuid : null);
-                        self = merge(self);
-                    }
-                }.execute();
                 completion.fail(errCode);
             }
         }).start();
