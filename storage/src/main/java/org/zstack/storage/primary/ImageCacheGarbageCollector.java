@@ -121,7 +121,7 @@ public class ImageCacheGarbageCollector implements Component, ManagementNodeChan
             private void fail(String error) {
                 ic.setState(ImageCacheState.ready);
                 dbf.update(ic);
-                logger.warn(String.format("failed to garbage collect image cache[id:%s, install:%s] on primary storage[uuid], because %s. Change its state back to ready and try garbage collecting it next time", ic.getId(), ic.getInstallUrl(), ic.getPrimaryStorageUuid(), error));
+                logger.warn(String.format("failed to garbage collect image cache[id:%s, install:%s] on primary storage[uuid:%s], because %s. Change its state back to ready and try garbage collecting it next time", ic.getId(), ic.getInstallUrl(), ic.getPrimaryStorageUuid(), error));
             }
             
             private void success() {
