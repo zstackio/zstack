@@ -18,6 +18,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -25,6 +26,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
+import org.zstack.utils.ssh.SshException;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -119,21 +121,42 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                 String script = "sudo bash /home/vyos/zvrboot.bin\n" +
                         "sudo bash /home/vyos/zvr.bin\n" +
                         "sudo bash /etc/init.d/zstack-virtualrouteragent restart\n";
-                
-                new Ssh().setTimeout(300).scp(
-                        PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
-                        "/home/vyos/zvr.bin"
-                ).scp(
-                        PathUtil.findFileOnClassPath("ansible/zvr/zvrboot.bin", true).getAbsolutePath(),
-                        "/home/vyos/zvrboot.bin"
-                ).scp(
-                        PathUtil.findFileOnClassPath("ansible/zvr/version", true).getAbsolutePath(),
-                        "/home/vyos/zvr/version"
-                ).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
 
-                new Ssh().shell( script
-                ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+                try {
+                    new Ssh().setTimeout(300).scp(
+                            PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
+                            "/home/vyos/zvr.bin"
+                    ).scp(
+                            PathUtil.findFileOnClassPath("ansible/zvr/zvrboot.bin", true).getAbsolutePath(),
+                            "/home/vyos/zvrboot.bin"
+                    ).scp(
+                            PathUtil.findFileOnClassPath("ansible/zvr/version", true).getAbsolutePath(),
+                            "/home/vyos/zvr/version"
+                    ).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
 
+                    new Ssh().shell(script
+                    ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+                } catch (SshException  e ) {
+                    /*
+                    ZSTAC-18352, try again with password when key fail
+                     */
+                    String password = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
+                    new Ssh().setTimeout(300).scp(
+                            PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
+                            "/home/vyos/zvr.bin"
+                    ).scp(
+                            PathUtil.findFileOnClassPath("ansible/zvr/zvrboot.bin", true).getAbsolutePath(),
+                            "/home/vyos/zvrboot.bin"
+                    ).scp(
+                            PathUtil.findFileOnClassPath("ansible/zvr/version", true).getAbsolutePath(),
+                            "/home/vyos/zvr/version"
+                    ).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+
+                    new Ssh().shell(script
+                    ).setTimeout(300).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+
+
+                }
                 trigger.next();
             }
 
