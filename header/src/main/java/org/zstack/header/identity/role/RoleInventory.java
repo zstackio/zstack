@@ -17,6 +17,7 @@ public class RoleInventory {
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private List<RolePolicyStatementInventory> statements;
+    private List<RolePolicyRefInventory> policies;
 
     public static RoleInventory valueOf(RoleVO vo) {
         RoleInventory inv = new RoleInventory();
@@ -28,6 +29,7 @@ public class RoleInventory {
         inv.createDate = vo.getCreateDate();
         inv.lastOpDate = vo.getLastOpDate();
         inv.statements = RolePolicyStatementInventory.valueOf(vo.getStatements());
+        inv.policies = RolePolicyRefInventory.valueOf(vo.getPolicies());
         return inv;
     }
 
@@ -97,5 +99,13 @@ public class RoleInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public List<RolePolicyRefInventory> getPolicies() {
+        return policies;
+    }
+
+    public void setPolicies(List<RolePolicyRefInventory> policies) {
+        this.policies = policies;
     }
 }

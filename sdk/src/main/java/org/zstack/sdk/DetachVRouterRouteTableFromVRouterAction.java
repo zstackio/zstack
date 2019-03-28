@@ -90,11 +90,11 @@ public class DetachVRouterRouteTableFromVRouterAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
+        info.httpMethod = "DELETE";
         info.path = "/vrouter-route-tables/{routeTableUuid}/detach";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

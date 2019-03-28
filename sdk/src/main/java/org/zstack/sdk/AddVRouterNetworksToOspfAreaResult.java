@@ -1,14 +1,14 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.VpcRouterVmInventory;
+
 
 public class AddVRouterNetworksToOspfAreaResult {
-    public VpcRouterVmInventory inventory;
-    public void setInventory(VpcRouterVmInventory inventory) {
-        this.inventory = inventory;
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
+        this.inventories = inventories;
     }
-    public VpcRouterVmInventory getInventory() {
-        return this.inventory;
+    public java.util.List getInventories() {
+        return this.inventories;
     }
 
 }

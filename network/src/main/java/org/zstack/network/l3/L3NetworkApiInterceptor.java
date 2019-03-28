@@ -157,7 +157,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICheckIpAvailabilityMsg msg) {
-        if (!NetworkUtils.isIpv4Address(msg.getIp())) {
+        if (!NetworkUtils.isValidIPAddress(msg.getIp())) {
             throw new ApiMessageInterceptionException(argerr("invalid IP[%s]", msg.getIp()));
         }
     }

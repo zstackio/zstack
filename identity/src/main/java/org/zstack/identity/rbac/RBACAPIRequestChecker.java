@@ -184,7 +184,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                                 p.getUuid(), statement, jsonMessage()));
                     }
 
-                    throw new OperationFailureException(operr("the operation is denied by the policy[uuid:%s]", p.getUuid()));
+                    throw new OperationFailureException(operr("the operation is denied by the policy[name:%s uuid:%s]", p.getName(), p.getUuid()));
                 }
 
                 Entity entity = Entity.getEntity(rbacEntity.getApiMessage().getClass());
@@ -197,7 +197,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                                 logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] denies the API:\n%s", p.getName(),
                                         p.getUuid(), statement, jsonMessage()));
                             }
-                            throw new OperationFailureException(operr("the operation is denied by the policy[uuid:%s], field[%s] is not permitted to set", p.getUuid(), fname));
+                            throw new OperationFailureException(operr("the operation is denied by the policy[name:%s, uuid:%s], field[%s] is not permitted to set", p.getName(), p.getUuid(), fname));
                         }
                     } catch (IllegalAccessException e) {
                         throw new CloudRuntimeException(e);

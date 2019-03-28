@@ -39,10 +39,7 @@ import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceFilter;
-import org.zstack.network.service.userdata.UserdataBackend;
-import org.zstack.network.service.userdata.UserdataConstant;
-import org.zstack.network.service.userdata.UserdataGlobalProperty;
-import org.zstack.network.service.userdata.UserdataStruct;
+import org.zstack.network.service.userdata.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -492,9 +489,11 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     @Override
     public void applyUserdata(final UserdataStruct struct, final Completion completion) {
-        if (struct.getUserdataList() == null || struct.getUserdataList().isEmpty()) {
-            completion.success();
-            return;
+        if (!UserdataGlobalConfig.OPEN_USERDATA_SERVICE_BY_DEFAULT.value(Boolean.class)) {
+            if (struct.getUserdataList() == null || struct.getUserdataList().isEmpty()) {
+                completion.success();
+                return;
+            }
         }
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();

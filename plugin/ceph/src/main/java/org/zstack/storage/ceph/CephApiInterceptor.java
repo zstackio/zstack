@@ -90,7 +90,7 @@ public class CephApiInterceptor implements ApiMessageInterceptor {
         } else if (duplicatePoolUuid != null && !msg.isCreate()) {
             throw new ApiMessageInterceptionException(argerr(
                     "Ceph pool[uuid:%s] with this name is already added into ZStack and used elsewhere, cannot reuse the ceph pool.",
-                    msg.getPoolName(), duplicatePoolUuid));
+                    duplicatePoolUuid));
         }
 
     }

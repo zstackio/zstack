@@ -2,6 +2,7 @@ package org.zstack.header.identity.role;
 
 import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.EntityGraph;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -10,6 +11,12 @@ import java.sql.Timestamp;
 @Table
 @Entity
 @IdClass(RolePolicyRefVO.CompositeID.class)
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = RoleVO.class, myField = "roleUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = PolicyVO.class, myField = "policyUuid", targetField = "uuid"),
+        }
+)
 public class RolePolicyRefVO {
     static class CompositeID implements Serializable {
         private String roleUuid;
