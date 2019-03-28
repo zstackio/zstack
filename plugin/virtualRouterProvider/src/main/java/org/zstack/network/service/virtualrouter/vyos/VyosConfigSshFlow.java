@@ -25,6 +25,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.ssh.Ssh;
+import org.zstack.utils.ssh.SshException;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -111,6 +112,7 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
 
             private void configAgentSsh() {
                 Boolean  passwordAuth = VirtualRouterGlobalConfig.SSH_LOGIN_PASSWORD.value(Boolean.class);
+                String password = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
                 String script;
                 if (!passwordAuth) {
                     script = "sudo sed -i \"/PasswordAuthentication /c PasswordAuthentication no\" /etc/ssh/sshd_config\n"+
@@ -119,9 +121,18 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
                     script = " sudo sed -i \"/PasswordAuthentication /c PasswordAuthentication yes\" /etc/ssh/sshd_config\n"+
                             "sudo service ssh restart\n";
                 }
-                new Ssh().shell( script
-                ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
-                
+                script = String.format("echo \"%s\" > .ssh/authorized_keys\n %s", asf.getPublicKey(), script);
+
+                try {
+                    new Ssh().shell(script
+                    ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+                } catch (SshException e ) {
+                     /*
+                    ZSTAC-18352, try again with password when key fail
+                     */
+                    new Ssh().shell(script
+                    ).setTimeout(300).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
+                }
                 trigger.next();
 
             }
