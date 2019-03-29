@@ -12,10 +12,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.storage.primary.APIListPrimaryStorageMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.storage.primary.APIDeletePrimaryStorageMsg</name>
     </message>
 
@@ -25,14 +21,6 @@
 
     <message>
         <name>org.zstack.header.storage.primary.APIAttachPrimaryStorageToClusterMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.storage.primary.APISearchPrimaryStorageMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.storage.primary.APIGetPrimaryStorageMsg</name>
     </message>
 
     <message>

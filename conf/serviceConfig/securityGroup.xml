@@ -8,10 +8,6 @@
     </message>
     
     <message>
-        <name>org.zstack.network.securitygroup.APIListSecurityGroupMsg</name>
-    </message>
-    
-    <message>
         <name>org.zstack.network.securitygroup.APIAddVmNicToSecurityGroupMsg</name>
     </message>
     
@@ -25,10 +21,6 @@
     
     <message>
         <name>org.zstack.network.securitygroup.APIDeleteVmNicFromSecurityGroupMsg</name>
-    </message>
-    
-    <message>
-        <name>org.zstack.network.securitygroup.APIListVmNicInSecurityGroupMsg</name>
     </message>
     
     <message>

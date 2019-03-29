@@ -6,11 +6,7 @@
     <message>
         <name>org.zstack.header.identity.APICreateAccountMsg</name>
     </message>
-    
-    <message>
-        <name>org.zstack.header.identity.APIListAccountMsg</name>
-    </message>
-    
+
     <message>
         <name>org.zstack.header.identity.APIUpdateAccountMsg</name>
     </message>

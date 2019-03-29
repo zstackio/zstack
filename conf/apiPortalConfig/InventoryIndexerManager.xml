@@ -66,10 +66,6 @@
 	</message>
 	
 	<message>
-		<class>org.zstack.header.search.APISearchGenerateSqlTriggerMsg</class>
-	</message>
-	
-	<message>
 		<class>org.zstack.header.search.APICreateSearchIndexMsg</class>
 	</message>
 	

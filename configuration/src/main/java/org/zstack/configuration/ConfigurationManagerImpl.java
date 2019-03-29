@@ -146,20 +146,8 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         try {
             if (msg instanceof APICreateInstanceOfferingMsg) {
                 handle((APICreateInstanceOfferingMsg) msg);
-            } else if (msg instanceof APIListInstanceOfferingMsg) {
-                handle((APIListInstanceOfferingMsg) msg);
             } else if (msg instanceof APICreateDiskOfferingMsg) {
                 handle((APICreateDiskOfferingMsg) msg);
-            } else if (msg instanceof APIListDiskOfferingMsg) {
-                handle((APIListDiskOfferingMsg) msg);
-            } else if (msg instanceof APISearchInstanceOfferingMsg) {
-                handle((APISearchInstanceOfferingMsg) msg);
-            } else if (msg instanceof APISearchDiskOfferingMsg) {
-                handle((APISearchDiskOfferingMsg) msg);
-            } else if (msg instanceof APIGetInstanceOfferingMsg) {
-                handle((APIGetInstanceOfferingMsg) msg);
-            } else if (msg instanceof APIGetDiskOfferingMsg) {
-                handle((APIGetDiskOfferingMsg) msg);
             } else if (msg instanceof APIGenerateApiJsonTemplateMsg) {
                 handle((APIGenerateApiJsonTemplateMsg) msg);
             } else if (msg instanceof APIGenerateTestLinkDocumentMsg) {
@@ -172,36 +160,12 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                 handle((APIGenerateSqlForeignKeyMsg) msg);
             } else if (msg instanceof APIGenerateSqlIndexMsg) {
                 handle((APIGenerateSqlIndexMsg) msg);
-            } else if (msg instanceof APIGetGlobalPropertyMsg) {
-                handle((APIGetGlobalPropertyMsg) msg);
             } else {
                 bus.dealWithUnknownMessage(msg);
             }
         } catch (IOException e) {
             throw new CloudRuntimeException(e);
         }
-    }
-
-    private void handle(APIGetGlobalPropertyMsg msg) {
-        /*
-        Properties p = System.getProperties();
-        Enumeration keys = p.keys();
-        List<String> pps = new ArrayList<String>();
-        while (keys.hasMoreElements()) {
-            String key = (String)keys.nextElement();
-            String value = (String)p.get(key);
-            pps.add(String.format("%s = %s", key, value));
-        }
-        */
-
-        List<String> pps = new ArrayList<>();
-        for (Map.Entry<String, String> e : Platform.getGlobalProperties().entrySet()) {
-            pps.add(String.format("%s: %s", e.getKey(), e.getValue()));
-        }
-
-        APIGetGlobalPropertyReply reply = new APIGetGlobalPropertyReply();
-        reply.setProperties(pps);
-        bus.reply(msg, reply);
     }
 
     private void handle(APIGenerateSqlIndexMsg msg) {
@@ -272,22 +236,6 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
 
     private void handle(APIGenerateGroovyClassMsg msg) {
         generateGroovyClasses(msg);
-    }
-
-    private void handle(APIGetDiskOfferingMsg msg) {
-        GetQuery q = new GetQuery();
-        String res = q.getAsString(msg, DiskOfferingInventory.class);
-        APIGetDiskOfferingReply reply = new APIGetDiskOfferingReply();
-        reply.setInventory(res);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIGetInstanceOfferingMsg msg) {
-        GetQuery q = new GetQuery();
-        String res = q.getAsString(msg, InstanceOfferingInventory.class);
-        APIGetInstanceOfferingReply reply = new APIGetInstanceOfferingReply();
-        reply.setInventory(res);
-        bus.reply(msg, reply);
     }
 
     private String whiteSpace(int num) {
@@ -879,31 +827,6 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         generatedPythonClassName = null;
     }
 
-    private void handle(APISearchDiskOfferingMsg msg) {
-        SearchQuery<DiskOfferingInventory> query = SearchQuery.create(msg, DiskOfferingInventory.class);
-        String content = query.listAsString();
-        APISearchDiskOfferingReply reply = new APISearchDiskOfferingReply();
-        reply.setContent(content);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APISearchInstanceOfferingMsg msg) {
-        SearchQuery<InstanceOfferingInventory> query = SearchQuery.create(msg, InstanceOfferingInventory.class);
-        query.add("visible", SearchOp.AND_EQ, Boolean.TRUE.toString());
-        String content = query.listAsString();
-        APISearchInstanceOfferingReply reply = new APISearchInstanceOfferingReply();
-        reply.setContent(content);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIListInstanceOfferingMsg msg) {
-        List<InstanceOfferingVO> vos = dl.listByApiMessage(msg, InstanceOfferingVO.class);
-        List<InstanceOfferingInventory> invs = InstanceOfferingInventory.valueOf(vos);
-        APIListInstanceOfferingReply reply = new APIListInstanceOfferingReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
-    }
-
     private void handle(APICreateInstanceOfferingMsg msg) {
         APICreateInstanceOfferingEvent evt = new APICreateInstanceOfferingEvent(msg.getId());
 
@@ -943,14 +866,6 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         evt.setInventory(inv);
         bus.publish(evt);
         logger.debug("Successfully added instance offering: " + printer.print(inv));
-    }
-
-    private void handle(APIListDiskOfferingMsg msg) {
-        List<DiskOfferingVO> vos = dl.listByApiMessage(msg, DiskOfferingVO.class);
-        List<DiskOfferingInventory> invs = DiskOfferingInventory.valueOf(vos);
-        APIListDiskOfferingReply reply = new APIListDiskOfferingReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
     }
 
     @Deferred

@@ -74,16 +74,6 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateL2NetworkMsg) {
             handle((APICreateL2NetworkMsg)msg);
-        } else if (msg instanceof APIListL2NetworkMsg) {
-            handle((APIListL2NetworkMsg) msg);
-        } else if (msg instanceof APISearchL2NetworkMsg) {
-        	handle((APISearchL2NetworkMsg)msg);
-        } else if (msg instanceof APISearchL2VlanNetworkMsg) {
-            handle((APISearchL2VlanNetworkMsg)msg);
-        } else if (msg instanceof APIGetL2NetworkMsg) {
-            handle((APIGetL2NetworkMsg) msg);
-        } else if (msg instanceof APIGetL2VlanNetworkMsg) {
-            handle((APIGetL2VlanNetworkMsg)msg);
         } else if (msg instanceof APIGetL2NetworkTypesMsg) {
             handle((APIGetL2NetworkTypesMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
@@ -100,39 +90,6 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         reply.setL2NetworkTypes(types);
         bus.reply(msg, reply);
     }
-
-    private void handle(APIGetL2VlanNetworkMsg msg) {
-        GetQuery q = new GetQuery();
-        String res = q.getAsString(msg, L2VlanNetworkInventory.class);
-        APIGetL2VlanNetworkReply reply = new APIGetL2VlanNetworkReply();
-        reply.setInventory(res);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APISearchL2VlanNetworkMsg msg) {
-        SearchQuery<L2VlanNetworkInventory> sq = SearchQuery.create(msg, L2VlanNetworkInventory.class);
-        String content = sq.listAsString();
-        APISearchL2VlanNetworkReply reply = new APISearchL2VlanNetworkReply();
-        reply.setContent(content);
-        bus.reply(msg, reply);
-        
-    }
-
-    private void handle(APIGetL2NetworkMsg msg) {
-        GetQuery q = new GetQuery();
-        String res = q.getAsString(msg, L2NetworkInventory.class);
-        APIGetL2NetworkReply reply = new APIGetL2NetworkReply();
-        reply.setInventory(res);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APISearchL2NetworkMsg msg) {
-    	SearchQuery<L2NetworkInventory> sq = SearchQuery.create(msg, L2NetworkInventory.class);
-    	String content = sq.listAsString();
-    	APISearchL2NetworkReply reply = new APISearchL2NetworkReply();
-    	reply.setContent(content);
-    	bus.reply(msg, reply);
-	}
 
 	private void passThrough(L2NetworkMessage msg) {
         Message amsg = (Message) msg;
@@ -151,14 +108,6 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         L2NetworkFactory factory = getL2NetworkFactory(L2NetworkType.valueOf(vo.getType()));
         L2Network nw = factory.getL2Network(vo);
         nw.handleMessage(amsg);
-    }
-    
-    private void handle(APIListL2NetworkMsg msg) {
-        List<L2NetworkVO> vos = dl.listByApiMessage(msg, L2NetworkVO.class);
-        List<L2NetworkInventory> invs = L2NetworkInventory.valueOf(vos);
-        APIListL2NetworkReply reply = new APIListL2NetworkReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
     }
 
     private void handle(APICreateL2NetworkMsg msg) {

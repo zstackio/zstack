@@ -57,45 +57,11 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
     public void handleMessage(Message msg) {
         if (msg instanceof APIUpdateGlobalConfigMsg) {
             handle((APIUpdateGlobalConfigMsg) msg);
-        } else if (msg instanceof APIListGlobalConfigMsg) {
-            handle((APIListGlobalConfigMsg) msg);
-        } else if (msg instanceof APIGetGlobalConfigMsg) {
-            handle((APIGetGlobalConfigMsg) msg);
-        } else if (msg instanceof APIResetGlobalConfigMsg) {
+        }else if (msg instanceof APIResetGlobalConfigMsg) {
             handle((APIResetGlobalConfigMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
-    }
-
-    private void handle(APIGetGlobalConfigMsg msg) {
-        GlobalConfig c = allConfig.get(msg.getIdentity());
-        APIGetGlobalConfigReply reply = new APIGetGlobalConfigReply();
-        if (c == null) {
-            ErrorCode err = argerr("unable to find GlobalConfig[category:%s, name:%s]", msg.getCategory(), msg.getName());
-            reply.setError(err);
-        } else {
-            GlobalConfigInventory inv = GlobalConfigInventory.valueOf(c);
-            reply.setInventory(inv);
-        }
-        bus.reply(msg, reply);
-    }
-
-    private List<GlobalConfigVO> listGlobalConfig(APIListGlobalConfigMsg msg) {
-        return dbf.listAll(msg.getOffset(), msg.getLength(), GlobalConfigVO.class);
-    }
-
-    private void handle(APIListGlobalConfigMsg msg) {
-        APIListGlobalConfigReply reply = new APIListGlobalConfigReply();
-
-        List<GlobalConfigVO> vos = listGlobalConfig(msg);
-        GlobalConfigInventory[] invs = new GlobalConfigInventory[vos.size()];
-        for (int i = 0; i < vos.size(); i++) {
-            invs[i] = GlobalConfigInventory.valueOf(vos.get(i));
-        }
-
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
     }
 
     private void handle(APIResetGlobalConfigMsg msg) {

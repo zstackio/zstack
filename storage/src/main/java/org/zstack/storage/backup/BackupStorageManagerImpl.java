@@ -83,14 +83,6 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
         try {
             if (msg instanceof APIAddBackupStorageMsg) {
                 handle((APIAddBackupStorageMsg) msg);
-            } else if (msg instanceof APIListBackupStorageMsg) {
-                handle((APIListBackupStorageMsg) msg);
-            } else if (msg instanceof APISearchBackupStorageMsg) {
-                handle((APISearchBackupStorageMsg) msg);
-            } else if (msg instanceof APIGetBackupStorageMsg) {
-                handle((APIGetBackupStorageMsg) msg);
-            } else if (msg instanceof APIGetBackupStorageTypesMsg) {
-                handle((APIGetBackupStorageTypesMsg) msg);
             } else if (msg instanceof APIGetBackupStorageCapacityMsg) {
                 handle((APIGetBackupStorageCapacityMsg) msg);
             } else if (msg instanceof BackupStorageMessage) {
@@ -139,30 +131,6 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
         APIGetBackupStorageTypesReply reply = new APIGetBackupStorageTypesReply();
         types.addAll(BackupStorageType.getAllTypeNames());
         reply.setBackupStorageTypes(types);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIGetBackupStorageMsg msg) {
-        GetQuery q = new GetQuery();
-        String res = q.getAsString(msg, BackupStorageInventory.class);
-        APIGetBackupStorageReply reply = new APIGetBackupStorageReply();
-        reply.setInventory(res);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APISearchBackupStorageMsg msg) {
-        SearchQuery<BackupStorageInventory> sq = SearchQuery.create(msg, BackupStorageInventory.class);
-        String content = sq.listAsString();
-        APISearchBackupStorageReply reply = new APISearchBackupStorageReply();
-        reply.setContent(content);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIListBackupStorageMsg msg) {
-        List<BackupStorageVO> vos = dl.listByApiMessage(msg, BackupStorageVO.class);
-        List<BackupStorageInventory> invs = BackupStorageInventory.valueOf(vos);
-        APIListBackupStorageReply reply = new APIListBackupStorageReply();
-        reply.setInventories(invs);
         bus.reply(msg, reply);
     }
 

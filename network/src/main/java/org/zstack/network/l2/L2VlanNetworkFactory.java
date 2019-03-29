@@ -76,20 +76,9 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
     }
 
     private void handleApiMessage(APIMessage msg) {
-        if (msg instanceof APIListL2VlanNetworkMsg) {
-            handle((APIListL2VlanNetworkMsg)msg);
-        } else {
-            bus.dealWithUnknownMessage(msg);
-        }
+        bus.dealWithUnknownMessage(msg);
     }
-    
-    private void handle(APIListL2VlanNetworkMsg msg) {
-        List<L2VlanNetworkVO> vos = dbf.listByApiMessage(msg, L2VlanNetworkVO.class);
-        List<L2VlanNetworkInventory> invs = L2VlanNetworkInventory.valueOf1(vos);
-        APIListL2VlanNetworkReply reply = new APIListL2VlanNetworkReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
-    }
+
 
     @Override
     public String getId() {

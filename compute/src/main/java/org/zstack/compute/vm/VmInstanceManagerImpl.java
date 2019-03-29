@@ -208,14 +208,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateVmInstanceMsg) {
             handle((APICreateVmInstanceMsg) msg);
-        } else if (msg instanceof APIListVmInstanceMsg) {
-            handle((APIListVmInstanceMsg) msg);
-        } else if (msg instanceof APISearchVmInstanceMsg) {
-            handle((APISearchVmInstanceMsg) msg);
-        } else if (msg instanceof APIGetVmInstanceMsg) {
-            handle((APIGetVmInstanceMsg) msg);
-        } else if (msg instanceof APIListVmNicMsg) {
-            handle((APIListVmNicMsg) msg);
         } else if(msg instanceof APICreateVmNicMsg) {
             handle((APICreateVmNicMsg) msg);
         } else if (msg instanceof APIDeleteVmNicMsg) {
@@ -676,14 +668,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         });
     }
 
-    private void handle(APIListVmNicMsg msg) {
-        List<VmNicVO> vos = dbf.listByApiMessage(msg, VmNicVO.class);
-        List<VmNicInventory> invs = VmNicInventory.valueOf(vos);
-        APIListVmNicReply reply = new APIListVmNicReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
-    }
-
     private void handle(APICreateVmNicMsg msg) {
         final APICreateVmNicEvent evt = new APICreateVmNicEvent(msg.getId());
         VmNicInventory nic = new VmNicInventory();
@@ -806,35 +790,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 bus.publish(evt);
             }
         }).start();
-    }
-
-    private void handle(APIGetVmInstanceMsg msg) {
-        SearchQuery<VmInstanceInventory> query = new SearchQuery(VmInstanceInventory.class);
-        query.addAccountAsAnd(msg);
-        query.add("uuid", SearchOp.AND_EQ, msg.getUuid());
-        List<VmInstanceInventory> invs = query.list();
-        APIGetVmInstanceReply reply = new APIGetVmInstanceReply();
-        if (!invs.isEmpty()) {
-            reply.setInventory(JSONObjectUtil.toJsonString(invs.get(0)));
-        }
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APISearchVmInstanceMsg msg) {
-        SearchQuery<VmInstanceInventory> query = SearchQuery.create(msg, VmInstanceInventory.class);
-        query.addAccountAsAnd(msg);
-        String content = query.listAsString();
-        APISearchVmInstanceReply reply = new APISearchVmInstanceReply();
-        reply.setContent(content);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIListVmInstanceMsg msg) {
-        List<VmInstanceVO> vos = dl.listByApiMessage(msg, VmInstanceVO.class);
-        List<VmInstanceInventory> invs = VmInstanceInventory.valueOf(vos);
-        APIListVmInstanceReply reply = new APIListVmInstanceReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
     }
 
     private void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<VmInstanceInventory> completion) {

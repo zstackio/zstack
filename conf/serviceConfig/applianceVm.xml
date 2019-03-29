@@ -7,8 +7,4 @@
         <serviceId>query</serviceId>
     </message>
 
-    <message>
-        <name>org.zstack.appliancevm.APIListApplianceVmMsg</name>
-    </message>
-
 </service>

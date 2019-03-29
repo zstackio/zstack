@@ -3,7 +3,6 @@ package org.zstack.test;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.appliancevm.APIListApplianceVmMsg;
 import org.zstack.appliancevm.APIListApplianceVmReply;
 import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.core.MessageCommandRecorder;
@@ -11,7 +10,6 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.componentloader.ComponentLoader;
-import org.zstack.core.config.APIListGlobalConfigMsg;
 import org.zstack.core.config.APIListGlobalConfigReply;
 import org.zstack.core.config.GlobalConfigInventory;
 import org.zstack.core.db.DatabaseFacade;
@@ -356,23 +354,25 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<L2VlanNetworkInventory> listL2VlanNetworks(List<String> uuids) throws ApiSenderException {
-        APIListL2VlanNetworkMsg msg = new APIListL2VlanNetworkMsg();
+        /*APIListL2VlanNetworkMsg msg = new APIListL2VlanNetworkMsg();
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListL2VlanNetworkReply reply = sender.call(msg, APIListL2VlanNetworkReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public List<ZoneInventory> listZones(List<String> uuids) throws ApiSenderException {
-        APIListZonesMsg msg = new APIListZonesMsg(uuids);
+        /*APIListZonesMsg msg = new APIListZonesMsg(uuids);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListZonesReply reply = sender.call(msg, APIListZonesReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public void deleteZone(String uuid) throws ApiSenderException {
@@ -430,7 +430,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<ClusterInventory> listClusters(int offset, int length, List<String> uuids) throws ApiSenderException {
-        APIListClusterMsg msg = new APIListClusterMsg(uuids);
+        /*APIListClusterMsg msg = new APIListClusterMsg(uuids);
         msg.setSession(adminSession);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setOffset(offset);
@@ -438,7 +438,8 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListClusterReply reply = sender.call(msg, APIListClusterReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public ClusterInventory changeClusterState(String uuid, ClusterStateEvent evt) throws ApiSenderException {
@@ -549,7 +550,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<PrimaryStorageInventory> listPrimaryStorage(int offset, int length, List<String> uuids) throws ApiSenderException {
-        APIListPrimaryStorageMsg msg = new APIListPrimaryStorageMsg(uuids);
+        /*APIListPrimaryStorageMsg msg = new APIListPrimaryStorageMsg(uuids);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setSession(adminSession);
         msg.setOffset(offset);
@@ -557,7 +558,8 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListPrimaryStorageReply reply = sender.call(msg, APIListPrimaryStorageReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public PrimaryStorageInventory changePrimaryStorageState(String uuid, PrimaryStorageStateEvent event) throws ApiSenderException {
@@ -768,7 +770,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<InstanceOfferingInventory> listInstanceOffering(int offset, int length, List<String> uuids) throws ApiSenderException {
-        APIListInstanceOfferingMsg msg = new APIListInstanceOfferingMsg(uuids);
+        /*APIListInstanceOfferingMsg msg = new APIListInstanceOfferingMsg(uuids);
         msg.setSession(adminSession);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setOffset(offset);
@@ -776,7 +778,8 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListInstanceOfferingReply reply = sender.call(msg, APIListInstanceOfferingReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public void deleteInstanceOffering(String uuid) throws ApiSenderException {
@@ -808,7 +811,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<DiskOfferingInventory> listDiskOffering(int offset, int length, List<String> uuids) throws ApiSenderException {
-        APIListDiskOfferingMsg msg = new APIListDiskOfferingMsg(uuids);
+        /*APIListDiskOfferingMsg msg = new APIListDiskOfferingMsg(uuids);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setSession(adminSession);
         msg.setOffset(offset);
@@ -816,7 +819,8 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListDiskOfferingReply reply = sender.call(msg, APIListDiskOfferingReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public void deleteDiskOffering(String uuid) throws ApiSenderException {
@@ -886,7 +890,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public GlobalConfigInventory[] listGlobalConfig(int offset, int length, Long[] ids) throws ApiSenderException {
-        APIListGlobalConfigMsg msg = new APIListGlobalConfigMsg();
+        /*APIListGlobalConfigMsg msg = new APIListGlobalConfigMsg();
         List<Long> idArr = new ArrayList<Long>();
         if (ids != null) {
             Collections.addAll(idArr, ids);
@@ -899,7 +903,8 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListGlobalConfigReply reply = sender.call(msg, APIListGlobalConfigReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public GlobalConfigInventory updateGlobalConfig(GlobalConfigInventory inv) throws ApiSenderException {
@@ -933,7 +938,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<L2NetworkInventory> listL2Network(int offset, int length, List<String> uuids) throws ApiSenderException {
-        APIListL2NetworkMsg msg = new APIListL2NetworkMsg(uuids);
+        /*APIListL2NetworkMsg msg = new APIListL2NetworkMsg(uuids);
         msg.setSession(adminSession);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setOffset(offset);
@@ -941,7 +946,8 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListL2NetworkReply reply = sender.call(msg, APIListL2NetworkReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public void deleteL2Network(String uuid) throws ApiSenderException {
@@ -1037,7 +1043,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<L3NetworkInventory> listL3Network(int offset, int length, List<String> uuids) throws ApiSenderException {
-        APIListL3NetworkMsg msg = new APIListL3NetworkMsg(uuids);
+        /*APIListL3NetworkMsg msg = new APIListL3NetworkMsg(uuids);
         msg.setSession(adminSession);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setOffset(offset);
@@ -1045,7 +1051,8 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListL3NetworkReply reply = sender.call(msg, APIListL3NetworkReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public APIGetIpAddressCapacityReply getIpAddressCapacity(List<String> iprUuids, List<String> l3Uuids, List<String> zoneUuids) throws ApiSenderException {
@@ -1180,7 +1187,7 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<IpRangeInventory> listIpRange(int offset, int length, List<String> uuids) throws ApiSenderException {
-        APIListIpRangeMsg msg = new APIListIpRangeMsg(uuids);
+        /*APIListIpRangeMsg msg = new APIListIpRangeMsg(uuids);
         msg.setSession(adminSession);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setOffset(offset);
@@ -1188,7 +1195,8 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListIpRangeReply reply = sender.call(msg, APIListIpRangeReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public void deleteIpRange(String uuid) throws ApiSenderException {
@@ -1524,13 +1532,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<VmInstanceInventory> listVmInstances(List<String> uuids) throws ApiSenderException {
-        APIListVmInstanceMsg msg = new APIListVmInstanceMsg(uuids);
+        /*APIListVmInstanceMsg msg = new APIListVmInstanceMsg(uuids);
         msg.setSession(adminSession);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListVmInstanceReply reply = sender.call(msg, APIListVmInstanceReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public VmInstanceInventory stopVmInstance(String uuid) throws ApiSenderException {
@@ -1887,23 +1896,25 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<ManagementNodeInventory> listManagementNodes() throws ApiSenderException {
-        APIListManagementNodeMsg msg = new APIListManagementNodeMsg();
+        /*APIListManagementNodeMsg msg = new APIListManagementNodeMsg();
         msg.setSession(adminSession);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListManagementNodeReply reply = sender.call(msg, APIListManagementNodeReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public List<AccountInventory> listAccount(List<String> uuids) throws ApiSenderException {
-        APIListAccountMsg msg = new APIListAccountMsg(uuids);
+        /*APIListAccountMsg msg = new APIListAccountMsg(uuids);
         msg.setSession(adminSession);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListAccountReply reply = sender.call(msg, APIListAccountReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public AccountInventory resetAccountPassword(String uuid, String password, SessionInventory session) throws ApiSenderException {
@@ -2097,11 +2108,11 @@ public class Api implements CloudBusEventListener {
     }
 
     public void generateSqlTrigger() throws ApiSenderException {
-        APISearchGenerateSqlTriggerMsg msg = new APISearchGenerateSqlTriggerMsg();
+        /*APISearchGenerateSqlTriggerMsg msg = new APISearchGenerateSqlTriggerMsg();
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
-        sender.send(msg, APISearchGenerateSqlTriggerEvent.class);
+        sender.send(msg, APISearchGenerateSqlTriggerEvent.class);*/
     }
 
     public String search(APISearchMessage msg) throws ApiSenderException {
@@ -2202,13 +2213,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<NetworkServiceProviderInventory> listNetworkServiceProvider(List<String> uuids) throws ApiSenderException {
-        APIListNetworkServiceProviderMsg msg = new APIListNetworkServiceProviderMsg();
+        /*APIListNetworkServiceProviderMsg msg = new APIListNetworkServiceProviderMsg();
         msg.setSession(adminSession);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListNetworkServiceProviderReply reply = sender.call(msg, APIListNetworkServiceProviderReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public L3NetworkInventory addDns(String l3NetworkUuid, String dns) throws ApiSenderException {
@@ -2495,25 +2507,27 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<VmNicInventory> listVmNic(List<String> uuids) throws ApiSenderException {
-        APIListVmNicMsg msg = new APIListVmNicMsg();
+        /*APIListVmNicMsg msg = new APIListVmNicMsg();
         msg.setSession(adminSession);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setUuids(uuids);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListVmNicReply reply = sender.call(msg, APIListVmNicReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public List<SecurityGroupInventory> listSecurityGroup(List<String> uuids) throws ApiSenderException {
-        APIListSecurityGroupMsg msg = new APIListSecurityGroupMsg();
+        /*APIListSecurityGroupMsg msg = new APIListSecurityGroupMsg();
         msg.setSession(adminSession);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setUuids(uuids);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListSecurityGroupReply reply = sender.call(msg, APIListSecurityGroupReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
 
@@ -2664,13 +2678,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<PortForwardingRuleInventory> listPortForwardingRules(List<String> uuids) throws ApiSenderException {
-        APIListPortForwardingRuleMsg msg = new APIListPortForwardingRuleMsg(uuids);
+        /*APIListPortForwardingRuleMsg msg = new APIListPortForwardingRuleMsg(uuids);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListPortForwardingRuleReply reply = sender.call(msg, APIListPortForwardingRuleReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public List<VmNicInventory> getPortForwardingAttachableNics(String ruleUuid) throws ApiSenderException {
@@ -2688,13 +2703,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<VmNicSecurityGroupRefInventory> listVmNicSecurityGroupRef(List<String> uuids) throws ApiSenderException {
-        APIListVmNicInSecurityGroupMsg msg = new APIListVmNicInSecurityGroupMsg();
+        /*APIListVmNicInSecurityGroupMsg msg = new APIListVmNicInSecurityGroupMsg();
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListVmNicInSecurityGroupReply reply = sender.call(msg, APIListVmNicInSecurityGroupReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public List<String> getHypervisorTypes() throws ApiSenderException {
@@ -2960,7 +2976,7 @@ public class Api implements CloudBusEventListener {
 
 
     public List<VolumeSnapshotTreeInventory> getVolumeSnapshotTree(String treeUuid, String volumeUuid) throws ApiSenderException {
-        APIGetVolumeSnapshotTreeMsg msg = new APIGetVolumeSnapshotTreeMsg();
+        /*APIGetVolumeSnapshotTreeMsg msg = new APIGetVolumeSnapshotTreeMsg();
         msg.setVolumeUuid(volumeUuid);
         msg.setTreeUuid(treeUuid);
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
@@ -2968,7 +2984,8 @@ public class Api implements CloudBusEventListener {
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIGetVolumeSnapshotTreeReply reply = sender.call(msg, APIGetVolumeSnapshotTreeReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public VolumeSnapshotInventory backupSnapshot(String snapshotUuid) throws ApiSenderException {
@@ -3121,13 +3138,14 @@ public class Api implements CloudBusEventListener {
     }
 
     public List<ApplianceVmInventory> listApplianceVm() throws ApiSenderException {
-        APIListApplianceVmMsg msg = new APIListApplianceVmMsg();
+        /*APIListApplianceVmMsg msg = new APIListApplianceVmMsg();
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         msg.setSession(adminSession);
         ApiSender sender = new ApiSender();
         sender.setTimeout(timeout);
         APIListApplianceVmReply reply = sender.call(msg, APIListApplianceVmReply.class);
-        return reply.getInventories();
+        return reply.getInventories();*/
+        return null;
     }
 
     public int getTimeout() {

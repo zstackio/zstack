@@ -20,30 +20,10 @@ public class SftpBackupStorageManagerImpl extends AbstractService implements Sft
 	@Override
     @MessageSafe
 	public void handleMessage(Message msg) {
-        if (msg instanceof APISearchSftpBackupStorageMsg) {
-            handle((APISearchSftpBackupStorageMsg)msg);
-        } else if (msg instanceof APIGetSftpBackupStorageMsg) {
-            handle((APIGetSftpBackupStorageMsg)msg);
-        } else {
-            bus.dealWithUnknownMessage(msg);
-        }
+		bus.dealWithUnknownMessage(msg);
 	}
 
-    private void handle(APIGetSftpBackupStorageMsg msg) {
-	    GetQuery q = new GetQuery();
-	    String res = q.getAsString(msg, SftpBackupStorageInventory.class);
-	    APIGetSftpBackupStorageReply reply = new APIGetSftpBackupStorageReply();
-	    reply.setInventory(res);
-	    bus.reply(msg, reply);
-    }
 
-    private void handle(APISearchSftpBackupStorageMsg msg) {
-		SearchQuery<SftpBackupStorageInventory> sq = SearchQuery.create(msg, SftpBackupStorageInventory.class);
-		String content = sq.listAsString();
-		APISearchSftpBackupStorageReply reply = new APISearchSftpBackupStorageReply();
-		reply.setContent(content);
-		bus.reply(msg, reply);
-	}
 
 	@Override
 	public String getId() {

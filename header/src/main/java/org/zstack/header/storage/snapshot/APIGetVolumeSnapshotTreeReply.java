@@ -5,7 +5,6 @@ import org.zstack.header.message.APIReply;
 import java.util.List;
 
 /**
- * @apiResult api reply for message :ref:`APIGetVolumeSnapshotTreeMsg`
  * @category volume snapshot
  * @example {
  * "org.zstack.header.storage.snapshot.APIGetVolumeSnapshotTreeReply": {

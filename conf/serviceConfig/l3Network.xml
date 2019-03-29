@@ -8,10 +8,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.network.l3.APIListL3NetworkMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.network.l3.APIDeleteL3NetworkMsg</name>
     </message>
 
@@ -21,10 +17,6 @@
 
     <message>
         <name>org.zstack.header.network.l3.APIDeleteIpRangeMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.network.l3.APIListIpRangeMsg</name>
     </message>
 
     <message>
@@ -43,14 +35,6 @@
 
     <message>
         <name>org.zstack.header.network.l3.APIRemoveDnsFromL3NetworkMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.network.l3.APISearchL3NetworkMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.network.l3.APIGetL3NetworkMsg</name>
     </message>
 
     <message>

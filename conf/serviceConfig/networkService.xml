@@ -4,18 +4,6 @@
     <interceptor>NetworkServiceApiInterceptor</interceptor>
 
     <message>
-        <name>org.zstack.header.network.service.APIListNetworkServiceProviderMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.network.service.APISearchNetworkServiceProviderMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.network.service.APIGetNetworkServiceProviderMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.network.service.APIQueryNetworkServiceProviderMsg</name>
     </message>
 

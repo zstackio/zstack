@@ -12,10 +12,6 @@
     </message>
 
     <message>
-        <name>org.zstack.header.configuration.APIListDiskOfferingMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.configuration.APICreateInstanceOfferingMsg</name>
     </message>
 
@@ -24,31 +20,11 @@
     </message>
 
     <message>
-        <name>org.zstack.header.configuration.APIListInstanceOfferingMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.configuration.APISearchDiskOfferingMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.configuration.APISearchInstanceOfferingMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.configuration.APIGenerateApiJsonTemplateMsg</name>
     </message>
 
     <message>
         <name>org.zstack.header.configuration.APIGenerateTestLinkDocumentMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.configuration.APIGetDiskOfferingMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.configuration.APIGetInstanceOfferingMsg</name>
     </message>
 
     <message>
@@ -91,10 +67,6 @@
 
     <message>
         <name>org.zstack.header.configuration.APIUpdateInstanceOfferingMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.header.configuration.APIGetGlobalPropertyMsg</name>
     </message>
 
     <message>

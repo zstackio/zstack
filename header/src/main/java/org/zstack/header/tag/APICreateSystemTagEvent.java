@@ -26,7 +26,7 @@ public class APICreateSystemTagEvent extends APIEvent {
     public void setInventory(SystemTagInventory inventory) {
         this.inventory = inventory;
     }
- 
+
     public static APICreateSystemTagEvent __example__() {
         APICreateSystemTagEvent event = new APICreateSystemTagEvent();
         SystemTagInventory tag = new SystemTagInventory();

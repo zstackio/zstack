@@ -501,20 +501,9 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     }
 
     private void handleApiMessage(APIMessage msg) {
-        if (msg instanceof APIListApplianceVmMsg) {
-            handle((APIListApplianceVmMsg) msg);
-        } else {
-            bus.dealWithUnknownMessage(msg);
-        }
+        bus.dealWithUnknownMessage(msg);
     }
 
-    private void handle(APIListApplianceVmMsg msg) {
-        List<ApplianceVmVO> vos = dbf.listAll(ApplianceVmVO.class);
-        List<ApplianceVmInventory> invs = ApplianceVmInventory.valueOf1(vos);
-        APIListApplianceVmReply reply = new APIListApplianceVmReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
-    }
 
     @Override
     public String getId() {

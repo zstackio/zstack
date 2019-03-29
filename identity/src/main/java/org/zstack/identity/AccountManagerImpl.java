@@ -196,12 +196,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateAccountMsg) {
             handle((APICreateAccountMsg) msg);
-        } else if (msg instanceof APIListAccountMsg) {
-            handle((APIListAccountMsg) msg);
-        } else if (msg instanceof APIListUserMsg) {
-            handle((APIListUserMsg) msg);
-        } else if (msg instanceof APIListPolicyMsg) {
-            handle((APIListPolicyMsg) msg);
         } else if (msg instanceof APILogInByAccountMsg) {
             handle((APILogInByAccountMsg) msg);
         } else if (msg instanceof APILogInByUserMsg) {
@@ -488,31 +482,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         evtf.fire(IdentityCanonicalEvents.ACCOUNT_LOGIN_PATH, data);
 
         reply.setInventory(session);
-        bus.reply(msg, reply);
-    }
-
-
-    private void handle(APIListPolicyMsg msg) {
-        List<PolicyVO> vos = dl.listByApiMessage(msg, PolicyVO.class);
-        List<PolicyInventory> invs = PolicyInventory.valueOf(vos);
-        APIListPolicyReply reply = new APIListPolicyReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIListUserMsg msg) {
-        List<UserVO> vos = dl.listByApiMessage(msg, UserVO.class);
-        List<UserInventory> invs = UserInventory.valueOf(vos);
-        APIListUserReply reply = new APIListUserReply();
-        reply.setInventories(invs);
-        bus.reply(msg, reply);
-    }
-
-    private void handle(APIListAccountMsg msg) {
-        List<AccountVO> vos = dl.listByApiMessage(msg, AccountVO.class);
-        List<AccountInventory> invs = AccountInventory.valueOf(vos);
-        APIListAccountReply reply = new APIListAccountReply();
-        reply.setInventories(invs);
         bus.reply(msg, reply);
     }
 

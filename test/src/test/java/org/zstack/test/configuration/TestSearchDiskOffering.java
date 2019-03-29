@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.configuration.APISearchDiskOfferingMsg;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.search.APISearchMessage.NOVTriple;
 import org.zstack.header.search.SearchOp;
@@ -40,19 +39,5 @@ public class TestSearchDiskOffering {
         dbf = loader.getComponent(DatabaseFacade.class);
     }
 
-    @Test
-    public void test() throws ApiSenderException, InterruptedException {
-        TimeUnit.SECONDS.sleep(5);
-        APISearchDiskOfferingMsg msg = new APISearchDiskOfferingMsg();
-        NOVTriple t = new NOVTriple();
-        t.setName("diskSize");
-        t.setOp(SearchOp.AND_NOT_EQ.toString());
-        t.setVal(String.valueOf(SizeUnit.GIGABYTE.toByte(50)));
-        msg.getNameOpValueTriples().add(t);
-        String content = api.search(msg);
-        List<DiskOfferingInventory> invs = JSONObjectUtil.toCollection(content, ArrayList.class, DiskOfferingInventory.class);
-        DiskOfferingInventory dinv = invs.get(0);
-        Assert.assertEquals(SizeUnit.GIGABYTE.toByte(120), dinv.getDiskSize());
-    }
 
 }

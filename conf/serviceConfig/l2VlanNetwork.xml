@@ -3,10 +3,6 @@
     <id>network.l2.vlan</id>
 
     <message>
-        <name>org.zstack.header.network.l2.APIListL2VlanNetworkMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.header.network.l2.APIQueryL2VlanNetworkMsg</name>
         <serviceId>query</serviceId>
     </message>

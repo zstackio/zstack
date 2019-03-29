@@ -7,9 +7,6 @@
         <name>org.zstack.header.vm.APICreateVmInstanceMsg</name>
     </message>
     <message>
-        <name>org.zstack.header.vm.APIListVmInstanceMsg</name>
-    </message>
-    <message>
         <name>org.zstack.header.vm.APIStopVmInstanceMsg</name>
     </message>
     <message>
@@ -23,15 +20,6 @@
     </message>
     <message>
         <name>org.zstack.header.vm.APIMigrateVmMsg</name>
-    </message>
-    <message>
-        <name>org.zstack.header.vm.APISearchVmInstanceMsg</name>
-    </message>
-    <message>
-        <name>org.zstack.header.vm.APIGetVmInstanceMsg</name>
-    </message>
-    <message>
-        <name>org.zstack.header.vm.APIListVmNicMsg</name>
     </message>
     <message>
         <name>org.zstack.header.vm.APIQueryVmInstanceMsg</name>

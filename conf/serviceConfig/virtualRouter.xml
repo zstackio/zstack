@@ -15,14 +15,6 @@
     </message>
 
     <message>
-        <name>org.zstack.network.service.virtualrouter.APISearchVirtualRouterOffingMsg</name>
-    </message>
-
-    <message>
-        <name>org.zstack.network.service.virtualrouter.APIGetVirtualRouterOfferingMsg</name>
-    </message>
-
-    <message>
         <name>org.zstack.network.service.virtualrouter.APIUpdateVirtualRouterOfferingMsg</name>
     </message>
 
