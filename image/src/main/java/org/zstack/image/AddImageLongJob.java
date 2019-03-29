@@ -10,9 +10,12 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Constants;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.*;
 import org.zstack.header.longjob.LongJobFor;
+import org.zstack.header.longjob.LongJobState;
 import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
@@ -57,6 +60,23 @@ public class AddImageLongJob implements LongJob {
                 }
             }
         });
+    }
+
+    @Override
+    public void resume(LongJobVO job) {
+        AddImageMsg msg = JSONObjectUtil.toObject(job.getJobData(), AddImageMsg.class);
+        ImageDeletionMsg dmsg = new ImageDeletionMsg();
+        dmsg.setImageUuid(msg.getResourceUuid());
+        dmsg.setForceDelete(true);
+        dmsg.setBackupStorageUuids(msg.getBackupStorageUuids());
+        bus.makeTargetServiceIdByResourceUuid(dmsg, ImageConstant.SERVICE_ID, dmsg.getImageUuid());
+        MessageReply reply = bus.call(dmsg);
+        if (!reply.isSuccess()) {
+            logger.warn(String.format("delete image [%s] failed after management node restarted", msg.getResourceUuid()));
+        }
+        ThreadContext.clearMap();
+        job.setJobResult("Failed because management node restarted.");
+        job.setState(LongJobState.Failed);
     }
 
     @Override
