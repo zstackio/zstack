@@ -76,14 +76,23 @@ public class IdentityCanonicalEvents {
 
     @NeedJsonSchema
     public static class AccountLoginData {
-        private AccountInventory account;
+        private String accountUuid;
+        private String userUuid;
 
-        public AccountInventory getAccount() {
-            return account;
+        public String getAccountUuid() {
+            return accountUuid;
         }
 
-        public void setAccount(AccountInventory account) {
-            this.account = account;
+        public void setAccountUuid(String accountUuid) {
+            this.accountUuid = accountUuid;
+        }
+
+        public String getUserUuid() {
+            return userUuid;
+        }
+
+        public void setUserUuid(String userUuid) {
+            this.userUuid = userUuid;
         }
     }
 }
