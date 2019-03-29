@@ -466,6 +466,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             struct = new AccountLoginStruct();
             struct.setAccountUuid(vo.getUuid());
             struct.setUserUuid(vo.getUuid());
+            struct.setResourceType(AccountVO.class.getSimpleName());
         }
 
         if (struct == null) {
@@ -475,7 +476,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
 
         for (AdditionalLoginExtensionPoint exp : pluginRgty.getExtensionList(AdditionalLoginExtensionPoint.class)){
-            if (!exp.authenticate(msg, struct.getAccountUuid(), AccountVO.class.getSimpleName())) {
+            if (!exp.authenticate(msg, struct.getUserUuid(), struct.getResourceType())) {
                 reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR, "additional authentication failed"));
                 bus.reply(msg, reply);
                 return;
@@ -484,7 +485,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
         SessionInventory session = getSession(struct.getAccountUuid(), struct.getUserUuid());
         IdentityCanonicalEvents.AccountLoginData data = new IdentityCanonicalEvents.AccountLoginData();
-        data.setAccount(AccountInventory.valueOf(vo));
+        data.setAccountUuid(struct.getAccountUuid());
+        data.setUserUuid(struct.getUserUuid());
         evtf.fire(IdentityCanonicalEvents.ACCOUNT_LOGIN_PATH, data);
 
         reply.setInventory(session);
