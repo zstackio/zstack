@@ -10,6 +10,10 @@ public aspect HasThreadContextAspect {
     public Map<Object, Object> HasThreadContext.taskContext;
 
     after(HasThreadContext obj) : target(obj) && execution(HasThreadContext+.new(..)) {
+        setThreadContext(obj);
+    }
+
+    public static void setThreadContext(HasThreadContext obj) {
         obj.threadContext = ThreadContext.getContext();
         obj.threadContextStack = ThreadContext.getImmutableStack().asList();
         obj.taskContext = TaskContext.getTaskContext();

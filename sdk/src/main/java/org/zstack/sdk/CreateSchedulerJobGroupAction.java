@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSchedulerJobAction extends AbstractAction {
+public class CreateSchedulerJobGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateSchedulerJobResult value;
+        public org.zstack.sdk.CreateSchedulerJobGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -30,9 +30,6 @@ public class CreateSchedulerJobAction extends AbstractAction {
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String targetResourceUuid;
 
     @Param(required = true, validValues = {"startVm","stopVm","rebootVm","volumeSnapshot","volumeBackup","rootVolumeBackup","vmBackup","databaseBackup"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
@@ -75,8 +72,8 @@ public class CreateSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateSchedulerJobResult value = res.getResult(org.zstack.sdk.CreateSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateSchedulerJobResult() : value; 
+        org.zstack.sdk.CreateSchedulerJobGroupResult value = res.getResult(org.zstack.sdk.CreateSchedulerJobGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateSchedulerJobGroupResult() : value; 
 
         return ret;
     }
@@ -106,7 +103,7 @@ public class CreateSchedulerJobAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/scheduler/jobs";
+        info.path = "/scheduler/jobgroups";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

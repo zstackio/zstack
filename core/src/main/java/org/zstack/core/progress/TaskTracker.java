@@ -15,6 +15,9 @@ public abstract class TaskTracker {
     private String resourceUuid;
     private Map<String, Object> params = new HashMap<>();
 
+    protected TaskTracker() {
+    }
+
     public static class Task {
         public String taskName;
         public String resourceType;
@@ -25,6 +28,10 @@ public abstract class TaskTracker {
 
     public TaskTracker(String resourceUuid) {
         this.resourceUuid = resourceUuid;
+    }
+
+    protected String getResourceUuid() {
+        return resourceUuid;
     }
 
     private static Map<String, List<Consumer>> taskConsumers = new HashMap<>();

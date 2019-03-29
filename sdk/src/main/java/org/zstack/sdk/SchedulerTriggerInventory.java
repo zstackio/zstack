@@ -100,4 +100,12 @@ public class SchedulerTriggerInventory  {
         return this.jobsUuid;
     }
 
+    public java.util.List jobGroupsUuid;
+    public void setJobGroupsUuid(java.util.List jobGroupsUuid) {
+        this.jobGroupsUuid = jobGroupsUuid;
+    }
+    public java.util.List getJobGroupsUuid() {
+        return this.jobGroupsUuid;
+    }
+
 }

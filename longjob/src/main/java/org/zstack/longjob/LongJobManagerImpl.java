@@ -41,7 +41,9 @@ import java.sql.SQLNonTransientConnectionException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static org.zstack.core.db.DBSourceUtils.isDBConnected;
 import static org.zstack.core.db.DBSourceUtils.waitDBConnected;
@@ -81,6 +83,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
     private List<String> longJobClasses = new ArrayList<String>();
     private Map<String, Class<? extends APIMessage>> useApiTimeout = new HashMap<>();
+    private Map<String, Function<APIEvent, Void>> longJobCallBacks = new ConcurrentHashMap<>();
 
     private void collectLongJobs() {
         Set<Class<?>> subs = BeanUtils.reflections.getTypesAnnotatedWith(LongJobFor.class);
@@ -359,7 +362,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     private void doStartJob(LongJob job, LongJobVO vo, AsyncBackup async) {
         String longJobUuid = vo.getUuid();
         job.start(vo, new ReturnValueCompletion<APIEvent>(async) {
-
             @Override
             public void success(APIEvent evt) {
                 reportProgress("100");
@@ -370,9 +372,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                     }
                 });
 
-                exts.forEach(ext -> {
-                    ext.afterJobFinished(job, vo, evt);
-                });
+                exts.forEach(ext -> ext.afterJobFinished(job, vo, evt));
+                Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> it.apply(evt));
 
                 logger.info(String.format("successfully run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
             }
@@ -389,9 +390,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 APIEvent evt = new APIEvent(ThreadContext.get(Constants.THREAD_CONTEXT_API));
                 evt.setError(errorCode);
 
-                exts.forEach(ext -> {
-                    ext.afterJobFailed(job, vo, evt);
-                });
+                exts.forEach(ext -> ext.afterJobFailed(job, vo, evt));
+                Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> it.apply(evt));
 
                 logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
             }
@@ -402,6 +402,25 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                     vo.setState(LongJobState.Canceled);
                 } else if (vo.getState() != LongJobState.Suspended) {
                     vo.setState(LongJobState.Failed);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void submitLongJob(SubmitLongJobMsg msg, CloudBusCallBack submitCallBack, Function<APIEvent, Void> jobCallBack) {
+        String apiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
+        longJobCallBacks.put(apiId, jobCallBack);
+        bus.makeLocalServiceId(msg, LongJobConstants.SERVICE_ID);
+        bus.send(msg, new CloudBusCallBack(submitCallBack) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    longJobCallBacks.remove(apiId);
+                }
+
+                if (submitCallBack != null) {
+                    submitCallBack.run(reply);
                 }
             }
         });

@@ -273,3 +273,108 @@ ALTER TABLE `SchedulerTriggerVO` MODIFY COLUMN `cron` varchar(255) DEFAULT NULL 
 
 ALTER TABLE `HybridAccountVO` MODIFY `name` VARCHAR(255) UNIQUE NOT NULL;
 
+CREATE TABLE `zstack`.`SchedulerJobGroupVO` (
+    `uuid` VARCHAR(32) NOT NULL UNIQUE,
+    `name` VARCHAR(255) NOT NULL,
+    `description` VARCHAR(2048) DEFAULT NULL,
+    `jobType` VARCHAR(32),
+    `jobClassName` varchar(255),
+    `jobData` text,
+    `state` varchar(255),
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `zstack`.`SchedulerJobGroupJobRefVO` (
+    `schedulerJobUuid` varchar(32) NOT NULL,
+    `schedulerJobGroupUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY (`schedulerJobUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `zstack`.`SchedulerJobGroupSchedulerTriggerRefVO` (
+    `schedulerJobGroupUuid` varchar(32) NOT NULL,
+    `schedulerTriggerUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY  (`schedulerJobGroupUuid`, `schedulerTriggerUuid`),
+    CONSTRAINT `fkSchedulerJobGroupSchedulerTriggerRefVOSchedulerJobGroupVO` FOREIGN KEY (`schedulerJobGroupUuid`) REFERENCES `SchedulerJobGroupVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkSchedulerJobGroupSchedulerTriggerRefVOSchedulerTriggerVO` FOREIGN KEY (`schedulerTriggerUuid`) REFERENCES `SchedulerTriggerVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELIMITER $$
+CREATE PROCEDURE migrateSchedulerJob()
+    BEGIN
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE triggerUuid VARCHAR(32);
+        DECLARE groupUuid VARCHAR(32);
+        DECLARE volumeType VARCHAR(32);
+        DECLARE volumeUuid VARCHAR(32);
+        DECLARE legacyJobUuid VARCHAR(32);
+        DECLARE legacyJobName VARCHAR(255);
+        DECLARE legacyJobDescription VARCHAR(2048);
+        DECLARE legacyJobClassName VARCHAR(255);
+        DECLARE legacyJobData TEXT;
+        DECLARE legacyJobstate VARCHAR(255);
+        DECLARE legacyJobAccountUuid VARCHAR(32);
+        DECLARE groupJobType VARCHAR(32);
+        DEClARE cur CURSOR FOR SELECT uuid, name, description, jobClassName, jobData, state, targetResourceUuid from SchedulerJobVO
+        where jobClassName in ('org.zstack.storage.backup.CreateVolumeBackupJob', 'org.zstack.storage.backup.CreateVmBackupJob');
+        DEClARE tcur CURSOR FOR SELECT schedulerTriggerUuid from SchedulerJobSchedulerTriggerRefVO where schedulerJobUuid = legacyJobUuid;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        insert_group_loop: LOOP
+            FETCH cur INTO legacyJobUuid, legacyJobName, legacyJobDescription, legacyJobClassName, legacyJobData, legacyJobstate, volumeUuid;
+            IF done THEN
+                LEAVE insert_group_loop;
+            END IF;
+
+            IF legacyJobClassName = 'org.zstack.storage.backup.CreateVolumeBackupJob' THEN
+                SELECT `type` INTO volumeType FROM `VolumeVO` WHERE `uuid` = volumeUuid;
+                IF volumeType = 'Root' THEN
+                    SET groupJobType = 'rootVolumeBackup';
+                ELSE
+                    SET groupJobType = 'volumeBackup';
+                END IF;
+            ELSE
+                SET groupJobType = 'vmBackup';
+            END IF;
+
+            SELECT DISTINCT accountUuid INTO legacyJobAccountUuid FROM AccountResourceRefVO WHERE resourceUuid = legacyJobUuid;
+            SET groupUuid = (REPLACE(UUID(), '-', ''));
+            INSERT INTO zstack.SchedulerJobGroupVO(uuid, name, description, jobClassName, jobData, jobType, state, lastOpDate, createDate)
+            VALUES(groupUuid, legacyJobName, legacyJobDescription, legacyJobClassName, legacyJobData, groupJobType, legacyJobstate, NOW(), NOW());
+            INSERT INTO zstack.ResourceVO(uuid, resourceName, resourceType, concreteResourceType)
+            VALUES(groupUuid, legacyJobName, 'SchedulerJobGroupVO', 'org.zstack.header.scheduler.SchedulerJobGroupVO');
+            INSERT INTO zstack.AccountResourceRefVO (accountUuid, ownerAccountUuid, resourceUuid, resourceType, permission, isShared, lastOpDate, createDate)
+            VALUES(legacyJobAccountUuid, legacyJobAccountUuid, groupUuid, 'SchedulerJobGroupVO', 2, 0,  NOW(), NOW());
+
+            INSERT INTO zstack.SchedulerJobGroupJobRefVO(schedulerJobUuid, schedulerJobGroupUuid, lastOpDate, createDate)
+            VALUES(legacyJobUuid, groupUuid, NOW(), NOW());
+
+            OPEN tcur;
+            migrate_ref_loop: LOOP
+                FETCH tcur INTO triggerUuid;
+                IF done THEN
+                    LEAVE migrate_ref_loop;
+                END IF;
+
+                INSERT INTO zstack.SchedulerJobGroupSchedulerTriggerRefVO(schedulerJobGroupUuid, schedulerTriggerUuid, lastOpDate, createDate)
+                VALUES (groupUuid, triggerUuid, NOW(), NOW());
+
+            END LOOP;
+            CLOSE tcur;
+
+            DELETE FROM zstack.SchedulerJobSchedulerTriggerRefVO where schedulerJobUuid = legacyJobUuid;
+            SET done = FALSE;
+        END LOOP;
+        CLOSE cur;
+    END $$
+DELIMITER ;
+
+call migrateSchedulerJob();
+DROP PROCEDURE IF EXISTS migrateSchedulerJob;
+
+ALTER TABLE `SchedulerTriggerVO` MODIFY COLUMN `cron` varchar(255) DEFAULT NULL COMMENT 'interval in cron format';

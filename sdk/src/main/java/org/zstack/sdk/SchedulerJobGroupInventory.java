@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class SchedulerJobInventory  {
+public class SchedulerJobGroupInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -10,14 +10,6 @@ public class SchedulerJobInventory  {
     }
     public java.lang.String getUuid() {
         return this.uuid;
-    }
-
-    public java.lang.String targetResourceUuid;
-    public void setTargetResourceUuid(java.lang.String targetResourceUuid) {
-        this.targetResourceUuid = targetResourceUuid;
-    }
-    public java.lang.String getTargetResourceUuid() {
-        return this.targetResourceUuid;
     }
 
     public java.lang.String name;
@@ -60,6 +52,14 @@ public class SchedulerJobInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.String jobType;
+    public void setJobType(java.lang.String jobType) {
+        this.jobType = jobType;
+    }
+    public java.lang.String getJobType() {
+        return this.jobType;
+    }
+
     public java.lang.String jobData;
     public void setJobData(java.lang.String jobData) {
         this.jobData = jobData;
@@ -76,12 +76,12 @@ public class SchedulerJobInventory  {
         return this.triggersUuid;
     }
 
-    public java.util.List schedulerJobGroupUuids;
-    public void setSchedulerJobGroupUuids(java.util.List schedulerJobGroupUuids) {
-        this.schedulerJobGroupUuids = schedulerJobGroupUuids;
+    public java.util.List jobsUuid;
+    public void setJobsUuid(java.util.List jobsUuid) {
+        this.jobsUuid = jobsUuid;
     }
-    public java.util.List getSchedulerJobGroupUuids() {
-        return this.schedulerJobGroupUuids;
+    public java.util.List getJobsUuid() {
+        return this.jobsUuid;
     }
 
 }
