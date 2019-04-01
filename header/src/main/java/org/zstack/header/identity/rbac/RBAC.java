@@ -5,6 +5,7 @@ import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.StatementEffect;
+import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
@@ -35,7 +36,7 @@ public class RBAC {
 
         List<String> missing = new ArrayList<>();
         APIMessage.apiMessageClasses.forEach(clz -> {
-            if (clz.isAnnotationPresent(Deprecated.class)) {
+            if (clz.isAnnotationPresent(Deprecated.class) || clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
                 return;
             }
 
