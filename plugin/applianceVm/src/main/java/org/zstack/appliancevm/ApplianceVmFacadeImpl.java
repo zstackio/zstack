@@ -47,6 +47,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * Created with IntelliJ IDEA.
@@ -349,10 +351,13 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         ret.put(BootstrapParams.sshPort.toString(), sshPort);
         ret.put(BootstrapParams.uuid.toString(), spec.getVmInventory().getUuid());
         ret.put(BootstrapParams.managementNodeIp.toString(), Platform.getManagementServerIp());
+        /* this is only used by ApplianceVmPrepareBootstrapInfoExtensionPoint extension point, will be deleted after extension point */
+        ret.put(BootstrapParams.additionalL3Uuids.toString(), additionalNics.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()));
 
         for (ApplianceVmPrepareBootstrapInfoExtensionPoint ext : pluginRgty.getExtensionList(ApplianceVmPrepareBootstrapInfoExtensionPoint.class)) {
             ext.applianceVmPrepareBootstrapInfo(spec, ret);
         }
+        ret.remove(BootstrapParams.additionalL3Uuids.toString());
 
         return ret;
     }
