@@ -268,6 +268,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         CleanupUserdataCmd cmd = new CleanupUserdataCmd();
         cmd.bridgeName = new BridgeNameFinder().findByL3Uuid(l3.getUuid());
         cmd.l3NetworkUuid = l3.getUuid();
+        cmd.namespaceName = FlatDhcpBackend.makeNamespaceName(cmd.bridgeName, cmd.l3NetworkUuid);
 
         for (String huuid : hostUuids) {
             new KvmCommandSender(huuid).send(cmd, CLEANUP_USER_DATA, new KvmCommandFailureChecker() {
@@ -452,6 +453,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
     public static class CleanupUserdataCmd extends KVMAgentCommands.AgentCommand {
         public String bridgeName;
         public String l3NetworkUuid;
+        public String namespaceName;
     }
 
     public static class CleanupUserdataRsp extends KVMAgentCommands.AgentResponse {
@@ -487,10 +489,18 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
         return FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE;
     }
 
+    private boolean hasMetedata(UserdataStruct struct) {
+        return VmSystemTags.HOSTNAME.getTokenByResourceUuid(struct.getVmUuid(), VmSystemTags.HOSTNAME_TOKEN) != null;
+    }
+
+    private boolean hasUserdata(UserdataStruct struct) {
+        return struct.getUserdataList() != null && !struct.getUserdataList().isEmpty();
+    }
+
     @Override
     public void applyUserdata(final UserdataStruct struct, final Completion completion) {
         if (!UserdataGlobalConfig.OPEN_USERDATA_SERVICE_BY_DEFAULT.value(Boolean.class)) {
-            if (struct.getUserdataList() == null || struct.getUserdataList().isEmpty()) {
+            if ( !hasMetedata(struct) && !hasUserdata(struct)) {
                 completion.success();
                 return;
             }
