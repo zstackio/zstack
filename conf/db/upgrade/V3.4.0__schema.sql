@@ -232,7 +232,8 @@ CREATE TABLE `ResourceUsageVO` (
   UNIQUE `idxResourceUsageVOuuidDate` (`resourceType`,`resourceUuid`,`spendingDate`)
 ) ENGINE=INNODB DEFAULT CHARSET=UTF8;
 
-INSERT INTO AccountResourceRefVO (`accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`) SELECT "36c27e8ff05c4780bf6d2fa65700f22e", "36c27e8ff05c4780bf6d2fa65700f22e", t.uuid, "L2NetworkVO", 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP() FROM L2NetworkVO t where t.type in ("L2VlanNetwork", "L2NoVlanNetwork");
+INSERT INTO AccountResourceRefVO (`accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`, `concreteResourceType`) SELECT "36c27e8ff05c4780bf6d2fa65700f22e", "36c27e8ff05c4780bf6d2fa65700f22e", t.uuid, "L2NetworkVO", 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), "org.zstack.header.network.l2.L2VlanNetworkVO" FROM L2NetworkVO t where t.type  = "L2VlanNetwork" AND t.uuid NOT IN (SELECT resourceUuid FROM AccountResourceRefVO);
+INSERT INTO AccountResourceRefVO (`accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`, `concreteResourceType`) SELECT "36c27e8ff05c4780bf6d2fa65700f22e", "36c27e8ff05c4780bf6d2fa65700f22e", t.uuid, "L2NetworkVO", 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), "org.zstack.header.network.l2.L2NetworkVO" FROM L2NetworkVO t where t.type  = "L2NoVlanNetwork" AND t.uuid NOT IN (SELECT resourceUuid FROM AccountResourceRefVO);
 
 ALTER TABLE `AlarmVO` ADD COLUMN `enableRecovery` boolean NOT NULL DEFAULT FALSE;
 ALTER TABLE `SNSTextTemplateVO` ADD COLUMN  `recoveryTemplate` text DEFAULT NULL;
