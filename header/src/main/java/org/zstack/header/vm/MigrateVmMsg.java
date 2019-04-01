@@ -6,6 +6,7 @@ import java.util.List;
 
 /**
  */
+@SkipVmTracer(replyClass = MigrateVmReply.class)
 public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage, MigrateVmMessage {
     private String vmInstanceUuid;
     private List<String> avoidHostUuids;

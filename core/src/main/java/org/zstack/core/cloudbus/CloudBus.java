@@ -7,7 +7,6 @@ import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.message.*;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public interface CloudBus extends Component {
@@ -69,6 +68,8 @@ public interface CloudBus extends Component {
     String makeTargetServiceIdByResourceUuid(String serviceId, String resourceUuid);
 
     void makeTargetServiceIdByResourceUuid(Message msg, String serviceId, String resourceUuid);
+
+    void installBeforeDeliveryMessageInterceptor(BeforeDeliveryMessageInterceptor interceptor, List<Class<? extends Message>> classes);
 
     void installBeforeDeliveryMessageInterceptor(BeforeDeliveryMessageInterceptor interceptor, Class<? extends Message>...classes);
 

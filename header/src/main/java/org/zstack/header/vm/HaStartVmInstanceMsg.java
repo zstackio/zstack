@@ -7,6 +7,7 @@ import java.util.List;
 /**
  * Created by xing5 on 2016/3/29.
  */
+@SkipVmTracer(replyClass = StartVmInstanceReply.class)
 public class HaStartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
     private String vmInstanceUuid;
     private String judgerClassName;

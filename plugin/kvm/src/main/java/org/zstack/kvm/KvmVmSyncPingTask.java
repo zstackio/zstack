@@ -36,7 +36,8 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.zstack.core.Platform.*;
+import static org.zstack.core.Platform.getReflections;
+import static org.zstack.core.Platform.operr;
 
 public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailureExtensionPoint, KVMHostConnectExtensionPoint,
         ReplyMessagePreSendingExtensionPoint, HostConnectionReestablishExtensionPoint, HostAfterConnectedExtensionPoint, Component {
@@ -56,6 +57,16 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     // A map from apiId to VM instance uuid
     private ConcurrentHashMap<String, String> vmApis = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Boolean> vmsToSkip = new ConcurrentHashMap<>();
+    private List<Class<? extends Message>> skipVmTracerMessages = new ArrayList<>();
+    private List<Class> skipVmTracerReplies = new ArrayList<>();
+
+    {
+        getReflections().getTypesAnnotatedWith(SkipVmTracer.class).forEach(clz -> {
+            skipVmTracerMessages.add(clz.asSubclass(Message.class));
+            skipVmTracerReplies.add(clz.getAnnotation(SkipVmTracer.class).replyClass());
+        });
+    }
+
 
     @SuppressWarnings("unchecked")
     void init() {
@@ -76,12 +87,12 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                     }
                 }
             }
-        }, StartVmInstanceMsg.class, MigrateVmMsg.class, StopVmInstanceMsg.class, APIPauseVmInstanceMsg.class, APIMigrateVmMsg.class);
+        }, skipVmTracerMessages);
     }
 
     @Override
     public List<Class> getReplyMessageClassForPreSendingExtensionPoint() {
-        return Arrays.asList(StartVmInstanceReply.class, MigrateVmReply.class, StopVmInstanceReply.class, APIPauseVmInstanceEvent.class, APIMigrateVmEvent.class);
+        return new ArrayList<>(skipVmTracerReplies);
     }
 
     @Override
@@ -128,7 +139,6 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                     Set<String> vmsToSkipSetHostSide = new HashSet<>(vmsToSkip.keySet());
                     Collection<String> vmUuidsInDeleteVmGC = DeleteVmGC.queryVmInGC(host.getUuid(), ret.getStates().keySet());
 
-                    logger.debug(String.valueOf(ret.getStates().size()));
                     for (Map.Entry<String, String> e : ret.getStates().entrySet()) {
                         if (logger.isTraceEnabled()) {
                             logger.trace(String.format("state from vmsync vm %s state %s", e.getKey(), e.getValue()));

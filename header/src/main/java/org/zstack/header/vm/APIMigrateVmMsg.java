@@ -3,7 +3,6 @@ package org.zstack.header.vm;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -42,6 +41,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIMigrateVmEvent.class,
         method = HttpMethod.PUT
 )
+@SkipVmTracer(replyClass = APIMigrateVmEvent.class)
 public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, MigrateVmMessage {
     /**
      * @desc vm uuid

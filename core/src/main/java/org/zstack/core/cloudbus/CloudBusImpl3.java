@@ -907,8 +907,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     }
 
     @Override
-    public void installBeforeDeliveryMessageInterceptor(BeforeDeliveryMessageInterceptor interceptor, Class<? extends Message>... classes) {
-        if (classes.length == 0) {
+    public void installBeforeDeliveryMessageInterceptor(BeforeDeliveryMessageInterceptor interceptor, List<Class<? extends Message>> classes) {
+        if (classes.size() == 0) {
             int order = 0;
             for (BeforeDeliveryMessageInterceptor i : beforeDeliveryMessageInterceptorsForAll) {
                 if (i.orderOfBeforeDeliveryMessageInterceptor() <= interceptor.orderOfBeforeDeliveryMessageInterceptor()) {
@@ -940,6 +940,13 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             }
         }
     }
+
+    @Override
+    public void installBeforeDeliveryMessageInterceptor(BeforeDeliveryMessageInterceptor interceptor, Class<? extends Message>... classes) {
+        installBeforeDeliveryMessageInterceptor(interceptor, Arrays.asList(classes));
+    }
+
+
 
     @Override
     public void installBeforeSendMessageInterceptor(BeforeSendMessageInterceptor interceptor, Class<? extends Message>... classes) {
