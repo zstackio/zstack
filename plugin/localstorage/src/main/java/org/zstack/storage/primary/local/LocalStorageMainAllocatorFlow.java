@@ -162,6 +162,14 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
         }
 
         List<LocalStorageHostRefVO> refs = query.getResultList();
+
+        // if required host exists, filter the refs first
+        if (spec.getRequiredHostUuid() != null) {
+            refs = refs.stream()
+                    .filter(ref -> ref.getHostUuid().equals(spec.getRequiredHostUuid()))
+                    .collect(Collectors.toList());
+        }
+
         List<LocalStorageHostRefVO> candidateHosts = new ArrayList<>();
         for (LocalStorageHostRefVO ref : refs) {
             if (spec.isNoOverProvisioning()) {
