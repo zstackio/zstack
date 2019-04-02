@@ -42,10 +42,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.io.File;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -422,13 +419,10 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 .collect(Collectors.toList());
 
         if (!clusterUuids.isEmpty()) {
-            clusterUuids = SQL.New("select cluster.uuid from ClusterVO cluster, HostVO host" +
-                    " where cluster.uuid = host.clusterUuid" +
-                    " and host.status = :hostStatus" +
-                    " and cluster.uuid in (:cuuids)", String.class)
-                    .param("hostStatus", HostStatus.Connected)
-                    .param("cuuids", clusterUuids)
-                    .list();
+            clusterUuids = Q.New(HostVO.class).select(HostVO_.clusterUuid)
+                    .eq(HostVO_.status, HostStatus.Connected)
+                    .in(HostVO_.clusterUuid, clusterUuids)
+                    .listValues();
         }
 
         if (clusterUuids.isEmpty()){
@@ -443,7 +437,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             return;
         }
 
-        final List<String> finalClusterUuids = clusterUuids;
+        final Set<String> finalClusterUuids = new HashSet<>(clusterUuids);
         new LoopAsyncBatch<String>(completion) {
             boolean success;
 
