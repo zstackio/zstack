@@ -23,4 +23,6 @@ public interface VyosConstants {
 
     String VYOS_VERSION_PATH = "ansible/zvr/version";
     int VYOS_VERSION_LENGTH = 4;
+
+    String REPLACE_FIREWALL_WITH_IPTBALES = "SkipVyosIptables";
 }

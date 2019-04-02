@@ -3,6 +3,7 @@ package org.zstack.network.service.virtualrouter.portforwarding;
 import java.io.Serializable;
 
 public class PortForwardingRuleTO implements Serializable {
+    private String uuid;
     private int vipPortStart;
     private int vipPortEnd;
     private int privatePortStart;
@@ -20,6 +21,14 @@ public class PortForwardingRuleTO implements Serializable {
 
     public void setSnatInboundTraffic(boolean snatInboundTraffic) {
         this.snatInboundTraffic = snatInboundTraffic;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     public int getVipPortStart() {
