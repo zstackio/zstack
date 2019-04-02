@@ -187,13 +187,19 @@ class AttachVolumeToStoppedVmCase extends SubCase {
         updateGlobalConfig {
             category = KVMGlobalConfig.CATEGORY
             name = KVMGlobalConfig.MAX_DATA_VOLUME_NUM.name
-            value = "1024"
+            value = "0"
+        }
+
+        updateGlobalConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.MAX_DATA_VOLUME_NUM.name
+            value = "24"
         }
 
         def a = new UpdateGlobalConfigAction()
         a.category = KVMGlobalConfig.CATEGORY
         a.name = KVMGlobalConfig.MAX_DATA_VOLUME_NUM.name
-        a.value = "1025"
+        a.value = "25"
         a.sessionId = adminSession()
 
         assert a.call().error != null
