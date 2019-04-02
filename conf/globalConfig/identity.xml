@@ -2,7 +2,7 @@
 <globalConfig xmlns="http://zstack.org/schema/zstack">
 	<config>
 		<name>session.maxConcurrent</name>
-		<description>Max number of sessions management server accepts. When this limit met, new session will be rejected</description>
+		<description>Max number of sessions management server accepts for every user. When this limit met, new session will be rejected</description>
 		<defaultValue>500</defaultValue>
 		<category>identity</category>
 		<type>java.lang.Integer</type>
