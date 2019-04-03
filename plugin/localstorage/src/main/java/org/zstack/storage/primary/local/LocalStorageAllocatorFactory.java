@@ -20,6 +20,7 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -45,6 +46,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     private ErrorFacade errf;
     @Autowired
     private PrimaryStorageOverProvisioningManager ratioMgr;
+    @Autowired
+    protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
 
     public static PrimaryStorageAllocatorStrategyType type = new PrimaryStorageAllocatorStrategyType(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
 
@@ -91,25 +94,26 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
             }
 
             SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
-            q.select(LocalStorageHostRefVO_.hostUuid, LocalStorageHostRefVO_.availableCapacity, LocalStorageResourceRefVO_.primaryStorageUuid);
             q.add(LocalStorageHostRefVO_.hostUuid, Op.IN, huuids);
-            List<Tuple> ts = q.listTuple();
+            List<LocalStorageHostRefVO> refs = q.list();
 
             final Set<String> toRemoveHuuids = new HashSet<>();
-            for (Tuple t : ts) {
-                String huuid = t.get(0, String.class);
-                long cap = t.get(1, Long.class);
-                String psUuid = t.get(2, String.class);
-                if (cap < ratioMgr.calculateByRatio(psUuid, spec.getDiskSize())) {
+            for (LocalStorageHostRefVO ref : refs) {
+                String huuid = ref.getHostUuid();
+                long cap = ref.getAvailableCapacity();
+                String psUuid = ref.getPrimaryStorageUuid();
+                // check primary storage capacity and host physical capacity
+                if (cap < ratioMgr.calculateByRatio(psUuid, spec.getDiskSize()) ||
+                        !physicalCapacityMgr.checkCapacityByRatio(psUuid, ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())) {
                     addHostPrimaryStorageBlacklist(huuid, psUuid, spec);
                     toRemoveHuuids.add(huuid);
                 }
             }
             // for more than one local storage, maybe one of it fit the requirement
-            for (Tuple t : ts) {
-                String huuid = t.get(0, String.class);
-                long cap = t.get(1, Long.class);
-                String psUuid = t.get(2, String.class);
+            for (LocalStorageHostRefVO ref : refs) {
+                String huuid = ref.getHostUuid();
+                long cap = ref.getAvailableCapacity();
+                String psUuid = ref.getPrimaryStorageUuid();
                 if (cap >= ratioMgr.calculateByRatio(psUuid, spec.getDiskSize())) {
                     toRemoveHuuids.remove(huuid);
                 }
@@ -157,6 +161,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 }
             }
         }
+
 
         /*
         else if (VmOperation.Migrate.toString().equals(spec.getVmOperation())) {
