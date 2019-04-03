@@ -134,7 +134,11 @@ elif [ $tool = 'zstack-dashboard' ]; then
 
 elif [ x"$tool" = x"zstack-ui" ]; then
     cd "$cwd"
-    ui_home=$(echo ~zstack)/zstack-ui
+    default_zstack_home='/usr/local/zstack/'
+    default_ui_home="$default_zstack_home"/zstack-ui/
+    zstack_home=$(echo ~zstack)
+    zstack_home=${zstack_home%/}/
+    ui_home="$zstack_home"/zstack-ui/
     mkdir -p "$ui_home"
 
     # Assume:
@@ -142,9 +146,9 @@ elif [ x"$tool" = x"zstack-ui" ]; then
     # - zstack-ui installed in /usr/local/zstack/zstack-ui
     # After upgrade, zstack-ui will be installed in /usr/local/zstacktest/zstack-ui.
     # We need to copy old ui config and certification files back
-    default_ui_home='/usr/local/zstack/zstack-ui'
     if [ ! -f "$ui_home"/zstack-ui.war -a -f "$default_ui_home"/zstack-ui.war ]; then
       cp -rf "$default_ui_home"/* "$ui_home"
+      sed -i "s|$default_zstack_home|$zstack_home|g" "$ui_home"/zstack.ui.properties
     fi
 
     cp -f zstack-ui.war "$ui_home"
@@ -154,8 +158,6 @@ elif [ x"$tool" = x"zstack-ui" ]; then
     chmod a+x /etc/init.d/zstack-ui
 
     chown -R zstack:zstack "$ui_home"
-    zstack-ctl config_ui --log=$(echo ~zstack)/apache-tomcat/logs
-    zstack-ctl config_ui --ssl-keystore="$ui_home"/ui.keystore.p12
 else
     usage
 fi
