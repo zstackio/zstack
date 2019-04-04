@@ -379,3 +379,5 @@ call migrateSchedulerJob();
 DROP PROCEDURE IF EXISTS migrateSchedulerJob;
 
 ALTER TABLE `SchedulerTriggerVO` MODIFY COLUMN `cron` varchar(255) DEFAULT NULL COMMENT 'interval in cron format';
+ALTER TABLE `VolumeBackupVO` DROP FOREIGN KEY `fkVolumeBackupVOResourceVO`;
+ALTER TABLE `DatabaseBackupVO` DROP FOREIGN KEY `fkDatabaseBackupVOResourceVO`;
