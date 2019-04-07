@@ -65,7 +65,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         ReportQuotaExtensionPoint,
         AfterReimageVmInstanceExtensionPoint,
         VmJustBeforeDeleteFromDbExtensionPoint,
-        VolumeJustBeforeDeleteFromDbExtensionPoint {
+        VolumeJustBeforeDeleteFromDbExtensionPoint,
+        OverwriteVolumeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotManagerImpl.class);
     private String syncSignature;
     @Autowired
@@ -1119,17 +1120,24 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         return list(quota);
     }
 
-    @Transactional
     @Override
     public void afterReimageVmInstance(VolumeInventory inventory) {
-        String rootVolumeUuid = inventory.getUuid();
+        removeVolumeFromOldSnapshotTreeInDb(inventory.getUuid());
+    }
 
+    @Override
+    public void afterOverwriteVolume(VolumeInventory volume, VolumeInventory transientVolume) {
+        removeVolumeFromOldSnapshotTreeInDb(volume.getUuid());
+    }
+
+    @Transactional
+    private void removeVolumeFromOldSnapshotTreeInDb(String volumeUuid) {
         String sql = "update VolumeSnapshotVO s" +
                 " set s.latest = false" +
                 " where s.latest = true" +
                 " and s.volumeUuid = :volumeUuid";
         Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("volumeUuid", rootVolumeUuid);
+        q.setParameter("volumeUuid", volumeUuid);
         q.executeUpdate();
 
         sql = "update VolumeSnapshotTreeVO tree" +
@@ -1137,7 +1145,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 " where tree.current = true" +
                 " and tree.volumeUuid = :volUuid";
         q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("volUuid", rootVolumeUuid);
+        q.setParameter("volUuid", volumeUuid);
         q.executeUpdate();
     }
 

@@ -12,6 +12,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
@@ -22,10 +23,8 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.core.workflow.SimpleFlowChain;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -141,6 +140,8 @@ public class VolumeBase implements Volume {
             handle((OverlayMessage) msg);
         } else if (msg instanceof ChangeVolumeStatusMsg) {
             handle((ChangeVolumeStatusMsg) msg);
+        } else if (msg instanceof OverwriteVolumeMsg) {
+            handle((OverwriteVolumeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -868,6 +869,108 @@ public class VolumeBase implements Volume {
                         completion.done();
                     }
                 });
+            }
+        }).start();
+    }
+
+    private void handle(OverwriteVolumeMsg msg) {
+        OverwriteVolumeReply reply = new OverwriteVolumeReply();
+        VolumeInventory volume = msg.getVolume(),
+                transientVolume = msg.getTransientVolume();
+
+        if (transientVolume.isAttached() && !transientVolume.getVmInstanceUuid().equals(volume.getVmInstanceUuid())) {
+            throw new CloudRuntimeException(String.format("transient volume[uuid:%s] has attached a different vm " +
+                            "with origin volume[uuid:%s].",transientVolume.getUuid(), volume.getUuid()));
+        }
+
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName("cover-volume-from-transient-volume");
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "attach-transient-volume-" + transientVolume.getUuid();
+
+            @Override
+            public boolean skip(Map data) {
+                return transientVolume.isAttached();
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                AttachDataVolumeToVmMsg amsg = new AttachDataVolumeToVmMsg();
+                amsg.setVolume(msg.getTransientVolume());
+                amsg.setVmInstanceUuid(msg.getVolume().getVmInstanceUuid());
+                bus.makeLocalServiceId(amsg, VmInstanceConstant.SERVICE_ID);
+                bus.send(amsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(reply.getError());
+                        }
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "swap-volume-path";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        // Do a swap to keep volume uuid ...
+                        sql(VolumeVO.class)
+                                .eq(VolumeVO_.uuid, transientVolume.getUuid())
+                                .set(VolumeVO_.installPath, volume.getInstallPath())
+                                .set(VolumeVO_.size, volume.getSize())
+                                .set(VolumeVO_.actualSize, volume.getActualSize())
+                                .update();
+
+                        sql(VolumeVO.class)
+                                .eq(VolumeVO_.uuid, volume.getUuid())
+                                .set(VolumeVO_.installPath, transientVolume.getInstallPath())
+                                .set(VolumeVO_.size, transientVolume.getSize())
+                                .set(VolumeVO_.actualSize, transientVolume.getActualSize())
+                                .update();
+                    }
+                }.execute();
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "delete-transient-volume-" + transientVolume.getUuid();
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                DeleteVolumeMsg dmsg = new DeleteVolumeMsg();
+                dmsg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString());
+                dmsg.setUuid(transientVolume.getUuid());
+                dmsg.setDetachBeforeDeleting(true);
+                bus.makeTargetServiceIdByResourceUuid(dmsg, VolumeConstant.SERVICE_ID, transientVolume.getUuid());
+                bus.send(dmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        trigger.next();
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                afterOverwriteVolume();
+                bus.reply(msg, reply);
+            }
+
+            @ExceptionSafe
+            private void afterOverwriteVolume() {
+                pluginRgty.getExtensionList(OverwriteVolumeExtensionPoint.class).forEach(it ->
+                        it.afterOverwriteVolume(volume, transientVolume));
+            }
+
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                reply.setError(errCode);
+                bus.reply(msg, reply);
             }
         }).start();
     }
