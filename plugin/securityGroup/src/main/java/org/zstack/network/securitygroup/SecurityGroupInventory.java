@@ -115,7 +115,7 @@ public class SecurityGroupInventory {
      * a list of l3Network uuid where this security group has attached to
      */
     @Queryable(mappingClass = SecurityGroupL3NetworkRefInventory.class,
-            joinColumn = @JoinColumn(name="l3NetworkUuid", referencedColumnName = "securityGroupUuid"))
+            joinColumn = @JoinColumn(name="securityGroupUuid", referencedColumnName = "l3NetworkUuid"))
     private Set<String> attachedL3NetworkUuids;
 
     public SecurityGroupInventory() {
