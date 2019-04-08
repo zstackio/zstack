@@ -52,9 +52,9 @@ import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperati
 import org.zstack.header.vm.VmInstanceConstant.Params;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
+import org.zstack.header.vm.VmInstanceSpec.CdRomSpec;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
-import org.zstack.header.vm.VmInstanceSpec.CdRomSpec;
 import org.zstack.header.vm.cdrom.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.Account;
@@ -72,9 +72,8 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.operr;
 import static org.zstack.core.Platform.err;
-import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.*;
 
 
@@ -973,7 +972,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public String getName() {
-                return String.format("vm-%s-state-change-on-the-host-%s", self.getUuid(), msg.getHostUuid());
+                return String.format("vm-%s-state-change-on-the-host-%s", msg.getVmInstanceUuid(), msg.getHostUuid());
             }
         });
     }
