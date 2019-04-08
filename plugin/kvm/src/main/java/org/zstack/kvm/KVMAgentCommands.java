@@ -301,6 +301,7 @@ public class KVMAgentCommands {
         private String cpuGHz;
         private String hostCpuModelName;
         private String systemProductName;
+        private String systemSerialNumber;
         private List<String> ipAddresses;
 
         public String getOsDistribution() {
@@ -377,6 +378,18 @@ public class KVMAgentCommands {
 
         public String getSystemProductName() {
             return systemProductName;
+        }
+
+        public void setSystemProductName(String systemProductName) {
+            this.systemProductName = systemProductName;
+        }
+
+        public String getSystemSerialNumber() {
+            return systemSerialNumber;
+        }
+
+        public void setSystemSerialNumber(String systemSerialNumber) {
+            this.systemSerialNumber = systemSerialNumber;
         }
     }
 
