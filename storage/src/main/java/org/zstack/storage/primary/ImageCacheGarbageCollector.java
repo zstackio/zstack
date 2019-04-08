@@ -45,9 +45,6 @@ public class ImageCacheGarbageCollector implements Component, ManagementNodeChan
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
                 garbageCollectionInterval = newConfig.value(Integer.class);
-                if (garbageCollectionThread != null) {
-                    garbageCollectionThread.cancel(true);
-                }
                 startGarbageCollectionThread();
             }
         });
@@ -59,7 +56,11 @@ public class ImageCacheGarbageCollector implements Component, ManagementNodeChan
         return true;
     }
 
-    private void startGarbageCollectionThread() {
+    private synchronized void startGarbageCollectionThread() {
+        if (garbageCollectionThread != null) {
+            garbageCollectionThread.cancel(true);
+        }
+
         garbageCollectionThread = thdf.submitPeriodicTask(this);
         logger.debug(String.format("Image cache garbage collector starts running by interval[%ss]", garbageCollectionInterval));
     }

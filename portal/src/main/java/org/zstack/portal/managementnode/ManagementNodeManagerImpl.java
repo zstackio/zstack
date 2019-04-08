@@ -113,8 +113,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         public void nodeJoin(ManagementNodeInventory inv) {
             final String nodeId = inv.getUuid();
             if (destinationMaker.getManagementNodesInHashRing().contains(nodeId)) {
-                logger.debug(String.format("the management node[uuid:%s] is already in our hash ring, ignore this node-join call", nodeId));
-                return;
+                logger.debug(String.format("the management node[uuid:%s] is already in our hash ring", nodeId));
             }
 
             ManagementNodeChangeListener l = (ManagementNodeChangeListener) destinationMaker;
