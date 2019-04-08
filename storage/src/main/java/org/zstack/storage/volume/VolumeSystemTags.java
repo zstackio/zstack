@@ -26,4 +26,7 @@ public class VolumeSystemTags {
 
     public static String AUTO_SCALING_GROUP_UUID_TOKEN = "autoScalingGroupUuid";
     public static PatternedSystemTag AUTO_SCALING_GROUP_UUID = new PatternedSystemTag(String.format("autoScalingGroupUuid::{%s}", AUTO_SCALING_GROUP_UUID_TOKEN), VolumeVO.class);
+
+    public static String OVERWRITED_VOLUME_TOKEN = "overwritedVolumeUuid";
+    public static PatternedSystemTag OVERWRITED_VOLUME = new PatternedSystemTag(String.format("overwriteBy::volume::{%s}", OVERWRITED_VOLUME_TOKEN), VolumeVO.class);
 }
