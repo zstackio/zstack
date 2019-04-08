@@ -114,7 +114,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 String huuid = ref.getHostUuid();
                 long cap = ref.getAvailableCapacity();
                 String psUuid = ref.getPrimaryStorageUuid();
-                if (cap >= ratioMgr.calculateByRatio(psUuid, spec.getDiskSize())) {
+                if (cap >= ratioMgr.calculateByRatio(psUuid, spec.getDiskSize()) &&
+                        physicalCapacityMgr.checkCapacityByRatio(psUuid, ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())) {
                     toRemoveHuuids.remove(huuid);
                 }
             }
