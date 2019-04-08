@@ -52,6 +52,7 @@ import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeConstant.Capability;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -64,7 +65,9 @@ import java.util.*;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -923,6 +926,8 @@ public class VolumeBase implements Volume {
                                 .eq(VolumeVO_.uuid, transientVolume.getUuid())
                                 .set(VolumeVO_.installPath, volume.getInstallPath())
                                 .set(VolumeVO_.size, volume.getSize())
+                                .set(VolumeVO_.rootImageUuid, volume.getRootImageUuid())
+                                .set(VolumeVO_.primaryStorageUuid, volume.getPrimaryStorageUuid())
                                 .set(VolumeVO_.actualSize, volume.getActualSize())
                                 .update();
 
@@ -930,11 +935,53 @@ public class VolumeBase implements Volume {
                                 .eq(VolumeVO_.uuid, volume.getUuid())
                                 .set(VolumeVO_.installPath, transientVolume.getInstallPath())
                                 .set(VolumeVO_.size, transientVolume.getSize())
+                                .set(VolumeVO_.rootImageUuid, transientVolume.getRootImageUuid())
+                                .set(VolumeVO_.primaryStorageUuid, transientVolume.getPrimaryStorageUuid())
                                 .set(VolumeVO_.actualSize, transientVolume.getActualSize())
                                 .update();
                     }
                 }.execute();
                 trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "run-extension";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<ChangeVolumeInstallPathExtensionPoint> exts = pluginRgty.getExtensionList(ChangeVolumeInstallPathExtensionPoint.class);
+
+                if (!exts.isEmpty()) {
+                    runExtensions(exts.iterator(), volume.getUuid(), transientVolume, trigger);
+                } else {
+                    trigger.next();
+                }
+            }
+
+            private void runExtensions(final Iterator<ChangeVolumeInstallPathExtensionPoint> it, String volumeUuid, final VolumeInventory transientVolume, final FlowTrigger chain) {
+                if (!it.hasNext()) {
+                    chain.next();
+                    return;
+                }
+
+                if (!VolumeType.Root.toString().equals(transientVolume.getType())) {
+                    chain.next();
+                    return;
+                }
+
+                ChangeVolumeInstallPathExtensionPoint extp = it.next();
+
+                logger.debug(String.format("run ChangeVolumeInstallPathExtensionPoint[%s]", extp.getClass()));
+                extp.afterChangeVmRootVolumeInstallPath(volumeUuid, transientVolume, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        runExtensions(it, volumeUuid, transientVolume, chain);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        chain.fail(errorCode);
+                    }
+                });
             }
         }).then(new NoRollbackFlow() {
             String __name__ = "delete-transient-volume-" + transientVolume.getUuid();
@@ -957,6 +1004,7 @@ public class VolumeBase implements Volume {
             @Override
             public void handle(Map data) {
                 afterOverwriteVolume();
+                createSystemTag();
                 bus.reply(msg, reply);
             }
 
@@ -964,6 +1012,13 @@ public class VolumeBase implements Volume {
             private void afterOverwriteVolume() {
                 pluginRgty.getExtensionList(OverwriteVolumeExtensionPoint.class).forEach(it ->
                         it.afterOverwriteVolume(volume, transientVolume));
+            }
+
+            private void createSystemTag() {
+                SystemTagCreator creator = VolumeSystemTags.OVERWRITED_VOLUME.newSystemTagCreator(volume.getUuid());
+                creator.setTagByTokens(Collections.singletonMap(VolumeSystemTags.OVERWRITED_VOLUME_TOKEN, transientVolume.getUuid()));
+                creator.inherent = false;
+                creator.create();
             }
 
         }).error(new FlowErrorHandler(msg) {
