@@ -110,7 +110,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>${project.compiler.version}</version>
+                <version>${aspectj.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>antlr-add-source</id>
