@@ -1,4 +1,4 @@
-package org.zstack.core.config.resourceconfig;
+package org.zstack.resourceconfig;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
@@ -29,7 +29,7 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
     @Autowired
     private GlobalConfigFacade gcf;
 
-    private Map<String, ResourceConfig> resourceConfigs = new HashMap<>();
+    protected Map<String, ResourceConfig> resourceConfigs = new HashMap<>();
 
     @Override
     @MessageSafe
@@ -137,10 +137,10 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
         return rc.getResourceConfigValue(resourceUuid, clz);
     }
 
-    private void buildResourceConfig(Field field) throws Exception {
+    protected void buildResourceConfig(Field field) throws Exception {
         BindResourceConfig at = field.getAnnotation(BindResourceConfig.class);
         GlobalConfig gc = (GlobalConfig) field.get(null);
-        resourceConfigs.putIfAbsent(gc.getIdentity(), gc.buildResourceConfig(at));
+        resourceConfigs.putIfAbsent(gc.getIdentity(), ResourceConfig.valueOf(gc, at));
     }
 
     private void initResourceConfig() {

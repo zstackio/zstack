@@ -3,7 +3,7 @@ package org.zstack.compute.vm;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
-import org.zstack.core.config.resourceconfig.BindResourceConfig;
+import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceVO;
 

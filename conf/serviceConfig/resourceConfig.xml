@@ -4,24 +4,24 @@
     <interceptor>ResourceConfigApiInterceptor</interceptor>
 
     <message>
-        <name>org.zstack.core.config.resourceconfig.APIUpdateResourceConfigMsg</name>
+        <name>org.zstack.resourceconfig.APIUpdateResourceConfigMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.core.config.resourceconfig.APIDeleteResourceConfigMsg</name>
+        <name>org.zstack.resourceconfig.APIDeleteResourceConfigMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.core.config.resourceconfig.APIQueryResourceConfigMsg</name>
+        <name>org.zstack.resourceconfig.APIQueryResourceConfigMsg</name>
         <serviceId>query</serviceId>
     </message>
 
     <message>
-        <name>org.zstack.core.config.resourceconfig.APIGetResourceBindableConfigMsg</name>
+        <name>org.zstack.resourceconfig.APIGetResourceBindableConfigMsg</name>
     </message>
 
     <message>
-        <name>org.zstack.core.config.resourceconfig.APIGetResourceConfigMsg</name>
+        <name>org.zstack.resourceconfig.APIGetResourceConfigMsg</name>
     </message>
 
 </service>

@@ -3,7 +3,7 @@ package org.zstack.storage.primary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigFacade;
-import org.zstack.core.config.resourceconfig.ResourceConfigFacade;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager;
 
 import java.util.Map;
