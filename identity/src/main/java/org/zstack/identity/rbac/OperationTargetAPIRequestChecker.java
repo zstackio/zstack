@@ -113,7 +113,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 }
 
                 try {
-                    if (resourceType.isAssignableFrom(AccountVO.class)) {
+                    if (resourceType.equals(AccountVO.class)) {
                         checkIfTheAccountOperationItSelf(param);
                     } else if (info.getTargetResources().stream().anyMatch( it -> resourceType.isAssignableFrom(it))) {
                         checkIfTheAccountOwnTheResource(param);
