@@ -46,10 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -70,6 +67,8 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     private Future<Void> heartBeatTask = null;
     private HeartBeatDBSource heartBeatDBSource;
     private List<ManagementNodeChangeListener> lifeCycleExtension = new ArrayList<ManagementNodeChangeListener>();
+    // A dictionary (nodeId -> ManagementNodeInventory) of joined management Node
+    final private Map<String, ManagementNodeInventory> joinedManagementNodes = new ConcurrentHashMap<>();
 
     private static int NODE_STARTING = 0;
     private static int NODE_RUNNING = 1;
@@ -112,7 +111,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         @Override
         public void nodeJoin(ManagementNodeInventory inv) {
             final String nodeId = inv.getUuid();
-            if (destinationMaker.getManagementNodesInHashRing().contains(nodeId)) {
+            if (joinedManagementNodes.putIfAbsent(nodeId, inv) != null) {
                 logger.debug(String.format("the management node[uuid:%s] is already in our hash ring, ignore this node-join call", nodeId));
                 return;
             }
@@ -131,7 +130,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         @Override
         public void nodeLeft(ManagementNodeInventory inv) {
             final String nodeId = inv.getUuid();
-            if (!destinationMaker.getManagementNodesInHashRing().contains(nodeId)) {
+            if (joinedManagementNodes.remove(nodeId) == null) {
                 logger.debug(String.format("the management node[uuid:%s] is not in our hash ring, ignore this node-left call", nodeId));
                 return;
             }
