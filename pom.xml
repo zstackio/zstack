@@ -48,6 +48,7 @@
         <module>coregroovy</module>
         <module>externalservice</module>
         <module>longjob</module>
+        <module>resourceconfig</module>
     </modules>
 
     <dependencyManagement>

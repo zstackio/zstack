@@ -1,4 +1,4 @@
-package org.zstack.core.config.resourceconfig;
+package org.zstack.resourceconfig;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.query.APIQueryMessage;

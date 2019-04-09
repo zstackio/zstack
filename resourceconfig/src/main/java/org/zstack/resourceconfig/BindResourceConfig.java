@@ -1,4 +1,4 @@
-package org.zstack.core.config.resourceconfig;
+package org.zstack.resourceconfig;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;

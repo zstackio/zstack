@@ -13,7 +13,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.componentloader.ComponentLoaderImpl;
 import org.zstack.core.config.GlobalConfigFacade;
-import org.zstack.core.config.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DatabaseGlobalProperty;
 import org.zstack.core.db.Q;
@@ -517,10 +516,6 @@ public class Platform {
         GlobalConfigFacade gcf = loader.getComponent(GlobalConfigFacade.class);
         if (gcf != null) {
             ((Component)gcf).start();
-        }
-        ResourceConfigFacade rcf = loader.getComponent(ResourceConfigFacade.class);
-        if (rcf != null) {
-            ((Component)rcf).start();
         }
 
         bus = loader.getComponentNoExceptionWhenNotExisting(CloudBus.class);

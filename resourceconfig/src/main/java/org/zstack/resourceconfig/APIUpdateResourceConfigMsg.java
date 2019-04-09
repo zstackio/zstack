@@ -1,12 +1,10 @@
-package org.zstack.core.config.resourceconfig;
+package org.zstack.resourceconfig;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vo.ResourceVO;
-
-import javax.annotation.Resource;
 
 @RestRequest(path = "/resource-configurations/{category}/{name}/{resourceUuid}/actions",
         method = HttpMethod.PUT,
