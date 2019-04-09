@@ -893,7 +893,7 @@ public class VolumeBase implements Volume {
 
             @Override
             public boolean skip(Map data) {
-                return transientVolume.isAttached();
+                return transientVolume.isAttached() || !volume.isAttached();
             }
 
             @Override
