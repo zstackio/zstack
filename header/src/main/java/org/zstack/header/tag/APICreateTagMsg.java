@@ -2,13 +2,14 @@ package org.zstack.header.tag;
 
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.vo.ResourceVO;
 
 /**
  */
 public abstract class APICreateTagMsg extends APIMessage {
     @APIParam
     private String resourceType;
-    @APIParam(checkAccount = true)
+    @APIParam(checkAccount = true, resourceType = ResourceVO.class)
     private String resourceUuid;
     @APIParam
     private String tag;
