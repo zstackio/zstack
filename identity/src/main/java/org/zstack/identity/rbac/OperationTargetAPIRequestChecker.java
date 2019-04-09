@@ -205,7 +205,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                     return;
                 }
 
-                List<String> resourceWithNoAccess = new CheckIfAccountCanAccessResource().check(uuids, rbacEntity.getApiMessage().getSession().getAccountUuid());
+                List<String> resourceWithNoAccess = CheckIfAccountCanAccessResource.check(uuids, rbacEntity.getApiMessage().getSession().getAccountUuid());
                 if (!resourceWithNoAccess.isEmpty()) {
                     throw new OperationFailureException(operr("the account[uuid:%s] has no access to the resources[uuid:%s, type:%s]",
                             rbacEntity.getApiMessage().getSession().getAccountUuid(), resourceWithNoAccess, resourceType.getSimpleName()));

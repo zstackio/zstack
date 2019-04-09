@@ -9,6 +9,10 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.APIMessage;
+import org.zstack.identity.AccountManager;
+import org.zstack.identity.rbac.CheckIfAccountCanAccessResource;
+
+import java.util.Collections;
 
 import static org.zstack.core.Platform.argerr;
 
@@ -18,11 +22,17 @@ public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
     private GlobalConfigFacade gcf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private AccountManager acMgr;
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof ResourceConfigMessage) {
             validate((ResourceConfigMessage) msg);
+        }
+
+        if (msg instanceof APIGetResourceConfigMsg) {
+            validate((APIGetResourceConfigMsg) msg);
         }
         return msg;
     }
@@ -38,6 +48,17 @@ public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
         if (rc == null) {
             throw new ApiMessageInterceptionException(argerr("global config[category:%s, name:%s] cannot bind resource",
                     msg.getCategory(), msg.getName()));
+        }
+    }
+
+    private void validate(APIGetResourceConfigMsg msg) {
+        if (acMgr.isAdmin(msg.getSession())) {
+            return;
+        }
+
+        if (!CheckIfAccountCanAccessResource.check(Collections.singletonList(msg.getResourceUuid()), msg.getSession().getAccountUuid()).isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr("account has no access to the resource[uuid: %s]",
+                    msg.getSession().getAccountUuid(), msg.getResourceUuid()));
         }
     }
 }
