@@ -31,6 +31,6 @@
 
     <context:annotation-config />
     <context:spring-configured />
-    <aop:aspectj-autoproxy/>
+    <aop:aspectj-autoproxy proxy-target-class="true"/>
     <tx:annotation-driven transaction-manager="transactionManager" mode="aspectj"/>
 </beans>

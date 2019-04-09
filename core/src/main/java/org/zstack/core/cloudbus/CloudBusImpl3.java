@@ -66,6 +66,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     private ResourceDestinationMaker destMaker;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private DeadMessageManager deadMessageManager;
 
     private final String NO_NEED_REPLY_MSG = "noReply";
     private final String CORRELATION_ID = "correlationId";
@@ -498,8 +500,21 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
         private void httpSend() {
             buildSchema(msg);
-            String ip = destMaker.getNodeInfo(managementNodeId).getNodeIP();
-            httpSend(ip);
+            try {
+                String ip = destMaker.getNodeInfo(managementNodeId).getNodeIP();
+                httpSend(ip);
+            } catch (ManagementNodeNotFoundException e) {
+                if (msg instanceof MessageReply) {
+                    if (!deadMessageManager.handleManagementNodeNotFoundError(managementNodeId, msg, () -> {
+                        String ip = destMaker.getNodeInfo(managementNodeId).getNodeIP();
+                        httpSend(ip);
+                    })) {
+                        throw e;
+                    }
+                } else {
+                    throw e;
+                }
+            }
         }
 
         private void httpSend(String ip) {
@@ -1153,16 +1168,20 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     }
 
     @AsyncThread
-    void handleHttpRequest(HttpEntity<String> e, HttpServletResponse rsp) {
-        Message msg = CloudBusGson.fromJson(e.getBody());
-        Map raw = JSONObjectUtil.toObject(e.getBody(), LinkedHashMap.class);
+    public void handleHttpRequest(HttpEntity<String> e, HttpServletResponse rsp) {
         try {
-            restoreFromSchema(msg, raw);
-        } catch (ClassNotFoundException e1) {
-            throw new CloudRuntimeException(e1);
-        }
+            Message msg = CloudBusGson.fromJson(e.getBody());
+            Map raw = JSONObjectUtil.toObject(e.getBody(), LinkedHashMap.class);
+            try {
+                restoreFromSchema(msg, raw);
+            } catch (ClassNotFoundException e1) {
+                throw new CloudRuntimeException(e1);
+            }
 
-        new MessageSender(msg).localSend();
-        rsp.setStatus(HttpStatus.OK.value());
+            new MessageSender(msg).localSend();
+            rsp.setStatus(HttpStatus.OK.value());
+        } catch (Throwable t) {
+            logger.warn(String.format("unable to deliver a message received from HTTP. HTTP body: %s", e.getBody()), t);
+        }
     }
 }

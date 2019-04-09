@@ -1,11 +1,13 @@
 package org.zstack.core.cloudbus;
 
+import org.springframework.http.HttpEntity;
 import org.zstack.header.Component;
 import org.zstack.header.Service;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.message.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -76,6 +78,15 @@ public interface CloudBus extends Component {
     void installBeforeSendMessageInterceptor(BeforeSendMessageInterceptor interceptor, Class<? extends Message>...classes);
 
     void installBeforePublishEventInterceptor(BeforePublishEventInterceptor interceptor, Class<? extends Event>...classes);
+
+    /**
+     *  this method should be inherited by implementations using HTTP
+     * @param e
+     * @param rsp
+     */
+    default void handleHttpRequest(HttpEntity<String> e, HttpServletResponse rsp) {
+        throw new AbstractMethodError("not supported");
+    }
 
     String HEADER_NO_NEED_REPLY_MSG = "noReply";
     String HEADER_CORRELATION_ID = "correlationId";

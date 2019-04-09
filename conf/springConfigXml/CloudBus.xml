@@ -19,6 +19,13 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="DeadMessageManager" class="org.zstack.core.cloudbus.DeadMessageManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" order="999"/>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="CloudBus3ManagementNodeLifeCycleTracker" class="org.zstack.core.cloudbus.CloudBus3ManagementNodeLifeCycleTracker">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>

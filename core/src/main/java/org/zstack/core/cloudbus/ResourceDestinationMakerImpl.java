@@ -82,7 +82,7 @@ public class ResourceDestinationMakerImpl implements ManagementNodeChangeListene
         if (info == null) {
             ManagementNodeVO vo = dbf.findByUuid(nodeUuid, ManagementNodeVO.class);
             if (vo == null) {
-                throw new CloudRuntimeException(String.format("cannot find management node[uuid:%s]", nodeUuid));
+                throw new ManagementNodeNotFoundException(nodeUuid);
             }
 
             nodeHash.add(nodeUuid);

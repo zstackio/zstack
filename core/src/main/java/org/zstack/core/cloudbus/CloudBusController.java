@@ -1,11 +1,11 @@
 package org.zstack.core.cloudbus;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.zstack.core.Platform;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -17,6 +17,9 @@ import java.util.Enumeration;
 @Controller
 public class CloudBusController {
     private static final CLogger logger = Utils.getLogger(CloudBusController.class);
+
+    @Autowired
+    private CloudBus bus;
 
     private HttpEntity<String> toHttpEntity(HttpServletRequest req) {
         try {
@@ -43,6 +46,7 @@ public class CloudBusController {
     @RequestMapping(value = CloudBusImpl3.HTTP_BASE_URL, method = RequestMethod.POST)
     public void handle(HttpServletRequest request, HttpServletResponse response) {
         HttpEntity<String> entity = toHttpEntity(request);
-        Platform.getComponentLoader().getComponent(CloudBusImpl3.class).handleHttpRequest(entity, response);
+        //Platform.getComponentLoader().getComponent(CloudBusImpl3.class).handleHttpRequest(entity, response);
+        bus.handleHttpRequest(entity, response);
     }
 }
