@@ -12,7 +12,7 @@ public class CheckIfAccountCanAccessResource {
      * @param accountUuid
      * @return the List of resourceUuids that the account have no access
      */
-    public List<String> check(List<String> resourceUuids, String accountUuid) {
+    public static List<String> check(List<String> resourceUuids, String accountUuid) {
         return new SQLBatchWithReturn<List<String>>() {
             @Override
             protected List<String> scripts() {

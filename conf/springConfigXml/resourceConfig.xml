@@ -25,4 +25,11 @@
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
         </zstack:plugin>
     </bean>
+
+    <bean id="ResourceConfigZQLExtension" class="org.zstack.resourceconfig.ResourceConfigZQLExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.zql.RestrictByExprExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 </beans>
