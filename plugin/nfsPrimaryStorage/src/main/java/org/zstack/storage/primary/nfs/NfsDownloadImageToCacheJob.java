@@ -123,7 +123,7 @@ public class NfsDownloadImageToCacheJob implements Job {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        mediator.downloadBits(primaryStorage, backupStorage, image.getSelectedBackupStorage().getInstallPath(), cacheInstallPath, new Completion(trigger) {
+                        mediator.downloadBits(primaryStorage, backupStorage, image.getSelectedBackupStorage().getInstallPath(), cacheInstallPath, false, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
