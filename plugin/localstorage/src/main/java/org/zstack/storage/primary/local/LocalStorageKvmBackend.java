@@ -139,6 +139,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static class InitCmd extends AgentCommand {
         private String path;
         private String hostUuid;
+        private String initFilePath;
 
         public String getHostUuid() {
             return hostUuid;
@@ -154,6 +155,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
         public void setPath(String path) {
             this.path = path;
+        }
+
+        public String getInitFilePath() {
+            return initFilePath;
+        }
+
+        public void setInitFilePath(String initFilePath) {
+            this.initFilePath = initFilePath;
         }
     }
 
@@ -1510,6 +1519,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         InitCmd cmd = new InitCmd();
         cmd.setHostUuid(msg.getHostUuid());
         cmd.setPath(self.getUrl());
+        cmd.setInitFilePath(makeInitializedFilePath());
 
         httpCall(INIT_PATH, msg.getHostUuid(), cmd, true, AgentResponse.class,
                 new ReturnValueCompletion<AgentResponse>(completion) {
@@ -2627,6 +2637,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         cmd.uuid = self.getUuid();
                         cmd.path = self.getUrl();
                         cmd.hostUuid = arg;
+                        cmd.initFilePath = makeInitializedFilePath();
 
                         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                         msg.setCommand(cmd);
