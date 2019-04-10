@@ -7,6 +7,47 @@ import org.zstack.header.message.NeedJsonSchema;
 public class VmTracerCanonicalEvents {
     public static final String VM_STATE_CHANGED_PATH = "/vmTracer/vmStateChanged";
     public static final String STRANGER_VM_FOUND_PATH = "/vmTracer/strangerVmFound";
+    public static final String VM_OPERATE_FAIL_ON_HYPERVISOR_PATH = "/vmTracer/vmOperateFailOnHypervisor";
+
+    @NeedJsonSchema
+    public static class OperateFailOnHypervisorData {
+        private String vmUuid;
+        private String hostUuid;
+        private String operate;
+        private String result;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getOperate() {
+            return operate;
+        }
+
+        public void setOperate(String operate) {
+            this.operate = operate;
+        }
+
+        public String getResult() {
+            return result;
+        }
+
+        public void setResult(String result) {
+            this.result = result;
+        }
+    }
 
     @NeedJsonSchema
     public static class StrangerVmFoundData {
