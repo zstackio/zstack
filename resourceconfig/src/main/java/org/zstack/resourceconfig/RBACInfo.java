@@ -1,4 +1,4 @@
-package org.zstack.core.config;
+package org.zstack.resourceconfig;
 
 import org.zstack.header.identity.rbac.RBACDescription;
 import org.zstack.header.vo.ResourceVO;
@@ -8,19 +8,14 @@ public class RBACInfo implements RBACDescription {
     public void permissions() {
         permissionBuilder()
                 .name("global-config")
-                .adminOnlyAPIs("org.zstack.core.config.**")
-                .normalAPIs(APIQueryGlobalConfigMsg.class)
-                .normalAPIs("org.zstack.core.config.resourceconfig.**")
+                .normalAPIs("org.zstack.resourceconfig.**")
                 .targetResources(ResourceVO.class)
                 .build();
     }
 
     @Override
     public void contributeToRoles() {
-        roleContributorBuilder()
-                .roleName("other")
-                .actions(APIQueryGlobalConfigMsg.class)
-                .build();
+
     }
 
     @Override

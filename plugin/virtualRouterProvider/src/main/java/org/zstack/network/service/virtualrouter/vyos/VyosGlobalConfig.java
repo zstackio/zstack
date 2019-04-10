@@ -3,7 +3,7 @@ package org.zstack.network.service.virtualrouter.vyos;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
-import org.zstack.core.config.resourceconfig.BindResourceConfig;
+import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.network.l3.L3NetworkVO;
 
 /**

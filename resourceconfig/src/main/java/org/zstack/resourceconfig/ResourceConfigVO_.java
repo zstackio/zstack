@@ -1,4 +1,4 @@
-package org.zstack.core.config.resourceconfig;
+package org.zstack.resourceconfig;
 
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
