@@ -1,5 +1,6 @@
 package org.zstack.test.integration.kvm.host
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
@@ -10,9 +11,13 @@ import org.zstack.kvm.AddKVMHostMsg
 import org.zstack.sdk.AddKVMHostAction
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.GetHypervisorTypesResult
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
+import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.tester.ZTester
 
 /**
@@ -45,12 +50,61 @@ class AddHostCase extends SubCase {
             testCheckHostManagementFailure()
             testInnerAddHostMsg()
             testGetHypervisorTypes()
+            testAddHostFailureRollback()
         }
     }
 
     void prepare() {
         cluster = env.inventoryByName("cluster") as ClusterInventory
         bus = bean(CloudBus.class)
+    }
+
+    void testAddHostFailureRollback() {
+        def initCalled = false
+        def hangOnHostContinueConnectFlow = true
+
+        env.afterSimulator(LocalStorageKvmBackend.INIT_PATH) { rsp, HttpEntity<String> e ->
+            initCalled = true
+
+            while (hangOnHostContinueConnectFlow) {
+                sleep(1000)
+            }
+
+            return rsp
+        }
+
+        def res = null
+        def hostUuid = Platform.uuid
+        def addHostThread = Thread.start {
+            def action = new AddKVMHostAction()
+            action.sessionId = adminSession()
+            action.resourceUuid = hostUuid
+            action.clusterUuid = cluster.uuid
+            action.managementIp = "127.0.0.3"
+            action.name = "kvm"
+            action.username = "root"
+            action.password = "password"
+            res = action.call()
+        }
+
+        def deleteHostThread = Thread.start {
+            retryInSecs {
+                assert initCalled
+            }
+
+            deleteHost {
+                uuid = hostUuid
+            }
+
+            hangOnHostContinueConnectFlow = false
+        }
+
+        addHostThread.join()
+        deleteHostThread.join()
+
+        retryInSecs {
+            assert res.error != null
+        }
     }
 
     void testCheckHostVersionFailure() {
