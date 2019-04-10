@@ -842,6 +842,33 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
+    public static class CheckSnapshotCompletedCmd extends AgentCommand {
+        private String volumePath;
+        private List<String> snapshots; // uuids
+
+        public String getVolumePath() {
+            return volumePath;
+        }
+
+        public void setVolumePath(String volumePath) {
+            this.volumePath = volumePath;
+        }
+
+        public List<String> getSnapshots() {
+            return snapshots;
+        }
+
+        public void setSnapshots(List<String> snapshots) {
+            this.snapshots = snapshots;
+        }
+    }
+
+    public static class CheckSnapshotCompletedRsp extends AgentResponse {
+        public String snapshotUuid;
+        public boolean completed;  // whether the snapshot create completed
+        public long size;
+    }
+
     public static class DownloadBitsFromKVMHostCmd extends AgentCommand implements ReloadableCommand {
         private String hostname;
         private String username;
@@ -990,6 +1017,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String GET_VOLUME_SNAPINFOS_PATH = "/ceph/primarystorage/volume/getsnapinfos";
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download/cancel";
+    public static final String CHECK_SNAPSHOT_COMPLETED = "/ceph/primarystorage/check/snapshot";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
 
@@ -4119,6 +4147,46 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     @Override
     public void handle(AskInstallPathForNewSnapshotMsg msg) {
         AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
+        bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(CheckVolumeSnapshotsOnPrimaryStorageMsg msg) {
+        final CheckVolumeSnapshotsOnPrimaryStorageReply reply = new CheckVolumeSnapshotsOnPrimaryStorageReply();
+        CheckSnapshotCompletedCmd cmd = new CheckSnapshotCompletedCmd();
+        cmd.setVolumePath(msg.getVolumeInstallPath());
+        cmd.snapshots = msg.getSnapshots().stream().map(VolumeSnapshotInventory::getUuid).collect(Collectors.toList());
+
+        httpCall(CHECK_SNAPSHOT_COMPLETED, cmd, CheckSnapshotCompletedRsp.class, new ReturnValueCompletion<CheckSnapshotCompletedRsp>(msg) {
+            @Override
+            public void success(CheckSnapshotCompletedRsp returnValue) {
+                reply.setCompleted(returnValue.completed);
+                if (returnValue.completed) {
+                    /**
+                     * complete the new snapshot installpath
+                     */
+                    VolumeSnapshotVO snapshot = dbf.findByUuid(returnValue.snapshotUuid, VolumeSnapshotVO.class);
+                    snapshot.setStatus(VolumeSnapshotStatus.Ready);
+                    snapshot.setPrimaryStorageInstallPath(msg.getVolumeInstallPath() + "@" + snapshot.getUuid());
+                    snapshot.setSize(returnValue.size);
+                    snapshot.setPrimaryStorageUuid(self.getUuid());
+                    snapshot.setType(VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString());
+                    snapshot.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+                    dbf.updateAndRefresh(snapshot);
+
+                    reply.setSnapshotUuid(returnValue.snapshotUuid);
+                }
+
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+
         bus.reply(msg, reply);
     }
 }

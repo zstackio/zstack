@@ -12,6 +12,7 @@ import java.sql.Timestamp;
 public class VolumeSnapshotTreeAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VolumeSnapshotTreeAO, Boolean> current;
     public static volatile SingularAttribute<VolumeSnapshotTreeAO, String> volumeUuid;
+    public static volatile SingularAttribute<VolumeSnapshotTreeAO, VolumeSnapshotTreeStatus> status;
     public static volatile SingularAttribute<VolumeSnapshotTreeAO, Timestamp> createDate;
     public static volatile SingularAttribute<VolumeSnapshotTreeAO, Timestamp> lastOpDate;
 }

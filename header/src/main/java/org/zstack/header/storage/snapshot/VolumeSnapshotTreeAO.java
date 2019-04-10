@@ -5,10 +5,7 @@ import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.VolumeEO;
 
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.PreUpdate;
+import javax.persistence.*;
 import java.sql.Timestamp;
 
 /**
@@ -21,6 +18,10 @@ public class VolumeSnapshotTreeAO extends ResourceVO {
 
     @Column
     private boolean current;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    private VolumeSnapshotTreeStatus status;
 
     @Column
     private Timestamp createDate;
@@ -63,5 +64,13 @@ public class VolumeSnapshotTreeAO extends ResourceVO {
 
     public void setCurrent(boolean current) {
         this.current = current;
+    }
+
+    public VolumeSnapshotTreeStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(VolumeSnapshotTreeStatus status) {
+        this.status = status;
     }
 }

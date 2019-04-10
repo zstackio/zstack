@@ -7,4 +7,5 @@ import org.zstack.header.core.Completion;
  */
 public interface VolumeSnapshotAfterDeleteExtensionPoint {
     void volumeSnapshotAfterDeleteExtensionPoint(VolumeSnapshotInventory snapshot, Completion completion);
+    void volumeSnapshotAfterFailedDeleteExtensionPoint(VolumeSnapshotInventory snapshot);
 }

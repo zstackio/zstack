@@ -39,6 +39,8 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
@@ -1339,6 +1341,11 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     @Override
     public void handle(AskInstallPathForNewSnapshotMsg msg) {
         NfsPrimaryStorageBackend bkd = getUsableBackend();
+        if (bkd == null) {
+            throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
+                    self.getUuid(), self.getName()));
+        }
+
         bkd.handle(getSelfInventory(), msg, new ReturnValueCompletion<AskInstallPathForNewSnapshotReply>(msg) {
             @Override
             public void success(AskInstallPathForNewSnapshotReply returnValue) {
@@ -1350,6 +1357,60 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
                 reply.setSuccess(false);
                 reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(CheckVolumeSnapshotsOnPrimaryStorageMsg msg) {
+        CheckVolumeSnapshotsOnPrimaryStorageReply sreply = new CheckVolumeSnapshotsOnPrimaryStorageReply();
+        String connectedHostUuid = factory.getConnectedHostForOperation(getSelfInventory()).get(0).getUuid();
+        CheckSnapshotOnHypervisorMsg cmsg = new CheckSnapshotOnHypervisorMsg();
+        cmsg.setHostUuid(connectedHostUuid);
+        cmsg.setVolumeInstallPath(msg.getVolumeInstallPath());
+
+        bus.makeLocalServiceId(cmsg, HostConstant.SERVICE_ID);
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    CheckSnapshotOnHypervisorReply r = reply.castReply();
+                    sreply.setCompleted(r.isCompleted());
+                    if (r.isCompleted()) {
+                        /**
+                         * 1. complete snapshot
+                         * 2. update volume
+                         */
+                        VolumeVO volume = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
+                        VolumeSnapshotVO snapshot = null;
+                        for (VolumeSnapshotInventory s: msg.getSnapshots()) {
+                            if (r.getSnapshotInstallPath().contains(s.getUuid())) {
+                                snapshot = dbf.findByUuid(s.getUuid(), VolumeSnapshotVO.class);
+                            }
+                        }
+                        if (snapshot == null) {
+                            r.setError(operr("cannot find snapshot installpath in db, but actually [%s] in ps [%s], please check it manually",
+                                    r.getSnapshotInstallPath(), self.getUuid()));
+                        } else {
+                            volume.setInstallPath(r.getVolumeInstallPath());
+
+                            snapshot.setStatus(VolumeSnapshotStatus.Ready);
+                            snapshot.setPrimaryStorageUuid(self.getUuid());
+                            snapshot.setPrimaryStorageInstallPath(r.getSnapshotInstallPath());
+                            snapshot.setSize(r.getSize());
+                            snapshot.setType(VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString());
+                            snapshot.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
+
+                            dbf.updateAndRefresh(volume);
+                            dbf.updateAndRefresh(snapshot);
+
+                            sreply.setSnapshotUuid(snapshot.getUuid());
+                        }
+                    }
+                } else {
+                    sreply.setError(reply.getError());
+                }
                 bus.reply(msg, reply);
             }
         });
