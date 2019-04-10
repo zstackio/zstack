@@ -466,7 +466,7 @@ public class KvmBackend extends HypervisorBackend {
                                 @Override
                                 public void run(final FlowTrigger trigger, Map data) {
                                     BackupStorageKvmDownloader downloader = getBackupStorageKvmDownloader(backupStorageUuid);
-                                    downloader.downloadBits(backupStorageInstallPath, primaryStorageInstallPath, new Completion(trigger) {
+                                    downloader.downloadBits(backupStorageInstallPath, primaryStorageInstallPath, false, new Completion(trigger) {
                                         @Override
                                         public void success() {
                                             trigger.next();
@@ -783,7 +783,7 @@ public class KvmBackend extends HypervisorBackend {
     void handle(final DownloadDataVolumeToPrimaryStorageMsg msg, final ReturnValueCompletion<DownloadDataVolumeToPrimaryStorageReply> completion) {
         final String installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
         BackupStorageKvmDownloader downloader = getBackupStorageKvmDownloader(msg.getBackupStorageRef().getBackupStorageUuid());
-        downloader.downloadBits(msg.getBackupStorageRef().getInstallPath(), installPath, new Completion(completion) {
+        downloader.downloadBits(msg.getBackupStorageRef().getInstallPath(), installPath, true, new Completion(completion) {
             @Override
             public void success() {
                 DownloadDataVolumeToPrimaryStorageReply reply = new DownloadDataVolumeToPrimaryStorageReply();
@@ -1350,7 +1350,7 @@ public class KvmBackend extends HypervisorBackend {
         }
 
         @Override
-        public void downloadBits(final String bsPath, final String psPath, final Completion completion) {
+        public void downloadBits(final String bsPath, final String psPath, boolean isData, final Completion completion) {
             GetSftpBackupStorageDownloadCredentialMsg gmsg = new GetSftpBackupStorageDownloadCredentialMsg();
             gmsg.setBackupStorageUuid(bsUuid);
             bus.makeTargetServiceIdByResourceUuid(gmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
