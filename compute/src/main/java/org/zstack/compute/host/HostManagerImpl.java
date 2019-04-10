@@ -389,15 +389,14 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     }
                 });
             }
-        }).done(new FlowDoneHandler(amsg) {
+        }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
                 HostInventory inv = factory.getHostInventory(vo.getUuid());
                 logger.debug(String.format("successfully added host[name:%s, hypervisor:%s, uuid:%s]", vo.getName(), vo.getHypervisorType(), vo.getUuid()));
                 completion.success(inv);
-
             }
-        }).error(new FlowErrorHandler(amsg) {
+        }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
                 // delete host totally through the database, so other tables
