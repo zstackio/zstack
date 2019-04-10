@@ -20,7 +20,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.ansible.*;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.resourceconfig.ResourceConfigFacade;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;

@@ -7,8 +7,6 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.GlobalConfigCanonicalEvents.UpdateEvent;
-import org.zstack.core.config.resourceconfig.BindResourceConfig;
-import org.zstack.core.config.resourceconfig.ResourceConfig;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
@@ -390,10 +388,6 @@ public class GlobalConfig {
 
         String newValue = val == null ? null : val.toString();
         update(newValue, true);
-    }
-
-    public ResourceConfig buildResourceConfig(BindResourceConfig info) {
-        return ResourceConfig.valueOf(this, info);
     }
 
     boolean isLinked() {

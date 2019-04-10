@@ -12,17 +12,24 @@
          http://zstack.org/schema/zstack/plugin.xsd"
        default-init-method="init" default-destroy-method="destroy">
 
-    <bean id="ResourceConfigFacade" class="org.zstack.core.config.resourceconfig.ResourceConfigFacadeImpl">
+    <bean id="ResourceConfigFacade" class="org.zstack.resourceconfig.ResourceConfigFacadeImpl">
         <zstack:plugin>
-            <!-- don't declare ResourceConfigFacade as Component, it's specially handled -->
+            <zstack:extension interface="org.zstack.header.Component" order="65535"/>
             <zstack:extension interface="org.zstack.header.Service" />
-            <zstack:extension interface="org.zstack.core.config.resourceconfig.ResourceConfigFacade"/>
+            <zstack:extension interface="org.zstack.resourceconfig.ResourceConfigFacade"/>
         </zstack:plugin>
     </bean>
 
-    <bean id="ResourceConfigApiInterceptor" class="org.zstack.core.config.resourceconfig.ResourceConfigApiInterceptor">
+    <bean id="ResourceConfigApiInterceptor" class="org.zstack.resourceconfig.ResourceConfigApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="ResourceConfigZQLExtension" class="org.zstack.resourceconfig.ResourceConfigZQLExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.zql.RestrictByExprExtensionPoint"/>
         </zstack:plugin>
     </bean>
 </beans>

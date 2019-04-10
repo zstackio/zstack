@@ -3,8 +3,8 @@ package org.zstack.compute.allocator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigFacade;
-import org.zstack.core.config.resourceconfig.ResourceConfig;
-import org.zstack.core.config.resourceconfig.ResourceConfigFacade;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
 
 import java.util.Map;

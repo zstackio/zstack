@@ -1,4 +1,4 @@
-package org.zstack.core.config.resourceconfig;
+package org.zstack.resourceconfig;
 
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,13 +18,12 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.StringDSL.s;
-import static org.zstack.core.config.resourceconfig.ResourceConfigCanonicalEvents.*;
+import static org.zstack.resourceconfig.ResourceConfigCanonicalEvents.*;
 
 /**
  * Created by MaJin on 2019/2/23.

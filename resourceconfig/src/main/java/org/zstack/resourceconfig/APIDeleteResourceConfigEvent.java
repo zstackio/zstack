@@ -1,4 +1,4 @@
-package org.zstack.core.config.resourceconfig;
+package org.zstack.resourceconfig;
 
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
