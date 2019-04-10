@@ -115,7 +115,7 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
     }
 
     @Override
-    public void downloadBits(final PrimaryStorageInventory pinv, final BackupStorageInventory bsinv, final String backupStorageInstallPath, final String primaryStorageInstallPath, final Completion completion) {
+    public void downloadBits(final PrimaryStorageInventory pinv, final BackupStorageInventory bsinv, final String backupStorageInstallPath, final String primaryStorageInstallPath, boolean isData, final Completion completion) {
         GetSftpBackupStorageDownloadCredentialMsg gmsg = new GetSftpBackupStorageDownloadCredentialMsg();
         gmsg.setBackupStorageUuid(bsinv.getUuid());
         bus.makeTargetServiceIdByResourceUuid(gmsg, BackupStorageConstant.SERVICE_ID, bsinv.getUuid());

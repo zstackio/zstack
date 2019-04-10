@@ -12,7 +12,7 @@ public interface NfsPrimaryToBackupStorageMediator extends PrimaryToBackupStorag
     void createVolumeFromImageCache(PrimaryStorageInventory primaryStorage, ImageCacheInventory image,
                                     VolumeInventory volume, ReturnValueCompletion<String> completion);
 
-    void downloadBits(PrimaryStorageInventory pinv, BackupStorageInventory bsinv, String backupStorageInstallPath, String primaryStorageInstallPath, Completion completion);
+    void downloadBits(PrimaryStorageInventory pinv, BackupStorageInventory bsinv, String backupStorageInstallPath, String primaryStorageInstallPath, boolean isData, Completion completion);
 
     void uploadBits(String imageUuid, PrimaryStorageInventory pinv, BackupStorageInventory bsinv, String backupStorageInstallPath, String primaryStorageInstallPath, ReturnValueCompletion<String> completion);
 
