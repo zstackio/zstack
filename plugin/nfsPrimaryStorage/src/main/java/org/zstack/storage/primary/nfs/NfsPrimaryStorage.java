@@ -971,7 +971,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         );
 
         mediator.downloadBits(getSelfInventory(), BackupStorageInventory.valueOf(bsvo),
-                msg.getBackupStorageRef().getInstallPath(), installPath, new Completion(msg) {
+                msg.getBackupStorageRef().getInstallPath(), installPath, true, new Completion(msg) {
                     @Override
                     public void success() {
                         reply.setInstallPath(installPath);
