@@ -162,6 +162,16 @@ doc {
 					
 				}
 				column {
+					name "tagUuids"
+					enclosedIn "params"
+					desc "标签UUID列表"
+					location "body"
+					type "List"
+					optional true
+					since "3.4"
+
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "云主机系统标签"
