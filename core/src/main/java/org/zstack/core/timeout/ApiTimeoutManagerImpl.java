@@ -10,12 +10,10 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
 import org.zstack.core.db.Q;
 import org.zstack.header.Component;
-import org.zstack.header.core.StaticInit;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.*;
-import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
@@ -79,10 +77,6 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
 
         gcf.getAllConfig().values().stream().filter(gc -> APITIMEOUT_GLOBAL_CONFIG_TYPE.equals(gc.getCategory()))
                 .forEach(gc -> gc.installValidateExtension(validator));
-    }
-
-    public Map<Class, Long> getLegacyTimeouts() {
-        return legacyTimeouts;
     }
 
     @Override
@@ -166,29 +160,17 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
                 vo.setDefaultValue(String.valueOf(at.timeunit().toMillis(at.value())));
             }
 
-            vo.setValue(getTimeoutGlobalConfigValue(clz, vo));
+            Long timeout = getLegacyTimeout(clz);
+            if (timeout != null) {
+                vo.setValue(String.valueOf(timeout));
+            } else {
+                vo.setValue(vo.getDefaultValue());
+            }
 
             results.add(GlobalConfig.valueOf(vo));
         });
 
         return results;
-    }
-
-    private String getTimeoutGlobalConfigValue(Class clz, GlobalConfigVO vo) {
-        // once global config already exists, use its default value as
-        // auto generated value and do not use legacy timeout
-        if (Q.New(GlobalConfigVO.class)
-                .eq(GlobalConfigVO_.category, vo.getCategory())
-                .eq(GlobalConfigVO_.name, vo.getName()).isExists()) {
-            return vo.getDefaultValue();
-        }
-
-        Long timeout = getLegacyTimeout(clz);
-        if (timeout != null) {
-            return String.valueOf(timeout);
-        }
-
-        return vo.getDefaultValue();
     }
 
     class Value {
