@@ -1,14 +1,20 @@
 CREATE INDEX idxVmUsageVOvmUuid ON VmUsageVO(accountUuid, dateInLong, vmUuid);
+CREATE INDEX idxVmUsageVOaccountUuidVmUuid ON VmUsageVO(accountUuid, vmUuid);
 
 CREATE INDEX idxRootVolumeUsageVOvolumeUuid ON RootVolumeUsageVO(accountUuid, dateInLong, volumeUuid);
+CREATE INDEX idxRootVolumeUsageVOaccountUuidVolumeUuid ON RootVolumeUsageVO(accountUuid, volumeUuid);
 
 CREATE INDEX idxDataVolumeUsageVOvolumeUuid ON DataVolumeUsageVO(accountUuid, dateInLong, volumeUuid);
+CREATE INDEX idxDataVolumeUsageVOaccountUuidVolumeUuid ON DataVolumeUsageVO(accountUuid, volumeUuid);
 
 CREATE INDEX idxPciDeviceUsageVOpciDeviceUuid ON PciDeviceUsageVO(accountUuid, dateInLong, pciDeviceUuid);
+CREATE INDEX idxPciDeviceUsageVOaccountUuidPciDeviceUuid ON PciDeviceUsageVO(accountUuid, pciDeviceUuid);
 
 CREATE INDEX idxPubIpVipBandwidthUsageVOvipUuid ON PubIpVipBandwidthUsageVO(accountUuid, dateInLong, vipUuid);
+CREATE INDEX idxPubIpVipBandwidthUsageVOaccountUuidVipUuid ON PubIpVipBandwidthUsageVO(accountUuid, vipUuid);
 
 CREATE INDEX idxPubIpVmNicBandwidthUsageVOvmNicUuid ON PubIpVmNicBandwidthUsageVO(accountUuid, dateInLong, vmNicUuid);
+CREATE INDEX idxPubIpVmNicBandwidthUsageVOaccountUuidVmNicUuid ON PubIpVmNicBandwidthUsageVO(accountUuid, vmNicUuid);
 
 CREATE TABLE `BillingVO` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -16,7 +22,7 @@ CREATE TABLE `BillingVO` (
   `accountUuid` varchar(32) NOT NULL,
   `resourceUuid` varchar(32) NOT NULL,
   `resourceName` varchar(255),
-  `spending` bigint(20) unsigned NOT NULL,
+  `spending` double unsigned NOT NULL,
   `startTime` bigint(20) unsigned NOT NULL,
   `endTime` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`id`),
@@ -60,7 +66,7 @@ CREATE TABLE `PciDeviceBillingVO`(
 
 CREATE TABLE `PubIpVipBandwidthInBillingVO` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `vipIp` varchar(255) NOT NULL,
+  `vipIp` varchar(255),
   `bandwidthSize` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`)
@@ -68,7 +74,7 @@ CREATE TABLE `PubIpVipBandwidthInBillingVO` (
 
 CREATE TABLE `PubIpVipBandwidthOutBillingVO` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `vipIp` varchar(255) NOT NULL,
+  `vipIp` varchar(255),
   `bandwidthSize` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`)
@@ -76,7 +82,7 @@ CREATE TABLE `PubIpVipBandwidthOutBillingVO` (
 
 CREATE TABLE `PubIpVmNicBandwidthInBillingVO` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `vmNicIp` varchar(255) NOT NULL,
+  `vmNicIp` varchar(255),
   `bandwidthSize` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`)
@@ -84,7 +90,7 @@ CREATE TABLE `PubIpVmNicBandwidthInBillingVO` (
 
 CREATE TABLE `PubIpVmNicBandwidthOutBillingVO` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `vmNicIp` varchar(255) NOT NULL,
+  `vmNicIp` varchar(255),
   `bandwidthSize` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`)
@@ -206,3 +212,5 @@ CREATE TABLE `PubIpVmNicBandwidthUsageHistoryVO` (
   KEY `idxPubIpVmNicBandwidthUsageVOaccountUuid` (`accountUuid`,`dateInLong`),
   KEY  `idxPubIpVmNicBandwidthUsageVOvmNicUuid` (`accountUuid`, `dateInLong`, `vmNicUuid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+
+INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`, `concreteResourceType`) SELECT t.uuid, t.resourceName, "PriceVO", "org.zstack.billing.PriceVO" FROM PriceVO t;
