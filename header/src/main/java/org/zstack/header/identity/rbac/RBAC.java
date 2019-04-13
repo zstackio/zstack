@@ -318,6 +318,8 @@ public class RBAC {
 
         public Permission build() {
             permission = RBACDescriptionHelper.flatten(permission);
+            DebugUtils.Assert(permissions.stream().noneMatch(it -> it.name != null && it.name.equals(permission.name)),
+                    String.format("RBAC already has a permission named: %s", permission.name));
             permissions.add(permission);
             return permission;
         }

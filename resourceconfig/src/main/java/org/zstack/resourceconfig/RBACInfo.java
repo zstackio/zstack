@@ -7,7 +7,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
-                .name("global-config")
+                .name("resource-config")
                 .normalAPIs("org.zstack.resourceconfig.**")
                 .targetResources(ResourceVO.class)
                 .build();
@@ -17,7 +17,7 @@ public class RBACInfo implements RBACDescription {
     public void contributeToRoles() {
         roleContributorBuilder()
                 .roleName("other")
-                .actionsByPermissionName("global-config")
+                .actionsByPermissionName("resource-config")
                 .build();
     }
 
