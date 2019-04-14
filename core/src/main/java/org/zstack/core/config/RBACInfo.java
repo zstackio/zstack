@@ -10,8 +10,6 @@ public class RBACInfo implements RBACDescription {
                 .name("global-config")
                 .adminOnlyAPIs("org.zstack.core.config.**")
                 .normalAPIs(APIQueryGlobalConfigMsg.class)
-                .normalAPIs("org.zstack.core.config.resourceconfig.**")
-                .targetResources(ResourceVO.class)
                 .build();
     }
 
