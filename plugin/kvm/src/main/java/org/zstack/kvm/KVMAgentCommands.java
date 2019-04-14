@@ -1972,4 +1972,8 @@ public class KVMAgentCommands {
     public static class ReportHostDeviceEventCmd {
         public String hostUuid;
     }
+
+    public static class ReportVmShutdownEventCmd {
+        public String vmUuid;
+    }
 }
