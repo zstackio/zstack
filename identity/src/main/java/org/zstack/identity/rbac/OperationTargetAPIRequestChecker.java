@@ -9,6 +9,8 @@ import org.zstack.header.identity.*;
 import org.zstack.header.identity.rbac.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.tag.APICreateTagMsg;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.identity.APIRequestChecker;
 
 import javax.persistence.Tuple;
@@ -113,12 +115,16 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 }
 
                 try {
-                    if (resourceType.equals(AccountVO.class)) {
+                    // TODO: fix hack
+                    // should use a more appropriate way to check resource access
+                    if (APICreateTagMsg.class.isAssignableFrom(rbacEntity.getApiMessage().getClass())) {
+                        checkIfTheAccountCanAccessTheResource(param);
+                    } else if (resourceType.equals(AccountVO.class)) {
                         checkIfTheAccountOperationItSelf(param);
                     } else if (info.getTargetResources().stream().anyMatch( it -> resourceType.isAssignableFrom(it))) {
                         checkIfTheAccountOwnTheResource(param);
                     } else {
-                        checkIfTheAccountCanAccessTheResource(param);
+                        checkIfTheAccountCanReadTheResource(param);
                     }
                 } catch (OperationFailureException oe) {
                     throw oe;
@@ -193,13 +199,17 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 });
             }
 
-            private void checkIfTheAccountCanAccessTheResource(APIMessage.FieldParam param) throws IllegalAccessException {
+            private void checkIfTheAccountCanReadTheResource(APIMessage.FieldParam param) throws IllegalAccessException {
                 Class resourceType = param.param.resourceType();
 
                 if (RBAC.isResourceGlobalReadable(resourceType)) {
                     return;
                 }
 
+                checkIfTheAccountCanAccessTheResource(param);
+            }
+
+            private void checkIfTheAccountCanAccessTheResource(APIMessage.FieldParam param) throws IllegalAccessException {
                 List<String> uuids = getResourceUuids(param);
                 if (uuids.isEmpty()) {
                     return;
@@ -208,7 +218,7 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 List<String> resourceWithNoAccess = CheckIfAccountCanAccessResource.check(uuids, rbacEntity.getApiMessage().getSession().getAccountUuid());
                 if (!resourceWithNoAccess.isEmpty()) {
                     throw new OperationFailureException(operr("the account[uuid:%s] has no access to the resources[uuid:%s, type:%s]",
-                            rbacEntity.getApiMessage().getSession().getAccountUuid(), resourceWithNoAccess, resourceType.getSimpleName()));
+                            rbacEntity.getApiMessage().getSession().getAccountUuid(), resourceWithNoAccess, param.param.resourceType().getSimpleName()));
                 }
 
             }
