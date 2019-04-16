@@ -16,6 +16,14 @@ CREATE INDEX idxPubIpVipBandwidthUsageVOaccountUuidVipUuid ON PubIpVipBandwidthU
 CREATE INDEX idxPubIpVmNicBandwidthUsageVOvmNicUuid ON PubIpVmNicBandwidthUsageVO(accountUuid, dateInLong, vmNicUuid);
 CREATE INDEX idxPubIpVmNicBandwidthUsageVOaccountUuidVmNicUuid ON PubIpVmNicBandwidthUsageVO(accountUuid, vmNicUuid);
 
+ALTER TABLE VmUsageVO add column resourcePriceUserConfig varchar(1024) DEFAULT NULL;
+ALTER TABLE RootVolumeUsageVO add column resourcePriceUserConfig varchar(1024) DEFAULT NULL;
+ALTER TABLE DataVolumeUsageVO add column resourcePriceUserConfig varchar(1024) DEFAULT NULL;
+ALTER TABLE PciDeviceUsageVO add column resourcePriceUserConfig varchar(1024) DEFAULT NULL;
+ALTER TABLE PubIpVipBandwidthUsageVO add column resourcePriceUserConfig varchar(1024) DEFAULT NULL;
+ALTER TABLE PubIpVmNicBandwidthUsageVO add column resourcePriceUserConfig varchar(1024) DEFAULT NULL;
+ALTER TABLE SnapShotUsageVO add column resourcePriceUserConfig varchar(1024) DEFAULT NULL;
+
 CREATE TABLE `BillingVO` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `billingType` varchar(255) NOT NULL,
@@ -105,6 +113,7 @@ CREATE TABLE `DataVolumeUsageHistoryVO` (
   `volumeSize` bigint(20) unsigned NOT NULL,
   `dateInLong` bigint(20) unsigned NOT NULL,
   `inventory` text,
+  `resourcePriceUserConfig` varchar(1024) DEFAULT NULL,
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`id`),
@@ -123,6 +132,7 @@ CREATE TABLE `RootVolumeUsageHistoryVO` (
   `volumeSize` bigint(20) unsigned NOT NULL,
   `dateInLong` bigint(20) unsigned NOT NULL,
   `inventory` text,
+  `resourcePriceUserConfig` varchar(1024) DEFAULT NULL,
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`id`),
@@ -142,6 +152,7 @@ CREATE TABLE `VmUsageHistoryVO` (
   `rootVolumeSize` bigint(20) unsigned NOT NULL,
   `dateInLong` bigint(20) unsigned NOT NULL,
   `inventory` text,
+  `resourcePriceUserConfig` varchar(1024) DEFAULT NULL,
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`id`),
@@ -165,6 +176,7 @@ CREATE TABLE `PciDeviceUsageHistoryVO`(
   `accountUuid` varchar(32) NOT NULL,
   `dateInLong` bigint(20) unsigned NOT NULL,
   `inventory` text,
+  `resourcePriceUserConfig` varchar(1024) DEFAULT NULL,
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`id`),
@@ -185,6 +197,7 @@ CREATE TABLE `PubIpVipBandwidthUsageHistoryVO` (
   `accountUuid` varchar(32) NOT NULL,
   `dateInLong` bigint(20) unsigned NOT NULL,
   `inventory` text,
+  `resourcePriceUserConfig` varchar(1024) DEFAULT NULL,
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`id`),
@@ -205,6 +218,7 @@ CREATE TABLE `PubIpVmNicBandwidthUsageHistoryVO` (
   `accountUuid` varchar(32) NOT NULL,
   `dateInLong` bigint(20) unsigned NOT NULL,
   `inventory` text,
+  `resourcePriceUserConfig` varchar(1024) DEFAULT NULL,
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`id`),
@@ -214,3 +228,5 @@ CREATE TABLE `PubIpVmNicBandwidthUsageHistoryVO` (
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 
 INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`, `concreteResourceType`) SELECT t.uuid, t.resourceName, "PriceVO", "org.zstack.billing.PriceVO" FROM PriceVO t;
+
+ALTER TABLE PriceVO CHANGE COLUMN `resourceName` `priceResourceType` varchar(255) NOT NULL;
