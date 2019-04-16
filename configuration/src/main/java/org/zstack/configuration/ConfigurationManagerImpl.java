@@ -863,6 +863,8 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             }
         }.execute();
 
+        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), InstanceOfferingVO.class.getSimpleName());
+
         evt.setInventory(inv);
         bus.publish(evt);
         logger.debug("Successfully added instance offering: " + printer.print(inv));
