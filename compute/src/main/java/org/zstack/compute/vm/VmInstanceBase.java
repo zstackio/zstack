@@ -7,6 +7,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.*;
@@ -34,6 +35,7 @@ import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -637,24 +639,50 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
-                logger.debug(String.format("HaStartVmJudger[%s] says the VM[uuid:%s, name:%s] is qualified for HA start, now we are starting it",
-                        judger.getClass(), self.getUuid(), self.getName()));
-                SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid())
-                        .set(VmInstanceVO_.state, VmInstanceState.Stopped)
-                        .update();
-                startVm(msg, new Completion(msg, chain) {
-                    @Override
-                    public void success() {
-                        reply.setInventory(getSelfInventory());
-                        bus.reply(msg, reply);
-                        chain.next();
-                    }
+                ErrorCodeList errList = new ErrorCodeList();
+                new While<>(pluginRgty.getExtensionList(BeforeHaStartVmInstanceExtensionPoint.class)).each((ext, whileCompletion) -> {
+                    ext.beforeHaStartVmInstance(msg.getVmInstanceUuid(), msg.getJudgerClassName(), msg.getSoftAvoidHostUuids(), new Completion() {
+                        @Override
+                        public void success() {
+                            whileCompletion.done();
+                        }
 
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            errList.getCauses().add(errorCode);
+                            whileCompletion.done();
+                        }
+                    });
+                }).run(new NoErrorCompletion() {
                     @Override
-                    public void fail(ErrorCode errorCode) {
-                        reply.setError(errorCode);
-                        bus.reply(msg, reply);
-                        chain.next();
+                    public void done() {
+                        if (!errList.getCauses().isEmpty()) {
+                            reply.setError(errList.getCauses().get(0));
+                            bus.reply(msg, reply);
+                            chain.next();
+                            return;
+                        }
+
+                        logger.debug(String.format("HaStartVmJudger[%s] says the VM[uuid:%s, name:%s] is qualified for HA start, now we are starting it",
+                                judger.getClass(), self.getUuid(), self.getName()));
+                        SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid())
+                                .set(VmInstanceVO_.state, VmInstanceState.Stopped)
+                                .update();
+                        startVm(msg, new Completion(msg, chain) {
+                            @Override
+                            public void success() {
+                                reply.setInventory(getSelfInventory());
+                                bus.reply(msg, reply);
+                                chain.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                reply.setError(errorCode);
+                                bus.reply(msg, reply);
+                                chain.next();
+                            }
+                        });
                     }
                 });
             }
