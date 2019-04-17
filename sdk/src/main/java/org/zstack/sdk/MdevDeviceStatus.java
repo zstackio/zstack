@@ -1,7 +1,6 @@
 package org.zstack.sdk;
 
-public enum PciDeviceStatus {
+public enum MdevDeviceStatus {
 	Active,
 	Attached,
-	System,
 }

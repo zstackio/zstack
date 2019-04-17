@@ -65,7 +65,7 @@ public class QueryPciDeviceSpecAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/pci-device/pci-device-specs";
+        info.path = "/pci-device-specs";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

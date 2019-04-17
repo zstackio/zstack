@@ -1,8 +1,9 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.PciDeviceStatus;
-import org.zstack.sdk.PciDeviceState;
 import org.zstack.sdk.PciDeviceType;
+import org.zstack.sdk.PciDeviceState;
+import org.zstack.sdk.PciDeviceStatus;
+import org.zstack.sdk.PciDeviceVirtStatus;
 import org.zstack.sdk.PciDeviceMetaData;
 
 public class PciDeviceInventory  {
@@ -13,6 +14,14 @@ public class PciDeviceInventory  {
     }
     public java.lang.String getUuid() {
         return this.uuid;
+    }
+
+    public java.lang.String name;
+    public void setName(java.lang.String name) {
+        this.name = name;
+    }
+    public java.lang.String getName() {
+        return this.name;
     }
 
     public java.lang.String description;
@@ -31,6 +40,14 @@ public class PciDeviceInventory  {
         return this.hostUuid;
     }
 
+    public java.lang.String parentUuid;
+    public void setParentUuid(java.lang.String parentUuid) {
+        this.parentUuid = parentUuid;
+    }
+    public java.lang.String getParentUuid() {
+        return this.parentUuid;
+    }
+
     public java.lang.String vmInstanceUuid;
     public void setVmInstanceUuid(java.lang.String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
@@ -39,12 +56,20 @@ public class PciDeviceInventory  {
         return this.vmInstanceUuid;
     }
 
-    public PciDeviceStatus status;
-    public void setStatus(PciDeviceStatus status) {
-        this.status = status;
+    public java.lang.String pciSpecUuid;
+    public void setPciSpecUuid(java.lang.String pciSpecUuid) {
+        this.pciSpecUuid = pciSpecUuid;
     }
-    public PciDeviceStatus getStatus() {
-        return this.status;
+    public java.lang.String getPciSpecUuid() {
+        return this.pciSpecUuid;
+    }
+
+    public PciDeviceType type;
+    public void setType(PciDeviceType type) {
+        this.type = type;
+    }
+    public PciDeviceType getType() {
+        return this.type;
     }
 
     public PciDeviceState state;
@@ -55,12 +80,20 @@ public class PciDeviceInventory  {
         return this.state;
     }
 
-    public PciDeviceType type;
-    public void setType(PciDeviceType type) {
-        this.type = type;
+    public PciDeviceStatus status;
+    public void setStatus(PciDeviceStatus status) {
+        this.status = status;
     }
-    public PciDeviceType getType() {
-        return this.type;
+    public PciDeviceStatus getStatus() {
+        return this.status;
+    }
+
+    public PciDeviceVirtStatus virtStatus;
+    public void setVirtStatus(PciDeviceVirtStatus virtStatus) {
+        this.virtStatus = virtStatus;
+    }
+    public PciDeviceVirtStatus getVirtStatus() {
+        return this.virtStatus;
     }
 
     public java.lang.String vendorId;
@@ -95,20 +128,20 @@ public class PciDeviceInventory  {
         return this.subdeviceId;
     }
 
-    public PciDeviceMetaData metaData;
-    public void setMetaData(PciDeviceMetaData metaData) {
-        this.metaData = metaData;
-    }
-    public PciDeviceMetaData getMetaData() {
-        return this.metaData;
-    }
-
     public java.lang.String pciDeviceAddress;
     public void setPciDeviceAddress(java.lang.String pciDeviceAddress) {
         this.pciDeviceAddress = pciDeviceAddress;
     }
     public java.lang.String getPciDeviceAddress() {
         return this.pciDeviceAddress;
+    }
+
+    public PciDeviceMetaData metaData;
+    public void setMetaData(PciDeviceMetaData metaData) {
+        this.metaData = metaData;
+    }
+    public PciDeviceMetaData getMetaData() {
+        return this.metaData;
     }
 
     public java.sql.Timestamp createDate;
@@ -133,6 +166,14 @@ public class PciDeviceInventory  {
     }
     public java.util.List getMatchedPciDeviceOfferingRef() {
         return this.matchedPciDeviceOfferingRef;
+    }
+
+    public java.util.List mdevSpecRefs;
+    public void setMdevSpecRefs(java.util.List mdevSpecRefs) {
+        this.mdevSpecRefs = mdevSpecRefs;
+    }
+    public java.util.List getMdevSpecRefs() {
+        return this.mdevSpecRefs;
     }
 
 }

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetPciDeviceSpecCandidatesAction extends AbstractAction {
+public class QueryMdevDeviceAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetPciDeviceSpecCandidatesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetPciDeviceSpecCandidatesResult value;
+        public org.zstack.sdk.QueryMdevDeviceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,6 @@ public class GetPciDeviceSpecCandidatesAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List clusterUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hostUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List types;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
 
 
     private Result makeResult(ApiResult res) {
@@ -60,8 +34,8 @@ public class GetPciDeviceSpecCandidatesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetPciDeviceSpecCandidatesResult value = res.getResult(org.zstack.sdk.GetPciDeviceSpecCandidatesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetPciDeviceSpecCandidatesResult() : value; 
+        org.zstack.sdk.QueryMdevDeviceResult value = res.getResult(org.zstack.sdk.QueryMdevDeviceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryMdevDeviceResult() : value; 
 
         return ret;
     }
@@ -91,7 +65,7 @@ public class GetPciDeviceSpecCandidatesAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/pci-device-specs/candidates";
+        info.path = "/mdev-devices";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
