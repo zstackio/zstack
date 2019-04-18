@@ -5,4 +5,6 @@ public enum VRouterRouteEntryType {
 	UserBlackHole,
 	DirectConnect,
 	ZStack,
+	OSPF,
+	Unknown,
 }
