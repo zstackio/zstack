@@ -126,7 +126,7 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                 for (MessageReply r : replies) {
                     L2NetworkInventory inv = l2invs.get(replies.indexOf(r));
                     uuids.add(inv.getUuid());
-                    logger.debug(String.format("delete backup storage[uuid:%s, name:%s]", inv.getUuid(), inv.getName()));
+                    logger.debug(String.format("delete l2 network[uuid:%s, name:%s]", inv.getUuid(), inv.getName()));
                 }
 
                 dbf.removeByPrimaryKeys(uuids, L2NetworkVO.class);
