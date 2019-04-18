@@ -388,7 +388,11 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                 } else {
                     res.success = false;
                     res.error = rsp.error;
-                    res.failure = rsp.failure.toString();
+
+                    // if agent met unexpected error, no failure will be set
+                    if (rsp.failure != null) {
+                        res.failure = rsp.failure.toString();
+                    }
                 }
 
                 if (rsp.success && rsp.availableCapacity != null && rsp.totalCapacity != null) {
