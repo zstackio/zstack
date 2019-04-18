@@ -641,7 +641,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 ErrorCodeList errList = new ErrorCodeList();
                 new While<>(pluginRgty.getExtensionList(BeforeHaStartVmInstanceExtensionPoint.class)).each((ext, whileCompletion) -> {
-                    ext.beforeHaStartVmInstance(msg.getVmInstanceUuid(), msg.getJudgerClassName(), msg.getSoftAvoidHostUuids(), new Completion() {
+                    ext.beforeHaStartVmInstance(msg.getVmInstanceUuid(), msg.getJudgerClassName(), msg.getSoftAvoidHostUuids(), new Completion(msg) {
                         @Override
                         public void success() {
                             whileCompletion.done();
