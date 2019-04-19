@@ -1,11 +1,14 @@
 package org.zstack.test.integration.storage.primary.ceph
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
+import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.ceph.MonStatus
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO_
+import org.zstack.storage.primary.PrimaryStorageGlobalConfig
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -17,6 +20,7 @@ import org.zstack.utils.gson.JSONObjectUtil
  */
 class CephPrimaryStorageStatusCase extends SubCase {
     EnvSpec env
+    PrimaryStorageInventory ps
 
     @Override
     void clean() {
@@ -123,17 +127,48 @@ class CephPrimaryStorageStatusCase extends SubCase {
     @Override
     void test() {
         env.create {
+            ps = env.inventoryByName("ceph-pri")
+
+            PrimaryStorageGlobalConfig.PING_INTERVAL.updateValue(1)
+
             testOneMonDownWontCausePrimaryStorageDown()
+            testPingFailButNoFailureSetInResponse()
+        }
+    }
+
+    void testPingFailButNoFailureSetInResponse() {
+        env.afterSimulator(CephPrimaryStorageMonBase.PING_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageMonBase.PingCmd.class)
+            CephPrimaryStorageMonBase.PingRsp pingRsp = new CephPrimaryStorageMonBase.PingRsp()
+            if (cmd.monAddr.equals( "127.0.0.4:7777")) {
+                pingRsp.failure = null
+                pingRsp.success = false
+                pingRsp.error = "on purpose"
+            }
+
+            return pingRsp
+        }
+
+        retryInSecs {
+            assert Q.New(CephPrimaryStorageMonVO.class)
+                    .eq(CephPrimaryStorageMonVO_.monAddr, "127.0.0.4")
+                    .eq(CephPrimaryStorageMonVO_.status, MonStatus.Disconnected).isExists()
+        }
+
+        env.cleanAfterSimulatorHandlers()
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+
+        retryInSecs {
+            assert Q.New(CephPrimaryStorageMonVO.class)
+                    .eq(CephPrimaryStorageMonVO_.monAddr, "127.0.0.4")
+                    .eq(CephPrimaryStorageMonVO_.status, MonStatus.Connected).isExists()
         }
     }
 
     void testOneMonDownWontCausePrimaryStorageDown() {
-        updateGlobalConfig {
-            category = "primaryStorage"
-            name = "ping.interval"
-            value = 1
-        }
-
         SQL.New(CephPrimaryStorageMonVO.class)
                 .eq(CephPrimaryStorageMonVO_.monAddr, "127.0.0.4")
                 .set(CephPrimaryStorageMonVO_.status, MonStatus.Connecting).update()
@@ -160,5 +195,16 @@ class CephPrimaryStorageStatusCase extends SubCase {
             assert mon2Exist
         }
 
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+
+        retryInSecs {
+            assert Q.New(CephPrimaryStorageMonVO.class)
+                    .eq(CephPrimaryStorageMonVO_.monAddr, "127.0.0.4")
+                    .eq(CephPrimaryStorageMonVO_.status, MonStatus.Connected).isExists()
+        }
+
+        env.cleanAfterSimulatorHandlers()
     }
 }

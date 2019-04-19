@@ -559,7 +559,7 @@ public abstract class HostBase extends AbstractHost {
                 HostState origState = self.getState();
                 HostState state = changeState(stateEvent);
 
-                return origState == HostState.Maintenance && state != HostState.Maintenance;
+                return (origState == HostState.Maintenance || origState == HostState.PreMaintenance) && state != HostState.Maintenance;
             }
 
             @Override
