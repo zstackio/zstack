@@ -21,6 +21,7 @@ import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -486,114 +487,41 @@ public abstract class HostBase extends AbstractHost {
         return self.getState();
     }
 
-    protected void changeStateByApiMessage(final APIChangeHostStateMsg msg, final NoErrorCompletion completion) {
-        thdf.chainSubmit(new ChainTask(msg, completion) {
-            @Override
-            public String getSyncSignature() {
-                return String.format("change-host-state-%s", self.getUuid());
-            }
+    private boolean hostOutOfMaintenance(HostStateEvent stateEvent) {
+        HostState origState = self.getState();
+        HostState state = changeState(stateEvent);
 
-            private void done(SyncTaskChain chain) {
-                completion.done();
-                chain.next();
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                final APIChangeHostStateEvent evt = new APIChangeHostStateEvent(msg.getId());
-                HostStateEvent stateEvent = HostStateEvent.valueOf(msg.getStateEvent());
-                stateEvent = stateEvent == HostStateEvent.maintain ? HostStateEvent.preMaintain : stateEvent;
-                try {
-                    extpEmitter.preChange(self, stateEvent);
-                } catch (HostException he) {
-                    evt.setError(err(SysErrors.CHANGE_RESOURCE_STATE_ERROR, he.getMessage()));
-                    bus.publish(evt);
-                    done(chain);
-                    return;
-                }
-
-                if (HostStateEvent.preMaintain == stateEvent) {
-                    HostState originState = self.getState();
-                    changeState(HostStateEvent.preMaintain);
-                    maintenanceHook(new Completion(msg, chain) {
-                        @Override
-                        public void success() {
-                            changeState(HostStateEvent.maintain);
-                            evt.setInventory(HostInventory.valueOf(self));
-                            bus.publish(evt);
-                            done(chain);
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            evt.setError(err(HostErrors.UNABLE_TO_ENTER_MAINTENANCE_MODE, errorCode, errorCode.getDetails()));
-                            HostStateEvent rollbackEvent = dbf.reload(self).getState().getTargetStateDrivenEvent(originState);
-                            DebugUtils.Assert(rollbackEvent != null, "rollbackEvent not found!");
-                            changeState(rollbackEvent);
-                            bus.publish(evt);
-                            done(chain);
-                        }
-                    });
-                } else {
-                    if (hostOutOfMaintenance(stateEvent)) {
-                        // host is out of maintenance mode, track and reconnect it.
-                        tracker.trackHost(self.getUuid());
-
-                        // change host status to connecting
-                        // jira: ZSTAC-15944
-                        changeConnectionState(HostStatusEvent.connecting);
-                        ReconnectHostMsg rmsg = new ReconnectHostMsg();
-                        rmsg.setHostUuid(self.getUuid());
-                        bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
-                        bus.send(rmsg);
-                    }
-
-                    HostInventory inv = HostInventory.valueOf(self);
-                    evt.setInventory(inv);
-                    bus.publish(evt);
-                    done(chain);
-                }
-            }
-
-            private boolean hostOutOfMaintenance(HostStateEvent stateEvent) {
-                HostState origState = self.getState();
-                HostState state = changeState(stateEvent);
-
-                return (origState == HostState.Maintenance || origState == HostState.PreMaintenance) && state != HostState.Maintenance;
-            }
-
-            @Override
-            public String getName() {
-                return String.format("change-host-state-%s", self.getUuid());
-            }
-        });
+        return (origState == HostState.Maintenance || origState == HostState.PreMaintenance) && state != HostState.Maintenance;
     }
 
     protected void handle(final APIChangeHostStateMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getName() {
-                return "change-host-state-" + self.getUuid();
-            }
+        APIChangeHostStateEvent evt = new APIChangeHostStateEvent(msg.getId());
 
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
+        HostStateEvent stateEvent = HostStateEvent.valueOf(msg.getStateEvent());
+        stateEvent = stateEvent == HostStateEvent.maintain ? HostStateEvent.preMaintain : stateEvent;
+        try {
+            extpEmitter.preChange(self, stateEvent);
+        } catch (HostException he) {
+            evt.setError(err(SysErrors.CHANGE_RESOURCE_STATE_ERROR, he.getMessage()));
+            bus.publish(evt);
+            return;
+        }
 
+        ChangeHostStateMsg cmsg = new ChangeHostStateMsg();
+        cmsg.setStateEvent(stateEvent.toString());
+        cmsg.setUuid(msg.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, cmsg.getUuid());
+        bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
-            public void run(final SyncTaskChain chain) {
-                changeStateByApiMessage(msg, new NoErrorCompletion(chain) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                    }
-                });
-            }
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                    return;
+                }
 
-            @Override
-            public int getSyncLevel() {
-                return getHostSyncLevel();
+                evt.setInventory(((ChangeHostStateReply)reply).getInventory());
+                bus.publish(evt);
             }
         });
     }
@@ -1064,32 +992,32 @@ public abstract class HostBase extends AbstractHost {
         });
     }
 
-    private void changeStateByLocalMessage(final ChangeHostStateMsg msg, final NoErrorCompletion completion) {
-        thdf.chainSubmit(new ChainTask(msg, completion) {
+    private void handle(final ChangeHostStateMsg msg) {
+        ChangeHostStateReply reply = new ChangeHostStateReply();
+
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
                 return String.format("change-host-state-%s", self.getUuid());
             }
 
-            private void done(SyncTaskChain chain) {
-                completion.done();
-                chain.next();
-            }
-
             @Override
             public void run(SyncTaskChain chain) {
-                ChangeHostStateReply reply = new ChangeHostStateReply();
-                if (self.getState() != HostState.Enabled && self.getState() != HostState.Disabled) {
-                    done(chain);
-                    return;
-                }
+                doHostStateChange(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        reply.setInventory(HostInventory.valueOf(self));
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
 
-                HostStateEvent stateEvent = HostStateEvent.valueOf(msg.getStateEvent());
-                changeState(stateEvent);
-                HostInventory inv = HostInventory.valueOf(self);
-                reply.setInventory(inv);
-                bus.reply(msg, reply);
-                done(chain);
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
             }
 
             @Override
@@ -1099,32 +1027,42 @@ public abstract class HostBase extends AbstractHost {
         });
     }
 
-    private void handle(final ChangeHostStateMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getName() {
-                return "change-host-state-" + self.getUuid();
+    private void doHostStateChange(ChangeHostStateMsg msg, Completion completion) {
+        HostStateEvent stateEvent = HostStateEvent.valueOf(msg.getStateEvent());
+
+        if (HostStateEvent.preMaintain == stateEvent) {
+            HostState originState = self.getState();
+            changeState(HostStateEvent.preMaintain);
+            maintenanceHook(new Completion(msg) {
+                @Override
+                public void success() {
+                    changeState(HostStateEvent.maintain);
+                    completion.success();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    HostStateEvent rollbackEvent = dbf.reload(self).getState().getTargetStateDrivenEvent(originState);
+                    DebugUtils.Assert(rollbackEvent != null, "rollbackEvent not found!");
+                    changeState(rollbackEvent);
+                    completion.fail(err(HostErrors.UNABLE_TO_ENTER_MAINTENANCE_MODE, errorCode, errorCode.getDetails()));
+                }
+            });
+        } else {
+            if (hostOutOfMaintenance(stateEvent)) {
+                // host is out of maintenance mode, track and reconnect it.
+                tracker.trackHost(self.getUuid());
+
+                // change host status to connecting
+                // jira: ZSTAC-15944
+                changeConnectionState(HostStatusEvent.connecting);
+                ReconnectHostMsg rmsg = new ReconnectHostMsg();
+                rmsg.setHostUuid(self.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
+                bus.send(rmsg);
             }
 
-            @Override
-            public String getSyncSignature() {
-                return id;
-            }
-
-            @Override
-            public void run(final SyncTaskChain chain) {
-                changeStateByLocalMessage(msg, new NoErrorCompletion(chain) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                    }
-                });
-            }
-
-            @Override
-            public int getSyncLevel() {
-                return getHostSyncLevel();
-            }
-        });
+            completion.success();
+        }
     }
 }
