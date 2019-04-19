@@ -4,6 +4,7 @@ import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.appliancevm.ApplianceVmSyncConfigToHaGroupExtensionPoint;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterConfigProxy;
 
 import java.util.ArrayList;
@@ -23,8 +24,8 @@ public class VipConfigProxy extends VirtualRouterConfigProxy implements Applianc
     }
 
     @Override
-    public void applianceVmSyncConfigAfterAddToHaGroup(ApplianceVmInventory inv, String haUuid) {
-
+    public void applianceVmSyncConfigAfterAddToHaGroup(ApplianceVmInventory inv, String haUuid, NoErrorCompletion completion) {
+        completion.done();
     }
 
     @Override

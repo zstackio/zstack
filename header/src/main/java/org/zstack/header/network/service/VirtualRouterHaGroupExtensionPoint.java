@@ -24,6 +24,7 @@ public interface VirtualRouterHaGroupExtensionPoint {
     void detachNetworkServiceFromHaRouter(String type, List<String> uuids, String vrUuid);
     List<String> getHaVrUuidsFromNetworkService(String type, String Uuid);
     List<String> getNetworkServicesFromHaVrUuid(String type, String vrUuid);
+    List<String> getNetworkServicesFromHaGroupUuid(String type, String haGroupUuid);
 
     void cleanupHaNetworkService(String vrUuid, Completion completion);
 }
