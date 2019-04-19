@@ -20,8 +20,10 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
@@ -87,6 +89,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
     @Override
     public List<HostVO> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
+        long reservedCapacity = SizeUtils.sizeStringToBytes(PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value());
+
         if (VmOperation.NewCreate.toString().equals(spec.getVmOperation())) {
             List<String> huuids = getNeedCheckHostLocalStorageList(candidates, spec);
             if(huuids.isEmpty()){
@@ -103,7 +107,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 long cap = ref.getAvailableCapacity();
                 String psUuid = ref.getPrimaryStorageUuid();
                 // check primary storage capacity and host physical capacity
-                if (cap < ratioMgr.calculateByRatio(psUuid, spec.getDiskSize()) ||
+                if (cap - reservedCapacity < ratioMgr.calculateByRatio(psUuid, spec.getDiskSize()) ||
                         !physicalCapacityMgr.checkCapacityByRatio(psUuid, ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())) {
                     addHostPrimaryStorageBlacklist(huuid, psUuid, spec);
                     toRemoveHuuids.add(huuid);
@@ -114,7 +118,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 String huuid = ref.getHostUuid();
                 long cap = ref.getAvailableCapacity();
                 String psUuid = ref.getPrimaryStorageUuid();
-                if (cap >= ratioMgr.calculateByRatio(psUuid, spec.getDiskSize()) &&
+                if (cap - reservedCapacity >= ratioMgr.calculateByRatio(psUuid, spec.getDiskSize()) &&
                         physicalCapacityMgr.checkCapacityByRatio(psUuid, ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())) {
                     toRemoveHuuids.remove(huuid);
                 }
