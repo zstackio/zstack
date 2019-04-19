@@ -221,25 +221,10 @@ class CloudBus3Case extends SubCase {
 
         bus.registerService(service)
 
-        ManagementNodeVO vo = new ManagementNodeVO()
-        vo.setHostName("127.0.0.123")
-        vo.setHeartBeat(Timestamp.valueOf(LocalDateTime.now()))
-        vo.setUuid(Platform.uuid)
-        vo.setPort(8080)
-        vo.setState(ManagementNodeState.RUNNING)
-        dbf.persist(vo)
-
         def qmsg = new APIQueryVmInstanceMsg()
         qmsg.setTimeout(1L)
         bus.makeLocalServiceId(qmsg, SERVICE_ID)
-        bus.makeServiceIdByManagementNodeId(qmsg, SERVICE_ID, vo.getUuid())
-
-        bus.installBeforeSendMessageInterceptor(new AbstractBeforeSendMessageInterceptor() {
-            @Override
-            void beforeSendMessage(Message msg) {
-                dbf.remove(vo)
-            }
-        })
+        bus.makeServiceIdByManagementNodeId(qmsg, SERVICE_ID, "some-fake-uuid")
 
         expect(OperationFailureException.class) {
             bus.call(qmsg)

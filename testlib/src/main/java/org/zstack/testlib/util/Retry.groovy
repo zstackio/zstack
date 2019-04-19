@@ -6,6 +6,13 @@ import org.zstack.utils.Utils
 import java.util.concurrent.TimeUnit
 
 trait Retry {
+    /**
+     *
+     * @param total
+     * @param interval: NOTE, default is 1/10 second for fast executing
+     * @param c
+     * @return
+     */
     boolean retryInSecs(int total = 8, int interval = 1, Closure c) {
         int count = 0
         def ret = false
