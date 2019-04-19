@@ -296,6 +296,10 @@ public class SourceClassMap {
 			put("org.zstack.monitoring.items.ItemInventory", "org.zstack.sdk.ItemInventory");
 			put("org.zstack.monitoring.media.EmailMediaInventory", "org.zstack.sdk.EmailMediaInventory");
 			put("org.zstack.monitoring.media.MediaInventory", "org.zstack.sdk.MediaInventory");
+			put("org.zstack.multicast.router.header.MulticastRouteInventory", "org.zstack.sdk.MulticastRouteInventory");
+			put("org.zstack.multicast.router.header.MulticastRouterInventory", "org.zstack.sdk.MulticastRouterInventory");
+			put("org.zstack.multicast.router.header.MulticastRouterRendezvousPointInventory", "org.zstack.sdk.MulticastRouterRendezvousPointInventory");
+			put("org.zstack.multicast.router.header.MulticastRouterVpcVRouterRefInventory", "org.zstack.sdk.MulticastRouterVpcVRouterRefInventory");
 			put("org.zstack.nas.NasFileSystemInventory", "org.zstack.sdk.NasFileSystemInventory");
 			put("org.zstack.nas.NasMountTargetInventory", "org.zstack.sdk.NasMountTargetInventory");
 			put("org.zstack.nas.NasProtocolType", "org.zstack.sdk.NasProtocolType");
@@ -657,6 +661,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MiniStorageType", "org.zstack.storage.primary.ministorage.MiniStorageType");
 			put("org.zstack.sdk.MonitorTriggerActionInventory", "org.zstack.monitoring.actions.MonitorTriggerActionInventory");
 			put("org.zstack.sdk.MonitorTriggerInventory", "org.zstack.monitoring.MonitorTriggerInventory");
+			put("org.zstack.sdk.MulticastRouteInventory", "org.zstack.multicast.router.header.MulticastRouteInventory");
+			put("org.zstack.sdk.MulticastRouterInventory", "org.zstack.multicast.router.header.MulticastRouterInventory");
+			put("org.zstack.sdk.MulticastRouterRendezvousPointInventory", "org.zstack.multicast.router.header.MulticastRouterRendezvousPointInventory");
+			put("org.zstack.sdk.MulticastRouterVpcVRouterRefInventory", "org.zstack.multicast.router.header.MulticastRouterVpcVRouterRefInventory");
 			put("org.zstack.sdk.NasFileSystemInventory", "org.zstack.nas.NasFileSystemInventory");
 			put("org.zstack.sdk.NasMountTargetInventory", "org.zstack.nas.NasMountTargetInventory");
 			put("org.zstack.sdk.NasProtocolType", "org.zstack.nas.NasProtocolType");

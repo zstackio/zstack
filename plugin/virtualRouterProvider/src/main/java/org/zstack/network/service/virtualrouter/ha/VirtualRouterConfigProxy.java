@@ -68,5 +68,13 @@ public abstract class VirtualRouterConfigProxy {
             return new ArrayList<>();
         }
     }
+
+    final public List<String> getServiceUuidsByHaGrupUuid(String haGroupUuid, String type) {
+        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            return ext.getNetworkServicesFromHaGroupUuid(type, haGroupUuid);
+        }
+
+        return new ArrayList<>();
+    }
 }
 
