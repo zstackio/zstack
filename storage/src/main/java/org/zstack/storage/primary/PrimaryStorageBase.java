@@ -721,6 +721,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         msg.setInstallPath(spec.getInstallPath());
         msg.setHypervisorType(spec.getHypervisorType());
         msg.setFolder(spec.isFolder());
+        msg.setBitsUuid(spec.getResourceUuid());
+        msg.setBitsType(spec.getResourceType());
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
         bus.send(msg, new CloudBusCallBack(msg) {
             @Override
@@ -809,6 +811,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             msg.setInstallPath(spec.getInstallPath());
             msg.setHypervisorType(spec.getHypervisorType());
             msg.setFolder(spec.isFolder());
+            msg.setBitsUuid(spec.getResourceUuid());
+            msg.setBitsType(spec.getResourceType());
             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
             bus.send(msg, new CloudBusCallBack(coml) {
                 @Override
