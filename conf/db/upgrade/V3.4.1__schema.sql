@@ -228,5 +228,3 @@ CREATE TABLE `PubIpVmNicBandwidthUsageHistoryVO` (
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 
 INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`, `concreteResourceType`) SELECT t.uuid, t.resourceName, "PriceVO", "org.zstack.billing.PriceVO" FROM PriceVO t;
-
-ALTER TABLE PriceVO CHANGE COLUMN `resourceName` `priceResourceType` varchar(255) NOT NULL;
