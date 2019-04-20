@@ -27,7 +27,8 @@ public enum HostState {
         PreMaintenance.transactions(
                 new Transaction(HostStateEvent.disable, HostState.Disabled),
                 new Transaction(HostStateEvent.enable, HostState.Enabled),
-                new Transaction(HostStateEvent.maintain, HostState.Maintenance)
+                new Transaction(HostStateEvent.maintain, HostState.Maintenance),
+                new Transaction(HostStateEvent.preMaintain, HostState.PreMaintenance)
         );
 
         Maintenance.transactions(
