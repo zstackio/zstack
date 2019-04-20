@@ -165,6 +165,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
 
         // if required host exists, filter the refs first
         if (spec.getRequiredHostUuid() != null) {
+            logger.debug(String.format("host[uuid:%s] is request, only check its capacity", spec.getRequiredHostUuid()));
             refs = refs.stream()
                     .filter(ref -> ref.getHostUuid().equals(spec.getRequiredHostUuid()))
                     .collect(Collectors.toList());
@@ -183,6 +184,8 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
                 }
             }
         }
+
+        logger.debug(String.format("candidate hosts [%s]", candidateHosts.stream().map(LocalStorageHostRefVO::getHostUuid).collect(Collectors.toList())));
         if (!candidateHosts.isEmpty()) {
             Iterator<LocalStorageHostRefVO> it = candidateHosts.iterator();
             List<String> err = new ArrayList<>();
@@ -210,6 +213,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             }
         }
 
+        logger.debug(String.format("after check image cache, primary storage candidates [%s]", candidates));
         List<PrimaryStorageVO> res;
         if (candidates.isEmpty()) {
             res = new ArrayList<>();
