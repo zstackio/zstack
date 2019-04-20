@@ -116,6 +116,14 @@ public class UsbDeviceInventory  {
         return this.usbVersion;
     }
 
+    public java.lang.String attachType;
+    public void setAttachType(java.lang.String attachType) {
+        this.attachType = attachType;
+    }
+    public java.lang.String getAttachType() {
+        return this.attachType;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
