@@ -72,7 +72,7 @@ class CreateDataVolumeTemplateCase extends SubCase {
         def l3 = env.inventoryByName("pubL3") as L3NetworkInventory
 
         shareResource {
-            resourceUuids = [offer.uuid, disk.uuid, image.uuid]
+            resourceUuids = [offer.uuid, disk.uuid, image.uuid, l3.uuid]
             toPublic = true
         }
 

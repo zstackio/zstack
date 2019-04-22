@@ -62,6 +62,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     private Map<String, Class> resourceTypeClassMap = new HashMap<>();
     private Map<Class, Class> resourceTypeCreateMessageMap = new HashMap<>();
     private Map<String, List<SystemTagCreateMessageValidator>> createMessageValidators = new HashMap<>();
+    private Map<String, List<SystemTagResourceDeletionOperator>> resourceDeletionOperators = new HashMap<>();
     private Map<String, List<SystemTagLifeCycleExtension>> lifeCycleExtensions = new HashMap<>();
     private List<CreateTagFromMsgExtensionPoint> createTagExtensions = new ArrayList<>();
     private List<Class> autoDeleteTagClasses;
@@ -647,6 +648,20 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     @Override
+    public void installAfterResourceDeletionOperator(String resourceType, SystemTagResourceDeletionOperator operator) {
+        if (!resourceTypeClassMap.containsKey(resourceType)) {
+            throw new CloudRuntimeException(String.format("cannot find resource type[%s] in tag system ", resourceType));
+        }
+
+        List<SystemTagResourceDeletionOperator> operators = resourceDeletionOperators.get(resourceType);
+        if (operators == null) {
+            operators = new ArrayList<>();
+            resourceDeletionOperators.put(resourceType, operators);
+        }
+        operators.add(operator);
+    }
+
+    @Override
     public void installCreateMessageValidator(String resourceType, SystemTagCreateMessageValidator validator) {
         if (!resourceTypeClassMap.containsKey(resourceType)) {
             throw new CloudRuntimeException(String.format("cannot find resource type[%s] in tag system ", resourceType));
@@ -727,6 +742,16 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         q.setParameter("resourceTypes", rtypes);
         q.setParameter("resourceUuids", entityIds);
         q.executeUpdate();
+
+        List<SystemTagResourceDeletionOperator> operators = resourceDeletionOperators.get(entityClass.getSimpleName());
+
+        if (operators == null) {
+            return;
+        }
+
+        for (SystemTagResourceDeletionOperator operator : operators) {
+            operator.execute(entityIds);
+        }
     }
 
     @Override
