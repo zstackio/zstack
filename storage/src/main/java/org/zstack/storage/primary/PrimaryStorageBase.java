@@ -345,9 +345,46 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((DetachIsoOnPrimaryStorageMsg) msg);
         } else if ((msg instanceof CheckInstallPathMsg)) {
             handle((CheckInstallPathMsg) msg);
+        } else if ((msg instanceof CleanUpTrashOnPrimaryStroageMsg)) {
+            handle((CleanUpTrashOnPrimaryStroageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    protected void handle(final CleanUpTrashOnPrimaryStroageMsg msg) {
+        MessageReply reply = new MessageReply();
+        thdf.chainSubmit(new ChainTask(msg) {
+            private String name = String.format("cleanup-trash-on-%s", self.getUuid());
+
+            @Override
+            public String getSyncSignature() {
+                return name;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<CleanTrashResult>(msg) {
+                    @Override
+                    public void success(CleanTrashResult returnValue) {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return name;
+            }
+        });
     }
 
     protected void handle(final CheckInstallPathMsg msg) {

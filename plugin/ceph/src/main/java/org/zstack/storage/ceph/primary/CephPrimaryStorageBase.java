@@ -65,7 +65,6 @@ import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -1628,6 +1627,41 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 } else {
                     completion.fail(errorCodeList.getCauses().get(0));
                 }
+            }
+        });
+    }
+
+    protected void handle(final CleanUpTrashOnPrimaryStroageMsg msg) {
+        MessageReply reply = new MessageReply();
+        thdf.chainSubmit(new ChainTask(msg) {
+            private String name = String.format("cleanup-trash-on-%s", self.getUuid());
+
+            @Override
+            public String getSyncSignature() {
+                return name;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<CleanTrashResult>(msg) {
+                    @Override
+                    public void success(CleanTrashResult returnValue) {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return name;
             }
         });
     }
@@ -3309,6 +3343,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((DownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else if (msg instanceof CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) {
             handle((CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
+        } else if ((msg instanceof CleanUpTrashOnPrimaryStroageMsg)) {
+            handle((CleanUpTrashOnPrimaryStroageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
