@@ -2,6 +2,9 @@ package org.zstack.storage.ceph.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.configuration.DiskOfferingSystemTags;
+import org.zstack.configuration.InstanceOfferingSystemTags;
+import org.zstack.configuration.OfferingUserConfigUtils;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
@@ -14,6 +17,8 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
+import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
+import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
@@ -26,6 +31,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.vm.CreateVmInstanceMsg;
+import org.zstack.header.vm.VmInstanceCreateExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.*;
@@ -63,7 +70,7 @@ import static org.zstack.utils.CollectionDSL.map;
 public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCapacityUpdateExtensionPoint, KVMStartVmExtensionPoint,
         KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint,
         KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component, PostMarkRootVolumeAsSnapshotExtension,
-        BeforeTakeLiveSnapshotsOnVolumes {
+        BeforeTakeLiveSnapshotsOnVolumes, VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -795,5 +802,132 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 .eq(PrimaryStorageVO_.uuid, volumeVO.getPrimaryStorageUuid()).find();
 
         return primaryStorageVO.getType().equals(type.toString());
+    }
+
+    @Override
+    public void preCreateVmInstance(CreateVmInstanceMsg msg) {
+        settingRootVolume(msg);
+        settingDataVolume(msg);
+    }
+
+    private void settingRootVolume(CreateVmInstanceMsg msg) {
+        String instanceOffering = msg.getInstanceOfferingUuid();
+
+        if (InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.hasTag(instanceOffering)) {
+            InstanceOfferingUserConfig config = OfferingUserConfigUtils.getInstanceOfferingConfig(instanceOffering, InstanceOfferingUserConfig.class);
+            if (config.getAllocate().getPrimaryStorage() != null) {
+                msg.setPrimaryStorageUuidForRootVolume(config.getAllocate().getPrimaryStorage().getUuid());
+
+                if (msg.getRootVolumeSystemTags() == null) {
+                    msg.setRootVolumeSystemTags(new ArrayList<>());
+                }
+
+                if (config.getAllocate().getPrimaryStorage() instanceof CephPrimaryStorageAllocateConfig) {
+                    CephPrimaryStorageAllocateConfig primaryStorageAllocateConfig = (CephPrimaryStorageAllocateConfig) config.getAllocate().getPrimaryStorage();
+                    msg.getRootVolumeSystemTags().add(CephSystemTags.USE_CEPH_ROOT_POOL.instantiateTag(
+                            map(
+                                    e(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN, primaryStorageAllocateConfig.getPoolNames().get(0))
+                            )
+                    ));
+                }
+            }
+        }
+
+        String rootDiskOffering = msg.getRootDiskOfferingUuid();
+        if (rootDiskOffering == null) {
+            return;
+        }
+
+        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(rootDiskOffering)) {
+            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(rootDiskOffering, DiskOfferingUserConfig.class);
+
+            if (config.getAllocate().getPrimaryStorage() != null) {
+                msg.setPrimaryStorageUuidForRootVolume(config.getAllocate().getPrimaryStorage().getUuid());
+            }
+
+            if (msg.getRootVolumeSystemTags() == null) {
+                msg.setRootVolumeSystemTags(new ArrayList<>());
+            }
+            if (config.getAllocate().getPrimaryStorage() instanceof CephPrimaryStorageAllocateConfig) {
+                CephPrimaryStorageAllocateConfig primaryStorageAllocateConfig = (CephPrimaryStorageAllocateConfig) config.getAllocate().getPrimaryStorage();
+                msg.getRootVolumeSystemTags().add(CephSystemTags.USE_CEPH_ROOT_POOL.instantiateTag(
+                        map(
+                                e(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN, primaryStorageAllocateConfig.getPoolNames().get(0))
+                        )
+                ));
+            }
+        }
+    }
+
+    private void settingDataVolume(CreateVmInstanceMsg msg) {
+        if (msg.getDataDiskOfferingUuids() == null || msg.getDataDiskOfferingUuids().isEmpty()) {
+            return;
+        }
+
+        String diskOffering = msg.getDataDiskOfferingUuids().get(0);
+        if (diskOffering == null) {
+            return;
+        }
+
+        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
+            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+
+            if (config.getAllocate().getPrimaryStorage() != null) {
+                msg.setPrimaryStorageUuidForDataVolume(config.getAllocate().getPrimaryStorage().getUuid());
+            }
+
+            if (msg.getDataVolumeSystemTags() == null) {
+                msg.setDataVolumeSystemTags(new ArrayList<>());
+            }
+
+            if (config.getAllocate().getPrimaryStorage() instanceof CephPrimaryStorageAllocateConfig) {
+                CephPrimaryStorageAllocateConfig primaryStorageAllocateConfig = (CephPrimaryStorageAllocateConfig) config.getAllocate().getPrimaryStorage();
+                msg.getDataVolumeSystemTags().add(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.instantiateTag(
+                        map(
+                                e(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN, primaryStorageAllocateConfig.getPoolNames().get(0))
+                        )
+                ));
+            }
+        }
+    }
+
+    @Override
+    public void preCreateVolume(APICreateDataVolumeMsg msg) {
+        String diskOffering = msg.getDiskOfferingUuid();
+        if (diskOffering == null) {
+            return;
+        }
+
+        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
+            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+
+            if (config.getAllocate().getPrimaryStorage() == null) {
+                return;
+            }
+            msg.setPrimaryStorageUuid(config.getAllocate().getPrimaryStorage().getUuid());
+
+            if (msg.getSystemTags() == null) {
+                msg.setSystemTags(new ArrayList<>());
+            }
+
+            if (config.getAllocate().getPrimaryStorage() instanceof CephPrimaryStorageAllocateConfig) {
+                CephPrimaryStorageAllocateConfig primaryStorageAllocateConfig = (CephPrimaryStorageAllocateConfig) config.getAllocate().getPrimaryStorage();
+                msg.getSystemTags().add(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.instantiateTag(
+                        map(
+                                e(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN, primaryStorageAllocateConfig.getPoolNames().get(0))
+                        )
+                ));
+            }
+        }
+    }
+
+    @Override
+    public void afterCreateVolume(VolumeVO vo) {
+        return;
+    }
+
+    @Override
+    public void beforeCreateVolume(VolumeInventory volume) {
+        return;
     }
 }

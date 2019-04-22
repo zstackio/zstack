@@ -35,6 +35,8 @@ CREATE TABLE `BillingVO` (
   `endTime` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`),
+  KEY `resourceUuid` (`resourceUuid`),
+  KEY `acountUuid` (`accountUuid`),
   KEY `idxBillingVOaccountUuid` (`accountUuid`,`startTime`, `endTime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

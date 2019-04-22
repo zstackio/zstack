@@ -2,6 +2,9 @@ package org.zstack.storage.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.configuration.DiskOfferingSystemTags;
+import org.zstack.configuration.InstanceOfferingSystemTags;
+import org.zstack.configuration.OfferingUserConfigUtils;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -17,6 +20,8 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
+import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
@@ -30,12 +35,12 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
-import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagValidator;
+import org.zstack.header.vm.CreateVmInstanceMsg;
+import org.zstack.header.vm.VmInstanceCreateExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceStartExtensionPoint;
-import org.zstack.search.GetQuery;
-import org.zstack.search.SearchQuery;
+import org.zstack.header.volume.*;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
@@ -48,9 +53,12 @@ import java.util.*;
 import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
-        ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmInstanceStartExtensionPoint {
+        ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmInstanceStartExtensionPoint,
+        VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(PrimaryStorageManager.class);
 
     @Autowired
@@ -674,4 +682,81 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     public void failedToStartVm(VmInstanceInventory inv, ErrorCode reason) {
         // do nothing
     }
+
+    @Override
+    public void preCreateVmInstance(CreateVmInstanceMsg msg) {
+        settingRootVolume(msg);
+        settingDataVolume(msg);
+    }
+
+    private void settingRootVolume(CreateVmInstanceMsg msg) {
+        String instanceOffering = msg.getInstanceOfferingUuid();
+
+        if (InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.hasTag(instanceOffering)) {
+            InstanceOfferingUserConfig config = OfferingUserConfigUtils.getInstanceOfferingConfig(instanceOffering, InstanceOfferingUserConfig.class);
+            if (config.getAllocate().getPrimaryStorage() != null) {
+                msg.setPrimaryStorageUuidForRootVolume(config.getAllocate().getPrimaryStorage().getUuid());
+            }
+        }
+
+        String rootDiskOffering = msg.getRootDiskOfferingUuid();
+        if (rootDiskOffering == null) {
+            return;
+        }
+
+        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(rootDiskOffering)) {
+            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(rootDiskOffering, DiskOfferingUserConfig.class);
+
+            if (config.getAllocate().getPrimaryStorage() != null) {
+                msg.setPrimaryStorageUuidForRootVolume(config.getAllocate().getPrimaryStorage().getUuid());
+            }
+        }
+    }
+
+    private void settingDataVolume(CreateVmInstanceMsg msg) {
+        if (msg.getDataDiskOfferingUuids() == null || msg.getDataDiskOfferingUuids().isEmpty()) {
+            return;
+        }
+
+        String diskOffering = msg.getDataDiskOfferingUuids().get(0);
+        if (diskOffering == null) {
+            return;
+        }
+
+        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
+            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+
+            if (config.getAllocate().getPrimaryStorage() != null) {
+                msg.setPrimaryStorageUuidForDataVolume(config.getAllocate().getPrimaryStorage().getUuid());
+            }
+        }
+    }
+
+    @Override
+    public void preCreateVolume(APICreateDataVolumeMsg msg) {
+        String diskOffering = msg.getDiskOfferingUuid();
+        if (diskOffering == null) {
+            return;
+        }
+
+        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
+            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+
+            if (config.getAllocate().getPrimaryStorage() == null) {
+                return;
+            }
+            msg.setPrimaryStorageUuid(config.getAllocate().getPrimaryStorage().getUuid());
+        }
+    }
+
+    @Override
+    public void afterCreateVolume(VolumeVO vo) {
+        return;
+    }
+
+    @Override
+    public void beforeCreateVolume(VolumeInventory volume) {
+        return;
+    }
+
 }
