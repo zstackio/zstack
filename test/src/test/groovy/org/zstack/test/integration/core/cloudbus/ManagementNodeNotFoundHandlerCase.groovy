@@ -61,6 +61,7 @@ class ManagementNodeNotFoundHandlerCase extends SubCase {
 
         return {
             dbf.removeByPrimaryKey(vo.getUuid(), ManagementNodeVO.class)
+            bean(ManagementNodeManagerImpl.class).nodeLifeCycle.nodeLeft(ManagementNodeInventory.valueOf(vo))
         }
     }
 
