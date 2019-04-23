@@ -3,6 +3,7 @@ package org.zstack.storage.snapshot;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -10,6 +11,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.Message;
@@ -19,9 +22,7 @@ import org.zstack.header.storage.primary.IncreasePrimaryStorageCapacityMsg;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus.StatusEvent;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Map;
@@ -209,33 +210,32 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
     private void handle(final VolumeSnapshotPrimaryStorageDeletionMsg msg) {
         final VolumeSnapshotInventory sp = getSelfInventory();
 
-        for (VolumeSnapshotPreDeleteExtensionPoint ext : pluginRgty.getExtensionList(VolumeSnapshotPreDeleteExtensionPoint.class)) {
-            ext.volumeSnapshotPreDeleteExtensionPoint(sp);
-        }
-
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeSnapshotBeforeDeleteExtensionPoint.class), new ForEachFunction<VolumeSnapshotBeforeDeleteExtensionPoint>() {
-            @Override
-            public void run(VolumeSnapshotBeforeDeleteExtensionPoint arg) {
-                arg.volumeSnapshotBeforeDeleteExtensionPoint(sp);
-            }
-        });
-
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-volume-snapshot-%s-on-primary-storage", self.getUuid()));
         chain.then(new ShareFlow() {
             private void finish() {
-                CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeSnapshotAfterDeleteExtensionPoint.class), new ForEachFunction<VolumeSnapshotAfterDeleteExtensionPoint>() {
+                new While<>(pluginRgty.getExtensionList(VolumeSnapshotAfterDeleteExtensionPoint.class)).all((ext, c) -> {
+                    ext.volumeSnapshotAfterDeleteExtensionPoint(sp, new Completion(c) {
+                        @Override
+                        public void success() {
+                            c.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            c.done();
+                        }
+                    });
+                }).run(new NoErrorCompletion() {
                     @Override
-                    public void run(VolumeSnapshotAfterDeleteExtensionPoint arg) {
-                        arg.volumeSnapshotAfterDeleteExtensionPoint(sp);
+                    public void done() {
+                        VolumeSnapshotPrimaryStorageDeletionReply dreply = new VolumeSnapshotPrimaryStorageDeletionReply();
+                        self.setPrimaryStorageInstallPath(null);
+                        self.setPrimaryStorageUuid(null);
+                        dbf.update(self);
+                        bus.reply(msg, dreply);
                     }
                 });
-
-                VolumeSnapshotPrimaryStorageDeletionReply dreply = new VolumeSnapshotPrimaryStorageDeletionReply();
-                self.setPrimaryStorageInstallPath(null);
-                self.setPrimaryStorageUuid(null);
-                dbf.update(self);
-                bus.reply(msg, dreply);
             }
 
             @Override

@@ -2,6 +2,8 @@ package org.zstack.core.trash;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.UpdateQuery;
@@ -9,16 +11,25 @@ import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.jsonlabel.JsonLabelInventory;
 import org.zstack.core.jsonlabel.JsonLabelVO;
 import org.zstack.core.jsonlabel.JsonLabelVO_;
+import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageBackupStorageRefVO;
 import org.zstack.header.image.ImageBackupStorageRefVO_;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.StorageTrashSpec;
+import org.zstack.header.storage.primary.CleanUpTrashOnPrimaryStroageMsg;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.ImageCacheVO_;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.volume.VolumeDeletionExtensionPoint;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.utils.CollectionDSL;
@@ -27,20 +38,20 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.core.Platform.inerr;
 
 /**
  * Created by mingjian.deng on 2018/12/13.
  */
-public class StorageTrashImpl implements StorageTrash {
+public class StorageTrashImpl implements StorageTrash, VolumeDeletionExtensionPoint, VolumeSnapshotAfterDeleteExtensionPoint {
     private final static CLogger logger = Utils.getLogger(StorageTrashImpl.class);
 
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private CloudBus bus;
 
     private String getResourceType(String resourceUuid) {
         ResourceVO vo = dbf.findByUuid(resourceUuid, ResourceVO.class);
@@ -165,5 +176,69 @@ public class StorageTrashImpl implements StorageTrash {
             return makeSureInstallPathNotUsedBySnapshot(spec.getInstallPath());
         }
         return true;
+    }
+
+    @Override
+    public void preDeleteVolume(VolumeInventory volume) {
+
+    }
+
+    @Override
+    public void beforeDeleteVolume(VolumeInventory volume) {
+
+    }
+
+    private void deleteTrashForVolume(final Iterator<Long> trashIds, String primaryStorageUuid, Completion completion) {
+        if (!trashIds.hasNext()) {
+            completion.success();
+            return;
+        }
+        Long trashId = trashIds.next();
+
+        CleanUpTrashOnPrimaryStroageMsg pmsg = new CleanUpTrashOnPrimaryStroageMsg();
+        pmsg.setPrimaryStorageUuid(primaryStorageUuid);
+        pmsg.setTrashId(trashId);
+        bus.makeTargetServiceIdByResourceUuid(pmsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
+        bus.send(pmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("clean up trash [%s] on primary storage [%s] failed", pmsg.getTrashId(), primaryStorageUuid));
+                }
+                deleteTrashForVolume(trashIds, primaryStorageUuid, completion);
+            }
+        });
+    }
+
+    @Override
+    public void afterDeleteVolume(VolumeInventory volume, Completion completion) {
+        List<JsonLabelVO> lables = Q.New(JsonLabelVO.class).eq(JsonLabelVO_.resourceUuid, volume.getPrimaryStorageUuid()).list();
+        List<Long> trashIds = new ArrayList<>();
+        for (JsonLabelVO lable: lables) {
+            StorageTrashSpec spec = JSONObjectUtil.toObject(lable.getLabelValue(), StorageTrashSpec.class);
+            if (spec.getResourceUuid().equals(volume.getUuid())) {
+                trashIds.add(lable.getId());
+            }
+        }
+
+        deleteTrashForVolume(trashIds.iterator(), volume.getPrimaryStorageUuid(), completion);
+    }
+
+    @Override
+    public void failedToDeleteVolume(VolumeInventory volume, ErrorCode errorCode) {
+    }
+
+    @Override
+    public void volumeSnapshotAfterDeleteExtensionPoint(VolumeSnapshotInventory snapshot, Completion completion) {
+        List<JsonLabelVO> lables = Q.New(JsonLabelVO.class).eq(JsonLabelVO_.resourceUuid, snapshot.getPrimaryStorageUuid()).list();
+        List<Long> trashIds = new ArrayList<>();
+        for (JsonLabelVO lable: lables) {
+            StorageTrashSpec spec = JSONObjectUtil.toObject(lable.getLabelValue(), StorageTrashSpec.class);
+            if (spec.getResourceUuid().equals(snapshot.getUuid())) {
+                trashIds.add(lable.getId());
+            }
+        }
+
+        deleteTrashForVolume(trashIds.iterator(), snapshot.getPrimaryStorageUuid(), completion);
     }
 }

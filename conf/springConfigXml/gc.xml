@@ -26,5 +26,10 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="StorageTrash" class="org.zstack.core.trash.StorageTrashImpl" />
+    <bean id="StorageTrash" class="org.zstack.core.trash.StorageTrashImpl" >
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.volume.VolumeDeletionExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 </beans>
