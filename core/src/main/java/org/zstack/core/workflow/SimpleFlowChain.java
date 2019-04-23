@@ -323,6 +323,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             logger.warn(errInfo, fe);
             fail(fe.getErrorCode());
         } catch (Throwable t) {
+            logger.warn(String.format("unhandled exception call backtrace %s", DebugUtils.getStackTrace(t)));
             logger.warn(String.format("[FlowChain(%s): %s] unhandled exception when executing flow[%s], start to rollback",
                     id, name, flow.getClass().getName()), t);
             fail(inerr(t.getMessage()));
@@ -334,6 +335,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             logger.debug(String.format("[FlowChain(%s): %s] start to rollback flow[%s]", id, name, getFlowName(flow)));
             flow.rollback(this, data);
         } catch (Throwable t) {
+            logger.warn(String.format("unhandled exception when rollback, call backtrace %s", DebugUtils.getStackTrace(t)));
             logger.warn(String.format("[FlowChain(%s): %s] unhandled exception when rollback flow[%s]," +
                     " continue to next rollback", id, name, flow.getClass().getSimpleName()), t);
             rollback();
