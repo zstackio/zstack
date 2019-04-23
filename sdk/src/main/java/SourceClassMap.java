@@ -168,6 +168,7 @@ public class SourceClassMap {
 			put("org.zstack.header.scheduler.SchedulerJobGroupInventory", "org.zstack.sdk.SchedulerJobGroupInventory");
 			put("org.zstack.header.scheduler.SchedulerJobGroupJobRefInventory", "org.zstack.sdk.SchedulerJobGroupJobRefInventory");
 			put("org.zstack.header.scheduler.SchedulerJobGroupSchedulerTriggerRefInventory", "org.zstack.sdk.SchedulerJobGroupSchedulerTriggerRefInventory");
+			put("org.zstack.header.scheduler.SchedulerJobHistoryInventory", "org.zstack.sdk.SchedulerJobHistoryInventory");
 			put("org.zstack.header.scheduler.SchedulerJobInventory", "org.zstack.sdk.SchedulerJobInventory");
 			put("org.zstack.header.scheduler.SchedulerJobSchedulerTriggerInventory", "org.zstack.sdk.SchedulerJobSchedulerTriggerInventory");
 			put("org.zstack.header.scheduler.SchedulerTriggerInventory", "org.zstack.sdk.SchedulerTriggerInventory");
@@ -592,6 +593,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SchedulerJobGroupInventory", "org.zstack.header.scheduler.SchedulerJobGroupInventory");
 			put("org.zstack.sdk.SchedulerJobGroupJobRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupJobRefInventory");
 			put("org.zstack.sdk.SchedulerJobGroupSchedulerTriggerRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupSchedulerTriggerRefInventory");
+			put("org.zstack.sdk.SchedulerJobHistoryInventory", "org.zstack.header.scheduler.SchedulerJobHistoryInventory");
 			put("org.zstack.sdk.SchedulerJobInventory", "org.zstack.header.scheduler.SchedulerJobInventory");
 			put("org.zstack.sdk.SchedulerJobSchedulerTriggerInventory", "org.zstack.header.scheduler.SchedulerJobSchedulerTriggerInventory");
 			put("org.zstack.sdk.SchedulerTriggerInventory", "org.zstack.header.scheduler.SchedulerTriggerInventory");
