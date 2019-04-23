@@ -34,18 +34,16 @@ import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.search.APIGetMessage;
 import org.zstack.header.search.APISearchMessage;
-import org.zstack.header.search.Inventory;
-import org.zstack.header.search.SearchOp;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 import org.zstack.identity.AccountManager;
-import org.zstack.search.GetQuery;
-import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.*;
+import org.zstack.utils.FieldUtils;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.TypeUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.data.FieldPrinter;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
@@ -713,7 +711,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                 .collect(Collectors.toList())) {
             pysb.append(String.format("\nclass GlobalConfig_%s(object):", e.getKey().toUpperCase().replaceAll("\\.", "_")));
             for (String cname : e.getValue()) {
-                String var = cname.replaceAll("\\.", "_");
+                String var = cname.replaceAll("\\.", "_").replaceAll("-", "_");
                 pysb.append(String.format("\n%s%s = '%s'", whiteSpace(4), var.toUpperCase(), cname));
             }
             pysb.append("\n");
