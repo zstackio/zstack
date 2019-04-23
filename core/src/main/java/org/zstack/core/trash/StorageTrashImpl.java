@@ -203,7 +203,8 @@ public class StorageTrashImpl implements StorageTrash, VolumeDeletionExtensionPo
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    logger.warn(String.format("clean up trash [%s] on primary storage [%s] failed", pmsg.getTrashId(), primaryStorageUuid));
+                    logger.warn(String.format("clean up trash [%s] on primary storage [%s] failed, because: %s",
+                            pmsg.getTrashId(), primaryStorageUuid, reply.getError().getDetails()));
                 }
                 deleteTrashForVolume(trashIds, primaryStorageUuid, completion);
             }

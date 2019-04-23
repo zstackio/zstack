@@ -5,7 +5,7 @@ import org.zstack.header.message.NeedReplyMessage;
 /**
  * Created by mingjian.deng on 2018/12/25.
  */
-public class CheckInstallPathMsg extends NeedReplyMessage implements PrimaryStorageMessage {
+public class CheckInstallPathInTrashMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
     private String installPath;
 
