@@ -2,6 +2,8 @@ package org.zstack.utils;
 
 import org.zstack.utils.logging.CLogger;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
@@ -77,6 +79,14 @@ public class DebugUtils {
         }
 
         return sb.toString();
+    }
+
+    public static String getStackTrace(Throwable t) {
+        StringWriter stringWriter= new StringWriter();
+        PrintWriter writer= new PrintWriter(stringWriter);
+        t.printStackTrace(writer);
+        StringBuffer buffer= stringWriter.getBuffer();
+        return buffer.toString();
     }
 
     public static void dumpStackTrace(String msg) {
