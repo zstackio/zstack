@@ -42,6 +42,7 @@ import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
+import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -55,8 +56,7 @@ import org.zstack.header.network.service.*;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
-import org.zstack.header.tag.SystemTagInventory;
-import org.zstack.header.tag.SystemTagLifeCycleListener;
+import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.L3NetworkSystemTags;
@@ -534,6 +534,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 		populateExtensions();
         deployAnsible();
 		buildWorkFlowBuilder();
+        installSystemValidator();
 
         VirtualRouterSystemTags.VR_PARALLELISM_DEGREE.installLifeCycleListener(new SystemTagLifeCycleListener() {
             @Override
@@ -562,8 +563,60 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 	public boolean stop() {
 		return true;
 	}
-	
-	public void prepareDbInitialValue() {
+
+    private void installSystemValidator() {
+        class VirtualRouterOfferingValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
+
+            @Override
+            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+                if (msg instanceof APICreateL3NetworkMsg) {
+                    validate((APICreateL3NetworkMsg) msg);
+                }
+
+            }
+
+            private void validate(APICreateL3NetworkMsg msg) {
+                for (String sysTag : msg.getSystemTags()) {
+                    if (VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING.isMatch(sysTag)) {
+                        validateVirtualRouterOffering(sysTag);
+                    }
+                }
+            }
+
+            private void validateVirtualRouterOffering(String sysTag) {
+                String offeringUuid = VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING.getTokenByTag(sysTag, VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING_TOKEN);
+
+                if (!dbf.isExist(offeringUuid, VirtualRouterOfferingVO.class)) {
+                    throw new ApiMessageInterceptionException(argerr("No virtual router instance offering with uuid:%s is found", offeringUuid));
+                }
+            }
+
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                if (VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING.isMatch(systemTag)) {
+                    validateVirtualRouterOffering(systemTag);
+                }
+            }
+        }
+
+        class VirtualRouterOfferingOperator implements SystemTagResourceDeletionOperator {
+            @Override
+            public void execute(Collection resourceUuids) {
+                List<String> tags = (List<String>) resourceUuids.stream().map(resourceUuid -> TagUtils.tagPatternToSqlPattern(VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING.instantiateTag(
+                        map(e(VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING_TOKEN, resourceUuid))))).collect(Collectors.toList());
+
+                SQL.New(SystemTagVO.class).in(SystemTagVO_.tag, tags).delete();
+            }
+        }
+
+        VirtualRouterOfferingValidator validator = new VirtualRouterOfferingValidator();
+        tagMgr.installCreateMessageValidator(L3NetworkVO.class.getSimpleName(), validator);
+        tagMgr.installAfterResourceDeletionOperator(InstanceOfferingVO.class.getSimpleName(), new VirtualRouterOfferingOperator());
+        VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING.installValidator(validator);
+    }
+
+
+    public void prepareDbInitialValue() {
 		SimpleQuery<NetworkServiceProviderVO> query = dbf.createQuery(NetworkServiceProviderVO.class);
 		query.add(NetworkServiceProviderVO_.type, Op.EQ, VIRTUAL_ROUTER_PROVIDER_TYPE);
 		NetworkServiceProviderVO rpvo = query.find();
@@ -944,6 +997,14 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         List<VirtualRouterOfferingVO> vos = q.getResultList();
         if (!vos.isEmpty()) {
             return VirtualRouterOfferingInventory.valueOf1(vos);
+        }
+
+        List<String> offeringUuids = VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING.getTokensOfTagsByResourceUuid(guestL3.getUuid())
+                .stream().map(tokens -> tokens.get(VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING_TOKEN)).collect(Collectors.toList());
+        if (!offeringUuids.isEmpty()) {
+            return VirtualRouterOfferingInventory.valueOf1(Q.New(VirtualRouterOfferingVO.class)
+                    .in(VirtualRouterOfferingVO_.uuid, offeringUuids)
+                    .list());
         }
 
         sql ="select offering from VirtualRouterOfferingVO offering where offering.zoneUuid = :zoneUuid and offering.state = :state";

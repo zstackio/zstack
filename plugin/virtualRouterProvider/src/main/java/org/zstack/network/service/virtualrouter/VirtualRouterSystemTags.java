@@ -1,6 +1,7 @@
 package org.zstack.network.service.virtualrouter;
 
 import org.zstack.header.configuration.InstanceOfferingVO;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.PatternedSystemTag;
@@ -30,4 +31,7 @@ public class VirtualRouterSystemTags {
     public static SystemTag VYOS_OFFERING = new PatternedSystemTag("vrouter", InstanceOfferingVO.class);
     public static PatternedSystemTag VR_DISABLE_NETWORK_SERVICE_SNAT =
             new PatternedSystemTag(String.format("disabledService::SNAT"), VirtualRouterVmVO.class);
+
+    public static String VIRTUAL_ROUTER_OFFERING_TOKEN = "routerOffering";
+    public static PatternedSystemTag VIRTUAL_ROUTER_OFFERING = new PatternedSystemTag(String.format("virtualRouterOffering::{%s}", VIRTUAL_ROUTER_OFFERING_TOKEN), L3NetworkVO.class);
 }

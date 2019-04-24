@@ -3,6 +3,7 @@ package org.zstack.tag;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagResourceDeletionOperator;
 import org.zstack.header.tag.TagInventory;
 
 import java.util.Collection;
@@ -52,6 +53,8 @@ public interface TagManager {
     void validateSystemTag(String resourceUuid, String resourceType, String tag);
 
     void installCreateMessageValidator(String resourceType, SystemTagCreateMessageValidator validator);
+
+    void installAfterResourceDeletionOperator(String resourceType, SystemTagResourceDeletionOperator operator);
 
     void createTags(List<String> systemTags, List<String> userTags, String resourceUuid, String resourceType);
 }
