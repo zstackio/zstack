@@ -5,7 +5,7 @@ import org.zstack.header.message.MessageReply;
 /**
  * Created by mingjian.deng on 2018/12/25.
  */
-public class CheckInstallPathReply extends MessageReply {
+public class CheckInstallPathInTrashReply extends MessageReply {
     private Long trashId;
     private String resourceUuid;
 

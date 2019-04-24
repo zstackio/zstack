@@ -2710,13 +2710,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
         q.setParameter("puuid", self.getUuid());
         List<String> ret = q.getResultList();
         if (ret.isEmpty()) {
-            throw new CloudRuntimeException(
-                    String.format("resource[uuid:%s, type: %s] is not on the local primary storage[uuid:%s]",
+            throw new OperationFailureException(
+                    operr("resource[uuid:%s, type: %s] is not on the local primary storage[uuid:%s]",
                             resUuid, resourceType, self.getUuid()));
         }
         if (ret.size() != 1) {
-            throw new CloudRuntimeException(
-                    String.format("resource[uuid:%s, type: %s] on the local primary storage[uuid:%s] maps to multiple hypervisor%s",
+            throw new OperationFailureException(
+                    operr("resource[uuid:%s, type: %s] on the local primary storage[uuid:%s] maps to multiple hypervisor%s",
                             resUuid, resourceType, self.getUuid(), ret));
         }
 
@@ -2725,9 +2725,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     private LocalStorageHypervisorFactory getHypervisorBackendFactory(String hvType) {
-        if (hvType == null) {
-            throw new CloudRuntimeException("hvType is null!!!");
-        }
+        DebugUtils.Assert(hvType != null, "hvType is null!!!");
         for (LocalStorageHypervisorFactory f : pluginRgty.getExtensionList(LocalStorageHypervisorFactory.class)) {
             if (hvType.equals(f.getHypervisorType())) {
                 return f;

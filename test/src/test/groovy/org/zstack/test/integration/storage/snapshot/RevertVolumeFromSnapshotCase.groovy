@@ -49,6 +49,7 @@ STEP:
         env.create {
             vm = env.inventoryByName("vm") as VmInstanceInventory
             testRevertVolumeFromSnapshot()
+            testCleanUpTrash()
         }
     }
 
@@ -92,6 +93,8 @@ STEP:
         def trash = bean(StorageTrash.class)
         def specs = trash.getTrashList(root.primaryStorageUuid) as Map<String, StorageTrashSpec>
 
+        assert specs.size() > 0
+
         def trashed = false
         specs.each { k,v ->
             if (v.resourceUuid == vm.rootVolumeUuid) {
@@ -102,6 +105,19 @@ STEP:
             }
         }
         assert trashed
+    }
+
+    void testCleanUpTrash() {
+        def trash = bean(StorageTrash.class)
+        def specs = trash.getTrashList(root.primaryStorageUuid) as Map<String, StorageTrashSpec>
+        assert specs.size() > 0
+
+        cleanUpTrashOnPrimaryStorage {
+            uuid = root.primaryStorageUuid
+        }
+
+        specs = trash.getTrashList(root.primaryStorageUuid) as Map<String, StorageTrashSpec>
+        assert specs.size() == 0
     }
 
     private VolumeSnapshotInventory createSnapshot(String uuid){
