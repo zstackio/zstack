@@ -57,4 +57,6 @@ public interface TagManager {
     void installAfterResourceDeletionOperator(String resourceType, SystemTagResourceDeletionOperator operator);
 
     void createTags(List<String> systemTags, List<String> userTags, String resourceUuid, String resourceType);
+
+    List<String> filterSystemTags(List<String> systemTags, String resourceType);
 }
