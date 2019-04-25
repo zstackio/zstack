@@ -12,7 +12,7 @@ public class LoginIAM2ProjectAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.LoginIAM2ProjectResult value;
+        public LoginIAM2ProjectResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,10 @@ public class LoginIAM2ProjectAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String projectName;
+    public String projectName;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public Map clientInfo;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -51,8 +54,8 @@ public class LoginIAM2ProjectAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.LoginIAM2ProjectResult value = res.getResult(org.zstack.sdk.iam2.api.LoginIAM2ProjectResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.LoginIAM2ProjectResult() : value; 
+        LoginIAM2ProjectResult value = res.getResult(LoginIAM2ProjectResult.class);
+        ret.value = value == null ? new LoginIAM2ProjectResult() : value;
 
         return ret;
     }

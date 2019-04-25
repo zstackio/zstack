@@ -12,83 +12,123 @@ public class AuditData  {
         return this.queryableLabels;
     }
 
-    public java.lang.String TAG_RESOURCE_UUID;
-    public void setTAG_RESOURCE_UUID(java.lang.String TAG_RESOURCE_UUID) {
+    public java.util.Set queryableLoginLabels;
+    public void setQueryableLoginLabels(java.util.Set queryableLoginLabels) {
+        this.queryableLoginLabels = queryableLoginLabels;
+    }
+    public java.util.Set getQueryableLoginLabels() {
+        return this.queryableLoginLabels;
+    }
+
+    public String TAG_RESOURCE_UUID;
+    public void setTAG_RESOURCE_UUID(String TAG_RESOURCE_UUID) {
         this.TAG_RESOURCE_UUID = TAG_RESOURCE_UUID;
     }
-    public java.lang.String getTAG_RESOURCE_UUID() {
+    public String getTAG_RESOURCE_UUID() {
         return this.TAG_RESOURCE_UUID;
     }
 
-    public java.lang.String TAG_RESOURCE_TYPE;
-    public void setTAG_RESOURCE_TYPE(java.lang.String TAG_RESOURCE_TYPE) {
+    public String TAG_RESOURCE_TYPE;
+    public void setTAG_RESOURCE_TYPE(String TAG_RESOURCE_TYPE) {
         this.TAG_RESOURCE_TYPE = TAG_RESOURCE_TYPE;
     }
-    public java.lang.String getTAG_RESOURCE_TYPE() {
+    public String getTAG_RESOURCE_TYPE() {
         return this.TAG_RESOURCE_TYPE;
     }
 
-    public java.lang.String TAG_API_NAME;
-    public void setTAG_API_NAME(java.lang.String TAG_API_NAME) {
+    public String TAG_API_NAME;
+    public void setTAG_API_NAME(String TAG_API_NAME) {
         this.TAG_API_NAME = TAG_API_NAME;
     }
-    public java.lang.String getTAG_API_NAME() {
+    public String getTAG_API_NAME() {
         return this.TAG_API_NAME;
     }
 
-    public java.lang.String TAG_API_ERROR;
-    public void setTAG_API_ERROR(java.lang.String TAG_API_ERROR) {
+    public String TAG_API_ERROR;
+    public void setTAG_API_ERROR(String TAG_API_ERROR) {
         this.TAG_API_ERROR = TAG_API_ERROR;
     }
-    public java.lang.String getTAG_API_ERROR() {
+    public String getTAG_API_ERROR() {
         return this.TAG_API_ERROR;
     }
 
-    public java.lang.String TAG_API_OPERATOR_ACCOUNT_UUID;
-    public void setTAG_API_OPERATOR_ACCOUNT_UUID(java.lang.String TAG_API_OPERATOR_ACCOUNT_UUID) {
+    public String TAG_API_OPERATOR_ACCOUNT_UUID;
+    public void setTAG_API_OPERATOR_ACCOUNT_UUID(String TAG_API_OPERATOR_ACCOUNT_UUID) {
         this.TAG_API_OPERATOR_ACCOUNT_UUID = TAG_API_OPERATOR_ACCOUNT_UUID;
     }
-    public java.lang.String getTAG_API_OPERATOR_ACCOUNT_UUID() {
+    public String getTAG_API_OPERATOR_ACCOUNT_UUID() {
         return this.TAG_API_OPERATOR_ACCOUNT_UUID;
     }
 
-    public java.lang.String resourceUuid;
-    public void setResourceUuid(java.lang.String resourceUuid) {
+    public String TAG_API_CLIENTIP;
+    public void setTAG_API_CLIENTIP(String TAG_API_CLIENTIP) {
+        this.TAG_API_CLIENTIP = TAG_API_CLIENTIP;
+    }
+    public String getTAG_API_CLIENTIP() {
+        return this.TAG_API_CLIENTIP;
+    }
+
+    public String TAG_API_CLIENTBROWSER;
+    public void setTAG_API_CLIENTBROWSER(String TAG_API_CLIENTBROWSER) {
+        this.TAG_API_CLIENTBROWSER = TAG_API_CLIENTBROWSER;
+    }
+    public String getTAG_API_CLIENTBROWSER() {
+        return this.TAG_API_CLIENTBROWSER;
+    }
+
+    public String resourceUuid;
+    public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
     }
-    public java.lang.String getResourceUuid() {
+    public String getResourceUuid() {
         return this.resourceUuid;
     }
 
-    public java.lang.String resourceType;
-    public void setResourceType(java.lang.String resourceType) {
+    public String resourceType;
+    public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
-    public java.lang.String getResourceType() {
+    public String getResourceType() {
         return this.resourceType;
     }
 
-    public java.lang.String apiName;
-    public void setApiName(java.lang.String apiName) {
+    public String clientIp;
+    public void setClientIp(String clientIp) {
+        this.clientIp = clientIp;
+    }
+    public String getClientIp() {
+        return this.clientIp;
+    }
+
+    public String clientBrowser;
+    public void setClientBrowser(String clientBrowser) {
+        this.clientBrowser = clientBrowser;
+    }
+    public String getClientBrowser() {
+        return this.clientBrowser;
+    }
+
+    public String apiName;
+    public void setApiName(String apiName) {
         this.apiName = apiName;
     }
-    public java.lang.String getApiName() {
+    public String getApiName() {
         return this.apiName;
     }
 
-    public java.lang.String error;
-    public void setError(java.lang.String error) {
+    public String error;
+    public void setError(String error) {
         this.error = error;
     }
-    public java.lang.String getError() {
+    public String getError() {
         return this.error;
     }
 
-    public java.lang.String operatorAccountUuid;
-    public void setOperatorAccountUuid(java.lang.String operatorAccountUuid) {
+    public String operatorAccountUuid;
+    public void setOperatorAccountUuid(String operatorAccountUuid) {
         this.operatorAccountUuid = operatorAccountUuid;
     }
-    public java.lang.String getOperatorAccountUuid() {
+    public String getOperatorAccountUuid() {
         return this.operatorAccountUuid;
     }
 
@@ -100,43 +140,43 @@ public class AuditData  {
         return this.duration;
     }
 
-    public java.lang.String requestUuid;
-    public void setRequestUuid(java.lang.String requestUuid) {
+    public String requestUuid;
+    public void setRequestUuid(String requestUuid) {
         this.requestUuid = requestUuid;
     }
-    public java.lang.String getRequestUuid() {
+    public String getRequestUuid() {
         return this.requestUuid;
     }
 
-    public java.lang.String responseUuid;
-    public void setResponseUuid(java.lang.String responseUuid) {
+    public String responseUuid;
+    public void setResponseUuid(String responseUuid) {
         this.responseUuid = responseUuid;
     }
-    public java.lang.String getResponseUuid() {
+    public String getResponseUuid() {
         return this.responseUuid;
     }
 
-    public java.lang.String sessionUuid;
-    public void setSessionUuid(java.lang.String sessionUuid) {
+    public String sessionUuid;
+    public void setSessionUuid(String sessionUuid) {
         this.sessionUuid = sessionUuid;
     }
-    public java.lang.String getSessionUuid() {
+    public String getSessionUuid() {
         return this.sessionUuid;
     }
 
-    public java.lang.String requestDump;
-    public void setRequestDump(java.lang.String requestDump) {
+    public String requestDump;
+    public void setRequestDump(String requestDump) {
         this.requestDump = requestDump;
     }
-    public java.lang.String getRequestDump() {
+    public String getRequestDump() {
         return this.requestDump;
     }
 
-    public java.lang.String responseDump;
-    public void setResponseDump(java.lang.String responseDump) {
+    public String responseDump;
+    public void setResponseDump(String responseDump) {
         this.responseDump = responseDump;
     }
-    public java.lang.String getResponseDump() {
+    public String getResponseDump() {
         return this.responseDump;
     }
 

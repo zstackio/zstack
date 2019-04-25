@@ -43,6 +43,36 @@ doc {
 					
 				}
 				column {
+					name "captchaUuid"
+					enclosedIn "logInByAccount"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+
+				}
+				column {
+					name "verifyCode"
+					enclosedIn "logInByAccount"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+
+				}
+				column {
+					name "clientInfo"
+					enclosedIn "logInByAccount"
+					desc "客户端信息"
+					location "body"
+					type "Map"
+					optional true
+					since "3.5.0"
+
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

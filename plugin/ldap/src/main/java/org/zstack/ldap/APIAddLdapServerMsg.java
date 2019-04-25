@@ -29,7 +29,7 @@ public class APIAddLdapServerMsg extends APIMessage implements APIAuditor {
     @APIParam(maxLength = 1024)
     private String username;
 
-    @APIParam(maxLength = 1024)
+    @APIParam(maxLength = 1024, password = true)
     private String password;
 
     @APIParam(maxLength = 1024, validValues = {"None", "TLS"})

@@ -1,8 +1,14 @@
 package org.zstack.header.identity;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.http.HttpMethod;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.APIReply;
+import org.zstack.header.other.APILoginAuditor;
 import org.zstack.header.rest.RestRequest;
+
+import java.util.Map;
 
 @SuppressCredentialCheck
 @RestRequest(
@@ -11,15 +17,17 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.PUT,
         responseClass = APILogInReply.class
 )
-public class APILogInByUserMsg extends APISessionMessage {
+public class APILogInByUserMsg extends APISessionMessage implements APILoginAuditor {
     @APIParam(required = false)
     private String accountUuid;
     @APIParam(required = false)
     private String accountName;
     @APIParam
     private String userName;
-    @APIParam
+    @APIParam(password = true)
     private String password;
+    @APIParam(required = false)
+    private Map<String, String> clientInfo;
 
     public String getAccountName() {
         return accountName;
@@ -52,7 +60,15 @@ public class APILogInByUserMsg extends APISessionMessage {
     public void setPassword(String password) {
         this.password = password;
     }
- 
+
+    public Map<String, String> getClientInfo() {
+        return clientInfo;
+    }
+
+    public void setClientInfo(Map<String, String> clientInfo) {
+        this.clientInfo = clientInfo;
+    }
+
     public static APILogInByUserMsg __example__() {
         APILogInByUserMsg msg = new APILogInByUserMsg();
 
@@ -63,4 +79,17 @@ public class APILogInByUserMsg extends APISessionMessage {
         return msg;
     }
 
+    @Override
+    public LoginResult loginAudit(APIMessage msg, APIReply reply) {
+        String clientIp = "";
+        String clientBrowser = "";
+        APILogInByUserMsg amsg = (APILogInByUserMsg) msg;
+        Map<String, String> clientInfo = amsg.getClientInfo();
+        if (clientInfo != null && !clientInfo.isEmpty()) {
+            clientIp = StringUtils.isNotEmpty(clientInfo.get("clientIp")) ? clientInfo.get("clientIp") : "";
+            clientBrowser = StringUtils.isNotEmpty(clientInfo.get("clientBrowser")) ? clientInfo.get("clientBrowser") : "";
+        }
+        String resourceUuid = reply.isSuccess() ? amsg.getSession().getUuid() : "";
+        return new LoginResult(clientIp, clientBrowser, resourceUuid, SessionVO.class);
+    }
 }

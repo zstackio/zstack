@@ -18,7 +18,7 @@ import org.zstack.header.rest.RestRequest;
 public class APIUpdateKVMHostMsg extends APIUpdateHostMsg {
     @APIParam(maxLength = 255, required = false, emptyString = false)
     private String username;
-    @APIParam(maxLength = 255, required = false)
+    @APIParam(maxLength = 255, required = false, password = true)
     private String password;
     @APIParam(numberRange = {1, 65535}, required = false)
     private Integer sshPort;

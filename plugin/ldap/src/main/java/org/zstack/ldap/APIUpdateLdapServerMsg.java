@@ -30,7 +30,7 @@ public class APIUpdateLdapServerMsg extends APIMessage {
     @APIParam(maxLength = 1024, required = false)
     private String username;
 
-    @APIParam(maxLength = 1024, required = false)
+    @APIParam(maxLength = 1024, required = false, password = true)
     private String password;
 
     @APIParam(maxLength = 1024, validValues = {"None", "TLS"}, required = false)

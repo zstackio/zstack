@@ -394,10 +394,15 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         sq.add(AccountVO_.uuid, SimpleQuery.Op.EQ, vo.getAccountUuid());
         AccountVO avo = sq.find();
         if (avo == null) {
-            throw new CloudRuntimeException(String.format("Account[uuid:%s] Not Found!!!", vo.getAccountUuid()));
+            reply.setError(operr(
+                    "Account[uuid:%s] Not Found!!!", vo.getAccountUuid()));
+            bus.reply(msg, reply);
+            return;
         }
 
-        reply.setInventory(getSession(vo.getAccountUuid(), vo.getAccountUuid()));
+        SessionInventory inv = getSession(vo.getAccountUuid(), vo.getAccountUuid());
+        msg.setSession(inv);
+        reply.setInventory(inv);
         reply.setAccountInventory(AccountInventory.valueOf(avo));
 
         bus.reply(msg, reply);

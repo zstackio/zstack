@@ -32,6 +32,16 @@ doc {
 					
 				}
 				column {
+					name "clientInfo"
+					enclosedIn ""
+					desc "客户端信息"
+					location "body"
+					type "Map"
+					optional true
+					since "3.5.0"
+
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

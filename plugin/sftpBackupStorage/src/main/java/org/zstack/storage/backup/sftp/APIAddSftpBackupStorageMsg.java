@@ -65,7 +65,7 @@ public class APIAddSftpBackupStorageMsg extends APIAddBackupStorageMsg {
     private String hostname;
     @APIParam(maxLength = 255)
     private String username;
-    @APIParam(maxLength = 255)
+    @APIParam(maxLength = 255, password = true)
     private String password;
     @APIParam(numberRange = {1, 65535}, required = false)
     private int sshPort = 22;
