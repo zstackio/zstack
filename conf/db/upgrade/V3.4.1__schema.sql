@@ -33,6 +33,7 @@ CREATE TABLE `BillingVO` (
   `spending` double unsigned NOT NULL,
   `startTime` bigint(20) unsigned NOT NULL,
   `endTime` bigint(20) unsigned NOT NULL,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`),
   KEY `resourceUuid` (`resourceUuid`),
