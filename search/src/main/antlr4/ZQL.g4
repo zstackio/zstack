@@ -165,7 +165,7 @@ sumBy
     ;
 
 sum
-    : SUM queryTarget sumBy (WHERE condition+)? namedAs?
+    : SUM queryTarget sumBy (WHERE condition+)? orderBy? limit? offset? namedAs?
     ;
 
 

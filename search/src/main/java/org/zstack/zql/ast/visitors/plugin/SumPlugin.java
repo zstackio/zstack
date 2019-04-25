@@ -31,7 +31,7 @@ public class SumPlugin extends AbstractQueryVisitorPlugin {
             throw new OperationFailureException(argerr("the field to sum must be specified"));
         }
 
-        String sumFields = StringUtils.join(fields.stream().map(f->String.format("SUM(%s.%s)", entityAlias, f)).collect(Collectors.toList()), ",");
+        String sumFields = StringUtils.join(fields.stream().map(f->String.format("SUM(%s.%s) as %s", entityAlias, f, f)).collect(Collectors.toList()), ",");
         return String.format("%s,%s", sum.getGroupByField(), sumFields);
     }
 

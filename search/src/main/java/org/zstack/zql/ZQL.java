@@ -247,10 +247,12 @@ public class ZQL {
                         if (results.size() == 1 && results.get(0) instanceof Long) {
                             ret.count = (Long)results.get(0);
                         } else {
-                            List<Object[]> result = q.getResultList();
-                            int countIndex = result.isEmpty() ? 0 : result.get(0).length - 1;
-                            qr.inventoryCounts = result.stream().collect(Collectors.toMap(it -> entityVOtoInventory(it),
-                                    it -> (Long)it[countIndex]));
+                            qr.inventoryCounts = new LinkedHashMap<>();
+                            for (Object result : results) {
+                                Object[] fieldValues = (Object[]) result;
+                                int countIndex = fieldValues.length - 1;
+                                qr.inventoryCounts.put(entityVOtoInventory(fieldValues), (Long)fieldValues[countIndex]);
+                            }
 
                             Query totalCountQuery = astResult.createSimpleCountQuery.apply(databaseFacade.getEntityManager());
                             ret.count = (Long) totalCountQuery.getSingleResult();
