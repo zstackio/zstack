@@ -43,12 +43,12 @@ import org.zstack.storage.ceph.primary.KVMCephVolumeTO.MonInfo;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.tag.SystemTagCreator;
+import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -61,6 +61,7 @@ import java.util.concurrent.Future;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.markTaskStage;
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -824,9 +825,20 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
                 if (config.getAllocate().getPrimaryStorage() instanceof CephPrimaryStorageAllocateConfig) {
                     CephPrimaryStorageAllocateConfig primaryStorageAllocateConfig = (CephPrimaryStorageAllocateConfig) config.getAllocate().getPrimaryStorage();
+                    if (primaryStorageAllocateConfig.getPoolNames() == null || primaryStorageAllocateConfig.getPoolNames().isEmpty()) {
+                        return;
+                    }
+
+                    String cephPoolName = SystemTagUtils.findTagValue(msg.getRootVolumeSystemTags(), CephSystemTags.USE_CEPH_ROOT_POOL, CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN);
+                    String targetCephPoolName = primaryStorageAllocateConfig.getPoolNames().get(0);
+                    if (cephPoolName != null && !cephPoolName.equals(targetCephPoolName)) {
+                        throw new OperationFailureException(operr("ceph pool conflict, the ceph pool specified by the instance offering is %s, and the ceph pool specified in the creation parameter is %s"
+                                ,targetCephPoolName, cephPoolName));
+                    }
+
                     msg.getRootVolumeSystemTags().add(CephSystemTags.USE_CEPH_ROOT_POOL.instantiateTag(
                             map(
-                                    e(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN, primaryStorageAllocateConfig.getPoolNames().get(0))
+                                    e(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN, targetCephPoolName)
                             )
                     ));
                 }
@@ -838,25 +850,42 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             return;
         }
 
-        if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(rootDiskOffering)) {
-            DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(rootDiskOffering, DiskOfferingUserConfig.class);
-
-            if (config.getAllocate().getPrimaryStorage() != null) {
-                msg.setPrimaryStorageUuidForRootVolume(config.getAllocate().getPrimaryStorage().getUuid());
-            }
-
-            if (msg.getRootVolumeSystemTags() == null) {
-                msg.setRootVolumeSystemTags(new ArrayList<>());
-            }
-            if (config.getAllocate().getPrimaryStorage() instanceof CephPrimaryStorageAllocateConfig) {
-                CephPrimaryStorageAllocateConfig primaryStorageAllocateConfig = (CephPrimaryStorageAllocateConfig) config.getAllocate().getPrimaryStorage();
-                msg.getRootVolumeSystemTags().add(CephSystemTags.USE_CEPH_ROOT_POOL.instantiateTag(
-                        map(
-                                e(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN, primaryStorageAllocateConfig.getPoolNames().get(0))
-                        )
-                ));
-            }
+        if (!DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(rootDiskOffering)) {
+            return;
         }
+
+        DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(rootDiskOffering, DiskOfferingUserConfig.class);
+        if (config.getAllocate().getPrimaryStorage() == null) {
+            return;
+        }
+
+        msg.setPrimaryStorageUuidForRootVolume(config.getAllocate().getPrimaryStorage().getUuid());
+
+        if (msg.getRootVolumeSystemTags() == null) {
+            msg.setRootVolumeSystemTags(new ArrayList<>());
+        }
+
+        if (!(config.getAllocate().getPrimaryStorage() instanceof CephPrimaryStorageAllocateConfig)) {
+            return;
+        }
+
+        CephPrimaryStorageAllocateConfig primaryStorageAllocateConfig = (CephPrimaryStorageAllocateConfig) config.getAllocate().getPrimaryStorage();
+        if (primaryStorageAllocateConfig.getPoolNames() == null || primaryStorageAllocateConfig.getPoolNames().isEmpty()) {
+            return;
+        }
+
+        String cephPoolName = SystemTagUtils.findTagValue(msg.getRootVolumeSystemTags(), CephSystemTags.USE_CEPH_ROOT_POOL, CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN);
+        String targetCephPoolName = primaryStorageAllocateConfig.getPoolNames().get(0);
+        if (cephPoolName != null && !cephPoolName.equals(targetCephPoolName)) {
+            throw new OperationFailureException(operr("ceph pool conflict, the ceph pool specified by the disk offering is %s, and the ceph pool specified in the creation parameter is %s"
+                    ,targetCephPoolName, cephPoolName));
+        }
+
+        msg.getRootVolumeSystemTags().add(CephSystemTags.USE_CEPH_ROOT_POOL.instantiateTag(
+                map(
+                        e(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN, targetCephPoolName)
+                )
+        ));
     }
 
     private void settingDataVolume(CreateVmInstanceMsg msg) {
@@ -910,14 +939,27 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 msg.setSystemTags(new ArrayList<>());
             }
 
-            if (config.getAllocate().getPrimaryStorage() instanceof CephPrimaryStorageAllocateConfig) {
-                CephPrimaryStorageAllocateConfig primaryStorageAllocateConfig = (CephPrimaryStorageAllocateConfig) config.getAllocate().getPrimaryStorage();
-                msg.getSystemTags().add(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.instantiateTag(
-                        map(
-                                e(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN, primaryStorageAllocateConfig.getPoolNames().get(0))
-                        )
-                ));
+            if (!(config.getAllocate().getPrimaryStorage() instanceof CephPrimaryStorageAllocateConfig)) {
+                return;
             }
+
+            CephPrimaryStorageAllocateConfig primaryStorageAllocateConfig = (CephPrimaryStorageAllocateConfig) config.getAllocate().getPrimaryStorage();
+            if (primaryStorageAllocateConfig.getPoolNames() == null || primaryStorageAllocateConfig.getPoolNames().isEmpty()) {
+                return;
+            }
+
+            String cephPoolName = SystemTagUtils.findTagValue(msg.getSystemTags(), CephSystemTags.USE_CEPH_ROOT_POOL, CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN);
+            String targetCephPoolName = primaryStorageAllocateConfig.getPoolNames().get(0);
+            if (cephPoolName != null && !cephPoolName.equals(targetCephPoolName)) {
+                throw new OperationFailureException(operr("ceph pool conflict, the ceph pool specified by the disk offering is %s, and the ceph pool specified in the creation parameter is %s"
+                        ,targetCephPoolName, cephPoolName));
+            }
+
+            msg.getSystemTags().add(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL.instantiateTag(
+                    map(
+                            e(CephSystemTags.USE_CEPH_PRIMARY_STORAGE_POOL_TOKEN, primaryStorageAllocateConfig.getPoolNames().get(0))
+                    )
+            ));
         }
     }
 

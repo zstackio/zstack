@@ -695,7 +695,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         if (InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.hasTag(instanceOffering)) {
             InstanceOfferingUserConfig config = OfferingUserConfigUtils.getInstanceOfferingConfig(instanceOffering, InstanceOfferingUserConfig.class);
             if (config.getAllocate().getPrimaryStorage() != null) {
-                msg.setPrimaryStorageUuidForRootVolume(config.getAllocate().getPrimaryStorage().getUuid());
+                String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
+                if (msg.getPrimaryStorageUuidForRootVolume() != null && !msg.getPrimaryStorageUuidForRootVolume().equals(psUuid)) {
+                    throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the instance offering is %s, and the primary storage specified in the creation parameter is %s"
+                            ,psUuid, msg.getPrimaryStorageUuidForRootVolume()));
+                }
+                msg.setPrimaryStorageUuidForRootVolume(psUuid);
             }
         }
 
@@ -707,9 +712,16 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(rootDiskOffering)) {
             DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(rootDiskOffering, DiskOfferingUserConfig.class);
 
-            if (config.getAllocate().getPrimaryStorage() != null) {
-                msg.setPrimaryStorageUuidForRootVolume(config.getAllocate().getPrimaryStorage().getUuid());
+            if (config.getAllocate().getPrimaryStorage() == null) {
+                return;
             }
+
+            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
+            if (msg.getPrimaryStorageUuidForRootVolume() != null && !msg.getPrimaryStorageUuidForRootVolume().equals(psUuid)) {
+                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
+                        psUuid, msg.getPrimaryStorageUuidForRootVolume()));
+            }
+            msg.setPrimaryStorageUuidForRootVolume(psUuid);
         }
     }
 
@@ -726,9 +738,16 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
             DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
 
-            if (config.getAllocate().getPrimaryStorage() != null) {
-                msg.setPrimaryStorageUuidForDataVolume(config.getAllocate().getPrimaryStorage().getUuid());
+            if (config.getAllocate().getPrimaryStorage() == null) {
+                return;
             }
+
+            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
+            if (msg.getPrimaryStorageUuidForDataVolume() != null && !msg.getPrimaryStorageUuidForDataVolume().equals(psUuid)) {
+                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
+                        psUuid, msg.getPrimaryStorageUuidForDataVolume()));
+            }
+            msg.setPrimaryStorageUuidForDataVolume(psUuid);
         }
     }
 
@@ -745,7 +764,13 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             if (config.getAllocate().getPrimaryStorage() == null) {
                 return;
             }
-            msg.setPrimaryStorageUuid(config.getAllocate().getPrimaryStorage().getUuid());
+
+            String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
+            if (msg.getPrimaryStorageUuid() != null && !msg.getPrimaryStorageUuid().equals(psUuid)) {
+                throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the disk offering is %s, and the primary storage specified in the creation parameter is %s",
+                        psUuid, msg.getPrimaryStorageUuid()));
+            }
+            msg.setPrimaryStorageUuid(psUuid);
         }
     }
 
