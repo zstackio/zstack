@@ -46,6 +46,7 @@ public class ResourceConfig {
     private List<ResourceConfigUpdateExtensionPoint> updateExtensions = new ArrayList<>();
     private List<ResourceConfigDeleteExtensionPoint> localDeleteExtensions = new ArrayList<>();
     private List<ResourceConfigDeleteExtensionPoint> deleteExtensions = new ArrayList<>();
+    private List<ResourceConfigValidatorExtensionPoint> validatorExtensions = new ArrayList<>();
 
     public static ResourceConfig valueOf(GlobalConfig globalConfig, BindResourceConfig bindInfo) {
         ResourceConfig result = new ResourceConfig();
@@ -68,6 +69,10 @@ public class ResourceConfig {
 
     public void installDeleteExtension(ResourceConfigDeleteExtensionPoint ext) {
         deleteExtensions.add(ext);
+    }
+
+    public void installValidatorExtension(ResourceConfigValidatorExtensionPoint ext) {
+        validatorExtensions.add(ext);
     }
 
     public void updateValue(String resourceUuid, String newValue) {
@@ -156,6 +161,7 @@ public class ResourceConfig {
         if (localUpdate) {
             globalConfig.getValidators().forEach(it ->
                     it.validateGlobalConfig(globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
+            validatorExtensions.forEach(it -> it.validateResourceConfig(resourceUuid, oldValue, newValue));
             updateValueInDb(resourceUuid, resourceType, newValue);
             localUpdateExtensions.forEach(it -> it.updateResourceConfig(this, resourceUuid, resourceType, oldValue, newValue));
         }
