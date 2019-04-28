@@ -20,6 +20,7 @@ import org.zstack.sdk.ZSClient
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategy
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategyFactory
 import org.zstack.testlib.util.Retry
+import org.zstack.utils.Linux
 import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
@@ -31,6 +32,7 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import java.util.logging.Level
 import java.util.logging.Logger
 /**
@@ -532,9 +534,18 @@ abstract class Test implements ApiHelper, Retry {
         }
 
         def suiteStartTime = System.currentTimeMillis()
+        String suiteTimeoutSecs = System.getProperty("suiteTimeoutSecs")
         boolean hasFailure = false
+        boolean isTimeout = false
+        String caseResultShellPath = System.getProperty("caseResultShellPath")
 
         for (SubCaseResult r in allCases) {
+            if (suiteTimeoutSecs != null && System.currentTimeSeconds() - suiteStartTime / 1000L > Long.valueOf(suiteTimeoutSecs)){
+                hasFailure = true
+                isTimeout = true
+                logger.error(String.format("testsuite[%s] run timeout，timeout = %s，Case[%s] skipped ", this.class.name, suiteTimeoutSecs, r.name))
+                break
+            }
             logger.debug("creating sub-case ${r.caseType}")
             def c = r.caseType.getConstructor().newInstance() as Case
 
@@ -584,6 +595,11 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
 
                 logger.error("a sub case[${c.class}] of suite[${this.class}] fails, ${t.message}", t)
             } finally {
+                if (caseResultShellPath != null){
+                    String shellCmd = String.format("suite_name=%s case_name=%s result=%s sh %s", this.class.name, r.caseType.name, (r.success ? "success" : "failure"), caseResultShellPath)
+                    ShellUtils.run(shellCmd)
+                }
+
                 def spendTime = (System.currentTimeMillis() - caseStartTime) as long
                 logger.info("spend time collected: case ${c.class.simpleName} of suite[${this.class}] spends ${spendTime} millisencends")
 
@@ -599,8 +615,22 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         int success = 0
         int failure = 0
         int skipped = 0
+        int timeout = 0
         allCases.each {
-            if (it.success == null) {
+            if (it.success == null && isTimeout){
+                if (caseResultShellPath != null){
+                    String shellCmd = String.format("suite_name=%s case_name=%s result=timeout sh %s", this.class.name, it.caseType.name, caseResultShellPath)
+                    ShellUtils.run(shellCmd)
+                }
+                def fname = it.caseType.name.replace(".", "_") + ".timeout"
+                def rfile = new File([dir.absolutePath, fname].join("/"))
+                rfile.createNewFile()
+                timeout ++
+            } else if (it.success == null){
+                if (caseResultShellPath != null){
+                    String shellCmd = String.format("suite_name=%s case_name=%s result=skipped sh %s", this.class.name, it.caseType.name, caseResultShellPath)
+                    ShellUtils.run(shellCmd)
+                }
                 def fname = it.caseType.name.replace(".", "_") + ".skipped"
                 def rfile = new File([dir.absolutePath, fname].join("/"))
                 rfile.createNewFile()
@@ -620,6 +650,7 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
                 "success": success,
                 "failure": failure,
                 "skipped": skipped,
+                "timeout": timeout,
                 "passRate": ((float)success / (float)caseTypes.size()) * 100,
                 "spendTime": suiteEndTime - suiteStartTime
         ]))

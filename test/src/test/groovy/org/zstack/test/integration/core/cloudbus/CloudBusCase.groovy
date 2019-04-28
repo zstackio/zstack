@@ -47,7 +47,7 @@ class CloudBusCase extends SubCase{
 
         @Override
         public void handleMessage(Message msg) {
-            if (msg instanceof HelloWorldMsgForCloudBusCase) {
+            if (msg instanceof HelloWorldForCloudBusCaseMsg) {
                 isSuccess = true
                 latch.countDown()
             } else if (msg instanceof FakeNeedReplyMessage) {
@@ -109,7 +109,7 @@ class CloudBusCase extends SubCase{
     }
 
     void testCloudBusSharding(){
-        HelloWorldMsgForCloudBusCase msg = new HelloWorldMsgForCloudBusCase() 
+        HelloWorldForCloudBusCaseMsg msg = new HelloWorldForCloudBusCaseMsg()
         startFakeService() 
         startLatch.await() 
 

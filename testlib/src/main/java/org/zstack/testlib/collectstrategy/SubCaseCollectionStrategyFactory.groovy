@@ -13,10 +13,12 @@ class SubCaseCollectionStrategyFactory {
         if(strategyName == null){
             return defaultStrategy()
         } else if(NearestSubCaseCollectionStrategy.strategyName == strategyName){
-            return NearestSubCaseCollectionStrategy()
+            return new NearestSubCaseCollectionStrategy()
         } else if(MostCompleteSubCaseCollectionStrategy.strategyName == strategyName){
             return new MostCompleteSubCaseCollectionStrategy()
-        } else {
+        } else if(DesignatedSubCaseCollectionStrategy.strategyName == strategyName){
+            return new DesignatedSubCaseCollectionStrategy()
+        }else{
             assert false : "can not find SubCaseCollectionStrategy[${strategyName}]"
         }
     }

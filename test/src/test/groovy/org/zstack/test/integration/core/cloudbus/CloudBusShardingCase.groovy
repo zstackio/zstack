@@ -42,7 +42,7 @@ class CloudBusShardingCase extends SubCase {
 
         @Override
         void handleMessage(Message msg) {
-            if (msg.getClass() == HelloWorldMsgForCloudBusCase.class) {
+            if (msg.getClass() == HelloWorldForCloudBusCaseMsg.class) {
                 isSuccess = true
             }
             latch.countDown()
@@ -92,7 +92,7 @@ class CloudBusShardingCase extends SubCase {
 
     void testCloudBusSharding() {
         startFakeService()
-        HelloWorldMsgForCloudBusCase msg = new HelloWorldMsgForCloudBusCase()
+        HelloWorldForCloudBusCaseMsg msg = new HelloWorldForCloudBusCaseMsg()
         bus.makeTargetServiceIdByResourceUuid(msg, servId, Platform.getUuid())
         bus.send(msg)
         latch.await(10, TimeUnit.SECONDS)
