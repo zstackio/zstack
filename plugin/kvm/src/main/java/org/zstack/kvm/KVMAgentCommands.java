@@ -876,6 +876,15 @@ public class KVMAgentCommands {
         private boolean fromForeignHypervisor;
         private String machineType;
         private Integer pciePortNums;
+        private boolean useHugePage;
+
+        public boolean isUseHugePage() {
+            return useHugePage;
+        }
+
+        public void setUseHugePage(boolean useHugePage) {
+            this.useHugePage = useHugePage;
+        }
 
         public boolean isFromForeignHypervisor() {
             return fromForeignHypervisor;
