@@ -123,13 +123,13 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                         "sudo bash /etc/init.d/zstack-virtualrouteragent restart\n";
 
                 try {
-                    new Ssh().setTimeout(300).scp(
+                    new Ssh().setTimeout(300).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
                             "/home/vyos/zvr.bin"
-                    ).scp(
+                    ).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/zvrboot.bin", true).getAbsolutePath(),
                             "/home/vyos/zvrboot.bin"
-                    ).scp(
+                    ).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/version", true).getAbsolutePath(),
                             "/home/vyos/zvr/version"
                     ).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
@@ -141,13 +141,13 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                     ZSTAC-18352, try again with password when key fail
                      */
                     String password = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
-                    new Ssh().setTimeout(300).scp(
+                    new Ssh().setTimeout(300).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
                             "/home/vyos/zvr.bin"
-                    ).scp(
+                    ).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/zvrboot.bin", true).getAbsolutePath(),
                             "/home/vyos/zvrboot.bin"
-                    ).scp(
+                    ).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/version", true).getAbsolutePath(),
                             "/home/vyos/zvr/version"
                     ).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();

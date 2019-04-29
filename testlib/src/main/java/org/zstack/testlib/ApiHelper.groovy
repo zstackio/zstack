@@ -368,8 +368,62 @@ trait ApiHelper {
     }
 
 
+    def syncVmBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.SyncVmBackupAction.class) Closure c) {
+        def a = new org.zstack.heder.storage.volume.backup.SyncVmBackupAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def syncVmBackupFromImageStoreBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.SyncVmBackupFromImageStoreBackupStorageAction.class) Closure c) {
         def a = new org.zstack.heder.storage.volume.backup.SyncVmBackupFromImageStoreBackupStorageAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def syncVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.SyncVolumeBackupAction.class) Closure c) {
+        def a = new org.zstack.heder.storage.volume.backup.SyncVolumeBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

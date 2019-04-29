@@ -259,12 +259,17 @@ public class Ssh {
        };
     }
 
-    public Ssh scp(final String src, final String dst) {
-        commands.add(createScpCommand(src, dst));
+    public Ssh scpUpload(final String local, final String remote) {
+        commands.add(createScpCommand(local, remote, false));
         return this;
     }
 
-    private SshRunner createScpCommand(final String src, final String dst) {
+    public Ssh scpDownload(final String remote, final String local) {
+        commands.add(createScpCommand(remote, local, true));
+        return this;
+    }
+
+    private SshRunner createScpCommand(final String src, final String dst, boolean download) {
         return new SshRunner() {
             @Override
             public SshResult run() {
@@ -273,7 +278,11 @@ public class Ssh {
                 ret.setCommandToExecute(cmd);
 
                 try {
-                    ssh.newSCPFileTransfer().upload(src, dst);
+                    if (download) {
+                        ssh.newSCPFileTransfer().download(src, dst);
+                    } else {
+                        ssh.newSCPFileTransfer().upload(src, dst);
+                    }
                     if (logger.isTraceEnabled()) {
                         logger.trace(String.format("[SCP done]: %s", cmd));
                     }
@@ -292,7 +301,11 @@ public class Ssh {
 
             @Override
             public String getCommand() {
-                return String.format("scp -P %d %s %s@%s:%s", port, src, username, hostname, dst);
+                if (download) {
+                    return String.format("scp -P %d %s@%s:%s %s", port, username, hostname, src, dst);
+                } else {
+                    return String.format("scp -P %d %s %s@%s:%s", port, src, username, hostname, dst);
+                }
             }
         };
     }
