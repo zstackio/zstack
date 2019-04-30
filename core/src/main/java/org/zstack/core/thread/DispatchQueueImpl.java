@@ -33,8 +33,6 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     private final Map<String, ChainTaskQueueWrapper> chainTasks = Collections.synchronizedMap(new HashMap<>());
     private static final CLogger _logger = CLoggerImpl.getLogger(DispatchQueueImpl.class);
 
-    public static final String DUMP_TASK_DEBUG_SINGAL = "DumpTaskQueue";
-
     @Override
     public void handleDebugSignal() {
         StringBuilder sb = new StringBuilder();

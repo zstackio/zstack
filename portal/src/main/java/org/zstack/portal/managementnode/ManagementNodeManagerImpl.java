@@ -15,9 +15,11 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.core.debug.DebugManager;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.DispatchQueue;
 import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -100,9 +102,13 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     @Autowired
     private ThreadFacade thdf;
     @Autowired
+    private DebugManager debugManager;
+    @Autowired
     private ResourceDestinationMaker destinationMaker;
     @Autowired
     private EventFacade evtf;
+
+    private boolean sigUsr2 = false;
 
     void init() {
         heartBeatDBSource = new HeartBeatDBSource();
@@ -320,6 +326,14 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             }
         }
     };
+
+    void setSigUsr2() {
+        sigUsr2 = true;
+    }
+
+    private void dumpTaskQueue() {
+        debugManager.handleSig(DispatchQueue.DUMP_TASK_DEBUG_SINGAL);
+    }
 
     @Override
     public boolean start() {
@@ -547,7 +561,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         stopped = false;
 
         installShutdownHook();
-
+        DebugSignalHandler.listenTo("USR2", this);
 
         logger.info("Management node: " + getId() + " starts successfully");
 
@@ -555,7 +569,11 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             isNodeRunning = NODE_RUNNING;
             while (isRunning) {
                 try {
-                    this.wait();
+                    if (this.sigUsr2) {
+                        dumpTaskQueue();
+                        this.sigUsr2 = false;
+                    }
+                    this.wait(TimeUnit.SECONDS.toMillis(1));
                 } catch (InterruptedException e) {
                     logger.warn("Interrupted while daemon is running, continue ...", e);
                 }
