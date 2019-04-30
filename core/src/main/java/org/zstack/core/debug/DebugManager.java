@@ -12,11 +12,9 @@ public interface DebugManager {
     Map<String, List<DebugSignalHandler>> sigHandlers = new HashMap<>();
 
     static void registerDebugSignalHandler(String sig, DebugSignalHandler handler) {
-        List<DebugSignalHandler> hs = sigHandlers.get(sig);
-        if (hs == null) {
-            hs = new ArrayList<>();
-            sigHandlers.put(sig, hs);
-        }
+        List<DebugSignalHandler> hs = sigHandlers.computeIfAbsent(sig, k -> new ArrayList<>());
         hs.add(handler);
     }
+
+    void handleSig(String sig);
 }
