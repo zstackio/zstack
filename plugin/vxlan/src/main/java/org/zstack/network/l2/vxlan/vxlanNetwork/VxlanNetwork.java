@@ -8,6 +8,7 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -17,6 +18,8 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
@@ -98,6 +101,8 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
             handle((L2NetworkDeletionMsg) msg);
         } else if (msg instanceof CheckL2NetworkOnHostMsg) {
             handle((CheckL2NetworkOnHostMsg) msg);
+        } else if (msg instanceof PrepareL2NetworkOnHostsMsg) {
+            handle((PrepareL2NetworkOnHostsMsg) msg);
         } else if (msg instanceof L2NetworkMessage) {
             superHandle((L2NetworkMessage) msg);
         } else {
@@ -108,6 +113,23 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
     private void handle(final PrepareL2NetworkOnHostMsg msg) {
         final PrepareL2NetworkOnHostReply reply = new PrepareL2NetworkOnHostReply();
         prepareL2NetworkOnHosts(Arrays.asList(msg.getHost()), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final PrepareL2NetworkOnHostsMsg msg) {
+        final PrepareL2NetworkOnHostsReply reply = new PrepareL2NetworkOnHostsReply();
+        List<HostInventory> hosts = HostInventory.valueOf(Q.New(HostVO.class).in(HostVO_.uuid, msg.getHosts()).list());
+        prepareL2NetworkOnHosts(hosts, new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);
