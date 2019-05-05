@@ -127,6 +127,10 @@ public class AccountBase extends AbstractAccount {
     private void deleteAccount(Completion completion) {
         final String issuer = AccountVO.class.getSimpleName();
         final List<AccountInventory> ctx = list(AccountInventory.valueOf(self));
+        List<String> resourceUuids = Q.New(AccountResourceRefVO.class)
+                                        .select(AccountResourceRefVO_.resourceUuid)
+                                        .eq(AccountResourceRefVO_.ownerAccountUuid, self.getUuid())
+                                        .listValues();
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-account-%s", self.getUuid()));
         chain.then(new ShareFlow() {
@@ -155,7 +159,7 @@ public class AccountBase extends AbstractAccount {
                     @Override
                     public void handle(Map data) {
                         dbf.remove(self);
-                        acntMgr.adminAdoptAllOrphanedResource();
+                        acntMgr.adminAdoptAllOrphanedResource(resourceUuids, self.getUuid());
 
                         AccountDeletedData evtData = new AccountDeletedData();
                         evtData.setAccountUuid(self.getUuid());

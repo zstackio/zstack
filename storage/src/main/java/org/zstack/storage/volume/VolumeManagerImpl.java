@@ -563,6 +563,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     private void handle(APICreateDataVolumeMsg msg) {
         APICreateDataVolumeEvent evt = new APICreateDataVolumeEvent(msg.getId());
+        pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class).forEach(extensionPoint -> {
+            extensionPoint.preCreateVolume(msg);
+        });
+
         VolumeVO vo = new VolumeVO();
 
         final String diskOfferingUuid = msg.getDiskOfferingUuid();

@@ -10,6 +10,47 @@ import java.util.Date;
 public class VmCanonicalEvents {
     public static final String VM_FULL_STATE_CHANGED_PATH = "/vm/state/change";
     public static final String VM_INSTANCE_OFFERING_CHANGED_PATH = "/vm/instanceoffering/change";
+    public static final String VM_CONFIG_CHANGED_PATH = "/vm/config/change";
+
+    @NeedJsonSchema
+    public static class VmConfigChangedData {
+        private String vmUuid;
+        private VmInstanceInventory inv;
+        private Date date = new Date();
+        private String accountUuid;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public VmInstanceInventory getInv() {
+            return inv;
+        }
+
+        public void setInv(VmInstanceInventory inv) {
+            this.inv = inv;
+        }
+
+        public Date getDate() {
+            return date;
+        }
+
+        public void setDate(Date date) {
+            this.date = date;
+        }
+
+        public String getAccountUuid() {
+            return accountUuid;
+        }
+
+        public void setAccoundUuid(String accountUuid) {
+            this.accountUuid = accountUuid;
+        }
+    }
 
     @NeedJsonSchema
     public static class InstanceOfferingChangedData {

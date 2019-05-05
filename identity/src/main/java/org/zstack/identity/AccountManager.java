@@ -25,7 +25,7 @@ public interface AccountManager {
 
     boolean isAdmin(SessionInventory session);
 
-    void adminAdoptAllOrphanedResource();
+    void adminAdoptAllOrphanedResource(List<String> resourceUuid, String originAccountUuid);
 
     Class getBaseResourceType(Class clz);
 }

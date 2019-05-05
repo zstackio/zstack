@@ -4,6 +4,7 @@ import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
@@ -28,6 +29,7 @@ import javax.persistence.Transient;
                 @EntityGraph.Neighbour(type = DiskOfferingVO.class, myField = "diskOfferingUuid", targetField = "uuid"),
         }
 )
+@AutoDeleteTag
 public class VolumeVO extends VolumeAO implements OwnedByAccount {
     @Transient
     private String accountUuid;

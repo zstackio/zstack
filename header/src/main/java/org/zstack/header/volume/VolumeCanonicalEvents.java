@@ -9,6 +9,37 @@ import java.util.Date;
  */
 public class VolumeCanonicalEvents {
     public static final String VOLUME_STATUS_CHANGED_PATH = "/volume/status/change";
+    public static final String VOLUME_CONFIG_CHANGED_PATH = "/volume/config/change";
+
+    @NeedJsonSchema
+    public static class VolumeConfigChangedData {
+        private VolumeInventory inventory;
+        private String accoutUuid;
+        private Date date = new Date();
+
+        public VolumeInventory getInventory() {
+            return inventory;
+        }
+
+        public void setInventory(VolumeInventory inventory) {
+            this.inventory = inventory;
+        }
+
+        public String getAccoutUuid() {
+            return accoutUuid;
+        }
+
+        public void setAccoutUuid(String accoutUuid) {
+            this.accoutUuid = accoutUuid;
+        }
+        public Date getDate() {
+            return date;
+        }
+
+        public void setDate(Date date) {
+            this.date = date;
+        }
+    }
 
     @NeedJsonSchema
     public static class VolumeStatusChangedData {

@@ -107,6 +107,16 @@ public class TimeUtils {
         return TimeUnit.valueOf(time).toSeconds((long) 1);
     }
 
+    public static long parseTimeToMillis(String time){
+        if (time.equals(TimeUtils.TIME_UNIT_WEEKS)) {
+            return TimeUnit.DAYS.toMillis(7);
+        }
+        if (time.equals(TimeUtils.TIME_UNIT_MONTHS)) {
+            return TimeUnit.DAYS.toMillis(30);
+        }
+        return TimeUnit.valueOf(time).toMillis((long) 1);
+    }
+
     private static DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public static boolean isValidTimestampFormat(String timestamp) {
         try {

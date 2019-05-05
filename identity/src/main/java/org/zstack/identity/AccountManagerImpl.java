@@ -857,7 +857,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
     }
 
-    private void doAdminAdoptResource() {
+    private void doAdminAdoptResource(List<String> resourceUuids, String originAccountUuid) {
+        List<String> orphanedResources = new ArrayList<>();
+        final List<TakeOverResourceExtensionPoint> exts = pluginRgty.getExtensionList(TakeOverResourceExtensionPoint.class);
+
         new SQLBatch() {
             @Override
             protected void scripts() {
@@ -884,16 +887,29 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     ref.setOwnerAccountUuid(ref.getAccountUuid());
                     ref.setShared(false);
                     persist(ref);
+                    orphanedResources.add(ruuid);
                 });
             }
         }.execute();
+
+        if (orphanedResources.size() == 0 || resourceUuids.size() == 0) {
+            return;
+        }
+        List<String> uuids = resourceUuids.stream().filter(uuid -> orphanedResources.contains(uuid)).collect(Collectors.toList());
+
+        CollectionUtils.forEach(exts, new ForEachFunction<TakeOverResourceExtensionPoint>() {
+            @Override
+            public void run(TakeOverResourceExtensionPoint ext) {
+                ext.afterTakeOverResource(uuids, originAccountUuid, AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
+            }
+        });
     }
 
-    public void adminAdoptAllOrphanedResource(){
+    public void adminAdoptAllOrphanedResource(List<String> resourceUuid, String originAccountUuid){
         thdf.syncSubmit(new SyncTask<Void>() {
             @Override
             public Void call() throws Exception {
-                doAdminAdoptResource();
+                doAdminAdoptResource(resourceUuid, originAccountUuid);
                 return null;
             }
 

@@ -28,11 +28,11 @@ public class VmNicBandwidthSpendingDetails  {
         return this.spending;
     }
 
-    public double bandwidthSize;
-    public void setBandwidthSize(double bandwidthSize) {
+    public long bandwidthSize;
+    public void setBandwidthSize(long bandwidthSize) {
         this.bandwidthSize = bandwidthSize;
     }
-    public double getBandwidthSize() {
+    public long getBandwidthSize() {
         return this.bandwidthSize;
     }
 
