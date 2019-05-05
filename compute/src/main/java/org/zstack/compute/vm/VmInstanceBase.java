@@ -4089,6 +4089,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(Map data) {
                 dbf.update(self);
+                VmCanonicalEvents.VmConfigChangedData d = new VmCanonicalEvents.VmConfigChangedData();
+                d.setVmUuid(self.getUuid());
+                d.setInv(getSelfInventory());
+                d.setAccoundUuid(acntMgr.getOwnerAccountUuidOfResource(self.getUuid()));
+                evtf.fire(VmCanonicalEvents.VM_CONFIG_CHANGED_PATH, d);
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
