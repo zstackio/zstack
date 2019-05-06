@@ -17006,5 +17006,16 @@
     ],
     "line": 2178,
     "fileName": "src/main/java/org/zstack/mevoco/MevocoManagerImpl.java"
+  },
+  {
+    "raw": "the shared block group primary storage[uuid:%s, name:%s] has not attached to any clusters, or no hosts in the attached clusters are connected",
+    "en_US": "the shared block group primary storage[uuid:{0}, name:{1}] has not attached to any clusters, or no hosts in the attached clusters are connected",
+    "zh_CN": "SharedBlock主存储[uuid:{0}, name:{1}] 没有挂载到任何一个集群，或者挂载到集群的物理机均无法连接",
+    "arguments": [
+      "self.getUuid()",
+      "self.getName()"
+    ],
+    "line": 858,
+    "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
   }
 ]
