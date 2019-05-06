@@ -17,10 +17,7 @@ import org.zstack.zql.ast.visitors.result.ReturnWithResult;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
@@ -111,14 +108,12 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
             sqlClauses.add(StringUtils.join(where, " AND "));
         }
 
-        String groupBy = plugin.groupBy();
-        if (groupBy != null && ctype != QueryVisitorPlugin.ClauseType.SIMPLE_COUNT) {
-            sqlClauses.add(groupBy);
+        if (ctype != QueryVisitorPlugin.ClauseType.SIMPLE_COUNT) {
+            Optional.ofNullable(plugin.groupBy()).ifPresent(sqlClauses::add);
         }
 
-        String orderBy = plugin.orderBy();
-        if (orderBy != null && ctype != QueryVisitorPlugin.ClauseType.SIMPLE_COUNT) {
-            sqlClauses.add(orderBy);
+        if (ctype != QueryVisitorPlugin.ClauseType.SIMPLE_COUNT) {
+            Optional.ofNullable(plugin.orderBy()).ifPresent(sqlClauses::add);
         }
 
         List<String> jpqlClauses = new ArrayList<>(sqlClauses);
@@ -143,13 +138,16 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
     }
 
     public QueryResult visit(ASTNode.Query node) {
-        SQLText st = makeSQL(node, node instanceof ASTNode.Sum ? QueryVisitorPlugin.ClauseType.SUM : QueryVisitorPlugin.ClauseType.QUERY);
-        ret.sql = st.sql;
-        ret.createJPAQuery = (EntityManager emgr) -> {
-            Query q = emgr.createQuery(st.jpql);
-            setPaging(q, st);
-            return q;
-        };
+        if (!countQuery) {
+            SQLText st = makeSQL(node, node instanceof ASTNode.Sum ? QueryVisitorPlugin.ClauseType.SUM : QueryVisitorPlugin.ClauseType.QUERY);
+            ret.sql = st.sql;
+            ret.createJPAQuery = (EntityManager emgr) -> {
+                Query q = emgr.createQuery(st.jpql);
+                setPaging(q, st);
+                return q;
+            };
+        }
+
 
         if (node.getReturnWith() != null) {
             ret.returnWith = (List<ReturnWithResult>) node.getReturnWith().accept(new ReturnWithVisitor());
@@ -163,8 +161,9 @@ public class QueryVisitor implements ASTVisitor<QueryResult, ASTNode.Query> {
         }
 
         if (countQuery) {
+            SQLText cst = makeSQL(node, QueryVisitorPlugin.ClauseType.COUNT);
+            ret.sql = cst.sql;
             ret.createCountQuery = (EntityManager emgr) -> {
-                SQLText cst = makeSQL(node, QueryVisitorPlugin.ClauseType.COUNT);
                 Query q = emgr.createQuery(cst.jpql);
                 setPaging(q, cst);
                 return q;
