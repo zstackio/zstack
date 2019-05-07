@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateHybridKeySecretAction extends AbstractAction {
+public class CreateImageReplicationGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateHybridKeySecretResult value;
+        public org.zstack.sdk.CreateImageReplicationGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,17 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +66,8 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateHybridKeySecretResult value = res.getResult(org.zstack.sdk.UpdateHybridKeySecretResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateHybridKeySecretResult() : value; 
+        org.zstack.sdk.CreateImageReplicationGroupResult value = res.getResult(org.zstack.sdk.CreateImageReplicationGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateImageReplicationGroupResult() : value; 
 
         return ret;
     }
@@ -94,7 +97,7 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/hybrid/hybrid/{uuid}/key";
+        info.path = "/image-replication-groups";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
