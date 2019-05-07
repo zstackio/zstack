@@ -64,4 +64,8 @@ public class OfferingUserConfigUtils {
         T config = gson.fromJson(configStr, clazz);
         return config;
     }
+
+    public static <T> T toObject(String content, Class<T> clazz){
+        return gson.fromJson(content, clazz);
+    }
 }
