@@ -21,7 +21,9 @@ import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
+import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
+import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
@@ -53,12 +55,10 @@ import java.util.*;
 import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.map;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmInstanceStartExtensionPoint,
-        VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint {
+        VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint, InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator {
     private static final CLogger logger = Utils.getLogger(PrimaryStorageManager.class);
 
     @Autowired
@@ -784,4 +784,59 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         return;
     }
 
+    @Override
+    public void validateInstanceOfferingUserConfig(String userConfig, String instanceOfferingUuid) {
+        InstanceOfferingUserConfig config = OfferingUserConfigUtils.toObject(userConfig, InstanceOfferingUserConfig.class);
+
+        if (config.getAllocate() == null) {
+            return;
+        }
+
+        PrimaryStorageAllocateConfig primaryStorageAllocateConfig = config.getAllocate().getPrimaryStorage();
+        if (primaryStorageAllocateConfig == null) {
+            return;
+        }
+
+        if (primaryStorageAllocateConfig.getType() == null) {
+            throw new IllegalArgumentException("primaryStorage type cannot be empty");
+        }
+
+        if (primaryStorageAllocateConfig.getUuid() == null) {
+            throw new IllegalArgumentException("primaryStorage uuid cannot be empty");
+        }
+
+        String psUuid = primaryStorageAllocateConfig.getUuid();
+        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
+        if (primaryStorageVO == null) {
+            throw new IllegalArgumentException(String.format("primaryStorage[uuid=%s] does not exist", psUuid));
+        }
+    }
+
+    @Override
+    public void validateDiskOfferingUserConfig(String userConfig, String diskOfferingUuid) {
+        DiskOfferingUserConfig config = OfferingUserConfigUtils.toObject(userConfig, DiskOfferingUserConfig.class);
+
+        if (config.getAllocate() == null) {
+            return;
+        }
+
+        PrimaryStorageAllocateConfig primaryStorageAllocateConfig = config.getAllocate().getPrimaryStorage();
+        if (primaryStorageAllocateConfig == null) {
+            return;
+        }
+
+        if (primaryStorageAllocateConfig.getType() == null) {
+            throw new IllegalArgumentException("primaryStorage type cannot be empty");
+        }
+
+        if (primaryStorageAllocateConfig.getUuid() == null) {
+            throw new IllegalArgumentException("primaryStorage uuid cannot be empty");
+        }
+
+        String psUuid = primaryStorageAllocateConfig.getUuid();
+        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
+        if (primaryStorageVO == null) {
+            throw new IllegalArgumentException(String.format("primaryStorage[uuid=%s] does not exist", psUuid));
+        }
+    }
 }
