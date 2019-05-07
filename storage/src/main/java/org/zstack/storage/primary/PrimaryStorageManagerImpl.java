@@ -810,6 +810,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         if (primaryStorageVO == null) {
             throw new IllegalArgumentException(String.format("primaryStorage[uuid=%s] does not exist", psUuid));
         }
+
+        if (!primaryStorageVO.getType().equalsIgnoreCase(primaryStorageAllocateConfig.getType())) {
+            throw new IllegalArgumentException(String.format("primaryStorage[uuid=%s] type is %s", psUuid, primaryStorageVO.getType()));
+        }
     }
 
     @Override
@@ -837,6 +841,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
         if (primaryStorageVO == null) {
             throw new IllegalArgumentException(String.format("primaryStorage[uuid=%s] does not exist", psUuid));
+        }
+
+        if (!primaryStorageVO.getType().equalsIgnoreCase(primaryStorageAllocateConfig.getType())) {
+            throw new IllegalArgumentException(String.format("primaryStorage[uuid=%s] type is %s", psUuid, primaryStorageVO.getType()));
         }
     }
 }
