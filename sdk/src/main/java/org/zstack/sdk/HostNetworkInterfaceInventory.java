@@ -12,6 +12,17 @@ public class HostNetworkInterfaceInventory  {
         return this.interfaceName;
     }
 
+<<<<<<< HEAD
+=======
+    public java.lang.String interfaceType;
+    public void setInterfaceType(java.lang.String interfaceType) {
+        this.interfaceType = interfaceType;
+    }
+    public java.lang.String getInterfaceType() {
+        return this.interfaceType;
+    }
+
+>>>>>>> Support hostNetworkFacts
     public java.lang.Long speed;
     public void setSpeed(java.lang.Long speed) {
         this.speed = speed;
@@ -36,4 +47,23 @@ public class HostNetworkInterfaceInventory  {
         return this.carrierActive;
     }
 
+<<<<<<< HEAD
+=======
+    public java.util.List ipAddresses;
+    public void setIpAddresses(java.util.List ipAddresses) {
+        this.ipAddresses = ipAddresses;
+    }
+    public java.util.List getIpAddresses() {
+        return this.ipAddresses;
+    }
+
+    public java.lang.String mac;
+    public void setMac(java.lang.String mac) {
+        this.mac = mac;
+    }
+    public java.lang.String getMac() {
+        return this.mac;
+    }
+
+>>>>>>> Support hostNetworkFacts
 }
