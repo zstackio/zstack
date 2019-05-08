@@ -52,7 +52,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
@@ -1407,5 +1406,10 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
         reply.setSnapshotInstallPath(NfsPrimaryStorageKvmHelper.makeKvmSnapshotInstallPath(psInventory, msg.getVolumeInventory(), msg.getSnapshotUuid()));
         completion.success(reply);
+    }
+
+    @Override
+    public void handle(CheckVolumeSnapshotsOnPrimaryStorageMsg msg, ReturnValueCompletion<CheckVolumeSnapshotsOnPrimaryStorageReply> completion) {
+        
     }
 }

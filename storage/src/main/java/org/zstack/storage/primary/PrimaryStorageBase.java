@@ -117,6 +117,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(GetPrimaryStorageFolderListMsg msg);
 
+    protected abstract void handle(CheckVolumeSnapshotsOnPrimaryStorageMsg msg);
+
     protected abstract void handle(DeleteVolumeOnPrimaryStorageMsg msg);
 
     protected abstract void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg);
@@ -347,6 +349,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((CheckInstallPathInTrashMsg) msg);
         } else if ((msg instanceof CleanUpTrashOnPrimaryStroageMsg)) {
             handle((CleanUpTrashOnPrimaryStroageMsg) msg);
+        } else if ((msg instanceof CheckVolumeSnapshotsOnPrimaryStorageMsg)) {
+            handle((CheckVolumeSnapshotsOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }

@@ -22,9 +22,12 @@ import org.zstack.header.storage.primary.IncreasePrimaryStorageCapacityMsg;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus.StatusEvent;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -207,6 +210,26 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
         dbf.update(self);
     }
 
+    private void doCheckBeforeDeleteSnapshot(final Iterator<VolumeSnapshotCheckExtensionPoint> it, VolumeSnapshotInventory snapshot, Completion completion) {
+        if (!it.hasNext()) {
+            completion.success();
+            return;
+        }
+
+        VolumeSnapshotCheckExtensionPoint ext = it.next();
+        ext.checkBeforeDeleteSnapshot(snapshot, new Completion(completion) {
+            @Override
+            public void success() {
+                doCheckBeforeDeleteSnapshot(it, snapshot, completion);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
     private void handle(final VolumeSnapshotPrimaryStorageDeletionMsg msg) {
         final VolumeSnapshotInventory sp = getSelfInventory();
 
@@ -238,11 +261,46 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                 });
             }
 
+            private void errors(ErrorCode errorCode) {
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeSnapshotAfterDeleteExtensionPoint.class), new ForEachFunction<VolumeSnapshotAfterDeleteExtensionPoint>() {
+                    @Override
+                    public void run(VolumeSnapshotAfterDeleteExtensionPoint arg) {
+                        arg.volumeSnapshotAfterFailedDeleteExtensionPoint(sp);
+                    }
+                });
+
+                VolumeSnapshotPrimaryStorageDeletionReply dreply = new VolumeSnapshotPrimaryStorageDeletionReply();
+                dreply.setError(errorCode);
+                bus.reply(msg, dreply);
+            }
+
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
-                    String __name__ = "delete-on-primary-storage";
+                    String __name__ = "check-before-delete-snapshot";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        Iterator<VolumeSnapshotCheckExtensionPoint> it = pluginRgty.getExtensionList(VolumeSnapshotCheckExtensionPoint.class).iterator();
+                        if (!it.hasNext()) {
+                            trigger.next();
+                            return;
+                        }
+                        doCheckBeforeDeleteSnapshot(it, sp, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
 
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "delete-on-primary-storage";
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         DeleteSnapshotOnPrimaryStorageMsg dmsg = new DeleteSnapshotOnPrimaryStorageMsg();
@@ -287,9 +345,13 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
                         // TODO GC
-                        logger.warn(String.format("failed to delete snapshot[uuid:%s, name:%s] on primary storage[uuid:%s], the primary storage should cleanup",
-                                self.getUuid(), self.getName(), self.getPrimaryStorageUuid()));
-                        finish();
+                        if (VolumeSnapshotErrors.FULL_SNAPSHOT_ERROR.toString().equals(errCode.getCode())) {
+                            errors(errCode);
+                        } else {
+                            logger.warn(String.format("failed to delete snapshot[uuid:%s, name:%s] on primary storage[uuid:%s], the primary storage should cleanup",
+                                    self.getUuid(), self.getName(), self.getPrimaryStorageUuid()));
+                            finish();
+                        }
                     }
                 });
             }

@@ -3,6 +3,7 @@ package org.zstack.storage.primary.smp;
 import org.zstack.header.cluster.ClusterConnectionStatus;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.host.CheckSnapshotOnHypervisorReply;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.*;
 
@@ -66,6 +67,8 @@ public abstract class HypervisorBackend extends SMPPrimaryStorageBase {
     abstract void handle(BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg msg, ReturnValueCompletion<BackupVolumeSnapshotFromPrimaryStorageToBackupStorageReply> completion);
 
     abstract void handle(AskInstallPathForNewSnapshotMsg msg, ReturnValueCompletion<AskInstallPathForNewSnapshotReply> completion);
+
+    abstract void handle(CheckVolumeSnapshotsOnPrimaryStorageMsg msg, ReturnValueCompletion<CheckSnapshotOnHypervisorReply> completion);
 
     abstract void downloadImageToCache(ImageInventory img, final ReturnValueCompletion<String> completion);
 }

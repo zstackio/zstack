@@ -483,15 +483,23 @@ public class VolumeSnapshotTreeBase {
                 bus.send(pmsgs, VolumeSnapshotGlobalConfig.SNAPSHOT_DELETE_PARALLELISM_DEGREE.value(Integer.class), new CloudBusListCallBack(trigger) {
                     @Override
                     public void run(List<MessageReply> replies) {
+                        ErrorCodeList errors = new ErrorCodeList();
                         for (MessageReply r : replies) {
                             if (!r.isSuccess()) {
                                 VolumeSnapshotPrimaryStorageDeletionMsg pmsg = pmsgs.get(replies.indexOf(r));
-                                logger.warn(String.format("failed to delete snapshot[uuid:%s] on primary storage[uuid:%s], the primary storage should cleanup",
-                                        pmsg.getSnapshotUuid(), currentRoot.getPrimaryStorageUuid()));
+                                if (!msg.isVolumeDeletion() && VolumeSnapshotErrors.FULL_SNAPSHOT_ERROR.toString().equals(r.getError().getCode())) {
+                                    errors.getCauses().add(r.getError());
+                                } else {
+                                    logger.warn(String.format("failed to delete snapshot[uuid:%s] on primary storage[uuid:%s] cause: [%s], the primary storage should cleanup",
+                                            pmsg.getSnapshotUuid(), currentRoot.getPrimaryStorageUuid(), r.getError().getDetails()));
+                                }
                             }
                         }
-
-                        trigger.next();
+                        if (errors.getCauses().size() > 0) {
+                            trigger.fail(errors);
+                        } else {
+                            trigger.next();
+                        }
                     }
                 });
             }

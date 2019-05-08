@@ -43,10 +43,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.OverlayMessage;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.CreateVolumeSnapshotMsg;
-import org.zstack.header.storage.snapshot.CreateVolumeSnapshotReply;
-import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeConstant.Capability;
@@ -65,9 +62,7 @@ import java.util.*;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -145,9 +140,55 @@ public class VolumeBase implements Volume {
             handle((ChangeVolumeStatusMsg) msg);
         } else if (msg instanceof OverwriteVolumeMsg) {
             handle((OverwriteVolumeMsg) msg);
+        } else if (msg instanceof CheckVolumeSnapshotsMsg) {
+            handle((CheckVolumeSnapshotsMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final CheckVolumeSnapshotsMsg msg) {
+        CheckVolumeSnapshotsReply sreply = new CheckVolumeSnapshotsReply();
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            @Deferred
+            public void run(SyncTaskChain chain) {
+                CheckVolumeSnapshotsOnPrimaryStorageMsg gmsg = new CheckVolumeSnapshotsOnPrimaryStorageMsg();
+                gmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+                gmsg.setVolumeInstallPath(self.getInstallPath());
+                gmsg.setVolumeUuid(self.getUuid());
+                gmsg.setSnapshots(msg.getSnapshots());
+
+                bus.makeLocalServiceId(gmsg, PrimaryStorageConstant.SERVICE_ID);
+                bus.send(gmsg, new CloudBusCallBack(chain) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            CheckVolumeSnapshotsOnPrimaryStorageReply r = reply.castReply();
+                            sreply.setCompleted(r.isCompleted());
+                            sreply.setSnapshotUuid(r.getSnapshotUuid());
+
+                            bus.reply(msg, sreply);
+                        } else {
+                            sreply.setError(reply.getError());
+                            bus.reply(msg, sreply);
+                        }
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "check-volume-snapshots";
+            }
+        });
+
     }
 
     private void handle(ChangeVolumeStatusMsg msg) {
@@ -1593,6 +1634,7 @@ public class VolumeBase implements Volume {
             }
 
             @Override
+
             public void run(final SyncTaskChain chain) {
                 CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
                 cmsg.setName(msg.getName());

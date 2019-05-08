@@ -5,8 +5,7 @@ import org.zstack.header.vo.EO;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.volume.VolumeVO;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 /**
  */

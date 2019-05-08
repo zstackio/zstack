@@ -39,4 +39,10 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="VolumeSnapshotExtension" class="org.zstack.storage.snapshot.VolumeSnapshotExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotCheckExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
 </beans>

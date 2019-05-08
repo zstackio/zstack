@@ -5,4 +5,9 @@
         <id>1000</id>
         <description>Snapshot is not in correct status for operation.</description>
     </code>
+
+    <code>
+        <id>1001</id>
+        <description>Delete error while full snapshot is creating.</description>
+    </code>
 </error>

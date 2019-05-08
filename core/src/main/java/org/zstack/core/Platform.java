@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -47,6 +48,7 @@ import java.lang.reflect.Modifier;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -827,5 +829,11 @@ public class Platform {
 
     public static String randomAlphanumeric(int count) {
         return RandomStringUtils.randomAlphanumeric(count);
+    }
+
+    public static boolean isAfterManagementNodeStart(Timestamp ts) {
+        RuntimeMXBean bean = ManagementFactory.getRuntimeMXBean();
+        Timestamp startMnTime = new Timestamp(bean.getStartTime());
+        return ts.after(startMnTime);
     }
 }

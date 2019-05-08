@@ -242,4 +242,9 @@ public class StorageTrashImpl implements StorageTrash, VolumeDeletionExtensionPo
 
         deleteTrashForVolume(trashIds.iterator(), snapshot.getPrimaryStorageUuid(), completion);
     }
+
+    @Override
+    public void volumeSnapshotAfterFailedDeleteExtensionPoint(VolumeSnapshotInventory snapshot) {
+
+    }
 }
