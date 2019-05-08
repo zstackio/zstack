@@ -101,6 +101,10 @@ class CreateRootVolumeTemplateLongJobCase extends SubCase {
             return response
         }
 
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
         APICreateRootVolumeTemplateFromRootVolumeMsg msg = new APICreateRootVolumeTemplateFromRootVolumeMsg()
         msg.name = "test"
         msg.rootVolumeUuid = vm.rootVolumeUuid

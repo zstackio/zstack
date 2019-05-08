@@ -197,6 +197,10 @@ class BootModeCase extends SubCase {
         } as List<SystemTagInventory>
         assert tags.size() == 1
 
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
         // commit vm instance to image
         img = createRootVolumeTemplateFromRootVolume {
             name = "template"
