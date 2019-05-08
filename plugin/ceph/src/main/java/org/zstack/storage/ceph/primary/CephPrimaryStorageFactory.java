@@ -818,7 +818,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
         if (InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.hasTag(instanceOffering)) {
             InstanceOfferingUserConfig config = OfferingUserConfigUtils.getInstanceOfferingConfig(instanceOffering, InstanceOfferingUserConfig.class);
-            if (config.getAllocate().getPrimaryStorage() != null) {
+            if (config.getAllocate() != null && config.getAllocate().getPrimaryStorage() != null) {
                 msg.setPrimaryStorageUuidForRootVolume(config.getAllocate().getPrimaryStorage().getUuid());
 
                 if (msg.getRootVolumeSystemTags() == null) {
@@ -857,6 +857,10 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         }
 
         DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(rootDiskOffering, DiskOfferingUserConfig.class);
+        if (config.getAllocate() == null) {
+            return;
+        }
+
         if (config.getAllocate().getPrimaryStorage() == null) {
             return;
         }
@@ -903,6 +907,10 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
             DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
 
+            if (config.getAllocate() == null) {
+                return;
+            }
+
             if (config.getAllocate().getPrimaryStorage() != null) {
                 msg.setPrimaryStorageUuidForDataVolume(config.getAllocate().getPrimaryStorage().getUuid());
             }
@@ -931,6 +939,10 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
         if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
             DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+
+            if (config.getAllocate() == null) {
+                return;
+            }
 
             if (config.getAllocate().getPrimaryStorage() == null) {
                 return;

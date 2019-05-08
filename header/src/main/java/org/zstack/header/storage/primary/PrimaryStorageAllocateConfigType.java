@@ -4,8 +4,8 @@ package org.zstack.header.storage.primary;
  * Created by lining on 2019/4/24.
  */
 public enum PrimaryStorageAllocateConfigType {
-    LOCAL(PrimaryStorageAllocateConfig.class, "LocalStorage"),
-    NFS(PrimaryStorageAllocateConfig.class, "NFS"),
+    LOCAL(DefaultPrimaryStorageAllocateConfig.class, "LocalStorage"),
+    NFS(DefaultPrimaryStorageAllocateConfig.class, "NFS"),
     CEPH(CephPrimaryStorageAllocateConfig.class, "Ceph");
 
     private Class<? extends PrimaryStorageAllocateConfig> type;
