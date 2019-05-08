@@ -1,9 +1,15 @@
 package org.zstack.resourceconfig;
 
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
+import org.zstack.header.zone.Zone;
+import org.zstack.header.zone.ZoneVO;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -73,5 +79,17 @@ public class APIGetResourceBindableConfigReply extends APIReply {
         public static List<ResourceBindableConfigStruct> valueOf(Collection<ResourceConfig> resourceConfigs) {
             return resourceConfigs.stream().map(ResourceBindableConfigStruct::valueOf).collect(Collectors.toList());
         }
+    }
+
+    public static APIGetResourceBindableConfigReply __example__() {
+        APIGetResourceBindableConfigReply reply = new APIGetResourceBindableConfigReply();
+        ResourceBindableConfigStruct struct = new ResourceBindableConfigStruct();
+        struct.category = "host";
+        struct.name = "cpu.overProvisioning.ratio";
+        struct.bindResourceTypes = Arrays.asList(
+                HostVO.class.getSimpleName(), ClusterVO.class.getSimpleName(), ZoneVO.class.getSimpleName()
+        );
+        reply.setBindableConfigs(Collections.singletonList(struct));
+        return reply;
     }
 }
