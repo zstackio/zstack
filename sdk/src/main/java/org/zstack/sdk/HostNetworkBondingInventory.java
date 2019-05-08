@@ -44,21 +44,12 @@ public class HostNetworkBondingInventory  {
         return this.mac;
     }
 
-<<<<<<< HEAD
-    public java.lang.String ipAddress;
-    public void setIpAddress(java.lang.String ipAddress) {
-        this.ipAddress = ipAddress;
-    }
-    public java.lang.String getIpAddress() {
-        return this.ipAddress;
-=======
     public java.util.List ipAddresses;
     public void setIpAddresses(java.util.List ipAddresses) {
         this.ipAddresses = ipAddresses;
     }
     public java.util.List getIpAddresses() {
         return this.ipAddresses;
->>>>>>> Support hostNetworkFacts
     }
 
     public long miimon;
