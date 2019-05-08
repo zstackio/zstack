@@ -5,7 +5,9 @@ import org.junit.runner.Result
 import org.junit.runner.RunWith
 import org.junit.runner.notification.Failure
 import org.junit.runners.Suite
+import org.zstack.configuration.OfferingUserConfigUtils
 import org.zstack.test.unittest.utils.NetworkUtilsCase
+import org.zstack.test.unittest.utils.OfferingUserConfigUtilsCase
 
 import java.util.stream.Collectors
 
@@ -15,7 +17,8 @@ import java.util.stream.Collectors
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses([
-        NetworkUtilsCase.class
+        NetworkUtilsCase.class,
+        OfferingUserConfigUtilsCase.class
     ])
 class JUnitTestSuite {
 

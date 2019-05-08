@@ -694,7 +694,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         if (InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.hasTag(instanceOffering)) {
             InstanceOfferingUserConfig config = OfferingUserConfigUtils.getInstanceOfferingConfig(instanceOffering, InstanceOfferingUserConfig.class);
-            if (config.getAllocate().getPrimaryStorage() != null) {
+            if (config.getAllocate() != null && config.getAllocate().getPrimaryStorage() != null) {
                 String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
                 if (msg.getPrimaryStorageUuidForRootVolume() != null && !msg.getPrimaryStorageUuidForRootVolume().equals(psUuid)) {
                     throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the instance offering is %s, and the primary storage specified in the creation parameter is %s"
@@ -711,6 +711,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(rootDiskOffering)) {
             DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(rootDiskOffering, DiskOfferingUserConfig.class);
+
+            if (config.getAllocate() == null) {
+                return;
+            }
 
             if (config.getAllocate().getPrimaryStorage() == null) {
                 return;
@@ -738,6 +742,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
             DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
 
+            if (config.getAllocate() == null) {
+                return;
+            }
+
             if (config.getAllocate().getPrimaryStorage() == null) {
                 return;
             }
@@ -760,6 +768,10 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         if (DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.hasTag(diskOffering)) {
             DiskOfferingUserConfig config = OfferingUserConfigUtils.getDiskOfferingConfig(diskOffering, DiskOfferingUserConfig.class);
+
+            if (config.getAllocate() == null) {
+                return;
+            }
 
             if (config.getAllocate().getPrimaryStorage() == null) {
                 return;
