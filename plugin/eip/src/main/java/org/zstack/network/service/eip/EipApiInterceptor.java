@@ -21,7 +21,8 @@ import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicHelper;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
-import org.zstack.network.service.vip.Vip;
+import org.zstack.network.service.vip.VipNetworkServicesRefVO;
+import org.zstack.network.service.vip.VipNetworkServicesRefVO_;
 import org.zstack.network.service.vip.VipState;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.Utils;
@@ -29,14 +30,14 @@ import org.zstack.utils.VipUseForList;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
-import org.zstack.utils.network.NetworkUtils;
-
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.util.List;
 import java.util.concurrent.Callable;
+
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -233,10 +234,11 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APICreateEipMsg msg) {
         VipVO vip = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
-        if (vip.getUseFor() != null) {
-            VipUseForList useForList = new VipUseForList(vip.getUseFor());
+        List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, msg.getVipUuid()).listValues();
+        if(useFor != null && !useFor.isEmpty()){
+            VipUseForList useForList = new VipUseForList(useFor);
             if(!useForList.validateNewAdded(EipConstant.EIP_NETWORK_SERVICE_TYPE)) {
-                throw new ApiMessageInterceptionException(operr("vip[uuid:%s] has been occupied other network service entity[%s]", msg.getVipUuid(), vip.getUseFor()));
+                throw new ApiMessageInterceptionException(operr("vip[uuid:%s] has been occupied other network service entity[%s]", msg.getVipUuid(), useForList.toString()));
             }
         }
 

@@ -13,7 +13,7 @@ import org.zstack.network.service.portforwarding.PortForwardingConstant;
 import org.zstack.network.service.portforwarding.PortForwardingProtocolType;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipNetworkServicesRefVO;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
@@ -76,8 +76,9 @@ public class TestVirtualRouterPortForwarding17 {
         rule.setVipPortStart(80);
         rule = api.createPortForwardingRuleByFullConfig(rule);
         Assert.assertNull(rule.getVmNicUuid());
-        VipVO vipvo = dbf.findByUuid(vip.getUuid(), VipVO.class);
-        Assert.assertEquals(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE, vipvo.getUseFor());
+        VipNetworkServicesRefVO ref = dbf.findByUuid(rule.getUuid(), VipNetworkServicesRefVO.class);
+        Assert.assertTrue(ref != null);
+        Assert.assertEquals(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE, ref.getServiceType());
 
         VmInstanceInventory vm = deployer.vms.get("TestVm");
         rule = api.attachPortForwardingRule(rule.getUuid(), vm.getVmNics().get(0).getUuid());

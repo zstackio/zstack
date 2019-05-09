@@ -1,5 +1,8 @@
 package org.zstack.network.service.vip;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by xing5 on 2016/11/30.
  */
@@ -7,8 +10,9 @@ public class ModifyVipAttributesStruct {
     private String serviceProvider;
     private boolean isServiceProvider;
     private String useFor;
+    private String serviceUuid;
     private boolean isUserFor;
-    private String peerL3NetworkUuid;
+    private List<String> peerL3NetworkUuids;
     private boolean isPeerL3NetworkUuid;
 
     public void clearServiceProvider() {
@@ -22,7 +26,7 @@ public class ModifyVipAttributesStruct {
     }
 
     public void clearPeerL3NetworkUuid() {
-        peerL3NetworkUuid = null;
+        peerL3NetworkUuids = null;
         isPeerL3NetworkUuid = false;
     }
 
@@ -57,12 +61,26 @@ public class ModifyVipAttributesStruct {
         isUserFor = true;
     }
 
-    public String getPeerL3NetworkUuid() {
-        return peerL3NetworkUuid;
+    public String getServiceUuid() {
+        return serviceUuid;
+    }
+
+    public void setServiceUuid(String serviceUuid) {
+        this.serviceUuid = serviceUuid;
+    }
+
+    public List<String> getPeerL3NetworkUuids() {
+        return peerL3NetworkUuids;
     }
 
     public void setPeerL3NetworkUuid(String peerL3NetworkUuid) {
-        this.peerL3NetworkUuid = peerL3NetworkUuid;
+        this.peerL3NetworkUuids = new ArrayList<>();
+        this.peerL3NetworkUuids.add(peerL3NetworkUuid);
+        isPeerL3NetworkUuid = true;
+    }
+
+    public void setPeerL3NetworkUuids(List<String> peerL3NetworkUuids) {
+        this.peerL3NetworkUuids = peerL3NetworkUuids;
         isPeerL3NetworkUuid = true;
     }
 }

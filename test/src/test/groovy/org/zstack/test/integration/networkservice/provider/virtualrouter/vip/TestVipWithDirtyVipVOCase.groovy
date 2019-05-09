@@ -13,7 +13,6 @@ import org.zstack.test.integration.networkservice.provider.NetworkServiceProvide
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by shixin on 2018-03-13.
  */
@@ -163,8 +162,7 @@ class TestVipWithDirtyVipVOCase extends SubCase{
         }
 
         /* set vip usefor and provider to NULL */
-        SQL.New(VipVO.class).eq(VipVO_.uuid, eipInv.vipUuid).set(VipVO_.useFor, null).set(VipVO_.serviceProvider, null).update()
-
+        SQL.New(VipVO.class).eq(VipVO_.uuid, eipInv.vipUuid).set(VipVO_.serviceProvider, null).update()
         deleteVip {
             uuid = eipInv.vipUuid
         }

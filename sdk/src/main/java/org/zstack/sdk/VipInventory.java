@@ -92,6 +92,14 @@ public class VipInventory  {
         return this.peerL3NetworkUuids;
     }
 
+    public java.util.List servicesRefs;
+    public void setServicesRefs(java.util.List servicesRefs) {
+        this.servicesRefs = servicesRefs;
+    }
+    public java.util.List getServicesRefs() {
+        return this.servicesRefs;
+    }
+
     public java.lang.String useFor;
     public void setUseFor(java.lang.String useFor) {
         this.useFor = useFor;

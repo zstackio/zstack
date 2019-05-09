@@ -60,6 +60,7 @@
         <class>org.zstack.header.network.l3.IpRangeEO</class>
         <class>org.zstack.header.network.l3.UsedIpVO</class>
         <class>org.zstack.network.service.vip.VipVO</class>
+        <class>org.zstack.network.service.vip.VipNetworkServicesRefVO</class>
         <class>org.zstack.network.service.vip.VipPeerL3NetworkRefVO</class>
         <class>org.zstack.network.service.eip.EipVO</class>
         <class>org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO</class>

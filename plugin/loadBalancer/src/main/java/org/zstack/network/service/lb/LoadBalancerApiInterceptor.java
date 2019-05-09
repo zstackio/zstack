@@ -17,8 +17,8 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
-import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.vip.VipVO_;
+import org.zstack.network.service.vip.VipNetworkServicesRefVO;
+import org.zstack.network.service.vip.VipNetworkServicesRefVO_;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
@@ -106,12 +106,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateLoadBalancerMsg msg) {
-        SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
-        q.select(VipVO_.useFor);
-        q.add(VipVO_.uuid, Op.EQ, msg.getVipUuid());
-        String useFor = q.findValue();
-
-        if(useFor != null){
+        List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, msg.getVipUuid()).listValues();
+        if(useFor != null && !useFor.isEmpty()){
             VipUseForList useForList = new VipUseForList(useFor);
             if(!useForList.validateNewAdded(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)){
                 throw new ApiMessageInterceptionException(argerr("the vip[uuid:%s] has been occupied other network service entity[%s]", msg.getVipUuid(), useForList.toString()));
@@ -290,8 +286,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
 
         /* tcp port 22, 7272 can not be used on vrouter public vip */
         LoadBalancerVO loadBalancerVO = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).find();
-        VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, loadBalancerVO.getVipUuid()).find();
-        VipUseForList useForList = new VipUseForList(vipVO.getUseFor());
+        List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, loadBalancerVO.getVipUuid()).listValues();
+        VipUseForList useForList = new VipUseForList(useFor);
         boolean isTcpProto = msg.getProtocol().equals(LoadBalancerConstants.LB_PROTOCOL_TCP)
                 || msg.getProtocol().equals(LoadBalancerConstants.LB_PROTOCOL_HTTP)
                 || msg.getProtocol().equals(LoadBalancerConstants.LB_PROTOCOL_HTTPS);

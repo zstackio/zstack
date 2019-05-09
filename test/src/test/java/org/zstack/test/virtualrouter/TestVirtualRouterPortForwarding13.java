@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -15,7 +16,8 @@ import org.zstack.network.service.portforwarding.PortForwardingProtocolType;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
 import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipNetworkServicesRefVO;
+import org.zstack.network.service.vip.VipNetworkServicesRefVO_;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
@@ -95,7 +97,7 @@ public class TestVirtualRouterPortForwarding13 {
         PortForwardingRuleVO pfvo = dbf.findByUuid(rule.getUuid(), PortForwardingRuleVO.class);
         Assert.assertEquals(pfvo.getVipUuid(), vip.getUuid());
         Assert.assertNull(pfvo.getVmNicUuid());
-        VipVO vipvo = dbf.findByUuid(vip.getUuid(), VipVO.class);
-        Assert.assertEquals(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE, vipvo.getUseFor());
+        String ref = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.uuid,pfvo.getUuid()).find();
+        Assert.assertEquals(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE, ref);
     }
 }

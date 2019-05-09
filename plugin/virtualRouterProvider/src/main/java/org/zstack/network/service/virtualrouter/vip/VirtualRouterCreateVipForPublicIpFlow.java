@@ -4,7 +4,10 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -94,11 +97,17 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
         VirtualRouterVipVO vrvip = new VirtualRouterVipVO();
         vrvip.setUuid(vipvo.getUuid());
         vrvip.setVirtualRouterVmUuid(vr.getUuid());
+
+        VipNetworkServicesRefVO vipRef = new VipNetworkServicesRefVO();
+        vipRef.setUuid(vrvip.getUuid());
+        vipRef.setServiceType(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE);
+        vipRef.setVipUuid(vrvip.getUuid());
         new SQLBatch(){
             @Override
             protected void scripts() {
                 persist(vipvo);
                 persist(vrvip);
+                persist(vipRef);
                 tagMgr.copySystemTag(vr.getUuid(), VirtualRouterVmVO.class.getSimpleName(),
                         vipvo.getUuid(), VipVO.class.getSimpleName(), false);
             }
@@ -128,6 +137,7 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
 
         ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
         struct.setUseFor(NetworkServiceType.SNAT.toString());
+        struct.setServiceUuid(vipUuid);
         Vip vip = new Vip(vipUuid);
         vip.setStruct(struct);
         vip.release(new Completion(chain) {
