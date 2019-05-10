@@ -3,6 +3,9 @@ package org.zstack.testlib
 import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.ceph.CephPoolCapacity
@@ -158,10 +161,12 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
-            simulator(CephPrimaryStorageBase.GET_VOLUME_SIZE_PATH) {
-                def rsp = new CephPrimaryStorageBase.GetVolumeSizeRsp()
-                rsp.actualSize = 0
-                rsp.size = 0
+            simulator(CephPrimaryStorageBase.GET_VOLUME_SIZE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.GetVolumeSizeCmd.class)
+                CephPrimaryStorageBase.GetVolumeSizeRsp rsp = new CephPrimaryStorageBase.GetVolumeSizeRsp()
+                Long size = Q.New(VolumeVO.class).select(VolumeVO_.size).eq(VolumeVO_.uuid, cmd.volumeUuid).findValue()
+                rsp.actualSize = null
+                rsp.size = size
                 return rsp
             }
 

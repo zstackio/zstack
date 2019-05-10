@@ -2,8 +2,14 @@ package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.primary.PingPrimaryStorageMsg
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
@@ -131,10 +137,19 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
-            simulator(NfsPrimaryStorageKVMBackend.GET_VOLUME_SIZE_PATH) {
-                def rsp = new NfsPrimaryStorageKVMBackendCommands.GetVolumeActualSizeRsp()
-                rsp.size = 0
-                rsp.actualSize = 0
+            simulator(NfsPrimaryStorageKVMBackend.GET_VOLUME_SIZE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.GetVolumeActualSizeCmd.class)
+                NfsPrimaryStorageKVMBackendCommands.GetVolumeActualSizeRsp rsp = new NfsPrimaryStorageKVMBackendCommands.GetVolumeActualSizeRsp()
+                Long size = Q.New(VolumeVO.class).select(VolumeVO_.size).eq(VolumeVO_.uuid, cmd.volumeUuid).findValue()
+                boolean isSnapshotExist = Q.New(VolumeSnapshotVO.class)
+                        .eq(VolumeSnapshotVO_.volumeUuid, cmd.volumeUuid)
+                        .exists
+                if (!isSnapshotExist) {
+                    rsp.actualSize = Q.New(VolumeVO.class).select(VolumeVO_.actualSize).eq(VolumeVO_.uuid, cmd.volumeUuid).findValue()
+                } else {
+                    rsp.actualSize = 1L
+                }
+                rsp.size = size
                 return rsp
             }
 

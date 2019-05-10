@@ -1607,6 +1607,7 @@ public class VolumeBase implements Volume {
                         VolumeCreateSnapshotReply r = new VolumeCreateSnapshotReply();
                         if (reply.isSuccess()) {
                             CreateVolumeSnapshotReply creply = (CreateVolumeSnapshotReply) reply;
+                            syncVolSize();
                             r.setInventory(creply.getInventory());
                         } else {
                             r.setError(reply.getError());
@@ -1614,6 +1615,13 @@ public class VolumeBase implements Volume {
 
                         bus.reply(msg, r);
                         chain.next();
+                    }
+
+                    private void syncVolSize() {
+                        SyncVolumeSizeMsg syncVolumeSizeMsg = new SyncVolumeSizeMsg();
+                        syncVolumeSizeMsg.setVolumeUuid(msg.getVolumeUuid());
+                        bus.makeTargetServiceIdByResourceUuid(syncVolumeSizeMsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
+                        bus.send(syncVolumeSizeMsg);
                     }
                 });
             }
@@ -1648,7 +1656,7 @@ public class VolumeBase implements Volume {
                         if (reply.isSuccess()) {
                             CreateVolumeSnapshotReply creply = (CreateVolumeSnapshotReply) reply;
                             evt.setInventory(creply.getInventory());
-
+                            syncVolSize();
                             tagMgr.createTagsFromAPICreateMessage(msg, creply.getInventory().getUuid(), VolumeSnapshotVO.class.getSimpleName());
                         } else {
                             evt.setError(reply.getError());
@@ -1656,6 +1664,13 @@ public class VolumeBase implements Volume {
 
                         bus.publish(evt);
                         chain.next();
+                    }
+
+                    private void syncVolSize() {
+                        SyncVolumeSizeMsg syncVolumeSizeMsg = new SyncVolumeSizeMsg();
+                        syncVolumeSizeMsg.setVolumeUuid(msg.getVolumeUuid());
+                        bus.makeTargetServiceIdByResourceUuid(syncVolumeSizeMsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
+                        bus.send(syncVolumeSizeMsg);
                     }
                 });
             }
