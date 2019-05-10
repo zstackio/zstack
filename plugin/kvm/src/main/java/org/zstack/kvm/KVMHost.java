@@ -2445,6 +2445,7 @@ public class KVMHost extends HostBase implements Host {
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("continue-connecting-kvm-host-%s-%s", self.getManagementIp(), self.getUuid()));
+        chain.allowWatch();
         for (KVMHostConnectExtensionPoint extp : factory.getConnectExtensions()) {
             KVMHostConnectedContext ctx = new KVMHostConnectedContext();
             ctx.setInventory((KVMHostInventory) getSelfInventory());
@@ -2570,6 +2571,7 @@ public class KVMHost extends HostBase implements Host {
         } else {
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
             chain.setName(String.format("run-ansible-for-kvm-%s", self.getUuid()));
+            chain.allowWatch();
             chain.then(new ShareFlow() {
                 boolean deployed = false;
                 @Override

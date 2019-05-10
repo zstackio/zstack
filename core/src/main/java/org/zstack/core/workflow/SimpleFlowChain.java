@@ -99,6 +99,13 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     }
 
     private FlowStopWatch stopWatch;
+    private boolean allowWatch = false;
+    public void allowWatch() {
+        this.allowWatch = true;
+        if (stopWatch == null) {
+            stopWatch = new FlowStopWatch();
+        }
+    }
 
     {
         if (CoreGlobalProperty.PROFILER_WORKFLOW) {
@@ -303,7 +310,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                 toRun = flow;
             }
 
-            if (CoreGlobalProperty.PROFILER_WORKFLOW) {
+            if (CoreGlobalProperty.PROFILER_WORKFLOW || allowWatch) {
                 stopWatch.start(toRun);
             }
 
@@ -479,7 +486,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     }
 
     private void callDoneHandler() {
-        if (CoreGlobalProperty.PROFILER_WORKFLOW) {
+        if (CoreGlobalProperty.PROFILER_WORKFLOW || allowWatch) {
             stopWatch.stop();
         }
 
