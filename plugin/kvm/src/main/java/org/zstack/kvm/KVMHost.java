@@ -2896,6 +2896,9 @@ public class KVMHost extends HostBase implements Host {
                                     List<String> ips = ret.getIpAddresses();
                                     if (ips != null) {
                                         ips.remove(self.getManagementIp());
+                                        if (CoreGlobalProperty.MN_VIP != null) {
+                                            ips.remove(CoreGlobalProperty.MN_VIP);
+                                        }
                                         if (!ips.isEmpty()) {
                                             recreateNonInherentTag(HostSystemTags.EXTRA_IPS, HostSystemTags.EXTRA_IPS_TOKEN, StringUtils.join(ips, ","));
                                         } else {
