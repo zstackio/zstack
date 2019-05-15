@@ -208,7 +208,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String installPath;
     }
 
+    public static class GetVolumeSnapshotSizeCmd extends AgentCommand {
+        public String volumeSnapshotUuid;
+        public String installPath;
+    }
+
     public static class GetVolumeSizeRsp extends AgentResponse {
+        public Long size;
+        public Long actualSize;
+    }
+
+    public static class GetVolumeSnapshotSizeRsp extends AgentResponse {
         public Long size;
         public Long actualSize;
     }
@@ -1006,6 +1016,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String KVM_CREATE_SECRET_PATH = "/vm/createcephsecret";
     public static final String DELETE_POOL_PATH = "/ceph/primarystorage/deletepool";
     public static final String GET_VOLUME_SIZE_PATH = "/ceph/primarystorage/getvolumesize";
+    public static final String GET_VOLUME_SNAPSHOT_SIZE_PATH = "/ceph/primarystorage/getvolumesnapshotsize";
     public static final String KVM_HA_SETUP_SELF_FENCER = "/ha/ceph/setupselffencer";
     public static final String KVM_HA_CANCEL_SELF_FENCER = "/ha/ceph/cancelselffencer";
     public static final String GET_FACTS = "/ceph/primarystorage/facts";
@@ -4210,5 +4221,33 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         });
 
         bus.reply(msg, reply);
+    }
+
+    @Override
+    protected void handle(GetVolumeSnapshotSizeOnPrimaryStorageMsg msg) {
+        GetVolumeSnapshotSizeOnPrimaryStorageReply reply = new GetVolumeSnapshotSizeOnPrimaryStorageReply();
+        VolumeSnapshotVO snapshotVO = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);
+
+        String installPath = snapshotVO.getPrimaryStorageInstallPath();
+        GetVolumeSnapshotSizeCmd cmd = new GetVolumeSnapshotSizeCmd();
+        cmd.fsId = getSelf().getFsid();
+        cmd.uuid = self.getUuid();
+        cmd.volumeSnapshotUuid = snapshotVO.getUuid();
+        cmd.installPath = installPath;
+
+        httpCall(GET_VOLUME_SNAPSHOT_SIZE_PATH, cmd, GetVolumeSnapshotSizeRsp.class, new ReturnValueCompletion<GetVolumeSnapshotSizeRsp>(msg) {
+            @Override
+            public void success(GetVolumeSnapshotSizeRsp rsp) {
+                reply.setActualSize(rsp.actualSize);
+                reply.setSize(rsp.size);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 }

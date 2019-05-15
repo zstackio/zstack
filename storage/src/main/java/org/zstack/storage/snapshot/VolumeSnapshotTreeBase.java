@@ -885,6 +885,8 @@ public class VolumeSnapshotTreeBase {
             handle((APIDeleteVolumeSnapshotFromBackupStorageMsg) msg);
         } else if (msg instanceof APIUpdateVolumeSnapshotMsg) {
             handle((APIUpdateVolumeSnapshotMsg) msg);
+        } else if (msg instanceof APIGetVolumeSnapshotSizeMsg ) {
+            handle((APIGetVolumeSnapshotSizeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -909,6 +911,33 @@ public class VolumeSnapshotTreeBase {
         APIUpdateVolumeSnapshotEvent evt = new APIUpdateVolumeSnapshotEvent(msg.getId());
         evt.setInventory(VolumeSnapshotInventory.valueOf(self));
         bus.publish(evt);
+    }
+
+    private void handle(APIGetVolumeSnapshotSizeMsg msg) {
+        APIGetVolumeSnapshotSizeEvent event = new APIGetVolumeSnapshotSizeEvent(msg.getId());
+
+        VolumeSnapshotVO snapshotVO = dbf.findByUuid(msg.getUuid(), VolumeSnapshotVO.class);
+
+        GetVolumeSnapshotSizeOnPrimaryStorageMsg getVolumeSnapshotStatusMsg = new GetVolumeSnapshotSizeOnPrimaryStorageMsg();
+        getVolumeSnapshotStatusMsg.setPrimaryStorageUuid(snapshotVO.getPrimaryStorageUuid());
+        getVolumeSnapshotStatusMsg.setSnapshotUuid(snapshotVO.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(getVolumeSnapshotStatusMsg, PrimaryStorageConstant.SERVICE_ID, snapshotVO.getPrimaryStorageUuid());
+
+        bus.send(getVolumeSnapshotStatusMsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply rly) {
+                if (!rly.isSuccess()) {
+                    event.setError(rly.getError());
+                    bus.publish(event);
+                    return;
+                }
+
+                GetVolumeSnapshotSizeOnPrimaryStorageReply reply = (GetVolumeSnapshotSizeOnPrimaryStorageReply) rly;
+                event.setActualSize(reply.getActualSize());
+                event.setSize(reply.getSize());
+                bus.publish(event);
+            }
+        });
     }
 
     private boolean cleanup() {

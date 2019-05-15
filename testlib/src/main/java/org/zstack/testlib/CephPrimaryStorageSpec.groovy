@@ -165,6 +165,13 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+            simulator(CephPrimaryStorageBase.GET_VOLUME_SNAPSHOT_SIZE_PATH) {
+                def rsp = new CephPrimaryStorageBase.GetVolumeSnapshotSizeRsp()
+                rsp.actualSize = 0
+                rsp.size = 0
+                return rsp
+            }
+
             simulator(CephPrimaryStorageBase.ROLLBACK_SNAPSHOT_PATH) {
                 return new CephPrimaryStorageBase.RollbackSnapshotRsp()
             }
