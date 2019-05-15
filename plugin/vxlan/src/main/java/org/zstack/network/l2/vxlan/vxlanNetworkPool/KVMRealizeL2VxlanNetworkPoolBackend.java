@@ -28,12 +28,10 @@ import org.zstack.kvm.*;
 import org.zstack.network.l2.vxlan.vtep.CreateVtepMsg;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
 import org.zstack.network.l2.vxlan.vtep.VtepVO_;
-import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
-import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetwork;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkGlobalConfig;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 import org.zstack.tag.SystemTagCreator;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -62,7 +60,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
     private static String NEED_POPULATE = "needPopulate";
 
     @Override
-    public void realize(L2NetworkInventory l2Network, String hostUuid, Completion completion) {
+    public void realize(final L2NetworkInventory l2Network, final String hostUuid, final Completion completion) {
         completion.success();
     }
 
@@ -188,18 +186,23 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (data.get(NEED_POPULATE).equals(false)) {
+                if (data.get(NEED_POPULATE).equals(false) && VxlanNetworkGlobalConfig.CLUSTER_LAZY_ATTACH.value(Boolean.class)) {
+                    logger.debug("no need populate for vxlan networks");
                     trigger.next();
                     return;
                 }
-
-                List<VxlanNetworkVO> vxlanNetworkVOS = SQL.New("select vxlan from VxlanNetworkVO vxlan, VmNicVO nic, L3NetworkVO l3 " +
-                        "where vxlan.uuid = l3.l2NetworkUuid " +
-                        "and nic.l3NetworkUuid = l3.uuid " +
-                        "and vxlan.poolUuid = :poolUuid " +
-                        "group by vxlan.uuid")
-                        .param("poolUuid", l2Network.getUuid())
-                        .list();
+                List<VxlanNetworkVO> vxlanNetworkVOS;
+                if (VxlanNetworkGlobalConfig.CLUSTER_LAZY_ATTACH.value(Boolean.class)) {
+                    vxlanNetworkVOS = SQL.New("select vxlan from VxlanNetworkVO vxlan, VmNicVO nic, L3NetworkVO l3 " +
+                            "where vxlan.uuid = l3.l2NetworkUuid " +
+                            "and nic.l3NetworkUuid = l3.uuid " +
+                            "and vxlan.poolUuid = :poolUuid " +
+                            "group by vxlan.uuid")
+                                         .param("poolUuid", l2Network.getUuid())
+                                         .list();
+                } else {
+                    vxlanNetworkVOS = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.poolUuid, l2Network.getUuid()).list();
+                }
 
                 if (vxlanNetworkVOS == null || vxlanNetworkVOS.isEmpty()) {
                     trigger.next();

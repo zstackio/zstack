@@ -96,7 +96,7 @@ public class KVMConnectExtensionForVxlanNetwork implements KVMHostConnectExtensi
                 if (!reply.isSuccess()) {
                     completion.fail(reply.getError());
                 } else {
-                    completion.success();
+                    prepareNetwork(it, hostUuid, completion);
                 }
             }
         });

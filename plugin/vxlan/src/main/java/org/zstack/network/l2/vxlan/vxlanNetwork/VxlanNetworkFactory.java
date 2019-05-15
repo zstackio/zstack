@@ -110,6 +110,34 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
         }.execute();
 
         L2VxlanNetworkInventory inv = L2VxlanNetworkInventory.valueOf(vo);
+        if (!VxlanNetworkGlobalConfig.CLUSTER_LAZY_ATTACH.value(Boolean.class)) {
+// prepare the L2 network in all the hosts of the cluster
+            List<String> hosts = new SQLBatchWithReturn<List<String>>() {
+                @Override
+                protected List<String> scripts() {
+                    List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).
+                            select(L2NetworkClusterRefVO_.clusterUuid).eq(L2NetworkClusterRefVO_.l2NetworkUuid, inv.getPoolUuid()).listValues();
+                    if (clusterUuids == null || clusterUuids.isEmpty()) {
+                        return new ArrayList<>();
+                    }
+                    return Q.New(HostVO.class).select(HostVO_.uuid).in(HostVO_.clusterUuid, clusterUuids).listValues();
+                }
+            }.execute();
+
+            if (hosts != null && !hosts.isEmpty()) {
+                PrepareL2NetworkOnHostsMsg pmsg = new PrepareL2NetworkOnHostsMsg();
+                pmsg.setL2NetworkUuid(inv.getUuid());
+                pmsg.setHosts(hosts);
+                bus.makeTargetServiceIdByResourceUuid(pmsg, L2NetworkConstant.SERVICE_ID, inv.getUuid());
+                MessageReply rp = bus.call(pmsg);
+                if (!rp.isSuccess()) {
+                    logger.warn(String.format("fail to check and realize vxlan network[uuid: %s], it will try again while the vxlan network is used", inv.getUuid()));
+                } else {
+                    logger.debug(String.format("check and realize vxlan network[uuid: %s] successed", inv.getUuid()));
+                }
+            }
+        }
+
         String info = String.format("successfully create L2VxlanNetwork, %s", JSONObjectUtil.toJsonString(inv));
         logger.debug(info);
         return inv;
