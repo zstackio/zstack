@@ -14,6 +14,7 @@ public class SubmitLongJobMsg extends NeedReplyMessage {
     private String jobUuid;
     private String resourceUuid;
     private String accountUuid;
+    private String jobRequestUuid;
 
     public String getName() {
         return name;
@@ -91,5 +92,13 @@ public class SubmitLongJobMsg extends NeedReplyMessage {
         smsg.setUserTags(msg.getUserTags());
         smsg.setAccountUuid(msg.getSession().getAccountUuid());
         return smsg;
+    }
+
+    public String getJobRequestUuid() {
+        return jobRequestUuid;
+    }
+
+    public void setJobRequestUuid(String jobRequestUuid) {
+        this.jobRequestUuid = jobRequestUuid;
     }
 }
