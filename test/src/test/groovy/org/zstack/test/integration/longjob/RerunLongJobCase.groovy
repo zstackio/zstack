@@ -1,13 +1,16 @@
 package org.zstack.test.integration.longjob
 
 import com.google.gson.Gson
+import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.core.errorcode.ErrorFacade
 import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.image.*
 import org.zstack.header.longjob.LongJobState
 import org.zstack.header.longjob.LongJobVO
+import org.zstack.header.longjob.LongJobVO_
 import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.backup.DownloadImageMsg
 import org.zstack.sdk.BackupStorageInventory
@@ -79,10 +82,12 @@ class RerunLongJobCase extends SubCase {
         // resume add image job
         env.cleanSimulatorAndMessageHandlers()
 
+        SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid).set(LongJobVO_.managementNodeUuid, null).update()
         jobInv = rerunLongJob {
             uuid = jobInv.uuid
         } as LongJobInventory
         assert jobInv.state == org.zstack.sdk.LongJobState.Running
+        assert jobInv.managementNodeUuid == Platform.managementServerId
 
         retryInSecs() {
             LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
