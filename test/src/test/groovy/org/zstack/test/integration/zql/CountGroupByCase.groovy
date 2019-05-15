@@ -57,21 +57,22 @@ class CountGroupByCase extends SubCase {
             }
         }
 
-        def ret = ZQL.fromString("count instanceoffering group by name,cpuNum limit 100").getSingleResult() as ZQLQueryReturn
+        def ret = ZQL.fromString("count instanceoffering group by name,cpuNum order by groupCount asc limit 100").getSingleResult() as ZQLQueryReturn
         assert ret.inventoryCounts.size() == 3
         assert ret.inventoryCounts.findAll {it -> it.key.cpuNum == 1}.size() == 3
         assert ret.inventoryCounts.find {it -> it.value == 50L}.key.name == "50"
         assert ret.inventoryCounts.find {it -> it.value == 51L}.key.name == "51"
         assert ret.inventoryCounts.find {it -> it.value == 1L}.key.name == "instanceOffering"
+        ret.inventoryCounts.values()[0] == 1
+        ret.inventoryCounts.values()[1] == 50
+        ret.inventoryCounts.values()[2] == 51
         assert ret.total == 102
     }
 
     void testQuery() {
-        /* FIXME:  parser error
-        def ret = ZQL.fromString("query instanceoffering group by name,cpuNum return with (total) limit 100").getSingleResult() as ZQLQueryReturn
+        def ret = ZQL.fromString("query instanceoffering return with (total) group by name,cpuNum limit 100").getSingleResult() as ZQLQueryReturn
         assert ret.inventories.size() == 3
         assert ret.total == 102
-        */
 
         def ret2 = ZQL.fromString("query instanceoffering return with (total) limit 100").getSingleResult() as ZQLQueryReturn
         assert ret2.inventories.size() == 100

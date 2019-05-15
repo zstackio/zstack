@@ -48,7 +48,6 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.search.SearchOp;
 import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
@@ -66,7 +65,6 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
-import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -74,7 +72,6 @@ import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -793,6 +790,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     private void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<VmInstanceInventory> completion) {
+        pluginRgty.getExtensionList(VmInstanceCreateExtensionPoint.class).forEach(extensionPoint -> {
+            extensionPoint.preCreateVmInstance(msg);
+        });
+
         final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
         VmInstanceVO vo = new VmInstanceVO();
         if (msg.getResourceUuid() != null) {

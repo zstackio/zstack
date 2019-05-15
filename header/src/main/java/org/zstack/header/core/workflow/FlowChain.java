@@ -37,4 +37,6 @@ public interface FlowChain {
     FlowChain noRollback(boolean no);
 
     FlowChain allowEmptyFlow();
+
+    void allowWatch();
 }

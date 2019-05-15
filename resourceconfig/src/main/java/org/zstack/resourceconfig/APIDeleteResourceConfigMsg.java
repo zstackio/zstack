@@ -1,6 +1,7 @@
 package org.zstack.resourceconfig;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.core.Platform;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -41,5 +42,13 @@ public class APIDeleteResourceConfigMsg extends APIDeleteMessage implements Reso
 
     public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
+    }
+
+    public static APIDeleteResourceConfigMsg __example__() {
+        APIDeleteResourceConfigMsg msg = new APIDeleteResourceConfigMsg();
+        msg.category = "host";
+        msg.name = "cpu.overProvisioning.ratio";
+        msg.resourceUuid = Platform.getUuid();
+        return msg;
     }
 }

@@ -15,10 +15,14 @@ public class OrderByVisitor implements ASTVisitor<String, ASTNode.OrderBy> {
 
         String inventoryName = ZQLContext.peekQueryTargetInventoryName();
         ZQLMetadata.InventoryMetadata m = ZQLMetadata.getInventoryMetadataByName(inventoryName);
-        if (!m.hasInventoryField(node.getField())) {
+        if (!hasInventoryField(node, m)) {
             throw new ZQLError(Platform.i18n("invalid order by clause, inventory[%s] doesn't have field[%s]", m.simpleInventoryName(), node.getField()));
         }
 
         return String.format("ORDER BY %s %s", node.getField(), node.getDirection().toUpperCase());
+    }
+
+    protected boolean hasInventoryField(ASTNode.OrderBy node, ZQLMetadata.InventoryMetadata m) {
+        return m.hasInventoryField(node.getField());
     }
 }

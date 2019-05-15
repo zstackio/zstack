@@ -24,6 +24,8 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
 
     abstract void handle(InstantiateVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion);
 
+    abstract void handle(DownloadVolumeTemplateToPrimaryStorageMsg msg, ReturnValueCompletion<DownloadVolumeTemplateToPrimaryStorageReply> completion);
+
     abstract void handle(DeleteVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<DeleteVolumeOnPrimaryStorageReply> completion);
 
     abstract void handle(DownloadDataVolumeToPrimaryStorageMsg msg, ReturnValueCompletion<DownloadDataVolumeToPrimaryStorageReply> completion);
@@ -75,6 +77,8 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
     abstract void handle(LocalStorageDeleteImageCacheOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<DeleteImageCacheOnPrimaryStorageReply> completion);
 
     abstract void handle(AskInstallPathForNewSnapshotMsg msg, ReturnValueCompletion<AskInstallPathForNewSnapshotReply> completion);
+
+    abstract void handle(CheckVolumeSnapshotsOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<CheckVolumeSnapshotsOnPrimaryStorageReply> completion);
 
     abstract List<Flow> createMigrateBitsVolumeFlow(MigrateBitsStruct struct);
 

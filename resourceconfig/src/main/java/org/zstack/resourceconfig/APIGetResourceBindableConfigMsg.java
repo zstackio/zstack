@@ -22,4 +22,10 @@ public class APIGetResourceBindableConfigMsg extends APISyncCallMessage {
     public void setCategory(String category) {
         this.category = category;
     }
+
+    public static APIGetResourceBindableConfigMsg __example__() {
+        APIGetResourceBindableConfigMsg msg = new APIGetResourceBindableConfigMsg();
+        msg.category = "host";
+        return msg;
+    }
 }

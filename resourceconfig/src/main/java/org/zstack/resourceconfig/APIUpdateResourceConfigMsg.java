@@ -1,6 +1,7 @@
 package org.zstack.resourceconfig;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.core.Platform;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -52,5 +53,14 @@ public class APIUpdateResourceConfigMsg extends APIMessage implements ResourceCo
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public static APIUpdateResourceConfigMsg __example__() {
+        APIUpdateResourceConfigMsg msg = new APIUpdateResourceConfigMsg();
+        msg.category = "host";
+        msg.name = "cpu.overProvisioning.ratio";
+        msg.resourceUuid = Platform.getUuid();
+        msg.value = "10";
+        return msg;
     }
 }

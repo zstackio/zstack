@@ -22,6 +22,7 @@
 	<bean id="SftpBackupStorageApiInterceptor" class="org.zstack.storage.backup.sftp.SftpBackupStorageApiInterceptor">
 		<zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+			<zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
 		</zstack:plugin>
 	</bean>
 

@@ -52,6 +52,8 @@ public class CoreGlobalProperty {
     public static String LOG_DIR;
     @GlobalProperty(name="chrony.serverIp.")
     public static List<String> CHRONY_SERVERS;
+    @GlobalProperty(name="management.server.vip")
+    public static String MN_VIP;
     @GlobalProperty(name = "simulatorsOn", defaultValue = "false")
     public static boolean SIMULATORS_ON;
     @GlobalProperty(name = "updatePkgWhenConnect", defaultValue = "true")

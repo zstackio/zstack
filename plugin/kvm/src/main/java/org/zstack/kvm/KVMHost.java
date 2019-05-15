@@ -127,6 +127,7 @@ public class KVMHost extends HostBase implements Host {
     private String detachNicPath;
     private String migrateVmPath;
     private String snapshotPath;
+    private String checkSnapshotPath;
     private String mergeSnapshotPath;
     private String hostFactPath;
     private String attachIsoPath;
@@ -207,6 +208,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_MIGRATE_VM_PATH);
         migrateVmPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_CHECK_VOLUME_SNAPSHOT_PATH);
+        checkSnapshotPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH);
@@ -417,6 +422,8 @@ public class KVMHost extends HostBase implements Host {
             handle((ResumeVmOnHypervisorMsg) msg);
         } else if (msg instanceof GetKVMHostDownloadCredentialMsg) {
             handle((GetKVMHostDownloadCredentialMsg) msg);
+        } else if (msg instanceof CheckSnapshotOnHypervisorMsg) {
+            handle((CheckSnapshotOnHypervisorMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -968,6 +975,53 @@ public class KVMHost extends HostBase implements Host {
                 extEmitter.afterMergeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, reply.getError());
                 bus.reply(msg, reply);
                 completion.done();
+            }
+        });
+    }
+
+    private void handle(final CheckSnapshotOnHypervisorMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                CheckSnapshotOnHypervisorReply reply = new CheckSnapshotOnHypervisorReply();
+                CheckSnapshotCmd cmd = new CheckSnapshotCmd();
+                cmd.volumePath = msg.getVolumeInstallPath();
+                new Http<>(checkSnapshotPath, cmd, CheckSnapshotRsp.class).call(new ReturnValueCompletion<CheckSnapshotRsp>(msg, reply) {
+                    @Override
+                    public void success(CheckSnapshotRsp ret) {
+                        if (ret.isSuccess()) {
+                            reply.setCompleted(ret.completed);
+                            reply.setSnapshotInstallPath(ret.snapshotPath);
+                            reply.setVolumeInstallPath(ret.volumePath);
+                            reply.setSize(ret.size);
+                        } else {
+                            ErrorCode err = operr("operation error, because:%s", ret.getError());
+                            reply.setError(err);
+                        }
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return KVMGlobalConfig.HOST_SNAPSHOT_SYNC_LEVEL.value(Integer.class);
+            }
+
+            @Override
+            public String getName() {
+                return String.format("check-snapshot-on-kvm-%s", self.getUuid());
             }
         });
     }
@@ -1901,7 +1955,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setClock(ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio) ? "localtime" : "utc");
         cmd.setVideoType(VmGlobalConfig.VM_VIDEO_TYPE.value(String.class));
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
-        cmd.setKvmHiddenState(VmGlobalConfig.KVM_HIDDEN_STATE.value(Boolean.class));
+        cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getVmInventory().getClusterUuid(), Boolean.class));
         cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
         cmd.setEmulateHyperV(rcf.getResourceConfigValue(VmGlobalConfig.EMULATE_HYPERV, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setAdditionalQmp(VmGlobalConfig.ADDITIONAL_QMP.value(Boolean.class));
@@ -2391,6 +2445,7 @@ public class KVMHost extends HostBase implements Host {
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("continue-connecting-kvm-host-%s-%s", self.getManagementIp(), self.getUuid()));
+        chain.allowWatch();
         for (KVMHostConnectExtensionPoint extp : factory.getConnectExtensions()) {
             KVMHostConnectedContext ctx = new KVMHostConnectedContext();
             ctx.setInventory((KVMHostInventory) getSelfInventory());
@@ -2516,6 +2571,7 @@ public class KVMHost extends HostBase implements Host {
         } else {
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
             chain.setName(String.format("run-ansible-for-kvm-%s", self.getUuid()));
+            chain.allowWatch();
             chain.then(new ShareFlow() {
                 boolean deployed = false;
                 @Override
@@ -2840,6 +2896,9 @@ public class KVMHost extends HostBase implements Host {
                                     List<String> ips = ret.getIpAddresses();
                                     if (ips != null) {
                                         ips.remove(self.getManagementIp());
+                                        if (CoreGlobalProperty.MN_VIP != null) {
+                                            ips.remove(CoreGlobalProperty.MN_VIP);
+                                        }
                                         if (!ips.isEmpty()) {
                                             recreateNonInherentTag(HostSystemTags.EXTRA_IPS, HostSystemTags.EXTRA_IPS_TOKEN, StringUtils.join(ips, ","));
                                         } else {

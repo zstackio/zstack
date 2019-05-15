@@ -131,11 +131,6 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
 
     @Override
     public void releaseNetworkService(final VmInstanceSpec servedVm, Map<String, Object> data, final NoErrorCompletion completion) {
-        if (servedVm.getUserdataList() == null || servedVm.getUserdataList().isEmpty()) {
-            completion.done();
-            return;
-        }
-
         L3NetworkInventory defaultL3 = CollectionUtils.find(VmNicSpec.getL3NetworkInventoryOfSpec(servedVm.getL3Networks()),
                 new Function<L3NetworkInventory, L3NetworkInventory>() {
             @Override

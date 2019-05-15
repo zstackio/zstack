@@ -293,6 +293,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             vo.setState(LongJobState.Waiting);
             vo.setExecuteTime(null);
             vo.setJobResult(null);
+            vo.setManagementNodeUuid(Platform.getManagementServerId());
             Timestamp now = Timestamp.valueOf(LocalDateTime.now());
             vo.setCreateDate(now);
             vo.setLastOpDate(now);

@@ -2,22 +2,36 @@ package org.zstack.storage.backup.sftp;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.BackupStorageVO_;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.utils.network.NetworkUtils;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 /**
  */
-public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor {
+public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -31,9 +45,32 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor {
             validate((APIQuerySftpBackupStorageMsg)msg);
         } else if (msg instanceof APIUpdateSftpBackupStorageMsg) {
             validate((APIUpdateSftpBackupStorageMsg) msg);
+        } else if (msg instanceof APICreateRootVolumeTemplateFromRootVolumeMsg) {
+            validate((APICreateRootVolumeTemplateFromRootVolumeMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APICreateRootVolumeTemplateFromRootVolumeMsg msg) {
+        if (msg.getBackupStorageUuids() == null || msg.getBackupStorageUuids().isEmpty()) {
+            return;
+        }
+
+        // if vm in running or pause
+        if (Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.rootVolumeUuid, msg.getRootVolumeUuid())
+                .in(VmInstanceVO_.state, Arrays.asList(VmInstanceState.Running, VmInstanceState.Paused)).isExists()) {
+            for (String bsUuid : msg.getBackupStorageUuids()) {
+                String bsType = Q.New(BackupStorageVO.class)
+                        .eq(BackupStorageVO_.uuid, bsUuid)
+                        .select(BackupStorageVO_.type).findValue();
+
+                if (bsType.equals(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE)) {
+                    throw new ApiMessageInterceptionException(argerr("Please stop the vm before create volume template to sftp backup storage %s", bsUuid));
+                }
+            }
+        }
     }
 
     private void validate(APIUpdateSftpBackupStorageMsg msg) {
@@ -72,5 +109,15 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor {
         if (dir.startsWith("/proc")||dir.startsWith("/dev") || dir.startsWith("/sys")) {
             throw new ApiMessageInterceptionException(argerr(" the url contains an invalid folder[/dev or /proc or /sys]"));
         }
+    }
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        return Collections.singletonList(APICreateRootVolumeTemplateFromRootVolumeMsg.class);
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.FRONT;
     }
 }

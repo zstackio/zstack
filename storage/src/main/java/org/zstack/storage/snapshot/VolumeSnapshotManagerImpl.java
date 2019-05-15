@@ -17,8 +17,8 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -344,28 +344,63 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
     @Transactional
     private VolumeSnapshotStruct newChain(VolumeSnapshotVO vo, boolean fullsnapshot) {
-        VolumeSnapshotTreeVO chain = new VolumeSnapshotTreeVO();
-        chain.setCurrent(true);
-        chain.setVolumeUuid(vo.getVolumeUuid());
-        chain.setUuid(Platform.getUuid());
-        chain = dbf.getEntityManager().merge(chain);
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                VolumeSnapshotTreeVO chain = new VolumeSnapshotTreeVO();
+                chain.setCurrent(false);
+                chain.setVolumeUuid(vo.getVolumeUuid());
+                chain.setUuid(Platform.getUuid());
+                chain.setStatus(VolumeSnapshotTreeStatus.Creating);
+                chain = dbf.getEntityManager().merge(chain);
 
-        logger.debug(String.format("created new volume snapshot tree[tree uuid:%s, volume uuid:%s, full snapshot uuid:%s]",
-                chain.getUuid(), vo.getVolumeUuid(), vo.getUuid()));
+                logger.debug(String.format("created new volume snapshot tree[tree uuid:%s, volume uuid:%s, full snapshot uuid:%s]",
+                        chain.getUuid(), vo.getVolumeUuid(), vo.getUuid()));
 
-        vo.setTreeUuid(chain.getUuid());
-        vo.setDistance(fullsnapshot ? 0 : 1);
-        vo.setParentUuid(null);
-        vo.setLatest(true);
-        vo.setFullSnapshot(fullsnapshot);
-        dbf.getEntityManager().persist(vo);
-        dbf.getEntityManager().flush();
-        dbf.getEntityManager().refresh(vo);
+                vo.setTreeUuid(chain.getUuid());
+                vo.setDistance(fullsnapshot ? 0 : 1);
+                vo.setParentUuid(null);
+                vo.setLatest(true);
+                vo.setFullSnapshot(fullsnapshot);
+                dbf.getEntityManager().persist(vo);
+                dbf.getEntityManager().flush();
+                dbf.getEntityManager().refresh(vo);
+            }
+        }.execute();
+
 
         VolumeSnapshotStruct struct = new VolumeSnapshotStruct();
         struct.setCurrent(VolumeSnapshotInventory.valueOf(vo));
         struct.setFullSnapshot(fullsnapshot);
+
         return struct;
+    }
+
+    public static VolumeSnapshotTreeInventory getCurrentTree(String volumeUuid) {
+        VolumeSnapshotTreeVO vo = Q.New(VolumeSnapshotTreeVO.class).eq(VolumeSnapshotTreeVO_.volumeUuid, volumeUuid).eq(VolumeSnapshotTreeVO_.current, true).find();
+        if (vo != null) {
+            return VolumeSnapshotTreeInventory.valueOf(vo);
+        } else {
+            return null;
+        }
+    }
+
+    public static void markSnapshotTreeCompleted(VolumeSnapshotInventory snapshot) {
+        SQL.New("update VolumeSnapshotTreeVO tree" +
+                " set tree.current = false" +
+                " where tree.current = true" +
+                " and tree.volumeUuid = :volUuid").param("volUuid", snapshot.getVolumeUuid()).execute();
+
+        VolumeSnapshotTreeVO chain = Q.New(VolumeSnapshotTreeVO.class).eq(VolumeSnapshotTreeVO_.uuid, snapshot.getTreeUuid()).find();
+        DebugUtils.Assert(chain != null, "why not found volumeSnapshotTree here?");
+
+        SQL.New("update VolumeSnapshotTreeVO tree" +
+                " set tree.current = true, tree.status = :status" +
+                " where tree.uuid = :uuid").param("uuid", snapshot.getTreeUuid()).
+                param("status", VolumeSnapshotTreeStatus.Completed).execute();
+
+        logger.debug(String.format("mark new volume snapshot tree[tree uuid:%s, snapshot: %s] to Completed",
+                chain.getUuid(), snapshot.getUuid()));
     }
 
     @Transactional
@@ -402,7 +437,6 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             VolumeSnapshotVO latest = q.getSingleResult();
 
             if (latest.getDistance() >= maxIncrementalSnapshotNum) {
-                chain.setCurrent(false);
                 dbf.getEntityManager().merge(chain);
                 return newChain(vo, true);
             }
@@ -433,20 +467,13 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
     @Transactional
     private VolumeSnapshotStruct saveIndividualTypeSnapshot(VolumeSnapshotVO vo) {
-        String sql = "update VolumeSnapshotTreeVO tree" +
-                " set tree.current = false" +
-                " where tree.current = true" +
-                " and tree.volumeUuid = :volUuid";
-        Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("volUuid", vo.getVolumeUuid());
-        q.executeUpdate();
-
         return newChain(vo, false);
     }
 
     @Transactional
     private void rollbackSnapshot(String uuid) {
         VolumeSnapshotVO vo = dbf.getEntityManager().find(VolumeSnapshotVO.class, uuid);
+
         dbf.getEntityManager().remove(vo);
 
         String sql = "delete from AccountResourceRefVO where resourceUuid = :vsUuid and resourceType = 'VolumeSnapshotVO'";
@@ -533,30 +560,28 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
     private void handle(final CreateVolumeSnapshotMsg msg) {
         final CreateVolumeSnapshotReply ret = new CreateVolumeSnapshotReply();
-        VolumeSnapshotStruct struct = null;
-        try {
-            struct = getVolumeSnapshotStruct(msg);
-        } catch (OperationFailureException e) {
-            ret.setError(e.getErrorCode());
-            bus.reply(msg, ret);
-            return;
-        }
-
         final VolumeVO vol = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
         final String primaryStorageUuid = vol.getPrimaryStorageUuid();
 
-        HashMap<String, Object> dataMap = new HashMap<>();
-        dataMap.put(VolumeSnapshotConstant.VOLUME_SNAPSHOT_STRUCT, struct);
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("take-volume-snapshot-for-volume-%s", msg.getVolumeUuid()));
-        chain.setData(dataMap);
         chain.then(new ShareFlow() {
             VolumeSnapshotInventory snapshot;
             String volumeNewInstallPath;
+            VolumeSnapshotStruct struct;
 
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "create-new-tree-if-needed";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        struct = getVolumeSnapshotStruct(msg);
+                        trigger.next();
+                    }
+                });
+
                 flow(new NoRollbackFlow() {
                     String __name__ = "take-volume-snapshot";
 
@@ -564,7 +589,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     public void run(final FlowTrigger trigger, Map data) {
                         final TakeSnapshotMsg tmsg = new TakeSnapshotMsg();
                         tmsg.setPrimaryStorageUuid(primaryStorageUuid);
-                        tmsg.setStruct((VolumeSnapshotStruct)data.get(VolumeSnapshotConstant.VOLUME_SNAPSHOT_STRUCT));
+                        tmsg.setStruct(struct);
                         bus.makeTargetServiceIdByResourceUuid(tmsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
                         bus.send(tmsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -605,6 +630,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
+                        markSnapshotTreeCompleted(snapshot);
                         if (volumeNewInstallPath != null) {
                             vol.setInstallPath(volumeNewInstallPath);
                             dbf.update(vol);
@@ -633,8 +659,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        rollbackSnapshot(((VolumeSnapshotStruct)data.get(VolumeSnapshotConstant.VOLUME_SNAPSHOT_STRUCT))
-                                .getCurrent().getUuid());
+                        if (struct != null) {
+                            rollbackSnapshot(struct.getCurrent().getUuid());
+                        }
                         ret.setError(errCode);
                         bus.reply(msg, ret);
                     }
@@ -762,6 +789,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
+                        markSnapshotTreeCompleted(VolumeSnapshotInventory.valueOf(vo));
                         VolumeSnapshotVO svo = dbf.findByUuid(vo.getUuid(), VolumeSnapshotVO.class);
                         if (svo.getPrimaryStorageInstallPath() == null) {
                             svo.setPrimaryStorageInstallPath(vol.getInstallPath());

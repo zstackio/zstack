@@ -6,7 +6,10 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
-import org.zstack.core.cloudbus.*;
+import org.zstack.core.cloudbus.CanonicalEventEmitter;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
@@ -21,7 +24,6 @@ import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -879,6 +881,7 @@ public abstract class HostBase extends AbstractHost {
 
                 final FlowChain flowChain = FlowChainBuilder.newShareFlowChain();
                 flowChain.setName(String.format("connect-host-%s", self.getUuid()));
+                flowChain.allowWatch();
                 flowChain.then(new ShareFlow() {
                     @Override
                     public void setup() {

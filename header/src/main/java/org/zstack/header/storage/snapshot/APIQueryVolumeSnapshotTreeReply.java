@@ -45,6 +45,7 @@ public class APIQueryVolumeSnapshotTreeReply extends APIQueryReply {
         tinv.setCurrent(false);
         tinv.setVolumeUuid(inv.getVolumeUuid());
         tinv.setTree(linv);
+        tinv.setStatus(VolumeSnapshotTreeStatus.Completed.toString());
 
         return reply;
     }

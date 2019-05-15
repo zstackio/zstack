@@ -876,6 +876,15 @@ public class KVMAgentCommands {
         private boolean fromForeignHypervisor;
         private String machineType;
         private Integer pciePortNums;
+        private boolean useHugePage;
+
+        public boolean isUseHugePage() {
+            return useHugePage;
+        }
+
+        public void setUseHugePage(boolean useHugePage) {
+            this.useHugePage = useHugePage;
+        }
 
         public boolean isFromForeignHypervisor() {
             return fromForeignHypervisor;
@@ -1825,6 +1834,17 @@ public class KVMAgentCommands {
         public void setNewVolumeInstallPath(String newVolumeInstallPath) {
             this.newVolumeInstallPath = newVolumeInstallPath;
         }
+    }
+
+    public static class CheckSnapshotCmd extends AgentCommand {
+        public String volumePath;
+    }
+
+    public static class CheckSnapshotRsp extends AgentResponse {
+        public boolean completed;
+        public Long size;
+        public String volumePath;
+        public String snapshotPath;
     }
 
     public static class LogoutIscsiTargetCmd extends AgentCommand {

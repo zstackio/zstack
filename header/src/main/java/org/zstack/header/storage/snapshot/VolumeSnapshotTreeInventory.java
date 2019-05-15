@@ -171,6 +171,11 @@ public class VolumeSnapshotTreeInventory {
      * - false
      */
     private Boolean current;
+
+    /**
+     * @desc describe the status of the SnapshotTree
+     */
+    private String status;
     /**
      * @desc tree inventory, see :ref:`SnapshotLeafInventory`
      */
@@ -192,6 +197,7 @@ public class VolumeSnapshotTreeInventory {
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setUuid(vo.getUuid());
         inv.setVolumeUuid(vo.getVolumeUuid());
+        inv.setStatus(vo.getStatus().toString());
         return inv;
     }
 
@@ -233,6 +239,14 @@ public class VolumeSnapshotTreeInventory {
 
     public void setCurrent(boolean current) {
         this.current = current;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public Timestamp getCreateDate() {

@@ -41,6 +41,7 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
@@ -889,6 +890,64 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
+    @Override
+    void handle(DownloadVolumeTemplateToPrimaryStorageMsg msg, ReturnValueCompletion<DownloadVolumeTemplateToPrimaryStorageReply> completion) {
+        DownloadVolumeTemplateToPrimaryStorageReply reply = new DownloadVolumeTemplateToPrimaryStorageReply();
+        ImageSpec ispec = msg.getTemplateSpec();
+        BackupStorageInventory bsinv = null;
+        String backupStorageInstallPath;
+        if (ispec.getSelectedBackupStorage() != null) {
+            SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
+            q.add(BackupStorageVO_.uuid, Op.EQ, ispec.getSelectedBackupStorage().getBackupStorageUuid());
+            BackupStorageVO bs = q.find();
+
+            bsinv = BackupStorageInventory.valueOf(bs);
+            backupStorageInstallPath = ispec.getSelectedBackupStorage().getInstallPath();
+        } else {
+            ImageBackupStorageSelector selector = new ImageBackupStorageSelector();
+            selector.setZoneUuid(self.getZoneUuid());
+            selector.setImageUuid(ispec.getInventory().getUuid());
+            final String bsUuid = selector.select();
+            if (bsUuid == null) {
+                throw new OperationFailureException(operr(
+                        "the image[uuid:%s, name: %s] is not available to download on any backup storage:\n" +
+                                "1. check if image is in status of Deleted\n" +
+                                "2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:%s]",
+                        ispec.getInventory().getUuid(), ispec.getInventory().getName(), self.getZoneUuid()));
+            }
+
+            bsinv = BackupStorageInventory.valueOf(dbf.findByUuid(bsUuid, BackupStorageVO.class));
+            ImageBackupStorageRefInventory ref = CollectionUtils.find(ispec.getInventory().getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
+                @Override
+                public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
+                    return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
+                }
+            });
+            backupStorageInstallPath = ref.getInstallPath();
+        }
+
+        String pathInCache = makeCachedImageInstallUrl(ispec.getInventory());
+
+        ImageCache cache = new ImageCache();
+        cache.backupStorage = bsinv;
+        cache.backupStorageInstallPath = backupStorageInstallPath;
+        cache.primaryStorageInstallPath = pathInCache;
+        cache.hostUuid = msg.getHostUuid();
+        cache.image = ispec.getInventory();
+        cache.download(new ReturnValueCompletion<ImageCacheInventory>(completion) {
+            @Override
+            public void success(ImageCacheInventory returnValue) {
+                reply.setImageCache(returnValue);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
 
     private void createTemporaryEmptyVolume(InstantiateTemporaryVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
         final VolumeInventory volume = msg.getVolume();
@@ -994,7 +1053,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         String primaryStorageInstallPath;
         String backupStorageInstallPath;
 
-        void download(final ReturnValueCompletion<String> completion) {
+        void download(final ReturnValueCompletion<ImageCacheInventory> completion) {
             DebugUtils.Assert(image != null, "image cannot be null");
             DebugUtils.Assert(backupStorage != null, "backup storage cannot be null");
             DebugUtils.Assert(hostUuid != null, "host uuid cannot be null");
@@ -1121,7 +1180,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     logger.debug(String.format("downloaded image[uuid:%s, name:%s] to the image cache of local primary storage[uuid: %s, installPath: %s] on host[uuid: %s]",
                                             image.getUuid(), image.getName(), self.getUuid(), primaryStorageInstallPath, hostUuid));
 
-                                    completion.success(primaryStorageInstallPath);
+                                    completion.success(ImageCacheInventory.valueOf(vo));
                                     chain.next();
                                 }
                             });
@@ -1140,18 +1199,17 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 @Override
                 public void run(final SyncTaskChain chain) {
                     SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
-                    q.select(ImageCacheVO_.installUrl);
                     q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
                     q.add(ImageCacheVO_.imageUuid, Op.EQ, image.getUuid());
                     q.add(ImageCacheVO_.installUrl, Op.LIKE, String.format("%%hostUuid://%s%%", hostUuid));
-                    String fullPath = q.findValue();
-                    if (fullPath == null) {
+                    ImageCacheVO cache = q.find();
+                    if (cache == null) {
                         doDownload(chain);
                         return;
                     }
 
                     CacheInstallPath path = new CacheInstallPath();
-                    path.fullPath = fullPath;
+                    path.fullPath = cache.getInstallUrl();
                     final String installPath = path.disassemble().installPath;
                     CheckBitsCmd cmd = new CheckBitsCmd();
                     cmd.path = installPath;
@@ -1162,7 +1220,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             if (rsp.existing) {
                                 logger.debug(String.format("found image[uuid: %s, name: %s] in the image cache of local primary storage[uuid:%s, installPath: %s]",
                                         image.getUuid(), image.getName(), self.getUuid(), installPath));
-                                completion.success(installPath);
+                                completion.success(ImageCacheInventory.valueOf(cache));
                                 chain.next();
                                 return;
                             }
@@ -1234,11 +1292,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             return;
         }
 
-        SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
-        q.add(BackupStorageVO_.uuid, Op.EQ, ispec.getSelectedBackupStorage().getBackupStorageUuid());
-        BackupStorageVO bs = q.find();
-
-        final BackupStorageInventory bsInv = BackupStorageInventory.valueOf(bs);
         final VolumeInventory volume = msg.getVolume();
         final String hostUuid = msg.getDestHost().getUuid();
 
@@ -1256,22 +1309,20 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        ImageCache cache = new ImageCache();
-                        cache.backupStorage = bsInv;
-                        cache.backupStorageInstallPath = ispec.getSelectedBackupStorage().getInstallPath();
-                        cache.primaryStorageInstallPath = pathInCache;
-                        cache.hostUuid = hostUuid;
-                        cache.image = image;
-                        cache.download(new ReturnValueCompletion<String>(trigger) {
+                        DownloadVolumeTemplateToPrimaryStorageMsg dmsg = new DownloadVolumeTemplateToPrimaryStorageMsg();
+                        dmsg.setTemplateSpec(msg.getTemplateSpec());
+                        dmsg.setHostUuid(msg.getDestHost().getUuid());
+                        dmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+                        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, dmsg.getPrimaryStorageUuid());
+                        bus.send(dmsg, new CloudBusCallBack(trigger) {
                             @Override
-                            public void success(String returnValue) {
-                                pathInCache = returnValue;
-                                trigger.next();
-                            }
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                                trigger.next();
                             }
                         });
                     }
@@ -1492,11 +1543,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cache.primaryStorageInstallPath = makeCachedImageInstallUrl(ispec.getInventory());
         cache.backupStorage = bsinv;
         cache.backupStorageInstallPath = ispec.getSelectedBackupStorage().getInstallPath();
-        cache.download(new ReturnValueCompletion<String>(completion) {
+        cache.download(new ReturnValueCompletion<ImageCacheInventory>(completion) {
             @Override
-            public void success(String returnValue) {
+            public void success(ImageCacheInventory returnValue) {
                 DownloadIsoToPrimaryStorageReply reply = new DownloadIsoToPrimaryStorageReply();
-                reply.setInstallPath(returnValue);
+                reply.setInstallPath(returnValue.getInstallUrl());
                 completion.success(reply);
             }
 
@@ -1918,41 +1969,22 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     void downloadImageToCache(ImageInventory img, String hostUuid, final ReturnValueCompletion<String> completion) {
-        ImageBackupStorageSelector selector = new ImageBackupStorageSelector();
-        selector.setZoneUuid(self.getZoneUuid());
-        selector.setImageUuid(img.getUuid());
-        final String bsUuid = selector.select();
-        if (bsUuid == null) {
-            throw new OperationFailureException(operr(
-                    "the image[uuid:%s, name: %s] is not available to download on any backup storage:\n" +
-                            "1. check if image is in status of Deleted\n" +
-                            "2. check if the backup storage on which the image is shown as Ready is attached to the zone[uuid:%s]",
-                    img.getUuid(), img.getName(), self.getZoneUuid()));
-        }
-
-        BackupStorageInventory bs = BackupStorageInventory.valueOf(dbf.findByUuid(bsUuid, BackupStorageVO.class));
-        ImageBackupStorageRefInventory ref = CollectionUtils.find(img.getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
+        DownloadVolumeTemplateToPrimaryStorageMsg dmsg = new DownloadVolumeTemplateToPrimaryStorageMsg();
+        dmsg.setPrimaryStorageUuid(self.getUuid());
+        dmsg.setHostUuid(hostUuid);
+        ImageSpec imageSpec = new ImageSpec();
+        imageSpec.setInventory(img);
+        dmsg.setTemplateSpec(imageSpec);
+        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, dmsg.getPrimaryStorageUuid());
+        bus.send(dmsg, new CloudBusCallBack(completion) {
             @Override
-            public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
-                return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
-            }
-        });
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
 
-        final ImageCache cache = new ImageCache();
-        cache.image = img;
-        cache.hostUuid = hostUuid;
-        cache.primaryStorageInstallPath = makeCachedImageInstallUrl(img);
-        cache.backupStorage = bs;
-        cache.backupStorageInstallPath = ref.getInstallPath();
-        cache.download(new ReturnValueCompletion<String>(completion) {
-            @Override
-            public void success(String returnValue) {
-                completion.success(cache.primaryStorageInstallPath);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
+                completion.success(((DownloadVolumeTemplateToPrimaryStorageReply) reply).getImageCache().getInstallUrl());
             }
         });
     }
@@ -2935,5 +2967,59 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     private String makeInitializedFilePath() {
         return String.format("%s/%s-initialized-file", self.getMountPath(), self.getUuid());
+    }
+
+    @Override
+    void handle(CheckVolumeSnapshotsOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<CheckVolumeSnapshotsOnPrimaryStorageReply> completion) {
+        CheckVolumeSnapshotsOnPrimaryStorageReply sreply = new CheckVolumeSnapshotsOnPrimaryStorageReply();
+
+        CheckSnapshotOnHypervisorMsg cmsg = new CheckSnapshotOnHypervisorMsg();
+        cmsg.setHostUuid(hostUuid);
+        cmsg.setVolumeInstallPath(msg.getVolumeInstallPath());
+
+        bus.makeLocalServiceId(cmsg, HostConstant.SERVICE_ID);
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    CheckSnapshotOnHypervisorReply r = reply.castReply();
+                    sreply.setCompleted(r.isCompleted());
+                    if (r.isCompleted()) {
+                        /**
+                         * 1. complete snapshot
+                         * 2. update volume
+                         */
+                        VolumeVO volume = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
+                        VolumeSnapshotVO snapshot = null;
+                        for (VolumeSnapshotInventory s: msg.getSnapshots()) {
+                            if (r.getSnapshotInstallPath().contains(s.getUuid())) {
+                                snapshot = dbf.findByUuid(s.getUuid(), VolumeSnapshotVO.class);
+                            }
+                        }
+                        if (snapshot == null) {
+                            r.setError(operr("cannot find snapshot installpath in db, but actually [%s] in ps [%s], please check it manually",
+                                    r.getSnapshotInstallPath(), self.getUuid()));
+                        } else {
+                            volume.setInstallPath(r.getVolumeInstallPath());
+
+                            snapshot.setStatus(VolumeSnapshotStatus.Ready);
+                            snapshot.setPrimaryStorageUuid(self.getUuid());
+                            snapshot.setPrimaryStorageInstallPath(r.getSnapshotInstallPath());
+                            snapshot.setSize(r.getSize());
+                            snapshot.setType(VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString());
+                            snapshot.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
+
+                            dbf.updateAndRefresh(volume);
+                            dbf.updateAndRefresh(snapshot);
+
+                            sreply.setSnapshotUuid(snapshot.getUuid());
+                        }
+                    }
+                } else {
+                    sreply.setError(reply.getError());
+                }
+                bus.reply(msg, reply);
+            }
+        });
     }
 }

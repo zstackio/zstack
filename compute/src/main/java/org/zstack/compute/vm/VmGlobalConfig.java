@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.header.cluster.ClusterVO;
 import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceVO;
@@ -33,11 +34,12 @@ public class VmGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig VM_BOOT_MENU = new GlobalConfig(CATEGORY, "bootMenu");
     @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig(value = {ClusterVO.class})
     public static GlobalConfig KVM_HIDDEN_STATE = new GlobalConfig(CATEGORY, "kvmHiddenState");
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig VM_PORT_OFF = new GlobalConfig(CATEGORY, "vmPortOff");
     @GlobalConfigValidation(validValues = {"true", "false"})
-    @BindResourceConfig(value = {VmInstanceVO.class})
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig EMULATE_HYPERV = new GlobalConfig(CATEGORY, "emulateHyperV");
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig ADDITIONAL_QMP = new GlobalConfig(CATEGORY, "additionalQmp");
