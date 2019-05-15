@@ -260,6 +260,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         if (msg instanceof InstantiateVolumeOnPrimaryStorageMsg) {
             new PrimaryStorageValidater().disable().maintenance()
                     .validate();
+        } else if (msg instanceof DownloadVolumeTemplateToPrimaryStorageMsg) {
+            new PrimaryStorageValidater().disable().maintenance()
+                    .validate();
         } else if (msg instanceof CreateTemplateFromVolumeOnPrimaryStorageMsg) {
             new PrimaryStorageValidater().disable().maintenance()
                     .validate();
@@ -345,6 +348,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((SyncPrimaryStorageCapacityMsg) msg);
         } else if ((msg instanceof DetachIsoOnPrimaryStorageMsg)) {
             handle((DetachIsoOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DownloadVolumeTemplateToPrimaryStorageMsg) {
+            handle((DownloadVolumeTemplateToPrimaryStorageMsg) msg);
         } else if ((msg instanceof CheckInstallPathInTrashMsg)) {
             handle((CheckInstallPathInTrashMsg) msg);
         } else if ((msg instanceof CleanUpTrashOnPrimaryStroageMsg)) {
@@ -400,6 +405,11 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             reply.setTrashId(trashId);
             reply.setResourceUuid(spec.getResourceUuid());
         }
+        bus.reply(msg, reply);
+    }
+
+    protected void handle(DownloadVolumeTemplateToPrimaryStorageMsg msg) {
+        MessageReply reply = new MessageReply();
         bus.reply(msg, reply);
     }
 

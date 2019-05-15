@@ -131,6 +131,26 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(DownloadVolumeTemplateToPrimaryStorageMsg msg) {
+        HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getTemplateSpec().getInventory().getFormat());
+        HypervisorFactory f = getHypervisorFactoryByHypervisorType(type.toString());
+        HypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<DownloadVolumeTemplateToPrimaryStorageReply>(msg) {
+            @Override
+            public void success(DownloadVolumeTemplateToPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                DownloadVolumeTemplateToPrimaryStorageReply reply = new DownloadVolumeTemplateToPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
     protected void handle(final InstantiateVolumeOnPrimaryStorageMsg msg) {
         if (msg.getDestHost() == null) {
             String hostUuid = getAvailableHostUuidForOperation();
