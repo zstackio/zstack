@@ -381,6 +381,7 @@ public class VolumeBase implements Volume {
                         InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg imsg = new InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg();
                         prepareMsg(msg, imsg);
                         imsg.setTemplateSpec(msg.getTemplateSpec());
+
                         doInstantiateVolume(imsg, trigger);
                     }
 

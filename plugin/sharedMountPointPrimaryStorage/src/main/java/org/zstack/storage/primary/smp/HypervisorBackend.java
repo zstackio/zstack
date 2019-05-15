@@ -6,6 +6,7 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.CheckSnapshotOnHypervisorReply;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.vm.VmInstanceSpec;
 
 /**
  * Created by frank on 6/30/2015.
@@ -19,6 +20,8 @@ public abstract class HypervisorBackend extends SMPPrimaryStorageBase {
     }
 
     abstract void handle(InstantiateVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion);
+
+    abstract void handle(DownloadVolumeTemplateToPrimaryStorageMsg msg, ReturnValueCompletion<DownloadVolumeTemplateToPrimaryStorageReply> completion);
 
     abstract void handle(DeleteVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<DeleteVolumeOnPrimaryStorageReply> completion);
 
@@ -70,5 +73,5 @@ public abstract class HypervisorBackend extends SMPPrimaryStorageBase {
 
     abstract void handle(CheckVolumeSnapshotsOnPrimaryStorageMsg msg, ReturnValueCompletion<CheckSnapshotOnHypervisorReply> completion);
 
-    abstract void downloadImageToCache(ImageInventory img, final ReturnValueCompletion<String> completion);
+    abstract void downloadImageToCache(VmInstanceSpec.ImageSpec img, final ReturnValueCompletion<ImageCacheInventory> completion);
 }

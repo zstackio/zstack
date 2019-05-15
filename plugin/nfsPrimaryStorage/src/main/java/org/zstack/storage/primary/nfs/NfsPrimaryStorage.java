@@ -689,7 +689,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             NfsDownloadImageToCacheJob job = new NfsDownloadImageToCacheJob();
-                            job.setImage(ispec);
+                            job.setImage(msg.getTemplateSpec());
                             job.setPrimaryStorage(primaryStorage);
 
                             jobf.execute(NfsPrimaryStorageKvmHelper.makeDownloadImageJobName(image, primaryStorage),
