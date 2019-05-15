@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -22,16 +23,18 @@ import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.AddBackupStorageExtensionPoint;
 import org.zstack.header.storage.backup.AddBackupStorageStruct;
+import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
+import org.zstack.header.tag.TagType;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
@@ -80,21 +83,43 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         } else {
             q.setParameter("bsUuid", dumpInfo.getBackupStorageUuid());
         }
-        List<ImageVO> allImageVO = q.getResultList();
-        for (ImageVO imageVO : allImageVO) {
+        List<ImageInventory> allImageInv = q.getResultList().stream()
+                .map(imageVO -> ImageInventory.valueOf(imageVO)).collect(Collectors.toList());
+        setAllImagesSystemTags(allImageInv);
+        for (ImageInventory imageInv : allImageInv) {
             if (allImageInventories != null) {
-                allImageInventories = JSONObjectUtil.toJsonString(ImageInventory.valueOf(imageVO)) + "\n" + allImageInventories;
+                allImageInventories = JSONObjectUtil.toJsonString(imageInv) + "\n" + allImageInventories;
             } else {
-                allImageInventories = JSONObjectUtil.toJsonString(ImageInventory.valueOf(imageVO));
+                allImageInventories = JSONObjectUtil.toJsonString(imageInv);
             }
         }
         return allImageInventories;
     }
 
 
+    private void setAllImagesSystemTags(List<ImageInventory> imageInventories) {
+        //Load all systemTags
+        if (imageInventories == null) {
+            return;
+        }
+        List<SystemTagVO> allSystemTags = Q.New(SystemTagVO.class)
+                .in(SystemTagVO_.resourceUuid, imageInventories.stream()
+                        .map(img -> img.getUuid()).collect(Collectors.toList()))
+                .list();
+        Map<String, List<SystemTagInventory>> listMap = new HashMap<>();
+        for (SystemTagVO tagVO : allSystemTags) {
+            String key = tagVO.getResourceUuid();
+            listMap.putIfAbsent(key, new ArrayList<>());
+            listMap.get(key).add(SystemTagInventory.valueOf(tagVO));
+        }
+        imageInventories.forEach(img -> img.setSystemTags(listMap.get(img.getUuid())));
+    }
+
+
     private void restoreImagesBackupStorageMetadataToDatabase(String imagesMetadata, String backupStorageUuid) {
         List<ImageVO> imageVOs = new ArrayList<ImageVO>();
         List<ImageBackupStorageRefVO> backupStorageRefVOs = new ArrayList<ImageBackupStorageRefVO>();
+        List<SystemTagVO> systemTagVOs = new ArrayList<>();
         String[] metadatas = imagesMetadata.split("\n");
         for (String metadata : metadatas) {
             if (metadata.contains("backupStorageRefs")) {
@@ -150,10 +175,25 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                 imageVO.setLastOpDate(imageInventory.getLastOpDate());
                 imageVO.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
                 imageVOs.add(imageVO);
+
+                if (imageInventory.getSystemTags() != null) {
+                    for (SystemTagInventory tagInv : imageInventory.getSystemTags()) {
+                        SystemTagVO systemTagVO = new SystemTagVO();
+                        systemTagVO.setCreateDate(tagInv.getCreateDate());
+                        systemTagVO.setLastOpDate(tagInv.getLastOpDate());
+                        systemTagVO.setResourceType(tagInv.getResourceType());
+                        systemTagVO.setResourceUuid(tagInv.getResourceUuid());
+                        systemTagVO.setTag(tagInv.getTag());
+                        systemTagVO.setType(TagType.System.toString().equals(tagInv.getType()) ? TagType.System : TagType.User);
+                        systemTagVO.setUuid(tagInv.getUuid());
+                        systemTagVOs.add(systemTagVO);
+                    }
+                }
             }
         }
         dbf.persistCollection(imageVOs);
         dbf.persistCollection(backupStorageRefVOs);
+        dbf.persistCollection(systemTagVOs);
     }
 
 
@@ -335,6 +375,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
 
+                        setAllImagesSystemTags(Collections.singletonList(img));
                         if (!metaDataExist) {
                             SftpBackupStorageCommands.GenerateImageMetaDataFileCmd generateCmd = new SftpBackupStorageCommands.GenerateImageMetaDataFileCmd();
                             generateCmd.setBackupStoragePath(getBsUrlFromImageInventory(img));

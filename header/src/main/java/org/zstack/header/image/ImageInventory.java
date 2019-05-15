@@ -3,6 +3,7 @@ package org.zstack.header.image;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.volume.VolumeInventory;
 
 import javax.persistence.JoinColumn;
@@ -46,6 +47,7 @@ public class ImageInventory implements Serializable {
     @Queryable(mappingClass = ImageBackupStorageRefInventory.class,
             joinColumn = @JoinColumn(name = "imageUuid"))
     private List<ImageBackupStorageRefInventory> backupStorageRefs;
+    private List<SystemTagInventory> systemTags;
 
     public static ImageInventory valueOf(ImageVO vo) {
         ImageInventory inv = new ImageInventory();
@@ -270,5 +272,13 @@ public class ImageInventory implements Serializable {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public List<SystemTagInventory> getSystemTags() {
+        return systemTags;
+    }
+
+    public void setSystemTags(List<SystemTagInventory> systemTags) {
+        this.systemTags = systemTags;
     }
 }
