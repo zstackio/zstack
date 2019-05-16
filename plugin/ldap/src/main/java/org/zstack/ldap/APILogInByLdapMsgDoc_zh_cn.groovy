@@ -42,6 +42,36 @@ doc {
 					
 				}
 				column {
+					name "verifyCode"
+					enclosedIn "logInByLdap"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+
+				}
+				column {
+					name "captchaUuid"
+					enclosedIn "logInByLdap"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+
+				}
+				column {
+					name "clientInfo"
+					enclosedIn "logInByLdap"
+					desc "客户端信息"
+					location "body"
+					type "Map"
+					optional true
+					since "3.5.0"
+
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

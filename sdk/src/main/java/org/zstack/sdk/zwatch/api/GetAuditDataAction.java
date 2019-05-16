@@ -3,6 +3,7 @@ package org.zstack.sdk.zwatch.api;
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
+import org.zstack.sdk.zwatch.datatype.AuditType;
 
 public class GetAuditDataAction extends AbstractAction {
 
@@ -12,7 +13,7 @@ public class GetAuditDataAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.zwatch.api.GetAuditDataResult value;
+        public GetAuditDataResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,16 +27,19 @@ public class GetAuditDataAction extends AbstractAction {
     }
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long startTime;
+    public Long startTime;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long endTime;
+    public Long endTime;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer limit = 100;
+    public Integer limit = 100;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List conditions;
+
+    @Param(required = false, validValues = {"Login","Resource"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public AuditType auditType;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -60,8 +64,8 @@ public class GetAuditDataAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.zwatch.api.GetAuditDataResult value = res.getResult(org.zstack.sdk.zwatch.api.GetAuditDataResult.class);
-        ret.value = value == null ? new org.zstack.sdk.zwatch.api.GetAuditDataResult() : value; 
+        GetAuditDataResult value = res.getResult(GetAuditDataResult.class);
+        ret.value = value == null ? new GetAuditDataResult() : value;
 
         return ret;
     }

@@ -8,6 +8,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.message.SkipLogger;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
+import sun.security.util.Password;
 
 /**
  * @api
@@ -75,8 +76,8 @@ public class APIAddKVMHostMsg extends APIAddHostMsg implements AddKVMHostMessage
      * @desc password for ssh login
      * Max length of 255 characters
      */
-    @APIParam(maxLength = 255)
-    @SkipLogger
+    @APIParam(maxLength = 255, password = true)
+    @SkipLogger()
     private String password;
 
 

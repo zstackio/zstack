@@ -18,7 +18,7 @@ import org.zstack.header.storage.backup.APIUpdateBackupStorageMsg;
 public class APIUpdateSftpBackupStorageMsg extends APIUpdateBackupStorageMsg {
     @APIParam(maxLength = 255, required = false)
     private String username;
-    @APIParam(maxLength = 255, required = false)
+    @APIParam(maxLength = 255, required = false, password = true)
     private String password;
     @APIParam(maxLength = 255, required = false)
     private String hostname;

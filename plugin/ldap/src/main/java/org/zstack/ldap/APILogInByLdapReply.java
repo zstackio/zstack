@@ -1,15 +1,15 @@
 package org.zstack.ldap;
 
+import org.zstack.header.identity.APILogInAuditorReply;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountType;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
 import java.sql.Timestamp;
 
 @RestResponse(fieldsTo = {"all"})
-public class APILogInByLdapReply extends APIReply {
+public class APILogInByLdapReply extends APILogInAuditorReply {
     private SessionInventory inventory;
     private AccountInventory accountInventory;
 
@@ -28,7 +28,7 @@ public class APILogInByLdapReply extends APIReply {
     public void setAccountInventory(AccountInventory accountInventory) {
         this.accountInventory = accountInventory;
     }
- 
+
     public static APILogInByLdapReply __example__() {
         APILogInByLdapReply reply = new APILogInByLdapReply();
         SessionInventory inventory = new SessionInventory();

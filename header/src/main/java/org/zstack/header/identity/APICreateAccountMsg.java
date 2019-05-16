@@ -17,7 +17,7 @@ import org.zstack.header.rest.RestRequest;
 public class APICreateAccountMsg extends APICreateMessage implements APIAuditor {
     @APIParam(maxLength = 255)
     private String name;
-    @APIParam(maxLength = 255)
+    @APIParam(maxLength = 255, password = true)
     private String password;
     @APIParam(validValues = {"SystemAdmin", "Normal"}, required = false)
     private String type;

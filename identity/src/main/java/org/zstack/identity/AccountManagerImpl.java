@@ -373,6 +373,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void handle(APILogOutMsg msg) {
         APILogOutReply reply = new APILogOutReply();
+        SessionInventory session = sessions.get(msg.getSessionUuid());
+        if (session == null) {
+            SessionVO svo = dbf.findByUuid(msg.getSessionUuid(), SessionVO.class);
+            session = svo == null ? null : SessionInventory.valueOf(svo);
+        }
+        msg.setSession(session);
         logOutSession(msg.getSessionUuid());
         bus.reply(msg, reply);
     }
@@ -414,7 +420,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             accountq.add(AccountVO_.name, Op.EQ, msg.getAccountName());
             accountUuid = accountq.findValue();
             if (accountUuid == null) {
-                throw new OperationFailureException(argerr("account[%s] not found", msg.getAccountName()));
+                reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR, "account[%s] not found", msg.getAccountName()));
+                bus.reply(msg, reply);
+                return;
             }
         }
 
@@ -431,8 +439,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             bus.reply(msg, reply);
             return;
         }
-
-        reply.setInventory(getSession(user.getAccountUuid(), user.getUuid()));
+        SessionInventory session = getSession(user.getAccountUuid(), user.getUuid());
+        msg.setSession(session);
+        reply.setInventory(session);
         bus.reply(msg, reply);
     }
 
@@ -478,6 +487,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
 
         SessionInventory session = getSession(struct.getAccountUuid(), struct.getUserUuid());
+        msg.setSession(session);
         IdentityCanonicalEvents.AccountLoginData data = new IdentityCanonicalEvents.AccountLoginData();
         data.setAccountUuid(struct.getAccountUuid());
         data.setUserUuid(struct.getUserUuid());
@@ -1075,7 +1085,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                         vo.setType(AccountType.SystemAdmin);
                         persist(vo);
                         flush();
-                        
+
                         logger.debug(String.format("Created initial system admin account[name:%s]", AccountConstant.INITIAL_SYSTEM_ADMIN_NAME));
                     }
 
@@ -1185,7 +1195,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         if (session == null) {
             return;
         }
-        
+
         sessions.remove(sessionUuid);
         Session.logout(sessionUuid);
         dbf.removeByPrimaryKey(sessionUuid, SessionVO.class);

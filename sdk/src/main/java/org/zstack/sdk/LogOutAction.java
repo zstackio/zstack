@@ -12,7 +12,7 @@ public class LogOutAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.LogOutResult value;
+        public LogOutResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,10 @@ public class LogOutAction extends AbstractAction {
     }
 
     @Param(required = false)
-    public java.lang.String sessionUuid;
+    public String sessionUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public Map clientInfo;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -45,8 +48,8 @@ public class LogOutAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.LogOutResult value = res.getResult(org.zstack.sdk.LogOutResult.class);
-        ret.value = value == null ? new org.zstack.sdk.LogOutResult() : value; 
+        LogOutResult value = res.getResult(LogOutResult.class);
+        ret.value = value == null ? new LogOutResult() : value;
 
         return ret;
     }
