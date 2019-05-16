@@ -415,6 +415,11 @@ abstract class Test implements ApiHelper, Retry {
         return dbf.findByUuid(uuid, voClz)
     }
 
+    protected long dbCount(Class voClz) {
+        DatabaseFacade dbf = bean(DatabaseFacade.class)
+        return dbf.count(voClz)
+    }
+
     protected boolean dbIsExists(Object primaryKey, Class clz) {
         DatabaseFacade dbf = bean(DatabaseFacade.class)
         return dbf.isExist(primaryKey, clz)
