@@ -37,4 +37,8 @@
         <name>org.zstack.header.storage.snapshot.APIBatchDeleteVolumeSnapshotMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.header.storage.snapshot.APIGetVolumeSnapshotSizeMsg</name>
+    </message>
+
 </service>

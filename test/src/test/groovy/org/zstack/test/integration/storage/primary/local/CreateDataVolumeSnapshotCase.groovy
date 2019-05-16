@@ -7,7 +7,9 @@ import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.sdk.GetVolumeSnapshotSizeResult
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VolumeSnapshotInventory
 import org.zstack.storage.primary.local.LocalStorageHostRefVO
 import org.zstack.storage.primary.local.LocalStorageHostRefVO_
 import org.zstack.test.integration.kvm.KvmTest
@@ -115,10 +117,15 @@ class CreateDataVolumeSnapshotCase extends SubCase {
             String dataVolume2 = vm.allVolumes.find { it.uuid != vm.rootVolumeUuid && it.uuid != dataVolume1 }.uuid
             assert dataVolume1 != dataVolume2
 
-            createVolumeSnapshot {
+            VolumeSnapshotInventory snapshotInventory = createVolumeSnapshot {
                 name = "data-volume-snapshot"
                 volumeUuid = dataVolume1
             }
+            GetVolumeSnapshotSizeResult result = getVolumeSnapshotSize {
+                uuid = snapshotInventory.uuid
+            }
+            assert result.actualSize == snapshotInventory.size
+            assert result.size == snapshotInventory.size
 
             createVolumeSnapshot {
                 name = "data-volume-snapshot"

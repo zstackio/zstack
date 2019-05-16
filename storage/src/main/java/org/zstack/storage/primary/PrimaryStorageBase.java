@@ -40,15 +40,15 @@ import org.zstack.header.storage.backup.StorageTrashSpec;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
-import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
-import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageMsg;
-import org.zstack.header.storage.snapshot.VolumeSnapshotReportPrimaryStorageCapacityUsageReply;
+import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.StopVmInstanceMsg;
 import org.zstack.header.vm.VmAttachVolumeValidatorMethod;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.storage.snapshot.VolumeSnapshot;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -356,6 +356,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((CleanUpTrashOnPrimaryStroageMsg) msg);
         } else if ((msg instanceof CheckVolumeSnapshotsOnPrimaryStorageMsg)) {
             handle((CheckVolumeSnapshotsOnPrimaryStorageMsg) msg);
+        } else if ((msg instanceof GetVolumeSnapshotSizeOnPrimaryStorageMsg)) {
+            handle((GetVolumeSnapshotSizeOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1391,6 +1393,14 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 bus.publish(evt);
             }
         }).start();
+    }
+
+    protected void handle(GetVolumeSnapshotSizeOnPrimaryStorageMsg msg) {
+        GetVolumeSnapshotSizeOnPrimaryStorageReply reply = new GetVolumeSnapshotSizeOnPrimaryStorageReply();
+        VolumeSnapshotVO snapshotVO = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);
+        reply.setSize(snapshotVO.getSize());
+        reply.setActualSize(snapshotVO.getSize());
+        bus.reply(msg, reply);
     }
 
     // don't attach any cluster
