@@ -498,7 +498,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                     try {
                         ext.tagDeleted(tag);
                     } catch (Exception e) {
-                        logger.warn(String.format("unhandled exception when calling %s", ext.getClass()));
+                        logger.warn(String.format("unhandled exception when calling %s", ext.getClass()), e);
                     }
                 }
             }
