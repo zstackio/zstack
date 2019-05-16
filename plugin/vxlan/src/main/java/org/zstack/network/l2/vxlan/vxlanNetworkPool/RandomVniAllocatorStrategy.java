@@ -51,10 +51,7 @@ public class RandomVniAllocatorStrategy extends AbstractVniAllocatorStrategy {
                     /* No available vniin ranges */
                 return null;
             }
-
-            if (vni != null) {
-                return vni;
-            }
+            return vni;
         } while (true);
     }
 

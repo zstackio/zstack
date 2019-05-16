@@ -346,6 +346,7 @@ public class Platform {
     }
 
     static {
+        FileInputStream in = null;
         try {
             Set<Class> baseResourceClasses = reflections.getTypesAnnotatedWith(BaseResource.class).stream()
                     .filter(clz -> clz.isAnnotationPresent(BaseResource.class)).collect(Collectors.toSet());
@@ -358,7 +359,8 @@ public class Platform {
             }
 
             File globalPropertiesFile = PathUtil.findFileOnClassPath("zstack.properties", true);
-            FileInputStream in = new FileInputStream(globalPropertiesFile);
+
+            in = new FileInputStream(globalPropertiesFile);
             System.getProperties().load(in);
 
             // get ms ip should after global property setup
@@ -378,7 +380,14 @@ public class Platform {
             } else {
                 throw new RuntimeException(e);
             }
-
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    logger.warn(String.format("FileInputStream close IOException：%s", e.getMessage()));
+                }
+            }
         }
     }
 

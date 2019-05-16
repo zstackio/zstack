@@ -58,7 +58,7 @@ public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
 
         if (!CheckIfAccountCanAccessResource.check(Collections.singletonList(msg.getResourceUuid()), msg.getSession().getAccountUuid()).isEmpty()) {
             throw new ApiMessageInterceptionException(argerr("account has no access to the resource[uuid: %s]",
-                    msg.getSession().getAccountUuid(), msg.getResourceUuid()));
+                    msg.getResourceUuid()));
         }
     }
 }

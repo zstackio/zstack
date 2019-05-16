@@ -447,7 +447,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
             // TODO(WeiW) Optimize it
             List<Tuple> remainEips = new ArrayList<>();
             for (Tuple e : existsEips) {
-                Boolean add = true;
+                boolean add = true;
                 for (Tuple i : eips) {
                     if (e.get(0, String.class).equals(i.get(0, String.class)) &&
                             e.get(1, String.class).equals(i.get(1, String.class))) {

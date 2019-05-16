@@ -129,15 +129,31 @@ public class PathUtil {
     }
 
     public static boolean compareFileByMd5(File src, File dst) {
+        FileInputStream srcIn = null;
+        FileInputStream dstIn = null;
         try {
-            FileInputStream srcIn = new FileInputStream(src);
+            srcIn = new FileInputStream(src);
             String srcMd5 = DigestUtils.md5Hex(srcIn);
-            FileInputStream dstIn = new FileInputStream(dst);
+            dstIn = new FileInputStream(dst);
             String dstMd5 = DigestUtils.md5Hex(dstIn);
-
             return srcMd5.equals(dstMd5);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            if (srcIn != null) {
+                try {
+                    srcIn.close();
+                } catch (IOException e) {
+                    logger.warn(String.format("FileInputStream close IOException：%s", e.getMessage()));
+                }
+            }
+            if (dstIn != null) {
+                try {
+                    dstIn.close();
+                } catch (IOException e) {
+                    logger.warn(String.format("FileInputStream close IOException：%s", e.getMessage()));
+                }
+            }
         }
     }
 

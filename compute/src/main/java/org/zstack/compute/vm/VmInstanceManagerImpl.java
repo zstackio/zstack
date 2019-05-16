@@ -1494,7 +1494,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         if (!l3NetworkSet.contains(uuid)) {
                             l3NetworkSet.add(uuid);
                         } else {
-                            throw new ApiMessageInterceptionException(argerr("l3 network [uuid] is added to vm more than once", uuid));
+                            throw new ApiMessageInterceptionException(argerr("l3 network [uuid: %s] is added to vm more than once", uuid));
                         }
 
                         L3NetworkVO l3Vo = dbf.findByUuid(uuid, L3NetworkVO.class);

@@ -12,9 +12,6 @@ public class WorkFlowContext implements Serializable {
     private Map<String, Object> context = new HashMap<String, Object>();
     
     public void put(String key, Object value) {
-        if (!(key instanceof Serializable)) {
-        	throw new IllegalArgumentException(String.format("key[%s] must be Serializable", key));
-        }
         if (!(value instanceof Serializable)) {
         	throw new IllegalArgumentException(String.format("value[%s] must be Serializable", value.getClass().getName()));
         }
