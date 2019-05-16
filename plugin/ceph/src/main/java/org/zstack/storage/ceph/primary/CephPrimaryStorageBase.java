@@ -2025,6 +2025,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             @Override
                             public void fail(ErrorCode errorCode) {
                                 completion.fail(errorCode);
+                                chain.next();
                             }
                         });
 
