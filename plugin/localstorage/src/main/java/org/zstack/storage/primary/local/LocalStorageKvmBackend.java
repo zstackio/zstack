@@ -1180,7 +1180,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     logger.debug(String.format("downloaded image[uuid:%s, name:%s] to the image cache of local primary storage[uuid: %s, installPath: %s] on host[uuid: %s]",
                                             image.getUuid(), image.getName(), self.getUuid(), primaryStorageInstallPath, hostUuid));
 
-                                    completion.success(ImageCacheInventory.valueOf(vo));
+                                    ImageCacheInventory inv = ImageCacheInventory.valueOf(vo);
+                                    inv.setInstallUrl(primaryStorageInstallPath);
+                                    completion.success(inv);
                                     chain.next();
                                 }
                             });
@@ -1220,7 +1222,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             if (rsp.existing) {
                                 logger.debug(String.format("found image[uuid: %s, name: %s] in the image cache of local primary storage[uuid:%s, installPath: %s]",
                                         image.getUuid(), image.getName(), self.getUuid(), installPath));
-                                completion.success(ImageCacheInventory.valueOf(cache));
+
+                                ImageCacheInventory inv = ImageCacheInventory.valueOf(cache);
+                                inv.setInstallUrl(installPath);
+                                completion.success(inv);
                                 chain.next();
                                 return;
                             }
