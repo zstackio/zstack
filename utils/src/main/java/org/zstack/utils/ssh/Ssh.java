@@ -228,7 +228,7 @@ public class Ssh {
                        }
                    }
                } catch (Exception e) {
-                   if (e instanceof ConnectionException || e instanceof IOException || e instanceof TransportException) {
+                   if (e instanceof IOException) {
                        ret.setSshFailure(true);
                    }
 

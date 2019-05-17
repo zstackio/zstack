@@ -859,7 +859,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         }
                         attachedVmNicUuids.removeAll(
                                 nics.stream().map(n -> n.getUuid()).collect(Collectors.toSet()));
-                        if (attachedVmNicUuids != null && !attachedVmNicUuids.isEmpty()) {
+                        if (!attachedVmNicUuids.isEmpty()) {
                             logger.debug(String.format("there are vmnics[uuids:%s] attached on loadbalancer[uuid:%s], " +
                                     "wont release vip[uuid: %s]", attachedVmNicUuids, struct.getLb().getUuid(), vip.getUuid()));
                             trigger.rollback();

@@ -79,7 +79,6 @@ public abstract class AbstractLocalExternalService implements LocalExternalServi
             DebugUtils.Assert(action != null, "action cannot be null");
             DebugUtils.Assert(upChecker != null, "upChecker cannot be null");
             DebugUtils.Assert(timeout != null, "timeout cannot be null");
-            DebugUtils.Assert(upChecker != null, "upChecker cannot be null");
 
             endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeout);
 

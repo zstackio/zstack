@@ -252,8 +252,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
             @Override
             public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
-                Long valueLong = SizeUtils.sizeStringToBytes(value);
-                Long _1t = SizeUtils.sizeStringToBytes("1T");
+                long valueLong = SizeUtils.sizeStringToBytes(value);
+                long _1t = SizeUtils.sizeStringToBytes("1T");
                 if (valueLong > _1t || valueLong < 0) {
                     throw new GlobalConfigException(String.format("Value %s  cannot be greater than the 1TB" + " but got %s",
                             KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.getCanonicalName(), value));

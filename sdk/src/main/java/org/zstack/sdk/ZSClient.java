@@ -253,7 +253,7 @@ public class ZSClient {
 
         private ApiResult syncWebHookResult() {
             synchronized (this) {
-                Long timeout = this.getTimeout();
+                long timeout = this.getTimeout();
 
                 try {
                     this.wait(timeout);
@@ -498,9 +498,9 @@ public class ZSClient {
 
         private void asyncPollResult(final String url) {
             final long current = System.currentTimeMillis();
-            final Long timeout = this.getTimeout();
+            final long timeout = this.getTimeout();
             final long expiredTime = current + timeout;
-            final Long i = this.getInterval();
+            final long i = this.getInterval();
 
             final Object sessionId = action.getParameterValue(Constants.SESSION_ID);
             final Timer timer = new Timer();
@@ -577,9 +577,9 @@ public class ZSClient {
 
         private ApiResult syncPollResult(String url) {
             long current = System.currentTimeMillis();
-            Long timeout = this.getTimeout();
+            long timeout = this.getTimeout();
             long expiredTime = current + timeout;
-            Long interval = this.getInterval();
+            long interval = this.getInterval();
 
             Object sessionId = action.getParameterValue(Constants.SESSION_ID);
 

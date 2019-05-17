@@ -437,12 +437,10 @@ public class NetworkUtils {
             logger.debug(String.format("unable to connect remote port[ip:%s, port:%s], %s", ip, port, e.getMessage()));
             return false;
         } finally {
-            if (socket != null) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    logger.warn(e.getMessage(), e);
-                }
+            try {
+                socket.close();
+            } catch (IOException e) {
+                logger.warn(e.getMessage(), e);
             }
         }
     }

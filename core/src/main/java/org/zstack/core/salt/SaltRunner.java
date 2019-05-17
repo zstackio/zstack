@@ -232,7 +232,7 @@ public class SaltRunner {
         if ("".equals(res.getStdout()) || res.isReturnCode(2)) {
             sb = new StringBuilder(String.format("\nfailed to apply salt state[minion id:%s, state name:%s]", minionId, stateName));
             sb.append(String.format("\ncommand: %s", cmd));
-            sb.append(String.format("\nno json output from the command, it's probably caused by the minion hasn't connected to master, will retry", res.getStdout()));
+            sb.append(String.format("\nno json output from the command, it's probably caused by the minion hasn't connected to master, will retry"));
             logger.debug(sb.toString());
             return false;
         }

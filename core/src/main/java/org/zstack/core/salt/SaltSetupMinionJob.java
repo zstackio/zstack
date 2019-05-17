@@ -75,6 +75,7 @@ public class SaltSetupMinionJob implements Job {
     public void run(ReturnValueCompletion<Object> completion) {
         File tmpt = null;
         Ssh ssh = null;
+        FileInputStream fis = null;
         try {
             ssh = new Ssh().setHostname(targetIp).setPassword(password).setPrivateKey(privateKey)
                     .setUsername(username).setPort(port);
@@ -108,7 +109,7 @@ public class SaltSetupMinionJob implements Job {
                 logger.debug(String.format("cannot get md5 of minion configuration file, need to re-setup minion"));
             } else {
                 String dstMd5 = ret.getStdout().split(" ")[0].trim();
-                FileInputStream fis = new FileInputStream(tmpt);
+                fis = new FileInputStream(tmpt);
                 String srcMd5 = DigestUtils.md5Hex(fis);
                 deployMinion = !srcMd5.equals(dstMd5);
                 if (deployMinion) {
@@ -146,6 +147,13 @@ public class SaltSetupMinionJob implements Job {
             }
             if (ssh != null) {
                 ssh.close();
+            }
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    logger.warn(String.format("FileInputStream close IOException：%s", e.getMessage()));
+                }
             }
         }
     }

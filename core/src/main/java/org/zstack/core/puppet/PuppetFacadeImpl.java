@@ -85,15 +85,37 @@ public class PuppetFacadeImpl extends AbstractService implements PuppetFacade {
 
         Map<String, String> srcMd5sum = new HashMap<String, String>(srcFiles.size());
         for (File f : srcFiles) {
-            FileInputStream fis = new FileInputStream(f);
-            String md5 = DigestUtils.md5Hex(fis);
-            srcMd5sum.put(f.getName(), md5);
+            FileInputStream fis = null;
+            try {
+                fis = new FileInputStream(f);
+                String md5 = DigestUtils.md5Hex(fis);
+                srcMd5sum.put(f.getName(), md5);
+            } finally {
+                if (fis != null) {
+                    try {
+                        fis.close();
+                    } catch (IOException e) {
+                        logger.warn(String.format("FileInputStream close IOException：%s", e.getMessage()));
+                    }
+                }
+            }
         }
         Map<String, String> destMd5sum = new HashMap<String, String>(destFiles.size());
         for (File f : destFiles) {
-            FileInputStream fis = new FileInputStream(f);
-            String md5 = DigestUtils.md5Hex(fis);
-            destMd5sum.put(f.getName(), md5);
+            FileInputStream fis = null;
+            try {
+                fis = new FileInputStream(f);
+                String md5 = DigestUtils.md5Hex(fis);
+                destMd5sum.put(f.getName(), md5);
+            } finally {
+                if (fis != null) {
+                    try {
+                        fis.close();
+                    } catch (IOException e) {
+                        logger.warn(String.format("FileInputStream close IOException：%s", e.getMessage()));
+                    }
+                }
+            }
         }
         for (Map.Entry<String, String> srcEntry : srcMd5sum.entrySet()) {
             String name = srcEntry.getKey();
