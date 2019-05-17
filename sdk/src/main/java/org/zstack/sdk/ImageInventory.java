@@ -164,4 +164,11 @@ public class ImageInventory  {
         return this.backupStorageRefs;
     }
 
+    public java.util.List systemTags;
+    public void setSystemTags(java.util.List systemTags) {
+        this.systemTags = systemTags;
+    }
+    public java.util.List getSystemTags() {
+        return this.systemTags;
+    }
 }
