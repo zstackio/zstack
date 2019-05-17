@@ -28,6 +28,9 @@ public class GetUsbDeviceCandidatesForAttachingVmAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vmInstanceUuid;
 
+    @Param(required = false, validValues = {"PassThrough","Redirect"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String attachType = "PassThrough";
+
     @Param(required = false)
     public java.util.List systemTags;
 

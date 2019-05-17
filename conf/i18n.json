@@ -12733,9 +12733,9 @@
     "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/usbDevice/UsbDeviceManager.java"
   },
   {
-    "raw": "cannot migrate vm[uuid:%s] because there are usb devices attached",
-    "en_US": "cannot migrate vm[uuid:{0}] because there are usb devices attached",
-    "zh_CN": "不能迁移虚拟机[uuid:{0}]，因为虚拟机绑定了USB设备",
+    "raw": "cannot migrate vm[uuid:%s] because there are usb devices attached by passthrough",
+    "en_US": "cannot migrate vm[uuid:{0}] because there are usb devices attached by passthrough",
+    "zh_CN": "不能迁移虚拟机[uuid:{0}]，因为虚拟机通过直连的方式绑定了USB设备",
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
