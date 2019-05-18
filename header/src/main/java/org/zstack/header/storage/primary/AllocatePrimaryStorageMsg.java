@@ -15,6 +15,7 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private List<String> possiblePrimaryStorageTypes;
     private List<String> excludePrimaryStorageTypes;
 
+    private Long totalSize = null;
     private long size;
     private boolean dryRun;
     private List<String> tags;
@@ -191,5 +192,13 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
 
     public void setBackupStorageUuid(String backupStorageUuid) {
         this.backupStorageUuid = backupStorageUuid;
+    }
+
+    public Long getTotalSize() {
+        return totalSize;
+    }
+
+    public void setTotalSize(Long totalSize) {
+        this.totalSize = totalSize;
     }
 }

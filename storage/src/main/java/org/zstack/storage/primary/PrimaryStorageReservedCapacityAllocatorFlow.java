@@ -29,6 +29,8 @@ public class PrimaryStorageReservedCapacityAllocatorFlow extends NoRollbackFlow 
     protected ErrorFacade errf;
     @Autowired
     protected PrimaryStorageOverProvisioningManager psRatioMgr;
+    @Autowired
+    protected PrimaryStoragePhysicalCapacityManager physicalCapacityMgr;
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -40,7 +42,11 @@ public class PrimaryStorageReservedCapacityAllocatorFlow extends NoRollbackFlow 
         List<PrimaryStorageVO> ret = new ArrayList<PrimaryStorageVO>(candidates.size());
         for (PrimaryStorageVO vo : candidates) {
             if (vo.getCapacity().getAvailableCapacity() -
-                    psRatioMgr.calculateByRatio(vo.getUuid(), spec.getSize()) >= reservedCapacity) {
+                    psRatioMgr.calculateByRatio(vo.getUuid(), spec.getSize()) >= reservedCapacity
+                    && physicalCapacityMgr.checkCapacityByRatio(vo.getUuid(), vo.getCapacity().getTotalPhysicalCapacity(),
+                    vo.getCapacity().getAvailablePhysicalCapacity())
+                    && physicalCapacityMgr.checkRequiredCapacityByRatio(vo.getUuid(), vo.getCapacity().getTotalPhysicalCapacity(),
+                    spec.getTotalSize() == null ? spec.getSize() : spec.getTotalSize())) {
                 ret.add(vo);
             }
         }

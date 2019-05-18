@@ -22,5 +22,7 @@ public interface PrimaryStoragePhysicalCapacityManager {
 
     boolean checkCapacityByRatio(String psUuid, long totalPhysicalCapacity, long totalAvailableCapacity);
 
+    boolean checkRequiredCapacityByRatio(String psUuid, long totalPhysicalCapacity, long requiredCapacity);
+
     boolean checkCapacityByRatio(String psUuid, PrimaryStorageCapacityVO cap);
 }
