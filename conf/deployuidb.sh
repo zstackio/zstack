@@ -40,9 +40,7 @@ fi
 
 hostname=`hostname`
 mysql --user=$user --password=$password --host=$host --port=$port << EOF
-grant usage on *.* to 'zstack_ui'@'localhost';
-grant usage on *.* to 'zstack_ui'@'%';
-drop user zstack_ui;
+drop user if exists zstack_ui;
 create user 'zstack_ui' identified by "$zstack_ui_db_password";
 grant all privileges on zstack_ui.* to zstack_ui@'localhost' identified by "$zstack_ui_db_password";
 grant all privileges on zstack_ui.* to zstack_ui@'%' identified by "$zstack_ui_db_password";
