@@ -50,7 +50,9 @@ hostname=`hostname`
 
 [ -z $zstack_user_password ] && zstack_user_password=''
 mysql --user=$user --password=$password --host=$host --port=$port << EOF
-drop user if exists zstack;
+grant usage on *.* to 'zstack'@'localhost';
+grant usage on *.* to 'zstack'@'%';
+drop user zstack;
 create user 'zstack' identified by "$zstack_user_password";
 grant all privileges on zstack.* to zstack@'localhost' identified by "$zstack_user_password";
 grant all privileges on zstack.* to zstack@'%' identified by "$zstack_user_password";
