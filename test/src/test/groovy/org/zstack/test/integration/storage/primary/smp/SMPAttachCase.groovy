@@ -209,7 +209,7 @@ class SMPAttachCase extends SubCase{
         // 1. cluster has no host or no Connected host
         // 2. attach smp
         // 3. add host will success
-        // todo is in private void handle(final InitKvmHostMsg msg) {
+        // 4. reconnet will fail
         env.simulator(KvmBackend.CONNECT_PATH) {
             def rsp = new KvmBackend.ConnectRsp()
             rsp.isFirst = true
@@ -221,11 +221,17 @@ class SMPAttachCase extends SubCase{
             deleteCalled = true
             return new KvmBackend.AgentRsp()
         }
-        reconnectHost {
-            uuid = host1.uuid
+
+        expect(AssertionError.class) {
+            reconnectHost {
+                uuid = host1.uuid
+            }
         }
 
-        assert !deleteCalled
+        retryInSecs {
+            assert deleteCalled
+        }
+
     }
 
     void testReconnectSmpWhenNoHostInCluster(){

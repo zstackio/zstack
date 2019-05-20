@@ -6,6 +6,7 @@ import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
@@ -15,7 +16,10 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.cluster.ClusterConnectionStatus;
-import org.zstack.header.core.*;
+import org.zstack.header.core.AsyncLatch;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
@@ -23,8 +27,9 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.*;
+import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
@@ -36,7 +41,10 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeConstant;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.*;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
@@ -55,6 +63,7 @@ import javax.persistence.Tuple;
 import java.io.File;
 import java.util.*;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
 
@@ -1690,25 +1699,49 @@ public class KvmBackend extends HypervisorBackend {
 
     private void handle(final InitKvmHostMsg msg) {
         final InitKvmHostReply reply = new InitKvmHostReply();
-        connect(msg.getHostUuid(), new ReturnValueCompletion<Boolean>(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success(Boolean isFirst) {
-                if(isFirst){
-                    logger.warn(String.format("host[uuid:%s] might mount storage which is different from SMP[uuid:%s], please check it",
-                            msg.getHostUuid(), msg.getPrimaryStorageUuid()));
-                    /* TODO: find a way to confirm it, and do not block add host
-                    reply.setError(argerr("host[uuid:%s] might mount storage which is different from SMP[uuid:%s], please check it",
-                            msg.getHostUuid(), msg.getPrimaryStorageUuid()));
-                    cleanInvalidIdFile(asList(msg.getHostUuid()));
-                    */
-                }
-                bus.reply(msg, reply);
+            public String getSyncSignature() {
+                return getName();
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
+            public void run(SyncTaskChain chain) {
+                boolean isFirstAccessPS =
+                        (long) SQL.New("select count(host) from HostVO host, PrimaryStorageClusterRefVO cref " +
+                                "where cref.primaryStorageUuid = :psUuid " +
+                                "and host.uuid != :hostUuid " +
+                                "and host.clusterUuid = cref.clusterUuid")
+                                .param("psUuid", msg.getPrimaryStorageUuid())
+                                .param("hostUuid", msg.getHostUuid())
+                                .find() == 0;
+                connect(msg.getHostUuid(), new ReturnValueCompletion<Boolean>(msg, chain) {
+                    @Override
+                    public void success(Boolean isFirst) {
+                        if (isFirst && !isFirstAccessPS) {
+                            logger.warn(String.format("host[uuid:%s] might mount storage which is different from SMP[uuid:%s], please check it",
+                                    msg.getHostUuid(), msg.getPrimaryStorageUuid()));
+                            //TODO: find a way to confirm it, and do not block add host
+                            reply.setError(argerr("host[uuid:%s] might mount storage which is different from SMP[uuid:%s], please check it", msg.getHostUuid(), msg.getPrimaryStorageUuid()));
+                            cleanInvalidIdFile(Collections.singletonList(msg.getHostUuid()));
+
+                        }
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("check validity of mounting SMP[uuid:%s] to host[uuid:%s]",msg.getPrimaryStorageUuid(), msg.getHostUuid());
             }
         });
     }
