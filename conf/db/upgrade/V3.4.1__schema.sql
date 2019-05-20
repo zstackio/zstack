@@ -2,14 +2,16 @@ CREATE TABLE `DataVolumeUsageExtensionVO` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `resourcePriceUserConfig` varchar(1024) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `id` (`id`)
+  UNIQUE KEY `id` (`id`),
+  CONSTRAINT `fkDataVolumeUsageExtensionVODataVolumeUsageVO` FOREIGN KEY (`id`) REFERENCES `DataVolumeUsageVO` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `RootVolumeUsageExtensionVO` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `resourcePriceUserConfig` varchar(1024) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `id` (`id`)
+  UNIQUE KEY `id` (`id`),
+  CONSTRAINT `fkRootVolumeUsageExtensionVORootVolumeUsageVO` FOREIGN KEY (`id`) REFERENCES `RootVolumeUsageVO` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `BillingVO` (
