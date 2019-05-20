@@ -795,32 +795,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(GetPrimaryStorageFolderListMsg msg) {
-        GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
-        String hostUuid = getAvailableHostUuidForOperation();
-        if (hostUuid == null) {
-            bus.reply(msg, reply);
-            return;
-        }
-        String type = Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).select(HostVO_.hypervisorType).findValue();
-        NfsPrimaryStorageBackend bkd = getBackend(HypervisorType.valueOf(type));
-
-        bkd.list(getSelfInventory(), msg.getPath(), new ReturnValueCompletion<List<String>>(msg) {
-            @Override
-            public void success(List<String> paths) {
-                reply.setFolders(paths);
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
-    }
-
-    @Override
     protected void handle(InstantiateVolumeOnPrimaryStorageMsg msg) {
         if (msg instanceof InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg) {
             handle((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg) msg);

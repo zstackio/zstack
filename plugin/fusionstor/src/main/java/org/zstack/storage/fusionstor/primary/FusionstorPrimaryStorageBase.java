@@ -1081,12 +1081,6 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
-    @Override
-    protected void handle(final GetPrimaryStorageFolderListMsg msg) {
-        GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
-        bus.reply(msg, reply);
-    }
-
     class DownloadToCache {
         ImageSpec image;
 

@@ -2150,28 +2150,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(GetPrimaryStorageFolderListMsg msg) {
-        DebugUtils.Assert(msg.getHostUuid() != null, "hostUuid cannot be null here!");
-        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
-        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, new ReturnValueCompletion<GetPrimaryStorageFolderListReply>(msg) {
-            GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
-
-            @Override
-            public void success(GetPrimaryStorageFolderListReply returnValue) {
-                reply = returnValue;
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
-    }
-
-    @Override
     protected void handle(DownloadVolumeTemplateToPrimaryStorageMsg msg) {
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);

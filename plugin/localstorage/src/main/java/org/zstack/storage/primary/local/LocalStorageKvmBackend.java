@@ -678,7 +678,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/localstorage/volume/createvolumefromcache";
     public static final String DELETE_BITS_PATH = "/localstorage/delete";
     public static final String DELETE_DIR_PATH = "/localstorage/deletedir";
-    public static final String GET_LIST_PATH = "/localstorage/list";
     public static final String CHECK_BITS_PATH = "/localstorage/checkbits";
     public static final String CREATE_TEMPLATE_FROM_VOLUME = "/localstorage/volume/createtemplate";
     public static final String REVERT_SNAPSHOT_PATH = "/localstorage/snapshot/revert";
@@ -1420,24 +1419,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         });
     }
 
-    public void listPath(final String path, final String hostUuid, final ReturnValueCompletion<List<String>> completion) {
-        ListPathCmd cmd = new ListPathCmd();
-        cmd.setPath(path);
-        cmd.setHostUuid(hostUuid);
-
-        httpCall(GET_LIST_PATH, hostUuid, cmd, ListPathRsp.class, new ReturnValueCompletion<ListPathRsp>(completion) {
-            @Override
-            public void success(ListPathRsp returnValue) {
-                completion.success(returnValue.getPaths());
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
-            }
-        });
-    }
-
     @Override
     void handle(final DeleteVolumeOnPrimaryStorageMsg msg, final ReturnValueCompletion<DeleteVolumeOnPrimaryStorageReply> completion) {
         final DeleteVolumeOnPrimaryStorageReply dreply = new DeleteVolumeOnPrimaryStorageReply();
@@ -1507,23 +1488,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void success() {
                 DeleteBitsOnPrimaryStorageReply reply = new DeleteBitsOnPrimaryStorageReply();
-                completion.success(reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
-            }
-        });
-    }
-
-    @Override
-    void handle(GetPrimaryStorageFolderListMsg msg, ReturnValueCompletion<GetPrimaryStorageFolderListReply> completion) {
-        listPath(msg.getPath(), msg.getHostUuid(), new ReturnValueCompletion<List<String>>(completion) {
-            @Override
-            public void success(List<String> returnValue) {
-                GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
-                reply.setFolders(returnValue);
                 completion.success(reply);
             }
 
