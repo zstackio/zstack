@@ -4,9 +4,9 @@ package org.zstack.header.storage.primary;
  * Created by lining on 2019/4/24.
  */
 public enum PrimaryStorageAllocateConfigType {
-    LOCAL(PrimaryStorageAllocateConfig.class, "local"),
-    NFS(PrimaryStorageAllocateConfig.class, "nfs"),
-    CEPH(CephPrimaryStorageAllocateConfig.class, "ceph");
+    LOCAL(DefaultPrimaryStorageAllocateConfig.class, "LocalStorage"),
+    NFS(DefaultPrimaryStorageAllocateConfig.class, "NFS"),
+    CEPH(CephPrimaryStorageAllocateConfig.class, "Ceph");
 
     private Class<? extends PrimaryStorageAllocateConfig> type;
     private String category;
@@ -34,10 +34,11 @@ public enum PrimaryStorageAllocateConfigType {
 
     public static PrimaryStorageAllocateConfigType getByProductCategory(String category){
         for(PrimaryStorageAllocateConfigType t : values()){
-            if(t.category.equals(category)){
+            if(t.category.equalsIgnoreCase(category)){
                 return t;
             }
         }
-        return null;
+
+        throw new IllegalArgumentException(String.format("primaryStorage type[%s] not support", category));
     }
 }

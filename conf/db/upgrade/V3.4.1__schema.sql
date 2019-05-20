@@ -1,28 +1,18 @@
-CREATE INDEX idxVmUsageVOvmUuid ON VmUsageVO(accountUuid, dateInLong, vmUuid);
-CREATE INDEX idxVmUsageVOaccountUuidVmUuid ON VmUsageVO(accountUuid, vmUuid);
+CREATE TABLE `DataVolumeUsageExtensionVO` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `resourcePriceUserConfig` varchar(1024) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  CONSTRAINT `fkDataVolumeUsageExtensionVODataVolumeUsageVO` FOREIGN KEY (`id`) REFERENCES `DataVolumeUsageVO` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE INDEX idxRootVolumeUsageVOvolumeUuid ON RootVolumeUsageVO(accountUuid, dateInLong, volumeUuid);
-CREATE INDEX idxRootVolumeUsageVOaccountUuidVolumeUuid ON RootVolumeUsageVO(accountUuid, volumeUuid);
-
-CREATE INDEX idxDataVolumeUsageVOvolumeUuid ON DataVolumeUsageVO(accountUuid, dateInLong, volumeUuid);
-CREATE INDEX idxDataVolumeUsageVOaccountUuidVolumeUuid ON DataVolumeUsageVO(accountUuid, volumeUuid);
-
-CREATE INDEX idxPciDeviceUsageVOpciDeviceUuid ON PciDeviceUsageVO(accountUuid, dateInLong, pciDeviceUuid);
-CREATE INDEX idxPciDeviceUsageVOaccountUuidPciDeviceUuid ON PciDeviceUsageVO(accountUuid, pciDeviceUuid);
-
-CREATE INDEX idxPubIpVipBandwidthUsageVOvipUuid ON PubIpVipBandwidthUsageVO(accountUuid, dateInLong, vipUuid);
-CREATE INDEX idxPubIpVipBandwidthUsageVOaccountUuidVipUuid ON PubIpVipBandwidthUsageVO(accountUuid, vipUuid);
-
-CREATE INDEX idxPubIpVmNicBandwidthUsageVOvmNicUuid ON PubIpVmNicBandwidthUsageVO(accountUuid, dateInLong, vmNicUuid);
-CREATE INDEX idxPubIpVmNicBandwidthUsageVOaccountUuidVmNicUuid ON PubIpVmNicBandwidthUsageVO(accountUuid, vmNicUuid);
-
-ALTER TABLE VmUsageVO add column resourcePriceUserConfig varchar(1024) DEFAULT NULL;
-ALTER TABLE RootVolumeUsageVO add column resourcePriceUserConfig varchar(1024) DEFAULT NULL;
-ALTER TABLE DataVolumeUsageVO add column resourcePriceUserConfig varchar(1024) DEFAULT NULL;
-ALTER TABLE PciDeviceUsageVO add column resourcePriceUserConfig varchar(1024) DEFAULT NULL;
-ALTER TABLE PubIpVipBandwidthUsageVO add column resourcePriceUserConfig varchar(1024) DEFAULT NULL;
-ALTER TABLE PubIpVmNicBandwidthUsageVO add column resourcePriceUserConfig varchar(1024) DEFAULT NULL;
-ALTER TABLE SnapShotUsageVO add column resourcePriceUserConfig varchar(1024) DEFAULT NULL;
+CREATE TABLE `RootVolumeUsageExtensionVO` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `resourcePriceUserConfig` varchar(1024) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`),
+  CONSTRAINT `fkRootVolumeUsageExtensionVORootVolumeUsageVO` FOREIGN KEY (`id`) REFERENCES `RootVolumeUsageVO` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `BillingVO` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,

@@ -312,8 +312,11 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             } else {
                 vo.setName(msg.getJobName());
             }
+
+            String apiId = ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API) != null ?
+                    ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API) : msg.getJobRequestUuid();
             vo.setDescription(msg.getDescription());
-            vo.setApiId(ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API));
+            vo.setApiId(apiId);
             vo.setJobName(msg.getJobName());
             vo.setJobData(msg.getJobData());
             vo.setState(LongJobState.Waiting);
@@ -373,8 +376,10 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                     }
                 });
 
-                exts.forEach(ext -> ext.afterJobFinished(job, vo, evt));
-                Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> it.apply(evt));
+                if (evt != null) {
+                    exts.forEach(ext -> ext.afterJobFinished(job, vo, evt));
+                    Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> it.apply(evt));
+                }
 
                 logger.info(String.format("successfully run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
             }
