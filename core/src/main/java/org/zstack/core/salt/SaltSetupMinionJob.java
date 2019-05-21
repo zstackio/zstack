@@ -92,7 +92,7 @@ public class SaltSetupMinionJob implements Job {
                 String dstPath = String.format("/tmp/%s.sh", Platform.getUuid());
                 String srcPath = PathUtil.findFileOnClassPath(SALT_BOOTSTRAP, true).getAbsolutePath();
                 logger.debug(String.format("salt-minion is not found on system[%s], about to install a new one", targetIp));
-                ret = ssh.reset().scp(srcPath, dstPath).command(String.format("sh %s ; ret=$?; rm -f %s; exit $ret", dstPath, dstPath)).run();
+                ret = ssh.reset().scpUpload(srcPath, dstPath).command(String.format("sh %s ; ret=$?; rm -f %s; exit $ret", dstPath, dstPath)).run();
                 ret.raiseExceptionIfFailed();
                 logger.debug(String.format("successfully installed salt-minion on system[%s]", targetIp));
             } else {
@@ -124,7 +124,7 @@ public class SaltSetupMinionJob implements Job {
                 if (cleanMasterKey) {
                     ssh.command("rm -f /etc/salt/pki/minion/minion_master.pub");
                 }
-                ret = ssh.scp(tmpt.getAbsolutePath(), minionConfPath)
+                ret = ssh.scpUpload(tmpt.getAbsolutePath(), minionConfPath)
                         .command("service salt-minion restart").run();
             } else {
                 ret = ssh.command("service salt-minion status | grep -- 'running' || service salt-minion start").run();

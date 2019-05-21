@@ -23,7 +23,7 @@ public class TestSshPut {
             destDirFile.mkdirs();
             File tmp = File.createTempFile("TestSshPut", "zstack");
             new Ssh().setHostname("localhost").setUsername("root").setPassword("password")
-                    .scp(tmp.getAbsolutePath(), destPath).runErrorByException();
+                    .scpUpload(tmp.getAbsolutePath(), destPath).runErrorByException();
             File destFile = new File(PathUtil.join(destPath, tmp.getName()));
             Assert.assertTrue(destFile.exists());
 
@@ -32,7 +32,7 @@ public class TestSshPut {
             srcDirFile.delete();
             srcDirFile.mkdirs();
             new Ssh().setHostname("localhost").setUsername("root").setPassword("password")
-                    .scp(srcDir, destPath).runErrorByException();
+                    .scpUpload(srcDir, destPath).runErrorByException();
             File destDir = new File(PathUtil.join(destPath, "testDir"));
             logger.debug(destDir.getAbsolutePath());
             Assert.assertTrue(destDir.isDirectory());

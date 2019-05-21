@@ -32,10 +32,12 @@ public class SourceClassMap {
 			put("org.zstack.autoscaling.template.AutoScalingVmTemplateInventory", "org.zstack.sdk.AutoScalingVmTemplateInventory");
 			put("org.zstack.billing.DataVolumeSpending", "org.zstack.sdk.DataVolumeSpending");
 			put("org.zstack.billing.DataVolumeSpendingInventory", "org.zstack.sdk.DataVolumeSpendingInventory");
+			put("org.zstack.billing.Pagination", "org.zstack.sdk.Pagination");
 			put("org.zstack.billing.PciDeviceSpending", "org.zstack.sdk.PciDeviceSpending");
 			put("org.zstack.billing.PciDeviceSpendingInventory", "org.zstack.sdk.PciDeviceSpendingInventory");
 			put("org.zstack.billing.PriceInventory", "org.zstack.sdk.PriceInventory");
 			put("org.zstack.billing.PricePciDeviceOfferingRefInventory", "org.zstack.sdk.PricePciDeviceOfferingRefInventory");
+			put("org.zstack.billing.ResourceSpending", "org.zstack.sdk.ResourceSpending");
 			put("org.zstack.billing.RootVolumeSpending", "org.zstack.sdk.RootVolumeSpending");
 			put("org.zstack.billing.RootVolumeSpendingInventory", "org.zstack.sdk.RootVolumeSpendingInventory");
 			put("org.zstack.billing.SnapShotSpendingInventory", "org.zstack.sdk.SnapShotSpendingInventory");
@@ -52,8 +54,6 @@ public class SourceClassMap {
 			put("org.zstack.cloudformation.template.struct.ResourceStruct", "org.zstack.sdk.ResourceStruct");
 			put("org.zstack.cloudformation.template.struct.ResourceType", "org.zstack.sdk.ResourceType");
 			put("org.zstack.core.config.GlobalConfigInventory", "org.zstack.sdk.GlobalConfigInventory");
-			put("org.zstack.core.config.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct", "org.zstack.sdk.ResourceBindableConfigStruct");
-			put("org.zstack.core.config.resourceconfig.ResourceConfigInventory", "org.zstack.sdk.ResourceConfigInventory");
 			put("org.zstack.core.errorcode.ElaborationCategory", "org.zstack.sdk.ElaborationCategory");
 			put("org.zstack.core.errorcode.ElaborationCheckResult", "org.zstack.sdk.ElaborationCheckResult");
 			put("org.zstack.core.errorcode.ElaborationContent", "org.zstack.sdk.ElaborationContent");
@@ -168,6 +168,7 @@ public class SourceClassMap {
 			put("org.zstack.header.scheduler.SchedulerJobGroupInventory", "org.zstack.sdk.SchedulerJobGroupInventory");
 			put("org.zstack.header.scheduler.SchedulerJobGroupJobRefInventory", "org.zstack.sdk.SchedulerJobGroupJobRefInventory");
 			put("org.zstack.header.scheduler.SchedulerJobGroupSchedulerTriggerRefInventory", "org.zstack.sdk.SchedulerJobGroupSchedulerTriggerRefInventory");
+			put("org.zstack.header.scheduler.SchedulerJobHistoryInventory", "org.zstack.sdk.SchedulerJobHistoryInventory");
 			put("org.zstack.header.scheduler.SchedulerJobInventory", "org.zstack.sdk.SchedulerJobInventory");
 			put("org.zstack.header.scheduler.SchedulerJobSchedulerTriggerInventory", "org.zstack.sdk.SchedulerJobSchedulerTriggerInventory");
 			put("org.zstack.header.scheduler.SchedulerTriggerInventory", "org.zstack.sdk.SchedulerTriggerInventory");
@@ -284,6 +285,8 @@ public class SourceClassMap {
 			put("org.zstack.pciDevice.PciDeviceState", "org.zstack.sdk.PciDeviceState");
 			put("org.zstack.pciDevice.PciDeviceStatus", "org.zstack.sdk.PciDeviceStatus");
 			put("org.zstack.pciDevice.PciDeviceType", "org.zstack.sdk.PciDeviceType");
+			put("org.zstack.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct", "org.zstack.sdk.ResourceBindableConfigStruct");
+			put("org.zstack.resourceconfig.ResourceConfigInventory", "org.zstack.sdk.ResourceConfigInventory");
 			put("org.zstack.sns.SNSApplicationEndpointInventory", "org.zstack.sdk.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sns.SNSApplicationPlatformInventory", "org.zstack.sdk.sns.SNSApplicationPlatformInventory");
 			put("org.zstack.sns.SNSSubscriberInventory", "org.zstack.sdk.sns.SNSSubscriberInventory");
@@ -545,6 +548,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.NetworkServiceProviderInventory", "org.zstack.header.network.service.NetworkServiceProviderInventory");
 			put("org.zstack.sdk.OssBucketInventory", "org.zstack.header.aliyun.oss.OssBucketInventory");
 			put("org.zstack.sdk.OssBucketProperty", "org.zstack.header.aliyun.oss.OssBucketProperty");
+			put("org.zstack.sdk.Pagination", "org.zstack.billing.Pagination");
 			put("org.zstack.sdk.PciDeviceInventory", "org.zstack.pciDevice.PciDeviceInventory");
 			put("org.zstack.sdk.PciDeviceMetaData", "org.zstack.pciDevice.PciDeviceMetaData");
 			put("org.zstack.sdk.PciDeviceMetaDataEntry", "org.zstack.pciDevice.PciDeviceMetaDataEntry");
@@ -576,9 +580,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.QuotaInventory", "org.zstack.header.identity.QuotaInventory");
 			put("org.zstack.sdk.QuotaUsage", "org.zstack.header.identity.Quota$QuotaUsage");
 			put("org.zstack.sdk.RemovalInstanceRuleInventory", "org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory");
-			put("org.zstack.sdk.ResourceBindableConfigStruct", "org.zstack.core.config.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct");
-			put("org.zstack.sdk.ResourceConfigInventory", "org.zstack.core.config.resourceconfig.ResourceConfigInventory");
+			put("org.zstack.sdk.ResourceBindableConfigStruct", "org.zstack.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct");
+			put("org.zstack.sdk.ResourceConfigInventory", "org.zstack.resourceconfig.ResourceConfigInventory");
 			put("org.zstack.sdk.ResourceInventory", "org.zstack.header.vo.ResourceInventory");
+			put("org.zstack.sdk.ResourceSpending", "org.zstack.billing.ResourceSpending");
 			put("org.zstack.sdk.ResourceStackInventory", "org.zstack.header.cloudformation.ResourceStackInventory");
 			put("org.zstack.sdk.ResourceStruct", "org.zstack.cloudformation.template.struct.ResourceStruct");
 			put("org.zstack.sdk.ResourceType", "org.zstack.cloudformation.template.struct.ResourceType");
@@ -588,6 +593,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SchedulerJobGroupInventory", "org.zstack.header.scheduler.SchedulerJobGroupInventory");
 			put("org.zstack.sdk.SchedulerJobGroupJobRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupJobRefInventory");
 			put("org.zstack.sdk.SchedulerJobGroupSchedulerTriggerRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupSchedulerTriggerRefInventory");
+			put("org.zstack.sdk.SchedulerJobHistoryInventory", "org.zstack.header.scheduler.SchedulerJobHistoryInventory");
 			put("org.zstack.sdk.SchedulerJobInventory", "org.zstack.header.scheduler.SchedulerJobInventory");
 			put("org.zstack.sdk.SchedulerJobSchedulerTriggerInventory", "org.zstack.header.scheduler.SchedulerJobSchedulerTriggerInventory");
 			put("org.zstack.sdk.SchedulerTriggerInventory", "org.zstack.header.scheduler.SchedulerTriggerInventory");

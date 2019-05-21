@@ -498,7 +498,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                     try {
                         ext.tagDeleted(tag);
                     } catch (Exception e) {
-                        logger.warn(String.format("unhandled exception when calling %s", ext.getClass()));
+                        logger.warn(String.format("unhandled exception when calling %s", ext.getClass()), e);
                     }
                 }
             }
@@ -659,6 +659,13 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             resourceDeletionOperators.put(resourceType, operators);
         }
         operators.add(operator);
+    }
+
+    public List<String> filterSystemTags(List<String> systemTags, String resourceType) {
+        List<SystemTag> tags = resourceTypeSystemTagMap.get(resourceType);
+        return systemTags.stream()
+                .filter(it -> tags.stream().anyMatch(sys -> sys.isMatch(it)))
+                .collect(Collectors.toList());
     }
 
     @Override
