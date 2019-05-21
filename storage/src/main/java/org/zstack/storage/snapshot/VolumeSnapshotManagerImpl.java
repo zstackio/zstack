@@ -28,6 +28,7 @@ import org.zstack.header.message.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
@@ -39,6 +40,7 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.storage.volume.VolumeJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.storage.volume.VolumeSystemTags;
+import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
@@ -81,6 +83,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     private ErrorFacade errf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private TagManager tagMgr;
 
     private void passThrough(VolumeSnapshotMessage msg) {
         VolumeSnapshotVO vo = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);
@@ -799,6 +803,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                             svo.setFormat(vol.getFormat());
                         }
                         svo = dbf.updateAndRefresh(svo);
+                        tagMgr.createNonInherentSystemTag(svo.getUuid(),
+                                VolumeSnapshotSystemTags.VOLUMESNAPSHOT_CREATED_BY_SYSTEM.getTagFormat(),
+                                VolumeSnapshotVO.class.getSimpleName());
                         new FireSnapShotCanonicalEvent().
                                 fireSnapShotStatusChangedEvent(svo.getStatus(), VolumeSnapshotInventory.valueOf(svo));
                         ret.setInventory(VolumeSnapshotInventory.valueOf(svo));

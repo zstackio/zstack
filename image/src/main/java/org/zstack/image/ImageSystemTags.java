@@ -32,4 +32,8 @@ public class ImageSystemTags {
 
     public static String BOOT_MODE_TOKEN = "bootMode";
     public static PatternedSystemTag BOOT_MODE = new PatternedSystemTag(String.format("bootMode::{%s}", BOOT_MODE_TOKEN), ImageVO.class);
+
+    public static String IMAGE_CREATED_BY_SYSTEM_TOKEN = "CreatedBySystem";
+    public static PatternedSystemTag IMAGE_CREATED_BY_SYSTEM =
+            new PatternedSystemTag(String.format("%s", IMAGE_CREATED_BY_SYSTEM_TOKEN), ImageVO.class);
 }
