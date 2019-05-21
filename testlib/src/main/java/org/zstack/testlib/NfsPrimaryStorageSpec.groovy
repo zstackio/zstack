@@ -84,10 +84,6 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new NfsPrimaryStorageKVMBackendCommands.DeleteResponse()
             }
 
-            simulator(NfsPrimaryStorageKVMBackend.LIST_PATH) {
-                return new NfsPrimaryStorageKVMBackendCommands.ListDirectionResponse()
-            }
-
             simulator(NfsPrimaryStorageKVMBackend.MOVE_BITS_PATH) {
                 return new NfsPrimaryStorageKVMBackendCommands.MoveBitsRsp()
             }

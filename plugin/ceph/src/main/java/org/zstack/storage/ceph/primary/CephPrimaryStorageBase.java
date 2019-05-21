@@ -2172,12 +2172,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final GetPrimaryStorageFolderListMsg msg) {
-        GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
-        bus.reply(msg, reply);
-    }
-
-    @Override
     protected void handle(DownloadVolumeTemplateToPrimaryStorageMsg msg) {
         final DownloadVolumeTemplateToPrimaryStorageReply reply = new DownloadVolumeTemplateToPrimaryStorageReply();
         DownloadToCache downloadToCache = new DownloadToCache();

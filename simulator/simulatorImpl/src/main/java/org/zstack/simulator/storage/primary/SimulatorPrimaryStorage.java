@@ -89,12 +89,6 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(final GetPrimaryStorageFolderListMsg msg) {
-        GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
-        bus.reply(msg, reply);
-    }
-
-    @Override
     protected void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
         bus.dealWithUnknownMessage(msg);
     }

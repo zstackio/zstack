@@ -105,32 +105,6 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void handle(GetPrimaryStorageFolderListMsg msg) {
-        GetPrimaryStorageFolderListReply reply = new GetPrimaryStorageFolderListReply();
-        String hostUuid = getAvailableHostUuidForOperation();
-        if (hostUuid == null) {
-            bus.reply(msg, reply);
-            return;
-        }
-        String type = Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).select(HostVO_.hypervisorType).findValue();
-        HypervisorFactory f = getHypervisorFactoryByHypervisorType(type);
-        final HypervisorBackend bkd = f.getHypervisorBackend(self);
-
-        bkd.handle(msg, new ReturnValueCompletion<GetPrimaryStorageFolderListReply>(msg) {
-            @Override
-            public void success(GetPrimaryStorageFolderListReply reply) {
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
-    }
-
-    @Override
     protected void handle(DownloadVolumeTemplateToPrimaryStorageMsg msg) {
         HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getTemplateSpec().getInventory().getFormat());
         HypervisorFactory f = getHypervisorFactoryByHypervisorType(type.toString());

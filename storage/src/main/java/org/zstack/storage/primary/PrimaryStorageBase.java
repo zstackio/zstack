@@ -47,8 +47,6 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.storage.snapshot.VolumeSnapshot;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -114,8 +112,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     }
 
     protected abstract void handle(InstantiateVolumeOnPrimaryStorageMsg msg);
-
-    protected abstract void handle(GetPrimaryStorageFolderListMsg msg);
 
     protected abstract void handle(CheckVolumeSnapshotsOnPrimaryStorageMsg msg);
 
@@ -340,8 +336,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((UpdatePrimaryStorageHostStatusMsg) msg);
         } else if (msg instanceof GetInstallPathForDataVolumeDownloadMsg) {
             handle((GetInstallPathForDataVolumeDownloadMsg) msg);
-        } else if (msg instanceof GetPrimaryStorageFolderListMsg) {
-            handle((GetPrimaryStorageFolderListMsg) msg);
         } else if (msg instanceof AskInstallPathForNewSnapshotMsg) {
             handle((AskInstallPathForNewSnapshotMsg) msg);
         } else if ((msg instanceof SyncPrimaryStorageCapacityMsg)) {
