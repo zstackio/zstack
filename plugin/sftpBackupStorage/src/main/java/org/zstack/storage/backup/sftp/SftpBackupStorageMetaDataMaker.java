@@ -99,7 +99,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
     private void setAllImagesSystemTags(List<ImageInventory> imageInventories) {
         //Load all systemTags
-        if (imageInventories == null) {
+        if (imageInventories == null || imageInventories.size() == 0) {
             return;
         }
         List<SystemTagVO> allSystemTags = Q.New(SystemTagVO.class)

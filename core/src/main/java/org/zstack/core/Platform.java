@@ -755,13 +755,15 @@ public class Platform {
 
     public static ErrorCode err(Enum errCode, ErrorCode cause, String fmt, Object...args) {
         ErrorFacade errf = getComponentLoader().getComponent(ErrorFacade.class);
-        String details;
-        try {
-            details = String.format(fmt, args);
-        } catch (Exception e) {
-            logger.warn("exception happened when format error message");
-            logger.warn(e.getMessage());
-            details = fmt;
+        String details = null;
+        if (fmt != null) {
+            try {
+                details = String.format(fmt, args);
+            } catch (Exception e) {
+                logger.warn("exception happened when format error message");
+                logger.warn(e.getMessage());
+                details = fmt;
+            }
         }
         ErrorCode result = errf.instantiateErrorCode(errCode, details, cause);
         if (CoreGlobalProperty.ENABLE_ELABORATION) {

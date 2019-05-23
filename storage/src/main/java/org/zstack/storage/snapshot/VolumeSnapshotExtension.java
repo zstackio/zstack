@@ -16,6 +16,7 @@ import org.zstack.header.volume.VolumeConstant;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 
@@ -29,26 +30,48 @@ public class VolumeSnapshotExtension implements VolumeSnapshotCheckExtensionPoin
     private DatabaseFacade dbf;
 
     @Override
-    public void checkBeforeDeleteSnapshot(VolumeSnapshotInventory snapshot, Completion completion) {
-        if (!snapshot.isLatest()) {
-            // not the latest snapshot, skip all bellow
+    public void checkBeforeDeleteSnapshot(VolumeSnapshotInventory snapshot, boolean volumeDelete, Completion completion) {
+//        if (!snapshot.isLatest()) {
+//            // not the latest snapshot, skip all bellow
+//            completion.success();
+//            return;
+//        }
+        if (volumeDelete) {
             completion.success();
             return;
         }
+
         VolumeSnapshotTreeInventory currentTree = VolumeSnapshotManagerImpl.getCurrentTree(snapshot.getVolumeUuid());
         if (currentTree == null) {
             // no current tree, skip all bellow
             completion.success();
             return;
         }
-        if (!currentTree.getUuid().equals(snapshot.getTreeUuid())) {
-            // the snapshot is not on the current tree, skip all bellow
+        List<VolumeSnapshotTreeVO> trees = Q.New(VolumeSnapshotTreeVO.class).eq(VolumeSnapshotTreeVO_.volumeUuid, snapshot.getVolumeUuid()).eq(VolumeSnapshotTreeVO_.status, VolumeSnapshotTreeStatus.Creating).list();
+        if (trees.isEmpty()) {
+            // no working tree, skip all bellow
             completion.success();
             return;
         }
 
-        List<VolumeSnapshotTreeVO> trees = Q.New(VolumeSnapshotTreeVO.class).eq(VolumeSnapshotTreeVO_.volumeUuid, snapshot.getVolumeUuid()).eq(VolumeSnapshotTreeVO_.status, VolumeSnapshotTreeStatus.Creating).list();
+        if (!snapshotOnWorkingTree(snapshot, currentTree, trees)) {
+            completion.success();
+            return;
+        }
+
         judgeAndMergeTrees(trees, currentTree, completion);
+    }
+
+    private boolean snapshotOnWorkingTree(VolumeSnapshotInventory snapshot, VolumeSnapshotTreeInventory currentTree, List<VolumeSnapshotTreeVO> newTrees) {
+        if (currentTree.getUuid().equals(snapshot.getTreeUuid())) {
+            return true;
+        }
+
+        if (newTrees.stream().map(VolumeSnapshotTreeVO::getUuid).collect(Collectors.toList()).contains(snapshot.getTreeUuid())) {
+            return true;
+        }
+
+        return false;
     }
 
     private ErrorCode correctVolumeSnapshotTree(String treeUuid, List<VolumeSnapshotTreeVO> trees, boolean completed) {
