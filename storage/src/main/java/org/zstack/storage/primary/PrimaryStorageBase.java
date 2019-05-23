@@ -352,8 +352,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((CheckVolumeSnapshotsOnPrimaryStorageMsg) msg);
         } else if ((msg instanceof GetVolumeSnapshotSizeOnPrimaryStorageMsg)) {
             handle((GetVolumeSnapshotSizeOnPrimaryStorageMsg) msg);
-        } else if ((msg instanceof CheckInstallPathMsg)) {
-            handle((CheckInstallPathMsg) msg);
         } else if ((msg instanceof CleanUpTrashOnPrimaryStorageMsg)) {
             handle((CleanUpTrashOnPrimaryStorageMsg) msg);
         } else {
