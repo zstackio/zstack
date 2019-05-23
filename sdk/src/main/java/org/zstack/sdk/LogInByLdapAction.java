@@ -12,7 +12,7 @@ public class LogInByLdapAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public LogInByLdapResult value;
+        public org.zstack.sdk.LogInByLdapResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,19 +26,19 @@ public class LogInByLdapAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String uid;
+    public java.lang.String uid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String password;
+    public java.lang.String password;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String verifyCode;
+    public java.lang.String verifyCode;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String captchaUuid;
+    public java.lang.String captchaUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public Map clientInfo;
+    public java.util.Map clientInfo;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +57,8 @@ public class LogInByLdapAction extends AbstractAction {
             return ret;
         }
         
-        LogInByLdapResult value = res.getResult(LogInByLdapResult.class);
-        ret.value = value == null ? new LogInByLdapResult() : value;
+        org.zstack.sdk.LogInByLdapResult value = res.getResult(org.zstack.sdk.LogInByLdapResult.class);
+        ret.value = value == null ? new org.zstack.sdk.LogInByLdapResult() : value; 
 
         return ret;
     }

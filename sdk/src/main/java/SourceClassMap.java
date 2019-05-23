@@ -601,15 +601,13 @@ public class SourceClassMap {
 			put("org.zstack.sdk.QuotaInventory", "org.zstack.header.identity.QuotaInventory");
 			put("org.zstack.sdk.QuotaUsage", "org.zstack.header.identity.Quota$QuotaUsage");
 			put("org.zstack.sdk.RemovalInstanceRuleInventory", "org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory");
-			put("org.zstack.sdk.ResourceBindableConfigStruct", "org.zstack.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct");
-			put("org.zstack.sdk.ResourceConfigInventory", "org.zstack.resourceconfig.ResourceConfigInventory");
 			put("org.zstack.sdk.ReplicationDiskStatus", "org.zstack.storage.primary.ministorage.ReplicationDiskStatus");
 			put("org.zstack.sdk.ReplicationGroupState", "org.zstack.imagereplicator.ReplicationGroupState");
 			put("org.zstack.sdk.ReplicationNetworkStatus", "org.zstack.storage.primary.ministorage.ReplicationNetworkStatus");
 			put("org.zstack.sdk.ReplicationRole", "org.zstack.storage.primary.ministorage.ReplicationRole");
 			put("org.zstack.sdk.ReplicationState", "org.zstack.storage.primary.ministorage.ReplicationState");
-			put("org.zstack.sdk.ResourceBindableConfigStruct", "org.zstack.core.config.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct");
-			put("org.zstack.sdk.ResourceConfigInventory", "org.zstack.core.config.resourceconfig.ResourceConfigInventory");
+			put("org.zstack.sdk.ResourceBindableConfigStruct", "org.zstack.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct");
+			put("org.zstack.sdk.ResourceConfigInventory", "org.zstack.resourceconfig.ResourceConfigInventory");
 			put("org.zstack.sdk.ResourceInventory", "org.zstack.header.vo.ResourceInventory");
 			put("org.zstack.sdk.ResourceSpending", "org.zstack.billing.ResourceSpending");
 			put("org.zstack.sdk.ResourceStackInventory", "org.zstack.header.cloudformation.ResourceStackInventory");

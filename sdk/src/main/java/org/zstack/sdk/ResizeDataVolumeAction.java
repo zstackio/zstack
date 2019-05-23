@@ -29,7 +29,7 @@ public class ResizeDataVolumeAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public long size = 0;
+    public long size = 0L;
 
     @Param(required = false)
     public java.util.List systemTags;

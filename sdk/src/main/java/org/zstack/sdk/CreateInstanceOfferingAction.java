@@ -35,7 +35,7 @@ public class CreateInstanceOfferingAction extends AbstractAction {
     public int cpuNum = 0;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, numberRangeUnit = {"byte", "bytes"}, noTrim = false)
-    public long memorySize = 0;
+    public long memorySize = 0L;
 
     @Param(required = false)
     public java.lang.String allocatorStrategy;

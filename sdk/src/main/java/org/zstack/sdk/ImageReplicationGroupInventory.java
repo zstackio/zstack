@@ -52,4 +52,12 @@ public class ImageReplicationGroupInventory  {
         return this.lastOpDate;
     }
 
+    public java.util.List backupStorageRefs;
+    public void setBackupStorageRefs(java.util.List backupStorageRefs) {
+        this.backupStorageRefs = backupStorageRefs;
+    }
+    public java.util.List getBackupStorageRefs() {
+        return this.backupStorageRefs;
+    }
+
 }

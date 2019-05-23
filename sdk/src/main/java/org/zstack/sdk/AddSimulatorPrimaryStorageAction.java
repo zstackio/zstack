@@ -26,16 +26,16 @@ public class AddSimulatorPrimaryStorageAction extends AbstractAction {
     }
 
     @Param(required = false)
-    public long totalCapacity = 100000000;
+    public long totalCapacity = 100000000L;
 
     @Param(required = false)
-    public long availableCapacity = 10000000;
+    public long availableCapacity = 10000000L;
 
     @Param(required = false)
-    public long availablePhysicalCapacity = 10000000;
+    public long availablePhysicalCapacity = 10000000L;
 
     @Param(required = false)
-    public long totalPhysicalCapacity = 10000000;
+    public long totalPhysicalCapacity = 10000000L;
 
     @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String url;
