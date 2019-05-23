@@ -13,18 +13,15 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.VipConstant;
+import org.zstack.network.service.vip.VipDeletionMsg;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.VipUseForList;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  */
@@ -70,9 +67,9 @@ public class VirtualRouterCleanupVipOnDestroyFlow extends NoRollbackFlow {
         while (it.hasNext()){
             VirtualRouterVipVO vvipVO = it.next();
             VipVO vip = dbf.findByUuid(vvipVO.getUuid(), VipVO.class);
-            if (vip != null && vip.getUseFor() != null){
-                VipUseForList useForList = new VipUseForList(vip.getUseFor());
-                if(useForList.isIncluded(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE)) {
+            if (vip != null){
+                Set<String> useFor = vip.getServicesTypes();
+                if(useFor != null && useFor.contains(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE)) {
                     vips.add(vip);
                 }
             }

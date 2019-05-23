@@ -6,11 +6,14 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.eip.EipInventory;
+import org.zstack.network.service.vip.VipNetworkServicesRefVO;
+import org.zstack.network.service.vip.VipNetworkServicesRefVO_;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.eip.EipTO;
@@ -75,8 +78,9 @@ public class TestVirtualRouterEip1 {
         Assert.assertEquals(vipvo.getIp(), to.getVipIp());
 
         vipvo = dbf.reload(vipvo);
-        Assert.assertEquals(EipConstant.EIP_NETWORK_SERVICE_TYPE, vipvo.getUseFor());
         Assert.assertEquals(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE, vipvo.getServiceProvider());
+        String ref = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.uuid,eip.getUuid()).find();
+        Assert.assertEquals(EipConstant.EIP_NETWORK_SERVICE_TYPE, ref);
         VmNicInventory nic = vm.getVmNics().get(0);
         Assert.assertTrue(vipvo.getPeerL3NetworkUuids().contains(nic.getL3NetworkUuid()));
     }

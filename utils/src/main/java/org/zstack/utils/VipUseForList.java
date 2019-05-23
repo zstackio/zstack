@@ -2,10 +2,7 @@ package org.zstack.utils;
 
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by shixin 2017/10/06
@@ -19,22 +16,18 @@ public class VipUseForList {
     public static final String SNAT_NETWORK_SERVICE_TYPE = "SNAT";
 
     /* vip usefor field will be encoded like 'PortForwarding,LoadBalancer' */
-    private static final String delimiter = ",";
     private List<String> useForList;
     private static CLogger logger = Utils.getLogger(VipUseForList.class);
 
     public VipUseForList() {
-        this.useForList = new ArrayList<String>();
+        useForList = new ArrayList<>();
     }
 
-    public VipUseForList(String useFor) {
-        this.useForList = new ArrayList<String>();
-
-        if(useFor != null) {
-            String[] itemArray = useFor.split(delimiter);
-            for(String item : itemArray){
-                useForList.add(item);
-            }
+    public VipUseForList(Collection<String> useFor) {
+        if (useFor != null) {
+            useForList = new ArrayList<>(new HashSet<>(useFor));
+        } else {
+            useForList = new ArrayList<>();
         }
     }
 
@@ -42,84 +35,28 @@ public class VipUseForList {
         return this.useForList;
     }
 
-    public String add(String newItem){
-        boolean exist = false;
-        Iterator<String> it = this.useForList.iterator();
-        while (it.hasNext()) {
-            String item = it.next();
-            if (item.equals(newItem)) {
-                exist = true;
-                break;
-            }
-        }
-        if (!exist) {
-            this.useForList.add(newItem);
-        }
-
-        return this.toString();
-    }
-
-    public String del(String delItem) {
-        boolean exist = false;
-        Iterator<String> it = this.useForList.iterator();
-        while (it.hasNext()) {
-            String item = it.next();
-            if (item.equals(delItem)) {
-                it.remove();
-            }
-        }
-
-        return this.toString();
-    }
-
-    public boolean isIncluded(String newItem){
-        Iterator<String> it = this.useForList.iterator();
-        while (it.hasNext()) {
-            String item = it.next();
-            if (item.equals(newItem)) {
-                return true;
-            }
-        }
-
-        return false;
+    public boolean isIncluded(String item){
+        return useForList.contains(item);
     }
 
     /* true -- sucess, false -- failed*/
     public boolean validate(){
         /* eip and other services(SNAT,LB,IPSec,PF) can not be attached to same vip */
-        if(isIncluded(EIP_NETWORK_SERVICE_TYPE) && this.useForList.size() > 1){
-            return false;
-        }
-        else{
-            return true;
-        }
+        return  (isIncluded(EIP_NETWORK_SERVICE_TYPE) && useForList.size() > 1);
     }
 
-    public boolean validateNewAdded(String newItem){
+    public boolean validateNewAdded(String item){
         /* eip and other services(SNAT,LB,IPSec,PF) can not be attached to same vip */
-        if(newItem.equals(EIP_NETWORK_SERVICE_TYPE)){
-            if (this.useForList.isEmpty()){
-                return true;
-            }
-            else {
-                return false;
-            }
-        }
-        else{
-            if (isIncluded(EIP_NETWORK_SERVICE_TYPE)){
-                return false;
-            }
-            else {
-                return true;
-            }
+        if(EIP_NETWORK_SERVICE_TYPE.equals(item)){
+            return useForList.isEmpty();
+        } else{
+            return !isIncluded(EIP_NETWORK_SERVICE_TYPE);
         }
     }
 
     public boolean validateNewAdded(VipUseForList newList){
-        Iterator<String> it = newList.getUseForList().iterator();
-        while (it.hasNext()){
-            String useFor = it.next();
-            if(!validateNewAdded(useFor)){
+        for (String useFor : newList.getUseForList()) {
+            if (!validateNewAdded(useFor)) {
                 return false;
             }
         }
@@ -129,11 +66,13 @@ public class VipUseForList {
 
     @Override
     public String toString() {
-        if (this.useForList.isEmpty()){
+        final String delimiter = ",";
+
+        if (useForList.isEmpty()){
             return null;
         }
         else {
-            return String.join(delimiter, this.useForList);
+            return String.join(delimiter, useForList);
         }
     }
 }

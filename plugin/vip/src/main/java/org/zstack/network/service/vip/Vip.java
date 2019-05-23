@@ -64,4 +64,22 @@ public class Vip {
             }
         });
     }
+
+    public void stop(Completion completion) {
+        StopVipMsg msg = new StopVipMsg();
+        msg.setVipUuid(uuid);
+        msg.setStruct(struct);
+
+        bus.makeTargetServiceIdByResourceUuid(msg, VipConstant.SERVICE_ID, uuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    throw new OperationFailureException(reply.getError());
+                }
+
+                completion.success();
+            }
+        });
+    }
 }

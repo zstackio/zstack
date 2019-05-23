@@ -9,18 +9,20 @@ import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.portforwarding.PortForwardingProtocolType
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO_
-import org.zstack.network.service.vip.VipVO
-import org.zstack.network.service.vip.VipVO_
+import org.zstack.network.service.vip.VipNetworkServicesRefVO
+import org.zstack.network.service.vip.VipNetworkServicesRefVO_
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
-import org.zstack.sdk.*
+import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.PortForwardingRuleInventory
+import org.zstack.sdk.VipInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.VipUseForList
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by shixin on 18-02-08.
  */
@@ -167,12 +169,13 @@ class PortForwardingVipUseForCase extends SubCase {
             protocolType = PortForwardingProtocolType.TCP.toString()
             vipUuid = vip.uuid
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).count() == 1
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
 
         deletePortForwardingRule {
             uuid = pf1Inv.uuid
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == null
+        assert !Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).isExists()
 
         PortForwardingRuleInventory pf2Inv = createPortForwardingRule{
             name = "pf-2"
@@ -182,12 +185,13 @@ class PortForwardingVipUseForCase extends SubCase {
             vmNicUuid = vm.vmNics.get(0).uuid
             vipUuid = vip.uuid
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).count() == 1
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
 
         deletePortForwardingRule {
             uuid = pf2Inv.uuid
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == null
+        assert !Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).isExists()
 
         /* simulate install pf failed */
         env.simulator(VirtualRouterConstant.VR_CREATE_PORT_FORWARDING) { HttpEntity<String> e,EnvSpec spec ->
@@ -213,7 +217,7 @@ class PortForwardingVipUseForCase extends SubCase {
         assert s
         assert Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.vipUuid, vip.getUuid()).find() == null
         retryInSecs() {
-            assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == null
+            assert !Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).isExists()
         }
 
         env.simulator(VirtualRouterConstant.VR_CREATE_PORT_FORWARDING) { HttpEntity<String> e,EnvSpec spec ->
@@ -242,19 +246,22 @@ class PortForwardingVipUseForCase extends SubCase {
             protocolType = PortForwardingProtocolType.TCP.toString()
             vipUuid = vip.uuid
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).count() == 1
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
 
         /* attach & detach will not change vip usefor */
         attachPortForwardingRule {
             ruleUuid = pf1Inv.uuid
             vmNicUuid = vm.getVmNics().get(0).uuid
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).count() == 1
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
 
         detachPortForwardingRule {
             uuid = pf1Inv.uuid
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).count() == 1
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
 
         /* simulate install pf failed */
         env.simulator(VirtualRouterConstant.VR_CREATE_PORT_FORWARDING) { HttpEntity<String> e,EnvSpec spec ->
@@ -274,7 +281,8 @@ class PortForwardingVipUseForCase extends SubCase {
             s = true
         }
         assert s
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).count() == 1
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
 
         env.simulator(VirtualRouterConstant.VR_CREATE_PORT_FORWARDING) { HttpEntity<String> e,EnvSpec spec ->
             def rsp = new VirtualRouterCommands.CreatePortForwardingRuleRsp()
@@ -303,18 +311,21 @@ class PortForwardingVipUseForCase extends SubCase {
             vmNicUuid = vm.vmNics.get(0).uuid
             vipUuid = vip.uuid
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).count() == 1
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
 
         /* attach & detach will not change vip usefor */
         stopVmInstance {
             uuid = vm.uuid
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).count() == 1
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
 
         startVmInstance {
             uuid = vm.uuid
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).count() == 1
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
 
         /* simulate install pf failed */
         env.simulator(VirtualRouterConstant.VR_CREATE_PORT_FORWARDING) { HttpEntity<String> e,EnvSpec spec ->
@@ -336,7 +347,8 @@ class PortForwardingVipUseForCase extends SubCase {
             s = true
         }
         assert s
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).count() == 1
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
 
         env.simulator(VirtualRouterConstant.VR_CREATE_PORT_FORWARDING) { HttpEntity<String> e,EnvSpec spec ->
             def rsp = new VirtualRouterCommands.CreatePortForwardingRuleRsp()

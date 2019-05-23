@@ -62,14 +62,6 @@ public class ModifyVipAttributesMsg extends NeedReplyMessage implements VipMessa
         struct.setUseFor(useFor);
     }
 
-    public String getPeerL3NetworkUuid() {
-        return struct.getPeerL3NetworkUuid();
-    }
-
-    public void setPeerL3NetworkUuid(String peerL3NetworkUuid) {
-        struct.setPeerL3NetworkUuid(peerL3NetworkUuid);
-    }
-
     @Override
     public String getVipUuid() {
         return vipUuid;

@@ -10,6 +10,7 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleInventory;
 import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
 import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipNetworkServicesRefVO;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
@@ -75,6 +76,6 @@ public class TestVirtualRouterPortForwarding24 {
         Assert.assertNull(rulevo);
         vipvo = dbf.findByUuid(pfRule1.getVipUuid(), VipVO.class);
         Assert.assertNotNull(vipvo);
-        Assert.assertNull(vipvo.getUseFor());
+        Assert.assertFalse(dbf.isExist(pfRule1.getUuid(), VipNetworkServicesRefVO.class));
     }
 }

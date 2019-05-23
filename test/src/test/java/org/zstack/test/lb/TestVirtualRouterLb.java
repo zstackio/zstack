@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.query.QueryOp;
@@ -13,6 +14,8 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipNetworkServicesRefVO;
+import org.zstack.network.service.vip.VipNetworkServicesRefVO_;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmMsg;
 import org.zstack.network.service.virtualrouter.APIQueryVirtualRouterVmReply;
@@ -91,9 +94,9 @@ public class TestVirtualRouterLb {
 
         VipVO vip = dbf.findByUuid(lbvo.getVipUuid(), VipVO.class);
         Assert.assertNotNull(vip);
-        Assert.assertEquals(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING, vip.getUseFor());
         Assert.assertEquals(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE, vip.getServiceProvider());
         Assert.assertFalse(vconfig.vips.isEmpty());
+        Assert.assertTrue(dbf.isExist(lbvo.getUuid(), VipNetworkServicesRefVO.class));
 
         Assert.assertFalse(vconfig.refreshLbCmds.isEmpty());
         RefreshLbCmd cmd = vconfig.refreshLbCmds.get(0);
@@ -117,18 +120,17 @@ public class TestVirtualRouterLb {
         Assert.assertEquals(0, dbf.count(LoadBalancerVO.class));
         Assert.assertEquals(0, dbf.count(LoadBalancerListenerVO.class));
         Assert.assertEquals(0, dbf.count(LoadBalancerListenerVmNicRefVO.class));
-        vip = dbf.findByUuid(lbvo.getVipUuid(), VipVO.class);
-        Assert.assertNull(vip.getUseFor());
+        Assert.assertFalse(dbf.isExist(lbvo.getUuid(), VipNetworkServicesRefVO.class));
 
         L3NetworkInventory pubNw = deployer.l3Networks.get("PublicNetwork");
         VipInventory vip1 = api.acquireIp(pubNw.getUuid());
         LoadBalancerInventory lb2 = api.createLoadBalancer("lb2", vip1.getUuid(), null, null);
-        VipVO vip1vo = dbf.findByUuid(vip1.getUuid(), VipVO.class);
-        Assert.assertEquals(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING, vip1vo.getUseFor());
+
+        String ref = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.uuid,lb2.getUuid()).find();
+        Assert.assertEquals(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING, ref);
 
         api.deleteLoadBalancer(lb2.getUuid(), null);
-        vip1vo = dbf.findByUuid(vip1.getUuid(), VipVO.class);
-        Assert.assertNull(vip1vo.getUseFor());
+        Assert.assertFalse(dbf.isExist(lb2.getUuid(), VipNetworkServicesRefVO.class));
         Assert.assertFalse(dbf.isExist(lb2.getUuid(), LoadBalancerVO.class));
 
         APIQueryVirtualRouterVmMsg msg = new APIQueryVirtualRouterVmMsg();

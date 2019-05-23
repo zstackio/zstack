@@ -760,6 +760,7 @@ public class LoadBalancerBase {
                     public void run(FlowTrigger trigger, Map data) {
                         ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                         struct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        struct.setServiceUuid(self.getUuid());
                         Vip v = new Vip(self.getVipUuid());
                         v.setStruct(struct);
                         v.release(new Completion(trigger) {
