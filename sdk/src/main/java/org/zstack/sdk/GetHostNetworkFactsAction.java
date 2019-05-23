@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateHybridKeySecretAction extends AbstractAction {
+public class GetHostNetworkFactsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateHybridKeySecretResult value;
+        public org.zstack.sdk.GetHostNetworkFactsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,8 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -49,12 +43,6 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
     @Param(required = false)
     public String accessKeySecret;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -63,8 +51,8 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateHybridKeySecretResult value = res.getResult(org.zstack.sdk.UpdateHybridKeySecretResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateHybridKeySecretResult() : value; 
+        org.zstack.sdk.GetHostNetworkFactsResult value = res.getResult(org.zstack.sdk.GetHostNetworkFactsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetHostNetworkFactsResult() : value; 
 
         return ret;
     }
@@ -93,11 +81,11 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/hybrid/hybrid/{uuid}/key";
+        info.httpMethod = "GET";
+        info.path = "/hosts/network-facts/{hostUuid}";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

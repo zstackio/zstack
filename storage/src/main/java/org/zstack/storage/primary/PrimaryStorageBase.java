@@ -163,7 +163,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         return String.format("primaryStorage-%s", self.getUuid());
     }
 
-    protected static List<TrashType> trashLists = CollectionDSL.list(TrashType.MigrateVolume, TrashType.MigrateVolumeSnapshot, TrashType.RevertVolume);
+    protected static List<TrashType> trashLists = CollectionDSL.list(TrashType.MigrateVolume, TrashType.MigrateVolumeSnapshot, TrashType.RevertVolume, TrashType.VolumeSnapshot);
 
     protected void fireDisconnectedCanonicalEvent(ErrorCode reason) {
         PrimaryStorageCanonicalEvent.DisconnectedData data = new PrimaryStorageCanonicalEvent.DisconnectedData();
@@ -352,6 +352,10 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((CheckVolumeSnapshotsOnPrimaryStorageMsg) msg);
         } else if ((msg instanceof GetVolumeSnapshotSizeOnPrimaryStorageMsg)) {
             handle((GetVolumeSnapshotSizeOnPrimaryStorageMsg) msg);
+        } else if ((msg instanceof CheckInstallPathMsg)) {
+            handle((CheckInstallPathMsg) msg);
+        } else if ((msg instanceof CleanUpTrashOnPrimaryStorageMsg)) {
+            handle((CleanUpTrashOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -419,7 +423,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     }
     
-    private void updatePrimaryStorageHostStatus(List<String> psUuids, String hostUuid, PrimaryStorageHostStatus newStatus, ErrorCode reason){
+    protected void updatePrimaryStorageHostStatus(List<String> psUuids, String hostUuid, PrimaryStorageHostStatus newStatus, ErrorCode reason){
         List<PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData> datas = new ArrayList<>();
 
         new SQLBatch(){
@@ -767,6 +771,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         msg.setHypervisorType(spec.getHypervisorType());
         msg.setFolder(spec.isFolder());
         msg.setBitsUuid(spec.getResourceUuid());
+        msg.setBitsType(spec.getResourceType());
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
         bus.send(msg, new CloudBusCallBack(msg) {
             @Override
@@ -788,6 +793,41 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                     logger.warn(String.format("Failed to delete volume %s in Trash, because: %s", spec.getInstallPath(), reply.getError().getDetails()));
                     completion.fail(reply.getError());
                 }
+            }
+        });
+    }
+
+    protected void handle(final CleanUpTrashOnPrimaryStorageMsg msg) {
+        MessageReply reply = new MessageReply();
+        thdf.chainSubmit(new ChainTask(msg) {
+            private String name = String.format("cleanup-trash-on-%s", self.getUuid());
+
+            @Override
+            public String getSyncSignature() {
+                return name;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                cleanUpTrash(msg.getTrashId(), new ReturnValueCompletion<CleanTrashResult>(chain) {
+                    @Override
+                    public void success(CleanTrashResult result) {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return name;
             }
         });
     }

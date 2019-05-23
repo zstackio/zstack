@@ -52,7 +52,7 @@ public class GetResourceBindableConfigAction extends AbstractAction {
         }
         
         org.zstack.sdk.GetResourceBindableConfigResult value = res.getResult(org.zstack.sdk.GetResourceBindableConfigResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetResourceBindableConfigResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.GetResourceBindableConfigResult() : value; 
 
         return ret;
     }

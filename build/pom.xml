@@ -291,6 +291,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>ministorage</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>storage-device</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -302,6 +307,11 @@
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>volumebackup</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>imagereplicator</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

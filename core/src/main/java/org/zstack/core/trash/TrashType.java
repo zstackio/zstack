@@ -7,5 +7,6 @@ public enum TrashType {
     MigrateVolume,
     MigrateImage,
     MigrateVolumeSnapshot,
-    RevertVolume
+    RevertVolume,
+    VolumeSnapshot
 }

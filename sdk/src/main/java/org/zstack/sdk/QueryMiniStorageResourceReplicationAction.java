@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateHybridKeySecretAction extends AbstractAction {
+public class QueryMiniStorageResourceReplicationAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateHybridKeySecretResult value;
+        public org.zstack.sdk.QueryMiniStorageResourceReplicationResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,35 +25,6 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -63,8 +34,8 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateHybridKeySecretResult value = res.getResult(org.zstack.sdk.UpdateHybridKeySecretResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateHybridKeySecretResult() : value; 
+        org.zstack.sdk.QueryMiniStorageResourceReplicationResult value = res.getResult(org.zstack.sdk.QueryMiniStorageResourceReplicationResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryMiniStorageResourceReplicationResult() : value; 
 
         return ret;
     }
@@ -93,11 +64,11 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/hybrid/hybrid/{uuid}/key";
+        info.httpMethod = "GET";
+        info.path = "/primary-storage/mini/replications";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

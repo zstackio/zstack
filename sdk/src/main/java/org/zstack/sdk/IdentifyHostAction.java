@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateHybridKeySecretAction extends AbstractAction {
+public class IdentifyHostAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateHybridKeySecretResult value;
+        public org.zstack.sdk.IdentifyHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,11 +28,8 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,255L}, noTrim = false)
+    public java.lang.Long interval = 60L;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +60,8 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateHybridKeySecretResult value = res.getResult(org.zstack.sdk.UpdateHybridKeySecretResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateHybridKeySecretResult() : value; 
+        org.zstack.sdk.IdentifyHostResult value = res.getResult(org.zstack.sdk.IdentifyHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.IdentifyHostResult() : value; 
 
         return ret;
     }
@@ -93,11 +90,11 @@ public class UpdateHybridKeySecretAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/hybrid/hybrid/{uuid}/key";
+        info.httpMethod = "PUT";
+        info.path = "/hosts/kvm/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "identifyHost";
         return info;
     }
 

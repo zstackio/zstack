@@ -54,11 +54,7 @@ public class FutureCompletion extends Completion {
             return;
         }
 
-        try {
-            wait(timeout);
-        } catch (InterruptedException e) {
-            throw new CloudRuntimeException(e);
-        }
+        doWait(timeout);
 
         if (!done) {
             this.timeout = true;
@@ -66,6 +62,28 @@ public class FutureCompletion extends Completion {
             err.setCode(SysErrors.TIMEOUT.toString());
             err.setDetails(String.format("FutureCompletion timeout after %s seconds", TimeUnit.MILLISECONDS.toSeconds(timeout)));
             fail(err);
+        }
+    }
+
+    public synchronized boolean tryWait(long timeout) {
+        if (done) {
+            return done;
+        }
+
+        doWait(timeout);
+
+        if (!done) {
+            this.timeout = true;
+        }
+
+        return done;
+    }
+
+    private void doWait(long timeout) {
+        try {
+            wait(timeout);
+        } catch (InterruptedException e) {
+            throw new CloudRuntimeException(e);
         }
     }
 
