@@ -8,6 +8,7 @@ public class VolumeSnapshotPrimaryStorageDeletionMsg extends NeedReplyMessage im
     private String uuid;
     private boolean deleteOnPrimaryStorage;
     private String volumeUuid;
+    private boolean volumeDelete = false;
     /**
      * @ignore
      */
@@ -51,5 +52,13 @@ public class VolumeSnapshotPrimaryStorageDeletionMsg extends NeedReplyMessage im
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public boolean isVolumeDelete() {
+        return volumeDelete;
+    }
+
+    public void setVolumeDelete(boolean volumeDelete) {
+        this.volumeDelete = volumeDelete;
     }
 }

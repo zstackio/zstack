@@ -470,6 +470,7 @@ public class VolumeSnapshotTreeBase {
 
                         VolumeSnapshotPrimaryStorageDeletionMsg pmsg = new VolumeSnapshotPrimaryStorageDeletionMsg();
                         pmsg.setUuid(arg.getUuid());
+                        pmsg.setVolumeDelete(msg.isVolumeDeletion());
                         bus.makeTargetServiceIdByResourceUuid(pmsg, VolumeSnapshotConstant.SERVICE_ID, arg.getPrimaryStorageUuid());
                         return pmsg;
                     }
