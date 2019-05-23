@@ -14,6 +14,7 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageStatus;
 import org.zstack.header.storage.primary.ImageCacheVO;
 import org.zstack.header.storage.primary.ImageCacheVO_;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -129,7 +130,9 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
                     new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
                         @Override
                         public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
-                            return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
+                            return arg.getBackupStorageUuid().equals(bsUuid)
+                                    && ImageStatus.Ready.toString().equals(arg.getStatus())
+                                    ? arg : null;
                         }
                     }));
 

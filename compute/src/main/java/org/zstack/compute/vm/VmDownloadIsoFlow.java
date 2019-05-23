@@ -15,7 +15,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.ImageStatus;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.DownloadIsoToPrimaryStorageMsg;
 import org.zstack.header.storage.primary.DownloadIsoToPrimaryStorageReply;
@@ -28,10 +28,9 @@ import org.zstack.header.volume.VolumeVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.Map;
-import java.util.Optional;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 10/17/2015.
@@ -78,7 +77,9 @@ public class VmDownloadIsoFlow extends NoRollbackFlow {
                 new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
                     @Override
                     public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
-                        return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
+                        return arg.getBackupStorageUuid().equals(bsUuid)
+                                && ImageStatus.Ready.toString().equals(arg.getStatus())
+                                ? arg : null;
                     }
                 }));
         imageSpec.setInventory(iso);

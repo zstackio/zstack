@@ -3790,7 +3790,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public ImageBackupStorageRefInventory call(ImageBackupStorageRefVO arg) {
                 String fsid = Q.New(CephBackupStorageVO.class).eq(CephBackupStorageVO_.uuid, arg.getBackupStorageUuid()).select(CephBackupStorageVO_.fsid).findValue();
-                if (fsid != null && fsid.equals(getSelf().getFsid())) {
+                if (fsid != null && fsid.equals(getSelf().getFsid()) && ImageStatus.Ready == arg.getStatus()) {
                     return ImageBackupStorageRefInventory.valueOf(arg);
                 }
                 return null;
