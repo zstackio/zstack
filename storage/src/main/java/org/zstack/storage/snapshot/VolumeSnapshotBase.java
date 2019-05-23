@@ -210,17 +210,18 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
         dbf.update(self);
     }
 
-    private void doCheckBeforeDeleteSnapshot(final Iterator<VolumeSnapshotCheckExtensionPoint> it, VolumeSnapshotInventory snapshot, Completion completion) {
+    private void doCheckBeforeDeleteSnapshot(final Iterator<VolumeSnapshotCheckExtensionPoint> it, VolumeSnapshotInventory snapshot,
+                                             boolean volumeDelete, Completion completion) {
         if (!it.hasNext()) {
             completion.success();
             return;
         }
 
         VolumeSnapshotCheckExtensionPoint ext = it.next();
-        ext.checkBeforeDeleteSnapshot(snapshot, new Completion(completion) {
+        ext.checkBeforeDeleteSnapshot(snapshot, volumeDelete, new Completion(completion) {
             @Override
             public void success() {
-                doCheckBeforeDeleteSnapshot(it, snapshot, completion);
+                doCheckBeforeDeleteSnapshot(it, snapshot, volumeDelete, completion);
             }
 
             @Override
@@ -253,6 +254,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                     @Override
                     public void done() {
                         VolumeSnapshotPrimaryStorageDeletionReply dreply = new VolumeSnapshotPrimaryStorageDeletionReply();
+                        self = dbf.reload(self);
                         self.setPrimaryStorageInstallPath(null);
                         self.setPrimaryStorageUuid(null);
                         dbf.update(self);
@@ -285,7 +287,7 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                             trigger.next();
                             return;
                         }
-                        doCheckBeforeDeleteSnapshot(it, sp, new Completion(trigger) {
+                        doCheckBeforeDeleteSnapshot(it, sp, msg.isVolumeDelete(), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
