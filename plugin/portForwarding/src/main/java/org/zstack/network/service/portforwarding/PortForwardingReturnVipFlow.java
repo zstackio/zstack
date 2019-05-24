@@ -1,18 +1,15 @@
 package org.zstack.network.service.portforwarding;
 
 import org.springframework.beans.factory.annotation.Autowire;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.message.MessageReply;
-import org.zstack.network.service.portforwarding.PortForwardingConstant.Params;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.ModifyVipAttributesStruct;
+import org.zstack.network.service.vip.Vip;
+import org.zstack.network.service.vip.VipConstant;
+import org.zstack.network.service.vip.VipInventory;
 
 import java.util.Map;
 
@@ -25,6 +22,7 @@ public class PortForwardingReturnVipFlow extends NoRollbackFlow {
         VipInventory v = (VipInventory) data.get(VipConstant.Params.VIP.toString());
         ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
         struct.setUseFor( PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+        //TODO add services uuid
         Vip vip = new Vip(v.getUuid());
         vip.setStruct(struct);
         vip.release(new Completion(trigger) {

@@ -74,8 +74,6 @@ import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO_;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.network.service.virtualrouter.vyos.VyosVersionManager;
-import org.zstack.search.GetQuery;
-import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
@@ -92,9 +90,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
-import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
 import static org.zstack.network.service.virtualrouter.VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.GUEST_NIC_MASK;
@@ -428,17 +424,12 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private List<String> getVipUsedPortList(String vipUuid, String protocol){
-        String useFor = Q.New(VipVO.class).select(VipVO_.useFor).eq(VipVO_.uuid, vipUuid).findValue();
-        VipUseForList vipUseForList;
-        if (useFor != null){
-            vipUseForList = new VipUseForList(useFor);
-        } else {
-            vipUseForList = new VipUseForList();
-        }
+        List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, vipUuid).listValues();
+        VipUseForList useForList = new VipUseForList(useFor);
 
         List<RangeSet.Range> portRangeList = new ArrayList<RangeSet.Range>();
         for (VipGetUsedPortRangeExtensionPoint ext : vipGetUsedPortRangeExtensionPoints) {
-            RangeSet range = ext.getVipUsePortRange(vipUuid, protocol, vipUseForList);
+            RangeSet range = ext.getVipUsePortRange(vipUuid, protocol, useForList);
             portRangeList.addAll(range.getRanges());
         }
 
@@ -1395,10 +1386,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 "and lb.uuid = :lbUuid")
                 .param("lbUuid", msg.getLoadBalancerUuid()).find();
 
-        if (lbVipVO.getUseFor() != null && lbVipVO.getUseFor().contains(SNAT_NETWORK_SERVICE_TYPE)) {
-            vrUuid = Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.virtualRouterVmUuid)
-                    .eq(VirtualRouterVipVO_.uuid, lbVipVO.getUuid()).findValue();
-            return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
+        if (lbVipVO != null) {
+            List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, lbVipVO.getUuid()).listValues();
+            if(useFor != null && useFor.contains(SNAT_NETWORK_SERVICE_TYPE)) {
+                vrUuid = Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.virtualRouterVmUuid)
+                          .eq(VirtualRouterVipVO_.uuid, lbVipVO.getUuid()).findValue();
+                return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
+            }
         }
 
         if (vrUuid != null) {

@@ -8,8 +8,6 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
@@ -22,13 +20,13 @@ import org.zstack.network.service.vip.*;
 import org.zstack.utils.VipUseForList;
 import org.zstack.utils.network.NetworkUtils;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.concurrent.Callable;
+
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -176,8 +174,8 @@ public class PortForwardingApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
-        String useFor = Q.New(VipVO.class).select(VipVO_.useFor).eq(VipVO_.uuid, msg.getVipUuid()).findValue();
-        if(useFor != null){
+        List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, msg.getVipUuid()).listValues();
+        if(useFor != null && !useFor.isEmpty()){
             VipUseForList useForList = new VipUseForList(useFor);
             if(!useForList.validateNewAdded(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE)){
                 throw new ApiMessageInterceptionException(argerr("the vip[uuid:%s] has been occupied other network service entity[%s]", msg.getVipUuid(), useForList.toString()));

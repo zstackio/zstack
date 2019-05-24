@@ -27,7 +27,8 @@ import java.util.stream.Collectors;
 
         friends = {
                 @EntityGraph.Neighbour(type = UsedIpVO.class, myField = "usedIpUuid", targetField = "uuid"),
-                @EntityGraph.Neighbour(type = VipPeerL3NetworkRefVO.class, myField = "uuid", targetField = "vipUuid")
+                @EntityGraph.Neighbour(type = VipPeerL3NetworkRefVO.class, myField = "uuid", targetField = "vipUuid"),
+                @EntityGraph.Neighbour(type = VipNetworkServicesRefVO.class, myField = "uuid", targetField = "vipUuid")
         }
 )
 public class VipVO extends ResourceVO implements OwnedByAccount {
@@ -78,6 +79,11 @@ public class VipVO extends ResourceVO implements OwnedByAccount {
     @JoinColumn(name = "vipUuid", insertable = false, updatable = false)
     @NoView
     private Set<VipPeerL3NetworkRefVO> peerL3NetworkRefs = new HashSet<>();
+
+    @OneToMany(fetch=FetchType.EAGER)
+    @JoinColumn(name="vipUuid", insertable=false, updatable=false)
+    @NoView
+    private Set<VipNetworkServicesRefVO> servicesRefs = new HashSet<VipNetworkServicesRefVO>();
 
     @Column
     private Timestamp createDate;
@@ -132,6 +138,24 @@ public class VipVO extends ResourceVO implements OwnedByAccount {
             return getPeerL3NetworkRefs().stream()
                     .map(ref -> ref.getL3NetworkUuid())
                     .collect(Collectors.toSet());
+        }
+
+        return null;
+    }
+
+    public Set<VipNetworkServicesRefVO> getServicesRefs() {
+        return servicesRefs;
+    }
+
+    public void setServicesRefs(Set<VipNetworkServicesRefVO> servicesRefs) {
+        this.servicesRefs = servicesRefs;
+    }
+
+    public Set<String> getServicesTypes() {
+        if (getServicesRefs() != null && !getServicesRefs().isEmpty()) {
+            return getServicesRefs().stream()
+                                         .map(ref -> ref.getServiceType())
+                                         .collect(Collectors.toSet());
         }
 
         return null;

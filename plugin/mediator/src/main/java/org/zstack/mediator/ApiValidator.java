@@ -7,7 +7,6 @@ import org.zstack.appliancevm.ApplianceVmConstant;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -22,18 +21,16 @@ import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.lb.APICreateLoadBalancerListenerMsg;
 import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.lb.LoadBalancerVO_;
-import org.zstack.network.service.portforwarding.*;
-import org.zstack.network.service.vip.VipGetUsedPortRangeExtensionPoint;
-import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.vip.VipVO_;
-import org.zstack.utils.DebugUtils;
+import org.zstack.network.service.portforwarding.APIAttachPortForwardingRuleMsg;
+import org.zstack.network.service.portforwarding.APICreatePortForwardingRuleMsg;
+import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
+import org.zstack.network.service.vip.*;
 import org.zstack.utils.RangeSet;
 import org.zstack.utils.Utils;
 import org.zstack.utils.VipUseForList;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -173,15 +170,12 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
     }
 
     private void validate(APICreateEipMsg msg) {
-        String useFor = Q.New(VipVO.class).select(VipVO_.useFor).eq(VipVO_.uuid, msg.getVipUuid()).findValue();
-        VipUseForList vipUseForList;
-        if (useFor != null){
-            vipUseForList = new VipUseForList(useFor);
-        } else {
-            vipUseForList = new VipUseForList();
-        }
-        if(!vipUseForList.validateNewAdded(EipConstant.EIP_NETWORK_SERVICE_TYPE)){
-            throw new ApiMessageInterceptionException(operr("the vip[uuid:%s] already has bound to other service[%s]", msg.getVipUuid(), vipUseForList.toString()));
+        List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, msg.getVipUuid()).listValues();
+        if(useFor != null && !useFor.isEmpty()) {
+            VipUseForList useForList = new VipUseForList(useFor);
+            if (!useForList.validateNewAdded(EipConstant.EIP_NETWORK_SERVICE_TYPE)) {
+                throw new ApiMessageInterceptionException(operr("the vip[uuid:%s] already has bound to other service[%s]", msg.getVipUuid(), useForList.toString()));
+            }
         }
     }
 
@@ -192,17 +186,12 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
     }
 
     private RangeSet getVipPortRangeList(String vipUuid, String protocol){
-        String useFor = Q.New(VipVO.class).select(VipVO_.useFor).eq(VipVO_.uuid, vipUuid).findValue();
-        VipUseForList vipUseForList;
-        if (useFor != null){
-            vipUseForList = new VipUseForList(useFor);
-        } else {
-            vipUseForList = new VipUseForList();
-        }
+        List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, vipUuid).listValues();
+        VipUseForList useForList = new VipUseForList(useFor);
 
         List<RangeSet.Range> portRangeList = new ArrayList<RangeSet.Range>();
         for (VipGetUsedPortRangeExtensionPoint ext : pluginRgty.getExtensionList(VipGetUsedPortRangeExtensionPoint.class)){
-            RangeSet range = ext.getVipUsePortRange(vipUuid, protocol, vipUseForList);
+            RangeSet range = ext.getVipUsePortRange(vipUuid, protocol, useForList);
             portRangeList.addAll(range.getRanges());
         }
 

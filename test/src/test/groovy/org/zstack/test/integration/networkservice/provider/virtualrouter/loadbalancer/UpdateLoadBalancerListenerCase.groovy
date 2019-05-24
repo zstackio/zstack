@@ -6,22 +6,21 @@ import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.network.service.eip.EipConstant
-import org.zstack.network.service.eip.EipVO
-import org.zstack.network.service.eip.EipVO_
+import org.zstack.network.service.lb.LoadBalancerListenerVO
+import org.zstack.network.service.lb.LoadBalancerListenerVO_
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.lb.LoadBalancerVO
 import org.zstack.network.service.lb.LoadBalancerVO_
-import org.zstack.network.service.lb.LoadBalancerListenerVO
-import org.zstack.network.service.lb.LoadBalancerListenerVO_
-import org.zstack.network.service.vip.VipVO
-import org.zstack.network.service.vip.VipVO_
 import org.zstack.network.service.portforwarding.PortForwardingConstant
+import org.zstack.network.service.vip.VipNetworkServicesRefVO
+import org.zstack.network.service.vip.VipNetworkServicesRefVO_
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.*
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+
 import static java.util.Arrays.asList
 
 /**
@@ -472,9 +471,9 @@ class UpdateLoadBalancerListenerCase extends SubCase {
         long count = Q.New(LoadBalancerListenerVO.class).select()
                 .eq(LoadBalancerListenerVO_.loadBalancerUuid, loadBalancerInventory2.uuid).count()
         assert count == 0
-        VipVO vo =  Q.New(VipVO.class).eq(VipVO_.uuid, vipInventory1.uuid).find()
-        assert vo.getUseFor() == LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING :
-                "different pfs[${vo.getUseFor()}, ${LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING}]"
+        count =  Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vipInventory1.uuid)
+                .eq(VipNetworkServicesRefVO_.serviceType, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING).count()
+         assert count == 1
 
         CreateLoadBalancerAction createLoadBalancerAction3 = new CreateLoadBalancerAction()
         createLoadBalancerAction3.name = "lb-2"

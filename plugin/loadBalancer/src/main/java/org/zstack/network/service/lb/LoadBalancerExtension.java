@@ -175,7 +175,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
         }
 
         List<NeedReplyMessage> msgs = new ArrayList<NeedReplyMessage>();
-        if (servedVm.getCurrentVmOperation() == VmOperation.Destroy) {
+        if (servedVm.getCurrentVmOperation() == VmOperation.Destroy || servedVm.getCurrentVmOperation() == VmOperation.DetachNic) {
             msgs.addAll(CollectionUtils.transformToList(mt.entrySet(), new Function<NeedReplyMessage, Entry<String, Triplet>>() {
                 @Override
                 public NeedReplyMessage call(Entry<String, Triplet> arg) {

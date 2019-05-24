@@ -41,6 +41,8 @@ import java.util.stream.Collectors;
                 foreignKey = "l3NetworkUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "peerL3Network", inventoryClass = VipPeerL3NetworkRefInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "vipUuid"),
+        @ExpandedQuery(expandedField = "NetworkServicesRef", inventoryClass = VipNetworkServicesRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "vipUuid")
 })
 public class VipInventory implements Serializable {
     /**
@@ -95,6 +97,11 @@ public class VipInventory implements Serializable {
      * @desc uuid of l3Network this vip used for. For example, when vip is used as Eip, the guest network is the peer network
      */
     private List<String> peerL3NetworkUuids;
+
+    /**
+     * @desc services this vip used for.
+     */
+    private List<VipNetworkServicesRefInventory> servicesRefs;
     /**
      * @desc service name this vip used for. For example, PortForwarding
      */
@@ -124,7 +131,6 @@ public class VipInventory implements Serializable {
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setNetmask(vo.getNetmask());
         inv.setPrefixLen(vo.getPrefixLen());
-        inv.setUseFor(vo.getUseFor());
         inv.setUuid(vo.getUuid());
         inv.setState(vo.getState().toString());
         inv.setUsedIpUuid(vo.getUsedIpUuid());
@@ -133,6 +139,9 @@ public class VipInventory implements Serializable {
                     .map(ref -> ref.getL3NetworkUuid())
                     .collect(Collectors.toList()));
         }
+
+        inv.setServicesRefs(VipNetworkServicesRefInventory.valueOf(vo.getServicesRefs()));
+        inv.setUseFor(vo.getUseFor());
         return inv;
     }
 
@@ -181,6 +190,14 @@ public class VipInventory implements Serializable {
 
     public void setServiceProvider(String serviceProvider) {
         this.serviceProvider = serviceProvider;
+    }
+
+    public List<VipNetworkServicesRefInventory> getServicesRefs() {
+        return servicesRefs;
+    }
+
+    public void setServicesRefs(List<VipNetworkServicesRefInventory> servicesRefs) {
+        this.servicesRefs = servicesRefs;
     }
 
     public String getUseFor() {

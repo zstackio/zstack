@@ -220,7 +220,9 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 //0.check the l3 of vm nic has been attached to port forwarding service
                 List<String> l3Uuids = new ArrayList<>();
                 if (vipPeerL3Uuids == null || vipPeerL3Uuids.isEmpty()) {
-                    if (vipVO.getUseFor().contains(SNAT_NETWORK_SERVICE_TYPE)) {
+                    List<String> services = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType)
+                                             .eq(VipNetworkServicesRefVO_.vipUuid, vipVO.getUuid()).listValues();
+                    if(services!= null && services.contains(SNAT_NETWORK_SERVICE_TYPE)) {
                         l3Uuids = sql("select l3.uuid" +
                                 " from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref, " +
                                 " VmNicVO vmnic, VirtualRouterVipVO vrVip" +
@@ -407,6 +409,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             Vip vip = new Vip(vo.getVipUuid());
             ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
             struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+            struct.setServiceUuid(vo.getUuid());
             final NetworkServiceProviderType providerType =
                     nwServiceMgr.getTypeOfNetworkServiceProviderForService(
                             nicvo.getL3NetworkUuid(), NetworkServiceType.PortForwarding);
@@ -464,6 +467,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         if (vo.getVmNicUuid() == null) {
             ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
             struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+            struct.setServiceUuid(vo.getUuid());
             Vip v = new Vip(vo.getVipUuid());
             v.setStruct(struct);
             v.release(new Completion(complete) {
@@ -538,6 +542,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                         ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                         struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                        struct.setServiceUuid(vo.getUuid());
                         Vip v = new Vip(inv.getVipUuid());
                         v.setStruct(struct);
                         v.release(new Completion(trigger){
@@ -667,6 +672,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         if (msg.getVmNicUuid() == null) {
             ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
             struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+            struct.setServiceUuid(vo.getUuid());
             Vip v = new Vip(vo.getVipUuid());
             v.setStruct(struct);
             v.acquire(new Completion(msg) {
@@ -695,6 +701,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         if (VmInstanceState.Running != vmState) {
             ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
             struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+            struct.setServiceUuid(vo.getUuid());
             Vip v = new Vip(vo.getVipUuid());
             v.setStruct(struct);
             v.acquire(new Completion(msg) {
@@ -784,6 +791,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 /* pf is deleted, then release vip */
                                 ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
                                 vipStruct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                                vipStruct.setServiceUuid(struct.getRule().getUuid());
                                 Vip v = new Vip(struct.getVip().getUuid());
                                 v.setStruct(vipStruct);
                                 v.release(new NopeCompletion());
@@ -928,6 +936,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                     public void run(FlowTrigger trigger, Map data) {
                         ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
                         vipStruct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                        vipStruct.setServiceUuid(struct.getRule().getUuid());
                         vipStruct.setServiceProvider(providerType);
                         vipStruct.setPeerL3NetworkUuid(struct.getGuestL3Network().getUuid());
                         Vip vip = new Vip(struct.getVip().getUuid());
@@ -1002,6 +1011,40 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                             @Override
                             public void success() {
                                 logger.debug(String.format("successfully detached %s", struct.toString()));
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "remove-l3-from-vip";
+
+                    boolean s = false;
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (!struct.isReleaseVmNicInfoWhenDetaching()) {
+                            /*vm stop case, don't release vip*/
+                            trigger.next();
+                            return;
+                        }
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                        vipStruct.setServiceUuid(struct.getRule().getUuid());
+                        vipStruct.setServiceProvider(providerType);
+                        vipStruct.setPeerL3NetworkUuid(struct.getGuestL3Network().getUuid());
+                        Vip vip = new Vip(struct.getVip().getUuid());
+                        vip.setStruct(vipStruct);
+                        vip.stop(new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                s = true;
                                 trigger.next();
                             }
 
@@ -1149,7 +1192,23 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
     @Override
     public ServiceReference getServiceReference(String vipUuid) {
-        long count = Q.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.vipUuid, vipUuid).count();
-        return new VipGetServiceReferencePoint.ServiceReference(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE, count);
+        List<String> uuids = Q.New(PortForwardingRuleVO.class).select(PortForwardingRuleVO_.uuid)
+                .eq(PortForwardingRuleVO_.vipUuid, vipUuid).notNull(PortForwardingRuleVO_.vmNicUuid).listValues();
+        if (uuids == null) {
+            uuids = new ArrayList<>();
+        }
+        return new VipGetServiceReferencePoint.ServiceReference(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE, uuids.size(), uuids);
+    }
+
+    @Override
+    public ServiceReference getServicePeerL3Reference(String vipUuid, String peerL3Uuid) {
+        List<String> uuids = SQL.New("select distinct pf.uuid from VmNicVO nic, PortForwardingRuleVO pf " +
+            "where nic.uuid = pf.vmNicUuid and pf.vipUuid = :vipuuid and nic.l3NetworkUuid = :l3uuid")
+                .param("vipuuid",vipUuid).param("l3uuid", peerL3Uuid).list();
+
+        if (uuids == null) {
+            uuids = new ArrayList<>();
+        }
+        return new VipGetServiceReferencePoint.ServiceReference(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE, uuids.size(), uuids);
     }
 }

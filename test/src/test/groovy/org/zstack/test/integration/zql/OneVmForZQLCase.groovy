@@ -189,7 +189,7 @@ test a VM's start/stop/reboot/destroy/recover operations
                 logger.debug("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ${System.currentTimeMillis() - start}ms")
             }
 
-            ZQL.fromString("count vip where useFor is null and l3Network.zoneUuid = '0f0ff43535164fe4bf1a09b245389c91' limit 1000")
+            ZQL.fromString("count vip where l3Network.zoneUuid = '0f0ff43535164fe4bf1a09b245389c91' limit 1000")
                     .getSingleResult()
 
             ZoneInventory zone = env.inventoryByName("zone")

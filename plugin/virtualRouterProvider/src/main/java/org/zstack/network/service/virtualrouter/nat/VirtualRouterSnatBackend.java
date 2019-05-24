@@ -398,7 +398,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
 
         ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
         struct.setUseFor(NetworkServiceType.SNAT.toString());
-
+        struct.setServiceUuid(vipUuid);
         Vip vip = new Vip(vipUuid);
         String l3NetworkUuuid = nic.getL3NetworkUuid();
         try {

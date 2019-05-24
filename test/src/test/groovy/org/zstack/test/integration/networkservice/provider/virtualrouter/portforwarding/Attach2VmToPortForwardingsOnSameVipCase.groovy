@@ -1,28 +1,23 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.portforwarding
 
-import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.portforwarding.PortForwardingProtocolType
-import org.zstack.network.service.vip.VipVO
-import org.zstack.network.service.vip.VipVO_
-import org.zstack.network.service.virtualrouter.VirtualRouterCommands
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.network.service.vip.VipNetworkServicesRefVO
+import org.zstack.network.service.vip.VipNetworkServicesRefVO_
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PortForwardingRuleInventory
 import org.zstack.sdk.VipInventory
 import org.zstack.sdk.VmInstanceInventory
-import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.VipUseForList
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by shixin on 17-11-07.
  * This case will attach 2 vms in same private network to 2 portfowarding rules which bound to same vip
@@ -176,7 +171,7 @@ class Attach2VmToPortForwardingsOnSameVipCase extends SubCase{
             sessionId = adminSession()
             vipUuid = vip.getUuid()
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.uuid, pf1Inv.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
 
         PortForwardingRuleInventory pf2Inv = createPortForwardingRule{
             name = "pf-2"
@@ -186,7 +181,8 @@ class Attach2VmToPortForwardingsOnSameVipCase extends SubCase{
             sessionId = adminSession()
             vipUuid = vip.getUuid()
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).count() == 2
 
         /* pause VM */
         pauseVmInstance {
@@ -201,13 +197,12 @@ class Attach2VmToPortForwardingsOnSameVipCase extends SubCase{
             ruleUuid = pf1Inv.uuid
             vmNicUuid  = vm1.getVmNics().get(0).uuid
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
-
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
         attachPortForwardingRule {
             ruleUuid = pf2Inv.uuid
             vmNicUuid  = vm2.getVmNics().get(0).uuid
         }
-        assert Q.New(VipVO.class).eq(VipVO_.uuid, vip.getUuid()).select(VipVO_.useFor).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.uuid, pf2Inv.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
 
         /* resume vm */
         resumeVmInstance {
@@ -216,6 +211,7 @@ class Attach2VmToPortForwardingsOnSameVipCase extends SubCase{
         resumeVmInstance {
             uuid = vm2.uuid
         }
+        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).count() == 2
     }
 
     @Override
