@@ -108,7 +108,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 String psUuid = ref.getPrimaryStorageUuid();
                 // check primary storage capacity and host physical capacity
                 if (cap - reservedCapacity < ratioMgr.calculateByRatio(psUuid, spec.getDiskSize()) ||
-                        !physicalCapacityMgr.checkCapacityByRatio(psUuid, ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())) {
+                        !physicalCapacityMgr.checkCapacityByRatio(psUuid, ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity()) ||
+                        !physicalCapacityMgr.checkRequiredCapacityByRatio(psUuid, ref.getTotalPhysicalCapacity(), spec.getDiskSize())) {
                     addHostPrimaryStorageBlacklist(huuid, psUuid, spec);
                     toRemoveHuuids.add(huuid);
                 }
@@ -119,7 +120,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 long cap = ref.getAvailableCapacity();
                 String psUuid = ref.getPrimaryStorageUuid();
                 if (cap - reservedCapacity >= ratioMgr.calculateByRatio(psUuid, spec.getDiskSize()) &&
-                        physicalCapacityMgr.checkCapacityByRatio(psUuid, ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())) {
+                        physicalCapacityMgr.checkCapacityByRatio(psUuid, ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity()) &&
+                        physicalCapacityMgr.checkRequiredCapacityByRatio(psUuid, ref.getTotalPhysicalCapacity(), spec.getDiskSize())) {
                     toRemoveHuuids.remove(huuid);
                 }
             }

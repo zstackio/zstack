@@ -6,6 +6,7 @@ import java.util.List;
  */
 public class PrimaryStorageAllocationSpec {
     private long size;
+    private Long totalSize;
     private String requiredZoneUuid;
     private List<String> requiredClusterUuids;
     private String requiredHostUuid;
@@ -148,5 +149,13 @@ public class PrimaryStorageAllocationSpec {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
+    }
+
+    public Long getTotalSize() {
+        return totalSize;
+    }
+
+    public void setTotalSize(Long totalSize) {
+        this.totalSize = totalSize;
     }
 }

@@ -55,6 +55,12 @@ public class PrimaryStoragePhysicalCapacityManagerImpl implements PrimaryStorage
     }
 
     @Override
+    public boolean checkRequiredCapacityByRatio(String psUuid, long totalPhysicalCapacity, long requiredCapacity) {
+        double ratio = getRatio(psUuid);
+        return requiredCapacity < Math.round(totalPhysicalCapacity * ratio);
+    }
+
+    @Override
     public boolean checkCapacityByRatio(String psUuid, PrimaryStorageCapacityVO cap) {
         return checkCapacityByRatio(psUuid, cap.getTotalPhysicalCapacity(), cap.getAvailablePhysicalCapacity());
     }
