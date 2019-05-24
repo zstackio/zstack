@@ -7,21 +7,21 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceSpec.CdRomSpec;
+import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.header.vm.VmInstantiateResourceException;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
@@ -30,10 +30,12 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -97,7 +99,8 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                     imageSpec.setSelectedBackupStorage(CollectionUtils.find(iso.getBackupStorageRefs(), new Function<ImageBackupStorageRefInventory, ImageBackupStorageRefInventory>() {
                         @Override
                         public ImageBackupStorageRefInventory call(ImageBackupStorageRefInventory arg) {
-                            return arg.getBackupStorageUuid().equals(cdRomSpec.getBackupStorageUuid()) ? arg : null;
+                            return arg.getBackupStorageUuid().equals(cdRomSpec.getBackupStorageUuid()) &&
+                                    ImageStatus.Ready.toString().equals(arg.getStatus())? arg : null;
                         }
                     }));
 
