@@ -127,7 +127,6 @@ public class KVMHost extends HostBase implements Host {
     private String detachNicPath;
     private String migrateVmPath;
     private String snapshotPath;
-    private String checkSnapshotPath;
     private String mergeSnapshotPath;
     private String hostFactPath;
     private String attachIsoPath;
@@ -208,10 +207,6 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_MIGRATE_VM_PATH);
         migrateVmPath = ub.build().toString();
-
-        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-        ub.path(KVMConstant.KVM_CHECK_VOLUME_SNAPSHOT_PATH);
-        checkSnapshotPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_TAKE_VOLUME_SNAPSHOT_PATH);
@@ -422,8 +417,6 @@ public class KVMHost extends HostBase implements Host {
             handle((ResumeVmOnHypervisorMsg) msg);
         } else if (msg instanceof GetKVMHostDownloadCredentialMsg) {
             handle((GetKVMHostDownloadCredentialMsg) msg);
-        } else if (msg instanceof CheckSnapshotOnHypervisorMsg) {
-            handle((CheckSnapshotOnHypervisorMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -975,53 +968,6 @@ public class KVMHost extends HostBase implements Host {
                 extEmitter.afterMergeSnapshotFailed((KVMHostInventory) getSelfInventory(), msg, cmd, reply.getError());
                 bus.reply(msg, reply);
                 completion.done();
-            }
-        });
-    }
-
-    private void handle(final CheckSnapshotOnHypervisorMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return getName();
-            }
-
-            @Override
-            public void run(SyncTaskChain chain) {
-                CheckSnapshotOnHypervisorReply reply = new CheckSnapshotOnHypervisorReply();
-                CheckSnapshotCmd cmd = new CheckSnapshotCmd();
-                cmd.volumePath = msg.getVolumeInstallPath();
-                new Http<>(checkSnapshotPath, cmd, CheckSnapshotRsp.class).call(new ReturnValueCompletion<CheckSnapshotRsp>(msg, reply) {
-                    @Override
-                    public void success(CheckSnapshotRsp ret) {
-                        if (ret.isSuccess()) {
-                            reply.setCompleted(ret.completed);
-                            reply.setSnapshotInstallPath(ret.snapshotPath);
-                            reply.setVolumeInstallPath(ret.volumePath);
-                            reply.setSize(ret.size);
-                        } else {
-                            ErrorCode err = operr("operation error, because:%s", ret.getError());
-                            reply.setError(err);
-                        }
-                        bus.reply(msg, reply);
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        reply.setError(errorCode);
-                        bus.reply(msg, reply);
-                    }
-                });
-            }
-
-            @Override
-            protected int getSyncLevel() {
-                return KVMGlobalConfig.HOST_SNAPSHOT_SYNC_LEVEL.value(Integer.class);
-            }
-
-            @Override
-            public String getName() {
-                return String.format("check-snapshot-on-kvm-%s", self.getUuid());
             }
         });
     }

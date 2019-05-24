@@ -2787,27 +2787,4 @@ public class LocalStorageBase extends PrimaryStorageBase {
             }
         });
     }
-
-    @Override
-    protected void handle(final CheckVolumeSnapshotsOnPrimaryStorageMsg msg) {
-        CheckVolumeSnapshotsOnPrimaryStorageReply sreply = new CheckVolumeSnapshotsOnPrimaryStorageReply();
-
-        final String hostUuid = getHostUuidByResourceUuid(msg.getVolumeUuid());
-
-        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(hostUuid);
-        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, hostUuid, new ReturnValueCompletion<CheckVolumeSnapshotsOnPrimaryStorageReply>(msg) {
-            @Override
-            public void success(CheckVolumeSnapshotsOnPrimaryStorageReply returnValue) {
-                bus.reply(msg, returnValue);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                CheckVolumeSnapshotsOnPrimaryStorageReply sreply = new CheckVolumeSnapshotsOnPrimaryStorageReply();
-                sreply.setError(errorCode);
-                bus.reply(msg, sreply);
-            }
-        });
-    }
 }

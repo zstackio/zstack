@@ -1717,25 +1717,4 @@ public class KvmBackend extends HypervisorBackend {
         reply.setSnapshotInstallPath(makeSnapshotInstallPath(msg.getVolumeInventory(), msg.getSnapshotUuid()));
         completion.success(reply);
     }
-
-    @Override
-    void handle(CheckVolumeSnapshotsOnPrimaryStorageMsg msg, ReturnValueCompletion<CheckSnapshotOnHypervisorReply> completion) {
-        String connectedHostUuid = primaryStorageFactory.getConnectedHostForOperation(getSelfInventory()).get(0).getUuid();
-        CheckSnapshotOnHypervisorMsg cmsg = new CheckSnapshotOnHypervisorMsg();
-        cmsg.setHostUuid(connectedHostUuid);
-        cmsg.setVolumeInstallPath(msg.getVolumeInstallPath());
-
-        bus.makeLocalServiceId(cmsg, HostConstant.SERVICE_ID);
-        bus.send(cmsg, new CloudBusCallBack(msg) {
-            @Override
-            public void run(MessageReply reply) {
-                if (reply.isSuccess()) {
-                    CheckSnapshotOnHypervisorReply r = reply.castReply();
-                    completion.success(r);
-                } else {
-                    completion.fail(reply.getError());
-                }
-            }
-        });
-    }
 }

@@ -18,6 +18,4 @@ public class VolumeSnapshotGlobalConfig {
     public static GlobalConfig SNAPSHOT_BACKUP_PARALLELISM_DEGREE = new GlobalConfig(CATEGORY, "backup.parallelismDegree");
     @GlobalConfigValidation
     public static GlobalConfig SNAPSHOT_BEFORE_REVERTVOLUME = new GlobalConfig(CATEGORY, "snapshot.before.revertvolume");
-    @GlobalConfigValidation
-    public static GlobalConfig SNAPSHOT_CORRECT_AFTER_RESTART_MANAGEMENT = new GlobalConfig(CATEGORY, "snapshot.correct.after.restart.management");
 }

@@ -140,55 +140,9 @@ public class VolumeBase implements Volume {
             handle((ChangeVolumeStatusMsg) msg);
         } else if (msg instanceof OverwriteVolumeMsg) {
             handle((OverwriteVolumeMsg) msg);
-        } else if (msg instanceof CheckVolumeSnapshotsMsg) {
-            handle((CheckVolumeSnapshotsMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
-    }
-
-    private void handle(final CheckVolumeSnapshotsMsg msg) {
-        CheckVolumeSnapshotsReply sreply = new CheckVolumeSnapshotsReply();
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getSyncSignature() {
-                return syncThreadId;
-            }
-
-            @Override
-            @Deferred
-            public void run(SyncTaskChain chain) {
-                CheckVolumeSnapshotsOnPrimaryStorageMsg gmsg = new CheckVolumeSnapshotsOnPrimaryStorageMsg();
-                gmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
-                gmsg.setVolumeInstallPath(self.getInstallPath());
-                gmsg.setVolumeUuid(self.getUuid());
-                gmsg.setSnapshots(msg.getSnapshots());
-
-                bus.makeLocalServiceId(gmsg, PrimaryStorageConstant.SERVICE_ID);
-                bus.send(gmsg, new CloudBusCallBack(chain) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (reply.isSuccess()) {
-                            CheckVolumeSnapshotsOnPrimaryStorageReply r = reply.castReply();
-                            sreply.setCompleted(r.isCompleted());
-                            sreply.setSnapshotUuid(r.getSnapshotUuid());
-
-                            bus.reply(msg, sreply);
-                        } else {
-                            sreply.setError(reply.getError());
-                            bus.reply(msg, sreply);
-                        }
-                        chain.next();
-                    }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return "check-volume-snapshots";
-            }
-        });
-
     }
 
     private void handle(ChangeVolumeStatusMsg msg) {
