@@ -35,7 +35,7 @@ public class CreateDataVolumeAction extends AbstractAction {
     public java.lang.String diskOfferingUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public long diskSize = 0;
+    public long diskSize = 0L;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String primaryStorageUuid;

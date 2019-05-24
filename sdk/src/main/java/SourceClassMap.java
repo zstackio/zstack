@@ -118,6 +118,8 @@ public class SourceClassMap {
 			put("org.zstack.header.errorcode.ErrorCodeList", "org.zstack.sdk.ErrorCodeList");
 			put("org.zstack.header.host.AddHostFromFileResult", "org.zstack.sdk.AddHostFromFileResult");
 			put("org.zstack.header.host.HostInventory", "org.zstack.sdk.HostInventory");
+			put("org.zstack.header.host.HostNetworkBondingInventory", "org.zstack.sdk.HostNetworkBondingInventory");
+			put("org.zstack.header.host.HostNetworkInterfaceInventory", "org.zstack.sdk.HostNetworkInterfaceInventory");
 			put("org.zstack.header.hybrid.network.eip.HybridEipAddressInventory", "org.zstack.sdk.HybridEipAddressInventory");
 			put("org.zstack.header.hybrid.network.eip.HybridEipStatus", "org.zstack.sdk.HybridEipStatus");
 			put("org.zstack.header.hybrid.network.vpn.VpcUserVpnGatewayInventory", "org.zstack.sdk.VpcUserVpnGatewayInventory");
@@ -230,6 +232,9 @@ public class SourceClassMap {
 			put("org.zstack.iam2.entity.State", "org.zstack.sdk.iam2.entity.State");
 			put("org.zstack.iam2.entity.StateEvent", "org.zstack.sdk.iam2.entity.StateEvent");
 			put("org.zstack.iam2.project.template.Template", "org.zstack.sdk.iam2.project.template.Template");
+			put("org.zstack.imagereplicator.ImageReplicationGroupBackupStorageRefInventory", "org.zstack.sdk.ImageReplicationGroupBackupStorageRefInventory");
+			put("org.zstack.imagereplicator.ImageReplicationGroupInventory", "org.zstack.sdk.ImageReplicationGroupInventory");
+			put("org.zstack.imagereplicator.ReplicationGroupState", "org.zstack.sdk.ReplicationGroupState");
 			put("org.zstack.ipsec.IPsecConnectionInventory", "org.zstack.sdk.IPsecConnectionInventory");
 			put("org.zstack.ipsec.IPsecL3NetworkRefInventory", "org.zstack.sdk.IPsecL3NetworkRefInventory");
 			put("org.zstack.ipsec.IPsecPeerCidrInventory", "org.zstack.sdk.IPsecPeerCidrInventory");
@@ -317,6 +322,14 @@ public class SourceClassMap {
 			put("org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonInventory", "org.zstack.sdk.FusionstorPrimaryStorageMonInventory");
 			put("org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity", "org.zstack.sdk.HostDiskCapacity");
 			put("org.zstack.storage.primary.local.LocalStorageResourceRefInventory", "org.zstack.sdk.LocalStorageResourceRefInventory");
+			put("org.zstack.storage.primary.ministorage.MiniStorageHostRefInventory", "org.zstack.sdk.MiniStorageHostRefInventory");
+			put("org.zstack.storage.primary.ministorage.MiniStorageInventory", "org.zstack.sdk.MiniStorageInventory");
+			put("org.zstack.storage.primary.ministorage.MiniStorageResourceReplicationInventory", "org.zstack.sdk.MiniStorageResourceReplicationInventory");
+			put("org.zstack.storage.primary.ministorage.MiniStorageType", "org.zstack.sdk.MiniStorageType");
+			put("org.zstack.storage.primary.ministorage.ReplicationDiskStatus", "org.zstack.sdk.ReplicationDiskStatus");
+			put("org.zstack.storage.primary.ministorage.ReplicationNetworkStatus", "org.zstack.sdk.ReplicationNetworkStatus");
+			put("org.zstack.storage.primary.ministorage.ReplicationRole", "org.zstack.sdk.ReplicationRole");
+			put("org.zstack.storage.primary.ministorage.ReplicationState", "org.zstack.sdk.ReplicationState");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockCandidateStruct", "org.zstack.sdk.SharedBlockCandidateStruct");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockGroupPrimaryStorageHostRefInventory", "org.zstack.sdk.SharedBlockGroupPrimaryStorageHostRefInventory");
 			put("org.zstack.storage.primary.sharedblock.SharedBlockGroupPrimaryStorageInventory", "org.zstack.sdk.SharedBlockGroupPrimaryStorageInventory");
@@ -493,6 +506,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HostInventory", "org.zstack.header.host.HostInventory");
 			put("org.zstack.sdk.HostIommuStateType", "org.zstack.pciDevice.HostIommuStateType");
 			put("org.zstack.sdk.HostIommuStatusType", "org.zstack.pciDevice.HostIommuStatusType");
+			put("org.zstack.sdk.HostNetworkBondingInventory", "org.zstack.header.host.HostNetworkBondingInventory");
+			put("org.zstack.sdk.HostNetworkInterfaceInventory", "org.zstack.header.host.HostNetworkInterfaceInventory");
 			put("org.zstack.sdk.HybridAccountInventory", "org.zstack.hybrid.account.HybridAccountInventory");
 			put("org.zstack.sdk.HybridConnectionType", "org.zstack.header.aliyun.network.HybridConnectionType");
 			put("org.zstack.sdk.HybridEipAddressInventory", "org.zstack.header.hybrid.network.eip.HybridEipAddressInventory");
@@ -506,6 +521,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ImageBackupStorageRefInventory", "org.zstack.header.image.ImageBackupStorageRefInventory");
 			put("org.zstack.sdk.ImageCacheInventory", "org.zstack.header.storage.primary.ImageCacheInventory");
 			put("org.zstack.sdk.ImageInventory", "org.zstack.header.image.ImageInventory");
+			put("org.zstack.sdk.ImageReplicationGroupBackupStorageRefInventory", "org.zstack.imagereplicator.ImageReplicationGroupBackupStorageRefInventory");
+			put("org.zstack.sdk.ImageReplicationGroupInventory", "org.zstack.imagereplicator.ImageReplicationGroupInventory");
 			put("org.zstack.sdk.ImageStoreBackupStorageInventory", "org.zstack.storage.backup.imagestore.ImageStoreBackupStorageInventory");
 			put("org.zstack.sdk.ImageStoreGcResult", "org.zstack.storage.backup.imagestore.ImageStoreGcResult");
 			put("org.zstack.sdk.ImageStoreImageStruct", "org.zstack.storage.backup.imagestore.ImageStoreImageStruct");
@@ -537,6 +554,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LongJobState", "org.zstack.header.longjob.LongJobState");
 			put("org.zstack.sdk.ManagementNodeInventory", "org.zstack.header.managementnode.ManagementNodeInventory");
 			put("org.zstack.sdk.MediaInventory", "org.zstack.monitoring.media.MediaInventory");
+			put("org.zstack.sdk.MiniStorageHostRefInventory", "org.zstack.storage.primary.ministorage.MiniStorageHostRefInventory");
+			put("org.zstack.sdk.MiniStorageInventory", "org.zstack.storage.primary.ministorage.MiniStorageInventory");
+			put("org.zstack.sdk.MiniStorageResourceReplicationInventory", "org.zstack.storage.primary.ministorage.MiniStorageResourceReplicationInventory");
+			put("org.zstack.sdk.MiniStorageType", "org.zstack.storage.primary.ministorage.MiniStorageType");
 			put("org.zstack.sdk.MonitorTriggerActionInventory", "org.zstack.monitoring.actions.MonitorTriggerActionInventory");
 			put("org.zstack.sdk.MonitorTriggerInventory", "org.zstack.monitoring.MonitorTriggerInventory");
 			put("org.zstack.sdk.NasFileSystemInventory", "org.zstack.nas.NasFileSystemInventory");
@@ -580,6 +601,11 @@ public class SourceClassMap {
 			put("org.zstack.sdk.QuotaInventory", "org.zstack.header.identity.QuotaInventory");
 			put("org.zstack.sdk.QuotaUsage", "org.zstack.header.identity.Quota$QuotaUsage");
 			put("org.zstack.sdk.RemovalInstanceRuleInventory", "org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory");
+			put("org.zstack.sdk.ReplicationDiskStatus", "org.zstack.storage.primary.ministorage.ReplicationDiskStatus");
+			put("org.zstack.sdk.ReplicationGroupState", "org.zstack.imagereplicator.ReplicationGroupState");
+			put("org.zstack.sdk.ReplicationNetworkStatus", "org.zstack.storage.primary.ministorage.ReplicationNetworkStatus");
+			put("org.zstack.sdk.ReplicationRole", "org.zstack.storage.primary.ministorage.ReplicationRole");
+			put("org.zstack.sdk.ReplicationState", "org.zstack.storage.primary.ministorage.ReplicationState");
 			put("org.zstack.sdk.ResourceBindableConfigStruct", "org.zstack.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct");
 			put("org.zstack.sdk.ResourceConfigInventory", "org.zstack.resourceconfig.ResourceConfigInventory");
 			put("org.zstack.sdk.ResourceInventory", "org.zstack.header.vo.ResourceInventory");

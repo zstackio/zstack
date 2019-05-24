@@ -19,6 +19,7 @@ public class VolumeTO {
     public static final String SHAREDBLOCK = "sharedblock";
     public static final String SCSILUN = "scsilun";
     public static final String BLOCK = "block";
+    public static final String MINISTORAGE = "mini";
     public static List<KVMConvertVolumeExtensionPoint> exts;
 
     private String installPath;

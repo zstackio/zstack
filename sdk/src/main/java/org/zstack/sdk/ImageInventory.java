@@ -171,4 +171,5 @@ public class ImageInventory  {
     public java.util.List getSystemTags() {
         return this.systemTags;
     }
+
 }

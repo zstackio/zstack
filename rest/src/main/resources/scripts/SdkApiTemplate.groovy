@@ -183,7 +183,9 @@ class SdkApiTemplate implements SdkTemplate {
                 }
                 
                 if (val instanceof String) {
-                    return " = \"${StringEscapeUtils.escapeJava(val.toString())}\";"
+                    return " = \"${StringEscapeUtils.escapeJava(val.toString())}\";" 
+                } else if (val instanceof Long) {
+                    return " = ${val.toString()}L;"
                 } else {
                     return " = ${val.toString()};"
                 }

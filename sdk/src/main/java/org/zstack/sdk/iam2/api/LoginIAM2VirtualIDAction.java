@@ -12,7 +12,7 @@ public class LoginIAM2VirtualIDAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public LoginIAM2VirtualIDResult value;
+        public org.zstack.sdk.iam2.api.LoginIAM2VirtualIDResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,19 +26,19 @@ public class LoginIAM2VirtualIDAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String name;
+    public java.lang.String name;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String password;
+    public java.lang.String password;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String captchaUuid;
+    public java.lang.String captchaUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String verifyCode;
+    public java.lang.String verifyCode;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public Map clientInfo;
+    public java.util.Map clientInfo;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +57,8 @@ public class LoginIAM2VirtualIDAction extends AbstractAction {
             return ret;
         }
         
-        LoginIAM2VirtualIDResult value = res.getResult(LoginIAM2VirtualIDResult.class);
-        ret.value = value == null ? new LoginIAM2VirtualIDResult() : value;
+        org.zstack.sdk.iam2.api.LoginIAM2VirtualIDResult value = res.getResult(org.zstack.sdk.iam2.api.LoginIAM2VirtualIDResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.LoginIAM2VirtualIDResult() : value; 
 
         return ret;
     }

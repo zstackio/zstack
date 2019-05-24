@@ -12,7 +12,7 @@ public class LogInByAccountAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public LogInResult value;
+        public org.zstack.sdk.LogInResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,22 +26,22 @@ public class LogInByAccountAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String accountName;
+    public java.lang.String accountName;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String password;
+    public java.lang.String password;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String accountType;
+    public java.lang.String accountType;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String captchaUuid;
+    public java.lang.String captchaUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String verifyCode;
+    public java.lang.String verifyCode;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public Map clientInfo;
+    public java.util.Map clientInfo;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -60,8 +60,8 @@ public class LogInByAccountAction extends AbstractAction {
             return ret;
         }
         
-        LogInResult value = res.getResult(LogInResult.class);
-        ret.value = value == null ? new LogInResult() : value;
+        org.zstack.sdk.LogInResult value = res.getResult(org.zstack.sdk.LogInResult.class);
+        ret.value = value == null ? new org.zstack.sdk.LogInResult() : value; 
 
         return ret;
     }

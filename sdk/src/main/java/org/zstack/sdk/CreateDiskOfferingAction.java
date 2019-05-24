@@ -32,7 +32,7 @@ public class CreateDiskOfferingAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, numberRangeUnit = {"byte", "bytes"}, noTrim = false)
-    public long diskSize = 0;
+    public long diskSize = 0L;
 
     @Param(required = false)
     public int sortKey = 0;

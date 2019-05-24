@@ -32,7 +32,7 @@ public class CreateHybridEipAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,200L}, noTrim = false)
-    public long bandWidthMb = 0;
+    public long bandWidthMb = 0L;
 
     @Param(required = true, validValues = {"aliyun"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
