@@ -58,7 +58,6 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -72,6 +71,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.Constants.THREAD_CONTEXT_API;
@@ -947,9 +947,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             private int numTicks = 0;
 
             private void markCompletion(final GetImageDownloadProgressReply dr) {
-                new SQLBatch() {
+                ImageVO ivo = new SQLBatchWithReturn<ImageVO>() {
                     @Override
-                    protected void scripts() {
+                    protected ImageVO scripts() {
                         ImageVO vo = findByUuid(imageUuid, ImageVO.class);
                         if (StringUtils.isNotEmpty(dr.getFormat())) {
                             vo.setFormat(dr.getFormat());
@@ -972,10 +972,15 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 .set(ImageBackupStorageRefVO_.status, ImageStatus.Ready)
                                 .set(ImageBackupStorageRefVO_.installPath, dr.getInstallPath())
                                 .update();
+                        return vo;
                     }
                 }.execute();
 
                 logger.debug(String.format("added image [name: %s, uuid: %s]", name, imageUuid));
+
+                final ImageInventory einv = ImageInventory.valueOf(ivo);
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class),
+                        ext -> ext.afterAddImage(einv));
             }
 
             private void markFailure(ErrorCode reason) {
