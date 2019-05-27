@@ -1,0 +1,11 @@
+[
+  {
+    "category": "PS",
+    "code": "1001",
+    "regex": "failed to detach data volume[uuid:%s, installPath:%s] from vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because unable to detach the volum from the vm;it's still attached after 5 seconds",
+    "message_cn": "卸载云盘失败",
+    "message_en": "failed to detach volume",
+    "operation_cn": "由于云主机操作系统限制可能会导致卸载云盘失败，请尝试对云主机关机后再次卸载",
+    "operation_en": "Detach volume may fail due to limitations of the VM operating system, please try again after VM shut down."
+  }
+]
