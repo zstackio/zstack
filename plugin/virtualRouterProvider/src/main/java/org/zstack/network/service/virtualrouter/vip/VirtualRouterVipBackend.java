@@ -29,6 +29,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 import static org.zstack.core.Platform.operr;
 
 import java.util.ArrayList;
@@ -53,6 +54,8 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     protected ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
+    @Autowired
+    private VipConfigProxy proxy;
 
     private String getOwnerMac(VirtualRouterVmInventory vr, VipInventory vip) {
         for (VmNicInventory nic : vr.getVmNics()) {
@@ -147,147 +150,12 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         createVipOnVirtualRouterVm(vr, list(vip), new Completion(completion) {
             @Override
             public void success() {
-                if (!dbf.isExist(vip.getUuid(), VirtualRouterVipVO.class)) {
-                    VirtualRouterVipVO vrvip = new VirtualRouterVipVO();
-                    vrvip.setUuid(vip.getUuid());
-                    vrvip.setVirtualRouterVmUuid(vr.getUuid());
-                    dbf.persist(vrvip);
-                }
+                proxy.attachNetworkService(vr.getUuid(), VipVO.class.getSimpleName(), asList(vip.getUuid()));
                 completion.success();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
-            }
-        });
-    }
-
-    @Override
-    public void acquireVip(final VipInventory vip, final L3NetworkInventory guestNw, final Completion completion) {
-        VirtualRouterVipVO vipvo = dbf.findByUuid(vip.getUuid(), VirtualRouterVipVO.class);
-        if (vipvo != null) {
-            SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
-            q.select(VmInstanceVO_.state);
-            q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, vipvo.getVirtualRouterVmUuid());
-            VmInstanceState vrState = q.findValue();
-            if (VmInstanceState.Running != vrState) {
-                completion.fail(operr("virtual router[uuid:%s, state:%s] is not running, current HA has not been supported, please manually start this virtual router",
-                                vipvo.getVirtualRouterVmUuid(), vrState));
-            } else {
-                completion.success();
-            }
-
-            return;
-        }
-
-        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("prepare-vr-for-vip-%s-%s", vip.getUuid(), vip.getIp()));
-        chain.then(new NoRollbackFlow() {
-            @Override
-            public void run(final FlowTrigger trigger, final Map data) {
-                VirtualRouterStruct s = new VirtualRouterStruct();
-                s.setL3Network(guestNw);
-                s.setOfferingValidator(new VirtualRouterOfferingValidator() {
-                    @Override
-                    public void validate(VirtualRouterOfferingInventory offering) throws OperationFailureException {
-                        if (!offering.getPublicNetworkUuid().equals(vip.getL3NetworkUuid())) {
-                            throw new OperationFailureException(operr("found a virtual router offering[uuid:%s] for L3Network[uuid:%s] in zone[uuid:%s]; however, the network's public network[uuid:%s] is not the same to VIP[uuid:%s]'s; you may need to use system tag" +
-                                            " guestL3Network::l3NetworkUuid to specify a particular virtual router offering for the L3Network", offering.getUuid(), guestNw.getUuid(), guestNw.getZoneUuid(), vip.getL3NetworkUuid(), vip.getUuid()));
-                        }
-                    }
-                });
-
-                acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(trigger){
-                    @Override
-                    public void success(VirtualRouterVmInventory returnValue) {
-                        data.put(VirtualRouterConstant.Param.VR.toString(), returnValue);
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                });
-            }
-        }).then(new NoRollbackFlow() {
-            @Override
-            public void run(final FlowTrigger trigger, Map data) {
-                final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
-                createVipOnVirtualRouterVm(vr, Arrays.asList(vip), new Completion(trigger) {
-                    @Override
-                    public void success() {
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                });
-            }
-        }).done(new FlowDoneHandler(completion) {
-            @Override
-            public void handle(Map data) {
-                final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
-
-                if (!dbf.isExist(vip.getUuid(), VirtualRouterVipVO.class)) {
-                    VirtualRouterVipVO vrvip = new VirtualRouterVipVO();
-                    vrvip.setUuid(vip.getUuid());
-                    vrvip.setVirtualRouterVmUuid(vr.getUuid());
-                    dbf.persist(vrvip);
-                }
-
-                completion.success();
-            }
-        }).error(new FlowErrorHandler(completion) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                completion.fail(errCode);
-            }
-        }).start();
-    }
-
-    @Override
-    public void releaseVip(final VipInventory vip, final Completion completion) {
-        final VirtualRouterVipVO vrvip = dbf.findByUuid(vip.getUuid(), VirtualRouterVipVO.class);
-        if (vrvip == null) {
-            completion.success();
-            return;
-        }
-
-        if (vrvip.getVirtualRouterVmUuid() == null) {
-            // the vr has been deleted
-            dbf.remove(vrvip);
-            completion.success();
-            return;
-        }
-
-        final VirtualRouterVmVO vrvo = dbf.findByUuid(vrvip.getVirtualRouterVmUuid(), VirtualRouterVmVO.class);
-        if (vrvo.getState() != VmInstanceState.Running) {
-            // vr will sync when becomes Running
-            dbf.remove(vrvip);
-            completion.success();
-            return;
-        }
-
-        final VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrvo);
-
-        releaseVipOnVirtualRouterVm(vr, vip, new Completion(completion) {
-            @Override
-            public void success() {
-                logger.debug(String.format("successfully released vip[uuid:%s, name:%s, ip:%s] on virtual router vm[uuid:%s]",
-                        vip.getUuid(), vip.getName(), vip.getIp(), vrvo.getUuid()));
-                dbf.remove(vrvip);
-                completion.success();
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("failed to release vip[uuid:%s, name:%s, ip:%s] on virtual router vm[uuid:%s], because %s",
-                        vip.getUuid(), vip.getName(), vip.getIp(),
-                        vrvo.getUuid(), errorCode));
                 completion.fail(errorCode);
             }
         });
@@ -342,6 +210,8 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                             nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), ret.getError());
                     completion.fail(err);
                 } else {
+                    List<String> vipUuids = vips.stream().map(v -> v.getVipUuid()).distinct().collect(Collectors.toList());
+                    proxy.attachNetworkService(nic.getVmInstanceUuid(), VipVO.class.getSimpleName(), vipUuids);
                     completion.success();
                 }
             }
@@ -363,7 +233,6 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find());
 
         List<VipTO> vipTOS = new ArrayList<>();
-        List<VirtualRouterVipVO> refs = new ArrayList<>();
         for (VipVO vip : vips) {
             if (vipTOS.stream().anyMatch(v -> v.getIp().equals(vip.getIp()))) {
                 logger.warn(String.format(
@@ -386,18 +255,6 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                     .findFirst().get().getMac());
             to.setVipUuid(vip.getUuid());
             vipTOS.add(to);
-
-            if (!Q.New(VirtualRouterVipVO.class)
-                    .eq(VirtualRouterVipVO_.uuid, vip.getUuid())
-                    .isExists()) {
-                VirtualRouterVipVO vo = new VirtualRouterVipVO();
-                vo.setUuid(vip.getUuid());
-                vo.setVirtualRouterVmUuid(nic.getVmInstanceUuid());
-                refs.add(vo);
-            }
-        }
-        if (!refs.isEmpty()) {
-            dbf.persistCollection(refs);
         }
 
         return vipTOS;

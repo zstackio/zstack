@@ -18,6 +18,9 @@ class StorageTest extends Test {
         kvm()
         flatNetwork()
         securityGroup()
+        eip()
+        lb()
+        portForwarding()
     }
 
     @Override

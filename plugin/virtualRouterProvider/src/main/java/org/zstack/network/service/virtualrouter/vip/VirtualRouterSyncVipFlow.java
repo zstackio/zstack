@@ -6,8 +6,6 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -19,7 +17,6 @@ import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterSyncVipFlow implements Flow {
     @Autowired
@@ -27,13 +24,14 @@ public class VirtualRouterSyncVipFlow implements Flow {
     @Autowired
     @Qualifier("VirtualRouterVipBackend")
     protected VirtualRouterVipBackend vipExt;
+    @Autowired
+    protected VipConfigProxy proxy;
 
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
 
-        List<String> vrVips = Q.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.virtualRouterVmUuid, vr.getUuid())
-                .select(VirtualRouterVipVO_.uuid).listValues();
+        List<String> vrVips = proxy.getServiceUuidsByRouterUuid(vr.getUuid(), VipVO.class.getSimpleName());
         List<String> peerL3Vips = null;
         if (vr.getGuestL3Networks() != null && !vr.getGuestL3Networks().isEmpty()) {
             peerL3Vips = Q.New(VipPeerL3NetworkRefVO.class).select(VipPeerL3NetworkRefVO_.vipUuid)
@@ -54,7 +52,7 @@ public class VirtualRouterSyncVipFlow implements Flow {
             }
         }
 
-        if (vipUuids == null) {
+        if (vipUuids == null || vipUuids.isEmpty()) {
             chain.next();
             return;
         }
@@ -62,25 +60,12 @@ public class VirtualRouterSyncVipFlow implements Flow {
         List<VipVO> vips = vipUuids.stream()
                 .map(uuid -> (VipVO)Q.New(VipVO.class).eq(VipVO_.uuid, uuid).find())
                 .collect(Collectors.toList());
+
         List<VipInventory> invs = VipInventory.valueOf(vips);
         vipExt.createVipOnVirtualRouterVm(vr, invs, new Completion(chain) {
             @Override
             public void success() {
-                List<VirtualRouterVipVO> vrvips = new ArrayList<>();
-                for (VipVO vip : vips) {
-                    VirtualRouterVipVO vo = dbf.findByUuid(vip.getUuid(), VirtualRouterVipVO.class);
-                    if (vo == null) {
-                        vo = new VirtualRouterVipVO();
-                        vo.setUuid(vip.getUuid());
-                        vo.setVirtualRouterVmUuid(vr.getUuid());
-                        vrvips.add(vo);
-                    }
-                }
-
-                if (!vrvips.isEmpty()) {
-                    dbf.persistCollection(vrvips);
-                }
-
+                proxy.attachNetworkService(vr.getUuid(), VipVO.class.getSimpleName(), vips.stream().map(VipVO::getUuid).collect(Collectors.toList()));
                 chain.next();
             }
 

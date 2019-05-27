@@ -2,9 +2,7 @@ package org.zstack.network.service.flat;
 
 import org.zstack.header.core.Completion;
 import org.zstack.header.message.Message;
-import org.zstack.network.service.vip.VipBaseBackend;
-import org.zstack.network.service.vip.VipFactory;
-import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.*;
 
 /**
  * Created by xing5 on 2016/12/5.
@@ -34,6 +32,8 @@ public class FlatVipFactory implements VipFactory {
             protected void handleBackendSpecificMessage(Message msg) {
                 bus.dealWithUnknownMessage(msg);
             }
+
         };
     }
+
 }

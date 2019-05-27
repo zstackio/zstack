@@ -33,6 +33,7 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
@@ -915,6 +916,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
     @Override
     public PortForwardingBackend getPortForwardingBackend(String providerType) {
+
         PortForwardingBackend bkd = backends.get(providerType);
         DebugUtils.Assert(bkd != null, String.format("cannot find PortForwardingBackend[type:%s]", providerType));
         return bkd;

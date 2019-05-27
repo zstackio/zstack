@@ -20,6 +20,14 @@ public class NetworkRouterAreaRefInventory  {
         return this.vRouterUuid;
     }
 
+    public java.lang.String applianceVmType;
+    public void setApplianceVmType(java.lang.String applianceVmType) {
+        this.applianceVmType = applianceVmType;
+    }
+    public java.lang.String getApplianceVmType() {
+        return this.applianceVmType;
+    }
+
     public java.lang.String routerAreaUuid;
     public void setRouterAreaUuid(java.lang.String routerAreaUuid) {
         this.routerAreaUuid = routerAreaUuid;

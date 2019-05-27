@@ -18,6 +18,9 @@ class Ipv6Test extends Test {
         nfsPrimaryStorage()
         include("vip.xml")
         include("vxlan.xml")
+        eip()
+        lb()
+        portForwarding()
     }
 
     @Override

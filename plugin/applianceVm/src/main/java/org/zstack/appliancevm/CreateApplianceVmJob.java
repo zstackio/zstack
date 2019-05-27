@@ -7,6 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
@@ -55,6 +56,8 @@ public class CreateApplianceVmJob implements Job {
     private ApplianceVmFacade apvf;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     @Override
     public void run(final ReturnValueCompletion<Object> complete) {
@@ -113,6 +116,11 @@ public class CreateApplianceVmJob implements Job {
                 avo.setCpuSpeed(iovo.getCpuSpeed());
                 avo.setMemorySize(iovo.getMemorySize());
                 avo.setAllocatorStrategy(iovo.getAllocatorStrategy());
+                if (spec.getHaSpec() != null) {
+                    avo.setHaStatus(ApplianceVmHaStatus.Backup);
+                } else {
+                    avo.setHaStatus(ApplianceVmHaStatus.NoHa);
+                }
 
                 ApplianceVmSubTypeFactory factory = apvmFactory.getApplianceVmSubTypeFactory(avo.getApplianceVmType());
 
@@ -135,7 +143,19 @@ public class CreateApplianceVmJob implements Job {
                 if (spec.getNonInherentSystemTags() != null && !spec.getNonInherentSystemTags().isEmpty()) {
                     tagMgr.createNonInherentSystemTags(spec.getNonInherentSystemTags(), avo.getUuid(), VmInstanceVO.class.getSimpleName());
                 }
-                apvf.setApplianceVmSystemTags(avo.getUuid(), avo.getApplianceVmType());
+
+                /* if there is ha configure, appliance vm will use individual affinityGroup */
+                if (spec.getHaSpec() == null) {
+                    apvf.attachApplianceVmToAffinityGroup(avo.getUuid(), null);
+                } else {
+                    if (spec.getHaSpec().getHaUuid() != null) {
+                        apvf.attachApplianceVmToHaGroup(avo.getUuid(), spec.getHaSpec().getHaUuid());
+                    }
+
+                    if (spec.getHaSpec().getAffinityGroupUuid() != null) {
+                        apvf.attachApplianceVmToAffinityGroup(avo.getUuid(), spec.getHaSpec().getAffinityGroupUuid());
+                    }
+                }
 
                 trigger.next();
             }
