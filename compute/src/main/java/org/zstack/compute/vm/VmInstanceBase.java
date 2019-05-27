@@ -4770,8 +4770,17 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void handle(Map data) {
                 extEmitter.afterAttachVolume(getSelfInventory(), volume);
                 reply.setHypervisorType(self.getHypervisorType());
+                sendEvent();
                 bus.reply(msg, reply);
                 completion.done();
+            }
+
+            private void sendEvent() {
+                VolumeCanonicalEvents.VolumeAttachedData data = new VolumeCanonicalEvents.VolumeAttachedData();
+                data.setVolumeUuid(volume.getUuid());
+                data.setInventory(volume);
+                data.setVmInventory(getSelfInventory());
+                evtf.fire(VolumeCanonicalEvents.VOLUME_ATTACHED_VM_PATH, data);
             }
         }).error(new FlowErrorHandler(msg, completion) {
             @Override
