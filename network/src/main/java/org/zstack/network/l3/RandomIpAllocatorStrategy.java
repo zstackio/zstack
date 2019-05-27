@@ -10,6 +10,7 @@ import org.zstack.utils.network.NetworkUtils;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
     private static final CLogger logger = Utils.getLogger(RandomIpAllocatorStrategy.class);
@@ -69,8 +70,11 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
             // is a full scan in DB, which is very costly
             if (failureCheckPoint == failureCount++) {
                 SimpleQuery<UsedIpVO> q = dbf.createQuery(UsedIpVO.class);
+                q.select(UsedIpVO_.ipInLong);
                 q.add(UsedIpVO_.ipRangeUuid, Op.EQ, rangeUuid);
-                long count = q.count();
+                List<Long> used = q.listValue();
+                used = used.stream().distinct().collect(Collectors.toList());
+                long count = used.size();
                 if (count == total) {
                     logger.debug(String.format("ip range[uuid:%s] has no ip available, try next one", rangeUuid));
                     return null;
@@ -87,6 +91,7 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
             q.add(UsedIpVO_.ipInLong, Op.LTE, te);
             q.add(UsedIpVO_.ipRangeUuid, Op.EQ, rangeUuid);
             List<Long> used = q.listValue();
+            used = used.stream().distinct().collect(Collectors.toList());
             if (te - s + 1 == used.size()) {
                 s += step;
                 continue;

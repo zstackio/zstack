@@ -6,7 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.*;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.NoErrorCompletion;
@@ -24,22 +23,27 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
 import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.portforwarding.*;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBackend implements
         PortForwardingBackend, Component, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint {
@@ -57,6 +61,10 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
     private ApiTimeoutManager apiTimeoutManager;
     @Autowired
     private NetworkServiceManager nwServiceMgr;
+    @Autowired
+    private PortForwardingConfigProxy proxy;
+    @Autowired
+    private VirtualRouterHaBackend haBackend;
 
     public static final Set<VmInstanceState> SYNC_PF_VM_STATES = ImmutableSet.<VmInstanceState> of(
             VmInstanceState.Running
@@ -78,6 +86,16 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
             }
         });
 
+        String publicMac = CollectionUtils.find(vr.getVmNics(), new Function<String, VmNicInventory>() {
+            @Override
+            public String call(VmNicInventory arg) {
+                if (arg.getL3NetworkUuid().equals(struct.getVipL3Network().getUuid())) {
+                    return arg.getMac();
+                }
+                return null;
+            }
+        });
+
         DebugUtils.Assert(privateMac!=null, String.format("cannot find guest nic[l3NetworkUuid:%s] on virtual router[uuid:%s, name:%s]",
                 struct.getGuestL3Network().getUuid(), vr.getUuid(), vr.getName()));
 
@@ -93,14 +111,20 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
         to.setSnatInboundTraffic(struct.isSnatInboundTraffic());
         to.setVipPortStart(struct.getRule().getVipPortStart());
         to.setProtocolType(struct.getRule().getProtocolType());
+        to.setPublicMac(publicMac);
         return to;
     }
 
     @Transactional(readOnly = true)
     private VirtualRouterVmInventory findRunningVirtualRouterForRule(String ruleUuid) {
-        String sql = "select vr from VirtualRouterPortForwardingRuleRefVO ref, VirtualRouterVmVO vr where ref.virtualRouterVmUuid = vr.uuid and ref.uuid = :ruleUuid and vr.state = :vrState";
+        List<String> vrUuids = proxy.getVrUuidsByNetworkService(PortForwardingRuleVO.class.getSimpleName(), ruleUuid);
+        if (vrUuids == null || vrUuids.isEmpty()) {
+            return null;
+        }
+
+        String sql = "select vr from VirtualRouterVmVO vr where vr.uuid in (:vrUuids) and vr.state = :vrState";
         TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
-        q.setParameter("ruleUuid", ruleUuid);
+        q.setParameter("vrUuids", vrUuids);
         q.setParameter("vrState", VmInstanceState.Running);
         q.setMaxResults(1);
         List<VirtualRouterVmVO> vrs = q.getResultList();
@@ -166,11 +190,22 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
         acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
             @Override
             public void success(final VirtualRouterVmInventory vr) {
-                applyRule(struct, vr, new Completion(completion) {
+                applyRuleToVirtualRouter(struct, vr, new Completion(completion) {
                     @Override
                     public void success() {
                         new VirtualRouterRoleManager().makePortForwardingRole(vr.getUuid());
-                        applyRule(it, completion);
+                        proxy.attachNetworkService(vr.getUuid(), PortForwardingRuleVO.class.getSimpleName(), asList(struct.getRule().getUuid()));
+                        applyRuleOnHaVirtualRouter(struct, vr, new Completion(completion) {
+                            @Override
+                            public void success() {
+                                applyRule(it, completion);
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                completion.fail(errorCode);
+                            }
+                        });
                     }
 
                     @Override
@@ -187,7 +222,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
         });
     }
 
-    private void applyRule(final PortForwardingStruct struct, final VirtualRouterVmInventory vr, final Completion completion) {
+    public void applyRuleToVirtualRouter(final PortForwardingStruct struct, final VirtualRouterVmInventory vr, final Completion completion) {
         final PortForwardingRuleTO to = makePortForwardingRuleTO(struct, vr);
         FlowChain chain = applyRuleChainBuilder.build();
 
@@ -198,18 +233,6 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                SimpleQuery<VirtualRouterPortForwardingRuleRefVO> q = dbf.createQuery(VirtualRouterPortForwardingRuleRefVO.class);
-                q.add(VirtualRouterPortForwardingRuleRefVO_.uuid, Op.EQ, struct.getRule().getUuid());
-                if (!q.isExists()) {
-                    // if virtual router is stopped outside zstack (e.g. the host reboot)
-                    // database will still have VirtualRouterPortForwardingRuleRefVO for this PF rule.
-                    // in this case, don't create the record again
-                    VirtualRouterPortForwardingRuleRefVO ref = new VirtualRouterPortForwardingRuleRefVO();
-                    ref.setUuid(struct.getRule().getUuid());
-                    ref.setVirtualRouterVmUuid(vr.getUuid());
-                    ref.setVipUuid(struct.getVip().getUuid());
-                    dbf.persist(ref);
-                }
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
@@ -230,15 +253,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
         applyRule(Arrays.asList(struct).iterator(), completion);
     }
 
-    private void revokeRule(final PortForwardingStruct struct, final Completion completion) {
-        VirtualRouterVmInventory vr = findRunningVirtualRouterForRule(struct.getRule().getUuid());
-        if (vr == null) {
-            // vr is either destroyed or not running
-            // no need to do anything in each case, if vr is not running, rules will get synced once it gets running
-            completion.success();
-            return;
-        }
-
+    public void revokeRuleOnVirualRouter(final PortForwardingStruct struct, VirtualRouterVmInventory vr, final Completion completion) {
         PortForwardingRuleTO to = makePortForwardingRuleTO(struct, vr);
 
         FlowChain chain = releaseRuleChainBuilder.build();
@@ -251,7 +266,6 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
         chain.setData(ctx).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                dbf.removeByPrimaryKey(struct.getRule().getUuid(), VirtualRouterPortForwardingRuleRefVO.class);
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
@@ -264,7 +278,26 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
 
     @Override
     public void revokePortForwardingRule(PortForwardingStruct struct, Completion completion) {
-        revokeRule(struct, completion);
+        VirtualRouterVmInventory vr = findRunningVirtualRouterForRule(struct.getRule().getUuid());
+        if (vr == null) {
+            // vr is either destroyed or not running
+            // no need to do anything in each case, if vr is not running, rules will get synced once it gets running
+            completion.success();
+            return;
+        }
+
+        revokeRuleOnVirualRouter(struct, vr, new Completion(completion) {
+            @Override
+            public void success() {
+                proxy.detachNetworkService(vr.getUuid(), PortForwardingRuleVO.class.getSimpleName(), asList(struct.getRule().getUuid()));
+                revokeRuleOnHaVirtualRouter(struct, vr, completion);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     private List<PortForwardingRuleTO> findPortforwardingsOnVmNic(VmNicInventory nic, VirtualRouterVmInventory vr) {
@@ -274,27 +307,10 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
             return null;
         }
 
-        List<VirtualRouterPortForwardingRuleRefVO> refs = new ArrayList<VirtualRouterPortForwardingRuleRefVO>();
-        for (Tuple t : pfs) {
-            PortForwardingRuleVO rule = t.get(0, PortForwardingRuleVO.class);
-            if (!Q.New(VirtualRouterPortForwardingRuleRefVO.class)
-                    .eq(VirtualRouterPortForwardingRuleRefVO_.uuid, rule.getUuid())
-                    .eq(VirtualRouterPortForwardingRuleRefVO_.virtualRouterVmUuid, nic.getVmInstanceUuid())
-                    .isExists()) {
-                VirtualRouterPortForwardingRuleRefVO ref = new VirtualRouterPortForwardingRuleRefVO();
-                ref.setVirtualRouterVmUuid(nic.getVmInstanceUuid());
-                ref.setVipUuid(rule.getVipUuid());
-                ref.setUuid(rule.getUuid());
-                refs.add(ref);
-            }
-        }
-        if (!refs.isEmpty()) {
-            dbf.persistCollection(refs);
-        }
-
         List<PortForwardingRuleTO> tos = new ArrayList<>();
         for (Tuple t : pfs) {
             PortForwardingRuleVO pf = t.get(0, PortForwardingRuleVO.class);
+            VipVO vipVO = dbf.findByUuid(pf.getVipUuid(), VipVO.class);
             PortForwardingRuleTO to = new PortForwardingRuleTO();
             to.setUuid(pf.getUuid());
             to.setAllowedCidr(pf.getAllowedCidr());
@@ -302,6 +318,10 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
             to.setPrivateMac(
                     vr.getVmNics().stream()
                             .filter(n -> n.getL3NetworkUuid().equals(nic.getL3NetworkUuid()))
+                            .findFirst().get().getMac());
+            to.setPublicMac(
+                    vr.getVmNics().stream()
+                            .filter(n -> n.getL3NetworkUuid().equals(vipVO.getL3NetworkUuid()))
                             .findFirst().get().getMac());
             to.setPrivatePortStart(pf.getPrivatePortStart());
             to.setPrivatePortEnd(pf.getPrivatePortEnd());
@@ -451,17 +471,19 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
                     completion.fail(err);
                 } else {
                     List<Tuple> pfs = findPortForwardingTuplesOnVmNic(nic);
+                    List<String> ruleUuids = pfs.stream().map(p -> p.get(0, PortForwardingRuleVO.class).getUuid()).collect(Collectors.toList());
+                    proxy.detachNetworkService(vr.getUuid(), PortForwardingRuleVO.class.getSimpleName(), ruleUuids);
                     for (Tuple t : pfs) {
                         PortForwardingRuleVO rule = t.get(0, PortForwardingRuleVO.class);
                         new SQLBatch(){
                             @Override
                             protected void scripts() {
-                                sql(VirtualRouterPortForwardingRuleRefVO.class).eq(VirtualRouterPortForwardingRuleRefVO_.uuid, rule.getUuid()).delete();
                                 sql(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.uuid, rule.getUuid())
                                         .set(PortForwardingRuleVO_.guestIp, null).set(PortForwardingRuleVO_.vmNicUuid, null).update();
                             }
                         }.execute();
                     }
+
                     String info = String.format("sync port forwardings on virtual router[uuid:%s] successfully",
                             vrVO.getUuid());
                     logger.debug(info);
@@ -474,5 +496,49 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
     @Override
     public void beforeDetachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
         completion.done();
+    }
+
+    protected void revokeRuleOnHaVirtualRouter(final PortForwardingStruct struct, VirtualRouterVmInventory vrInv, Completion completion)  {
+        Map<String, Object> data = new HashMap<>();
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "revokePF");
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
+        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need revokePF on backend", vrUuid));
+                    compl.success();
+                    return;
+                }
+
+                VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
+                PortForwardingStruct s = (PortForwardingStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                revokeRuleOnVirualRouter(s, vrInv, compl);
+            }
+        }, data, completion);
+    }
+
+    protected void applyRuleOnHaVirtualRouter(final PortForwardingStruct struct, VirtualRouterVmInventory vrInv, Completion completion)  {
+        Map<String, Object> data = new HashMap<>();
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "applyPF");
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
+        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need applyVip on backend", vrUuid));
+                    compl.success();
+                    return;
+                }
+
+                VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
+                PortForwardingStruct s = (PortForwardingStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                applyRuleToVirtualRouter(s, vrInv, compl);
+            }
+        }, data, completion);
     }
 }

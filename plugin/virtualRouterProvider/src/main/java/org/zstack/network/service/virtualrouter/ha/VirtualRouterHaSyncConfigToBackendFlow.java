@@ -1,0 +1,69 @@
+package org.zstack.network.service.virtualrouter.ha;
+
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
+import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowRollback;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
+public class VirtualRouterHaSyncConfigToBackendFlow implements Flow {
+    @Autowired
+    protected DatabaseFacade dbf;
+    @Autowired
+    protected PluginRegistry pluginRgty;
+
+    @Override
+    public void run(final FlowTrigger chain, Map data) {
+        final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
+        if (!vr.isHaEnabled()) {
+            chain.next();
+            return;
+        }
+
+        List<ErrorCode> errs = new ArrayList<>();
+        List<VirtualRouterHaGroupExtensionPoint> exts = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
+        new While<>(exts).each((ext, compl) -> {
+            ext.syncVirtualRouterHaConfigToBackend(vr.getUuid(), new Completion(compl) {
+                @Override
+                public void success() {
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.allDone();
+                    errs.add(errorCode);
+                }
+            });
+        }).run(new NoErrorCompletion(chain) {
+            @Override
+            public void done() {
+                if (errs.isEmpty()) {
+                    chain.next();
+                } else {
+                    chain.fail(errs.get(0));
+                }
+            }
+        });
+    }
+
+    @Override
+    public void rollback(FlowRollback chain, Map data) {
+        chain.rollback();
+    }
+}

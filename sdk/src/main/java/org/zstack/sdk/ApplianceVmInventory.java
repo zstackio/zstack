@@ -44,4 +44,12 @@ public class ApplianceVmInventory extends org.zstack.sdk.VmInstanceInventory {
         return this.agentPort;
     }
 
+    public java.lang.String haStatus;
+    public void setHaStatus(java.lang.String haStatus) {
+        this.haStatus = haStatus;
+    }
+    public java.lang.String getHaStatus() {
+        return this.haStatus;
+    }
+
 }

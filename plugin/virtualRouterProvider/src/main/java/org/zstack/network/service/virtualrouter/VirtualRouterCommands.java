@@ -64,6 +64,7 @@ public class VirtualRouterCommands {
 		private String l2type;
 		private Integer vni;
 		private String firewallDefaultAction;
+		private List<String> secondaryIps;
 		
 		public String getIp() {
 			return ip;
@@ -134,6 +135,14 @@ public class VirtualRouterCommands {
 
 		public void setFirewallDefaultAction(String firewallDefaultAction) {
 			this.firewallDefaultAction = firewallDefaultAction;
+		}
+
+		public List<String> getSecondaryIps() {
+			return secondaryIps;
+		}
+
+		public void setSecondaryIps(List<String> secondaryIps) {
+			this.secondaryIps = secondaryIps;
 		}
 	}
 	
@@ -720,6 +729,7 @@ public class VirtualRouterCommands {
 	public static class PingRsp extends AgentResponse {
 		private String uuid;
 		private String version;
+		private String haStatus;
 
 		public String getUuid() {
 			return uuid;
@@ -736,5 +746,13 @@ public class VirtualRouterCommands {
         public void setVersion(String version) {
             this.version = version;
         }
-    }
+
+		public String getHaStatus() {
+			return haStatus;
+		}
+
+		public void setHaStatus(String haStatus) {
+			this.haStatus = haStatus;
+		}
+	}
 }

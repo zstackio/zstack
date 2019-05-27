@@ -75,7 +75,7 @@ public class VipBase {
     @Autowired
     protected EventFacade evtf;
 
-    protected String getThreadSyncSignature() {
+    public String getThreadSyncSignature() {
         return String.format("vip-%s-%s", self.getName(), self.getUuid());
     }
 

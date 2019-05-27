@@ -191,7 +191,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     List<Tuple> ts = q.getResultList();
                     ret.total = calcTotalIp(ts);
 
-                    sql = "select count(uip) from UsedIpVO uip where uip.ipRangeUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
+                    sql = "select count(distinct uip.ip) from UsedIpVO uip where uip.ipRangeUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
                     TypedQuery<Long> cq = dbf.getEntityManager().createQuery(sql, Long.class);
                     cq.setParameter("uuids", msg.getIpRangeUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
@@ -206,7 +206,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     List<Tuple> ts = q.getResultList();
                     ret.total = calcTotalIp(ts);
 
-                    sql = "select count(uip) from UsedIpVO uip where uip.l3NetworkUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
+                    sql = "select count(distinct uip.ip) from UsedIpVO uip where uip.l3NetworkUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
                     TypedQuery<Long> cq = dbf.getEntityManager().createQuery(sql, Long.class);
                     cq.setParameter("uuids", msg.getL3NetworkUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
@@ -221,7 +221,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     List<Tuple> ts = q.getResultList();
                     ret.total = calcTotalIp(ts);
 
-                    sql = "select count(uip) from UsedIpVO uip, L3NetworkVO l3, ZoneVO zone where uip.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
+                    sql = "select count(distinct uip.ip) from UsedIpVO uip, L3NetworkVO l3, ZoneVO zone where uip.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
                     TypedQuery<Long> cq = dbf.getEntityManager().createQuery(sql, Long.class);
                     cq.setParameter("uuids", msg.getZoneUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
@@ -410,9 +410,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         try {
             UsedIpVO vo = new UsedIpVO(ipRange.getUuid(), ip);
             vo.setIpInLong(NetworkUtils.ipv4StringToLong(ip));
-            String uuid = ipRange.getUuid() + ip;
-            uuid = UUID.nameUUIDFromBytes(uuid.getBytes()).toString().replaceAll("-", "");
-            vo.setUuid(uuid);
+            vo.setUuid(Platform.getUuid());
             vo.setL3NetworkUuid(ipRange.getL3NetworkUuid());
             vo.setNetmask(ipRange.getNetmask());
             vo.setGateway(ipRange.getGateway());
@@ -448,13 +446,15 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     public boolean isIpRangeFull(IpRangeVO vo) {
         SimpleQuery<UsedIpVO> query = dbf.createQuery(UsedIpVO.class);
         query.add(UsedIpVO_.ipRangeUuid, Op.EQ, vo.getUuid());
-        long used = query.count();
+        query.select(UsedIpVO_.ip);
+        List<Long> used = query.listValue();
+        used = used.stream().distinct().collect(Collectors.toList());
 
         if (vo.getIpVersion() == IPv6Constants.IPv4) {
             int total = NetworkUtils.getTotalIpInRange(vo.getStartIp(), vo.getEndIp());
-            return used >= total;
+            return used.size() >= total;
         } else {
-            return IPv6NetworkUtils.isIpv6RangeFull(vo.getStartIp(), vo.getEndIp(), used);
+            return IPv6NetworkUtils.isIpv6RangeFull(vo.getStartIp(), vo.getEndIp(), used.size());
         }
     }
 
@@ -466,13 +466,13 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             query.add(UsedIpVO_.ipRangeUuid, Op.EQ, vo.getUuid());
             List<Long> used = query.listValue();
             Collections.sort(used);
-            return used.stream().map(l -> new BigInteger(String.valueOf(l))).collect(Collectors.toList());
+            return used.stream().distinct().map(l -> new BigInteger(String.valueOf(l))).collect(Collectors.toList());
         } else {
             SimpleQuery<UsedIpVO> query = dbf.createQuery(UsedIpVO.class);
             query.select(UsedIpVO_.ip);
             query.add(UsedIpVO_.ipRangeUuid, Op.EQ, vo.getUuid());
             List<String> used = query.listValue();
-            return used.stream().map(IPv6NetworkUtils::getBigIntegerFromString).sorted().collect(Collectors.toList());
+            return used.stream().distinct().map(IPv6NetworkUtils::getBigIntegerFromString).sorted().collect(Collectors.toList());
         }
     }
 

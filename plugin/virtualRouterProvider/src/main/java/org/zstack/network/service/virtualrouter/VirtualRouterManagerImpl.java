@@ -66,9 +66,10 @@ import org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtension
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO_;
+import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaConstant;
+import org.zstack.network.service.virtualrouter.lb.LbConfigProxy;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
+import org.zstack.network.service.virtualrouter.vip.VipConfigProxy;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO_;
@@ -158,6 +159,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private NetworkServiceManager nwServiceMgr;
     @Autowired
     private VyosVersionManager vyosVersionManager;
+    @Autowired
+    private LbConfigProxy lbProxy;
+    @Autowired
+    private VipConfigProxy vipProxy;
 
 	@Override
     @MessageSafe
@@ -686,8 +691,25 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 	}
 
 	@Override
-	public NetworkServiceProviderInventory getVirtualRouterProvider() {
-		return virtualRouterProvider;
+	public String getVirtualRouterServiceProviderType(String vrUuid, NetworkServiceType nwType) {
+	    VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+	    if (vrVO.isHaEnabled()) {
+	        return VirtualRouterHaConstant.VIRTUAL_ROUTER_HA_PROVIDER_TYPE_NAME;
+        }
+
+	    if (nwType != null) {
+            for (VmNicVO nic : vrVO.getVmNics()) {
+                if (VirtualRouterNicMetaData.isGuestNic(nic)) {
+                    NetworkServiceProviderType providerType =
+                            nwServiceMgr.getTypeOfNetworkServiceProviderForService(
+                                    nic.getL3NetworkUuid(), nwType);
+                    return providerType.toString();
+                }
+            }
+        }
+
+	    /* when vpc is just created, there is no guest nic */
+	    return VYOS_ROUTER_PROVIDER_TYPE;
 	}
 
     private void deployAnsible() {
@@ -791,6 +813,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
                 if (vrs.isEmpty()) {
                     return null;
+                }
+
+                /* if there is master, return master */
+                for (VirtualRouterVmVO vo : vrs) {
+                    if (ApplianceVmHaStatus.Master == vo.getHaStatus()) {
+                        return vo;
+                    }
                 }
 
                 if (selector == null) {
@@ -946,6 +975,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         if (vos.isEmpty()) {
             return null;
         }
+
+        for (VirtualRouterVmVO vo : vos) {
+            if (ApplianceVmHaStatus.Master == vo.getHaStatus()) {
+                return VirtualRouterVmInventory.valueOf(vo);
+            }
+        }
+
         return VirtualRouterVmInventory.valueOf(vos.get(0));
     }
 
@@ -1253,9 +1289,12 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 .collect(Collectors.toList());
 
         if (vipForVirtualRouter != null && vipForVirtualRouter == true) {
-            String vrUuid = Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.virtualRouterVmUuid).eq(VirtualRouterVipVO_.uuid, vip.getUuid()).findValue();
-            if (vrUuid == null) {
+            List<String> vrUuids = vipProxy.getVrUuidsByNetworkService(VipVO.class.getSimpleName(), vip.getUuid());
+            String vrUuid;
+            if (vrUuids == null || vrUuids.isEmpty()) {
                 vrUuid = getVipPeerL3NetworkAttachedVirtualRouter(vip);
+            } else {
+                vrUuid = vrUuids.get(0);
             }
             if (vrUuid != null) {
                 List<String> vrAttachedGuestL3 = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid).eq(VmNicVO_.vmInstanceUuid, vrUuid).eq(VmNicVO_.metaData, GUEST_NIC_MASK).listValues();
@@ -1308,10 +1347,18 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     private String getVipPeerL3NetworkAttachedVirtualRouter(VipInventory vip) {
 	    for (String l3Uuid : vip.getPeerL3NetworkUuids()) {
-	        String vrUuid = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid).eq(VmNicVO_.l3NetworkUuid, l3Uuid).eq(VmNicVO_.metaData, GUEST_NIC_MASK).findValue();
-	        if (vrUuid != null) {
-	            return vrUuid;
+	        List<String> vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid).eq(VmNicVO_.l3NetworkUuid, l3Uuid).eq(VmNicVO_.metaData, GUEST_NIC_MASK).listValues();
+	        if (vrUuids == null || vrUuids.isEmpty()) {
+	            return null;
             }
+
+            vrUuids = Q.New(ApplianceVmVO.class).select(ApplianceVmVO_.uuid).in(ApplianceVmVO_.uuid, vrUuids)
+                    .notEq(ApplianceVmVO_.haStatus, ApplianceVmHaStatus.Backup).listValues();
+            if (vrUuids == null || vrUuids.isEmpty()) {
+                return null;
+            }
+
+            return vrUuids.get(0);
         }
 
         return null;
@@ -1345,11 +1392,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             return candidates;
         }
 
-        List<String> vrUuids = Q.New(VirtualRouterLoadBalancerRefVO.class)
-                .select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid)
-                .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, msg.getLoadBalancerUuid())
-                .listValues();
-
+        List<String> vrUuids = lbProxy.getVrUuidsByNetworkService(LoadBalancerVO.class.getSimpleName(), msg.getLoadBalancerUuid());
         String vrUuid = getDedicatedRoleVrUuidFromVrUuids(vrUuids, msg.getLoadBalancerUuid());
 
         if (vrUuid != null) {
@@ -1369,6 +1412,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     .in(VmNicVO_.l3NetworkUuid, peerL3NetworkUuids)
                     .eq(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK)
                     .listValues();
+            if (vrUuids != null && !vrUuids.isEmpty()) {
+                /* filter backup router */
+                vrUuids = Q.New(ApplianceVmVO.class).select(ApplianceVmVO_.uuid).in(ApplianceVmVO_.uuid, vrUuids)
+                        .notEq(ApplianceVmVO_.haStatus, ApplianceVmHaStatus.Backup).listValues();
+            }
 
             vrUuid = getDedicatedRoleVrUuidFromVrUuids(vrUuids, msg.getLoadBalancerUuid());
 
@@ -1389,9 +1437,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         if (lbVipVO != null) {
             List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, lbVipVO.getUuid()).listValues();
             if(useFor != null && useFor.contains(SNAT_NETWORK_SERVICE_TYPE)) {
-                vrUuid = Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.virtualRouterVmUuid)
-                          .eq(VirtualRouterVipVO_.uuid, lbVipVO.getUuid()).findValue();
-                return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
+                vrUuids = vipProxy.getVrUuidsByNetworkService(VipVO.class.getSimpleName(), lbVipVO.getUuid());
+                return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuids.get(0));
             }
         }
 

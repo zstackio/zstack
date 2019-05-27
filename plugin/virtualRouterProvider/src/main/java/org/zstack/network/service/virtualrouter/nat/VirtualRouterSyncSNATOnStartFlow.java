@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
@@ -16,6 +17,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.NetworkServiceManager;
@@ -24,6 +26,7 @@ import org.zstack.network.service.vip.Vip;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SNATInfo;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SyncSNATRsp;
+import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -48,6 +51,10 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
     private ApiTimeoutManager apiTimeoutManager;
     @Autowired
     private NetworkServiceManager nwServiceMgr;
+    @Autowired
+    protected PluginRegistry pluginRgty;
+    @Autowired
+    protected VirtualRouterHaBackend haBackend;
 
     @Override
     public void run(final FlowTrigger chain, Map data) {
@@ -67,12 +74,20 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
         /*
         * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
         * */
-        if ( VirtualRouterSystemTags.VR_DISABLE_NETWORK_SERVICE_SNAT.hasTag(vr.getUuid())) {
+        if (haBackend.isSnatDisabledOnRouter(vr.getUuid())) {
             chain.next();
             return;
         }
 
         new VirtualRouterRoleManager().makeSnatRole(vr.getUuid());
+
+        String publicIp = null;
+        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            publicIp = ext.getPublicIp(vr.getUuid(), vr.getPublicNic().getL3NetworkUuid());
+        }
+        if (publicIp == null) {
+            publicIp = vr.getPublicNic().getIp();
+        }
 
         final List<SNATInfo> snatInfo = new ArrayList<SNATInfo>();
         for (VmNicInventory nic : vr.getVmNics()) {
@@ -80,7 +95,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
                 SNATInfo info = new SNATInfo();
                 info.setPrivateNicIp(nic.getIp());
                 info.setPrivateNicMac(nic.getMac());
-                info.setPublicIp(vr.getPublicNic().getIp());
+                info.setPublicIp(publicIp);
                 info.setPublicNicMac(vr.getPublicNic().getMac());
                 info.setSnatNetmask(nic.getNetmask());
                 snatInfo.add(info);

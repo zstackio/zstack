@@ -25,4 +25,5 @@ public interface VyosConstants {
     int VYOS_VERSION_LENGTH = 4;
 
     String REPLACE_FIREWALL_WITH_IPTBALES = "SkipVyosIptables";
+    String HA_STATUS = "haStatus";
 }
