@@ -2749,9 +2749,4 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
         AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
         bus.reply(msg, reply);
     }
-
-    @Override
-    protected void handle(CheckVolumeSnapshotsOnPrimaryStorageMsg msg) {
-        bus.reply(msg, new CheckVolumeSnapshotsOnPrimaryStorageReply());
-    }
 }

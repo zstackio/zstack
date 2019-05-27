@@ -27,7 +27,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -210,27 +209,6 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
         dbf.update(self);
     }
 
-    private void doCheckBeforeDeleteSnapshot(final Iterator<VolumeSnapshotCheckExtensionPoint> it, VolumeSnapshotInventory snapshot,
-                                             boolean volumeDelete, Completion completion) {
-        if (!it.hasNext()) {
-            completion.success();
-            return;
-        }
-
-        VolumeSnapshotCheckExtensionPoint ext = it.next();
-        ext.checkBeforeDeleteSnapshot(snapshot, volumeDelete, new Completion(completion) {
-            @Override
-            public void success() {
-                doCheckBeforeDeleteSnapshot(it, snapshot, volumeDelete, completion);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
-            }
-        });
-    }
-
     private void handle(final VolumeSnapshotPrimaryStorageDeletionMsg msg) {
         final VolumeSnapshotInventory sp = getSelfInventory();
 
@@ -278,29 +256,6 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
 
             @Override
             public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "check-before-delete-snapshot";
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        Iterator<VolumeSnapshotCheckExtensionPoint> it = pluginRgty.getExtensionList(VolumeSnapshotCheckExtensionPoint.class).iterator();
-                        if (!it.hasNext()) {
-                            trigger.next();
-                            return;
-                        }
-                        doCheckBeforeDeleteSnapshot(it, sp, msg.isVolumeDelete(), new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
-                    }
-                });
-
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-on-primary-storage";
                     @Override

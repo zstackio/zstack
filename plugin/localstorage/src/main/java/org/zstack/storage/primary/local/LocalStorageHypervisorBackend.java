@@ -76,8 +76,6 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
 
     abstract void handle(AskInstallPathForNewSnapshotMsg msg, ReturnValueCompletion<AskInstallPathForNewSnapshotReply> completion);
 
-    abstract void handle(CheckVolumeSnapshotsOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<CheckVolumeSnapshotsOnPrimaryStorageReply> completion);
-
     abstract List<Flow> createMigrateBitsVolumeFlow(MigrateBitsStruct struct);
 
     abstract void deleteBits(String path, String hostUuid, Completion completion);

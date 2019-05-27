@@ -41,7 +41,6 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
-import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
@@ -2936,59 +2935,5 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     private String makeInitializedFilePath() {
         return String.format("%s/%s-initialized-file", self.getMountPath(), self.getUuid());
-    }
-
-    @Override
-    void handle(CheckVolumeSnapshotsOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<CheckVolumeSnapshotsOnPrimaryStorageReply> completion) {
-        CheckVolumeSnapshotsOnPrimaryStorageReply sreply = new CheckVolumeSnapshotsOnPrimaryStorageReply();
-
-        CheckSnapshotOnHypervisorMsg cmsg = new CheckSnapshotOnHypervisorMsg();
-        cmsg.setHostUuid(hostUuid);
-        cmsg.setVolumeInstallPath(msg.getVolumeInstallPath());
-
-        bus.makeLocalServiceId(cmsg, HostConstant.SERVICE_ID);
-        bus.send(cmsg, new CloudBusCallBack(msg) {
-            @Override
-            public void run(MessageReply reply) {
-                if (reply.isSuccess()) {
-                    CheckSnapshotOnHypervisorReply r = reply.castReply();
-                    sreply.setCompleted(r.isCompleted());
-                    if (r.isCompleted()) {
-                        /**
-                         * 1. complete snapshot
-                         * 2. update volume
-                         */
-                        VolumeVO volume = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
-                        VolumeSnapshotVO snapshot = null;
-                        for (VolumeSnapshotInventory s: msg.getSnapshots()) {
-                            if (r.getSnapshotInstallPath().contains(s.getUuid())) {
-                                snapshot = dbf.findByUuid(s.getUuid(), VolumeSnapshotVO.class);
-                            }
-                        }
-                        if (snapshot == null) {
-                            r.setError(operr("cannot find snapshot installpath in db, but actually [%s] in ps [%s], please check it manually",
-                                    r.getSnapshotInstallPath(), self.getUuid()));
-                        } else {
-                            volume.setInstallPath(r.getVolumeInstallPath());
-
-                            snapshot.setStatus(VolumeSnapshotStatus.Ready);
-                            snapshot.setPrimaryStorageUuid(self.getUuid());
-                            snapshot.setPrimaryStorageInstallPath(r.getSnapshotInstallPath());
-                            snapshot.setSize(r.getSize());
-                            snapshot.setType(VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString());
-                            snapshot.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
-
-                            dbf.updateAndRefresh(volume);
-                            dbf.updateAndRefresh(snapshot);
-
-                            sreply.setSnapshotUuid(snapshot.getUuid());
-                        }
-                    }
-                } else {
-                    sreply.setError(reply.getError());
-                }
-                bus.reply(msg, reply);
-            }
-        });
     }
 }

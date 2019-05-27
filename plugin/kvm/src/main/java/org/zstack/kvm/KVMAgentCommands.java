@@ -1849,17 +1849,6 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class CheckSnapshotCmd extends AgentCommand {
-        public String volumePath;
-    }
-
-    public static class CheckSnapshotRsp extends AgentResponse {
-        public boolean completed;
-        public Long size;
-        public String volumePath;
-        public String snapshotPath;
-    }
-
     public static class LogoutIscsiTargetCmd extends AgentCommand {
         private String hostname;
         private int port;

@@ -29,11 +29,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
-import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
-import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
@@ -834,56 +830,5 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         throw new OperationFailureException(operr("cannot find proper hypervisorType for primary storage[uuid:%s] to handle image format or volume format[%s]", psUuid, imageFormat));
-    }
-
-    @Override
-    protected void handle(CheckVolumeSnapshotsOnPrimaryStorageMsg msg) {
-        CheckVolumeSnapshotsOnPrimaryStorageReply sreply = new CheckVolumeSnapshotsOnPrimaryStorageReply();
-        HypervisorBackend bkd = getHypervisorBackendByVolumeUuid(msg.getVolumeUuid());
-        bkd.handle(msg, new ReturnValueCompletion<CheckSnapshotOnHypervisorReply>(msg) {
-            @Override
-            public void success(CheckSnapshotOnHypervisorReply returnValue) {
-                sreply.setCompleted(returnValue.isCompleted());
-                VolumeVO volume = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
-                VolumeSnapshotVO snapshot = null;
-                for (VolumeSnapshotInventory s: msg.getSnapshots()) {
-                    if (returnValue.getSnapshotInstallPath().contains(s.getUuid())) {
-                        snapshot = dbf.findByUuid(s.getUuid(), VolumeSnapshotVO.class);
-                    }
-                }
-                if (snapshot == null) {
-                    returnValue.setError(operr("cannot find snapshot installpath in db, but actually [%s] in ps [%s], please check it manually",
-                            returnValue.getSnapshotInstallPath(), self.getUuid()));
-                } else {
-                    if (returnValue.isCompleted()) {
-                        /**
-                         * 1. complete snapshot
-                         * 2. update volume
-                         */
-                        volume.setInstallPath(returnValue.getVolumeInstallPath());
-
-                        snapshot.setStatus(VolumeSnapshotStatus.Ready);
-                        snapshot.setPrimaryStorageUuid(self.getUuid());
-                        snapshot.setPrimaryStorageInstallPath(returnValue.getSnapshotInstallPath());
-                        snapshot.setSize(returnValue.getSize());
-                        snapshot.setType(VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString());
-                        snapshot.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
-
-                        dbf.updateAndRefresh(volume);
-                        dbf.updateAndRefresh(snapshot);
-
-                        sreply.setSnapshotUuid(snapshot.getUuid());
-                    }
-                }
-                bus.reply(msg, returnValue);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                CheckVolumeSnapshotsOnPrimaryStorageReply reply = new CheckVolumeSnapshotsOnPrimaryStorageReply();
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
     }
 }

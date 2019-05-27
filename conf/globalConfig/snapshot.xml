@@ -40,11 +40,4 @@
         <type>java.lang.Boolean</type>
     </config>
 
-    <config>
-        <name>snapshot.correct.after.restart.management</name>
-        <description>correct creating snapshot automatic after restart management</description>
-        <defaultValue>false</defaultValue>
-        <category>volumeSnapshot</category>
-        <type>java.lang.Boolean</type>
-    </config>
 </globalConfig>
