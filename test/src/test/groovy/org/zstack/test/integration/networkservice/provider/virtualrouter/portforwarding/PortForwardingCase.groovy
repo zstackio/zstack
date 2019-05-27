@@ -265,7 +265,9 @@ class PortForwardingCase extends SubCase {
         deletePortForwardingRule {
             uuid = portForwarding.getUuid()
         }
-        assert Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.uuid).eq(VirtualRouterVipVO_.uuid, vip.uuid).listValues().size() == 1
+        assert Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.uuid).eq(VirtualRouterVipVO_.uuid, vip.uuid).listValues().size() == 0
+        vipVO = dbFindByUuid(vip.uuid, VipVO.class)
+        assert vipVO.serviceProvider == null
 
         deletePortForwardingRule {
             uuid = portForwarding2.getUuid()

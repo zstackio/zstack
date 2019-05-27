@@ -239,25 +239,23 @@ public class VipBase {
             return false;
         }
 
-        long activeNetworks = 0;
         long activeServices = 0;
         for (VipGetServiceReferencePoint ext : pluginRgty.getExtensionList(VipGetServiceReferencePoint.class)) {
             VipGetServiceReferencePoint.ServiceReference service = ext.getServiceReference(self.getUuid());
-            activeNetworks += service.count;
-            activeServices += service.serviceUids.size();
+            if (!service.useFor.equals(s.getUseFor())) {
+                activeServices += service.serviceUids.size();
+            } else if (service.serviceUids.contains(s.getServiceUuid())) {
+                /* remove the service that will be deleted */
+                activeServices += (service.serviceUids.size() - 1);
+            }
         }
 
-        if (activeServices > 1) {
-            return false;
-        }
-        /*the vip is active in this service, in another word, there are at least one peerL3network to attach
-         * with the vip */
-        //return activeServices == 0;
-        int deleting = 0;
-        if (s.getPeerL3NetworkUuids() != null) {
-            deleting = s.getPeerL3NetworkUuids().size();
-        }
-        return activeNetworks <= deleting;
+        /*
+        it doesn't support to release multi Services concurrently, so for release a service, we just check
+        the active service count, if just one service ( that just delete one) or less, it means the vip can be release at backend.
+        And at same time clear all the peer L3 record. ZSTAC-20506
+        * */
+        return (activeServices <= 0);
     }
 
     private void handle(ReleaseVipMsg msg) {
@@ -393,8 +391,8 @@ public class VipBase {
             public void success() {
                 logger.debug(String.format("successfully released vip[uuid:%s, name:%s, ip:%s] on service[%s]",
                         self.getUuid(), self.getName(), self.getIp(), self.getServiceProvider()));
-                if (releaseServices) {
-                    clearServicesRefs();
+                if (s != null && s.getUseFor() != null && releaseServices) {
+                    delServicesRef(s.getServiceUuid(),s.getUseFor());
                 }
                 cleanInDB();
                 completion.success();
