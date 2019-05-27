@@ -61,6 +61,8 @@ import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageSystemTags;
+import org.zstack.storage.volume.VolumeSystemTags;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -74,7 +76,9 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created by frank on 7/28/2015.
@@ -2447,6 +2451,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         httpCall(GET_VOLUME_SIZE_PATH, cmd, GetVolumeSizeRsp.class, new ReturnValueCompletion<GetVolumeSizeRsp>(msg) {
             @Override
             public void success(GetVolumeSizeRsp rsp) {
+                markVolumeActualSize(vol.getUuid(), rsp.actualSize);
+
                 // current ceph has no way to get actual size
                 long asize = rsp.actualSize == null ? vol.getActualSize() : rsp.actualSize;
                 reply.setActualSize(asize);
@@ -2460,6 +2466,26 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private void markVolumeActualSize(String volumeUuid, Long actualSize) {
+        boolean flag = VolumeSystemTags.NOT_SUPPORT_ACTUAL_SIZE_FLAG.hasTag(volumeUuid);
+
+        if (actualSize == null && flag) {
+            return;
+        }
+
+        if (actualSize == null && !flag) {
+            SystemTagCreator creator = VolumeSystemTags.NOT_SUPPORT_ACTUAL_SIZE_FLAG.newSystemTagCreator(volumeUuid);
+            creator.setTagByTokens(map(e( VolumeSystemTags.NOT_SUPPORT_ACTUAL_SIZE_FLAG_TOKEN, true)));
+            creator.unique = true;
+            creator.create();
+            return;
+        }
+
+        if (actualSize != null && flag) {
+            VolumeSystemTags.NOT_SUPPORT_ACTUAL_SIZE_FLAG.delete(volumeUuid);
+        }
     }
 
     protected <T extends AgentResponse> void httpCall(final String path, final AgentCommand cmd, final Class<T> retClass, final ReturnValueCompletion<T> callback) {

@@ -29,4 +29,7 @@ public class VolumeSystemTags {
 
     public static String OVERWRITED_VOLUME_TOKEN = "overwritedVolumeUuid";
     public static PatternedSystemTag OVERWRITED_VOLUME = new PatternedSystemTag(String.format("overwriteBy::volume::{%s}", OVERWRITED_VOLUME_TOKEN), VolumeVO.class);
+
+    public static String NOT_SUPPORT_ACTUAL_SIZE_FLAG_TOKEN = "notSupportActualSize";
+    public static PatternedSystemTag NOT_SUPPORT_ACTUAL_SIZE_FLAG = new PatternedSystemTag(String.format("notSupportActualSize::{%s}", NOT_SUPPORT_ACTUAL_SIZE_FLAG_TOKEN), VolumeVO.class);
 }
