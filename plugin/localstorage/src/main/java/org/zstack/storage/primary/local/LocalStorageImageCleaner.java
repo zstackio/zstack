@@ -2,11 +2,21 @@ package org.zstack.storage.primary.local;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SQL;
-import org.zstack.core.thread.SyncTask;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.workflow.SimpleFlowChain;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
@@ -110,28 +120,49 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
         return sq.getResultList();
     }
 
-    private void cleanUpImageCache(String psUuid) {
+    private void cleanUpImageCache(String psUuid, NoErrorCompletion completion) {
         PrimaryStorageVO ps = dbf.findByUuid(psUuid, PrimaryStorageVO.class);
         logger.info(String.format("cleanup image cache on PrimaryStorage [%s]", ps.getUuid()));
         List<String> hostUuids = SQL.New("select h.uuid from LocalStorageHostRefVO ref, HostVO h " +
                 "where ref.hostUuid = h.uuid and ref.primaryStorageUuid = :ps and h.status = :status").
                 param("ps", psUuid).param("status", HostStatus.Connected).list();
-        List<BackupStoragePrimaryStorageExtensionPoint> extenstions = pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class);
-        extenstions.forEach(ext -> {
-            hostUuids.forEach(hostUuid ->
-                    ext.cleanupPrimaryCacheForBS(PrimaryStorageInventory.valueOf(ps), hostUuid, new NopeCompletion()));
+        List<BackupStoragePrimaryStorageExtensionPoint> extensions = pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class);
+        new While<>(extensions).each((ext, whileCompletion) ->
+                new While<>(hostUuids).each((hostUuid, innerWhileCompletion) -> ext.cleanupPrimaryCacheForBS(PrimaryStorageInventory.valueOf(ps), null, new Completion(completion) {
+            @Override
+            public void success() {
+                innerWhileCompletion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.debug(String.format("Failed to clean primary cache for backup storage, on host[uuid:%s] and primary storage[uuid:%s]", hostUuid, psUuid));
+                innerWhileCompletion.done();
+            }
+        })).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                whileCompletion.done();
+            }
+        })).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                completion.done();
+            }
         });
     }
 
-    private void cleanUpVolumeCache(String psUuid) {
+    private void cleanUpVolumeCache(String psUuid, NoErrorCompletion completion) {
         List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs(psUuid);
         if (shadowVOs == null || shadowVOs.isEmpty()) {
+            completion.done();
             return;
         }
 
-        for (final ImageCacheShadowVO vo : shadowVOs) {
+        new While<>(shadowVOs).each((vo, whileCompletion) -> {
             if (!destMaker.isManagedByUs(vo.getImageUuid())) {
-                continue;
+                whileCompletion.done();
+                return;
             }
 
             CacheInstallPath p = new CacheInstallPath();
@@ -140,7 +171,8 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
 
             if (!dbf.isExist(p.hostUuid, HostVO.class)){
                 dbf.removeByPrimaryKey(vo.getId(), ImageCacheShadowVO.class);
-                continue;
+                whileCompletion.done();
+                return;
             }
             LocalStorageDeleteImageCacheOnPrimaryStorageMsg msg = new LocalStorageDeleteImageCacheOnPrimaryStorageMsg();
             msg.setHostUuid(p.hostUuid);
@@ -160,41 +192,86 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
                     logger.debug(String.format("successfully deleted the stale image cache[%s] on the primary storage[%s]",
                             vo.getInstallUrl(), vo.getPrimaryStorageUuid()));
                     dbf.remove(vo);
+                    whileCompletion.done();
                 }
             });
-        }
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                completion.done();
+            }
+        });
     }
 
-    protected void doCleanup(String psUuid) {
-        if (psUuid != null) {
-            cleanUpImageCache(psUuid);
-        }
-        cleanUpVolumeCache(psUuid);
+    @Override
+    protected void doCleanup(String psUuid, NoErrorCompletion completion) {
+        SimpleFlowChain chain = new SimpleFlowChain();
+        chain.setName(String.format("do-clean-up-image-cache-on-%s", psUuid));
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                logger.debug("do clean up volume cache");
+                cleanUpVolumeCache(psUuid, new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                logger.debug("do clean up image cache");
+                if (psUuid == null) {
+                    logger.debug("no primary storage uuid specified, skip image cache clean up");
+                    trigger.next();
+                    return;
+                }
+
+                cleanUpImageCache(psUuid, new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        trigger.next();
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.done();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                logger.debug(String.format("failed to clean up image cache because: %s", errCode.getReadableDetails()));
+                completion.done();
+            }
+        }).start();
     }
 
     @Override
     public void cleanup(String psUuid) {
         ImageCacheCleaner self = this;
-        thdf.syncSubmit(new SyncTask<Void>() {
-            @Override
-            public Void call() throws Exception {
-                doCleanup(psUuid);
-                return null;
-            }
-
-            @Override
-            public String getName() {
-                return getSyncSignature();
-            }
-
+        thdf.chainSubmit(new ChainTask(null) {
             @Override
             public String getSyncSignature() {
                 return self.getClass().getName();
             }
 
             @Override
-            public int getSyncLevel() {
-                return 1;
+            public void run(SyncTaskChain chain) {
+                logger.debug("start clean up cache");
+                doCleanup(psUuid, new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("clean-up-image-cache-on-%s", psUuid);
             }
         });
     }
