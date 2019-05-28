@@ -40,6 +40,8 @@ operator
     | 'not in'
     | 'like'
     | 'not like'
+    | 'has'
+    | 'not has'
     ;
 
 value

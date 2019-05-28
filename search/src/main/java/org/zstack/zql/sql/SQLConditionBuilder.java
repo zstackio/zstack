@@ -9,6 +9,7 @@ import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.UserTagVO;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.FieldUtils;
+import org.zstack.utils.StringDSL;
 import org.zstack.zql.ast.ZQLMetadata;
 
 import java.lang.reflect.Field;
@@ -35,7 +36,7 @@ public class SQLConditionBuilder {
         Class inventoryClass;
         Field field;
 
-        String toSQL() {
+        String toSQL(String operator, String value) {
             ZQLMetadata.InventoryMetadata metadata = ZQLMetadata.getInventoryMetadataByName(inventoryClass.getName());
             if (metadata == null) {
                 throw new CloudRuntimeException(String.format("cannot find InventoryMetadata for class[%s]", inventoryClass));
@@ -46,10 +47,16 @@ public class SQLConditionBuilder {
             ZQLMetadata.InventoryMetadata mappingInventoryMetadata = ZQLMetadata.getInventoryMetadataByName(mappingInventoryClass.getName());
             String mappingEntityName = mappingInventoryClass.getSimpleName();
 
-            return String.format("%s.%s IN (SELECT %s.%s FROM %s %s WHERE %s.%s %%s %%s)",
-                    inventoryClass.getSimpleName(), primaryKey.getName(), mappingEntityName,
-                    annotation.joinColumn().name(), mappingInventoryMetadata.inventoryAnnotation.mappingVOClass().getSimpleName(),
-                    mappingEntityName, mappingEntityName, annotation.joinColumn().referencedColumnName());
+            if (operator.contains("has")) {
+                return String.format("%s.%s IN (%s)", inventoryClass.getSimpleName(), primaryKey.getName(),
+                        generateHasSQL(mappingInventoryMetadata.inventoryAnnotation.mappingVOClass().getSimpleName(), mappingEntityName,
+                                annotation.joinColumn().name(), annotation.joinColumn().referencedColumnName(), operator, value));
+            } else {
+                return String.format("%s.%s IN (SELECT %s.%s FROM %s %s WHERE %s.%s %%s %%s)",
+                        inventoryClass.getSimpleName(), primaryKey.getName(), mappingEntityName,
+                        annotation.joinColumn().name(), mappingInventoryMetadata.inventoryAnnotation.mappingVOClass().getSimpleName(),
+                        mappingEntityName, mappingEntityName, annotation.joinColumn().referencedColumnName());
+            }
         }
     }
 
@@ -69,6 +76,7 @@ public class SQLConditionBuilder {
         TAG_FALSE_OP.put("!=", "=");
         TAG_FALSE_OP.put("not in", "in");
         TAG_FALSE_OP.put("not like", "like");
+        TAG_FALSE_OP.put("not has", "in"); // not has for tag query is same as not in
     }
 
     private void setConditionField(Class clz, String fname) {
@@ -116,7 +124,7 @@ public class SQLConditionBuilder {
                 } else {
                     // self may be children class
                     qf.inventoryClass = fc.self.selfInventoryClass;
-                    template = qf.toSQL();
+                    template = qf.toSQL(operator, value);
                 }
             }
         } else {
@@ -154,8 +162,12 @@ public class SQLConditionBuilder {
                         subCondition = String.format("tagvo.tag %s %s", operator, value);
                     }
 
-                    return String.format("(%s.%s IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE %s))",
-                            src.simpleInventoryName(), primaryKey, tableName, subCondition);
+                    String filterResourceUuidSQL = operator.equals("has") ?
+                            generateHasSQL(tableName, "tagvo", "resourceUuid", "tag", operator, value) :
+                            String.format("SELECT tagvo.resourceUuid FROM %s tagvo WHERE %s", tableName, subCondition);
+
+                    return String.format("(%s.%s IN (%s))",
+                            src.simpleInventoryName(), primaryKey, filterResourceUuidSQL);
                 }
             }
         }
@@ -172,11 +184,13 @@ public class SQLConditionBuilder {
 
         String op = reserve ? TAG_FALSE_OP.get(operator) : operator;
         String subCondition = String.format("tagPatternUuid %s ", op + (value == null ? "" : value));
-        String filterResourceUuidSQL = String.format("SELECT distinct resourceUuid FROM UserTagVO WHERE %s", subCondition);
+        String filterResourceUuidSQL = operator.equals("has") ?
+                generateHasSQL("UserTagVO", "tagvo", "resourceUuid", "tagPatternUuid", operator, value) :
+                String.format("SELECT distinct resourceUuid FROM UserTagVO WHERE %s", subCondition);
 
-        String weather_not_in = reserve ? "NOT" : "";
+        String wetherNotIn = reserve ? "NOT" : "";
         return String.format("(%s.%s %s IN (%s))",
-                    src.simpleInventoryName(), primaryKey, weather_not_in, filterResourceUuidSQL);
+                    src.simpleInventoryName(), primaryKey, wetherNotIn, filterResourceUuidSQL);
     }
 
     private String makeTemplate(Iterator<ZQLMetadata.ChainQueryStruct> iterator) {
@@ -205,10 +219,13 @@ public class SQLConditionBuilder {
                 setConditionField(right.targetInventoryClass, fc.fieldName);
                 QueryableField qf = getIfConditionFieldQueryableField();
 
-                if (qf == null) {
-                    return String.format(filterSqlFormat, String.format("%s.%s %%s %%s", entityName, fc.fieldName));
+                if (qf != null) {
+                    return String.format(filterSqlFormat, qf.toSQL(operator, this.value));
+                } else if (operator.contains("has")) {
+                    return String.format("(%s)", generateHasSQL(right.targetVOClass.getSimpleName(), entityName,
+                        right.targetKeyName, fc.fieldName, operator, this.value));
                 } else {
-                    return String.format(filterSqlFormat, qf.toSQL());
+                    return String.format(filterSqlFormat, String.format("%s.%s %%s %%s", entityName, fc.fieldName));
                 }
             }
         }
@@ -233,5 +250,25 @@ public class SQLConditionBuilder {
 
     public String build() {
         return template;
+    }
+
+    private static String generateHasSQL(String entityClass, String entityName, String targetKeyName, String fieldName, String operator, String value) {
+        if (operator.equals("has")) {
+            int count = value.replaceAll("\\s", "").split("','").length;
+            return StringDSL.s("SELECT {3}.{0} FROM {2} {3}" +
+                    " WHERE {3}.{1} in {4}" +
+                    " GROUP BY {3}.{0}" +
+                    " HAVING COUNT(distinct {3}.{1}) = {5}")
+                    .format(targetKeyName, fieldName, entityClass, entityName, value, count);
+        } else {
+            return StringDSL.s("SELECT {3}.{0} FROM {2} {3}" +
+                    " WHERE {3}.{0} NOT IN" +
+                    " ( " +
+                    " SELECT {3}_.{0} FROM {2} {3}_" +
+                    " WHERE {3}_.{1} IN {4}" +
+                    " )")
+                    .format(targetKeyName, fieldName, entityClass, entityName, value);
+        }
+
     }
 }
