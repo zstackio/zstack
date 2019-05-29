@@ -5,7 +5,10 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.RestRequest;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by frank on 11/12/2015.
@@ -17,6 +20,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIExpungeVmInstanceEvent.class,
         method = HttpMethod.PUT
 )
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APIExpungeVmInstanceMsg extends APIMessage implements VmInstanceMessage {
     @APIParam(resourceType = VmInstanceVO.class)
     private String uuid;

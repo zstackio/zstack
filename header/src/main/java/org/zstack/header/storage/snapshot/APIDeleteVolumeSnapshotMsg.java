@@ -2,12 +2,11 @@ package org.zstack.header.storage.snapshot;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APIDeleteMessage;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIParam;
+import org.zstack.header.message.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @api delete a volume snapshot from primary storage and all its copies from backup stroage
@@ -43,6 +42,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.DELETE,
         responseClass = APIDeleteVolumeSnapshotEvent.class
 )
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APIDeleteVolumeSnapshotMsg extends APIDeleteMessage implements VolumeSnapshotMessage {
     /**
      * @desc volume snapshot uuid
