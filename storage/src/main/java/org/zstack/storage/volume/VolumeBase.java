@@ -959,15 +959,10 @@ public class VolumeBase implements Volume {
                     return;
                 }
 
-                if (!VolumeType.Root.toString().equals(transientVolume.getType())) {
-                    chain.next();
-                    return;
-                }
-
                 ChangeVolumeInstallPathExtensionPoint extp = it.next();
 
                 logger.debug(String.format("run ChangeVolumeInstallPathExtensionPoint[%s]", extp.getClass()));
-                extp.afterChangeVmRootVolumeInstallPath(volumeUuid, transientVolume, new Completion(chain) {
+                extp.afterChangeVmVolumeInstallPath(volumeUuid, transientVolume, new Completion(chain) {
                     @Override
                     public void success() {
                         runExtensions(it, volumeUuid, transientVolume, chain);
