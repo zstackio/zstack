@@ -104,9 +104,9 @@ public class SQLConditionBuilder {
 
             ConditionType ctype = getConditionType(fc.self.selfInventoryClass, fc.fieldName);
             if (ctype == ConditionType.Tag) {
-                template = createTagSQL(fc.self.selfInventoryClass, fc.fieldName, false);
+                template = createTagSQL(fc.self.selfInventoryClass, fc.fieldName);
             } else if (ctype == ConditionType.TagPattern) {
-                template = createTagPatternSQL(fc.self.selfInventoryClass, fc.fieldName, false);
+                template = createTagPatternSQL(fc.self.selfInventoryClass);
             } else {
                 setConditionField(fc.self.selfInventoryClass, fc.fieldName);
                 QueryableField qf = getIfConditionFieldQueryableField();
@@ -131,9 +131,9 @@ public class SQLConditionBuilder {
         }
     }
 
-    private String createTagSQL(Class invClz, String fieldName, boolean nestedQuery) {
+    private String createTagSQL(Class invClz, String fieldName) {
         class TagSQLMaker {
-            String make() {
+            private String make() {
                 ZQLMetadata.InventoryMetadata src = ZQLMetadata.getInventoryMetadataByName(invClz.getName());
 
                 String primaryKey = EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).getName();
@@ -145,14 +145,8 @@ public class SQLConditionBuilder {
                     subCondition = String.format("tagvo.uuid IN (SELECT tagvo_.uuid FROM %s tagvo_ WHERE tagvo_.tag %s %s)",
                             tableName, reserveOp, value);
 
-                    if (nestedQuery) {
-                        return String.format("(SELECT %s.%s FROM %s %s WHERE %s.%s NOT IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE %s))",
-                                src.simpleInventoryName(), primaryKey, src.inventoryAnnotation.mappingVOClass().getSimpleName(),
-                                src.simpleInventoryName() , src.simpleInventoryName(), primaryKey, tableName, subCondition);
-                    } else {
-                        return String.format("(%s.%s NOT IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE %s))",
-                                src.simpleInventoryName(), primaryKey, tableName, subCondition);
-                    }
+                    return String.format("(%s.%s NOT IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE %s))",
+                            src.simpleInventoryName(), primaryKey, tableName, subCondition);
                 } else {
                     if (value == null) {
                         subCondition = String.format("tagvo.tag %s", operator);
@@ -160,14 +154,8 @@ public class SQLConditionBuilder {
                         subCondition = String.format("tagvo.tag %s %s", operator, value);
                     }
 
-                    if (nestedQuery) {
-                        return String.format("(SELECT %s.%s FROM %s %s WHERE %s.%s IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE %s))",
-                                src.simpleInventoryName(), primaryKey, src.inventoryAnnotation.mappingVOClass().getSimpleName(), src.simpleInventoryName(),
-                                src.simpleInventoryName(), primaryKey, tableName, subCondition);
-                    } else {
-                        return String.format("(%s.%s IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE %s))",
-                                src.simpleInventoryName(), primaryKey, tableName, subCondition);
-                    }
+                    return String.format("(%s.%s IN (SELECT tagvo.resourceUuid FROM %s tagvo WHERE %s))",
+                            src.simpleInventoryName(), primaryKey, tableName, subCondition);
                 }
             }
         }
@@ -175,7 +163,7 @@ public class SQLConditionBuilder {
         return new TagSQLMaker().make();
     }
 
-    private String createTagPatternSQL(Class invClz, String fieldName, boolean nestedQuery) {
+    private String createTagPatternSQL(Class invClz) {
         ZQLMetadata.InventoryMetadata src = ZQLMetadata.getInventoryMetadataByName(invClz.getName());
 
         String primaryKey = EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).getName();
@@ -187,14 +175,8 @@ public class SQLConditionBuilder {
         String filterResourceUuidSQL = String.format("SELECT distinct resourceUuid FROM UserTagVO WHERE %s", subCondition);
 
         String weather_not_in = reserve ? "NOT" : "";
-        if (nestedQuery) {
-            return String.format("(SELECT %s.%s FROM %s %s WHERE %s.%s %s IN (%s))",
-                    src.simpleInventoryName(), primaryKey, src.inventoryAnnotation.mappingVOClass().getSimpleName(), src.simpleInventoryName(),
+        return String.format("(%s.%s %s IN (%s))",
                     src.simpleInventoryName(), primaryKey, weather_not_in, filterResourceUuidSQL);
-        } else {
-            return String.format("(%s.%s %s IN (%s))",
-                    src.simpleInventoryName(), primaryKey, weather_not_in, filterResourceUuidSQL);
-        }
     }
 
     private String makeTemplate(Iterator<ZQLMetadata.ChainQueryStruct> iterator) {
@@ -212,23 +194,21 @@ public class SQLConditionBuilder {
             String entityName = right.targetInventoryClass.getSimpleName();
 
             ConditionType ctype = getConditionType(right.targetInventoryClass, fc.fieldName);
+            String filterSqlFormat = String.format("(SELECT %s.%s FROM %s %s WHERE %%s)",
+                    entityName, right.targetKeyName, right.targetVOClass.getSimpleName(), entityName);
+
             if (ctype == ConditionType.Tag) {
-                return createTagSQL(right.targetInventoryClass, fc.fieldName, true);
+                return String.format(filterSqlFormat, createTagSQL(right.targetInventoryClass, fc.fieldName));
             } else if (ctype == ConditionType.TagPattern) {
-                return createTagPatternSQL(fc.self.selfInventoryClass, fc.fieldName, true);
+                return String.format(filterSqlFormat, createTagPatternSQL(right.targetInventoryClass));
             } else {
                 setConditionField(right.targetInventoryClass, fc.fieldName);
                 QueryableField qf = getIfConditionFieldQueryableField();
 
                 if (qf == null) {
-                    return String.format("(SELECT %s.%s FROM %s" +
-                                    " %s WHERE %s.%s %%s %%s)",
-                            entityName, right.targetKeyName, right.targetVOClass.getSimpleName(), entityName, entityName,
-                            fc.fieldName);
+                    return String.format(filterSqlFormat, String.format("%s.%s %%s %%s", entityName, fc.fieldName));
                 } else {
-                    return String.format("(SELECT %s.%s FROM %s" +
-                                    " %s WHERE %s)",
-                            entityName, right.targetKeyName, right.targetVOClass.getSimpleName(), entityName, qf.toSQL());
+                    return String.format(filterSqlFormat, qf.toSQL());
                 }
             }
         }
