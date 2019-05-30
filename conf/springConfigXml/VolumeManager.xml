@@ -85,4 +85,10 @@
             <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="DefaultVolumeAttachedJudger" class="org.zstack.storage.volume.DefaultVolumeAttachedJudger">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.volume.VolumeAttachedJudger"/>
+        </zstack:plugin>
+    </bean>
 </beans>

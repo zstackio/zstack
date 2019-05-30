@@ -14,7 +14,9 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @inventory inventory for volume
@@ -60,6 +62,8 @@ import java.util.List;
                 foreignKey = "rootImageUuid", expandedInventoryKey = "uuid"),
 })
 public class VolumeInventory implements Serializable {
+    private static List<VolumeAttachedJudger> attachedJudgers = new ArrayList<>();
+
     /**
      * @desc volume uuid
      */
@@ -292,7 +296,21 @@ public class VolumeInventory implements Serializable {
     }
 
     public boolean isAttached() {
-        return this.vmInstanceUuid != null;
+        if (attachedJudgers.isEmpty()) {
+            return vmInstanceUuid != null;
+        } else {
+            return attachedJudgers.stream().anyMatch(it -> it.isAttached(this));
+        }
+    }
+
+    public List<String> getAttachedVmUuids() {
+        if (attachedJudgers.isEmpty()) {
+            return vmInstanceUuid == null ? Collections.EMPTY_LIST : Collections.singletonList(vmInstanceUuid);
+        } else {
+            return attachedJudgers.stream().flatMap(it -> it.getAttachedVmUuids(this).stream())
+                    .distinct()
+                    .collect(Collectors.toList());
+        }
     }
 
     public String getState() {
@@ -357,5 +375,9 @@ public class VolumeInventory implements Serializable {
 
     public void setVolumeQos(String volumeQos) {
         this.volumeQos = volumeQos;
+    }
+
+    public static void setAttachedJudgers(List<VolumeAttachedJudger> attachedJudgers) {
+        VolumeInventory.attachedJudgers = attachedJudgers;
     }
 }

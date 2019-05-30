@@ -877,7 +877,7 @@ public class VolumeBase implements Volume {
         VolumeInventory volume = msg.getVolume(),
                 transientVolume = msg.getTransientVolume();
 
-        if (transientVolume.isAttached() && !transientVolume.getVmInstanceUuid().equals(volume.getVmInstanceUuid())) {
+        if (transientVolume.isAttached() && !transientVolume.getAttachedVmUuids().equals(volume.getAttachedVmUuids())) {
             throw new CloudRuntimeException(String.format("transient volume[uuid:%s] has attached a different vm " +
                             "with origin volume[uuid:%s].",transientVolume.getUuid(), volume.getUuid()));
         }
@@ -894,17 +894,30 @@ public class VolumeBase implements Volume {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                AttachDataVolumeToVmMsg amsg = new AttachDataVolumeToVmMsg();
-                amsg.setVolume(msg.getTransientVolume());
-                amsg.setVmInstanceUuid(msg.getVolume().getVmInstanceUuid());
-                bus.makeLocalServiceId(amsg, VmInstanceConstant.SERVICE_ID);
-                bus.send(amsg, new CloudBusCallBack(trigger) {
+                ErrorCodeList err = new ErrorCodeList();
+                new While<>(volume.getAttachedVmUuids()).each((vmUuid, compl) -> {
+                    AttachDataVolumeToVmMsg amsg = new AttachDataVolumeToVmMsg();
+                    amsg.setVolume(msg.getTransientVolume());
+                    amsg.setVmInstanceUuid(msg.getVolume().getVmInstanceUuid());
+                    bus.makeLocalServiceId(amsg, VmInstanceConstant.SERVICE_ID);
+                    bus.send(amsg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                compl.done();
+                            } else {
+                                err.getCauses().add(reply.getError());
+                                compl.allDone();
+                            }
+                        }
+                    });
+                }).run(new NoErrorCompletion() {
                     @Override
-                    public void run(MessageReply reply) {
-                        if (reply.isSuccess()) {
+                    public void done() {
+                        if (err.getCauses().isEmpty()) {
                             trigger.next();
                         } else {
-                            trigger.fail(reply.getError());
+                            trigger.fail(err.getCauses().get(0));
                         }
                     }
                 });
