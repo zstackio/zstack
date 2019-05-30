@@ -906,7 +906,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 dbf.removeCollection(self.getVmCdRoms(), VmCdRomVO.class);
                 dbf.remove(self);
                 logger.debug(String.format("successfully expunged the vm[uuid:%s]", self.getUuid()));
-                dbf.eoCleanup(VmInstanceVO.class, Collections.singletonList(self.getUuid()));
+                dbf.eoCleanup(VmInstanceVO.class, self.getUuid());
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
@@ -5247,7 +5247,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 // clean up EO, otherwise API-retry may cause conflict if
                 // the resource uuid is set
                 try {
-                    dbf.eoCleanup(VmInstanceVO.class, CollectionDSL.list(self.getUuid()));
+                    dbf.eoCleanup(VmInstanceVO.class, self.getUuid());
                 } catch (Exception e) {
                     logger.warn(e.getMessage());
                 }

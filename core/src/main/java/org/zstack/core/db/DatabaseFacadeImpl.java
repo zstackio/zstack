@@ -1,6 +1,7 @@
 package org.zstack.core.db;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Propagation;
@@ -329,7 +330,6 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             fireSoftDeleteExtensionByEOClass(ids, eoClass);
         }
 
-
         private void fireHardDeleteExtension(Collection ids) {
             List<HardDeleteEntityExtensionPoint> exts = hardDeleteExtensions.get(voClass);
             if (exts != null) {
@@ -351,6 +351,17 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             logger.debug(String.format("hard delete %s records from %s", ids.size(), tblName));
 
             fireHardDeleteExtension(ids);
+        }
+
+        private void hardDeleteByPrimaryKey(Object id) {
+            String tblName = hasEO() ? eoClass.getSimpleName() : voClass.getSimpleName();
+            String sql = String.format("delete from %s eo where eo.%s = :id", tblName, voPrimaryKeyField.getName());
+            Query q = getEntityManager().createQuery(sql);
+            q.setParameter("id", id);
+            q.executeUpdate();
+            logger.debug(String.format("hard delete 1 records from %s", tblName));
+
+            fireHardDeleteExtension(Collections.singletonList(id));
         }
 
         @Transactional
@@ -727,7 +738,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private void _eoCleanup(Class VOClazz, List ids) {
+    private void _eoCleanup(Class VOClazz, Object id) {
         EntityInfo info = getEntityInfo(VOClazz);
         if (!info.hasEO()) {
             logger.warn(String.format("Class[%s] doesn't has EO.", VOClazz));
@@ -735,16 +746,15 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
 
         String deleted = info.eoSoftDeleteColumn.getName();
-        String sql = String.format("select eo.%s from %s eo where eo.%s is not null and eo.%s in (:ids)", info.voPrimaryKeyField.getName(),
+        String sql = String.format("select eo.%s from %s eo where eo.%s is not null and eo.%s = (:id)", info.voPrimaryKeyField.getName(),
                 info.eoClass.getSimpleName(), deleted, info.voPrimaryKeyField.getName());
         Query q = getEntityManager().createQuery(sql);
-        q.setParameter("ids", ids);
-        ids = q.getResultList();
-        if (ids.isEmpty()) {
+        q.setParameter("id", id);
+        if (q.getResultList().isEmpty()) {
             return;
         }
 
-        info.hardDelete(ids);
+        info.hardDeleteByPrimaryKey(id);
     }
 
     @Override
@@ -755,12 +765,12 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
     @Override
     @DeadlockAutoRestart
-    public void eoCleanup(Class VOClazz, List ids) {
-        if(ids.isEmpty()) {
-            return;
+    public void eoCleanup(Class VOClazz, Object id) {
+        if(id == null) {
+            throw new RuntimeException(String.format("Cleanup %s EO  fail, id is null", VOClazz.getSimpleName()));
         }
 
-        _eoCleanup(VOClazz, ids);
+        _eoCleanup(VOClazz, id);
     }
 
     @Override

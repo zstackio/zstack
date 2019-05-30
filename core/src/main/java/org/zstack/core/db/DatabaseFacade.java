@@ -66,9 +66,14 @@ public interface DatabaseFacade {
     
     boolean isExist(Object id, Class<?> clazz);
 
+    /**
+     * Deleting data in batches may result in deadlocks
+     * please use: void eoCleanup(Class VOClazz, Object id)
+     */
+    @Deprecated
     void eoCleanup(Class VOClazz);
 
-    void eoCleanup(Class VOClazz, List ids);
+    void eoCleanup(Class VOClazz, Object id);
 
     DataSource getDataSource();
 
