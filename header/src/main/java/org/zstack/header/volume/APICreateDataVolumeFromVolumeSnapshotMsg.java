@@ -7,6 +7,7 @@ import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.tag.TagResourceType;
 
 import java.util.concurrent.TimeUnit;
 
@@ -38,6 +39,7 @@ import java.util.concurrent.TimeUnit;
  * @result see :ref:`APICreateDataVolumeFromVolumeSnapshotEvent`
  * @since 0.1.0
  */
+@TagResourceType(VolumeVO.class)
 @Action(category = VolumeConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/volumes/data/from/volume-snapshots/{volumeSnapshotUuid}",
