@@ -925,7 +925,7 @@ public class KVMHost extends HostBase implements Host {
             q.select(VmInstanceVO_.state);
             q.add(VmInstanceVO_.uuid, Op.EQ, volume.getVmInstanceUuid());
             VmInstanceState state = q.findValue();
-            if (state != VmInstanceState.Stopped && state != VmInstanceState.Running) {
+            if (state != VmInstanceState.Stopped && state != VmInstanceState.Running && state != VmInstanceState.Paused && state != VmInstanceState.Destroyed) {
                 throw new OperationFailureException(operr("cannot do volume snapshot merge when vm[uuid:%s] is in state of %s." +
                                 " The operation is only allowed when vm is Running or Stopped", volume.getUuid(), state));
             }

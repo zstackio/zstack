@@ -2,10 +2,13 @@ package org.zstack.test.integration.storage.snapshot
 
 import org.springframework.http.HttpEntity
 import org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotReply
+import org.zstack.header.vm.VmInstanceState
+import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.BatchDeleteVolumeSnapshotAction
 import org.zstack.sdk.BatchDeleteVolumeSnapshotResult
+import org.zstack.sdk.DestroyVmInstanceResult
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeSnapshotInventory
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
@@ -13,6 +16,7 @@ import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.testlib.VmSpec
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
@@ -177,6 +181,8 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
 
             testBatchDeleteVolumeSnapshotOnLocal()
             testBatchDeleteVolumeSnapshotOnCeph()
+            testBatchDeleteVolumeSnapshotOnLocalWhenVmDestroyed()
+            testBatchDeleteVolumeSnapshotOnCephWhenVmDestroyed()
         }
     }
 
@@ -278,5 +284,115 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
         assert cmds.size() == 20
         assert result.results.error.toSet() == [null].toSet()
         // delete error will not return error, check org.zstack.storage.snapshot.VolumeSnapshotBase.handle(org.zstack.header.storage.snapshot.VolumeSnapshotPrimaryStorageDeletionMsg)
+    }
+
+    void testBatchDeleteVolumeSnapshotOnLocalWhenVmDestroyed(){
+        for (i in 1..22) {
+            def snapName = "localsnap${i}".toString()
+            createVolumeSnapshot {
+                volumeUuid = localVm.rootVolumeUuid
+                name = snapName
+            }
+        }
+
+        destroyVmInstance {
+            uuid = localVm.uuid
+        }
+        VmInstanceVO vo = dbFindByUuid(localVm.uuid, VmInstanceVO.class)
+        assert vo.state == VmInstanceState.Destroyed
+
+        List<KVMAgentCommands.MergeSnapshotCmd> cmds = Collections.synchronizedList(new ArrayList<>())
+        env.afterSimulator(KVMConstant.KVM_MERGE_SNAPSHOT_PATH) { rsp, HttpEntity<String> e ->
+            def mergeCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.MergeSnapshotCmd.class)
+            cmds.add(mergeCmd)
+            return rsp
+        }
+
+        VolumeSnapshotInventory snap1 = queryVolumeSnapshot {conditions=["name=localsnap1".toString()]}[0]
+        VolumeSnapshotInventory snap2 = queryVolumeSnapshot {conditions=["name=localsnap2".toString()]}[0]
+
+        batchDeleteVolumeSnapshot {
+            uuids = [snap1, snap2].uuid
+        }
+
+        assert cmds.size() == 0
+
+
+        VolumeSnapshotInventory snap6 = queryVolumeSnapshot {conditions=["name=localsnap6".toString()]}[0]
+        VolumeSnapshotInventory snap8 = queryVolumeSnapshot {conditions=["name=localsnap8".toString()]}[0]
+
+        batchDeleteVolumeSnapshot {
+            uuids = [snap6, snap8].uuid
+        }
+        assert (queryVolumeSnapshot {} as List<VolumeSnapshotInventory>).size() == 14
+        assert cmds.size() == 0
+
+        List<VolumeSnapshotInventory> snaps = queryVolumeSnapshot {}
+        batchDeleteVolumeSnapshot {
+            uuids = snaps.uuid
+        }
+
+        assert cmds.size() == 1
+        assert (queryVolumeSnapshot {} as List<VolumeSnapshotInventory>).size() == 0
+    }
+
+    void testBatchDeleteVolumeSnapshotOnCephWhenVmDestroyed(){
+        for (i in 1..22) {
+            def snapName = "cephsnap${i}".toString()
+            createVolumeSnapshot {
+                volumeUuid = cephVm.rootVolumeUuid
+                name = snapName
+            }
+        }
+        destroyVmInstance {
+            uuid = cephVm.uuid
+        }
+        VmInstanceVO vo = dbFindByUuid(cephVm.uuid, VmInstanceVO.class)
+        assert vo.state == VmInstanceState.Destroyed
+
+        List<CephPrimaryStorageBase.DeleteSnapshotCmd> cmds = Collections.synchronizedList(new ArrayList<>())
+        env.simulator(CephPrimaryStorageBase.DELETE_SNAPSHOT_PATH) { HttpEntity<String> e ->
+            def rsp = new CephPrimaryStorageBase.DeleteSnapshotRsp()
+            def delCmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.DeleteSnapshotCmd.class)
+            cmds.add(delCmd)
+            return rsp
+        }
+
+
+        VolumeSnapshotInventory snap1 = queryVolumeSnapshot {conditions=["name=cephsnap1".toString()]}[0]
+        VolumeSnapshotInventory snap2 = queryVolumeSnapshot {conditions=["name=cephsnap2".toString()]}[0]
+
+        batchDeleteVolumeSnapshot {
+            uuids = [snap1, snap2].uuid
+        }
+
+        assert cmds.size() == 2
+        cmds.clear()
+        env.cleanSimulatorHandlers()
+        assert (queryVolumeSnapshot {} as List<VolumeSnapshotInventory>).size() == 20
+
+        VolumeSnapshotInventory snap3 = queryVolumeSnapshot {conditions=["name=cephsnap3".toString()]}[0]
+
+        List<VolumeSnapshotInventory> snaps = queryVolumeSnapshot {}
+        env.simulator(CephPrimaryStorageBase.DELETE_SNAPSHOT_PATH) { HttpEntity<String> e ->
+            def rsp = new CephPrimaryStorageBase.DeleteSnapshotRsp()
+            def delCmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.DeleteSnapshotCmd.class)
+            cmds.add(delCmd)
+
+            if (delCmd.snapshotPath == snap3.primaryStorageInstallPath) {
+                rsp.setSuccess(false)
+                rsp.setError("test error")
+            }
+            return rsp
+        }
+
+        def result = batchDeleteVolumeSnapshot {
+            uuids = snaps.uuid
+        } as BatchDeleteVolumeSnapshotResult
+
+        assert cmds.size() == 20
+        assert result.results.error.toSet() == [null].toSet()
+        // delete error will not return error, check org.zstack.storage.snapshot.VolumeSnapshotBase.handle(org.zstack.header.storage.snapshot.VolumeSnapshotPrimaryStorageDeletionMsg)
+
     }
 }
