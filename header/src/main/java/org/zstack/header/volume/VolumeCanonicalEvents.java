@@ -1,6 +1,7 @@
 package org.zstack.header.volume;
 
 import org.zstack.header.message.NeedJsonSchema;
+import org.zstack.header.vm.VmInstanceInventory;
 
 import java.util.Date;
 
@@ -10,6 +11,7 @@ import java.util.Date;
 public class VolumeCanonicalEvents {
     public static final String VOLUME_STATUS_CHANGED_PATH = "/volume/status/change";
     public static final String VOLUME_CONFIG_CHANGED_PATH = "/volume/config/change";
+    public static final String VOLUME_ATTACHED_VM_PATH = "/volume/attached/vm";
 
     @NeedJsonSchema
     public static class VolumeConfigChangedData {
@@ -96,6 +98,37 @@ public class VolumeCanonicalEvents {
 
         public void setAccountUuid(String accountUuid) {
             this.accountUuid = accountUuid;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class VolumeAttachedData {
+        private String volumeUuid;
+        private VmInstanceInventory vmInventory;
+        private VolumeInventory inventory;
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
+
+        public VolumeInventory getInventory() {
+            return inventory;
+        }
+
+        public void setInventory(VolumeInventory inventory) {
+            this.inventory = inventory;
+        }
+
+        public VmInstanceInventory getVmInventory() {
+            return vmInventory;
+        }
+
+        public void setVmInventory(VmInstanceInventory vmInventory) {
+            this.vmInventory = vmInventory;
         }
     }
 }
