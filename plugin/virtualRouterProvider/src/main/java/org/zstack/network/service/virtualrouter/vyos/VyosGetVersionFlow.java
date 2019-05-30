@@ -25,6 +25,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -75,6 +76,7 @@ public class VyosGetVersionFlow extends NoRollbackFlow {
         chain.setName(String.format("virtual-router-%s-get-version", vrUuid));
         chain.setData(flowData);
         chain.then(new ShareFlow() {
+            Boolean echoSuccess = false;
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
@@ -86,39 +88,49 @@ public class VyosGetVersionFlow extends NoRollbackFlow {
                         restf.echo(url, new Completion(trigger) {
                             @Override
                             public void success() {
+                                echoSuccess = true;
                                 trigger.next();
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                                if (NetworkUtils.isRemotePortOpen(mgmtNic.getIp(), 22, 2000)) {
+                                    /*zvr not ready, and need to deploy agent for ZSTAC-20420*/
+                                    flowData.put(ApplianceVmConstant.Params.isReconnect.toString(), Boolean.TRUE.toString());
+                                    flowData.put(ApplianceVmConstant.Params.managementNicIp.toString(), mgmtNic.getIp());
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(errorCode);
+                                }
                             }
                         }, TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(Long.parseLong(VirtualRouterGlobalConfig.VYOS_ECHO_TIMEOUT.value())));
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "get-version";
+                if (echoSuccess) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "get-version";
 
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        vyosVersionManager.vyosRouterVersionCheck(vrUuid, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                logger.debug(String.format("virtual router [uuid:%s] version check successfully", vrUuid));
-                                trigger.next();
-                            }
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            vyosVersionManager.vyosRouterVersionCheck(vrUuid, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    logger.debug(String.format("virtual router [uuid:%s] version check successfully", vrUuid));
+                                    trigger.next();
+                                }
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                logger.warn(String.format("virtual router [uuid:%s] version check failed because %s, need to be reconnect", vrUuid, errorCode.getDetails()));
-                                flowData.put(ApplianceVmConstant.Params.isReconnect.toString(), Boolean.TRUE.toString());
-                                flowData.put(ApplianceVmConstant.Params.managementNicIp.toString(), mgmtNic.getIp());
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.warn(String.format("virtual router [uuid:%s] version check failed because %s, need to be reconnect", vrUuid, errorCode.getDetails()));
+                                    flowData.put(ApplianceVmConstant.Params.isReconnect.toString(), Boolean.TRUE.toString());
+                                    flowData.put(ApplianceVmConstant.Params.managementNicIp.toString(), mgmtNic.getIp());
+                                    trigger.next();
+                                }
+                            });
+                        }
+                    });
+                }
 
                 done(new FlowDoneHandler(flowTrigger) {
                     @Override
