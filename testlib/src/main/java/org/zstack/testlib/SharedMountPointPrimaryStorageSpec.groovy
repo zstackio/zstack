@@ -1,6 +1,12 @@
 package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.smp.KvmBackend
 import org.zstack.utils.gson.JSONObjectUtil
@@ -67,10 +73,19 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new KvmBackend.MergeSnapshotRsp()
             }
 
-            simulator(KvmBackend.GET_VOLUME_SIZE_PATH) {
-                def rsp = new KvmBackend.GetVolumeSizeRsp()
-                rsp.actualSize = 0
-                rsp.size = 0
+            simulator(KvmBackend.GET_VOLUME_SIZE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, KvmBackend.GetVolumeSizeCmd.class)
+                KvmBackend.GetVolumeSizeRsp rsp = new KvmBackend.GetVolumeSizeRsp()
+                Long size = Q.New(VolumeVO.class).select(VolumeVO_.size).eq(VolumeVO_.uuid, cmd.volumeUuid).findValue()
+                boolean isSnapshotExist = Q.New(VolumeSnapshotVO.class)
+                        .eq(VolumeSnapshotVO_.volumeUuid, cmd.volumeUuid)
+                        .exists
+                if (!isSnapshotExist) {
+                    rsp.actualSize = Q.New(VolumeVO.class).select(VolumeVO_.actualSize).eq(VolumeVO_.uuid, cmd.volumeUuid).findValue()
+                } else {
+                    rsp.actualSize = 1L
+                }
+                rsp.size = size
                 return rsp
             }
 

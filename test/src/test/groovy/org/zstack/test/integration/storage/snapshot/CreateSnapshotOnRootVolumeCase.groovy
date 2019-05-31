@@ -1,6 +1,7 @@
 package org.zstack.test.integration.storage.snapshot
 
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO
@@ -13,6 +14,7 @@ import org.zstack.sdk.VolumeSnapshotInventory
 import org.zstack.test.integration.ldap.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.ImageSpec
 import org.zstack.testlib.SubCase
 /**
  * Created by ads6 on 2018/1/2.
@@ -49,7 +51,30 @@ Step:
     void test() {
         env.create {
             vm = env.inventoryByName("vm") as VmInstanceInventory
+            testActualsizeAfterCreateSnapshotOnRootVolume()
             testCreateSnapshotOnRootVolume()
+        }
+    }
+
+    void testActualsizeAfterCreateSnapshotOnRootVolume() {
+        //set current actualSize and size for volume
+        ImageSpec imageSpec = env.specByName("image")
+        SQL.New(VolumeVO.class)
+                .eq(VolumeVO_.uuid, vm.getRootVolumeUuid())
+                .set(VolumeVO_.size, imageSpec.getSize())
+                .set(VolumeVO_.actualSize, imageSpec.getActualSize())
+                .update()
+        long originActualSize = Q.New(VolumeVO.class).select(VolumeVO_.actualSize).eq(VolumeVO_.uuid, vm.getRootVolumeUuid()).findValue()
+        VolumeSnapshotInventory snapshotInv = createVolumeSnapshot {
+            volumeUuid = vm.getRootVolumeUuid()
+            name = "test"
+        } as VolumeSnapshotInventory
+        retryInSecs {
+            long afterActualSize = Q.New(VolumeVO.class).select(VolumeVO_.actualSize).eq(VolumeVO_.uuid, vm.getRootVolumeUuid()).findValue()
+            assert afterActualSize > originActualSize
+        }
+        deleteVolumeSnapshot {
+            uuid = snapshotInv.uuid
         }
     }
 

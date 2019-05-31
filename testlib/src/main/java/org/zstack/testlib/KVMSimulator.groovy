@@ -1,14 +1,18 @@
 package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
-import org.zstack.core.Platform
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.Constants
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.VolumeTO
@@ -16,7 +20,6 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.persistence.Tuple
-import java.nio.file.Paths
 
 /**
  * Created by xing5 on 2017/6/6.
@@ -103,7 +106,15 @@ class KVMSimulator implements Simulator {
             def rsp = new KVMAgentCommands.TakeSnapshotResponse()
             rsp.newVolumeInstallPath = cmd.installPath
             rsp.snapshotInstallPath = cmd.volumeInstallPath
-            rsp.size = 1
+            long num = Q.New(VolumeSnapshotVO.class)
+                    .eq(VolumeSnapshotVO_.volumeUuid, cmd.volumeUuid)
+                    .count()
+            if (num == 1) {
+                Long actualSize = Q.New(VolumeVO.class).select(VolumeVO_.actualSize).eq(VolumeVO_.uuid, cmd.volumeUuid).findValue()
+                rsp.size = actualSize == 0 ? 1 : actualSize
+            } else {
+                rsp.size = 1
+            }
             return rsp
         }
 
