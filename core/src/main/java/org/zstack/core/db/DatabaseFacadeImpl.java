@@ -353,17 +353,6 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             fireHardDeleteExtension(ids);
         }
 
-        private void hardDeleteByPrimaryKey(Object id) {
-            String tblName = hasEO() ? eoClass.getSimpleName() : voClass.getSimpleName();
-            String sql = String.format("delete from %s eo where eo.%s = :id", tblName, voPrimaryKeyField.getName());
-            Query q = getEntityManager().createQuery(sql);
-            q.setParameter("id", id);
-            q.executeUpdate();
-            logger.debug(String.format("hard delete 1 records from %s", tblName));
-
-            fireHardDeleteExtension(Collections.singletonList(id));
-        }
-
         @Transactional
         private void nativeSqlDelete(Collection ids) {
             // native sql can avoid JPA cascades a deletion to parent entity when deleting a child entity
@@ -746,15 +735,16 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
 
         String deleted = info.eoSoftDeleteColumn.getName();
-        String sql = String.format("select eo.%s from %s eo where eo.%s is not null and eo.%s = (:id)", info.voPrimaryKeyField.getName(),
+        String sql = String.format("select eo from %s eo where eo.%s is not null and eo.%s = :id",
                 info.eoClass.getSimpleName(), deleted, info.voPrimaryKeyField.getName());
-        Query q = getEntityManager().createQuery(sql);
+        Query q = getEntityManager().createQuery(sql, info.eoClass);
         q.setParameter("id", id);
-        if (q.getResultList().isEmpty()) {
+        List result = q.getResultList();
+        if (result.isEmpty()) {
             return;
         }
 
-        info.hardDeleteByPrimaryKey(id);
+        info.hardDelete(result.get(0));
     }
 
     @Override
