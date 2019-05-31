@@ -1,5 +1,6 @@
 package org.zstack.test.integration.kvm.vm
 
+import org.hibernate.exception.LockAcquisitionException
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.*
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig
@@ -8,8 +9,6 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.Test
 import org.zstack.utils.data.SizeUnit
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -135,6 +134,8 @@ class BatchCreateVmFailOnLocalStorageCase extends SubCase{
 
         def threads = []
 
+        boolean dbDeadlockOccurred = false
+
         for (int i = 0; i < 10; i++) {
             def thread = Thread.start {
                 CreateVmInstanceAction action = new CreateVmInstanceAction(
@@ -150,6 +151,10 @@ class BatchCreateVmFailOnLocalStorageCase extends SubCase{
                 CreateVmInstanceAction.Result ret = action.call()
 
                 if (ret.error != null) {
+                    if (ret.error.getDetails().contains(LockAcquisitionException.class.simpleName)) {
+                        dbDeadlockOccurred = true
+                    }
+
                     errorNum.incrementAndGet()
                 }
             }
@@ -160,6 +165,8 @@ class BatchCreateVmFailOnLocalStorageCase extends SubCase{
         threads.each { it.join() }
 
         assert errorNum.get() >= 0
+
+        assert !dbDeadlockOccurred
 
         ps = queryPrimaryStorage {
             conditions=["uuid=${ps.uuid}".toString()]
