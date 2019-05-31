@@ -8,5 +8,5 @@ import org.zstack.header.volume.VolumeInventory;
  * Created by mingjian.deng on 2018/8/2.
  */
 public interface ChangeVolumeInstallPathExtensionPoint extends ChangeVmImageExtensionPoint {
-    void afterChangeVmRootVolumeInstallPath(String oldVolumeUuid, VolumeInventory newVol, final Completion completion);
+    void afterChangeVmVolumeInstallPath(String oldVolumeUuid, VolumeInventory newVol, final Completion completion);
 }
