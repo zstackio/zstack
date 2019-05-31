@@ -917,9 +917,13 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 if (!rsp.isSuccess()) {
                     logger.warn(String.format("failed to delete bits[%s] on nfs primary storage[uuid:%s], %s, will clean up",
                             installPath, pinv.getUuid(), rsp.getError()));
-                } else {
-                    nfsMgr.reportCapacityIfNeeded(pinv.getUuid(), rsp);
+                    completion.fail(operr("failed to delete bits[%s] on nfs primary storage[uuid:%s], %s, will clean up " +
+                                    "installPath, pinv.getUuid(), rsp.getError()",
+                            installPath, pinv.getUuid(), rsp.getError()));
+                    return;
                 }
+
+                nfsMgr.reportCapacityIfNeeded(pinv.getUuid(), rsp);
 
                 completion.success();
             }
