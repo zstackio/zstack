@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -313,6 +314,11 @@ public class VolumeSnapshotTreeBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                if (CoreGlobalProperty.SIMULATORS_ON) {
+                    trigger.next();
+                    return;
+                }
+
                 ErrorCodeList errList = new ErrorCodeList();
                 new While<>(currentLeaf.getDescendants()).all((sp, whileCompletion) -> {
                     Optional<VolumeSnapshotDeletionProtector> protector = pluginRgty.getExtensionList(VolumeSnapshotDeletionProtector.class).stream().filter(p -> p.getPrimaryStorageType().equals(primaryStorageType))
