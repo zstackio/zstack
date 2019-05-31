@@ -234,6 +234,8 @@ public class ImageBase implements Image {
                 }
 
                 returnBackupStorageCapacity(ref.getBackupStorageUuid(), self.getActualSize());
+                dbf.remove(ref);
+
                 //TODO remove ref from metadata, this logic should after all refs deleted
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(ExpungeImageExtensionPoint.class), new ForEachFunction<ExpungeImageExtensionPoint>() {
                     @Override
@@ -241,8 +243,6 @@ public class ImageBase implements Image {
                         ext.afterExpungeImage(ImageInventory.valueOf(self), ref.getBackupStorageUuid());
                     }
                 });
-
-                dbf.remove(ref);
 
                 logger.debug(String.format("successfully expunged the image[uuid: %s, name: %s] on the backup storage[uuid: %s]",
                         self.getUuid(), self.getName(), ref.getBackupStorageUuid()));

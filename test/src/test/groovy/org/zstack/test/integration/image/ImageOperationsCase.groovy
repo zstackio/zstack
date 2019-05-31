@@ -2,17 +2,11 @@ package org.zstack.test.integration.image
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.header.image.ImageBackupStorageRefVO
-import org.zstack.header.image.ImageBackupStorageRefVO_
-import org.zstack.header.image.ImageConstant
-import org.zstack.header.image.ImageStatus
-import org.zstack.header.image.ImageVO
-import org.zstack.header.image.ImageVO_
-import org.zstack.header.image.SyncImageSizeMsg
-import org.zstack.header.image.SyncImageSizeReply
+import org.zstack.header.image.*
 import org.zstack.header.storage.backup.AllocateBackupStorageMsg
 import org.zstack.header.storage.backup.AllocateBackupStorageReply
 import org.zstack.header.storage.backup.BackupStorageInventory
@@ -25,7 +19,6 @@ import org.zstack.header.volume.SyncVolumeSizeMsg
 import org.zstack.header.volume.SyncVolumeSizeReply
 import org.zstack.sdk.CreateRootVolumeTemplateFromRootVolumeAction
 import org.zstack.sdk.DiskOfferingInventory
-import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
@@ -36,6 +29,7 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 
 import java.util.concurrent.TimeUnit
+
 /**
  * Created by david on 3/2/17.
  */
@@ -153,6 +147,32 @@ class ImageOperationsCase extends SubCase {
         env.delete()
     }
 
+    class TestExpungeImageExt implements ExpungeImageExtensionPoint {
+        boolean called = false
+        boolean found = true
+
+        @Override
+        void preExpungeImage(ImageInventory img) {
+        }
+
+        @Override
+        void beforeExpungeImage(ImageInventory img) {
+        }
+
+        @Override
+        void afterExpungeImage(ImageInventory img, String imageBackupStorageUuid) {
+            called = true
+            found = Q.New(ImageBackupStorageRefVO.class)
+                    .eq(ImageBackupStorageRefVO_.imageUuid, img.uuid)
+                    .eq(ImageBackupStorageRefVO_.backupStorageUuid, imageBackupStorageUuid)
+                    .exists
+        }
+
+        @Override
+        void failedToExpungeImage(ImageInventory img, ErrorCode err) {
+        }
+    }
+
     void testDeleteImage() {
         def thisImageUuid = (env.specByName("image") as ImageSpec).inventory.uuid
         deleteImage {
@@ -176,9 +196,18 @@ class ImageOperationsCase extends SubCase {
         deleteImage {
             uuid = thisImageUuid
         }
+
+        PluginRegistry pluginRegistry = bean(PluginRegistry.class)
+        def expungeExts = pluginRegistry.getExtensionList(ExpungeImageExtensionPoint.class)
+        def testExt = new TestExpungeImageExt()
+        expungeExts.add(testExt)
+
         expungeImage {
             imageUuid = thisImageUuid
         }
+
+        assert testExt.called
+        assert !testExt.found
     }
 
     void testDeleteImageWhichUsedInVm() {
@@ -206,7 +235,7 @@ class ImageOperationsCase extends SubCase {
             url = "http://my-site/foo.iso"
             backupStorageUuids = [bs.uuid]
             format = ImageConstant.ISO_FORMAT_STRING
-        } as ImageInventory
+        }
 
         retryInSecs {
             assert dbIsExists(large.uuid, ImageVO.class)
@@ -245,7 +274,7 @@ class ImageOperationsCase extends SubCase {
             url = "http://my-site/foo.iso"
             backupStorageUuids = [bs.uuid]
             format = ImageConstant.ISO_FORMAT_STRING
-        } as ImageInventory
+        }
 
         retryInSecs {
             assert dbIsExists(large.uuid, ImageVO.class)
@@ -392,7 +421,7 @@ class ImageOperationsCase extends SubCase {
         def image = createRootVolumeTemplateFromRootVolume {
             name = imageName
             rootVolumeUuid = vm.rootVolumeUuid
-        } as ImageInventory
+        }
         ImageBackupStorageRefVO vo =  Q.New(ImageBackupStorageRefVO.class)
                 .eq(ImageBackupStorageRefVO_.imageUuid, image.uuid)
                 .find()
