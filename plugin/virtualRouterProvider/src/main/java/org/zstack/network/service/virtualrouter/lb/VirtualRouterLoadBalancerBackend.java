@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -17,6 +18,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -27,6 +29,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
@@ -52,6 +55,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -78,6 +82,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     private ApiTimeoutManager apiTimeoutManager;
     @Autowired
     private NetworkServiceManager nwServiceMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     @Override
     public List<Class> getMessageClassToIntercept() {
@@ -120,14 +126,23 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         .eq(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK)
                         .listValues());
 
-        if (vrUuids.size() == 2
-                && LoadBalancerSystemTags.SEPARATE_VR.hasTag(msg.getLoadBalancerUuid())
-                && vrUuids.stream().anyMatch(uuid -> VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(uuid))) {
-            logger.debug(String.format(
-                    "there are two virtual routers[uuids:%s] on l3 networks[uuids:%s] which vmnics[uuids:%s]" +
-                            "attached", vrUuids, l3NetworkUuids, attachedVmNicUuids
-            ));
+        boolean valid = true;
+        if (vrUuids.size() == 2 ) {
+            if (LoadBalancerSystemTags.SEPARATE_VR.hasTag(msg.getLoadBalancerUuid())
+                    && vrUuids.stream().anyMatch(uuid -> VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(uuid))) {
+                logger.debug(String.format(
+                        "there are two virtual routers[uuids:%s] on l3 networks[uuids:%s] which vmnics[uuids:%s]" +
+                                "attached", vrUuids, l3NetworkUuids, attachedVmNicUuids));
+                valid = true;
+            } else if (isVirtualRouterHaPair(new ArrayList<>(vrUuids))){
+                valid = true;
+            } else {
+                valid = false;
+            }
         } else if (vrUuids.size() > 1) {
+            valid = false;
+        }
+        if (!valid) {
             throw new ApiMessageInterceptionException(argerr(
                     "new add vm nics[uuids:%s] and attached vmnics are not on the same vrouter, " +
                             "they are on vrouters[uuids:%s]", msg.getVmNicUuids(), vrUuids));
@@ -157,7 +172,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         .eq(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK)
                         .listValues());
 
-        if (vrUuids.size() > 1) {
+        if (vrUuids.size() > 1 && !isVirtualRouterHaPair(new ArrayList<>(vrUuids))) {
             throw new ApiMessageInterceptionException(argerr(
                     "new add vm nics[uuids:%s] and peer l3s[uuids:%s] of loadbalancer[uuid: %s]'s vip are not on the same vrouter, " +
                             "they are on vrouters[uuids:%s]", msg.getVmNicUuids(), peerL3NetworkUuids, msg.getLoadBalancerUuid(), vrUuids));
@@ -166,12 +181,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     @Transactional(readOnly = true)
     private VirtualRouterVmInventory findVirtualRouterVm(String lbUuid) {
-        String sql = "select vr from VirtualRouterVmVO vr, VirtualRouterLoadBalancerRefVO ref where ref.virtualRouterVmUuid =" +
-                " vr.uuid and ref.loadBalancerUuid = :lbUuid";
-        TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
-        q.setParameter("lbUuid", lbUuid);
-        List<VirtualRouterVmVO> vrs = q.getResultList();
-
+        List<VirtualRouterVmVO> vrs = getAllVirtualRouters(lbUuid);
         if (LoadBalancerSystemTags.SEPARATE_VR.hasTag(lbUuid)) {
             Optional<VirtualRouterVmInventory> vr = vrs.stream()
                     .filter(v -> VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(v.getUuid()))
@@ -188,11 +198,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     @Transactional(readOnly = true)
     private VirtualRouterVmInventory findVirtualRouterVm(String lbUuid, List<String> vmNics) {
-        String sql = "select vr from VirtualRouterVmVO vr, VirtualRouterLoadBalancerRefVO ref where ref.virtualRouterVmUuid =" +
-                " vr.uuid and ref.loadBalancerUuid = :lbUuid";
-        TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
-        q.setParameter("lbUuid", lbUuid);
-        List<VirtualRouterVmVO> vrs = q.getResultList();
+        List<VirtualRouterVmVO> vrs = getAllVirtualRouters(lbUuid);
 
         if (LoadBalancerSystemTags.SEPARATE_VR.hasTag(lbUuid)) {
             Optional<VirtualRouterVmVO> vr = vrs.stream()
@@ -224,6 +230,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         String lbUuid;
         String listenerUuid;
         String vip;
+        String publicNic;
         List<String> nicIps;
         int instancePort;
         int loadBalancerPort;
@@ -302,6 +309,14 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         public void setCertificateUuid(String certificateUuid) {
             this.certificateUuid = certificateUuid;
         }
+
+        public String getPublicNic() {
+            return publicNic;
+        }
+
+        public void setPublicNic(String publicNic) {
+            this.publicNic = publicNic;
+        }
     }
 
     public static class RefreshLbCmd extends AgentCommand {
@@ -363,11 +378,13 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     public static final String CREATE_CERTIFICATE_PATH = "/certificate/create";
     public static final String DELETE_CERTIFICATE_PATH = "/certificate/delete";
 
-    private List<LbTO> makeLbTOs(final LoadBalancerStruct struct) {
+    private List<LbTO> makeLbTOs(final LoadBalancerStruct struct, VirtualRouterVmInventory vr) {
         SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
-        q.select(VipVO_.ip);
         q.add(VipVO_.uuid, Op.EQ, struct.getLb().getVipUuid());
-        final String vip = q.findValue();
+        final VipVO vip = q.find();
+        String publicMac = vr.getVmNics().stream()
+                .filter(n -> n.getL3NetworkUuid().equals(vip.getL3NetworkUuid()))
+                .findFirst().get().getMac();
 
         return CollectionUtils.transformToList(struct.getListeners(), new Function<LbTO, LoadBalancerListenerInventory>() {
             @Override
@@ -378,7 +395,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 to.setLbUuid(l.getLoadBalancerUuid());
                 to.setListenerUuid(l.getUuid());
                 to.setMode(l.getProtocol());
-                to.setVip(vip);
+                to.setVip(vip.getIp());
                 if (l.getCertificateRefs() != null && !l.getCertificateRefs().isEmpty()) {
                     to.setCertificateUuid(l.getCertificateRefs().get(0).getCertificateUuid());
                 }
@@ -396,6 +413,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 }));
 
+                to.setPublicNic(publicMac);
                 SimpleQuery<SystemTagVO> q  = dbf.createQuery(SystemTagVO.class);
                 q.select(SystemTagVO_.tag);
                 q.add(SystemTagVO_.resourceUuid, Op.EQ, l.getUuid());
@@ -426,13 +444,13 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         });
     }
 
-    private void refreshCertificate(VirtualRouterVmInventory vr, List<LoadBalancerStruct> struct, final Completion completion){
+    public void refreshCertificate(String vrUuid, List<LoadBalancerStruct> struct, final Completion completion){
         Set<String> certificateUuids = getCertificates(struct);
 
         List<ErrorCode> errors = new ArrayList<>();
         new While<>(certificateUuids).each((uuid, wcmpl) -> {
             VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
-            msg.setVmInstanceUuid(vr.getUuid());
+            msg.setVmInstanceUuid(vrUuid);
             msg.setPath(CREATE_CERTIFICATE_PATH);
 
             CertificateCmd cmd = new CertificateCmd();
@@ -441,7 +459,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             cmd.setCertificate(vo.getCertificate());
 
             msg.setCommand(cmd);
-            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrUuid);
             bus.send(msg, new CloudBusCallBack(wcmpl) {
                 @Override
                 public void run(MessageReply reply) {
@@ -471,19 +489,19 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         });
     }
 
-    private void rollbackCertificate(VirtualRouterVmInventory vr, List<LoadBalancerStruct> struct, final NoErrorCompletion completion){
+    public void rollbackCertificate(String vrUuid, List<LoadBalancerStruct> struct, final NoErrorCompletion completion){
         Set<String> certificateUuids = getCertificates(struct);
 
         new While<>(certificateUuids).each((uuid, wcmpl) -> {
             VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
-            msg.setVmInstanceUuid(vr.getUuid());
+            msg.setVmInstanceUuid(vrUuid);
             msg.setPath(DELETE_CERTIFICATE_PATH);
 
             CertificateCmd cmd = new CertificateCmd();
             cmd.setUuid(uuid);
 
             msg.setCommand(cmd);
-            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrUuid);
             bus.send(msg, new CloudBusCallBack(wcmpl) {
                 @Override
                 public void run(MessageReply reply) {
@@ -493,12 +511,15 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         }).run(new NoErrorCompletion(completion) {
             @Override
             public void done() {
+                deleteCertificateOnHaRouter(vrUuid, struct);
                 completion.done();
             }
         });
     }
 
-    private void refresh(VirtualRouterVmInventory vr, LoadBalancerStruct struct, final Completion completion) {
+    @Override
+    public void refresh(String vrUuid, LoadBalancerStruct struct, final Completion completion) {
+        VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName("refresh-lb-to-virtualRouter");
         chain.then(new ShareFlow() {
@@ -508,7 +529,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     String __name__ = "refresh-lb-ceriticae-to-virtualRouter";
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        refreshCertificate(vr, Collections.singletonList(struct), new Completion(trigger) {
+                        refreshCertificate(vr.getUuid(), Collections.singletonList(struct), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -523,7 +544,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        rollbackCertificate(vr, Collections.singletonList(struct), new NoErrorCompletion(trigger) {
+                        rollbackCertificate(vr.getUuid(), Collections.singletonList(struct), new NoErrorCompletion(trigger) {
                             @Override
                             public void done() {
                                 trigger.rollback();
@@ -542,7 +563,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         msg.setPath(REFRESH_LB_PATH);
 
                         RefreshLbCmd cmd = new RefreshLbCmd();
-                        cmd.lbs = makeLbTOs(struct);
+                        cmd.lbs = makeLbTOs(struct, vr);
 
                         msg.setCommand(cmd);
                         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
@@ -567,6 +588,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
+                        refreshOnHaRouter(vr, struct);
                         completion.success();
                     }
                 });
@@ -656,7 +678,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     private void startVrIfNeededAndRefresh(final VirtualRouterVmInventory vr, final LoadBalancerStruct struct, final Completion completion) {
         if (!VmInstanceState.Stopped.toString().equals(vr.getState())) {
-            refresh(vr, struct, completion);
+            refresh(vr.getUuid(), struct, completion);
             return;
         }
 
@@ -753,7 +775,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        refresh(vr, struct, new Completion(trigger) {
+                        refresh(vr.getUuid(), struct, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -1105,7 +1127,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        refresh(vr, struct, new Completion(trigger) {
+                        refresh(vr.getUuid(), struct, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -1127,15 +1149,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                             @Override
                             protected void scripts() {
-                                List<VirtualRouterLoadBalancerRefVO> refs = Q.New(VirtualRouterLoadBalancerRefVO.class)
-                                        .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid,struct.getLb().getUuid())
-                                        .eq(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, vr.getUuid()).list();
-                                if (refs.size() == 0) {
-                                    VirtualRouterLoadBalancerRefVO ref = new VirtualRouterLoadBalancerRefVO();
-                                    ref.setLoadBalancerUuid(struct.getLb().getUuid());
-                                    ref.setVirtualRouterVmUuid(vr.getUuid());
-                                    persist(ref);
-                                }
+                                attachLoadBalancerToVirtualRouter(asList(struct.getLb().getUuid()), vr.getUuid());
                             }
                         }.execute();
                         completion.success();
@@ -1198,7 +1212,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             return;
                         }
 
-                        refresh(vr, struct, new Completion(trigger) {
+                        refresh(vr.getUuid(), struct, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -1234,14 +1248,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        List<VirtualRouterLoadBalancerRefVO> refs = Q.New(VirtualRouterLoadBalancerRefVO.class)
-                                                                     .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid,struct.getLb().getUuid())
-                                                                     .eq(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, vr.getUuid()).list();
-                        if (refs.size() != 0) {
-                            if (struct.getListeners().isEmpty() || struct.getListeners().stream().allMatch(r->r.getVmNicRefs() == null || r.getVmNicRefs().isEmpty())) {
-                                dbf.removeCollection(refs, VirtualRouterLoadBalancerRefVO.class);
-                            }
-                        }
+                        detachLoadBalancerFromVirtualRouter(struct, vr.getUuid());
                         completion.success();
                     }
                 });
@@ -1254,7 +1261,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 });
             }
         }).start();
-
     }
 
     @Override
@@ -1299,7 +1305,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             return;
                         }
 
-                        refresh(vr, struct, new Completion(trigger) {
+                        refresh(vr.getUuid(), struct, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -1365,14 +1371,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
-                        List<VirtualRouterLoadBalancerRefVO> refs = Q.New(VirtualRouterLoadBalancerRefVO.class)
-                                                                     .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid,struct.getLb().getUuid())
-                                                                     .eq(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, vr.getUuid()).list();
-                        if (refs.size() != 0) {
-                            if (struct.getListeners().isEmpty() || struct.getListeners().stream().allMatch(r->r.getVmNicRefs() == null || r.getVmNicRefs().isEmpty())) {
-                                dbf.removeCollection(refs, VirtualRouterLoadBalancerRefVO.class);
-                            }
-                        }
+                        detachLoadBalancerFromVirtualRouter(struct, vr.getUuid());
                         completion.success();
                     }
                 });
@@ -1385,7 +1384,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 });
             }
         }).start();
-
     }
 
     @Override
@@ -1413,37 +1411,25 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             msg.setVmInstanceUuid(vr.getUuid());
                             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
                             bus.send(msg, new CloudBusCallBack(trigger) {
-                                @Override
+                            @Override
                                 public void run(MessageReply reply) {
                                     if (reply.isSuccess()) {
-                                        trigger.next();
+                                trigger.next();
                                     } else {
                                         trigger.fail(reply.getError());
-                                    }
+                            }
                                 }
                             });
                         } else if (roles.size() > 1 && roles.contains(VirtualRouterSystemTags.VR_LB_ROLE.getTagFormat())) {
-                            DeleteLbCmd cmd = new DeleteLbCmd();
-                            cmd.setLbs(makeLbTOs(struct));
-
-                            VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
-                            msg.setVmInstanceUuid(vr.getUuid());
-                            msg.setPath(DELETE_LB_PATH);
-                            msg.setCommand(cmd);
-                            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
-                            bus.send(msg, new CloudBusCallBack(trigger) {
+                            destroyLoadBalancerOnVirtualRouter(vr, struct, new Completion(trigger) {
                                 @Override
-                                public void run(MessageReply reply) {
-                                    if (reply.isSuccess()) {
-                                        DeleteLbRsp rsp = ((VirtualRouterAsyncHttpCallReply)reply).toResponse(DeleteLbRsp.class);
-                                        if (rsp.isSuccess()) {
-                                            trigger.next();
-                                        } else {
-                                            trigger.fail(operr("operation error, because:%s", rsp.getError()));
-                                        }
-                                    } else {
-                                        trigger.fail(reply.getError());
-                                    }
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
                                 }
                             });
                         } else {
@@ -1482,7 +1468,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         startVrIfNeededAndRefresh(vr, struct, completion);
     }
 
-    void syncOnStart(VirtualRouterVmInventory vr, List<LoadBalancerStruct> structs, final Completion completion) {
+    /* this api is called from VirtualRouterSyncLbOnStartFlow which is specified to a individual router */
+    @Override
+    public void syncOnStart(String vrUuid, List<LoadBalancerStruct> structs, final Completion completion) {
+        VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName("lb-sync-on-Start");
         chain.then(new ShareFlow() {
@@ -1492,7 +1481,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     String __name__ = "lb-sync-certificate-on-start";
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        refreshCertificate(vr, structs, new Completion(trigger) {
+                        refreshCertificate(vr.getUuid(), structs, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -1507,7 +1496,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        rollbackCertificate(vr, structs, new NoErrorCompletion(trigger) {
+                        rollbackCertificate(vr.getUuid(), structs, new NoErrorCompletion(trigger) {
                             @Override
                             public void done() {
                                 trigger.rollback();
@@ -1523,7 +1512,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     public void run(FlowTrigger trigger, Map data) {
                         List<LbTO> tos = new ArrayList<LbTO>();
                         for (LoadBalancerStruct s : structs) {
-                            tos.addAll(makeLbTOs(s));
+                            tos.addAll(makeLbTOs(s, vr));
                         }
 
                         RefreshLbCmd cmd = new RefreshLbCmd();
@@ -1575,5 +1564,109 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     @Override
     public String getNetworkServiceProviderType() {
         return VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
+    }
+
+    @Override
+    public List<String> getAllLbUuidsOnVr(String vrUuid) {
+        String sql = "select ref.loadBalancerUuid from VirtualRouterLoadBalancerRefVO ref where ref.virtualRouterVmUuid = :vruuid";
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("vruuid", vrUuid);
+        List<String> lbuuids = q.getResultList();
+        return lbuuids;
+    }
+
+    protected List<VirtualRouterVmVO> getAllVirtualRouters(String lbUuid) {
+        String sql = "select vr from VirtualRouterVmVO vr, VirtualRouterLoadBalancerRefVO ref where ref.virtualRouterVmUuid =" +
+                " vr.uuid and ref.loadBalancerUuid = :lbUuid";
+        TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
+        q.setParameter("lbUuid", lbUuid);
+        List<VirtualRouterVmVO> vrs = q.getResultList();
+        return vrs;
+    }
+
+    @Override
+    public void attachLoadBalancerToVirtualRouter(List<String> lbUuids, String vrUuid) {
+        List<VirtualRouterLoadBalancerRefVO> refs = new ArrayList<>();
+        for (String uuid : lbUuids) {
+            if (!Q.New(VirtualRouterLoadBalancerRefVO.class)
+                    .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, uuid)
+                    .eq(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, vrUuid).isExists()) {
+                VirtualRouterLoadBalancerRefVO ref = new VirtualRouterLoadBalancerRefVO();
+                ref.setLoadBalancerUuid(uuid);
+                ref.setVirtualRouterVmUuid(vrUuid);
+                refs.add(ref);
+            }
+        }
+
+        if (!refs.isEmpty()) {
+            dbf.persistCollection(refs);
+        }
+    }
+
+    protected void detachLoadBalancerFromVirtualRouter(LoadBalancerStruct struct, String vrUuid) {
+        List<VirtualRouterLoadBalancerRefVO> refs = Q.New(VirtualRouterLoadBalancerRefVO.class)
+                .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, struct.getLb().getUuid())
+                .eq(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, vrUuid).list();
+        if (refs.size() != 0) {
+            if (struct.getListeners().isEmpty() || struct.getListeners().stream().allMatch(r->r.getVmNicRefs() == null || r.getVmNicRefs().isEmpty())) {
+                dbf.removeCollection(refs, VirtualRouterLoadBalancerRefVO.class);
+            }
+        }
+    }
+
+    @Override
+    public void detachLoadBalancerFromVirtualRouter(List<String> lbUuids, String vrUuid) {
+        SQL.New(VirtualRouterLoadBalancerRefVO.class).eq(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, vrUuid)
+                .in(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, lbUuids).delete();
+    }
+
+    public void destroyLoadBalancerOnVirtualRouter(VirtualRouterVmInventory vr, LoadBalancerStruct struct, Completion completion) {
+        DeleteLbCmd cmd = new DeleteLbCmd();
+        cmd.setLbs(makeLbTOs(struct, vr));
+
+        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+        msg.setVmInstanceUuid(vr.getUuid());
+        msg.setPath(DELETE_LB_PATH);
+        msg.setCommand(cmd);
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    DeleteLbRsp rsp = ((VirtualRouterAsyncHttpCallReply)reply).toResponse(DeleteLbRsp.class);
+                    if (rsp.isSuccess()) {
+                        destroyLoadBalancerOnHaRouter(vr.getUuid(), struct);
+                        completion.success();
+                    } else {
+                        completion.fail(operr("operation error, because:%s", rsp.getError()));
+                    }
+                } else {
+                    completion.fail(reply.getError());
+                }
+            }
+        });
+    }
+
+    /* to be Override in ha router */
+    protected boolean isVirtualRouterHaPair(List<String> vrUuids) {
+        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+             return ext.isVirtualRouterInSameHaPair(vrUuids);
+        }
+
+        return false;
+    }
+
+    protected void refreshCertificateOnHaRouter(String vrUuid, List<LoadBalancerStruct> struct) {
+
+    }
+
+    protected void deleteCertificateOnHaRouter(String vrUuid, List<LoadBalancerStruct> struct) {
+
+    }
+
+    protected void refreshOnHaRouter(VirtualRouterVmInventory vr, LoadBalancerStruct struct) {
+    }
+
+    protected void destroyLoadBalancerOnHaRouter(String vrUuid, LoadBalancerStruct struct) {
     }
 }

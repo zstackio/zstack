@@ -39,5 +39,8 @@ public interface ApplianceVmFacade {
 
     void removeFirewall(String applianceVmUuid, String l3uuid, List<ApplianceVmFirewallRuleInventory> rules, Completion completion);
 
-    void setApplianceVmSystemTags(String vmUuid, String applianceType);
+    void attachApplianceVmToAffinityGroup(String vmUuid, String affinityGroupUuid);
+    void attachApplianceVmToHaGroup(String vmUuid, String haGroupUuid);
+    void dettachVmInstanceFromAffinityGroup(String vmUuid);
+    void detachVirtualRouterFromHaGroup(String vmUuid, String haGroupUuid);
 }

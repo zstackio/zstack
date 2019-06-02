@@ -222,4 +222,7 @@
             <zstack:extension interface="org.zstack.network.service.vip.VipFactory" />
         </zstack:plugin>
     </bean>
+
+    <bean id="VirtualRouterHaBackend" class="org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend">
+    </bean>
 </beans>

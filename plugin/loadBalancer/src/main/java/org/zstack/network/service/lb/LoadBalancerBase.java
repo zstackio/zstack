@@ -32,6 +32,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
+import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.vip.ModifyVipAttributesStruct;
@@ -80,8 +81,12 @@ public class LoadBalancerBase {
     @Autowired
     private PluginRegistry pluginRgty;
 
+    public static String getSyncId(String vipUuid) {
+        return String.format("operate-lb-with-vip-%s", vipUuid);
+    }
+
     private String getSyncId() {
-        return String.format("operate-lb-with-vip-%s", self.getVipUuid());
+        return getSyncId(self.getVipUuid());
     }
 
     private LoadBalancerVO self;
@@ -1182,9 +1187,35 @@ public class LoadBalancerBase {
         return true;
     }
 
+    /* get one of nic l3 uuid bound to lb listeners, we suppose that all l3 are belonged to same router
+    * or it's a bug */
+    private String getLbNicL3Uuid() {
+        String sql = "select distinct nic.l3NetworkUuid from VmNicVO nic, LoadBalancerVO lb, LoadBalancerListenerVO ls, " +
+                "LoadBalancerListenerVmNicRefVO ref where lb.uuid=ls.loadBalancerUuid and ls.uuid=ref.listenerUuid " +
+                "and ref.vmNicUuid=nic.uuid and lb.uuid=:lbUid";
+        List<String> l3Uuids = SQL.New(sql, String.class).param("lbUid", self.getUuid()).limit(1).list();
+        if (l3Uuids == null || l3Uuids.isEmpty()) {
+            return null;
+        } else {
+            return l3Uuids.get(0);
+        }
+    }
+
     private LoadBalancerBackend getBackend() {
         DebugUtils.Assert(self.getProviderType() != null, "providerType cannot be null");
-        return lbMgr.getBackend(self.getProviderType());
+
+        String providerType = self.getProviderType();
+        String l3Uuid = getLbNicL3Uuid();
+        if (l3Uuid != null) {
+            for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+                String L3ProviderType = ext.getL3NetworkServiceProviderTypeOfHaRouter(l3Uuid);
+                if (L3ProviderType != null) {
+                    providerType = L3ProviderType;
+                }
+            }
+        }
+
+        return lbMgr.getBackend(providerType);
     }
 
     private LoadBalancerStruct makeStruct() {

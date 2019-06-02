@@ -35,6 +35,9 @@ public class ApplianceVmVO extends VmInstanceVO {
     @Column
     private int agentPort;
 
+    @Column
+    private ApplianceVmHaStatus haStatus;
+
     public ApplianceVmVO(ApplianceVmVO other) {
         super(other);
         this.applianceVmType = other.applianceVmType;
@@ -42,6 +45,7 @@ public class ApplianceVmVO extends VmInstanceVO {
         this.defaultRouteL3NetworkUuid = other.defaultRouteL3NetworkUuid;
         this.status = other.status;
         this.agentPort = other.agentPort;
+        this.haStatus = other.haStatus;
     }
 
     public ApplianceVmVO() {
@@ -85,5 +89,17 @@ public class ApplianceVmVO extends VmInstanceVO {
 
     public void setStatus(ApplianceVmStatus status) {
         this.status = status;
+    }
+
+    public ApplianceVmHaStatus getHaStatus() {
+        return haStatus;
+    }
+
+    public void setHaStatus(ApplianceVmHaStatus haStatus) {
+        this.haStatus = haStatus;
+    }
+
+    public boolean isHaEnabled() {
+        return !ApplianceVmHaStatus.NoHa.equals(haStatus);
     }
 }

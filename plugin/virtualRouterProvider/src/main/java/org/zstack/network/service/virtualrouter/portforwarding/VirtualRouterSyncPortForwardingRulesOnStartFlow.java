@@ -13,13 +13,14 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.portforwarding.PortForwardingConstant;
-import org.zstack.network.service.portforwarding.PortForwardingGlobalConfig;
-import org.zstack.network.service.portforwarding.PortForwardingRuleVO;
+import org.zstack.network.service.NetworkServiceManager;
+import org.zstack.network.service.portforwarding.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SyncPortForwardingRuleCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SyncPortForwardingRuleRsp;
@@ -48,13 +49,24 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
     private VirtualRouterManager vrMgr;
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
+    @Autowired
+    private PortForwardingManager pfMgr;
+    @Autowired
+    private NetworkServiceManager nwServiceMgr;
 
     @Transactional
-    private List<PortForwardingRuleVO> findRulesForThisRouter(VirtualRouterVmInventory vr, Map<String, Object> data, boolean isNewCreated) {
+    private List<PortForwardingRuleVO> findRulesForThisRouter(VirtualRouterVmInventory vr, Map<String, Object> data, boolean isNewCreated, String serviceProviderType) {
         if (!isNewCreated) {
-            String sql = "select rule from PortForwardingRuleVO rule, VirtualRouterPortForwardingRuleRefVO ref, VmNicVO nic, VmInstanceVO vm where vm.state = :vmState and nic.vmInstanceUuid = vm.uuid and rule.vmNicUuid = nic.uuid and rule.uuid = ref.uuid and ref.virtualRouterVmUuid = :vrUuid";
+            PortForwardingBackend bkd = pfMgr.getPortForwardingBackend(serviceProviderType, vr.getGuestNics().get(0).getL3NetworkUuid());
+            List<String> pfUuids = bkd.getAllPfUuidsOfRouter(vr.getUuid());
+            if (pfUuids == null || pfUuids.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            String sql = "select rule from PortForwardingRuleVO rule, VmNicVO nic, VmInstanceVO vm where vm.state = :vmState " +
+                    "and nic.vmInstanceUuid = vm.uuid and rule.vmNicUuid = nic.uuid and rule.uuid in (:pfUuids)";
             TypedQuery<PortForwardingRuleVO> q = dbf.getEntityManager().createQuery(sql, PortForwardingRuleVO.class);
-            q.setParameter("vrUuid", vr.getUuid());
+            q.setParameter("pfUuids", pfUuids);
             q.setParameter("vmState", VmInstanceState.Running);
             return q.getResultList();
         } else {
@@ -70,20 +82,11 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
             q.setParameter("vmState", VmInstanceState.Running);
 
             List<PortForwardingRuleVO> rules =  q.getResultList();
+            List<String> ruleUuids = rules.stream().map(PortForwardingRuleVO::getUuid).collect(Collectors.toList());
 
-            if (!rules.isEmpty()) {
-                List<VirtualRouterPortForwardingRuleRefVO> refs = new ArrayList<VirtualRouterPortForwardingRuleRefVO>();
-                for (PortForwardingRuleVO rule : rules) {
-                    VirtualRouterPortForwardingRuleRefVO ref = new VirtualRouterPortForwardingRuleRefVO();
-                    ref.setVirtualRouterVmUuid(vr.getUuid());
-                    ref.setVipUuid(rule.getVipUuid());
-                    ref.setUuid(rule.getUuid());
-                    dbf.getEntityManager().persist(ref);
-                    refs.add(ref);
-                }
-
-                data.put(VirtualRouterSyncPortForwardingRulesOnStartFlow.class.getName(), refs);
-            }
+            PortForwardingBackend bkd = pfMgr.getPortForwardingBackend(serviceProviderType, vr.getGuestNics().get(0).getL3NetworkUuid());
+            bkd.addVirtualRouterPortForwardingRuleRefVO(ruleUuids, vr.getUuid());
+            data.put(VirtualRouterSyncPortForwardingRulesOnStartFlow.class.getName(), ruleUuids);
 
             return rules;
         }
@@ -91,18 +94,20 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
     
     @Transactional(readOnly=true)
     private Collection<PortForwardingRuleTO> calculateAllRules(Map<String, PortForwardingRuleVO> ruleMap, String vrUuid) {
-        String sql = "select rule.uuid, nic.ip, vip.ip from PortForwardingRuleVO rule, VmNicVO nic, VipVO vip where rule.vmNicUuid = nic.uuid and rule.uuid in (:ruleUuids) and vip.uuid = rule.vipUuid";
+        String sql = "select rule.uuid, nic.ip, vip.ip, vip.l3NetworkUuid from PortForwardingRuleVO rule, VmNicVO nic, VipVO vip where rule.vmNicUuid = nic.uuid and rule.uuid in (:ruleUuids) and vip.uuid = rule.vipUuid";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("ruleUuids", ruleMap.keySet());
         List<Tuple> privateIps = q.getResultList();
-        
+
+        VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
         Map<String, PortForwardingRuleTO> tos = new HashMap<String, PortForwardingRuleTO>();
         for (Tuple t : privateIps) {
             String ruleUuid = t.get(0, String.class);
+            String publicL3Uuid = t.get(3, String.class);
             PortForwardingRuleTO to = new PortForwardingRuleTO();
             to.setUuid(ruleUuid);
             to.setPrivateIp(t.get(1, String.class));
-            
+
             PortForwardingRuleVO ruleVO = ruleMap.get(ruleUuid);
             to.setAllowedCidr(ruleVO.getAllowedCidr());
             to.setPrivatePortEnd(ruleVO.getPrivatePortEnd());
@@ -112,6 +117,9 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
             to.setVipPortStart(ruleVO.getVipPortStart());
             to.setVipIp(t.get(2, String.class));
             to.setProtocolType(ruleVO.getProtocolType().toString());
+            to.setPublicMac(vr.getVmNics().stream()
+                    .filter(n -> n.getL3NetworkUuid().equals(publicL3Uuid))
+                    .findFirst().get().getMac());
             tos.put(ruleUuid, to);
         }
         
@@ -150,11 +158,21 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
             return;
         }
 
+        NetworkServiceProviderType serviceProviderType = null;
+        try {
+            serviceProviderType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vr.getGuestNics().get(0).getL3NetworkUuid(), PortForwardingConstant.PORTFORWARDING_TYPE);
+        } catch (OperationFailureException e) {
+            chain.next();
+            return;
+        }
+
+        data.put(Param.SERVICE_PROVIDER_TYPE.toString(), serviceProviderType.toString());
+
         new VirtualRouterRoleManager().makePortForwardingRole(vr.getUuid());
 
         boolean isNewCreated = data.containsKey(Param.IS_NEW_CREATED.toString());
 
-        List<PortForwardingRuleVO> ruleVOs = findRulesForThisRouter(vr, data, isNewCreated);
+        List<PortForwardingRuleVO> ruleVOs = findRulesForThisRouter(vr, data, isNewCreated, serviceProviderType.toString());
         if (ruleVOs.isEmpty()) {
             chain.next();
             return;
@@ -203,10 +221,13 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
 
     @Override
     public void rollback(FlowRollback chain, Map data) {
-        List<VirtualRouterPortForwardingRuleRefVO> refs = (List<VirtualRouterPortForwardingRuleRefVO>) data.get(VirtualRouterSyncPortForwardingRulesOnStartFlow.class.getName());
-        if (refs != null) {
-            dbf.removeCollection(refs, VirtualRouterPortForwardingRuleRefVO.class);
-        }
+        VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
+        String serviceProviderType = (String) data.get(Param.SERVICE_PROVIDER_TYPE.toString());
+        List<String> ruleUuids = (List<String>) data.get(VirtualRouterSyncPortForwardingRulesOnStartFlow.class.getName());
+
+        PortForwardingBackend bkd = pfMgr.getPortForwardingBackend(serviceProviderType, vr.getGuestNics().get(0).getL3NetworkUuid());
+        bkd.addVirtualRouterPortForwardingRuleRefVO(ruleUuids, vr.getUuid());
+        bkd.removeVirtualRouterPortForwardingRuleRefVO(ruleUuids, vr.getUuid());
 
         chain.rollback();
     }

@@ -18,7 +18,9 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -78,8 +80,8 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     protected EventFacade evtf;
 
     private Map<String, VipReleaseExtensionPoint> vipReleaseExts = new HashMap<String, VipReleaseExtensionPoint>();
-    private Map<String, VipBackend> vipBackends = new HashMap<String, VipBackend>();
     private Map<String, VipFactory> factories = new HashMap<>();
+    private Map<String, VipBackend> backendMap = new HashMap<>();
 
     private List<String> releaseVipByApiFlowNames;
     private FlowChainBuilder releaseVipByApiFlowChainBuilder;
@@ -95,18 +97,6 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
             vipReleaseExts.put(extp.getVipUse(), extp);
         }
 
-        exts = pluginRgty.getExtensionByInterfaceName(VipBackend.class.getName());
-        for (PluginExtension ext : exts) {
-            VipBackend extp = (VipBackend) ext.getInstance();
-            VipBackend old = vipBackends.get(extp.getServiceProviderTypeForVip());
-            if (old != null) {
-                throw new CloudRuntimeException(
-                        String.format("duplicate VipBackend[%s, %s] for provider type[%s]", old.getClass().getName(), extp.getClass().getName(), extp.getServiceProviderTypeForVip())
-                );
-            }
-            vipBackends.put(extp.getServiceProviderTypeForVip(), extp);
-        }
-
         for (VipFactory ext : pluginRgty.getExtensionList(VipFactory.class)) {
             VipFactory old = factories.get(ext.getNetworkServiceProviderType());
             if (old != null) {
@@ -115,6 +105,16 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
             }
 
             factories.put(ext.getNetworkServiceProviderType(), ext);
+        }
+
+        for (VipBackend ext : pluginRgty.getExtensionList(VipBackend.class)) {
+            VipBackend old = backendMap.get(ext.getServiceProviderTypeForVip());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate VipBackend[%s, %s] for the network service provider type[%s]",
+                        old.getClass(), ext.getClass(), ext.getServiceProviderTypeForVip()));
+            }
+
+            backendMap.put(ext.getServiceProviderTypeForVip(), ext);
         }
     }
 
@@ -140,9 +140,18 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     }
 
     @Override
+    public VipBackend getVipBackend(String networkServiceProviderType) {
+        VipBackend f = backendMap.get(networkServiceProviderType);
+        DebugUtils.Assert(f != null, String.format("cannot find the VipBackend for the network service provider type[%s]", networkServiceProviderType));
+        return f;
+    }
+
+    @Override
     @MessageSafe
     public void handleMessage(Message msg) {
-        if (msg instanceof VipMessage) {
+        if (msg instanceof CreateVipMsg) {
+            handle((CreateVipMsg)msg);
+        } else if (msg instanceof VipMessage) {
             passThrough((VipMessage) msg);
         } else if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
@@ -175,9 +184,32 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         }
     }
 
-    private void handle(final APICreateVipMsg msg) {
-        final APICreateVipEvent evt = new APICreateVipEvent(msg.getId());
+    private void handle(CreateVipMsg msg) {
+        CreateVipReply reply = new CreateVipReply();
 
+        APICreateVipMsg amsg = new APICreateVipMsg();
+        amsg.setName(msg.getName());
+        amsg.setDescription(msg.getDescription());
+        amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
+        amsg.setAllocatorStrategy(msg.getAllocatorStrategy());
+        amsg.setRequiredIp(msg.getRequiredIp());
+        amsg.setSession(msg.getSession());
+        docreateVip(amsg, new ReturnValueCompletion<VipInventory>(msg) {
+            @Override
+            public void success(VipInventory returnValue) {
+                reply.setVip(returnValue);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void docreateVip(final APICreateVipMsg msg, ReturnValueCompletion<VipInventory> completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-vip-%s-from-l3-%s", msg.getName(), msg.getL3NetworkUuid()));
         chain.then(new ShareFlow() {
@@ -293,24 +325,40 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                     }
                 });
 
-                done(new FlowDoneHandler(msg) {
+                done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
                         logger.debug(String.format("successfully acquired vip[uuid:%s, address:%s] on l3NetworkUuid[uuid:%s]", vip.getUuid(), ip.getIp(), ip.getL3NetworkUuid()));
-                        evt.setInventory(vip);
-                        bus.publish(evt);
+                        completion.success(vip);
                     }
                 });
 
-                error(new FlowErrorHandler(msg) {
+                error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        evt.setError(errCode);
-                        bus.publish(evt);
+                        completion.fail(errCode);
                     }
                 });
             }
         }).start();
+    }
+
+    private void handle(final APICreateVipMsg msg) {
+        final APICreateVipEvent evt = new APICreateVipEvent(msg.getId());
+
+        docreateVip(msg, new ReturnValueCompletion<VipInventory>(msg) {
+            @Override
+            public void success(VipInventory returnValue) {
+                evt.setInventory(returnValue);
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
     @Override

@@ -33,6 +33,7 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
@@ -517,7 +518,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        PortForwardingBackend bkd = getPortForwardingBackend(providerType);
+                        PortForwardingBackend bkd = getPortForwardingBackend(providerType.toString(), struct.getGuestL3Network().getUuid());
                         bkd.revokePortForwardingRule(struct, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -846,10 +847,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         return true;
     }
 
-    public PortForwardingBackend getPortForwardingBackend(NetworkServiceProviderType nspType) {
-        return getPortForwardingBackend(nspType.toString());
-    }
-
     @Override
     public String getVipUse() {
         return PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE;
@@ -871,7 +868,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         PortForwardingStruct struct = makePortForwardingStruct(PortForwardingRuleInventory.valueOf(rule));
         final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(struct.getGuestL3Network().getUuid(),
                 NetworkServiceType.PortForwarding);
-        PortForwardingBackend bkd = getPortForwardingBackend(providerType);
+        PortForwardingBackend bkd = getPortForwardingBackend(providerType.toString(), struct.getGuestL3Network().getUuid());
         bkd.revokePortForwardingRule(struct, new Completion(completion) {
             @Override
             public void success() {
@@ -914,7 +911,14 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
     }
 
     @Override
-    public PortForwardingBackend getPortForwardingBackend(String providerType) {
+    public PortForwardingBackend getPortForwardingBackend(String providerType, String l3NetworkUuid) {
+        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            String newProviderType = ext.getL3NetworkServiceProviderTypeOfHaRouter(l3NetworkUuid);
+            if (newProviderType != null) {
+                providerType = newProviderType;
+            }
+        }
+
         PortForwardingBackend bkd = backends.get(providerType);
         DebugUtils.Assert(bkd != null, String.format("cannot find PortForwardingBackend[type:%s]", providerType));
         return bkd;
@@ -961,7 +965,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        PortForwardingBackend bkd = getPortForwardingBackend(providerType);
+                        PortForwardingBackend bkd = getPortForwardingBackend(providerType, struct.getGuestL3Network().getUuid());
                         bkd.applyPortForwardingRule(struct, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -1006,7 +1010,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        PortForwardingBackend bkd = getPortForwardingBackend(providerType);
+                        PortForwardingBackend bkd = getPortForwardingBackend(providerType, struct.getGuestL3Network().getUuid());
                         bkd.revokePortForwardingRule(struct, new Completion(trigger) {
                             @Override
                             public void success() {

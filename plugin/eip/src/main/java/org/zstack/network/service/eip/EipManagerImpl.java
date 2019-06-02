@@ -26,6 +26,7 @@ import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
@@ -467,7 +468,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        EipBackend bkd = getEipBackend(providerType.toString());
+                        EipBackend bkd = getEipBackend(providerType.toString(), struct.getNic().getL3NetworkUuid());
                         bkd.revokeEip(struct, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -736,7 +737,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        EipBackend bkd = getEipBackend(providerType.toString());
+                        EipBackend bkd = getEipBackend(providerType.toString(), struct.getNic().getL3NetworkUuid());
                         bkd.applyEip(struct, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -803,7 +804,14 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     }
 
     @Override
-    public EipBackend getEipBackend(String providerType) {
+    public EipBackend getEipBackend(String providerType, String l3Uuid) {
+        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            String L3ProviderType = ext.getL3NetworkServiceProviderTypeOfHaRouter(l3Uuid);
+            if (L3ProviderType != null) {
+                providerType = L3ProviderType;
+            }
+        }
+
         EipBackend bkd = backends.get(providerType);
         if (bkd == null) {
             throw new CloudRuntimeException(String.format("cannot find EipBackend for type[%s]", providerType));
@@ -827,7 +835,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        EipBackend bkd = getEipBackend(providerType);
+                        EipBackend bkd = getEipBackend(providerType, struct.getNic().getL3NetworkUuid());
                         bkd.revokeEip(struct, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -990,7 +998,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        EipBackend bkd = getEipBackend(providerType);
+                        EipBackend bkd = getEipBackend(providerType, struct.getNic().getL3NetworkUuid());
                         bkd.applyEip(struct, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -1006,7 +1014,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        EipBackend bkd = getEipBackend(providerType);
+                        EipBackend bkd = getEipBackend(providerType, struct.getNic().getL3NetworkUuid());
                         bkd.revokeEip(struct, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -1089,7 +1097,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         struct.setEip(EipInventory.valueOf(vo));
         struct.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
 
-        EipBackend bkd = getEipBackend(providerType.toString());
+        EipBackend bkd = getEipBackend(providerType.toString(), struct.getNic().getL3NetworkUuid());
         bkd.revokeEip(struct, new Completion(completion) {
             @Override
             public void success() {

@@ -66,6 +66,7 @@ import org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtension
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
+import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaConstant;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO_;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
@@ -686,8 +687,25 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 	}
 
 	@Override
-	public NetworkServiceProviderInventory getVirtualRouterProvider() {
-		return virtualRouterProvider;
+	public String getVirtualRouterServiceProviderType(String vrUuid, NetworkServiceType nwType) {
+	    VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+	    if (vrVO.isHaEnabled()) {
+	        return VirtualRouterHaConstant.VIRTUAL_ROUTER_HA_PROVIDER_TYPE_NAME;
+        }
+
+	    if (nwType != null) {
+            for (VmNicVO nic : vrVO.getVmNics()) {
+                if (VirtualRouterNicMetaData.isGuestNic(nic)) {
+                    NetworkServiceProviderType providerType =
+                            nwServiceMgr.getTypeOfNetworkServiceProviderForService(
+                                    nic.getL3NetworkUuid(), nwType);
+                    return providerType.toString();
+                }
+            }
+        }
+
+	    /* when vpc is just created, there is no guest nic */
+	    return VYOS_ROUTER_PROVIDER_TYPE;
 	}
 
     private void deployAnsible() {
@@ -791,6 +809,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
                 if (vrs.isEmpty()) {
                     return null;
+                }
+
+                /* if there is master, return master */
+                for (VirtualRouterVmVO vo : vrs) {
+                    if (ApplianceVmHaStatus.Master == vo.getHaStatus()) {
+                        return vo;
+                    }
                 }
 
                 if (selector == null) {
@@ -946,6 +971,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         if (vos.isEmpty()) {
             return null;
         }
+
+        for (VirtualRouterVmVO vo : vos) {
+            if (ApplianceVmHaStatus.Master == vo.getHaStatus()) {
+                return VirtualRouterVmInventory.valueOf(vo);
+            }
+        }
+
         return VirtualRouterVmInventory.valueOf(vos.get(0));
     }
 

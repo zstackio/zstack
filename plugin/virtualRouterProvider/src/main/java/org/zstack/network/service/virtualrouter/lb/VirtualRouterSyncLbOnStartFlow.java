@@ -3,10 +3,8 @@ package org.zstack.network.service.virtualrouter.lb;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -18,9 +16,7 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.lb.*;
-import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.vip.VipVO_;
+import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
@@ -32,6 +28,8 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import static org.zstack.network.service.lb.LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE;
+
 /**
  * Created by frank on 8/17/2015.
  */
@@ -42,11 +40,9 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
-    @Qualifier("VirtualRouterLoadBalancerBackend")
-    private VirtualRouterLoadBalancerBackend bkd;
+    private LoadBalancerManager lbMgr;
     @Autowired
-    @Qualifier("VirtualRouterVipBackend")
-    protected VirtualRouterVipBackend vipExt;
+    private VipManager vipManager;
 
     private LoadBalancerStruct makeStruct(LoadBalancerVO vo) {
         LoadBalancerStruct struct = new LoadBalancerStruct();
@@ -101,6 +97,12 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
 
         new VirtualRouterRoleManager().makeLoadBalancerRole(vr.getUuid());
 
+        String serviceProviderType = vrMgr.getVirtualRouterServiceProviderType(vr.getUuid(), LB_NETWORK_SERVICE_TYPE);
+        VirtualRouterVipBackend vipExt = (VirtualRouterVipBackend)vipManager.getVipBackend(serviceProviderType);
+
+        LoadBalancerBackend backend = lbMgr.getBackend(serviceProviderType);
+        data.put(Param.BACKEND.toString(), backend);
+
         Collection<LoadBalancerVO> lbs = new Callable<List<LoadBalancerVO>>() {
             @Override
             @Transactional(readOnly = true)
@@ -114,10 +116,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
 
                 if (!data.containsKey(Param.IS_NEW_CREATED.toString())) {
                     // start/reboot the vr, handle the case that it is the separate lb vr
-                    sql = "select ref.loadBalancerUuid from VirtualRouterLoadBalancerRefVO ref where ref.virtualRouterVmUuid = :vruuid";
-                    TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                    q.setParameter("vruuid", vr.getUuid());
-                    List<String> lbuuids = q.getResultList();
+                    List<String> lbuuids = backend.getAllLbUuidsOnVr(vr.getUuid());
 
                     if (!lbuuids.isEmpty()) {
                         sql = "select lb from LoadBalancerVO lb, LoadBalancerListenerVO l, LoadBalancerListenerVmNicRefVO lref, VmNicVO nic, L3NetworkVO l3" +
@@ -199,28 +198,12 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                             structs.add(makeStruct(vo));
                         }
 
-                        bkd.syncOnStart(vr, structs, new Completion(trigger) {
+                        backend.syncOnStart(vr.getUuid(), structs, new Completion(trigger) {
                             @Override
                             public void success() {
-                                List<VirtualRouterLoadBalancerRefVO> refs = new ArrayList<>();
-                                new SQLBatch() {
-                                    @Override
-                                    protected void scripts() {
-                                        for (LoadBalancerVO vo : finalLbs) {
-                                            if (!q(VirtualRouterLoadBalancerRefVO.class)
-                                                    .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, vo.getUuid())
-                                                    .eq(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, vr.getUuid()).isExists()) {
-                                                VirtualRouterLoadBalancerRefVO ref = new VirtualRouterLoadBalancerRefVO();
-                                                ref.setLoadBalancerUuid(vo.getUuid());
-                                                ref.setVirtualRouterVmUuid(vr.getUuid());
-                                                ref = persist(ref);
-                                                refs.add(ref);
-                                            }
-                                        }
-                                    }
-                                }.execute();
-
-                                data.put(VirtualRouterSyncLbOnStartFlow.class, refs);
+                                List<String> lbUuids = finalLbs.stream().map(LoadBalancerVO::getUuid).collect(Collectors.toList());
+                                backend.attachLoadBalancerToVirtualRouter(lbUuids, vr.getUuid());
+                                data.put(VirtualRouterSyncLbOnStartFlow.class, lbUuids);
                                 trigger.next();
                             }
 
@@ -251,10 +234,11 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
 
     @Override
     public void rollback(FlowRollback trigger, Map data) {
-        List<VirtualRouterLoadBalancerRefVO> refs = (List<VirtualRouterLoadBalancerRefVO>) data.get(VirtualRouterSyncLbOnStartFlow.class);
-        if (refs != null) {
-            dbf.removeCollection(refs, VirtualRouterLoadBalancerRefVO.class);
-        }
+        final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
+        List<String> lbUuids = (List<String>) data.get(VirtualRouterSyncLbOnStartFlow.class);
+        LoadBalancerBackend backend = (LoadBalancerBackend)data.get(Param.BACKEND.toString());
+
+        backend.detachLoadBalancerFromVirtualRouter(lbUuids, vr.getUuid());
 
         trigger.rollback();
     }

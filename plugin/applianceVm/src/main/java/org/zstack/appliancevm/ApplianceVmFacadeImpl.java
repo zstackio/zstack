@@ -20,7 +20,7 @@ import org.zstack.core.job.JobQueueFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
-import org.zstack.header.allocator.SetApplianceVmSystemTags;
+import org.zstack.header.allocator.AttachVmInstanceToAffinityGroupExtensionPoint;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
@@ -47,7 +47,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -515,9 +514,27 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         return bus.makeLocalServiceId(ApplianceVmConstant.SERVICE_ID);
     }
 
-    public void setApplianceVmSystemTags(String vmUuid, String applianceType) {
-        for (SetApplianceVmSystemTags ext : pluginRgty.getExtensionList(SetApplianceVmSystemTags.class)){
-            ext.setApplianceVmSystemTags(vmUuid, applianceType);
+    public void attachApplianceVmToAffinityGroup(String vmUuid, String affinityGroupUuid) {
+        for (AttachVmInstanceToAffinityGroupExtensionPoint ext : pluginRgty.getExtensionList(AttachVmInstanceToAffinityGroupExtensionPoint.class)){
+            ext.attachVmInstanceToAffinityGroup(vmUuid, affinityGroupUuid);
+        }
+    }
+
+    public void dettachVmInstanceFromAffinityGroup(String vmUuid) {
+        for (AttachVmInstanceToAffinityGroupExtensionPoint ext : pluginRgty.getExtensionList(AttachVmInstanceToAffinityGroupExtensionPoint.class)){
+            ext.detachVmInstanceFromAffinityGroup(vmUuid);
+        }
+    }
+
+    public void attachApplianceVmToHaGroup(String vmUuid, String haGroupUuid) {
+        for (ApplianceVmHaExtensionPoint ext : pluginRgty.getExtensionList(ApplianceVmHaExtensionPoint.class)) {
+            ext.attachVirtualRouterToHaGroup(vmUuid, haGroupUuid);
+        }
+    }
+
+    public void detachVirtualRouterFromHaGroup(String vmUuid, String haGroupUuid) {
+        for (ApplianceVmHaExtensionPoint ext : pluginRgty.getExtensionList(ApplianceVmHaExtensionPoint.class)) {
+            ext.detachVirtualRouterFromHaGroup(vmUuid, haGroupUuid);
         }
     }
 }

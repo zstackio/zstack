@@ -6,9 +6,8 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.workflow.Flow;
@@ -17,11 +16,15 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.NetworkServiceManager;
+import org.zstack.network.service.eip.EipBackend;
 import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.eip.EipGlobalConfig;
+import org.zstack.network.service.eip.EipManager;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SyncEipRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
@@ -57,10 +60,16 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
     private ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
+    @Autowired
+    protected PluginRegistry pluginRgty;
+    @Autowired
+    protected EipManager eipManager;
+    @Autowired
+    protected NetworkServiceManager nwMgr;
 
     @Transactional(readOnly = true)
     private List<EipTO> findEipOnThisRouter(VirtualRouterVmInventory vr, List<String> eipUuids) {
-        String sql = "select vip.ip, nic.l3NetworkUuid, nic.ip from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm where nic.vmInstanceUuid = vm.uuid and vm.state = :vmState and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and eip.uuid in (:euuids)";
+        String sql = "select vip.ip, nic.l3NetworkUuid, nic.ip, vip.l3NetworkUuid from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm where nic.vmInstanceUuid = vm.uuid and vm.state = :vmState and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and eip.uuid in (:euuids)";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("euuids", eipUuids);
         q.setParameter("vmState", VmInstanceState.Running);
@@ -70,6 +79,7 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
             String vipIp = t.get(0, String.class);
             final String l3Uuid = t.get(1, String.class);
             String guestIp = t.get(2, String.class);
+            final String pubL3Uuid = t.get(3, String.class);
             String privMac = CollectionUtils.find(vr.getVmNics(), new Function<String, VmNicInventory>() {
                 @Override
                 public String call(VmNicInventory arg) {
@@ -80,10 +90,21 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
                 }
             });
 
+            String publicMac = CollectionUtils.find(vr.getVmNics(), new Function<String, VmNicInventory>() {
+                @Override
+                public String call(VmNicInventory arg) {
+                    if (arg.getL3NetworkUuid().equals(pubL3Uuid)) {
+                        return arg.getMac();
+                    }
+                    return null;
+                }
+            });
+
             DebugUtils.Assert(privMac!=null, String.format("cannot find private nic[l3NetworkUuid:%s] on virtual router[uuid:%s]",
                     l3Uuid, vr.getUuid()));
             EipTO to = new EipTO();
             to.setVipIp(vipIp);
+            to.setPublicMac(publicMac);
             to.setGuestIp(guestIp);
             to.setPrivateMac(privMac);
             to.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
@@ -94,7 +115,8 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
     }
 
     private List<EipTO> findEipOnThisRouter(final VirtualRouterVmInventory vr, Map<String, Object> data, boolean isNewCreated) throws OperationFailureException {
-        List<String> eipUuids;
+        EipBackend eipBackend = (EipBackend)data.get(Param.BACKEND.toString());
+        List<String> eipUuids = new ArrayList<>();
         if (isNewCreated) {
             final List<VmNicInventory> guestNics = vr.getGuestNics();
             final VmNicInventory publicNic = vr.getPublicNic();
@@ -116,28 +138,11 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
                 }
             }.call();
 
-            if (!eipUuids.isEmpty()) {
-                List<VirtualRouterEipRefVO> refs = new ArrayList<VirtualRouterEipRefVO>();
-                for (String eipUuid : eipUuids) {
-                    VirtualRouterEipRefVO oldRef = Q.New(VirtualRouterEipRefVO.class)
-                            .eq(VirtualRouterEipRefVO_.eipUuid, eipUuid).notEq(VirtualRouterEipRefVO_.virtualRouterVmUuid, vr.getUuid()).find();
-                    if (oldRef != null) {
-                        throw new OperationFailureException(operr("Eip [uuid:%s] already bound to router [uuid:%s]", oldRef.getEipUuid(), oldRef.getVirtualRouterVmUuid()));
-                    }
-                    VirtualRouterEipRefVO ref = new VirtualRouterEipRefVO();
-                    ref.setEipUuid(eipUuid);
-                    ref.setVirtualRouterVmUuid(vr.getUuid());
-                    refs.add(ref);
-                }
+            eipBackend.attachEipToVirtualRouter(eipUuids, vr.getUuid());
+            data.put(VirtualRouterSyncEipOnStartFlow.class.getName(), eipUuids);
 
-                dbf.persistCollection(refs);
-                data.put(VirtualRouterSyncEipOnStartFlow.class.getName(), refs);
-            }
         } else {
-            SimpleQuery<VirtualRouterEipRefVO> q = dbf.createQuery(VirtualRouterEipRefVO.class);
-            q.select(VirtualRouterEipRefVO_.eipUuid);
-            q.add(VirtualRouterEipRefVO_.virtualRouterVmUuid, SimpleQuery.Op.EQ, vr.getUuid());
-            eipUuids = q.listValue();
+            eipUuids = eipBackend.getEipUuidsOnVirtualRouter(vr.getUuid());
         }
 
         if (eipUuids.isEmpty()) {
@@ -164,6 +169,10 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
             trigger.next();
             return;
         }
+
+        NetworkServiceProviderType providerType = nwMgr.getTypeOfNetworkServiceProviderForService(guestNics.get(0).getL3NetworkUuid(), EipConstant.EIP_TYPE);
+        EipBackend eipBackend = eipManager.getEipBackend(providerType.toString(), guestNics.get(0).getL3NetworkUuid());
+        data.put(Param.BACKEND.toString(), eipBackend);
 
         new VirtualRouterRoleManager().makeEipRole(vr.getUuid());
 
@@ -215,9 +224,11 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
 
     @Override
     public void rollback(FlowRollback trigger, Map data) {
-        List<VirtualRouterEipRefVO> refs = (List<VirtualRouterEipRefVO>) data.get(VirtualRouterSyncEipOnStartFlow.class.getName());
-        if (refs != null) {
-            dbf.removeCollection(refs, VirtualRouterEipRefVO.class);
+        final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
+        List<String> eipUuids = (List<String>) data.get(VirtualRouterSyncEipOnStartFlow.class.getName());
+        EipBackend eipBackend = (EipBackend)data.get(Param.BACKEND.toString());
+        if (eipUuids != null) {
+            eipBackend.detachEipToVirtualRouter(eipUuids, vr.getUuid());
         }
 
         trigger.rollback();
