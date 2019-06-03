@@ -24,6 +24,7 @@ public abstract class QueryVisitorPlugin {
     public abstract ClauseType getClauseType();
     public abstract String selectTarget();
     public abstract List<String> targetFields();
+    public abstract String functions();
     public abstract String tableName();
     public abstract String conditions();
     public abstract String restrictBy();

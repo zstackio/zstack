@@ -10,7 +10,7 @@ public class CountVisitor extends ZQLBaseVisitor<ASTNode.Query> {
     @Override
     public ASTNode.Query visitCount(ZQLParser.CountContext ctx) {
         ASTNode.Query q = new ASTNode.Query();
-        q.setTarget(ctx.queryTarget().accept(new QueryTargetVisitor()));
+        q.setTarget(ctx.queryTargetWithFunction().accept(new QueryTargetWithFunctionVisitor()));
         q.setConditions(ctx.condition() == null ? null : ctx.condition().stream().map(it->it.accept(new ConditionVisitor())).collect(Collectors.toList()));
         q.setRestrictBy(ctx.restrictBy() == null ? null : ctx.restrictBy().accept(new RestrictByVisitor()));
         q.setOrderBy(ctx.orderBy() == null ? null : ctx.orderBy().accept(new OrderByVisitor()));
