@@ -5,6 +5,7 @@ package org.zstack.header.host;
 public class ConnectHostInfo {
     private boolean isNewAdded;
     private boolean isStartPingTaskOnFailure;
+    private boolean isSkipInstallVirtPkgs;
 
     public boolean isNewAdded() {
         return isNewAdded;
@@ -20,6 +21,14 @@ public class ConnectHostInfo {
 
     public void setStartPingTaskOnFailure(boolean isStartPingTaskOnFailure) {
         this.isStartPingTaskOnFailure = isStartPingTaskOnFailure;
+    }
+
+    public boolean isSkipInstallVirtPkgs() {
+        return isSkipInstallVirtPkgs;
+    }
+
+    public void setSkipInstallVirtPkgs(boolean skipInstallVirtPkgs) {
+        isSkipInstallVirtPkgs = skipInstallVirtPkgs;
     }
 
     public static ConnectHostInfo fromConnectHostMsg(ConnectHostMsg msg) {
