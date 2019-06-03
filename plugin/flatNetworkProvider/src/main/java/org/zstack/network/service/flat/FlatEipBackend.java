@@ -663,7 +663,11 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
         final KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
-        msg.setHostUuid(getHostUuidByVmUuid(cmd.eip.vmUuid));
+        if (struct.getHostUuid() != null) {
+            msg.setHostUuid(struct.getHostUuid());
+        } else {
+            msg.setHostUuid(getHostUuidByVmUuid(cmd.eip.vmUuid));
+        }
         msg.setPath(DELETE_EIP_PATH);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
         bus.send(msg, new CloudBusCallBack(completion) {

@@ -14,6 +14,7 @@ public class EipStruct {
     private boolean snatInboundTraffic;
     private UsedIpInventory guestIp;
     private IpRangeInventory guestIpRange;
+    private String hostUuid;
 
     public boolean isSnatInboundTraffic() {
         return snatInboundTraffic;
@@ -61,5 +62,13 @@ public class EipStruct {
 
     public void setGuestIpRange(IpRangeInventory guestIpRange) {
         this.guestIpRange = guestIpRange;
+    }
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
     }
 }

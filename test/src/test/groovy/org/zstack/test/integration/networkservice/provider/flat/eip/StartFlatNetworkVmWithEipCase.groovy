@@ -106,10 +106,20 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
                     name = "eip"
                     useVip("pubL3")
                 }
+                eip {
+                    name = "eip-1"
+                    useVip("pubL3")
+                }
             }
 
             vm {
                 name = "vm"
+                useImage("image")
+                useL3Networks("l3")
+                useInstanceOffering("instanceOffering")
+            }
+            vm {
+                name = "vm-1"
                 useImage("image")
                 useL3Networks("l3")
                 useInstanceOffering("instanceOffering")
@@ -121,6 +131,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
     void test() {
         env.create {
             testStartVmWithEip()
+            testRecoverVmWithEip()
         }
     }
 
@@ -134,6 +145,36 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
         }
 
         stopVmInstance {
+            uuid = vm.uuid
+        }
+
+        startVmInstance {
+            uuid = vm.uuid
+        }
+    }
+
+    void testRecoverVmWithEip(){
+        def eip = env.inventoryByName("eip-1") as EipInventory
+        def vm = env.inventoryByName("vm-1") as VmInstanceInventory
+
+        attachEip {
+            eipUuid = eip.uuid
+            vmNicUuid = vm.vmNics[0].uuid
+        }
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+
+        EipInventory eip1 = queryEip { conditions=["name=eip-1"] }[0]
+        assert eip1.vmNicUuid == null
+        assert eip1.guestIp == null
+
+        recoverVmInstance {
             uuid = vm.uuid
         }
 
