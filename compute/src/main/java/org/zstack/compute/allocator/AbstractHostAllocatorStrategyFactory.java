@@ -49,5 +49,11 @@ public abstract class AbstractHostAllocatorStrategyFactory implements HostAlloca
     }
 
     public void marshalSpec(HostAllocatorSpec spec, AllocateHostMsg msg) {
+        if (msg instanceof DesignatedAllocateHostMsg) {
+            DesignatedAllocateHostMsg dmsg = (DesignatedAllocateHostMsg)msg;
+            spec.getExtraData().put(HostAllocatorConstant.LocationSelector.zone, dmsg.getZoneUuid());
+            spec.getExtraData().put(HostAllocatorConstant.LocationSelector.cluster, dmsg.getClusterUuid());
+            spec.getExtraData().put(HostAllocatorConstant.LocationSelector.host, dmsg.getHostUuid());
+        }
     }
 }
