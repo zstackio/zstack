@@ -218,13 +218,20 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
                 " and bs.uuid = ref.backupStorageUuid", BackupStorageVO.class)
                 .param("imgUuid", spec.getImageUuid())
                 .list();
-        vos.removeIf(ps ->
-            bsvos.stream().noneMatch(bs -> {
-                List<String> relatedPsUuids = BackupStorageType.valueOf(bs.getType()).findRelatedPrimaryStorage(bs.getUuid());
-                return relatedPsUuids == null || relatedPsUuids.contains(ps.getUuid());
-            })
-        );
-        return vos;
+
+        List<String> relatedPsUuids = new ArrayList<>();
+        for (BackupStorageVO bs : bsvos) {
+            List<String> pss = BackupStorageType.valueOf(bs.getType()).findRelatedPrimaryStorage(bs.getUuid());
+            if (pss != null && !pss.isEmpty()) {
+                relatedPsUuids.addAll(pss);
+            }
+        }
+
+        if (relatedPsUuids.isEmpty()) {
+            return vos;
+        } else {
+            return vos.stream().filter(ps -> relatedPsUuids.contains(ps.getUuid())).collect(Collectors.toList());
+        }
     }
 
     @Override
