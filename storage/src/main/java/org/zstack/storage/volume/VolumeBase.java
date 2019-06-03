@@ -1633,38 +1633,68 @@ public class VolumeBase implements Volume {
             }
 
             @Override
-            public void run(final SyncTaskChain chain) {
-                CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
-                cmsg.setName(msg.getName());
-                cmsg.setDescription(msg.getDescription());
-                cmsg.setResourceUuid(msg.getResourceUuid());
-                cmsg.setAccountUuid(msg.getSession().getAccountUuid());
-                cmsg.setVolumeUuid(msg.getVolumeUuid());
-                bus.makeLocalServiceId(cmsg, VolumeSnapshotConstant.SERVICE_ID);
-                bus.send(cmsg, new CloudBusCallBack(msg, chain) {
+            public void run(final SyncTaskChain taskChain) {
+                FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+                chain.setName("");
+
+                chain.then(new NoRollbackFlow() {
+                    String __name__ = String.format("create-snapshot-for-volume-%s", msg.getVolumeUuid());
                     @Override
-                    public void run(MessageReply reply) {
-                        APICreateVolumeSnapshotEvent evt = new APICreateVolumeSnapshotEvent(msg.getId());
-                        if (reply.isSuccess()) {
-                            CreateVolumeSnapshotReply creply = (CreateVolumeSnapshotReply) reply;
-                            evt.setInventory(creply.getInventory());
-                            syncVolSize();
-                            tagMgr.createTagsFromAPICreateMessage(msg, creply.getInventory().getUuid(), VolumeSnapshotVO.class.getSimpleName());
-                        } else {
-                            evt.setError(reply.getError());
-                        }
-
-                        bus.publish(evt);
-                        chain.next();
+                    public void run(FlowTrigger trigger, Map data) {
+                        CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
+                        cmsg.setName(msg.getName());
+                        cmsg.setDescription(msg.getDescription());
+                        cmsg.setResourceUuid(msg.getResourceUuid());
+                        cmsg.setAccountUuid(msg.getSession().getAccountUuid());
+                        cmsg.setVolumeUuid(msg.getVolumeUuid());
+                        bus.makeLocalServiceId(cmsg, VolumeSnapshotConstant.SERVICE_ID);
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    CreateVolumeSnapshotReply creply = (CreateVolumeSnapshotReply) reply;
+                                    tagMgr.createTagsFromAPICreateMessage(msg, creply.getInventory().getUuid(), VolumeSnapshotVO.class.getSimpleName());
+                                    data.put("uuid", creply.getInventory().getUuid());
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
                     }
-
-                    private void syncVolSize() {
+                }).then(new NoRollbackFlow() {
+                    String __name__ = String.format("sync-volume[uuid: %s]-size-after-create-snapshot", msg.getVolumeUuid());
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
                         SyncVolumeSizeMsg syncVolumeSizeMsg = new SyncVolumeSizeMsg();
                         syncVolumeSizeMsg.setVolumeUuid(msg.getVolumeUuid());
                         bus.makeTargetServiceIdByResourceUuid(syncVolumeSizeMsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
-                        bus.send(syncVolumeSizeMsg);
+                        bus.send(syncVolumeSizeMsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                trigger.next();
+                            }
+                        });
                     }
-                });
+                }).done(new FlowDoneHandler(taskChain) {
+                    @Override
+                    public void handle(Map data) {
+                        APICreateVolumeSnapshotEvent evt = new APICreateVolumeSnapshotEvent(msg.getId());
+                        String snapshotUuid = (String)data.get("uuid");
+
+                        evt.setInventory(VolumeSnapshotInventory.valueOf(dbf.findByUuid(snapshotUuid, VolumeSnapshotVO.class)));
+                        bus.publish(evt);
+                        taskChain.next();
+                    }
+                }).error(new FlowErrorHandler(taskChain) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        APICreateVolumeSnapshotEvent evt = new APICreateVolumeSnapshotEvent(msg.getId());
+                        evt.setError(errCode);
+                        bus.publish(evt);
+                        taskChain.next();
+                    }
+                }).start();
             }
 
             @Override
