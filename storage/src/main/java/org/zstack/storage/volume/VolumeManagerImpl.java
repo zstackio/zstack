@@ -691,6 +691,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             }
         }
 
+        VolumeInventory.setAttachedJudgers(pluginRgty.getExtensionList(VolumeAttachedJudger.class));
+
         return true;
     }
 

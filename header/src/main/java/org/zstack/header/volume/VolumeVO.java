@@ -1,5 +1,6 @@
 package org.zstack.header.volume;
 
+import org.springframework.security.access.method.P;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.image.ImageVO;
@@ -13,6 +14,7 @@ import org.zstack.header.vo.EntityGraph;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import java.util.List;
 
 @Entity
 @Table
@@ -47,5 +49,14 @@ public class VolumeVO extends VolumeAO implements OwnedByAccount {
     @Override
     public Class getResourceTypeClass() {
         return null;
+    }
+
+    @Override
+    public boolean isAttached() {
+        return VolumeInventory.valueOf(this).isAttached();
+    }
+
+    public List<String> getAttachedVmUuids() {
+        return VolumeInventory.valueOf(this).getAttachedVmUuids();
     }
 }
