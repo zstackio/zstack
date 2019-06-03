@@ -2,13 +2,13 @@ package org.zstack.header.cluster;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APICreateMessage;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by GuoYi on 3/12/18
@@ -19,6 +19,7 @@ import java.util.List;
         isAction = true,
         method = HttpMethod.PUT
 )
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 24)
 public class APIUpdateClusterOSMsg extends APICreateMessage implements ClusterMessage {
     @APIParam(resourceType = ClusterVO.class)
     private String uuid;

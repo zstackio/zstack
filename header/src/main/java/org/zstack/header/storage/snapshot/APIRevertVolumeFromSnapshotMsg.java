@@ -5,10 +5,13 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.volume.VolumeVO;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @api revert a volume to one of its snapshot
@@ -44,6 +47,7 @@ import org.zstack.header.volume.VolumeVO;
         method = HttpMethod.PUT,
         responseClass = APIRevertVolumeFromSnapshotEvent.class
 )
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 24)
 public class APIRevertVolumeFromSnapshotMsg extends APIMessage implements VolumeSnapshotMessage, APIAuditor {
     /**
      * @desc volume snapshot uuid

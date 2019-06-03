@@ -5,7 +5,10 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.RestRequest;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @api live migrate vm to another host
@@ -42,6 +45,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.PUT
 )
 @SkipVmTracer(replyClass = APIMigrateVmEvent.class)
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 1)
 public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, MigrateVmMessage {
     /**
      * @desc vm uuid
