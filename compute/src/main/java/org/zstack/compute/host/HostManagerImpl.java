@@ -111,8 +111,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
     private void handle(APIGetHypervisorTypesMsg msg) {
         APIGetHypervisorTypesReply reply = new APIGetHypervisorTypesReply();
-        List<String> res = new ArrayList<String>();
-        res.addAll(HypervisorType.getAllTypeNames());
+        List<String> res = new ArrayList<>(HypervisorType.getAllTypeNames());
         reply.setHypervisorTypes(res);
         bus.reply(msg, reply);
     }
@@ -156,16 +155,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         } else {
             bus.dealWithUnknownMessage(msg);
         }
-    }
-
-    private AddHostMsg getAddHostMsg(AddHostMessage msg) {
-        if (msg instanceof AddHostMsg) {
-            return (AddHostMsg) msg;
-        } else if (msg instanceof APIAddHostMsg) {
-            return AddHostMsg.valueOf((APIAddHostMsg) msg);
-        }
-
-        throw new CloudRuntimeException("unexpected addHost message: " + msg);
     }
 
     private void addHostInQueue(final AddHostMessage msg, ReturnValueCompletion<HostInventory> completion) {
@@ -264,7 +253,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
         final HypervisorFactory factory = getHypervisorFactory(HypervisorType.valueOf(cluster.getHypervisorType()));
         final HostVO vo = factory.createHost(hvo, msg);
-        final AddHostMsg amsg = getAddHostMsg(msg);
 
         if (msg instanceof APIAddHostMsg) {
             tagMgr.createTagsFromAPICreateMessage((APIAddHostMsg)msg, vo.getUuid(), HostVO.class.getSimpleName());
@@ -403,7 +391,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 // refer to the host table will clean up themselves
                 HostVO nvo = dbf.reload(vo);
                 dbf.remove(nvo);
-                dbf.eoCleanup(HostVO.class);
+                dbf.eoCleanup(HostVO.class, nvo.getUuid());
                 HostInventory inv = HostInventory.valueOf(nvo);
 
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(FailToAddHostExtensionPoint.class), new ForEachFunction<FailToAddHostExtensionPoint>() {
