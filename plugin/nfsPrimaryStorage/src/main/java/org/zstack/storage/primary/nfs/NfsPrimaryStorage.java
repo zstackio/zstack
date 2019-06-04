@@ -1333,4 +1333,9 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             }
         });
     }
+
+    @Override
+    protected void handle(GetPrimaryStorageResourceLocationMsg msg) {
+        bus.reply(msg, new GetPrimaryStorageResourceLocationReply());
+    }
 }
