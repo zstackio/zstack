@@ -43,6 +43,9 @@ public class CreatePciDeviceOfferingAction extends AbstractAction {
     @Param(required = false, maxLength = 4, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String subdeviceId;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ramSize;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

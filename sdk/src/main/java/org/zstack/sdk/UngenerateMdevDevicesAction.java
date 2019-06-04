@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetPciDeviceSpecCandidatesAction extends AbstractAction {
+public class UngenerateMdevDevicesAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetPciDeviceSpecCandidatesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetPciDeviceSpecCandidatesResult value;
+        public org.zstack.sdk.UngenerateVirtualPciDevicesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,8 @@ public class GetPciDeviceSpecCandidatesAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List clusterUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hostUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List types;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String pciDeviceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -52,6 +43,12 @@ public class GetPciDeviceSpecCandidatesAction extends AbstractAction {
     @Param(required = false)
     public String accessKeySecret;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -60,8 +57,8 @@ public class GetPciDeviceSpecCandidatesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetPciDeviceSpecCandidatesResult value = res.getResult(org.zstack.sdk.GetPciDeviceSpecCandidatesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetPciDeviceSpecCandidatesResult() : value; 
+        org.zstack.sdk.UngenerateVirtualPciDevicesResult value = res.getResult(org.zstack.sdk.UngenerateVirtualPciDevicesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UngenerateVirtualPciDevicesResult() : value; 
 
         return ret;
     }
@@ -90,11 +87,11 @@ public class GetPciDeviceSpecCandidatesAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/pci-device-specs/candidates";
+        info.httpMethod = "PUT";
+        info.path = "/pci-devices/{pciDeviceUuid}/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "ungenerateMdevDevices";
         return info;
     }
 

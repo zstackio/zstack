@@ -43,6 +43,9 @@ public class UpdatePciDeviceSpecAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public boolean abandonSpecRom = false;
 
+    @Param(required = false, validValues = {"Enabled","Disabled"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String state;
+
     @Param(required = false)
     public java.util.List systemTags;
 
@@ -103,7 +106,7 @@ public class UpdatePciDeviceSpecAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/pci-device/pci-device-specs/{uuid}/actions";
+        info.path = "/pci-device-specs/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "updatePciDeviceSpec";

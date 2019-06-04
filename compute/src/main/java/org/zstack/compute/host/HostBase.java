@@ -886,6 +886,38 @@ public abstract class HostBase extends AbstractHost {
                     @Override
                     public void setup() {
                         flow(new NoRollbackFlow() {
+                            String __name__ = "call-pre-connect-extensions";
+
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                FlowChain preConnectChain = FlowChainBuilder.newSimpleFlowChain();
+                                preConnectChain.allowEmptyFlow();
+
+                                self = dbf.reload(self);
+                                HostInventory inv = getSelfInventory();
+
+                                for (PreHostConnectExtensionPoint p : pluginRgty.getExtensionList(PreHostConnectExtensionPoint.class)) {
+                                    Flow flow = p.createPreHostConnectFlow(inv);
+                                    if (flow != null) {
+                                        preConnectChain.then(flow);
+                                    }
+                                }
+
+                                preConnectChain.done(new FlowDoneHandler(trigger) {
+                                    @Override
+                                    public void handle(Map data) {
+                                        trigger.next();
+                                    }
+                                }).error(new FlowErrorHandler(trigger) {
+                                    @Override
+                                    public void handle(ErrorCode errCode, Map data) {
+                                        trigger.fail(errCode);
+                                    }
+                                }).start();
+                            }
+                        });
+
+                        flow(new NoRollbackFlow() {
                             String __name__ = "connect-host";
 
                             @Override

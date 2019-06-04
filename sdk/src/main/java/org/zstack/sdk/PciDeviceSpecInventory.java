@@ -1,6 +1,7 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.PciDeviceType;
+import org.zstack.sdk.PciDeviceSpecState;
 
 public class PciDeviceSpecInventory  {
 
@@ -58,6 +59,46 @@ public class PciDeviceSpecInventory  {
     }
     public java.lang.String getSubdeviceId() {
         return this.subdeviceId;
+    }
+
+    public java.lang.String ramSize;
+    public void setRamSize(java.lang.String ramSize) {
+        this.ramSize = ramSize;
+    }
+    public java.lang.String getRamSize() {
+        return this.ramSize;
+    }
+
+    public java.lang.Integer maxPartNum;
+    public void setMaxPartNum(java.lang.Integer maxPartNum) {
+        this.maxPartNum = maxPartNum;
+    }
+    public java.lang.Integer getMaxPartNum() {
+        return this.maxPartNum;
+    }
+
+    public PciDeviceType type;
+    public void setType(PciDeviceType type) {
+        this.type = type;
+    }
+    public PciDeviceType getType() {
+        return this.type;
+    }
+
+    public PciDeviceSpecState state;
+    public void setState(PciDeviceSpecState state) {
+        this.state = state;
+    }
+    public PciDeviceSpecState getState() {
+        return this.state;
+    }
+
+    public java.lang.Boolean isVirtual;
+    public void setIsVirtual(java.lang.Boolean isVirtual) {
+        this.isVirtual = isVirtual;
+    }
+    public java.lang.Boolean getIsVirtual() {
+        return this.isVirtual;
     }
 
     public java.lang.String romVersion;

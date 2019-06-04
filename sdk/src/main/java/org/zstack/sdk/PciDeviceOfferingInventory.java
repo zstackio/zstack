@@ -68,6 +68,14 @@ public class PciDeviceOfferingInventory  {
         return this.subdeviceId;
     }
 
+    public java.lang.String ramSize;
+    public void setRamSize(java.lang.String ramSize) {
+        this.ramSize = ramSize;
+    }
+    public java.lang.String getRamSize() {
+        return this.ramSize;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
