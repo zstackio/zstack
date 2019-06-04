@@ -398,6 +398,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.api.APIGetAllMetricMetadataReply$MetricStruct", "org.zstack.sdk.zwatch.api.MetricStruct");
 			put("org.zstack.zwatch.datatype.AlarmData", "org.zstack.sdk.zwatch.datatype.AlarmData");
 			put("org.zstack.zwatch.datatype.AuditData", "org.zstack.sdk.zwatch.datatype.AuditData");
+			put("org.zstack.zwatch.datatype.AuditType", "org.zstack.sdk.zwatch.datatype.AuditType");
 			put("org.zstack.zwatch.datatype.Datapoint", "org.zstack.sdk.zwatch.datatype.Datapoint");
 			put("org.zstack.zwatch.datatype.EventData", "org.zstack.sdk.zwatch.datatype.EventData");
 			put("org.zstack.zwatch.datatype.EventFamily$EmergencyLevel", "org.zstack.sdk.zwatch.datatype.EmergencyLevel");
@@ -803,6 +804,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.api.MetricStruct", "org.zstack.zwatch.api.APIGetAllMetricMetadataReply$MetricStruct");
 			put("org.zstack.sdk.zwatch.datatype.AlarmData", "org.zstack.zwatch.datatype.AlarmData");
 			put("org.zstack.sdk.zwatch.datatype.AuditData", "org.zstack.zwatch.datatype.AuditData");
+			put("org.zstack.sdk.zwatch.datatype.AuditType", "org.zstack.zwatch.datatype.AuditType");
 			put("org.zstack.sdk.zwatch.datatype.Datapoint", "org.zstack.zwatch.datatype.Datapoint");
 			put("org.zstack.sdk.zwatch.datatype.EmergencyLevel", "org.zstack.zwatch.datatype.EventFamily$EmergencyLevel");
 			put("org.zstack.sdk.zwatch.datatype.EventData", "org.zstack.zwatch.datatype.EventData");

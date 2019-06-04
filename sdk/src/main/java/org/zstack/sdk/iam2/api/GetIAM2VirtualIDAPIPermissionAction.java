@@ -29,6 +29,9 @@ public class GetIAM2VirtualIDAPIPermissionAction extends AbstractAction {
     public java.util.List apisToCheck;
 
     @Param(required = false)
+    public boolean onlyCheckParams = false;
+
+    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)
