@@ -26,7 +26,7 @@ public class QueryPlugin extends AbstractQueryVisitorPlugin {
             queryTarget = StringUtils.join(qt, ",");
         }
 
-        return queryTarget;
+        return String.format(functions(), queryTarget);
     }
 
 

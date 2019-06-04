@@ -33,7 +33,7 @@ public class CountPlugin extends SimpleCountPlugin {
             List<String> fieldNames = targetFields();
 
             List<String> qt = fieldNames.stream().map(f->String.format("%s.%s", inventory.simpleInventoryName(), f)).collect(Collectors.toList());
-            qt.add("count(*) as " + GROUP_COUNT_TARGET_FILED);
+            qt.add(super.selectTarget() + " as " + GROUP_COUNT_TARGET_FILED);
             queryTarget = StringUtils.join(qt, ",");
 
             return queryTarget;
@@ -43,7 +43,7 @@ public class CountPlugin extends SimpleCountPlugin {
     @Override
     public List<String> targetFields() {
         ZQLMetadata.InventoryMetadata inventory = ZQLMetadata.findInventoryMetadata(node.getTarget().getEntity());
-        List<String> fieldNames = node.getGroupBy() == null ? new ArrayList<>() : node.getGroupBy().getFields();
+        List<String> fieldNames = node.getGroupBy() == null ? super.targetFields() : node.getGroupBy().getFields();
         fieldNames.forEach(inventory::errorIfNoField);
         return fieldNames;
     }

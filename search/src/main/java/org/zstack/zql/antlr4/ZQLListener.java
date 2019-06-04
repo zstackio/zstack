@@ -222,6 +222,40 @@ public interface ZQLListener extends ParseTreeListener {
 	 */
 	void exitWithMultiFields(ZQLParser.WithMultiFieldsContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link ZQLParser#function}.
+	 * @param ctx the parse tree
+	 */
+	void enterFunction(ZQLParser.FunctionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#function}.
+	 * @param ctx the parse tree
+	 */
+	void exitFunction(ZQLParser.FunctionContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code withoutFunction}
+	 * labeled alternative in {@link ZQLParser#queryTargetWithFunction}.
+	 * @param ctx the parse tree
+	 */
+	void enterWithoutFunction(ZQLParser.WithoutFunctionContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code withoutFunction}
+	 * labeled alternative in {@link ZQLParser#queryTargetWithFunction}.
+	 * @param ctx the parse tree
+	 */
+	void exitWithoutFunction(ZQLParser.WithoutFunctionContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code withFunction}
+	 * labeled alternative in {@link ZQLParser#queryTargetWithFunction}.
+	 * @param ctx the parse tree
+	 */
+	void enterWithFunction(ZQLParser.WithFunctionContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code withFunction}
+	 * labeled alternative in {@link ZQLParser#queryTargetWithFunction}.
+	 * @param ctx the parse tree
+	 */
+	void exitWithFunction(ZQLParser.WithFunctionContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link ZQLParser#orderBy}.
 	 * @param ctx the parse tree
 	 */

@@ -33,6 +33,20 @@ public abstract class AbstractQueryVisitorPlugin extends QueryVisitorPlugin {
     }
 
     @Override
+    public String functions() {
+        String functions = "%s";
+        ASTNode.Function function;
+        ASTNode.QueryTargetWithFunction target = node.getTarget();
+        while ((function = target.getFunction()) != null) {
+            functions = String.format(functions, ((ASTNode) function).accept(new FunctionVisitor()));
+            if ((target = target.getSubTarget()) == null) {
+                break;
+            }
+        }
+        return functions;
+    }
+
+    @Override
     public String tableName() {
         return String.format("%s %s", entityVOName, entityAlias);
     }

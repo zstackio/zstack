@@ -25,9 +25,42 @@ class ASTNode {
     interface ReturnWithExpr {
     }
 
+    interface Function {
+    }
+
+    static class Distinct extends ASTNode implements Function {
+    }
+
     static class QueryTarget extends ASTNode {
          String entity
          List<String> fields
+    }
+
+    static class QueryTargetWithFunction extends QueryTarget {
+        Function function
+        QueryTargetWithFunction subTarget
+
+        static QueryTargetWithFunction valueOf(QueryTarget q) {
+            return new QueryTargetWithFunction(entity: q.entity, fields: q.fields)
+        }
+
+        @Override
+        String getEntity() {
+            if (subTarget != null) {
+                return subTarget.getEntity()
+            } else {
+                return super.getEntity()
+            }
+        }
+
+        @Override
+        List<String> getFields() {
+            if (subTarget != null) {
+                return subTarget.getFields()
+            } else {
+                return super.getFields()
+            }
+        }
     }
 
     static class ComplexValue extends ASTNode implements Value {
@@ -102,7 +135,7 @@ class ASTNode {
     }
 
     static class Query extends ASTNode {
-        QueryTarget target
+        QueryTargetWithFunction target
         List<Condition> conditions
         RestrictBy restrictBy
         ReturnWith returnWith

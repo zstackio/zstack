@@ -78,6 +78,15 @@ queryTarget
     | entity '.' multiFields #withMultiFields
     ;
 
+function
+    : DISTINCT
+    ;
+
+queryTargetWithFunction
+    : queryTarget #withoutFunction
+    | function '(' queryTargetWithFunction ')' #withFunction
+    ;
+
 orderBy
     : ORDER_BY ID ORDER_BY_VALUE
     ;
@@ -151,11 +160,11 @@ namedAs
     ;
 
 query
-    : QUERY queryTarget (WHERE condition+)? restrictBy? returnWith? groupBy? orderBy? limit? offset? filterBy? namedAs?
+    : QUERY queryTargetWithFunction (WHERE condition+)? restrictBy? returnWith? groupBy? orderBy? limit? offset? filterBy? namedAs?
     ;
 
 count
-    : COUNT queryTarget (WHERE condition+)? restrictBy? groupBy? orderBy? limit? offset? namedAs?
+    : COUNT queryTargetWithFunction (WHERE condition+)? restrictBy? groupBy? orderBy? limit? offset? namedAs?
     ;
 
 sumByValue
@@ -182,6 +191,8 @@ QUERY: 'query';
 COUNT: 'count';
 
 SUM: 'sum';
+
+DISTINCT: 'distinct';
 
 ORDER_BY: 'order by';
 

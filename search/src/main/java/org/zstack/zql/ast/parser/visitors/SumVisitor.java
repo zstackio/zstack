@@ -10,7 +10,7 @@ public class SumVisitor extends ZQLBaseVisitor<ASTNode.Sum> {
     @Override
     public ASTNode.Sum visitSum(ZQLParser.SumContext ctx) {
         ASTNode.Sum sum = new ASTNode.Sum();
-        sum.setTarget(ctx.queryTarget().accept(new QueryTargetVisitor()));
+        sum.setTarget(ASTNode.QueryTargetWithFunction.valueOf(ctx.queryTarget().accept(new QueryTargetVisitor())));
         sum.setConditions(ctx.condition() == null ? null : ctx.condition().stream().map(c->c.accept(new ConditionVisitor())).collect(Collectors.toList()));
         sum.setGroupByField(ctx.sumBy().sumByValue().getText());
         sum.setOrderBy(ctx.orderBy() == null ? null : ctx.orderBy().accept(new OrderByVisitor()));

@@ -10,7 +10,7 @@ public class QueryVisitor extends ZQLBaseVisitor<ASTNode.Query> {
     @Override
     public ASTNode.Query visitQuery(ZQLParser.QueryContext ctx) {
         ASTNode.Query  q = new ASTNode.Query();
-        q.setTarget(ctx.queryTarget().accept(new QueryTargetVisitor()));
+        q.setTarget(ctx.queryTargetWithFunction().accept(new QueryTargetWithFunctionVisitor()));
         q.setConditions(ctx.condition() == null ? null : ctx.condition().stream().map(it->it.accept(new ConditionVisitor())).collect(Collectors.toList()));
         q.setFilterBy(ctx.filterBy() == null ? null : ctx.filterBy().accept(new FilterByVisitor()));
         q.setReturnWith(ctx.returnWith() == null ? null : ctx.returnWith().accept(new ReturnWithVisitor()));
