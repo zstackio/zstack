@@ -4,6 +4,14 @@ package org.zstack.sdk;
 
 public class VolumeInventory  {
 
+    public java.util.List attachedJudgers;
+    public void setAttachedJudgers(java.util.List attachedJudgers) {
+        this.attachedJudgers = attachedJudgers;
+    }
+    public java.util.List getAttachedJudgers() {
+        return this.attachedJudgers;
+    }
+
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
         this.uuid = uuid;
