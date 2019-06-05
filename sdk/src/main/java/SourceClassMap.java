@@ -46,6 +46,9 @@ public class SourceClassMap {
 			put("org.zstack.billing.SpendingDetails", "org.zstack.sdk.SpendingDetails");
 			put("org.zstack.billing.VmSpending", "org.zstack.sdk.VmSpending");
 			put("org.zstack.billing.VmSpendingDetails", "org.zstack.sdk.VmSpendingDetails");
+			put("org.zstack.billing.generator.BillingInventory", "org.zstack.sdk.BillingInventory");
+			put("org.zstack.billing.generator.volume.data.DataVolumeBillingInventory", "org.zstack.sdk.DataVolumeBillingInventory");
+			put("org.zstack.billing.generator.volume.root.RootVolumeBillingInventory", "org.zstack.sdk.RootVolumeBillingInventory");
 			put("org.zstack.billing.vip.PubIpVipBandwidthSpending", "org.zstack.sdk.PubIpVipBandwidthSpending");
 			put("org.zstack.billing.vip.VipBandwidthSpendingDetails", "org.zstack.sdk.VipBandwidthSpendingDetails");
 			put("org.zstack.billing.vmnic.PubIpVmNicBandwidthSpending", "org.zstack.sdk.PubIpVmNicBandwidthSpending");
@@ -461,6 +464,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BaremetalPxeServerInventory", "org.zstack.header.baremetal.pxeserver.BaremetalPxeServerInventory");
 			put("org.zstack.sdk.BaremetalVlanNicInventory", "org.zstack.header.baremetal.network.BaremetalVlanNicInventory");
 			put("org.zstack.sdk.BatchDeleteVolumeSnapshotStruct", "org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotStruct");
+			put("org.zstack.sdk.BillingInventory", "org.zstack.billing.generator.BillingInventory");
 			put("org.zstack.sdk.CephBackupStorageInventory", "org.zstack.storage.ceph.backup.CephBackupStorageInventory");
 			put("org.zstack.sdk.CephBackupStorageMonInventory", "org.zstack.storage.ceph.backup.CephBackupStorageMonInventory");
 			put("org.zstack.sdk.CephPrimaryStorageInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageInventory");
@@ -485,6 +489,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.DahoVllsInventory", "org.zstack.header.daho.process.DahoVllsInventory");
 			put("org.zstack.sdk.DataCenterInventory", "org.zstack.header.datacenter.DataCenterInventory");
 			put("org.zstack.sdk.DataCenterProperty", "org.zstack.header.datacenter.DataCenterProperty");
+			put("org.zstack.sdk.DataVolumeBillingInventory", "org.zstack.billing.generator.volume.data.DataVolumeBillingInventory");
 			put("org.zstack.sdk.DataVolumeSpending", "org.zstack.billing.DataVolumeSpending");
 			put("org.zstack.sdk.DataVolumeSpendingInventory", "org.zstack.billing.DataVolumeSpendingInventory");
 			put("org.zstack.sdk.DiskOfferingInventory", "org.zstack.header.configuration.DiskOfferingInventory");
@@ -633,6 +638,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ResourceStackInventory", "org.zstack.header.cloudformation.ResourceStackInventory");
 			put("org.zstack.sdk.ResourceStruct", "org.zstack.cloudformation.template.struct.ResourceStruct");
 			put("org.zstack.sdk.ResourceType", "org.zstack.cloudformation.template.struct.ResourceType");
+			put("org.zstack.sdk.RootVolumeBillingInventory", "org.zstack.billing.generator.volume.root.RootVolumeBillingInventory");
 			put("org.zstack.sdk.RootVolumeSpending", "org.zstack.billing.RootVolumeSpending");
 			put("org.zstack.sdk.RootVolumeSpendingInventory", "org.zstack.billing.RootVolumeSpendingInventory");
 			put("org.zstack.sdk.RouterAreaInventory", "org.zstack.header.protocol.RouterAreaInventory");
