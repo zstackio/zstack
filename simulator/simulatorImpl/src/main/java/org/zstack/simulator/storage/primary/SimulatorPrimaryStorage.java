@@ -196,4 +196,9 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
         AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
         bus.reply(msg, reply);
     }
+
+    @Override
+    protected void handle(GetPrimaryStorageResourceLocationMsg msg) {
+        bus.reply(msg, new GetPrimaryStorageResourceLocationReply());
+    }
 }

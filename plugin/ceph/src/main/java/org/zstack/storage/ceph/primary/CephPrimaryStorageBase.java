@@ -4178,6 +4178,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(GetPrimaryStorageResourceLocationMsg msg) {
+        bus.reply(msg, new GetPrimaryStorageResourceLocationReply());
+    }
+
+    @Override
     protected void handle(GetVolumeSnapshotSizeOnPrimaryStorageMsg msg) {
         GetVolumeSnapshotSizeOnPrimaryStorageReply reply = new GetVolumeSnapshotSizeOnPrimaryStorageReply();
         VolumeSnapshotVO snapshotVO = dbf.findByUuid(msg.getSnapshotUuid(), VolumeSnapshotVO.class);

@@ -804,6 +804,11 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         });
     }
 
+    @Override
+    protected void handle(GetPrimaryStorageResourceLocationMsg msg) {
+        bus.reply(msg, new GetPrimaryStorageResourceLocationReply());
+    }
+
     public HypervisorType findHypervisorTypeByImageFormatAndPrimaryStorageUuid(String imageFormat, final String psUuid) {
         HypervisorType hvType = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(imageFormat);
         if (hvType != null) {
