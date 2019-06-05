@@ -1676,20 +1676,18 @@ public class KvmBackend extends HypervisorBackend {
                         (long) SQL.New("select count(host) from HostVO host, PrimaryStorageClusterRefVO cref " +
                                 "where cref.primaryStorageUuid = :psUuid " +
                                 "and host.uuid != :hostUuid " +
+                                "and host.status = :status " +
                                 "and host.clusterUuid = cref.clusterUuid")
                                 .param("psUuid", msg.getPrimaryStorageUuid())
                                 .param("hostUuid", msg.getHostUuid())
+                                .param("status", HostStatus.Connected)
                                 .find() == 0;
                 connect(msg.getHostUuid(), new ReturnValueCompletion<Boolean>(msg, chain) {
                     @Override
                     public void success(Boolean isFirst) {
                         if (isFirst && !isFirstAccessPS) {
-                            logger.warn(String.format("host[uuid:%s] might mount storage which is different from SMP[uuid:%s], please check it",
-                                    msg.getHostUuid(), msg.getPrimaryStorageUuid()));
-                            //TODO: find a way to confirm it, and do not block add host
                             reply.setError(argerr("host[uuid:%s] might mount storage which is different from SMP[uuid:%s], please check it", msg.getHostUuid(), msg.getPrimaryStorageUuid()));
                             cleanInvalidIdFile(Collections.singletonList(msg.getHostUuid()));
-
                         }
                         bus.reply(msg, reply);
                         chain.next();
@@ -1706,7 +1704,7 @@ public class KvmBackend extends HypervisorBackend {
 
             @Override
             public String getName() {
-                return String.format("check validity of mounting SMP[uuid:%s] to host[uuid:%s]",msg.getPrimaryStorageUuid(), msg.getHostUuid());
+                return String.format("check validity of mounting SMP[uuid:%s]",msg.getPrimaryStorageUuid());
             }
         });
     }
