@@ -2787,4 +2787,16 @@ public class LocalStorageBase extends PrimaryStorageBase {
             }
         });
     }
+
+    @Override
+    protected void handle(GetPrimaryStorageResourceLocationMsg msg) {
+        GetPrimaryStorageResourceLocationReply reply = new GetPrimaryStorageResourceLocationReply();
+        reply.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        String hostUuid = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, msg.getResourceUuid())
+                .select(LocalStorageResourceRefVO_.hostUuid)
+                .findValue();
+        reply.setHostUuid(hostUuid);
+        bus.reply(msg, reply);
+    }
 }
