@@ -3,6 +3,7 @@ package org.zstack.test.integration.storage.primary.smp
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.header.Constants
+import org.zstack.header.host.HostVO
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageVO
@@ -20,6 +21,7 @@ import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -57,6 +59,7 @@ class SMPAttachCase extends SubCase{
             testAttachSameMountPointSmp()
             testReconnectHost()
             testReconnectSmpWhenNoHostInCluster()
+            testBatchAddHost()
         }
     }
 
@@ -209,7 +212,7 @@ class SMPAttachCase extends SubCase{
         // 1. cluster has no host or no Connected host
         // 2. attach smp
         // 3. add host will success
-        // 4. reconnet will fail
+        // 4. add host whose mount point different will fail
         env.simulator(KvmBackend.CONNECT_PATH) {
             def rsp = new KvmBackend.ConnectRsp()
             rsp.isFirst = true
@@ -251,6 +254,36 @@ class SMPAttachCase extends SubCase{
         a.uuid = primaryStorageInventory.uuid
         a.sessionId = currentEnvSpec.session.uuid
         assert a.call().error != null
+    }
+
+    void testBatchAddHost() {
+        assert !Q.New(HostVO.class).isExists()
+
+        def first = new AtomicBoolean(true)
+        env.simulator(KvmBackend.CONNECT_PATH) {
+            def rsp = new KvmBackend.ConnectRsp()
+            rsp.isFirst = first.compareAndSet(true, false)
+            return rsp
+        }
+
+        List<Thread> threads = []
+        def count = new AtomicInteger(0)
+        for (int i = 1; i <= 3; i++) {
+            String ip = "127.0.0." + i.toString()
+            threads.add(Thread.start {
+                addKVMHost {
+                    clusterUuid = host1.clusterUuid
+                    managementIp = ip
+                    name = "kvm-" + ip
+                    username = "root"
+                    password = "password"
+                }
+                count.addAndGet(1)
+            })
+        }
+
+        threads.forEach({it.join()})
+        assert count.intValue() == 3
     }
 
     @Override
