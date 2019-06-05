@@ -1,4 +1,3 @@
-
 -- ------------------------------
 --  for pci device virtualization
 -- ------------------------------
@@ -120,3 +119,35 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmInstanceMdevSpecDeviceRefVO` (
     CONSTRAINT `fkVmMdevDeviceRefMdevSpecUuid` FOREIGN KEY (`mdevSpecUuid`) REFERENCES `MdevDeviceSpecVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkVmMdevDeviceRefMdevDeviceUuid` FOREIGN KEY (`mdevDeviceUuid`) REFERENCES `MdevDeviceVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELIMITER $$
+CREATE PROCEDURE handleLegacyPciSpecUuidTags()
+    BEGIN
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE tagUuid VARCHAR(32);
+        DECLARE vmInstanceUuid VARCHAR(32);
+        DECLARE pciSpecUuidTag VARCHAR(32);
+        DECLARE pciSpecUuid VARCHAR(32);
+        DEClARE cur CURSOR FOR SELECT `uuid`, `resourceUuid`, `tag` from `zstack`.`SystemTagVO`
+            WHERE `resourceType` = 'VmInstanceVO' AND `tag` LIKE 'pciSpecUuid::%';
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO tagUuid, vmInstanceUuid, pciSpecUuidTag;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            SET pciSpecUuid = substring(pciSpecUuidTag, LENGTH('pciSpecUuid::') + 1);
+            INSERT INTO `zstack`.`VmInstancePciDeviceSpecRefVO` (`vmInstanceUuid`, `pciSpecUuid`, `pciDeviceNumber`, `lastOpDate`, `createDate`)
+                VALUES (vmInstanceUuid, pciSpecUuid, 1, NOW(), NOW());
+            DELETE FROM `zstack`.`SystemTagVO` WHERE `uuid` = tagUuid;
+        END LOOP;
+        CLOSE cur;
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+call handleLegacyPciSpecUuidTags();
+DROP PROCEDURE IF EXISTS handleLegacyPciSpecUuidTags;
+DELETE FROM `zstack`.`SystemTagVO` WHERE `resourceType` = 'InstanceOfferingVO' AND `tag` LIKE 'pciSpecUuid::%';

@@ -886,6 +886,26 @@ public abstract class HostBase extends AbstractHost {
                     @Override
                     public void setup() {
                         flow(new NoRollbackFlow() {
+                            String __name__ = "connect-host";
+
+                            @Override
+                            public void run(final FlowTrigger trigger, Map data) {
+                                changeConnectionState(HostStatusEvent.connecting);
+                                connectHook(ConnectHostInfo.fromConnectHostMsg(msg), new Completion(trigger) {
+                                    @Override
+                                    public void success() {
+                                        trigger.next();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                });
+                            }
+                        });
+
+                        flow(new NoRollbackFlow() {
                             String __name__ = "call-pre-connect-extensions";
 
                             @Override
@@ -914,26 +934,6 @@ public abstract class HostBase extends AbstractHost {
                                         trigger.fail(errCode);
                                     }
                                 }).start();
-                            }
-                        });
-
-                        flow(new NoRollbackFlow() {
-                            String __name__ = "connect-host";
-
-                            @Override
-                            public void run(final FlowTrigger trigger, Map data) {
-                                changeConnectionState(HostStatusEvent.connecting);
-                                connectHook(ConnectHostInfo.fromConnectHostMsg(msg), new Completion(trigger) {
-                                    @Override
-                                    public void success() {
-                                        trigger.next();
-                                    }
-
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        trigger.fail(errorCode);
-                                    }
-                                });
                             }
                         });
 
