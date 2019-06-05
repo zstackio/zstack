@@ -10,6 +10,8 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
+import java.util.stream.Collectors
+
 class AddVxlanVtepIpCase extends SubCase {
     EnvSpec env
 
@@ -91,6 +93,7 @@ class AddVxlanVtepIpCase extends SubCase {
     void test() {
         env.create {
             testVxlanVtepIpChanged()
+            testCreateVxlanPoll()
         }
     }
 
@@ -237,5 +240,52 @@ class AddVxlanVtepIpCase extends SubCase {
         assert ccmd != null
         assert ccmd.vtepip == "127.1.0.2" || ccmd.vtepip == "127.1.0.1"
 
+    }
+
+    void testCreateVxlanPoll() {
+        def zone = env.inventoryByName("zone") as ZoneInventory
+        def cluster = env.inventoryByName("cluster1") as ClusterInventory
+        def host1 = env.inventoryByName("kvm1") as KVMHostInventory
+        def host2 = env.inventoryByName("kvm2") as KVMHostInventory
+
+        def pool = createL2VxlanNetworkPool {
+            name = "TestVxlanPool2"
+            zoneUuid = zone.uuid
+        } as L2VxlanNetworkPoolInventory
+
+        createVniRange {
+            startVni = 10
+            endVni = 20
+            l2NetworkUuid = pool.uuid
+            name = "TestRange2"
+        }
+
+        String vtep1 = "127.1.0.1"
+        String vtep2 = "127.1.0.2"
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            def resp = new VxlanKvmAgentCommands.CheckVxlanCidrResponse() as VxlanKvmAgentCommands.CheckVxlanCidrResponse
+            if (entity.getHeaders().get("X-Resource-UUID")[0] == host1.uuid) {
+                resp.vtepIp = vtep1
+            } else {
+                resp.vtepIp = vtep2
+            }
+            resp.setSuccess(true)
+            return resp
+        }
+
+        attachL2NetworkToCluster {
+            l2NetworkUuid = pool.uuid
+            clusterUuid = cluster.uuid
+            systemTags = ["l2NetworkUuid::${pool.getUuid()}::clusterUuid::${cluster.uuid}::cidr::{192.168.0.0/16}".toString()]
+        }
+
+        List<VtepInventory> vtepinvs = queryVtep {
+            conditions = ["poolUuid=${pool.getUuid()}".toString()]
+        }
+
+        List<String> vtepIps = vtepinvs.stream().map{vtep -> vtep.vtepIp}.distinct().collect(Collectors.toList())
+        assert vtepIps.size() == 2
+        assert vtepIps.contains(vtep1)
+        assert vtepIps.contains(vtep2)
     }
 }

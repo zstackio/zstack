@@ -129,14 +129,18 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
             public void run(FlowTrigger trigger, Map data) {
                 data.put(NEED_POPULATE, false);
 
+                if (data.get(VTEP_IP) == null) {
+                    trigger.next();
+                    return;
+                }
+
                 List<VtepVO> vtepVOS = Q.New(VtepVO.class)
                         .eq(VtepVO_.poolUuid, l2Network.getUuid())
                         .eq(VtepVO_.hostUuid, hostUuid)
                         .list();
 
                 if (vtepVOS == null || vtepVOS.isEmpty()) {
-                    trigger.next();
-                    return;
+                    /* vtep is not created */
                 } else if (vtepVOS.size() > 1) {
                     throw new CloudRuntimeException(String.format("multiple vteps[ips: %s] found on host[uuid: %s]",
                             vtepVOS.stream().map(v -> v.getVtepIp()).collect(Collectors.toSet()), hostUuid));
