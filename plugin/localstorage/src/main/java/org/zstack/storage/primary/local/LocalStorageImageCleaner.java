@@ -128,7 +128,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
                 param("ps", psUuid).param("status", HostStatus.Connected).list();
         List<BackupStoragePrimaryStorageExtensionPoint> extensions = pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class);
         new While<>(extensions).each((ext, whileCompletion) ->
-                new While<>(hostUuids).each((hostUuid, innerWhileCompletion) -> ext.cleanupPrimaryCacheForBS(PrimaryStorageInventory.valueOf(ps), null, new Completion(completion) {
+                new While<>(hostUuids).each((hostUuid, innerWhileCompletion) -> ext.cleanupPrimaryCacheForBS(PrimaryStorageInventory.valueOf(ps), hostUuid, new Completion(completion) {
             @Override
             public void success() {
                 innerWhileCompletion.done();
@@ -186,6 +186,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
                     if (!reply.isSuccess()) {
                         logger.warn(String.format("failed to delete the stale image cache[%s] on the primary storage[%s], %s," +
                                 "will re-try later", vo.getInstallUrl(), vo.getPrimaryStorageUuid(), reply.getError()));
+                        whileCompletion.done();
                         return;
                     }
 
@@ -206,11 +207,10 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
     @Override
     protected void doCleanup(String psUuid, NoErrorCompletion completion) {
         SimpleFlowChain chain = new SimpleFlowChain();
-        chain.setName(String.format("do-clean-up-image-cache-on-%s", psUuid));
+        chain.setName(String.format("do-clean-up-image-cache-on-local-storage-%s", psUuid));
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                logger.debug("do clean up volume cache");
                 cleanUpVolumeCache(psUuid, new NoErrorCompletion() {
                     @Override
                     public void done() {
@@ -221,7 +221,6 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                logger.debug("do clean up image cache");
                 if (psUuid == null) {
                     logger.debug("no primary storage uuid specified, skip image cache clean up");
                     trigger.next();
@@ -271,7 +270,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
 
             @Override
             public String getName() {
-                return String.format("clean-up-image-cache-on-%s", psUuid);
+                return String.format("clean-up-image-cache-on-local-storage-%s", psUuid);
             }
         });
     }
