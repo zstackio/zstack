@@ -278,12 +278,15 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
             throw new OperationFailureException(operr("cannot find a Connected host to execute command for nfs primary storage[uuid:%s]", pri.getUuid()));
         }
 
+        //we need to filter out the non-enabled host in case of host maintained but kvmagent downed
         String sql = "select h from HostVO h " +
-                "where h.status = :connectionState and h.clusterUuid in (:clusterUuids) " +
+                "where h.status = :connectionState and h.state = :state " +
+                "and h.clusterUuid in (:clusterUuids) " +
                 "and h.uuid not in (select ref.hostUuid from PrimaryStorageHostRefVO ref " +
                 "where ref.primaryStorageUuid = :psUuid and ref.hostUuid = h.uuid and ref.status = :status)";
         TypedQuery<HostVO> q = dbf.getEntityManager().createQuery(sql, HostVO.class);
         q.setParameter("connectionState", HostStatus.Connected);
+        q.setParameter("state", HostState.Enabled);
         q.setParameter("clusterUuids", pri.getAttachedClusterUuids());
         q.setParameter("psUuid", pri.getUuid());
         q.setParameter("status", PrimaryStorageHostStatus.Disconnected);
