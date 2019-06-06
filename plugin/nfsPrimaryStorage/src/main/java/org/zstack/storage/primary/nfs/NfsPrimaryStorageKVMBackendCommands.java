@@ -186,6 +186,15 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     public static class CheckIsBitsExistingCmd extends NfsPrimaryStorageAgentCommand {
         private String installPath;
+        private String hostUuid;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
 
         public String getInstallPath() {
             return installPath;
