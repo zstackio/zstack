@@ -1,19 +1,18 @@
 package org.zstack.core.timeout;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.*;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.GLock;
 import org.zstack.core.db.Q;
+import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.thread.TimerTask;
 import org.zstack.header.Component;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.utils.*;
@@ -21,6 +20,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -38,6 +38,10 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
     private CloudBus bus;
     @Autowired
     private GlobalConfigFacade gcf;
+    @Autowired
+    private ThreadFacade thdf;
+    @Autowired
+    private Timer timer;
 
     // Legacy timeout which is configured in zstack.properties is prior 3.2.0
     // which has been replaced by ThreadContext based timeout
@@ -49,6 +53,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
     public static final String CONFIGURABLE_TIMEOUT_GLOBAL_CONFIG_TYPE = "configurableTimeout";
     private long SYNCALL_TIMEOUT = -1;
     public static final String TASK_CONTEXT_MESSAGE_TIMEOUT = "__messagetimeout__";
+    public static final String TASK_CONTEXT_MESSAGE_DEADLINE = "__messagedeadline__";
 
     void init() {
         SYNCALL_TIMEOUT = parseTimeout(ApiTimeoutGlobalProperty.SYNCCALL_API_TIMEOUT);
@@ -125,9 +130,33 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
 
     @Override
     public void beforeDeliveryMessage(Message msg) {
-        if (msg instanceof ConfigurableTimeoutMessage && !TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_TIMEOUT)) {
-            TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_TIMEOUT, getMessageTimeout((ConfigurableTimeoutMessage) msg));
+        if (!TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_DEADLINE)) {
+            long currentTime = timer.getCurrentTimeMillis();
+
+            if (msg instanceof ConfigurableTimeoutMessage) {
+                TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_TIMEOUT, String.valueOf(getMessageTimeout((ConfigurableTimeoutMessage) msg)));
+                TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_DEADLINE, String.valueOf(currentTime + getMessageTimeout((ConfigurableTimeoutMessage) msg)));
+            } else if (msg instanceof NeedReplyMessage) {
+                TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_TIMEOUT, String.valueOf(getMessageTimeout()));
+                TaskContext.putTaskContextItem(TASK_CONTEXT_MESSAGE_DEADLINE, String.valueOf(currentTime + getMessageTimeout()));
+            }
         }
+    }
+
+    private long getMessageTimeout() {
+        for (ApiTimeoutExtensionPoint apiTimeoutExt : apiTimeoutExts) {
+            Long timeout = apiTimeoutExt.getApiTimeout();
+            if (timeout != null) {
+                return timeout;
+            }
+        }
+
+        if (TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_TIMEOUT)) {
+            return Long.valueOf((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_TIMEOUT));
+        }
+
+        // this is an internal message
+        return parseTimeout(ApiTimeoutGlobalProperty.INTERNAL_MESSAGE_TIMEOUT);
     }
 
     private Long getLegacyTimeout(Class clz) {
@@ -263,29 +292,14 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
 
     @Override
     public Long getTimeout() {
-        for (ApiTimeoutExtensionPoint apiTimeoutExt : apiTimeoutExts) {
-            Long timeout = apiTimeoutExt.getApiTimeout();
-            if (timeout != null) {
-                return timeout;
+        if (TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_DEADLINE)) {
+            long deadline = Long.valueOf((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_DEADLINE));
+            if (deadline < timer.getCurrentTimeMillis()) {
+                return 1L;
             }
         }
 
-        Long apiTimeout = parseObjectToLong(TaskContext.getTaskContextItem(TASK_CONTEXT_MESSAGE_TIMEOUT));
-        if (apiTimeout != null) {
-            return apiTimeout;
-        } else {
-            // this is an internal message
-            return parseTimeout(ApiTimeoutGlobalProperty.INTERNAL_MESSAGE_TIMEOUT);
-        }
-    }
-
-    private static Long parseObjectToLong(Object o) {
-        if (o == null) {
-            return null;
-        }
-        DecimalFormat df = new DecimalFormat("#");
-        df.setMaximumFractionDigits(0);
-        return Long.parseLong(df.format(o).split("\\.")[0]);
+        return getMessageTimeout();
     }
 
     /**
@@ -305,13 +319,34 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
      */
     @Override
     public void setMessageTimeout(Message msg) {
-        if (msg instanceof ConfigurableTimeoutMessage && !TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_TIMEOUT)) {
-            ((ConfigurableTimeoutMessage) msg).setTimeout(getMessageTimeout((ConfigurableTimeoutMessage) msg));
+        if (msg instanceof ConfigurableTimeoutMessage) {
+            ((ConfigurableTimeoutMessage) msg).setTimeout(evalTimeout(getMessageTimeout((ConfigurableTimeoutMessage) msg)));
         } else if (msg instanceof NeedReplyMessage) {
             NeedReplyMessage nmsg = (NeedReplyMessage) msg;
             if (nmsg.getTimeout() == -1) {
-                nmsg.setTimeout(getTimeout());
+                nmsg.setTimeout(evalTimeout(getMessageTimeout()));
             }
         }
+    }
+
+    private long evalTimeout(long messageTimeout) {
+        if (!TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_DEADLINE)) {
+            return messageTimeout;
+        }
+
+        if (TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_TIMEOUT)) {
+            long originTimeout = Long.parseLong((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_TIMEOUT));
+
+            // deadline should be updated
+            if (messageTimeout != originTimeout) {
+                long deadline = Long.parseLong((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_DEADLINE));
+                long remainingTime = deadline - timer.getCurrentTimeMillis();
+
+                TaskContext.getTaskContext().put(TASK_CONTEXT_MESSAGE_DEADLINE, String.valueOf(timer.getCurrentTimeMillis() + messageTimeout - (originTimeout - remainingTime)));
+                TaskContext.getTaskContext().put(TASK_CONTEXT_MESSAGE_TIMEOUT, String.valueOf(messageTimeout));
+            }
+        }
+
+        return getTimeout();
     }
 }
