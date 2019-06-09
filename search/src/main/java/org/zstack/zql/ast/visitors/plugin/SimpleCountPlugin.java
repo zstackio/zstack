@@ -27,8 +27,8 @@ public class SimpleCountPlugin extends AbstractQueryVisitorPlugin {
         if (fieldNames.isEmpty()) {
             queryTarget = entityAlias;
         } else {
-            List<String> qt = fieldNames.stream().map(f->String.format("%s.%s", inventory.simpleInventoryName(), f)).collect(Collectors.toList());
-            queryTarget = StringUtils.join(qt, ",");
+            // TODO: Compatibility changes: hql count do not support multiple fields, even if distinct modified.
+            queryTarget = String.format("%s.%s", inventory.simpleInventoryName(), fieldNames.get(0));
         }
 
         return String.format("count(%s)", String.format(functions(), queryTarget));
