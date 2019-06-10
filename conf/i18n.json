@@ -17562,5 +17562,56 @@
     ],
     "line": 858,
     "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/SharedBlockGroupPrimaryStorageBase.java"
+  },
+  {
+    "raw": "found trashId(%s) in BackupStorage [%s] for the migrate installPath[%s]. Please clean it first by 'APICleanUpTrashOnBackupStorageMsg' if you insist to migrate the image[%s]",
+    "en_US": "found trashId({0}) in BackupStorage [{1}] for the migrate installPath[{2}]. Please clean it first by 'APICleanUpTrashOnBackupStorageMsg' if you insist to migrate the image[{3}]",
+    "zh_CN": "在备份存储[{1}]的回收数据({0})中己存在要迁移的目标路径[{2}]，如果要继续迁移镜像[{3}]，请先调用'APICleanUpTrashOnBackupStorageMsg'来手动清理该回收数据",
+    "arguments": [
+      "reply1.getTrashId()",
+      "reply1.getTrashId()",
+      "reply1.getResourceUuid()"
+    ],
+    "line": 143,
+    "fileName": "src/main/java/org/zstack/storage/migration/backup/ceph/CephToCephMigrateImageFlow.java"
+  },
+  {
+    "raw": "found trashId(%s) in PrimaryStorage [%s] for the migrate installPath[%s]. Please clean it first by 'APICleanUpTrashOnPrimaryStorageMsg' if you insist to migrate the volume[%s]",
+    "en_US": "found trashId({0}) in PrimaryStorage [{1}] for the migrate installPath[{2}]. Please clean it first by 'APICleanUpTrashOnPrimaryStorageMsg' if you insist to migrate the volume[{3}]",
+    "zh_CN": "在主存储[{1}]的回收数据({0})中己存在要迁移的目标路径[{2}]，如果要继续迁移云盘[{3}]，请先调用'APICleanUpTrashOnPrimaryStorageMsg'来手动清理该回收数据",
+    "arguments": [
+      "reply1.getTrashId()",
+      "dstPsUuid",
+      "dstVolumeFolderPath",
+      "reply1.getResourceUuid()"
+    ],
+    "line": 113,
+    "fileName": "src/main/java/org/zstack/storage/primary/sharedblock/migration/SblkToSblkMigrateVolumeFlow.java"
+  },
+  {
+    "raw": "found trashId(%s) in PrimaryStorage [%s] for the migrate installPath[%s]. Please clean it first by 'APICleanUpTrashOnPrimaryStorageMsg' if you insist to migrate the volume[%s]",
+    "en_US": "found trashId({0}) in PrimaryStorage [{1}] for the migrate installPath[{2}]. Please clean it first by 'APICleanUpTrashOnPrimaryStorageMsg' if you insist to migrate the volume[{3}]",
+    "zh_CN": "在主存储[{1}]的回收数据({0})中己存在要迁移的目标路径[{2}]，如果要继续迁移云盘[{3}]，请先调用'APICleanUpTrashOnPrimaryStorageMsg'来手动清理该回收数据",
+    "arguments": [
+      "reply1.getTrashId()",
+      "dstPsUuid",
+      "dstVolumeFolderPath",
+      "reply1.getResourceUuid()"
+    ],
+    "line": 143,
+    "fileName": "src/main/java/org/zstack/storage/migration/primary/nfs/NfsToNfsMigrateVolumeFlow.java"
+  },
+  {
+    "raw": "found trashId(%s) in PrimaryStorage [%s] for the migrate installPath[%s]. Please clean it first by 'APICleanUpTrashOnPrimaryStorageMsg' if you insist to migrate the volume[%s]",
+    "en_US": "found trashId({0}) in PrimaryStorage [{1}] for the migrate installPath[{2}]. Please clean it first by 'APICleanUpTrashOnPrimaryStorageMsg' if you insist to migrate the volume[{3}]",
+    "zh_CN": "在主存储[{1}]的回收数据({0})中己存在要迁移的目标路径[{2}]，如果要继续迁移云盘[{3}]，请先调用'APICleanUpTrashOnPrimaryStorageMsg'来手动清理该回收数据",
+    "arguments": [
+      "reply1.getTrashId()",
+      "dstPsUuid",
+      "dstVolumeInstallPath",
+      "reply1.getResourceUuid()"
+    ],
+    "line": 127,
+    "fileName": "src/main/java/org/zstack/storage/migration/primary/ceph/CephToCephMigrateVolumeFlow.java"
   }
 ]
