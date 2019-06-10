@@ -33,6 +33,8 @@ class PrimaryStorageTrashCase extends SubCase {
     VolumeInventory volume
     VolumeSnapshotInventory snapshot
 
+    String trashResourceUuid
+
     @Override
     void clean() {
         env.delete()
@@ -84,17 +86,17 @@ class PrimaryStorageTrashCase extends SubCase {
     }
 
     void createTrash() {
-        String resourceUuid = Platform.uuid
-        def spec = new StorageTrashSpec(resourceUuid, VolumeVO.class.getSimpleName(), ps.uuid, PrimaryStorageVO.class.getSimpleName(),
-                "mock-installpath-${resourceUuid}", 123456L)
+        trashResourceUuid = Platform.uuid
+        def spec = new StorageTrashSpec(trashResourceUuid, VolumeVO.class.getSimpleName(), ps.uuid, PrimaryStorageVO.class.getSimpleName(),
+                "mock-installpath-${trashResourceUuid}", 123456L)
         label = trashMrg.createTrash(TrashType.MigrateVolume, spec) as JsonLabelInventory
 
         assert label.resourceUuid == ps.uuid
         assert label.labelKey.startsWith(TrashType.MigrateVolume.toString())
         def s = JSONObjectUtil.toObject(label.labelValue, StorageTrashSpec.class)
         assert s.size == 123456L
-        assert s.installPath == "mock-installpath-${resourceUuid}"
-        assert s.resourceUuid == resourceUuid
+        assert s.installPath == "mock-installpath-${trashResourceUuid}"
+        assert s.resourceUuid == trashResourceUuid
         assert s.storageUuid == ps.uuid
         assert s.storageType == "PrimaryStorageVO"
         assert s.resourceType == "VolumeVO"
@@ -121,12 +123,25 @@ class PrimaryStorageTrashCase extends SubCase {
         def trashs = getTrashOnPrimaryStorage {
             uuid = ps.uuid
         } as GetTrashOnPrimaryStorageResult
+        assertTrash(trashs)
 
+        trashs = getTrashOnPrimaryStorage {
+            delegate.uuid = ps.uuid
+            delegate.resourceType = "VolumeVO"
+            delegate.resourceUuid = trashResourceUuid
+            delegate.trashType = "MigrateVolume"
+        } as GetTrashOnPrimaryStorageResult
+
+        assertTrash(trashs)
+    }
+
+    void assertTrash(GetTrashOnPrimaryStorageResult trashs) {
         assert trashs.storageTrashSpecs.get(0).size == 123456L
         assert trashs.storageTrashSpecs.get(0).installPath.startsWith("mock-installpath")
         assert trashs.storageTrashSpecs.get(0).storageUuid == ps.uuid
         assert trashs.storageTrashSpecs.get(0).storageType == "PrimaryStorageVO"
         assert trashs.storageTrashSpecs.get(0).resourceType == "VolumeVO"
+        assert trashs.storageTrashSpecs.get(0).trashType == "MigrateVolume"
         assert trashs.storageTrashSpecs.get(0).trashId > 0
         assert trashs.storageTrashSpecs.get(0).createDate == label.createDate
     }

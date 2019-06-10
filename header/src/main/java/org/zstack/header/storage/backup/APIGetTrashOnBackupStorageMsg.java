@@ -16,6 +16,12 @@ import org.zstack.header.rest.RestRequest;
 public class APIGetTrashOnBackupStorageMsg extends APISyncCallMessage implements BackupStorageMessage {
     @APIParam(resourceType = BackupStorageVO.class)
     private String uuid;
+    @APIParam(required = false)
+    private String resourceUuid;
+    @APIParam(required = false)
+    private String resourceType;
+    @APIParam(required = false, validValues = {"MigrateImage"})
+    private String trashType;
 
     public String getUuid() {
         return uuid;
@@ -28,6 +34,30 @@ public class APIGetTrashOnBackupStorageMsg extends APISyncCallMessage implements
     @Override
     public String getBackupStorageUuid() {
         return uuid;
+    }
+
+    public String getResourceUuid() {
+        return resourceUuid;
+    }
+
+    public void setResourceUuid(String resourceUuid) {
+        this.resourceUuid = resourceUuid;
+    }
+
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
+    }
+
+    public String getTrashType() {
+        return trashType;
+    }
+
+    public void setTrashType(String trashType) {
+        this.trashType = trashType;
     }
 
     public static APIGetTrashOnBackupStorageMsg __example__() {

@@ -459,7 +459,19 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     private void handle(final APIGetTrashOnBackupStorageMsg msg) {
         APIGetTrashOnBackupStorageReply reply = new APIGetTrashOnBackupStorageReply();
-        reply.getStorageTrashSpecs().addAll(trash.getTrashList(self.getUuid(), trashLists).values());
+
+        List<TrashType> lists = msg.getTrashType() != null ? CollectionDSL.list(TrashType.valueOf(msg.getTrashType())) : trashLists;
+        Map<String, StorageTrashSpec> trashs = trash.getTrashList(self.getUuid(), lists);
+        if (msg.getResourceUuid() == null) {
+            reply.getStorageTrashSpecs().addAll(trash.getTrashList(self.getUuid(), trashLists).values());
+        } else {
+            trashs.values().forEach(t -> {
+                if (msg.getResourceUuid().equals(t.getResourceUuid()) && msg.getResourceType().equals(t.getResourceType())) {
+                    reply.getStorageTrashSpecs().add(t);
+                }
+            });
+        }
+
         bus.reply(msg, reply);
     }
 
