@@ -120,6 +120,14 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmInstanceMdevSpecDeviceRefVO` (
     CONSTRAINT `fkVmMdevDeviceRefMdevDeviceUuid` FOREIGN KEY (`mdevDeviceUuid`) REFERENCES `MdevDeviceVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `BillingResourceLabelVO` (
+  `resourceUuid` varchar(32) NOT NULL,
+  `labelKey` varchar(255) DEFAULT NULL,
+  `labelValue` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`resourceUuid`, `labelKey`),
+  KEY `resourceUuid` (`resourceUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 DELIMITER $$
 CREATE PROCEDURE handleLegacyPciSpecUuidTags()
     BEGIN
