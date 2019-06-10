@@ -835,6 +835,16 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
     }
 
+    private void replyErrorExistingApiEvent(APIEvent evt, String err) {
+        replyErrorExistingApiEvent(evt, inerr(err));
+    }
+
+    private void replyErrorExistingApiEvent(APIEvent evt, ErrorCode err) {
+        evt.setError(err);
+        evt.setSuccess(false);
+        this.publish(evt);
+    }
+
     private void replyErrorToApiMessage(APIMessage msg, ErrorCode err) {
         if (msg instanceof APISyncCallMessage) {
             APIReply reply = new APIReply();
@@ -862,6 +872,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     public void replyErrorByMessageType(Message msg, String err) {
         if (msg instanceof APIMessage) {
             replyErrorToApiMessage((APIMessage) msg, err);
+        } else if (msg instanceof APIEvent) {
+            replyErrorExistingApiEvent((APIEvent) msg, err);
         } else {
             replyErrorIfMessageNeedReply(msg, err);
         }
@@ -871,6 +883,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     public void replyErrorByMessageType(Message msg, ErrorCode err) {
         if (msg instanceof APIMessage) {
             replyErrorToApiMessage((APIMessage) msg, err);
+        } else if (msg instanceof APIEvent) {
+            replyErrorExistingApiEvent((APIEvent) msg, err);
         } else {
             replyErrorIfMessageNeedReply(msg, err);
         }
