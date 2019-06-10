@@ -3,11 +3,16 @@ package org.zstack.header.vm.cdrom;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageVO;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APICreateMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APIParam;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceMessage;
+import org.zstack.header.vm.VmInstanceVO;
 
 /**
  * Create by lining at 2018/12/29
@@ -52,6 +57,8 @@ public class APICreateVmCdRomMsg extends APICreateMessage implements APIAuditor,
     public static APICreateVmCdRomMsg __example__() {
         APICreateVmCdRomMsg msg = new APICreateVmCdRomMsg();
         msg.setName("cd-1");
+        msg.setIsoUuid(uuid());
+        msg.setVmInstanceUuid(uuid());
         msg.setDescription("this is a cd-rom");
         return msg;
     }
