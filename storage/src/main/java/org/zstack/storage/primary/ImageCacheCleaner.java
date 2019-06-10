@@ -120,7 +120,7 @@ public abstract class ImageCacheCleaner {
             msg.setInstallPath(vo.getInstallUrl());
             msg.setPrimaryStorageUuid(vo.getPrimaryStorageUuid());
             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, vo.getPrimaryStorageUuid());
-            bus.send(msg, new CloudBusCallBack(null) {
+            bus.send(msg, new CloudBusCallBack(whileCompletion) {
                 @Override
                 public void run(MessageReply reply) {
                     if (!reply.isSuccess()) {
