@@ -28,6 +28,8 @@ class BackupStorageTrashCase extends SubCase {
     StorageTrashImpl trashMrg
     JsonLabelInventory label
 
+    String trashResourceUuid
+
     @Override
     void clean() {
         env.delete()
@@ -72,8 +74,8 @@ class BackupStorageTrashCase extends SubCase {
     }
 
     void createTrash() {
-        String resourceUuid = Platform.uuid
-        def spec = new StorageTrashSpec(resourceUuid, ImageVO.class.getSimpleName(), bs.uuid, BackupStorageVO.class.getSimpleName(),
+        trashResourceUuid = Platform.uuid
+        def spec = new StorageTrashSpec(trashResourceUuid, ImageVO.class.getSimpleName(), bs.uuid, BackupStorageVO.class.getSimpleName(),
                 "mock-installpath", 123456L)
         label = trashMrg.createTrash(TrashType.MigrateImage, spec) as JsonLabelInventory
 
@@ -82,7 +84,7 @@ class BackupStorageTrashCase extends SubCase {
         def s = JSONObjectUtil.toObject(label.labelValue, StorageTrashSpec.class)
         assert s.size == 123456L
         assert s.installPath == "mock-installpath"
-        assert s.resourceUuid == resourceUuid
+        assert s.resourceUuid == trashResourceUuid
         assert s.storageUuid == bs.uuid
         assert s.storageType == "BackupStorageVO"
         assert s.resourceType == "ImageVO"
@@ -93,11 +95,26 @@ class BackupStorageTrashCase extends SubCase {
             uuid = bs.uuid
         } as GetTrashOnBackupStorageResult
 
+        assertTrash(trashs)
+
+        trashs = getTrashOnBackupStorage {
+            delegate.uuid = bs.uuid
+            delegate.resourceType = "ImageVO"
+            delegate.resourceUuid = trashResourceUuid
+            delegate.trashType = "MigrateImage"
+        } as GetTrashOnBackupStorageResult
+
+        assertTrash(trashs)
+    }
+
+    void assertTrash(GetTrashOnBackupStorageResult trashs) {
         assert trashs.storageTrashSpecs.get(0).size == 123456L
         assert trashs.storageTrashSpecs.get(0).installPath == "mock-installpath"
         assert trashs.storageTrashSpecs.get(0).storageUuid == bs.uuid
         assert trashs.storageTrashSpecs.get(0).storageType == "BackupStorageVO"
         assert trashs.storageTrashSpecs.get(0).resourceType == "ImageVO"
+        assert trashs.storageTrashSpecs.get(0).resourceUuid == trashResourceUuid
+        assert trashs.storageTrashSpecs.get(0).trashType == "MigrateImage"
         assert trashs.storageTrashSpecs.get(0).trashId > 0
         assert trashs.storageTrashSpecs.get(0).createDate == label.createDate
     }

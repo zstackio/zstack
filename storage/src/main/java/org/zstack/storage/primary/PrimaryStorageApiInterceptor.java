@@ -9,7 +9,6 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
@@ -17,14 +16,13 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
-import org.zstack.utils.CollectionUtils;
-
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
 
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -57,6 +55,8 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             validate((APIDetachPrimaryStorageFromClusterMsg) msg);
         } else if (msg instanceof APIGetPrimaryStorageCapacityMsg) {
             validate((APIGetPrimaryStorageCapacityMsg) msg);
+        } else if (msg instanceof APIGetTrashOnPrimaryStorageMsg) {
+            validate(((APIGetTrashOnPrimaryStorageMsg) msg));
         }
 
         setServiceId(msg);
@@ -175,6 +175,12 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr("primary storage[uuid:%s] cannot be deleted for still " +
                             "being attached to cluster[uuid:%s].",
                     msg.getPrimaryStorageUuid(), clusterUuidsString));
+        }
+    }
+
+    private void validate(final APIGetTrashOnPrimaryStorageMsg msg) {
+        if ((msg.getResourceType() != null) ^ (msg.getResourceUuid() != null)) {
+            throw new ApiMessageInterceptionException((argerr("'resourceUuid' and 'resourceType' must be set both or neither!")));
         }
     }
 }

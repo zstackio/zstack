@@ -52,6 +52,8 @@ public class BackupStorageApiInterceptor implements ApiMessageInterceptor {
             validate((APIDeleteExportedImageFromBackupStorageMsg) msg);
         } else if (msg instanceof APIGetBackupStorageCapacityMsg) {
             validate((APIGetBackupStorageCapacityMsg) msg);
+        } else if (msg instanceof APIGetTrashOnBackupStorageMsg) {
+            validate((APIGetTrashOnBackupStorageMsg) msg);
         }
 
         setServiceId(msg);
@@ -123,6 +125,12 @@ public class BackupStorageApiInterceptor implements ApiMessageInterceptor {
         q.add(BackupStorageZoneRefVO_.zoneUuid, Op.EQ, msg.getZoneUuid());
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(operr("backup storage[uuid:%s] has been attached to zone[uuid:%s]", msg.getBackupStorageUuid(), msg.getZoneUuid()));
+        }
+    }
+
+    private void validate(final APIGetTrashOnBackupStorageMsg msg) {
+        if ((msg.getResourceType() != null) ^ (msg.getResourceUuid() != null)) {
+            throw new ApiMessageInterceptionException((argerr("'resourceUuid' and 'resourceType' must be set both or neither!")));
         }
     }
 }
