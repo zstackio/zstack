@@ -126,7 +126,7 @@ CREATE PROCEDURE handleLegacyPciSpecUuidTags()
         DECLARE done INT DEFAULT FALSE;
         DECLARE tagUuid VARCHAR(32);
         DECLARE vmInstanceUuid VARCHAR(32);
-        DECLARE pciSpecUuidTag VARCHAR(32);
+        DECLARE pciSpecUuidTag VARCHAR(64);
         DECLARE pciSpecUuid VARCHAR(32);
         DEClARE cur CURSOR FOR SELECT `uuid`, `resourceUuid`, `tag` from `zstack`.`SystemTagVO`
             WHERE `resourceType` = 'VmInstanceVO' AND `tag` LIKE 'pciSpecUuid::%';
