@@ -710,7 +710,8 @@ public class VolumeBase implements Volume {
 
             @Override
             public void setup() {
-                if (self.getVmInstanceUuid() != null && self.getType() == VolumeType.Data && msg.isDetachBeforeDeleting()) {
+                if (self.getVmInstanceUuid() != null && self.getType() == VolumeType.Data && msg.isDetachBeforeDeleting() &&
+                        self.getStatus() != VolumeStatus.NotInstantiated && dbf.isExist(self.getVmInstanceUuid(), VmInstanceVO.class)) {
                     flow(new NoRollbackFlow() {
                         String __name__ = "detach-volume-from-vm";
 
