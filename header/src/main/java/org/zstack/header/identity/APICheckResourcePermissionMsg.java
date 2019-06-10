@@ -1,7 +1,7 @@
 package org.zstack.header.identity;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.identity.rbac.SuppressRBACCheck;
+import org.zstack.header.core.NoDoc;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
@@ -14,6 +14,7 @@ import org.zstack.header.rest.RestRequest;
         path = "/accounts/resource/api-permissions",
         method = HttpMethod.GET,
         responseClass = APICheckResourcePermissionReply.class)
+@NoDoc
 public class APICheckResourcePermissionMsg extends APISyncCallMessage {
     @APIParam
     private String resourceType;

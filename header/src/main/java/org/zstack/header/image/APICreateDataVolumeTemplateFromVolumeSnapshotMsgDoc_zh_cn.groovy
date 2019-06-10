@@ -1,26 +1,36 @@
 package org.zstack.header.image
 
-import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeEvent
+import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeSnapshotEvent
 
 doc {
-    title "从云盘创建数据云盘镜像(CreateDataVolumeTemplateFromVolume)"
+    title "从云盘快照创建数据云盘镜像(CreateDataVolumeTemplateFromVolumeSnapshot)"
 
     category "image"
 
-    desc """从指定的云盘创建出一个数据云盘镜像"""
+    desc """从指定的云盘快照创建出一个数据云盘镜像"""
 
     rest {
         request {
-			url "POST /v1/images/data-volume-templates/from/volumes/{volumeUuid}"
+			url "POST /v1/images/data-volume-templates/from/volume-snapshots/{snapshotUuid}"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APICreateDataVolumeTemplateFromVolumeMsg.class
+            clz APICreateDataVolumeTemplateFromVolumeSnapshotMsg.class
 
             desc """"""
             
 			params {
 
+				column {
+					name "snapshotUuid"
+					enclosedIn "params"
+					desc "数据云盘快照的资源UUID"
+					location "url"
+					type "String"
+					optional false
+					since "0.6"
+					
+				}
 				column {
 					name "name"
 					enclosedIn "params"
@@ -34,20 +44,10 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "数据云盘镜像的详细描述"
+					desc "数据云盘镜像描述"
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "volumeUuid"
-					enclosedIn "params"
-					desc "起始云盘UUID"
-					location "url"
-					type "String"
-					optional false
 					since "0.6"
 					
 				}
@@ -57,7 +57,7 @@ doc {
 					desc "镜像服务器UUID列表"
 					location "body"
 					type "List"
-					optional true
+					optional false
 					since "0.6"
 					
 				}
@@ -67,6 +67,16 @@ doc {
 					desc "数据云盘镜像UUID。若指定，数据云盘镜像会使用该字段值作为UUID。"
 					location "body"
 					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "tagUuids"
+					enclosedIn "params"
+					desc "标签UUID列表"
+					location "body"
+					type "List"
 					optional true
 					since "0.6"
 					
@@ -95,7 +105,7 @@ doc {
         }
 
         response {
-            clz APICreateDataVolumeTemplateFromVolumeEvent.class
+            clz APICreateDataVolumeTemplateFromVolumeSnapshotEvent.class
         }
     }
 }
