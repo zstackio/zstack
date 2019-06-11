@@ -63,7 +63,9 @@ class CephCreateVmByIsoCapacityCase extends SubCase {
         InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         L3NetworkInventory l3 = env.inventoryByName("l3")
         CephBackupStorageInventory bs = queryCephBackupStorage {}[0]
-        CephPrimaryStoragePoolInventory cephPrimaryStoragePool = queryCephPrimaryStoragePool {}[0]
+        CephPrimaryStoragePoolInventory cephPrimaryStoragePool = queryCephPrimaryStoragePool {
+            conditions = ["type=Data"]
+        }[0]
 
         def image_virtual_size = SizeUnit.GIGABYTE.toByte(10)//10G
         def image_physical_size = SizeUnit.GIGABYTE.toByte(1)//1G
@@ -123,7 +125,9 @@ class CephCreateVmByIsoCapacityCase extends SubCase {
         assert bs.poolReplicatedSize == bsPoolReplicatedSize
         assert bs.poolUsedCapacity == bsPoolUsedCapacity
 
-        cephPrimaryStoragePool = queryCephPrimaryStoragePool {}[0]
+        cephPrimaryStoragePool = queryCephPrimaryStoragePool {
+            conditions = ["type=Data"]
+        }[0]
         assert cephPrimaryStoragePool.availableCapacity == psPoolAvailableCapacity
         assert cephPrimaryStoragePool.replicatedSize == psPoolReplicatedSize
         assert cephPrimaryStoragePool.usedCapacity == psPoolUsedCapacity
