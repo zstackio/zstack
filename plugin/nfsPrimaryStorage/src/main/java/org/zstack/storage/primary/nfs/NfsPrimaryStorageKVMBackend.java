@@ -690,6 +690,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
         CheckIsBitsExistingCmd cmd = new CheckIsBitsExistingCmd();
         cmd.setUuid(inv.getUuid());
+        cmd.setHostUuid(host.getUuid());
         cmd.setInstallPath(installPath);
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
