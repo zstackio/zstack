@@ -1911,10 +1911,17 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(final DeleteVolumeOnPrimaryStorageMsg msg) {
-        SimpleQuery<LocalStorageResourceRefVO> q = dbf.createQuery(LocalStorageResourceRefVO.class);
-        q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, msg.getVolume().getUuid());
-        q.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
-        if (!q.isExists()) {
+        String sql = "select host" +
+                " from LocalStorageResourceRefVO h, HostVO host" +
+                " where h.hostUuid = host.uuid" +
+                " and h.resourceUuid = :resourceUuid" +
+                " and h.resourceType = :resourceType";
+
+        TypedQuery<HostVO> q = dbf.getEntityManager().createQuery(sql, HostVO.class);
+        q.setParameter("resourceUuid", msg.getVolume().getUuid());
+        q.setParameter("resourceType", VolumeVO.class.getSimpleName());
+
+        if (q.getResultList().isEmpty()) {
             logger.debug(String.format("volume[uuid:%s] is not on the local storage[uuid:%s, name:%s]," +
                             "the host the volume is on may have been deleted",
                     msg.getVolume().getUuid(), self.getUuid(), self.getName()));
