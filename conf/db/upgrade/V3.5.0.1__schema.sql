@@ -159,3 +159,6 @@ DELIMITER ;
 call handleLegacyPciSpecUuidTags();
 DROP PROCEDURE IF EXISTS handleLegacyPciSpecUuidTags;
 DELETE FROM `zstack`.`SystemTagVO` WHERE `resourceType` = 'InstanceOfferingVO' AND `tag` LIKE 'pciSpecUuid::%';
+
+ALTER TABLE VmCPUBillingVO ADD COLUMN cpuNum int(10) unsigned NOT NULL;
+ALTER TABLE VmMemoryBillingVO ADD COLUMN memorySize bigint(20) unsigned NOT NULL;
