@@ -11,6 +11,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
+import org.zstack.sdk.CleanUpTrashOnPrimaryStorageAction
 import org.zstack.sdk.CleanUpTrashOnPrimaryStorageResult
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GetTrashOnPrimaryStorageResult
@@ -75,7 +76,7 @@ class PrimaryStorageTrashCase extends SubCase {
                 name = "snapshot"
                 volumeUuid = volume.uuid
             } as VolumeSnapshotInventory
-            testCleanUpTrashOnlyDB()
+            testCleanUpTrashWhileUsing()
         }
     }
 
@@ -181,12 +182,13 @@ class PrimaryStorageTrashCase extends SubCase {
     }
 
     // if installpath still in using (this situation usually caused by bug), then skip delete it
-    void testCleanUpTrashOnlyDB() {
+    void testCleanUpTrashWhileUsing() {
         def trashs = getTrashOnPrimaryStorage {
             uuid = ps.uuid
         } as GetTrashOnPrimaryStorageResult
 
         assert trashs.storageTrashSpecs.size() > 0
+        def count = trashs.storageTrashSpecs.size()
 
         trashs.storageTrashSpecs.each {
             def trash = it as org.zstack.sdk.StorageTrashSpec
@@ -197,18 +199,18 @@ class PrimaryStorageTrashCase extends SubCase {
             }
         }
 
-        def result = cleanUpTrashOnPrimaryStorage {
-            uuid = ps.uuid
-        } as CleanUpTrashOnPrimaryStorageResult
+        def action = new CleanUpTrashOnPrimaryStorageAction()
+        action.uuid = ps.uuid
+        action.sessionId = adminSession()
 
-        assert result.result != null
-        assert result.result.size == 0
-        assert result.result.resourceUuids.size() == 0
+        def result = action.call()
+
+        assert result.error != null
 
         trashs = getTrashOnPrimaryStorage {
             uuid = ps.uuid
         } as GetTrashOnPrimaryStorageResult
 
-        assert trashs.storageTrashSpecs.size() == 0
+        assert trashs.storageTrashSpecs.size() == count
     }
 }
