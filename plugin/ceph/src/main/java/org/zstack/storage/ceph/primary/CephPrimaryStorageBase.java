@@ -1508,9 +1508,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         if (!trash.makeSureInstallPathNotUsed(spec)) {
-            logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
-            trash.removeFromDb(spec.getTrashId());
-            completion.success(result);
+            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
             return;
         }
 
@@ -1597,8 +1595,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             StorageTrashSpec spec = t.getValue();
 
             if (!trash.makeSureInstallPathNotUsed(spec)) {
-                logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
-                trash.removeFromDb(spec.getTrashId());
+                errorCodeList.getCauses().add(operr("%s is still in using by %s, cannot remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
                 coml.done();
                 return;
             }

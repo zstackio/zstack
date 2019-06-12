@@ -154,7 +154,8 @@ public class StorageTrashImpl implements StorageTrash, VolumeDeletionExtensionPo
 
     private boolean makeSureInstallPathNotUsedByVolume(String installPath) {
         return !Q.New(VolumeVO.class).eq(VolumeVO_.installPath, installPath).isExists() &&
-                !Q.New(ImageCacheVO.class).eq(ImageCacheVO_.installUrl, installPath).isExists();
+                !Q.New(ImageCacheVO.class).eq(ImageCacheVO_.installUrl, installPath).isExists() &&
+                !Q.New(VolumeSnapshotVO.class).like(VolumeSnapshotVO_.primaryStorageInstallPath, installPath + "@%").isExists();
     }
 
     private boolean makeSureInstallPathNotUsedByImage(String installPath) {
