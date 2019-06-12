@@ -678,6 +678,13 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         final MarkRootVolumeAsSnapshotReply ret = new MarkRootVolumeAsSnapshotReply();
         VolumeInventory vol = msg.getVolume();
 
+        String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type).eq(PrimaryStorageVO_.uuid, vol.getPrimaryStorageUuid()).findValue();
+        if (psType == null) {
+            ret.setError(operr("cannot find type for primaryStorage [%s]", vol.getPrimaryStorageUuid()));
+            bus.reply(msg, ret);
+            return;
+        }
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("mark-rootVolume-%s-as-snapshot", vol.getUuid()));
         chain.then(new ShareFlow() {
@@ -717,58 +724,47 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "mark-rootVolume-as-snapshot";
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type).eq(PrimaryStorageVO_.uuid, vol.getPrimaryStorageUuid()).findValue();
-                        if (psType == null) {
-                            trigger.fail(operr("cannot find type for primaryStorage [%s]", vol.getPrimaryStorageUuid()));
-                            return;
-                        }
-                        // mark volume installPath as snapshot installPath, or other extentions...
-                        List<MarkRootVolumeAsSnapshotExtension> extensions = pluginRgty.getExtensionList(MarkRootVolumeAsSnapshotExtension.class);
-                        for(MarkRootVolumeAsSnapshotExtension extension : extensions){
-                            if (psType.equals(extension.getExtensionPrimaryStorageType())) {
-                                extension.markRootVolumeAsSnapshot(vol, msg.getAccountUuid(), new ReturnValueCompletion<String>(trigger) {
-                                    @Override
-                                    public void success(String snapshotUuid) {
-                                        vo.setUuid(snapshotUuid);
-                                        trigger.next();
-                                    }
-
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        trigger.fail(errorCode);
-                                    }
-                                });
-                                return;
-                            }
-                        }
-
-                        vo.setUuid(Platform.getUuid());
-                        vo.setName(vol.getName());
-                        vo.setDescription(vol.getDescription());
-                        vo.setVolumeUuid(vol.getUuid());
-                        vo.setFormat(vol.getFormat());
-                        vo.setVolumeType(vol.getType());
-                        vo.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
-                        vo.setSize(vol.getSize());
-                        vo.setState(VolumeSnapshotState.Enabled);
-                        vo.setStatus(VolumeSnapshotStatus.Creating);
-                        vo.setAccountUuid(msg.getAccountUuid());
-
-                        if (VolumeSnapshotArrangementType.CHAIN == capability.getArrangementType()) {
-                            saveChainTypeSnapshot(vo);
-                        } else if (VolumeSnapshotArrangementType.INDIVIDUAL == capability.getArrangementType()) {
-                            saveIndividualTypeSnapshot(vo);
-                        } else {
-                            DebugUtils.Assert(false, "should not be here");
-                        }
-
-                        trigger.next();
+                // mark volume installPath as snapshot installPath, or other extentions...
+                List<MarkRootVolumeAsSnapshotExtension> extensions = pluginRgty.getExtensionList(MarkRootVolumeAsSnapshotExtension.class);
+                List<Flow> customizedFlows = null;
+                for(MarkRootVolumeAsSnapshotExtension extension : extensions){
+                    if (psType.equals(extension.getExtensionPrimaryStorageType())) {
+                        customizedFlows = extension.markRootVolumeAsSnapshot(vol, vo, msg.getAccountUuid());
+                        break;
                     }
-                });
+                }
+
+                if (customizedFlows != null) {
+                    customizedFlows.forEach(this::flow);
+                } else {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "mark-rootVolume-as-snapshot";
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            vo.setUuid(Platform.getUuid());
+                            vo.setName(vol.getName());
+                            vo.setDescription(vol.getDescription());
+                            vo.setVolumeUuid(vol.getUuid());
+                            vo.setFormat(vol.getFormat());
+                            vo.setVolumeType(vol.getType());
+                            vo.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
+                            vo.setSize(vol.getSize());
+                            vo.setState(VolumeSnapshotState.Enabled);
+                            vo.setStatus(VolumeSnapshotStatus.Creating);
+                            vo.setAccountUuid(msg.getAccountUuid());
+
+                            if (VolumeSnapshotArrangementType.CHAIN == capability.getArrangementType()) {
+                                saveChainTypeSnapshot(vo);
+                            } else if (VolumeSnapshotArrangementType.INDIVIDUAL == capability.getArrangementType()) {
+                                saveIndividualTypeSnapshot(vo);
+                            } else {
+                                DebugUtils.Assert(false, "should not be here");
+                            }
+
+                            trigger.next();
+                        }
+                    });
+                }
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "post-mark-rootVolume-as-snapshot";

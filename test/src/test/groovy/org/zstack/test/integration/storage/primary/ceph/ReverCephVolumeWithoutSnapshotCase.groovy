@@ -153,7 +153,7 @@ class ReverCephVolumeWithoutSnapshotCase extends SubCase {
         def specs = trash.getTrashList(ps.uuid) as Map<String, StorageTrashSpec>
         def trashed = false
         specs.each { k,v ->
-            if (v.resourceUuid == root.uuid) {
+            if (v.resourceUuid == root.uuid && v.trashType != TrashType.ReimageVolume.toString()) {
                 assert v.installPath == installPath
                 assert v.size == size
                 assert k.startsWith(TrashType.RevertVolume.toString())

@@ -16,6 +16,8 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.trash.StorageTrash;
+import org.zstack.core.trash.TrashType;
 import org.zstack.header.Component;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator;
@@ -23,6 +25,7 @@ import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -33,16 +36,14 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.CreateVmInstanceMsg;
-import org.zstack.header.vm.VmInstanceCreateExtensionPoint;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.*;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.primary.KVMCephVolumeTO.MonInfo;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.snapshot.MarkRootVolumeAsSnapshotExtension;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
@@ -73,7 +74,9 @@ import static org.zstack.utils.CollectionDSL.map;
 public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCapacityUpdateExtensionPoint, KVMStartVmExtensionPoint,
         KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint,
         KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component, PostMarkRootVolumeAsSnapshotExtension,
-        BeforeTakeLiveSnapshotsOnVolumes, VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint, InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator {
+        BeforeTakeLiveSnapshotsOnVolumes, VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint,
+        InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator, MarkRootVolumeAsSnapshotExtension,
+        AfterReimageVmInstanceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -90,6 +93,8 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     private CloudBus bus;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private StorageTrash trash;
 
     private Future imageCacheCleanupThread;
 
@@ -1079,5 +1084,54 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 throw new IllegalArgumentException(String.format("cephPrimaryStorage[uuid=%s] cephPool[name=%s] does not exist", psUuid, poolName));
             }
         }
+    }
+
+    @Override
+    public List<Flow> markRootVolumeAsSnapshot(VolumeInventory vol, VolumeSnapshotVO vo, String accountUuid) {
+        List<Flow> flows = new ArrayList<>();
+        flows.add(new NoRollbackFlow() {
+            String __name__ = "create-snapshot-before-reimage";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
+                cmsg.setAccountUuid(accountUuid);
+                cmsg.setVolumeUuid(vol.getUuid());
+                cmsg.setName(vol.getName());
+                cmsg.setDescription(vol.getDescription());
+                cmsg.setDescription(vol.getDescription());
+
+                bus.makeLocalServiceId(cmsg, VolumeSnapshotConstant.SERVICE_ID);
+                bus.send(cmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        CreateVolumeSnapshotReply r = (CreateVolumeSnapshotReply)reply;
+                        vo.setUuid(r.getInventory().getUuid());
+                        trigger.next();
+                    }
+                });
+            }
+        });
+        return flows;
+    }
+
+    @Override
+    public String getExtensionPrimaryStorageType() {
+        return CephConstants.CEPH_PRIMARY_STORAGE_TYPE;
+    }
+
+    @Override
+    public void afterReimageVmInstance(VolumeInventory vol) {
+        StorageTrashSpec spec = new StorageTrashSpec(vol.getUuid(), VolumeVO.class.getSimpleName(),
+                vol.getPrimaryStorageUuid(), PrimaryStorageVO.class.getSimpleName(),
+                vol.getInstallPath(), vol.getSize());
+        spec.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(vol.getFormat()).toString());
+        String labelKey = trash.createTrash(TrashType.ReimageVolume, spec).getLabelKey();
+        logger.debug(String.format("move old volume install path to trash[key:%s]", labelKey));
     }
 }
