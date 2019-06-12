@@ -2,8 +2,11 @@ package org.zstack.ldap;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.ldap.AuthenticationException;
+import org.springframework.ldap.CommunicationException;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -132,6 +135,12 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
             filter.and(new EqualsFilter(LdapConstant.LDAP_UID_KEY, ""));
             ldapTemplateContextSource.getLdapTemplate().authenticate("", filter.toString(), "");
             logger.info("LDAP connection was successful");
+        } catch (AuthenticationException e) {
+            logger.debug("Cannot connect to LDAP server, Invalid Credentials, please checkout User DN and password", e);
+            return operr("Cannot connect to LDAP server, Invalid Credentials, please checkout User DN and password");
+        } catch (CommunicationException e) {
+            logger.debug("Cannot connect to LDAP server, communication false, please checkout IP, port and Base DN", e);
+            return operr("Cannot connect to LDAP server, communication false, please checkout IP, port and Base DN");
         } catch (Exception e) {
             logger.debug("Cannot connect to LDAP server", e);
             return operr("Cannot connect to LDAP server, %s", e.toString());
