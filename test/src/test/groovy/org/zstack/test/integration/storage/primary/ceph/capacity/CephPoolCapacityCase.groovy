@@ -2,11 +2,15 @@ package org.zstack.test.integration.storage.primary.ceph.capacity
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
+import org.zstack.core.db.SQL
 import org.zstack.header.image.ImageConstant
+import org.zstack.header.image.ImageVO
+import org.zstack.header.image.ImageVO_
 import org.zstack.sdk.*
 import org.zstack.storage.ceph.CephPoolCapacity
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
+import org.zstack.storage.primary.PrimaryStorageGlobalConfig
 import org.zstack.test.integration.storage.CephEnv
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.CephPrimaryStorageSpec
@@ -40,6 +44,8 @@ class CephPoolCapacityCase extends SubCase {
     void test() {
         env.create {
             testReconnectPrimaryStorage()
+            testCreateDataVolume()
+            testCreateVm()
         }
     }
 
@@ -108,5 +114,153 @@ class CephPoolCapacityCase extends SubCase {
         }[0]
         assert afterBs.availableCapacity == bs.availableCapacity + addSize
         assert afterBs.totalCapacity == bs.totalCapacity + addSize
+    }
+
+    void testCreateDataVolume() {
+        PrimaryStorageGlobalConfig.RESERVED_CAPACITY.updateValue(0)
+
+        PrimaryStorageInventory ps = env.inventoryByName("ceph-pri")
+        BackupStorageInventory bs = env.inventoryByName("ceph-bk")
+        CephPrimaryStoragePoolInventory primaryStoragePool = queryCephPrimaryStoragePool {
+            conditions = ["type=Data"]
+        }[0]
+        CephPrimaryStoragePoolInventory cachePool = queryCephPrimaryStoragePool {
+            conditions = ["type=ImageCache"]
+        }[0]
+
+        long poolSize = 100
+
+        env.simulator(CephPrimaryStorageBase.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.InitCmd.class)
+            CephPrimaryStorageSpec cspec = spec.specByUuid(cmd.uuid)
+
+            def rsp = new CephPrimaryStorageBase.InitRsp()
+            rsp.fsid = cspec.fsid
+            rsp.userKey = Platform.uuid
+            rsp.totalCapacity = poolSize
+            rsp.availableCapacity = poolSize
+            rsp.poolCapacities = [
+                    new CephPoolCapacity(
+                            name : primaryStoragePool.poolName,
+                            usedCapacity: 0,
+                            availableCapacity : poolSize,
+                            totalCapacity: poolSize
+                    ),
+                    new CephPoolCapacity(
+                            name : cachePool.poolName,
+                            usedCapacity: 0,
+                            availableCapacity : poolSize,
+                            totalCapacity: poolSize
+                    )
+            ]
+            return rsp
+        }
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+
+        DiskOfferingInventory diskOffering = createDiskOffering {
+            name = "testDiskOffering"
+            diskSize = poolSize + 1
+        }
+
+        expectError {
+            createDataVolume {
+                name = "dataVolume"
+                primaryStorageUuid = ps.uuid
+                diskOfferingUuid = diskOffering.uuid
+            }
+        }
+
+        diskOffering = createDiskOffering {
+            name = "testDiskOffering"
+            diskSize = poolSize - 1
+        }
+
+        VolumeInventory volumeInventory = createDataVolume {
+            name = "dataVolume"
+            primaryStorageUuid = ps.uuid
+            diskOfferingUuid = diskOffering.uuid
+        }
+
+        deleteDataVolume {
+            uuid = volumeInventory.uuid
+        }
+
+        expungeDataVolume {
+            uuid = volumeInventory.uuid
+        }
+    }
+
+    void testCreateVm() {
+        PrimaryStorageGlobalConfig.RESERVED_CAPACITY.updateValue(0)
+
+        PrimaryStorageInventory ps = env.inventoryByName("ceph-pri")
+        CephPrimaryStoragePoolInventory rootPool = queryCephPrimaryStoragePool {
+            conditions = ["type=Root"]
+        }[0]
+        CephPrimaryStoragePoolInventory cachePool = queryCephPrimaryStoragePool {
+            conditions = ["type=ImageCache"]
+        }[0]
+
+        long poolSize = 100
+
+        env.simulator(CephPrimaryStorageBase.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.InitCmd.class)
+            CephPrimaryStorageSpec cspec = spec.specByUuid(cmd.uuid)
+
+            def rsp = new CephPrimaryStorageBase.InitRsp()
+            rsp.fsid = cspec.fsid
+            rsp.userKey = Platform.uuid
+            rsp.totalCapacity = poolSize
+            rsp.availableCapacity = poolSize
+            rsp.poolCapacities = [
+                    new CephPoolCapacity(
+                            name : rootPool.poolName,
+                            usedCapacity: 0,
+                            availableCapacity : poolSize,
+                            totalCapacity: poolSize
+                    ),
+                    new CephPoolCapacity(
+                            name : cachePool.poolName,
+                            usedCapacity: 0,
+                            availableCapacity : poolSize,
+                            totalCapacity: poolSize
+                    )
+            ]
+            return rsp
+        }
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+
+        VmInstanceInventory testVm = env.inventoryByName("test-vm")
+        SQL.New(ImageVO.class)
+                .eq(ImageVO_.uuid, testVm.imageUuid)
+                .set(ImageVO_.size, poolSize + 1)
+                .set(ImageVO_.actualSize, poolSize + 1)
+                .update()
+
+        expect(AssertionError.class){
+            createVmInstance {
+                name = "vm"
+                instanceOfferingUuid = testVm.instanceOfferingUuid
+                imageUuid = testVm.imageUuid
+                l3NetworkUuids = [testVm.defaultL3NetworkUuid]
+            }
+        }
+
+        SQL.New(ImageVO.class)
+                .eq(ImageVO_.uuid, testVm.imageUuid)
+                .set(ImageVO_.size, poolSize - 1)
+                .set(ImageVO_.actualSize, poolSize - 1)
+                .update()
+
+        createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = testVm.instanceOfferingUuid
+            imageUuid = testVm.imageUuid
+            l3NetworkUuids = [testVm.defaultL3NetworkUuid]
+        }
     }
 }
