@@ -2,7 +2,9 @@ package org.zstack.storage.ceph.backup;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.ansible.*;
+import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -173,10 +175,19 @@ public class CephBackupStorageMonBase extends CephMonBase {
                             repoChecker.setPassword(self.getSshPassword());
                             repoChecker.setSshPort(self.getSshPort());
 
+                            CallBackNetworkChecker callbackChecker = new CallBackNetworkChecker();
+                            callbackChecker.setTargetIp(getSelf().getHostname());
+                            callbackChecker.setUsername(getSelf().getSshUsername());
+                            callbackChecker.setPassword(getSelf().getSshPassword());
+                            callbackChecker.setPort(getSelf().getSshPort());
+                            callbackChecker.setCallbackIp(Platform.getManagementServerIp());
+                            callbackChecker.setCallBackPort(CloudBusGlobalProperty.HTTP_PORT);
+
                             AnsibleRunner runner = new AnsibleRunner();
                             runner.installChecker(checker);
                             runner.installChecker(chronyChecker);
                             runner.installChecker(repoChecker);
+                            runner.installChecker(callbackChecker);
                             runner.setPassword(getSelf().getSshPassword());
                             runner.setUsername(getSelf().getSshUsername());
                             runner.setTargetIp(getSelf().getHostname());
