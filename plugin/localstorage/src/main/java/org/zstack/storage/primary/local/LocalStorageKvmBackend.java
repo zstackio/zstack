@@ -17,6 +17,7 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.core.Completion;
@@ -1636,32 +1637,70 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     void handle(ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<ReInitRootVolumeFromTemplateOnPrimaryStorageReply> completion) {
-        ReinitImageCmd cmd = new ReinitImageCmd();
-        if (msg.getVolume().getRootImageUuid() == null) {
-            completion.fail(operr("root image has been deleted, cannot reimage now"));
-            return;
-        }
+        ReInitRootVolumeFromTemplateOnPrimaryStorageReply reply = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
 
-        if (!dbf.isExist(msg.getVolume().getRootImageUuid(), ImageVO.class)) {
-            completion.fail(operr("root image has been deleted, cannot reimage now"));
-            return;
-        }
-        cmd.imagePath = makeCachedImageInstallUrlFromImageUuidForTemplate(msg.getVolume().getRootImageUuid());
-        cmd.volumePath = makeRootVolumeInstallUrl(msg.getVolume());
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName("re-init-root-volume-on-primary-storage");
+        chain.then(new Flow() {
+            String __name__ = "allocate-capacity-on-host";
 
-        httpCall(REINIT_IMAGE_PATH, hostUuid, cmd, ReinitImageRsp.class, new ReturnValueCompletion<ReinitImageRsp>(completion) {
+            boolean reserved = false;
+
             @Override
-            public void success(ReinitImageRsp rsp) {
-                ReInitRootVolumeFromTemplateOnPrimaryStorageReply ret = new ReInitRootVolumeFromTemplateOnPrimaryStorageReply();
-                ret.setNewVolumeInstallPath(rsp.getNewVolumeInstallPath());
-                completion.success(ret);
+            public void run(FlowTrigger trigger, Map data) {
+                reserveCapacityOnHost(hostUuid, msg.getOriginSize(), self.getUuid());
+                reserved = true;
+                trigger.next();
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
+            public void rollback(FlowRollback trigger, Map data) {
+                if (reserved) {
+                    returnStorageCapacityToHost(hostUuid, msg.getOriginSize());
+                }
+
+                trigger.rollback();
             }
-        });
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                ReinitImageCmd cmd = new ReinitImageCmd();
+                if (msg.getVolume().getRootImageUuid() == null) {
+                    completion.fail(operr("root image has been deleted, cannot reimage now"));
+                    return;
+                }
+
+                if (!dbf.isExist(msg.getVolume().getRootImageUuid(), ImageVO.class)) {
+                    completion.fail(operr("root image has been deleted, cannot reimage now"));
+                    return;
+                }
+                cmd.imagePath = makeCachedImageInstallUrlFromImageUuidForTemplate(msg.getVolume().getRootImageUuid());
+                cmd.volumePath = makeRootVolumeInstallUrl(msg.getVolume());
+
+                httpCall(REINIT_IMAGE_PATH, hostUuid, cmd, ReinitImageRsp.class, new ReturnValueCompletion<ReinitImageRsp>(completion) {
+                    @Override
+                    public void success(ReinitImageRsp rsp) {
+                        reply.setNewVolumeInstallPath(rsp.getNewVolumeInstallPath());
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                completion.success(reply);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     @Override
