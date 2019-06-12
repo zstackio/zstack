@@ -488,6 +488,7 @@ public class VolumeBase implements Volume {
 
             @Override
             public void run(SyncTaskChain chain) {
+                refreshVO();
                 recoverVolume(new Completion(chain, msg) {
                     @Override
                     public void success() {
@@ -586,6 +587,7 @@ public class VolumeBase implements Volume {
 
             @Override
             public void run(SyncTaskChain chain) {
+                refreshVO();
                 expunge(new Completion(msg, chain) {
                     @Override
                     public void success() {
@@ -618,6 +620,7 @@ public class VolumeBase implements Volume {
 
             @Override
             public void run(SyncTaskChain chain) {
+                refreshVO();
                 doCreateDataVolumeTemplateFromDataVolumeMsg(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
@@ -1127,6 +1130,7 @@ public class VolumeBase implements Volume {
     }
 
     private void syncVolumeVolumeSize(final ReturnValueCompletion<VolumeSize> completion) {
+        refreshVO();
         SyncVolumeSizeOnPrimaryStorageMsg smsg = new SyncVolumeSizeOnPrimaryStorageMsg();
         smsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
         smsg.setVolumeUuid(self.getUuid());
@@ -1140,6 +1144,7 @@ public class VolumeBase implements Volume {
                     return;
                 }
 
+                refreshVO();
                 SyncVolumeSizeOnPrimaryStorageReply r = reply.castReply();
                 self.setSize(r.getSize());
                 // the actual size = volume actual size + all snapshot size
@@ -1197,6 +1202,7 @@ public class VolumeBase implements Volume {
             @Override
             public void run(SyncTaskChain chain) {
                 final APIExpungeDataVolumeEvent evt = new APIExpungeDataVolumeEvent(msg.getId());
+                refreshVO();
                 expunge(new Completion(msg, chain) {
                     @Override
                     public void success() {
@@ -1268,6 +1274,7 @@ public class VolumeBase implements Volume {
 
             @Override
             public void run(SyncTaskChain chain) {
+                refreshVO();
                 final APIRecoverDataVolumeEvent evt = new APIRecoverDataVolumeEvent(msg.getId());
                 recoverVolume(new Completion(msg, chain) {
                     @Override
@@ -1450,6 +1457,7 @@ public class VolumeBase implements Volume {
 
             @Override
             public void run(SyncTaskChain chain) {
+                refreshVO();
                 DetachDataVolumeFromVmMsg dmsg = new DetachDataVolumeFromVmMsg();
                 dmsg.setVolume(getSelfInventory());
                 String vmUuid;
