@@ -484,9 +484,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         }
 
         if (!trash.makeSureInstallPathNotUsed(spec)) {
-            logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
-            trash.removeFromDb(spec.getTrashId());
-            completion.success(result);
+            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
             return;
         }
         DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
@@ -536,8 +534,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         new While<>(trashs.entrySet()).all((t, coml) -> {
             StorageTrashSpec spec = t.getValue();
             if (!trash.makeSureInstallPathNotUsed(spec)) {
-                logger.warn(String.format("%s is still in using by %s, only remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
-                trash.removeFromDb(spec.getTrashId());
+                errs.add(operr("%s is still in using by %s, cannot remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
                 coml.done();
                 return;
             }

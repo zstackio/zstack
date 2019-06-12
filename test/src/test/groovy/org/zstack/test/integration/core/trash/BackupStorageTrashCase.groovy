@@ -12,6 +12,7 @@ import org.zstack.header.image.ImageVO
 import org.zstack.header.storage.backup.BackupStorageVO
 import org.zstack.header.storage.backup.StorageTrashSpec
 import org.zstack.sdk.BackupStorageInventory
+import org.zstack.sdk.CleanUpTrashOnBackupStorageAction
 import org.zstack.sdk.CleanUpTrashOnBackupStorageResult
 import org.zstack.sdk.GetTrashOnBackupStorageResult
 import org.zstack.sdk.ImageInventory
@@ -64,7 +65,7 @@ class BackupStorageTrashCase extends SubCase {
                 backupStorageUuids = [bs.uuid]
                 format = ImageConstant.QCOW2_FORMAT_STRING
             } as ImageInventory
-            testCleanUpTrashOnlyDB()
+            testCleanUpTrashWhileUsing()
         }
     }
 
@@ -153,7 +154,7 @@ class BackupStorageTrashCase extends SubCase {
         assert trashs.storageTrashSpecs.size() == 0
     }
 
-    void testCleanUpTrashOnlyDB() {
+    void testCleanUpTrashWhileUsing() {
         def trashs = getTrashOnBackupStorage {
             uuid = bs.uuid
         } as GetTrashOnBackupStorageResult
@@ -167,19 +168,18 @@ class BackupStorageTrashCase extends SubCase {
             }
         }
 
-        def result = cleanUpTrashOnBackupStorage {
-            uuid = bs.uuid
-            trashId = label.id
-        } as CleanUpTrashOnBackupStorageResult
+        def action = new CleanUpTrashOnBackupStorageAction()
+        action.uuid = bs.uuid
+        action.trashId = label.id
+        action.sessionId = adminSession()
 
-        assert result.result != null
-        assert result.result.size == 0
-        assert result.result.resourceUuids.size() == 0
+        def result = action.call()
+        assert result.error != null
 
         trashs = getTrashOnBackupStorage {
             uuid = bs.uuid
         } as GetTrashOnBackupStorageResult
 
-        assert trashs.storageTrashSpecs.size() == count - 1
+        assert trashs.storageTrashSpecs.size() == count
     }
 }
