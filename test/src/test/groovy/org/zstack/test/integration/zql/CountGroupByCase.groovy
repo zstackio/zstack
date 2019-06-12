@@ -37,6 +37,7 @@ class CountGroupByCase extends SubCase {
             testCountGroupBy()
             testQuery()
             testGroupLimit()
+            testEmpty()
         }
     }
 
@@ -83,5 +84,11 @@ class CountGroupByCase extends SubCase {
         def ret = ZQL.fromString("count instanceoffering group by name,cpuNum limit 2").getSingleResult() as ZQLQueryReturn
         assert ret.inventoryCounts.size() == 2
         assert ret.total == 102
+    }
+
+    void testEmpty() {
+        def ret = ZQL.fromString("count zone group by name").getSingleResult() as ZQLQueryReturn
+        assert ret.inventoryCounts == null
+        assert ret.total == 0
     }
 }
