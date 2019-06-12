@@ -247,7 +247,14 @@ public class ZQL {
                         if (results.size() == 1 && results.get(0) instanceof Long) {
                             ret.count = (Long)results.get(0);
                         } else {
-                            qr.inventoryCounts = new LinkedHashMap<>();
+                            if (!results.isEmpty()) {
+                                /*
+                                    gson which enable ComplexMapKeySerialization will serialize the map to json array
+                                    when it is not empty or json object "{}" when it is empty.
+                                    null is better than a inconsistent json type.
+                                 */
+                                qr.inventoryCounts = new LinkedHashMap<>();
+                            }
                             for (Object result : results) {
                                 Object[] fieldValues = (Object[]) result;
                                 int countIndex = fieldValues.length - 1;
