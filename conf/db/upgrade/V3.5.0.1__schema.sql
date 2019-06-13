@@ -1,6 +1,6 @@
--- ------------------------------
---  for pci device virtualization
--- ------------------------------
+-- -----------------------------------
+--  BEGIN OF PCI DEVICE VIRTUALIZATION
+-- -----------------------------------
 ALTER TABLE `zstack`.`PciDeviceVO` ADD COLUMN `name` VARCHAR(255) NOT NULL;
 ALTER TABLE `zstack`.`PciDeviceVO` ADD COLUMN `virtStatus` VARCHAR(32) DEFAULT NULL;
 ALTER TABLE `zstack`.`PciDeviceVO` ADD COLUMN `parentUuid` VARCHAR(32) DEFAULT NULL;
@@ -120,14 +120,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmInstanceMdevSpecDeviceRefVO` (
     CONSTRAINT `fkVmMdevDeviceRefMdevDeviceUuid` FOREIGN KEY (`mdevDeviceUuid`) REFERENCES `MdevDeviceVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `BillingResourceLabelVO` (
-  `resourceUuid` varchar(32) NOT NULL,
-  `labelKey` varchar(255) DEFAULT NULL,
-  `labelValue` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`resourceUuid`, `labelKey`),
-  KEY `resourceUuid` (`resourceUuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 DELIMITER $$
 CREATE PROCEDURE handleLegacyPciSpecUuidTags()
     BEGIN
@@ -136,6 +128,7 @@ CREATE PROCEDURE handleLegacyPciSpecUuidTags()
         DECLARE vmInstanceUuid VARCHAR(32);
         DECLARE pciSpecUuidTag VARCHAR(64);
         DECLARE pciSpecUuid VARCHAR(32);
+        DECLARE autoReleaseTagUuid VARCHAR(32);
         DEClARE cur CURSOR FOR SELECT `uuid`, `resourceUuid`, `tag` from `zstack`.`SystemTagVO`
             WHERE `resourceType` = 'VmInstanceVO' AND `tag` LIKE 'pciSpecUuid::%';
         DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
@@ -146,9 +139,23 @@ CREATE PROCEDURE handleLegacyPciSpecUuidTags()
                 LEAVE read_loop;
             END IF;
 
+            -- create records in VmInstancePciDeviceSpecRefVO
             SET pciSpecUuid = substring(pciSpecUuidTag, LENGTH('pciSpecUuid::') + 1);
             INSERT INTO `zstack`.`VmInstancePciDeviceSpecRefVO` (`vmInstanceUuid`, `pciSpecUuid`, `pciDeviceNumber`, `lastOpDate`, `createDate`)
                 VALUES (vmInstanceUuid, pciSpecUuid, 1, NOW(), NOW());
+
+            -- create records in VmInstancePciSpecDeviceRefVO
+            INSERT INTO `zstack`.`VmInstancePciSpecDeviceRefVO` (`vmInstanceUuid`, `pciSpecUuid`, `pciDeviceUuid`, `lastOpDate`, `createDate`)
+                VALUES (vmInstanceUuid, pciSpecUuid, (
+                    SELECT `uuid` FROM `zstack`.`PciDeviceVO` where `vmInstanceUuid` = vmInstanceUuid AND `pciSpecUuid` = pciSpecUuid LIMIT 1
+                ), NOW(), NOW());
+
+            -- create autoReleaseSpecReleatedPhysicalPciDevice tag for vm
+            SET autoReleaseTagUuid = REPLACE(UUID(), '-', '');
+            INSERT INTO `zstack`.`SystemTagVO` (`uuid`, `resourceUuid`, `resourceType`, `inherent`, `type`, `tag`, `createDate`, `lastOpDate`)
+                VALUES (autoReleaseTagUuid, vmInstanceUuid, 'VmInstanceVO', 0, 'System', 'autoReleaseSpecReleatedPhysicalPciDevice', NOW(), NOW());
+
+            -- delete legacy pciSpecUuid tag
             DELETE FROM `zstack`.`SystemTagVO` WHERE `uuid` = tagUuid;
         END LOOP;
         CLOSE cur;
@@ -156,9 +163,22 @@ CREATE PROCEDURE handleLegacyPciSpecUuidTags()
     END $$
 DELIMITER ;
 
+SET FOREIGN_KEY_CHECKS = 0;
 call handleLegacyPciSpecUuidTags();
+SET FOREIGN_KEY_CHECKS = 1;
 DROP PROCEDURE IF EXISTS handleLegacyPciSpecUuidTags;
 DELETE FROM `zstack`.`SystemTagVO` WHERE `resourceType` = 'InstanceOfferingVO' AND `tag` LIKE 'pciSpecUuid::%';
+-- ---------------------------------
+--  END OF PCI DEVICE VIRTUALIZATION
+-- ---------------------------------
+
+CREATE TABLE IF NOT EXISTS `BillingResourceLabelVO` (
+  `resourceUuid` varchar(32) NOT NULL,
+  `labelKey` varchar(255) DEFAULT NULL,
+  `labelValue` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`resourceUuid`, `labelKey`),
+  KEY `resourceUuid` (`resourceUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE VmCPUBillingVO ADD COLUMN cpuNum int(10) unsigned NOT NULL;
 ALTER TABLE VmMemoryBillingVO ADD COLUMN memorySize bigint(20) unsigned NOT NULL;
