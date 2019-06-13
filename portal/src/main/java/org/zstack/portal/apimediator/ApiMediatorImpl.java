@@ -142,7 +142,7 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
 
     @Transactional(readOnly = true)
     private void handle(APIGetVersionMsg msg) {
-        String sql = "select v.version from schema_version v order by version_rank desc";
+        String sql = "select v.version from schema_version v order by installed_rank desc";
         Query q = dbf.getEntityManager().createNativeQuery(sql);
         q.setMaxResults(1);
         String version = (String) q.getSingleResult();
