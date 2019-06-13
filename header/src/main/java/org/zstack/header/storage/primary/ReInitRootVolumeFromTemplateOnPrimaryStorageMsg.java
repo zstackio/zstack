@@ -6,6 +6,7 @@ import org.zstack.header.volume.VolumeInventory;
 
 public class ReInitRootVolumeFromTemplateOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private VolumeInventory volume;
+    private long originSize;
 
     @Override
     public String getPrimaryStorageUuid() {
@@ -18,5 +19,13 @@ public class ReInitRootVolumeFromTemplateOnPrimaryStorageMsg extends NeedReplyMe
 
     public void setVolume(VolumeInventory volume) {
         this.volume = volume;
+    }
+
+    public long getOriginSize() {
+        return originSize;
+    }
+
+    public void setOriginSize(long originSize) {
+        this.originSize = originSize;
     }
 }
