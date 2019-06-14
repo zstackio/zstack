@@ -7,6 +7,8 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotStatus
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_
 import org.zstack.header.volume.VolumeType
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -59,10 +61,12 @@ class CephVolumeSnapshotCase extends SubCase {
             }
 
             testRollbackVolumeFromSnapshot()
+            assert trash.getTrashList(ps.uuid).isEmpty()
             testReImage()
+            assert trash.getTrashList(ps.uuid).size() == 1
             testRollbackVolumeFromRootSnapshotAfterReImage()
 
-            assert trash.getTrashList(ps.uuid).isEmpty()
+            assert trash.getTrashList(ps.uuid).size() == 0
 
             startVmInstance {
                 uuid = vm.uuid
@@ -156,6 +160,7 @@ class CephVolumeSnapshotCase extends SubCase {
     }
 
     void testReImage() {
+        VolumeVO originVol = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, vm.rootVolumeUuid).find()
         def vm1 = reimageVmInstance {
             vmInstanceUuid = vm.uuid
         } as VmInstanceInventory
@@ -168,13 +173,14 @@ class CephVolumeSnapshotCase extends SubCase {
 
         assert root1.uuid == root.uuid
         assert root1.installPath.contains("/reset-image-${root.uuid}")
+        assert trash.getTrashList(ps.uuid).values().iterator().next().installPath == originVol.installPath
 
         def snapshot = queryVolumeSnapshot {
             conditions = ["name~=reimage-vm-point-${vm1.uuid}-%"]
         }[0] as VolumeSnapshotInventory
 
         assert snapshot.volumeUuid == vm.rootVolumeUuid
-        assert snapshot.primaryStorageInstallPath == root.installPath  // save old install path
+        assert snapshot.primaryStorageInstallPath == root.installPath + "@" + snapshot.uuid // save old install path
         assert snapshot.treeUuid != rootSnapshot.treeUuid
     }
 

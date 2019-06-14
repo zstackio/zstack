@@ -1,6 +1,7 @@
 package org.zstack.test.integration.core.trash
 
 import org.zstack.core.trash.StorageTrashImpl
+import org.zstack.core.trash.TrashType
 import org.zstack.sdk.CleanUpTrashOnPrimaryStorageAction
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -51,9 +52,13 @@ class CephReImageTrashCase extends SubCase {
                 uuid = vm.uuid
             }
 
+            assert trashMrg.getTrashList(ps.uuid).isEmpty()
             vm = reimageVmInstance {
                 vmInstanceUuid = vm.uuid
             } as VmInstanceInventory
+            def afterReimageTrashes = trashMrg.getTrashList(ps.uuid)
+            assert afterReimageTrashes.size() == 1
+            assert afterReimageTrashes.values().iterator().next().trashType == TrashType.ReimageVolume.toString()
 
             snapshot2 = createVolumeSnapshot {
                 name = "snapshot2"
@@ -63,6 +68,11 @@ class CephReImageTrashCase extends SubCase {
             revertVolumeFromSnapshot {
                 uuid = snapshot1.uuid
             }
+
+            // revert snapshot will restore before trash if need, and create new trash
+            def afterRevertTrashes = trashMrg.getTrashList(ps.uuid)
+            assert afterRevertTrashes.size() == 1
+            assert afterRevertTrashes.values().iterator().next().trashType == TrashType.RevertVolume.toString()
 
             testCheckTrashBeforeDeleteSnapshot()
 

@@ -16,6 +16,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
@@ -98,6 +99,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     private AccountManager acntMgr;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private StorageTrash trash;
 
     public CephPrimaryStorageBase() {
     }
@@ -3754,6 +3757,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
+                        Long trashId = trash.getTrashId(self.getUuid(), volumePath);
+                        if (trashId != null) {
+                            trash.removeFromDb(trashId);
+                        }
+
                         reply.setNewVolumeInstallPath(volumePath);
                         bus.reply(msg, reply);
                     }
