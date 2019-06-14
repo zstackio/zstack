@@ -182,3 +182,5 @@ CREATE TABLE IF NOT EXISTS `BillingResourceLabelVO` (
 
 ALTER TABLE VmCPUBillingVO ADD COLUMN cpuNum int(10) unsigned NOT NULL;
 ALTER TABLE VmMemoryBillingVO ADD COLUMN memorySize bigint(20) unsigned NOT NULL;
+
+ALTER TABLE `BillingVO` ADD INDEX idxAccountUuidCreateDate (`accountUuid`, `createDate`);
