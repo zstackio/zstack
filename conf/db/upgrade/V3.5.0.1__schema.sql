@@ -128,8 +128,9 @@ CREATE PROCEDURE handleLegacyPciSpecUuidTags()
         DECLARE vmInstanceUuid VARCHAR(32);
         DECLARE pciSpecUuidTag VARCHAR(64);
         DECLARE pciSpecUuid VARCHAR(32);
+        DECLARE pciDeviceUuid VARCHAR(32);
         DECLARE autoReleaseTagUuid VARCHAR(32);
-        DEClARE cur CURSOR FOR SELECT `uuid`, `resourceUuid`, `tag` from `zstack`.`SystemTagVO`
+        DEClARE cur CURSOR FOR SELECT `uuid`, `resourceUuid`, `tag` FROM `zstack`.`SystemTagVO`
             WHERE `resourceType` = 'VmInstanceVO' AND `tag` LIKE 'pciSpecUuid::%';
         DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
         OPEN cur;
@@ -145,10 +146,9 @@ CREATE PROCEDURE handleLegacyPciSpecUuidTags()
                 VALUES (vmInstanceUuid, pciSpecUuid, 1, NOW(), NOW());
 
             -- create records in VmInstancePciSpecDeviceRefVO
+            SELECT pci.uuid INTO pciDeviceUuid FROM `zstack`.`PciDeviceVO` pci WHERE pci.vmInstanceUuid = vmInstanceUuid AND pci.pciSpecUuid = pciSpecUuid LIMIT 1;
             INSERT INTO `zstack`.`VmInstancePciSpecDeviceRefVO` (`vmInstanceUuid`, `pciSpecUuid`, `pciDeviceUuid`, `lastOpDate`, `createDate`)
-                VALUES (vmInstanceUuid, pciSpecUuid, (
-                    SELECT `uuid` FROM `zstack`.`PciDeviceVO` where `vmInstanceUuid` = vmInstanceUuid AND `pciSpecUuid` = pciSpecUuid LIMIT 1
-                ), NOW(), NOW());
+                VALUES (vmInstanceUuid, pciSpecUuid, pciDeviceUuid, NOW(), NOW());
 
             -- create autoReleaseSpecReleatedPhysicalPciDevice tag for vm
             SET autoReleaseTagUuid = REPLACE(UUID(), '-', '');
