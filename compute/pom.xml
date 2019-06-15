@@ -4,7 +4,7 @@
     <parent>
         <artifactId>zstack</artifactId>
         <groupId>org.zstack</groupId>
-        <version>3.5.0</version>
+        <version>3.6.0</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>compute</artifactId>
