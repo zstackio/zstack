@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmInstancePciSpecDeviceRefVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
     `vmInstanceUuid` VARCHAR(32) NOT NULL,
     `pciSpecUuid` VARCHAR(32) NOT NULL,
-    `pciDeviceUuid` VARCHAR(32) DEFAULT NULL,
+    `pciDeviceUuid` VARCHAR(32) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`id`),
@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmInstanceMdevSpecDeviceRefVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
     `vmInstanceUuid` VARCHAR(32) NOT NULL,
     `mdevSpecUuid` VARCHAR(32) NOT NULL,
-    `mdevDeviceUuid` VARCHAR(32) DEFAULT NULL,
+    `mdevDeviceUuid` VARCHAR(32) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`id`),
@@ -142,13 +142,17 @@ CREATE PROCEDURE handleLegacyPciSpecUuidTags()
 
             -- create records in VmInstancePciDeviceSpecRefVO
             SET pciSpecUuid = substring(pciSpecUuidTag, LENGTH('pciSpecUuid::') + 1);
-            INSERT INTO `zstack`.`VmInstancePciDeviceSpecRefVO` (`vmInstanceUuid`, `pciSpecUuid`, `pciDeviceNumber`, `lastOpDate`, `createDate`)
+            IF pciSpecUuid IS NOT NULL THEN
+                INSERT INTO `zstack`.`VmInstancePciDeviceSpecRefVO` (`vmInstanceUuid`, `pciSpecUuid`, `pciDeviceNumber`, `lastOpDate`, `createDate`)
                 VALUES (vmInstanceUuid, pciSpecUuid, 1, NOW(), NOW());
+            END IF;
 
             -- create records in VmInstancePciSpecDeviceRefVO
-            SELECT pci.uuid INTO pciDeviceUuid FROM `zstack`.`PciDeviceVO` pci WHERE pci.vmInstanceUuid = vmInstanceUuid AND pci.pciSpecUuid = pciSpecUuid LIMIT 1;
-            INSERT INTO `zstack`.`VmInstancePciSpecDeviceRefVO` (`vmInstanceUuid`, `pciSpecUuid`, `pciDeviceUuid`, `lastOpDate`, `createDate`)
+            SELECT pci.uuid INTO pciDeviceUuid FROM `zstack`.`PciDeviceVO` pci WHERE pci.vmInstanceUuid = vmInstanceUuid AND pci.type = 'GPU_Video_Controller' LIMIT 1;
+            IF pciDeviceUuid IS NOT NULL THEN
+                INSERT INTO `zstack`.`VmInstancePciSpecDeviceRefVO` (`vmInstanceUuid`, `pciSpecUuid`, `pciDeviceUuid`, `lastOpDate`, `createDate`)
                 VALUES (vmInstanceUuid, pciSpecUuid, pciDeviceUuid, NOW(), NOW());
+            END IF;
 
             -- create autoReleaseSpecReleatedPhysicalPciDevice tag for vm
             SET autoReleaseTagUuid = REPLACE(UUID(), '-', '');
