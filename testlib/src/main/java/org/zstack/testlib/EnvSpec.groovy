@@ -81,9 +81,12 @@ class EnvSpec implements Node, ApiHelper {
     private boolean hasCreated
     private ConcurrentHashMap<String, Closure> httpHandlers = [:]
     private ConcurrentHashMap<String, Closure> httpPostHandlers = [:]
+    private ConcurrentHashMap<String, Integer> httpHandlerCounters = [:]
+    private ConcurrentHashMap<String, Integer> httpPostHandlerCounters = [:]
     private ConcurrentHashMap<String, Closure> defaultHttpHandlers = [:]
     private ConcurrentHashMap<String, Closure> defaultHttpPostHandlers = [:]
     protected ConcurrentHashMap<Class, List<Tuple>> messageHandlers = [:]
+    protected ConcurrentHashMap<Class, Integer> messageHandlerCounters = [:]
     protected ConcurrentHashMap<Class, List<Closure>> notifiersOfReceivedMessages = [:]
     private ConcurrentHashMap<Class, List<Tuple>> defaultMessageHandlers = [:]
     private ConcurrentHashMap<String, List<Tuple>> httpConditionHandlers = [:]
@@ -219,16 +222,19 @@ class EnvSpec implements Node, ApiHelper {
 
     void cleanSimulatorHandlers() {
         httpHandlers.clear()
+        httpHandlerCounters.clear()
         httpHandlers.putAll(defaultHttpHandlers)
     }
 
     void cleanAfterSimulatorHandlers() {
         httpPostHandlers.clear()
+        httpPostHandlerCounters.clear()
         httpPostHandlers.putAll(defaultHttpPostHandlers)
     }
 
     void cleanMessageHandlers() {
         messageHandlers.clear()
+        messageHandlerCounters.clear()
         messageHandlers.putAll(defaultMessageHandlers)
     }
 
@@ -922,6 +928,11 @@ class EnvSpec implements Node, ApiHelper {
                 } else {
                     ret = postHandler(ret, entity, this)
                 }
+                if (httpPostHandlerCounters[url] == null) {
+                    httpPostHandlerCounters[url] = 1
+                } else {
+                    httpPostHandlerCounters[url] ++
+                }
             }
 
             if (ret == null) {
@@ -935,6 +946,12 @@ class EnvSpec implements Node, ApiHelper {
         } catch (Throwable t) {
             logger.warn("error happened when handling $url", t)
             rsp.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), t.message)
+        } finally {
+            if (httpHandlerCounters[url] == null) {
+                httpHandlerCounters[url] = 1
+            } else {
+                httpHandlerCounters[url] ++
+            }
         }
     }
 
@@ -985,5 +1002,50 @@ class EnvSpec implements Node, ApiHelper {
         c.delegate = this
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c()
+    }
+
+    int getAfterSimulatorSize(String path) {
+        return httpPostHandlerCounters[path] == null ? 0 : httpPostHandlerCounters[path].intValue()
+    }
+
+    int getSimulatorSize(String path) {
+        return httpHandlerCounters[path] == null ? 0 : httpHandlerCounters[path].intValue()
+    }
+
+    int getMessageSize(Class clz) {
+        return messageHandlerCounters[clz] == null ? 0 : messageHandlerCounters[clz].intValue()
+    }
+
+    boolean verifyAfterSimulator(String path, int times) {
+        return httpPostHandlerCounters[path] == null ? times == 0 : httpPostHandlerCounters[path].intValue() == times
+    }
+
+    boolean verifySimulator(String path, int times) {
+        return httpHandlerCounters[path] == null ? times == 0 : httpHandlerCounters[path].intValue() == times
+    }
+
+    boolean verifyMessage(Class clz, int times) {
+        return messageHandlerCounters[clz] == null ? times == 0 : messageHandlerCounters[clz].intValue() == times
+    }
+
+    boolean verifyAfterSimulator(String path) {
+        return httpPostHandlerCounters[path] != null && httpPostHandlerCounters[path] > 0
+    }
+
+    boolean verifySimulator(String path) {
+        return httpHandlerCounters[path] != null && httpHandlerCounters[path] > 0
+    }
+
+    boolean verifyMessage(Class clz) {
+        return messageHandlerCounters[clz] != null && messageHandlerCounters[clz] > 0
+    }
+
+    void resetAllSimulatorSize() {
+        httpPostHandlerCounters.clear()
+        httpHandlerCounters.clear()
+    }
+
+    void resetAllMessageSize() {
+        messageHandlerCounters.clear()
     }
 }

@@ -279,6 +279,12 @@ abstract class Test implements ApiHelper, Retry {
                     if (!handled) {
                         bus.replyErrorByMessageType(msg, "a test case installed message handler for this message, however," +
                                 " its condition closure decides not to handle this message. Check your test case")
+                    } else {
+                        if (currentEnvSpec.messageHandlerCounters[msg.getClass()] == null) {
+                            currentEnvSpec.messageHandlerCounters[msg.getClass()] = 1
+                        } else {
+                            currentEnvSpec.messageHandlerCounters[msg.getClass()] ++
+                        }
                     }
                 } catch (Exception ex) {
                     bus.replyErrorByMessageType(msg, ex)
