@@ -188,3 +188,37 @@ ALTER TABLE VmCPUBillingVO ADD COLUMN cpuNum int(10) unsigned NOT NULL;
 ALTER TABLE VmMemoryBillingVO ADD COLUMN memorySize bigint(20) unsigned NOT NULL;
 
 ALTER TABLE `BillingVO` ADD INDEX idxAccountUuidCreateDate (`accountUuid`, `createDate`);
+
+DELIMITER $$
+CREATE PROCEDURE modifyVipNetworkServicesRefVO()
+    modifyVipNetworkServicesRefVO:BEGIN
+        DECLARE curUuid VARCHAR(32);
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE snatUuidExists INT DEFAULT 0;
+        DEClARE cur CURSOR FOR SELECT r.uuid FROM VipNetworkServicesRefVO r WHERE r.serviceType='SNAT';
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        SELECT COUNT(uuid) INTO snatUuidExists FROM VipNetworkServicesRefVO r where r.serviceType='SNAT';
+
+        IF (snatUuidExists = 0) THEN
+            LEAVE modifyVipNetworkServicesRefVO;
+        END IF;
+
+        OPEN cur;
+        delete_loop: LOOP
+            FETCH cur INTO curUuid;
+            IF done THEN
+                LEAVE delete_loop;
+            END IF;
+            DELETE FROM VipNetworkServicesRefVO WHERE uuid = curUuid;
+        END LOOP;
+        CLOSE cur;
+
+        INSERT INTO VipNetworkServicesRefVO (`uuid`, `serviceType`, `vipUuid`, `lastOpDate`, `createDate`)
+        SELECT vr.uuid, "SNAT", vr.uuid, current_timestamp(), current_timestamp() FROM VirtualRouterVipVO vr, VipVO vip, VmInstanceVO vm, VmNicVO n WHERE vr.uuid = vip.uuid
+        AND vm.uuid=vr.virtualRouterVmUuid AND n.vmInstanceUuid=vm.uuid AND n.l3NetworkUuid=vip.l3NetworkUuid AND n.ip=vip.ip;
+
+    END $$
+DELIMITER ;
+
+call modifyVipNetworkServicesRefVO();
+DROP PROCEDURE IF EXISTS modifyVipNetworkServicesRefVO;
