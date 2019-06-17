@@ -4,7 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.ansible.*;
+import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
@@ -347,10 +349,19 @@ public class SftpBackupStorage extends BackupStorageBase {
         repoChecker.setPassword(getSelf().getPassword());
         repoChecker.setSshPort(getSelf().getSshPort());
 
+        CallBackNetworkChecker callbackChecker = new CallBackNetworkChecker();
+        callbackChecker.setTargetIp(getSelf().getHostname());
+        callbackChecker.setUsername(getSelf().getUsername());
+        callbackChecker.setPassword(getSelf().getPassword());
+        callbackChecker.setPort(getSelf().getSshPort());
+        callbackChecker.setCallbackIp(Platform.getManagementServerIp());
+        callbackChecker.setCallBackPort(CloudBusGlobalProperty.HTTP_PORT);
+
         AnsibleRunner runner = new AnsibleRunner();
         runner.installChecker(checker);
         runner.installChecker(chronyChecker);
         runner.installChecker(repoChecker);
+        runner.installChecker(callbackChecker);
         runner.setPassword(getSelf().getPassword());
         runner.setUsername(getSelf().getUsername());
         runner.setTargetIp(getSelf().getHostname());

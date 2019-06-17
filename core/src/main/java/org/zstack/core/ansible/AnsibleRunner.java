@@ -12,6 +12,7 @@ import org.zstack.core.defer.Deferred;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
@@ -291,6 +292,11 @@ public class AnsibleRunner {
 
     private boolean runChecker() {
         for (AnsibleChecker checker : checkers) {
+            ErrorCode err = checker.stopAnsible();
+            if (err != null) {
+                throw new OperationFailureException(err);
+            }
+
             if (checker.needDeploy()) {
                 logger.debug(String.format("checker[%s] reports deploy is needed", checker.getClass()));
                 return true;

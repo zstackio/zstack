@@ -19,6 +19,7 @@ import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.*;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.Q;
@@ -2669,10 +2670,19 @@ public class KVMHost extends HostBase implements Host {
                             repoChecker.setPassword(getSelf().getPassword());
                             repoChecker.setSshPort(getSelf().getPort());
 
+                            CallBackNetworkChecker callbackChecker = new CallBackNetworkChecker();
+                            callbackChecker.setTargetIp(getSelf().getManagementIp());
+                            callbackChecker.setUsername(getSelf().getUsername());
+                            callbackChecker.setPassword(getSelf().getPassword());
+                            callbackChecker.setPort(getSelf().getPort());
+                            callbackChecker.setCallbackIp(Platform.getManagementServerIp());
+                            callbackChecker.setCallBackPort(CloudBusGlobalProperty.HTTP_PORT);
+
                             AnsibleRunner runner = new AnsibleRunner();
                             runner.installChecker(checker);
                             runner.installChecker(chronyChecker);
                             runner.installChecker(repoChecker);
+                            runner.installChecker(callbackChecker);
                             runner.setAgentPort(KVMGlobalProperty.AGENT_PORT);
                             runner.setTargetIp(getSelf().getManagementIp());
                             runner.setPlayBookName(KVMConstant.ANSIBLE_PLAYBOOK_NAME);
