@@ -118,7 +118,7 @@ class ReverCephVolumeWithoutSnapshotCase extends SubCase {
                 trashed = true
             }
         }
-        assert trashed
+        assert !trashed // installPath not changed, so no trash
         assert Q.New(VolumeSnapshotVO.class).count() == count
     }
 
