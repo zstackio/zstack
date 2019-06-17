@@ -43,7 +43,10 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.AllocateBackupStorageMsg;
+import org.zstack.header.storage.backup.BackupStorageConstant;
+import org.zstack.header.storage.backup.ReturnBackupStorageMsg;
+import org.zstack.header.storage.backup.StorageTrashSpec;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint.ParamIn;
@@ -57,6 +60,7 @@ import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.utils.CollectionUtils;
@@ -70,8 +74,8 @@ import javax.persistence.Query;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.operr;
 import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.e;
 
@@ -1456,6 +1460,15 @@ public class VolumeSnapshotTreeBase {
 
                 flow(new Flow() {
                     String __name__ = "move old install path to trash if no snapshots";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        logger.debug(String.format("volume[uuid:%s] has been used new install path[%s], " +
+                                "check old install path[%s] is still in used or not.",
+                                volume.getUuid(), newVolumeInstallPath, oldVolumeInstallPath));
+                        return oldVolumeInstallPath.equals(newVolumeInstallPath);
+                    }
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         if (!VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {
