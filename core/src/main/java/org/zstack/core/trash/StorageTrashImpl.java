@@ -41,6 +41,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by mingjian.deng on 2018/12/13.
