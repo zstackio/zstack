@@ -2,6 +2,7 @@ package org.zstack.utils.test;
 
 import org.junit.Test;
 import org.zstack.utils.IpRangeSet;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.util.Set;
 
@@ -27,5 +28,9 @@ public class TestIpRangeSet {
         assert ips.size() == 2;
         assert ips.contains("0.0.0.0");
         assert ips.contains("255.255.255.255");
+
+        IpRangeSet set = IpRangeSet.generateIpRangeSet("192.168.1.1/32,^192.168.1.1/32,192.168.1.2/32");
+        assert set.size() == 1;
+        assert set.contains(NetworkUtils.ipv4StringToLong("192.168.1.2"));
     }
 }
