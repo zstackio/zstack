@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.*;
-import org.zstack.appliancevm.ApplianceVmCanonicalEvents.ApplianceVmStatusChangedData;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
@@ -174,6 +173,8 @@ public class VirtualRouter extends ApplianceVmBase {
                             boolean connected = self.getUuid().equals(ret.getUuid());
                             if (!connected) {
                                 logger.warn(String.format("a signature lost on the virtual router vm[uuid:%s] changed, it's probably caused by the agent restart. We will issue a reconnect soon", self.getUuid()));
+                            } else {
+                                connected = ApplianceVmStatus.Connected == getSelf().getStatus();
                             }
                             reply.setConnected(connected);
                         }
