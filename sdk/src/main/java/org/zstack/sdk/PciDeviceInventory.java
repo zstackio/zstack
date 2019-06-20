@@ -136,6 +136,14 @@ public class PciDeviceInventory  {
         return this.pciDeviceAddress;
     }
 
+    public java.lang.String iommuGroup;
+    public void setIommuGroup(java.lang.String iommuGroup) {
+        this.iommuGroup = iommuGroup;
+    }
+    public java.lang.String getIommuGroup() {
+        return this.iommuGroup;
+    }
+
     public PciDeviceMetaData metaData;
     public void setMetaData(PciDeviceMetaData metaData) {
         this.metaData = metaData;
