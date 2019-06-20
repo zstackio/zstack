@@ -93,3 +93,5 @@ CREATE TABLE  `zstack`.`HistoricalPasswordVO` (
     `createDate` timestamp,
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`PciDeviceVO` ADD COLUMN `iommuGroup` VARCHAR(255) DEFAULT NULL;
