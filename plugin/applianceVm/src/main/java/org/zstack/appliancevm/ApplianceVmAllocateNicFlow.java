@@ -85,7 +85,11 @@ public class ApplianceVmAllocateNicFlow implements Flow {
             inv.setIp(nicSpec.getIp());
             inv.setNetmask(nicSpec.getNetmask());
             inv.setUsedIpUuid(null);
-            inv.setIpVersion(IPv6Constants.IPv4); /* TODO, shixin fix when ipv6 router is done*/
+            if (NetworkUtils.isIpv4Address(nicSpec.getIp())) {
+                inv.setIpVersion(IPv6Constants.IPv4);
+            } else {
+                inv.setIpVersion(IPv6Constants.IPv6);
+            }
             if (nicSpec.getMac() != null) {
                 inv.setMac(nicSpec.getMac());
             }

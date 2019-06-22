@@ -62,5 +62,7 @@ public interface VirtualRouterConstant {
         VIPS,
         PUB_VIP_UUID,
         VR_NIC,
+	SERVICE_PROVIDER_TYPE,
+	BACKEND,
     }
 }

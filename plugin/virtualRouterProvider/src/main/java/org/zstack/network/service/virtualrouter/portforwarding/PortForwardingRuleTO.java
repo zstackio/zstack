@@ -10,6 +10,7 @@ public class PortForwardingRuleTO implements Serializable {
     private int privatePortEnd;
     private String protocolType;
     private String vipIp;
+    private String publicMac;
     private String privateIp;
     private String privateMac;
     private String allowedCidr;
@@ -84,5 +85,13 @@ public class PortForwardingRuleTO implements Serializable {
     }
     public void setAllowedCidr(String allowedCidr) {
         this.allowedCidr = allowedCidr;
+    }
+
+    public String getPublicMac() {
+        return publicMac;
+    }
+
+    public void setPublicMac(String publicMac) {
+        this.publicMac = publicMac;
     }
 }

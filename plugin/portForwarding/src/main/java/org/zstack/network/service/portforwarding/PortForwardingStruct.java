@@ -15,6 +15,9 @@ public class PortForwardingStruct {
     private boolean snatInboundTraffic;
     private boolean releaseVmNicInfoWhenDetaching;
     private boolean releaseVip;
+    /* when port PortForwarding is applied to router, it will be applied to peer router also.
+    * this flag will indicate that peer router should not apply to original router again */
+    private boolean applyToHaRouter=true;
 
     public boolean isReleaseVip() {
         return releaseVip;
@@ -86,6 +89,14 @@ public class PortForwardingStruct {
 
     public void setGuestMac(String guestMac) {
         this.guestMac = guestMac;
+    }
+
+    public boolean isApplyToHaRouter() {
+        return applyToHaRouter;
+    }
+
+    public void setApplyToHaRouter(boolean applyToHaRouter) {
+        this.applyToHaRouter = applyToHaRouter;
     }
 
     @Override

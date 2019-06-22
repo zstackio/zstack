@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.*;
-import org.zstack.appliancevm.ApplianceVmCanonicalEvents.ApplianceVmStatusChangedData;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
@@ -37,6 +36,7 @@ import org.zstack.header.vm.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
+import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 
 import java.util.*;
 
@@ -62,6 +62,8 @@ public class VirtualRouter extends ApplianceVmBase {
     protected ErrorFacade errf;
     @Autowired
     protected ApiTimeoutManager apiTimeoutManager;
+    @Autowired
+    protected VirtualRouterHaBackend haBackend;
 
     protected VirtualRouterVmInventory vr;
 
@@ -176,6 +178,7 @@ public class VirtualRouter extends ApplianceVmBase {
                                 logger.warn(String.format("a signature lost on the virtual router vm[uuid:%s] changed, it's probably caused by the agent restart. We will issue a reconnect soon", self.getUuid()));
                             }
                             reply.setConnected(connected);
+                            reply.setHaStatus(ret.getHaStatus());
                         }
                         bus.reply(msg, reply);
                         chain.next();
@@ -430,6 +433,11 @@ public class VirtualRouter extends ApplianceVmBase {
                     info.setVni(ext.getL2NetworkVni(l2NetworkVO.getUuid()));
                 }
             }
+            List<String> secondaryIps = haBackend.getSecondaryIpsOfVirtualRouterHaGroup(
+                    nicInventory.getVmInstanceUuid(), nicInventory.getL3NetworkUuid());
+            if (!secondaryIps.isEmpty()) {
+                info.setSecondaryIps(secondaryIps);
+            }
             cmd.setNics(Arrays.asList(info));
 
             VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
@@ -566,6 +574,7 @@ public class VirtualRouter extends ApplianceVmBase {
                 chain.setData(data);
                 chain.insert(new virtualRouterAfterAttachNicFlow());
                 chain.then(new virtualRouterApplyServicesAfterAttachNicFlow());
+                chain.then(haBackend.getAttachL3NetworkFlow());
                 chain.done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
@@ -588,6 +597,17 @@ public class VirtualRouter extends ApplianceVmBase {
         });
     }
 
+    @Override
+    protected void afterDetachNic(VmNicInventory nicInventory, boolean isRollback, Completion completion) {
+        if (isRollback) {
+            completion.success();
+            return;
+        }
+
+        haBackend.detachL3NetworkFromVirtualRouterHaGroup(nicInventory.getVmInstanceUuid(),
+                nicInventory.getL3NetworkUuid(), isRollback, completion);
+    }
+
     private class virtualRouterbeforeDetachNic extends NoRollbackFlow {
         String __name__ = "virtualRouter-beforeDetachNic";
         @Override
@@ -600,6 +620,13 @@ public class VirtualRouter extends ApplianceVmBase {
             info.setGateway(nicInventory.getGateway());
             info.setMac(nicInventory.getMac());
             info.setNetmask(nicInventory.getNetmask());
+            cmd.setNics(Arrays.asList(info));
+
+            List<String> secondaryIps = haBackend.getSecondaryIpsOfVirtualRouterHaGroup(
+                    nicInventory.getVmInstanceUuid(), nicInventory.getL3NetworkUuid());
+            if (!secondaryIps.isEmpty()) {
+                info.setSecondaryIps(secondaryIps);
+            }
             cmd.setNics(Arrays.asList(info));
 
             VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();

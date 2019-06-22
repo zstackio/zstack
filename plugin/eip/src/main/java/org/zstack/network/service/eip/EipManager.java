@@ -9,7 +9,7 @@ import org.zstack.network.service.vip.VipInventory;
 /**
  */
 public interface EipManager extends Service {
-    EipBackend getEipBackend(String providerType);
+    EipBackend getEipBackend(String providerType, String l3Uuid);
 
     void detachEip(EipStruct struct, String providerType, Completion completion);
 

@@ -21,6 +21,7 @@ public class ApplianceVmInventory extends VmInstanceInventory {
     private String defaultRouteL3NetworkUuid;
     private String status;
     private Integer agentPort;
+    private String haStatus;
 
     protected ApplianceVmInventory(ApplianceVmVO vo) {
         super(vo);
@@ -29,6 +30,7 @@ public class ApplianceVmInventory extends VmInstanceInventory {
         this.setDefaultRouteL3NetworkUuid(vo.getDefaultRouteL3NetworkUuid());
         this.setStatus(vo.getStatus().toString());
         this.setAgentPort(vo.getAgentPort());
+        this.setHaStatus(vo.getHaStatus().toString());
     }
 
     public ApplianceVmInventory() {
@@ -94,5 +96,17 @@ public class ApplianceVmInventory extends VmInstanceInventory {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getHaStatus() {
+        return haStatus;
+    }
+
+    public void setHaStatus(String haStatus) {
+        this.haStatus = haStatus;
+    }
+
+    public boolean isHaEnabled() {
+        return !ApplianceVmHaStatus.NoHa.toString().equals(haStatus);
     }
 }

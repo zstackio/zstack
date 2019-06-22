@@ -35,7 +35,7 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
     @Autowired
     private CloudBus bus;
 
-    private final Map<String, CallbackWrapper> global = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, CallbackWrapper> global = new ConcurrentHashMap<>();
     private final Map<String, CallbackWrapper> local =  new ConcurrentHashMap<>();
 
     private EventSubscriberReceipt unsubscriber;

@@ -1,6 +1,7 @@
 package org.zstack.network.service.lb;
 
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.vip.VipInventory;
 
@@ -27,4 +28,11 @@ public interface LoadBalancerBackend {
     void refresh(LoadBalancerStruct struct, Completion completion);
 
     String getNetworkServiceProviderType();
+
+    List<String> getAllLbUuidsOnVr(String vrUuid);
+
+    void attachLoadBalancerToVirtualRouter(List<String> lbUuids, String vrUuid);
+    void detachLoadBalancerFromVirtualRouter(List<String> lbUuids, String vrUuid);
+    void syncOnStart(String vrUuid, List<LoadBalancerStruct> structs, final Completion completion);
+    void refresh(String vrUuid, LoadBalancerStruct struct, final Completion completion);
 }

@@ -53,6 +53,8 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     protected ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
+    @Autowired
+    private VipManager vipMgr;
 
     private String getOwnerMac(VirtualRouterVmInventory vr, VipInventory vip) {
         for (VmNicInventory nic : vr.getVmNics()) {
@@ -293,6 +295,28 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         });
     }
 
+    protected List<String> getAllVipsOnThisRouter(String vrUuid) {
+        return Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.uuid)
+                .eq(VirtualRouterVipVO_.virtualRouterVmUuid, vrUuid).listValues();
+    }
+
+    protected void attachVipToVirtualRouter(String vrUuid, List<String> vipUuids) {
+        List<VirtualRouterVipVO> vrvips = new ArrayList<>();
+        for (String uuid : vipUuids) {
+            VirtualRouterVipVO vo = dbf.findByUuid(uuid, VirtualRouterVipVO.class);
+            if (vo == null) {
+                vo = new VirtualRouterVipVO();
+                vo.setUuid(uuid);
+                vo.setVirtualRouterVmUuid(vrUuid);
+                vrvips.add(vo);
+            }
+        }
+
+        if (!vrvips.isEmpty()) {
+            dbf.persistCollection(vrvips);
+        }
+    }
+
     @Override
     public void afterAttachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
         completion.done();
@@ -316,6 +340,10 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
             completion.success();
             return;
         }
+
+        VipVO vipvo = dbf.findByUuid(vips.get(0).getVipUuid(), VipVO.class);
+        VipFactory f = vipMgr.getVipFactory(vipvo.getServiceProvider());
+        VipBaseBackend backend = f.getVip(nic.getVmInstanceUuid(), vipvo);
 
         CreateVipCmd cmd = new CreateVipCmd();
         cmd.setVips(vips);
@@ -342,6 +370,8 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                             nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), ret.getError());
                     completion.fail(err);
                 } else {
+                    List<String> vipUuids = vips.stream().map(v -> v.getVipUuid()).distinct().collect(Collectors.toList());
+                    backend.attachVipToVirtualRouter(nic.getVmInstanceUuid(), vipUuids);
                     completion.success();
                 }
             }
@@ -363,7 +393,6 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find());
 
         List<VipTO> vipTOS = new ArrayList<>();
-        List<VirtualRouterVipVO> refs = new ArrayList<>();
         for (VipVO vip : vips) {
             if (vipTOS.stream().anyMatch(v -> v.getIp().equals(vip.getIp()))) {
                 logger.warn(String.format(
@@ -386,18 +415,6 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                     .findFirst().get().getMac());
             to.setVipUuid(vip.getUuid());
             vipTOS.add(to);
-
-            if (!Q.New(VirtualRouterVipVO.class)
-                    .eq(VirtualRouterVipVO_.uuid, vip.getUuid())
-                    .isExists()) {
-                VirtualRouterVipVO vo = new VirtualRouterVipVO();
-                vo.setUuid(vip.getUuid());
-                vo.setVirtualRouterVmUuid(nic.getVmInstanceUuid());
-                refs.add(vo);
-            }
-        }
-        if (!refs.isEmpty()) {
-            dbf.persistCollection(refs);
         }
 
         return vipTOS;
