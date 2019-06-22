@@ -11,9 +11,11 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.network.l3.IpRangeAO;
 import org.zstack.header.network.l3.IpRangeVO;
 import org.zstack.header.network.l3.IpRangeVO_;
+import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
 import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 
 import java.util.ArrayList;
@@ -81,5 +83,37 @@ public class VirtualRouterHaBackend {
         }
 
         exps.get(0).prepareVirtualRouterHaConfig(vrUuid, completion);
+    }
+
+    public void submitVirutalRouterHaTask(VirtualRouterHaCallbackInterface callback, Map<String, Object> data, Completion completion) {
+        VirtualRouterVmInventory vrInv = (VirtualRouterVmInventory)data.get(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString());
+        if (!vrInv.isHaEnabled()) {
+            completion.success();
+            return;
+        }
+
+        List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
+        if (exps.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        String peerUuid = exps.get(0).getPeerUuid(vrInv.getUuid());
+        if (peerUuid == null) {
+            completion.success();
+            return;
+        }
+
+        data.put(VirtualRouterHaCallbackInterface.Params.PeerRouterUuid.toString(), peerUuid);
+        exps.get(0).submitTaskToHaRouter(callback, data, completion);
+    }
+
+    public List<String> getAllVipsOnThisRouter(String vrUuid) {
+        List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
+        if (exps.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return exps.get(0).getAllVipsOnThisRouter(vrUuid);
     }
 }
