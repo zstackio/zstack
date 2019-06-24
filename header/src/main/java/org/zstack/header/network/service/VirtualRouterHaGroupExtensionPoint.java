@@ -30,4 +30,9 @@ public interface VirtualRouterHaGroupExtensionPoint {
     void submitTaskToHaRouter(VirtualRouterHaCallbackInterface callback, Map<String, Object> data, Completion completion);
 
     List<String> getAllVipsOnThisRouter(String vrUuid);
+
+    void attachNetworkServiceToHaRouter(String type, List<String> uuids, String vrUuid);
+    void detachNetworkServiceFromHaRouter(String type, List<String> uuids, String vrUuid);
+    List<String> getHaVrUuidsFromNetworkService(String type, String Uuid);
+    List<String> getNetworkServicesFromHaVrUuid(String type, String vrUuid);
 }

@@ -11,10 +11,12 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.network.l3.IpRangeAO;
 import org.zstack.header.network.l3.IpRangeVO;
 import org.zstack.header.network.l3.IpRangeVO_;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
 import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 
@@ -115,5 +117,24 @@ public class VirtualRouterHaBackend {
         }
 
         return exps.get(0).getAllVipsOnThisRouter(vrUuid);
+    }
+
+    public boolean isSnatDisabledOnRouter(String vrUuid) {
+        VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+        if (!vrVO.isHaEnabled()) {
+            return VirtualRouterSystemTags.VR_DISABLE_NETWORK_SERVICE_SNAT.hasTag(vrUuid);
+        } else {
+            List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
+            if (exps.isEmpty()) {
+                return false;
+            }
+
+            List<String> state = exps.get(0).getNetworkServicesFromHaVrUuid(NetworkServiceType.SNAT.toString(),  vrUuid);
+            if (state == null || state.isEmpty()) {
+                return false;
+            } else {
+                return true;
+            }
+        }
     }
 }

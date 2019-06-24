@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RemoeVpcHaGroupMonitorIpsAction extends AbstractAction {
+public class RemoveVpcHaGroupMonitorIpsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 

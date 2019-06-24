@@ -26,6 +26,7 @@ import org.zstack.network.service.vip.Vip;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SNATInfo;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SyncSNATRsp;
+import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -52,6 +53,8 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
     private NetworkServiceManager nwServiceMgr;
     @Autowired
     protected PluginRegistry pluginRgty;
+    @Autowired
+    protected VirtualRouterHaBackend haBackend;
 
     @Override
     public void run(final FlowTrigger chain, Map data) {
@@ -71,7 +74,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
         /*
         * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
         * */
-        if ( VirtualRouterSystemTags.VR_DISABLE_NETWORK_SERVICE_SNAT.hasTag(vr.getUuid())) {
+        if (haBackend.isSnatDisabledOnRouter(vr.getUuid())) {
             chain.next();
             return;
         }

@@ -27,6 +27,7 @@ import org.zstack.network.service.vip.VipVO_;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.RemoveSNATRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SetSNATRsp;
+import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -65,6 +66,8 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
     protected ThreadFacade thdf;
     @Autowired
     protected PluginRegistry pluginRgty;
+    @Autowired
+    protected VirtualRouterHaBackend haBackend;
 
     @Override
     public NetworkServiceProviderType getProviderType() {
@@ -98,7 +101,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 /*
                  * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
                  */
-                if ( VirtualRouterSystemTags.VR_DISABLE_NETWORK_SERVICE_SNAT.hasTag(vr.getUuid())) {
+                if (haBackend.isSnatDisabledOnRouter(vr.getUuid())) {
                     completion.success();
                     return;
                 }
@@ -199,7 +202,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         /*
          * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
          * */
-        if ( VirtualRouterSystemTags.VR_DISABLE_NETWORK_SERVICE_SNAT.hasTag(vr.getUuid())) {
+        if ( haBackend.isSnatDisabledOnRouter(vr.getUuid())) {
             releaseSnat(it, vmInstanceInventory, completion);
             return;
         }
@@ -344,7 +347,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         /*
          * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
          * */
-        if ( VirtualRouterSystemTags.VR_DISABLE_NETWORK_SERVICE_SNAT.hasTag(vrVO.getUuid())) {
+        if ( haBackend.isSnatDisabledOnRouter(vrVO.getUuid())) {
             completion.success();
             return;
         }

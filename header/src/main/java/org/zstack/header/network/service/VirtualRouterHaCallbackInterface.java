@@ -10,6 +10,7 @@ public interface VirtualRouterHaCallbackInterface {
         OriginRouter,
         PeerRouterUuid,
         Struct,
+        Struct1,
     }
 
     void callBack(String vrUuid, Map<String, Object> data, Completion completion);
