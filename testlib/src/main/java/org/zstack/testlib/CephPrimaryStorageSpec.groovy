@@ -13,6 +13,8 @@ import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO_
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
+import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 /**
@@ -73,24 +75,27 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 rsp.userKey = Platform.uuid
                 rsp.totalCapacity = cspec.totalCapacity
                 rsp.availableCapacity = cspec.availableCapacity
+                long rootSize = cspec.availableCapacity / 3
+                long dataSize = cspec.availableCapacity / 3
+                long cacheSize = cspec.totalCapacity - rootSize - dataSize
                 List<CephPoolCapacity> poolCapacities = [
                         new CephPoolCapacity(
                                 name: cspec.rootVolumePoolName,
-                                availableCapacity: cspec.availableCapacity,
+                                availableCapacity: rootSize,
                                 usedCapacity: cspec.totalCapacity - cspec.availableCapacity,
-                                totalCapacity: cspec.totalCapacity
+                                totalCapacity: rootSize
                         ),
                         new CephPoolCapacity(
                                 name: cspec.dataVolumePoolName,
-                                availableCapacity: 0,
+                                availableCapacity: dataSize,
                                 usedCapacity: 0,
-                                totalCapacity: 0
+                                totalCapacity: dataSize
                         ),
                         new CephPoolCapacity(
                                 name: cspec.imageCachePoolName,
-                                availableCapacity: 0,
+                                availableCapacity: cacheSize,
                                 usedCapacity: 0,
-                                totalCapacity: 0
+                                totalCapacity: cacheSize
                         ),
                 ]
                 rsp.poolCapacities = poolCapacities
@@ -193,10 +198,38 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new CephPrimaryStorageBase.AgentResponse()
             }
 
+            def decodeUnicode = { String unicode ->
+                String str = unicode.split(" ")[0]
+                str = str.replace("\\", "")
+                String[] arr = str.split("u")
+                String text = ""
+                for(int i = 1; i < arr.length; i++){
+                    int hexVal = Integer.parseInt(arr[i], 16)
+                    text += (char) hexVal
+                }
 
-            simulator(CephPrimaryStorageBase.ADD_POOL_PATH) {
-                return new CephPrimaryStorageBase.AddPoolRsp()
+                return text
             }
+
+            simulator(CephPrimaryStorageBase.ADD_POOL_PATH) { HttpEntity<String> entity ->
+                def cmd = JSONObjectUtil.toObject(entity.body, CephPrimaryStorageBase.AddPoolCmd.class)
+
+                CephPrimaryStorageBase.AddPoolRsp rsp = new CephPrimaryStorageBase.AddPoolRsp()
+                rsp.setAvailableCapacity(SizeUnit.GIGABYTE.toByte(100))
+                rsp.setTotalCapacity(SizeUnit.GIGABYTE.toByte(100))
+                List<CephPoolCapacity> poolCapacities = [
+                        new CephPoolCapacity(
+                                name: decodeUnicode(cmd.poolName),
+                                availableCapacity: SizeUnit.GIGABYTE.toByte(100),
+                                usedCapacity: 0,
+                                totalCapacity: SizeUnit.GIGABYTE.toByte(100),
+                        )
+                ]
+                rsp.setPoolCapacities(poolCapacities)
+
+                return rsp
+            }
+
             simulator(CephPrimaryStorageBase.CHECK_BITS_PATH) {
                 CephPrimaryStorageBase.CheckIsBitsExistingRsp rsp = new CephPrimaryStorageBase.CheckIsBitsExistingRsp()
                 rsp.setExisting(true)
