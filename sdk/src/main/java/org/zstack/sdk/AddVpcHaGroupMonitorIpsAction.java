@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteVpcHaGroupAction extends AbstractAction {
+public class AddVpcHaGroupMonitorIpsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteVpcHaGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteVpcHaGroupResult value;
+        public org.zstack.sdk.AddVpcHaGroupMonitorIpsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,10 @@ public class DeleteVpcHaGroupAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String haGroupUuid;
 
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List monitorIps;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -60,8 +60,8 @@ public class DeleteVpcHaGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteVpcHaGroupResult value = res.getResult(org.zstack.sdk.DeleteVpcHaGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteVpcHaGroupResult() : value; 
+        org.zstack.sdk.AddVpcHaGroupMonitorIpsResult value = res.getResult(org.zstack.sdk.AddVpcHaGroupMonitorIpsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddVpcHaGroupMonitorIpsResult() : value; 
 
         return ret;
     }
@@ -90,11 +90,11 @@ public class DeleteVpcHaGroupAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/vpc/hagroups/{uuid}";
+        info.httpMethod = "POST";
+        info.path = "/vpc/hagroups/{haGroupUuid}/monitorIps";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

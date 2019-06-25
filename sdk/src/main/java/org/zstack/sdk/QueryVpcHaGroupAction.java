@@ -65,7 +65,7 @@ public class QueryVpcHaGroupAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/vpc/hagroup/";
+        info.path = "/vpc/hagroups";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

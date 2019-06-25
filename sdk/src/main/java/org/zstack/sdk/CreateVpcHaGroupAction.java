@@ -31,7 +31,7 @@ public class CreateVpcHaGroupAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List monitorIps;
 
     @Param(required = false)
@@ -100,7 +100,7 @@ public class CreateVpcHaGroupAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/vpc/hagroup";
+        info.path = "/vpc/hagroups";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

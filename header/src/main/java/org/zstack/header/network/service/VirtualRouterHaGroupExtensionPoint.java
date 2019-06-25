@@ -4,8 +4,10 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.message.MessageReply;
 
 import java.util.List;
+import java.util.Map;
 
 public interface VirtualRouterHaGroupExtensionPoint {
+
     String getPublicIp(String vrUuid, String l3Uuid);
 
     /* virtual router vm type */
@@ -20,4 +22,12 @@ public interface VirtualRouterHaGroupExtensionPoint {
     void syncVirtualRouterHaConfig(String vrUuid, Completion completion);
 
     void prepareVirtualRouterHaConfig(String vrUuid, Completion completion);
+
+    String getVirtualRouterUuidByVip(String vipUuid);
+
+    String getPeerUuid(String vrUuid);
+
+    void submitTaskToHaRouter(VirtualRouterHaCallbackInterface callback, Map<String, Object> data, Completion completion);
+
+    List<String> getAllVipsOnThisRouter(String vrUuid);
 }
