@@ -46,6 +46,9 @@ public class GetTaskProgressAction extends AbstractAction {
     @Param(required = false)
     public String accessKeySecret;
 
+    @Param(required = false)
+    public String requestIp;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
