@@ -61,6 +61,9 @@ public class GetCandidatePrimaryStoragesForCreatingVmAction extends AbstractActi
     @Param(required = false)
     public String accessKeySecret;
 
+    @Param(required = false)
+    public String requestIp;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();

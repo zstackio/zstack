@@ -46,6 +46,9 @@ public class RemoveSchedulerJobsFromSchedulerJobGroupAction extends AbstractActi
     @Param(required = false)
     public String accessKeySecret;
 
+    @Param(required = false)
+    public String requestIp;
+
     @NonAPIParam
     public long timeout = -1;
 
