@@ -41,4 +41,7 @@ public abstract class QueryAction extends AbstractAction {
 
     @Param(required = false)
     public String accessKeySecret;
+
+    @Param(required = false)
+    public String requestIp;
 }
