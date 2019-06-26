@@ -82,7 +82,7 @@ public class GetLogConfigurationAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/log/configurations/";
+        info.path = "/log/configurations";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
