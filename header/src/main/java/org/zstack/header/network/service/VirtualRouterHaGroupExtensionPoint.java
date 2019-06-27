@@ -19,9 +19,9 @@ public interface VirtualRouterHaGroupExtensionPoint {
 
     void afterReceiveTracerReply(String resourceUuid, MessageReply reply);
 
-    void syncVirtualRouterHaConfig(String vrUuid, Completion completion);
+    void syncVirtualRouterHaConfigToBackend(String vrUuid, Completion completion);
 
-    void prepareVirtualRouterHaConfig(String vrUuid, Completion completion);
+    void allocateVirtualRouterHaConfig(String vrUuid, Completion completion);
 
     String getVirtualRouterUuidByVip(String vipUuid);
 
@@ -35,4 +35,6 @@ public interface VirtualRouterHaGroupExtensionPoint {
     void detachNetworkServiceFromHaRouter(String type, List<String> uuids, String vrUuid);
     List<String> getHaVrUuidsFromNetworkService(String type, String Uuid);
     List<String> getNetworkServicesFromHaVrUuid(String type, String vrUuid);
+
+    void cleanupHaNetworkService(String vrUuid, Completion completion);
 }

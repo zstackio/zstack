@@ -29,7 +29,7 @@ public class RemoveVpcHaGroupMonitorIpsAction extends AbstractAction {
     public java.lang.String haGroupUuid;
 
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List monitorIps;
+    public java.lang.String monitorIp;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -91,7 +91,7 @@ public class RemoveVpcHaGroupMonitorIpsAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/vpc/hagroups/{haGroupUuid}/monitorIps";
+        info.path = "/vpc/hagroups/{haGroupUuid}/monitorIps/{monitorIp}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

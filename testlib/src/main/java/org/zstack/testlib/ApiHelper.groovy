@@ -1,6 +1,5 @@
 package org.zstack.testlib
 
-import org.zstack.sdk.RemoveVpcHaGroupMonitorIpsAction
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.core.Platform
 
@@ -21061,33 +21060,6 @@ trait ApiHelper {
     }
 
 
-    def removeVpcHaGroupMonitorIps(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = RemoveVpcHaGroupMonitorIpsAction.class) Closure c) {
-        def a = new RemoveVpcHaGroupMonitorIpsAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def removeCertificateFromLoadBalancerListener(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RemoveCertificateFromLoadBalancerListenerAction.class) Closure c) {
         def a = new org.zstack.sdk.RemoveCertificateFromLoadBalancerListenerAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -21549,6 +21521,33 @@ trait ApiHelper {
 
     def removeVmNicFromLoadBalancer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RemoveVmNicFromLoadBalancerAction.class) Closure c) {
         def a = new org.zstack.sdk.RemoveVmNicFromLoadBalancerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def removeVpcHaGroupMonitorIps(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RemoveVpcHaGroupMonitorIpsAction.class) Closure c) {
+        def a = new org.zstack.sdk.RemoveVpcHaGroupMonitorIpsAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

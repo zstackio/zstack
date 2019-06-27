@@ -36,6 +36,7 @@ public class ApplianceVmVO extends VmInstanceVO {
     private int agentPort;
 
     @Column
+    @Enumerated(EnumType.STRING)
     private ApplianceVmHaStatus haStatus;
 
     public ApplianceVmVO(ApplianceVmVO other) {
