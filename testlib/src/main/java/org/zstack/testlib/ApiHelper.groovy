@@ -1,5 +1,6 @@
 package org.zstack.testlib
 
+import org.zstack.sdk.RemoveVpcHaGroupMonitorIpsAction
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.core.Platform
 
@@ -21060,8 +21061,8 @@ trait ApiHelper {
     }
 
 
-    def remoeVpcHaGroupMonitorIps(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RemoeVpcHaGroupMonitorIpsAction.class) Closure c) {
-        def a = new org.zstack.sdk.RemoeVpcHaGroupMonitorIpsAction()
+    def removeVpcHaGroupMonitorIps(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = RemoveVpcHaGroupMonitorIpsAction.class) Closure c) {
+        def a = new RemoveVpcHaGroupMonitorIpsAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

@@ -4,12 +4,12 @@ package org.zstack.sdk;
 
 public class VpcHaGroupNetowrkServiceRefInventory  {
 
-    public java.lang.String uuid;
-    public void setUuid(java.lang.String uuid) {
-        this.uuid = uuid;
+    public java.lang.Long id;
+    public void setId(java.lang.Long id) {
+        this.id = id;
     }
-    public java.lang.String getUuid() {
-        return this.uuid;
+    public java.lang.Long getId() {
+        return this.id;
     }
 
     public java.lang.String vpcHaRouterUuid;

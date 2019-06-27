@@ -46,12 +46,12 @@ CREATE TABLE  `zstack`.`VpcHaGroupApplianceVmRefVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `zstack`.`VpcHaGroupNetworkServiceRefVO` (
-    `uuid` varchar(32) NOT NULL UNIQUE,
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
     `vpcHaRouterUuid` varchar(32) NOT NULL,
     `networkServiceName` varchar(128) NOT NULL,
-    `networkServiceUuid` varchar(32) NOT NULL,
+    `networkServiceUuid` varchar(128) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
-    PRIMARY KEY (`uuid`),
+    PRIMARY KEY (`id`),
     CONSTRAINT fkVpcHaGroupNetworkServiceRefVOVpcHaGroupVO FOREIGN KEY (vpcHaRouterUuid) REFERENCES VpcHaGroupVO (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
