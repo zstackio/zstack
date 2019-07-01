@@ -4,9 +4,7 @@ import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ResourceVO;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.sql.Timestamp;
 
 /**
@@ -36,6 +34,9 @@ public class LdapServerVO extends ResourceVO {
 
     @Column
     private String encryption;
+
+    @Column
+    private String scope;
 
     @Column
     private Timestamp createDate;
@@ -113,5 +114,13 @@ public class LdapServerVO extends ResourceVO {
 
     public void setEncryption(String encryption) {
         this.encryption = encryption;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 }

@@ -1,6 +1,7 @@
 package org.zstack.ldap;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -34,6 +35,9 @@ public class APIAddLdapServerMsg extends APIMessage implements APIAuditor {
 
     @APIParam(maxLength = 1024, validValues = {"None", "TLS"})
     private String encryption;
+
+    @APIParam(validValues = {"account", "IAM2"})
+    private String scope = "account";
 
     public String getName() {
         return name;
@@ -90,7 +94,15 @@ public class APIAddLdapServerMsg extends APIMessage implements APIAuditor {
     public void setEncryption(String encryption) {
         this.encryption = encryption;
     }
- 
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
     public static APIAddLdapServerMsg __example__() {
         APIAddLdapServerMsg msg = new APIAddLdapServerMsg();
         msg.setName("miao");
@@ -100,6 +112,7 @@ public class APIAddLdapServerMsg extends APIMessage implements APIAuditor {
         msg.setUsername("");
         msg.setPassword("");
         msg.setEncryption("None");
+        msg.setScope(AccountConstant.LOGIN_TYPE);
 
         return msg;
     }

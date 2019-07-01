@@ -113,6 +113,8 @@
 
         <Logger name="org.zstack.rest" level="TRACE" />
 
+        <Logger name="org.zstack.login" level="TRACE" />
+
         <!--
         <Logger name="com.datastax.driver.core" level="TRACE" />
         -->
