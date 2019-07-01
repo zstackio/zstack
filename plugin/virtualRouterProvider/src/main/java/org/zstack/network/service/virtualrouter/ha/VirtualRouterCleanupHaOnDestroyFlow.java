@@ -1,0 +1,56 @@
+package org.zstack.network.service.virtualrouter.ha;
+
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.message.MessageReply;
+import org.zstack.network.service.vip.VipConstant;
+import org.zstack.network.service.vip.VipDeletionMsg;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
+import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
+import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO_;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
+
+import java.util.*;
+
+/**
+ */
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
+public class VirtualRouterCleanupHaOnDestroyFlow extends NoRollbackFlow {
+    @Autowired
+    private DatabaseFacade dbf;
+    @Autowired
+    protected CloudBus bus;
+    @Autowired
+    protected VirtualRouterHaBackend haBackend;
+
+    private static CLogger logger = Utils.getLogger(VirtualRouterCleanupHaOnDestroyFlow.class);
+
+    @Override
+    public void run(final FlowTrigger trigger, Map data) {
+        final String vrUuid = (String) data.get(Param.VR_UUID.toString());
+        haBackend.cleanupHaNetworkService(vrUuid, new Completion(trigger) {
+            @Override
+            public void success() {
+                trigger.next();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                trigger.next();
+            }
+        });
+    }
+}

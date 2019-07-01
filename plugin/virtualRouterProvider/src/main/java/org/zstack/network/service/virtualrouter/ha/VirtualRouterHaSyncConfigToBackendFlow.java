@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VirtualRouterSyncHaFlow implements Flow {
+public class VirtualRouterHaSyncConfigToBackendFlow implements Flow {
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -38,7 +38,7 @@ public class VirtualRouterSyncHaFlow implements Flow {
         List<ErrorCode> errs = new ArrayList<>();
         List<VirtualRouterHaGroupExtensionPoint> exts = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
         new While<>(exts).each((ext, compl) -> {
-            ext.syncVirtualRouterHaConfig(vr.getUuid(), new Completion(chain) {
+            ext.syncVirtualRouterHaConfigToBackend(vr.getUuid(), new Completion(chain) {
                 @Override
                 public void success() {
                     compl.done();

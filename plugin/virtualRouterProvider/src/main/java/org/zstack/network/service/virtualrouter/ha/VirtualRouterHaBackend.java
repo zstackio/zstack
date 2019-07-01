@@ -77,16 +77,6 @@ public class VirtualRouterHaBackend {
                 .limit(1).listValues();
     }
 
-    public void prepareVirtualRouterHaConfig(String vrUuid, Completion completion) {
-        List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
-        if (exps.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        exps.get(0).prepareVirtualRouterHaConfig(vrUuid, completion);
-    }
-
     public void submitVirutalRouterHaTask(VirtualRouterHaCallbackInterface callback, Map<String, Object> data, Completion completion) {
         VirtualRouterVmInventory vrInv = (VirtualRouterVmInventory)data.get(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString());
         if (!vrInv.isHaEnabled()) {
@@ -136,5 +126,15 @@ public class VirtualRouterHaBackend {
                 return true;
             }
         }
+    }
+
+    public void cleanupHaNetworkService(String vrUuid, Completion completion) {
+        List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
+        if (exps.isEmpty()) {
+            completion.success();
+            return ;
+        }
+
+        exps.get(0).cleanupHaNetworkService(vrUuid, completion);
     }
 }

@@ -7,20 +7,16 @@ import org.zstack.appliancevm.ApplianceVmConstant;
 import org.zstack.appliancevm.ApplianceVmPostLifeCycleInfo;
 import org.zstack.appliancevm.ApplianceVmSpec;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
-import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
-import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -32,16 +28,14 @@ import java.util.Map;
 public class VirtualRouterAssembleDecoratorFlow extends NoRollbackFlow {
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private VirtualRouterHaBackend haBackend;
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
 
         ApplianceVmPostLifeCycleInfo info;
         if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
+            final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
             info = new ApplianceVmPostLifeCycleInfo();
             info.setDefaultRouteL3Network(aspec.getDefaultRouteL3Network());
             VmNicInventory mgmtNic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
@@ -64,23 +58,7 @@ public class VirtualRouterAssembleDecoratorFlow extends NoRollbackFlow {
             data.put(VirtualRouterConstant.Param.VR.toString(), VirtualRouterVmInventory.valueOf(dbf.findByUuid(spec.getVmInventory().getUuid(), VirtualRouterVmVO.class)));
         }
 
-        /* prepare ha config */
-        VirtualRouterVmVO vrVO = dbf.findByUuid(spec.getVmInventory().getUuid(), VirtualRouterVmVO.class);
-        if (vrVO.isHaEnabled()) {
-            haBackend.prepareVirtualRouterHaConfig(spec.getVmInventory().getUuid(), new Completion(trigger) {
-                @Override
-                public void success() {
-                    trigger.next();
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    trigger.fail(errorCode);
-                }
-            });
-        } else {
-            trigger.next();
-        }
-
+        trigger.next();
     }
+
 }
