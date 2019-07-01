@@ -1527,6 +1527,7 @@ public class VolumeBase implements Volume {
         }
         List<VmInstanceVO> ret = sql.param("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
 
+        ret.addAll(getVmInstancesWithoutClusterInfo(vmUuids));
         //the vm doesn't suport to online attach volume when vm platform type is other
         ret.removeIf(it -> it.getPlatform().equals(ImagePlatform.Other.toString()) && it.getState() != VmInstanceState.Stopped);
         if (ret.isEmpty()) {
@@ -1538,6 +1539,49 @@ public class VolumeBase implements Volume {
             ret = ext.returnAttachableVms(vol, ret);
         }
         return ret;
+    }
+
+    private List<VmInstanceVO> getVmInstancesWithoutClusterInfo(List<String> accessibleVmUuids) {
+        SQL sql = null;
+        if (self.getStatus() == VolumeStatus.Ready) {
+            List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
+            sql = SQL.New("select vm" +
+                    " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol" +
+                    " where vol.uuid = :volUuid" +
+                    " and ref.primaryStorageUuid = vol.primaryStorageUuid" +
+                    (accessibleVmUuids == null ? "" : " and vm.uuid in (:vmUuids)") +
+                    " and vm.clusterUuid is NULL" +
+                    " and vm.type = :vmType" +
+                    " and vm.state in (:vmStates)" +
+                    " and vm.hypervisorType in (:hvTypes)" +
+                    " group by vm.uuid")
+                    .param("volUuid", self.getUuid())
+                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                    .param("hvTypes", hvTypes);
+        } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
+            sql = SQL.New("select vm" +
+                    " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, PrimaryStorageEO ps, PrimaryStorageCapacityVO capacity" +
+                    " where "+ (accessibleVmUuids == null ? "" : " vm.uuid in (:vmUuids) and") +
+                    " vm.state in (:vmStates)" +
+                    " and vm.type = :vmType" +
+                    " and vm.clusterUuid is NULL" +
+                    " and capacity.uuid = ps.uuid" +
+                    " and capacity.availableCapacity > :volumeSize" +
+                    " and ref.primaryStorageUuid = ps.uuid" +
+                    " and ps.state in (:psState)" +
+                    " group by vm.uuid")
+                    .param("volumeSize", self.getSize())
+                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                    .param("psState", PrimaryStorageState.Enabled);
+        } else {
+            DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
+        }
+
+        if (accessibleVmUuids != null) {
+            sql.param("vmUuids", accessibleVmUuids);
+        }
+
+        return sql.param("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
     }
 
     private boolean volumeIsAttached(final String volumeUuid) {
