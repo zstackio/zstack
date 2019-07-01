@@ -1,0 +1,1 @@
+ALTER TABLE `zstack`.`PciDeviceVO` ADD COLUMN `iommuGroup` VARCHAR(255) DEFAULT NULL;
