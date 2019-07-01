@@ -32,6 +32,12 @@ public interface VmInstanceConstant {
         vmInventory,
         VmAllocateNicFlow_ips,
         VmAllocateNicFlow_nics,
+        ApplianceVmSyncHaConfig_applianceVm,
+        ApplianceVmSyncHaConfig_haUuid,
+        ApplianceVmSyncHaConfig_nic,
+        ApplianceVmSyncHaConfig_oldUsedIpUuid,
+        ApplianceVmSyncHaConfig_oldUsedIp,
+        ApplianceVmSyncHaConfig_newUsedIp,
     }
 
     enum VmOperation {
