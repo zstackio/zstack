@@ -31,4 +31,8 @@
     <message>
         <name>org.zstack.header.host.APIUpdateHostMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.host.APIGetHostTaskMsg</name>
+    </message>
 </service>

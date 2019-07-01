@@ -115,6 +115,11 @@ public abstract class HostBase extends AbstractHost {
         id = "Host-" + self.getUuid();
     }
 
+    @Override
+    public String getId() {
+        return id;
+    }
+
     protected void checkStatus() {
         if (HostStatus.Connected != self.getStatus()) {
             ErrorCode cause = err(HostErrors.HOST_IS_DISCONNECTED, "host[uuid:%s, name:%s] is in status[%s], cannot perform required operation", self.getUuid(), self.getName(), self.getStatus());
@@ -489,7 +494,7 @@ public abstract class HostBase extends AbstractHost {
         return self.getState();
     }
 
-    private boolean hostOutOfMaintenance(HostStateEvent stateEvent) {
+    private boolean doChangeStateAndCheckHostOutOfMaintenance(HostStateEvent stateEvent) {
         HostState origState = self.getState();
         HostState state = changeState(stateEvent);
 
@@ -1083,7 +1088,7 @@ public abstract class HostBase extends AbstractHost {
                 }
             });
         } else {
-            if (hostOutOfMaintenance(stateEvent)) {
+            if (doChangeStateAndCheckHostOutOfMaintenance(stateEvent)) {
                 // host is out of maintenance mode, track and reconnect it.
                 tracker.trackHost(self.getUuid());
 

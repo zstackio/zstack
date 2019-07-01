@@ -43,6 +43,9 @@ public class DetachIAM2ProjectFromIAM2OrganizationAction extends AbstractAction 
     @Param(required = false)
     public String accessKeySecret;
 
+    @Param(required = false)
+    public String requestIp;
+
     @NonAPIParam
     public long timeout = -1;
 
@@ -87,7 +90,7 @@ public class DetachIAM2ProjectFromIAM2OrganizationAction extends AbstractAction 
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
+        info.httpMethod = "DELETE";
         info.path = "/iam2/projects/{projectUuid}/iam2/organizations";
         info.needSession = true;
         info.needPoll = true;

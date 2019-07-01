@@ -4,4 +4,5 @@ import org.zstack.header.message.Message;
 
 public interface Host {
     void handleMessage(Message msg);
+    String getId();
 }

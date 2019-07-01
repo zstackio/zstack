@@ -17,10 +17,10 @@ public class GetPrimaryStorageLicenseInfoAction extends AbstractAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                        String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
+                    String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
                 );
             }
-
+            
             return this;
         }
     }
@@ -43,6 +43,9 @@ public class GetPrimaryStorageLicenseInfoAction extends AbstractAction {
     @Param(required = false)
     public String accessKeySecret;
 
+    @Param(required = false)
+    public String requestIp;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -50,9 +53,9 @@ public class GetPrimaryStorageLicenseInfoAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.GetPrimaryStorageLicenseInfoResult value = res.getResult(org.zstack.sdk.GetPrimaryStorageLicenseInfoResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetPrimaryStorageLicenseInfoResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.GetPrimaryStorageLicenseInfoResult() : value; 
 
         return ret;
     }

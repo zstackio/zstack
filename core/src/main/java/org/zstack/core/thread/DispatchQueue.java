@@ -1,5 +1,7 @@
 package org.zstack.core.thread;
 
+import org.zstack.header.core.progress.ChainInfo;
+
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -15,4 +17,6 @@ public interface DispatchQueue {
     Map<String, ChainTaskStatistic> getChainTaskStatistics();
 
     boolean isChainTaskRunning(String signature);
+
+    ChainInfo getChainTaskInfo(String signature);
 }

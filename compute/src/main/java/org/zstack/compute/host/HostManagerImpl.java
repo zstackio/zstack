@@ -101,6 +101,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             handle((APIAddHostMsg) msg);
         } else if (msg instanceof APIGetHypervisorTypesMsg) {
             handle((APIGetHypervisorTypesMsg) msg);
+        } else if (msg instanceof APIGetHostTaskMsg) {
+            handle((APIGetHostTaskMsg) msg);
         } else if (msg instanceof HostMessage) {
             HostMessage hmsg = (HostMessage) msg;
             passThrough(hmsg);
@@ -113,6 +115,17 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         APIGetHypervisorTypesReply reply = new APIGetHypervisorTypesReply();
         List<String> res = new ArrayList<>(HypervisorType.getAllTypeNames());
         reply.setHypervisorTypes(res);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(APIGetHostTaskMsg msg) {
+        APIGetHostTaskReply reply = new APIGetHostTaskReply();
+        List<HostVO> vos = Q.New(HostVO.class).in(HostVO_.uuid, msg.getHostUuids()).list();
+        vos.forEach(vo -> {
+            HypervisorFactory factory = this.getHypervisorFactory(HypervisorType.valueOf(vo.getHypervisorType()));
+            Host host = factory.getHost(vo);
+            reply.putResults(vo.getUuid(), thdf.getChainTaskInfo(host.getId()));
+        });
         bus.reply(msg, reply);
     }
 

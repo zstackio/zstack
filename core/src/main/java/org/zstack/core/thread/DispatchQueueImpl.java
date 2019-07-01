@@ -6,9 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.debug.DebugManager;
 import org.zstack.core.debug.DebugSignalHandler;
-import org.zstack.header.core.AsyncBackup;
+import org.zstack.header.core.progress.ChainInfo;
+import org.zstack.header.core.progress.PendingTaskInfo;
+import org.zstack.header.core.progress.RunningTaskInfo;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.message.Message;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -52,24 +53,12 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                 int index = 0;
                 for (Object obj : w.runningQueue) {
                     ChainFuture cf = (ChainFuture) obj;
-                    long execTime = TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartExecutionTimeInMills());
-                    long pendingTime = TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartPendingTimeInMills()) - execTime;
-
-                    tb.append(String.format("\nRUNNING TASK[NAME: %s, CLASS: %s, PENDING TIME: %s sec, EXECUTION TIME: %s secs, INDEX: %s] %s",
-                            cf.getTask().getName(), cf.getTask().getClass(),
-                            pendingTime,
-                            execTime, index++,
-                            getChainContext(cf.getTask())
-                    ));
+                    tb.append(TaskInfoBuilder.buildRunningTaskInfo(cf, now, index++));
                 }
 
                 for (Object obj : w.pendingQueue) {
                     ChainFuture cf = (ChainFuture) obj;
-                    tb.append(String.format("\nPENDING TASK[NAME: %s, CLASS: %s PENDING TIME: %s secs, INDEX: %s] %s",
-                            cf.getTask().getName(), cf.getTask().getClass(),
-                            TimeUnit.MILLISECONDS.toSeconds(now - cf.getStartPendingTimeInMills()), index++,
-                            getChainContext(cf.getTask())
-                    ));
+                    tb.append(TaskInfoBuilder.buildPendingTaskInfo(cf, now, index++));
                 }
                 asyncTasks.add(tb.toString());
             }
@@ -81,19 +70,28 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
         logger.debug(sb.toString());
     }
 
-    private String getChainContext(ChainTask task) {
-        List<String> context = new ArrayList<>();
-        for (AsyncBackup backup : task.getBackups()) {
-            if (backup instanceof Message) {
-                context.add(JSONObjectUtil.toJsonString(backup));
+    @Override
+    public ChainInfo getChainTaskInfo(String signature) {
+        long now = System.currentTimeMillis();
+        synchronized (chainTasks) {
+            ChainTaskQueueWrapper w = chainTasks.get(signature);
+            if (w == null) {
+                return null;
             }
-        }
 
-        if (!context.isEmpty()) {
-            return String.format("CONTEXT: %s", StringUtils.join(context, "\n"));
-        }
+            ChainInfo info = new ChainInfo();
+            int index = 0;
+            for (Object obj : w.runningQueue) {
+                ChainFuture cf = (ChainFuture) obj;
+                info.addRunningTask(TaskInfoBuilder.buildRunningTaskInfo(cf, now, index++));
+            }
 
-        return "";
+            for (Object obj : w.pendingQueue) {
+                ChainFuture cf = (ChainFuture) obj;
+                info.addPendingTask(TaskInfoBuilder.buildPendingTaskInfo(cf, now, index++));
+            }
+            return info;
+        }
     }
 
     public DispatchQueueImpl() {
@@ -251,7 +249,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             super(task);
         }
 
-        private ChainTask getTask() {
+        ChainTask getTask() {
             return (ChainTask) task;
         }
 

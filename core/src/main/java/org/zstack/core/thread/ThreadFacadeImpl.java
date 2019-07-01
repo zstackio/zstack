@@ -2,6 +2,7 @@ package org.zstack.core.thread;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.jmx.JmxFacade;
+import org.zstack.header.core.progress.ChainInfo;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
@@ -223,6 +224,10 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
     @Override
     public boolean isChainTaskRunning(String signature) {
         return dpq.isChainTaskRunning(signature);
+    }
+
+    public ChainInfo getChainTaskInfo(String signature) {
+        return dpq.getChainTaskInfo(signature);
     }
 
     public static interface TimeoutTaskReceipt {

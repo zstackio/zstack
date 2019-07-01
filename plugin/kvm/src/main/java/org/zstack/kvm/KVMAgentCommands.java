@@ -2000,4 +2000,10 @@ public class KVMAgentCommands {
     public static class ReportVmShutdownEventCmd {
         public String vmUuid;
     }
+
+    public static class ShutdownHostCmd extends AgentCommand {
+    }
+
+    public static class ShutdownHostResponse extends AgentResponse {
+    }
 }

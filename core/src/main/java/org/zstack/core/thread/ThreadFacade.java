@@ -1,6 +1,7 @@
 package org.zstack.core.thread;
 
 import org.zstack.header.Component;
+import org.zstack.header.core.progress.ChainInfo;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -13,6 +14,8 @@ public interface ThreadFacade extends Component {
     Future<Void> chainSubmit(ChainTask task);
 
     boolean isChainTaskRunning(String signature);
+
+    ChainInfo getChainTaskInfo(String signature);
 
     Future<Void> submitPeriodicTask(PeriodicTask task, long delay);
     
