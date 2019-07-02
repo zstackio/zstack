@@ -1790,7 +1790,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         if (msg.getUuid() == null) {
             msg.setUuid(msg.getSession().getAccountUuid());
         }
+        AccountVO account = dbf.findByUuid(msg.getUuid(), AccountVO.class);
 
+
+        if (msg.getOldPassword() != null && !msg.getOldPassword().equals(account.getPassword())) {
+            throw new OperationFailureException(operr("old password is not equal to the original password, cannot update the password of account[uuid: %s]", msg.getUuid()));
+        }
 
         if (a.getType() == AccountType.SystemAdmin) {
             if (msg.getName() != null && (msg.getUuid() == null || msg.getUuid().equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID))) {
@@ -1806,7 +1811,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             return;
         }
 
-        AccountVO account = dbf.findByUuid(msg.getUuid(), AccountVO.class);
         if (!account.getUuid().equals(a.getUuid())) {
             throw new OperationFailureException(operr("account[uuid: %s, name: %s] is a normal account, it cannot reset the password of another account[uuid: %s]",
                             account.getUuid(), account.getName(), msg.getUuid()));
