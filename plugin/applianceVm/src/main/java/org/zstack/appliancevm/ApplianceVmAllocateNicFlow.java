@@ -6,10 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.TransactionalCallback;
+import org.zstack.core.db.*;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowException;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -45,9 +42,12 @@ public class ApplianceVmAllocateNicFlow implements Flow {
     @Autowired
     private L3NetworkManager l3nm;
 
-    private UsedIpInventory acquireIp(String l3NetworkUuid, String mac, String stratgey) {
+    private UsedIpInventory acquireIp(String l3NetworkUuid, String mac, String staticIp, String stratgey) {
         AllocateIpMsg msg = new AllocateIpMsg();
         msg.setL3NetworkUuid(l3NetworkUuid);
+        if (staticIp != null) {
+            msg.setRequiredIp(staticIp);
+        }
         l3nm.updateIpAllocationMsg(msg, mac);
         bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3NetworkUuid);
         msg.setAllocateStrategy(stratgey);
@@ -73,13 +73,12 @@ public class ApplianceVmAllocateNicFlow implements Flow {
 
         if (nicSpec.getIp() == null) {
             String strategy = nicSpec.getAllocatorStrategy() == null ? L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY : nicSpec.getAllocatorStrategy();
-            UsedIpInventory ip = acquireIp(nicSpec.getL3NetworkUuid(), inv.getMac(), strategy);
+            UsedIpInventory ip = acquireIp(nicSpec.getL3NetworkUuid(), inv.getMac(), nicSpec.getStaticIp(), strategy);
             inv.setGateway(ip.getGateway());
             inv.setIp(ip.getIp());
             inv.setNetmask(ip.getNetmask());
             inv.setUsedIpUuid(ip.getUuid());
             inv.setIpVersion(ip.getIpVersion());
-
         } else {
             inv.setGateway(nicSpec.getGateway());
             inv.setIp(nicSpec.getIp());

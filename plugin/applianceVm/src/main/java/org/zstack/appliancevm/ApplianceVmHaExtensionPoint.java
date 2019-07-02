@@ -6,5 +6,5 @@ package org.zstack.appliancevm;
 public interface ApplianceVmHaExtensionPoint {
     void attachVirtualRouterToHaGroup(String vrUuid, String haGroupUuid);
     void detachVirtualRouterFromHaGroup(String vrUuid, String haGroupUuid);
-    void createApplianceVmHaSpec(ApplianceVmSpec aspec, String haUuid);
+    void createApplianceVmHaSpec(ApplianceVmSpec aspec, String offeringUuid, String haUuid);
 }

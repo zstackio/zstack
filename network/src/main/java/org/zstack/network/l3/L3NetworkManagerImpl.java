@@ -410,7 +410,9 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         try {
             UsedIpVO vo = new UsedIpVO(ipRange.getUuid(), ip);
             vo.setIpInLong(NetworkUtils.ipv4StringToLong(ip));
-            String uuid = ipRange.getUuid() + ip;
+            /* for ha, same ip will used by 2 nic, so add a number prefix */
+            Long count = Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, ipRange.getL3NetworkUuid()).eq(UsedIpVO_.ip, ip).count();
+            String uuid = ipRange.getUuid() + ip + count.toString();
             uuid = UUID.nameUUIDFromBytes(uuid.getBytes()).toString().replaceAll("-", "");
             vo.setUuid(uuid);
             vo.setL3NetworkUuid(ipRange.getL3NetworkUuid());

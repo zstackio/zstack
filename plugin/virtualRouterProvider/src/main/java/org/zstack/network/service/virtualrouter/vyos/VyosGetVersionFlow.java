@@ -107,30 +107,33 @@ public class VyosGetVersionFlow extends NoRollbackFlow {
                     }
                 });
 
-                if (echoSuccess) {
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "get-version";
+                flow(new NoRollbackFlow() {
+                    String __name__ = "get-version";
 
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            vyosVersionManager.vyosRouterVersionCheck(vrUuid, new Completion(trigger) {
-                                @Override
-                                public void success() {
-                                    logger.debug(String.format("virtual router [uuid:%s] version check successfully", vrUuid));
-                                    trigger.next();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    logger.warn(String.format("virtual router [uuid:%s] version check failed because %s, need to be reconnect", vrUuid, errorCode.getDetails()));
-                                    flowData.put(ApplianceVmConstant.Params.isReconnect.toString(), Boolean.TRUE.toString());
-                                    flowData.put(ApplianceVmConstant.Params.managementNicIp.toString(), mgmtNic.getIp());
-                                    trigger.next();
-                                }
-                            });
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (!echoSuccess) {
+                            trigger.next();
+                            return;
                         }
-                    });
-                }
+
+                        vyosVersionManager.vyosRouterVersionCheck(vrUuid, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                logger.debug(String.format("virtual router [uuid:%s] version check successfully", vrUuid));
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.warn(String.format("virtual router [uuid:%s] version check failed because %s, need to be reconnect", vrUuid, errorCode.getDetails()));
+                                flowData.put(ApplianceVmConstant.Params.isReconnect.toString(), Boolean.TRUE.toString());
+                                flowData.put(ApplianceVmConstant.Params.managementNicIp.toString(), mgmtNic.getIp());
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
 
                 done(new FlowDoneHandler(flowTrigger) {
                     @Override

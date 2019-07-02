@@ -17,6 +17,7 @@ public class ApplianceVmNicSpec implements Serializable {
     private boolean acquireOnNetwork;
     private String allocatorStrategy;
     private String metaData;
+    private String staticIp;
 
     public String getL3NetworkUuid() {
         return l3NetworkUuid;
@@ -80,5 +81,13 @@ public class ApplianceVmNicSpec implements Serializable {
 
     public void setMetaData(String metaData) {
         this.metaData = metaData;
+    }
+
+    public String getStaticIp() {
+        return staticIp;
+    }
+
+    public void setStaticIp(String staticIp) {
+        this.staticIp = staticIp;
     }
 }
