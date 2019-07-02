@@ -77,6 +77,9 @@ class PythonSdkGenerator {
             fieldList.add("self.accessKeySecret = None")
             annotationList.add("'accessKeySecret': ParamAnnotation(required=False)")
         }
+
+        fieldList.add("self.requestIp = None")
+        annotationList.add("'requestIp': ParamAnnotation(required=False)")
     }
 
     void generate(String outputPath) {
