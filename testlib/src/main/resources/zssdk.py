@@ -34,6 +34,7 @@ HEADER_JOB_UUID = "X-Job-UUID"
 HEADER_WEBHOOK = "X-Web-Hook"
 HEADER_JOB_SUCCESS = "X-Job-Success"
 HEADER_AUTHORIZATION = "Authorization"
+HEADER_REQUEST_IP = "X-Request-Ip";
 OAUTH = "OAuth"
 LOCATION = "location"
 
@@ -150,6 +151,7 @@ class AbstractAction(object):
     def __init__(self):
         self.apiId = None
         self.sessionId = None
+        self.requestIp = None
         self.systemTags = None
         self.userTags = None
         self.timeout = None
@@ -278,6 +280,9 @@ class AbstractAction(object):
 
         date = time.time()
         datestr = datetime.datetime.fromtimestamp(date).strftime('%a, %d %b %Y %H:%M:%S CST')
+
+        if self.requestIp is not None:
+            headers[HEADER_REQUEST_IP] = self.requestIp
 
         if self.NEED_SESSION:
             if self.sessionId is not None:
