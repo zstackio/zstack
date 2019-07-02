@@ -20,4 +20,9 @@
         <id>1003</id>
         <description>Wrong captcha</description>
     </code>
+
+    <code>
+        <id>1004</id>
+        <description>Request refused</description>
+    </code>
 </error>
