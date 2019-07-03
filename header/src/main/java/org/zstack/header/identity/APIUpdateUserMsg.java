@@ -25,6 +25,8 @@ public class APIUpdateUserMsg extends APIMessage implements AccountMessage {
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
+    @APIParam(maxLength = 255, required = false)
+    private String oldPassword;
 
     public String getUuid() {
         return uuid;
@@ -62,7 +64,16 @@ public class APIUpdateUserMsg extends APIMessage implements AccountMessage {
     public void setDescription(String description) {
         this.description = description;
     }
- 
+
+
+    public String getOldPassword() {
+        return oldPassword;
+    }
+
+    public void setOldPassword(String oldPassword) {
+        this.oldPassword = oldPassword;
+    }
+
     public static APIUpdateUserMsg __example__() {
         APIUpdateUserMsg msg = new APIUpdateUserMsg();
         msg.setName("new");

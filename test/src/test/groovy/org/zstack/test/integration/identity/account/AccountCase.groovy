@@ -16,6 +16,7 @@ import org.zstack.header.identity.SessionVO
 import org.zstack.header.identity.SessionVO_
 import org.zstack.header.identity.PolicyVO
 import org.zstack.header.identity.PolicyInventory
+import org.zstack.header.identity.UserVO
 import org.zstack.identity.QuotaGlobalConfig
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.AccountInventory
@@ -24,7 +25,9 @@ import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.SessionInventory
+import org.zstack.sdk.UpdateAccountAction
 import org.zstack.sdk.UpdateGlobalConfigAction
+import org.zstack.sdk.UpdateUserAction
 import org.zstack.sdk.UserInventory
 import org.zstack.test.integration.ZStackTest
 import org.zstack.test.integration.identity.Env
@@ -198,10 +201,47 @@ class AccountCase extends SubCase {
     }
 
     void testAdminUser() {
-        createUser {
+        UserInventory userInventory = createUser {
             name = "admin2"
             password = "password"
         }
+
+        //change
+        updateUser {
+            uuid = userInventory.uuid
+            password = "password1"
+        }
+
+        UserVO userVO = dbFindByUuid(userInventory.uuid, UserVO.class)
+        assert userVO.password == "password1"
+
+        //changeWithRightOldPassword
+        updateUser {
+            uuid = userInventory.uuid
+            password = "password2"
+            oldPassword = "password1"
+        }
+
+        userVO = dbFindByUuid(userInventory.uuid, UserVO.class)
+        assert userVO.password == "password2"
+
+        //changeWithWrongOldPassword
+        UpdateUserAction updateUserAction = new UpdateUserAction()
+        updateUserAction.uuid = userInventory.uuid
+        updateUserAction.password = "password3"
+        updateUserAction.sessionId = adminSession()
+        updateUserAction.oldPassword = "wrongPassword"
+        UpdateUserAction.Result result = updateUserAction.call()
+        assert result.error != null
+
+        // restore
+        updateUser {
+            uuid = userInventory.uuid
+            password = "password"
+        }
+
+        userVO = dbFindByUuid(userInventory.uuid, UserVO.class)
+        assert userVO.password == "password"
 
         SessionInventory s = logInByUser {
             accountName = "admin"
@@ -235,6 +275,26 @@ class AccountCase extends SubCase {
 
         AccountVO accountVO = dbFindByUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, AccountVO.class)
         assert accountVO.password  == "new"
+
+        //changeWithRightOldPassword
+        updateAccount {
+            uuid = AccountConstant.INITIAL_SYSTEM_ADMIN_UUID
+            password = "new2"
+            sessionId = sessionInventory.uuid
+            oldPassword = "new"
+        }
+
+        accountVO = dbFindByUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID, AccountVO.class)
+        assert accountVO.password  == "new2"
+
+        //changeWithWrongOldPassword
+        UpdateAccountAction updateAccountAction = new UpdateAccountAction()
+        updateAccountAction.uuid = AccountConstant.INITIAL_SYSTEM_ADMIN_UUID
+        updateAccountAction.password = "new3"
+        updateAccountAction.sessionId = sessionInventory.uuid
+        updateAccountAction.oldPassword = "wrongPassword"
+        UpdateAccountAction.Result result = updateAccountAction.call()
+        assert result.error != null
 
         // restore
         updateAccount {

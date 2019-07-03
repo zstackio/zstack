@@ -543,6 +543,10 @@ public class AccountBase extends AbstractAccount {
                     " account[uuid:%s]", user.getUuid(), msg.getAccountUuid()));
         }
 
+        if (msg.getOldPassword() != null && !msg.getOldPassword().equals(user.getPassword())){
+            throw new OperationFailureException(argerr("old password is not equal to the original password, cannot update the password of user[uuid:%s]", user.getUuid()));
+        }
+
         boolean update = false;
         if (msg.getName() != null) {
             user.setName(msg.getName());
