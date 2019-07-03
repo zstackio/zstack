@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddVpcHaGroupMonitorIpsAction extends AbstractAction {
+public class ChangeVpcHaGroupMonitorIpsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddVpcHaGroupMonitorIpsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddVpcHaGroupMonitorIpsResult value;
+        public org.zstack.sdk.ChangeVpcHaGroupMonitorIpsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,7 @@ public class AddVpcHaGroupMonitorIpsAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String haGroupUuid;
+    public java.lang.String uuid;
 
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List monitorIps;
@@ -60,8 +60,8 @@ public class AddVpcHaGroupMonitorIpsAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddVpcHaGroupMonitorIpsResult value = res.getResult(org.zstack.sdk.AddVpcHaGroupMonitorIpsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddVpcHaGroupMonitorIpsResult() : value; 
+        org.zstack.sdk.ChangeVpcHaGroupMonitorIpsResult value = res.getResult(org.zstack.sdk.ChangeVpcHaGroupMonitorIpsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeVpcHaGroupMonitorIpsResult() : value; 
 
         return ret;
     }
@@ -90,11 +90,11 @@ public class AddVpcHaGroupMonitorIpsAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/vpc/hagroups/{haGroupUuid}/monitorIps";
+        info.httpMethod = "PUT";
+        info.path = "/vpc/hagroups/{uuid}/monitorIps";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "changeVpcHaGroupMonitorIps";
         return info;
     }
 
