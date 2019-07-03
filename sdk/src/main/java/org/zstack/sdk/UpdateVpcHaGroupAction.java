@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RemoveVpcHaGroupMonitorIpsAction extends AbstractAction {
+public class UpdateVpcHaGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RemoveVpcHaGroupMonitorIpsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RemoveVpcHaGroupMonitorIpsResult value;
+        public org.zstack.sdk.UpdateVpcHaGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,13 @@ public class RemoveVpcHaGroupMonitorIpsAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String haGroupUuid;
+    public java.lang.String uuid;
 
-    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String monitorIp;
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -60,8 +63,8 @@ public class RemoveVpcHaGroupMonitorIpsAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.RemoveVpcHaGroupMonitorIpsResult value = res.getResult(org.zstack.sdk.RemoveVpcHaGroupMonitorIpsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RemoveVpcHaGroupMonitorIpsResult() : value; 
+        org.zstack.sdk.UpdateVpcHaGroupResult value = res.getResult(org.zstack.sdk.UpdateVpcHaGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateVpcHaGroupResult() : value; 
 
         return ret;
     }
@@ -90,11 +93,11 @@ public class RemoveVpcHaGroupMonitorIpsAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/vpc/hagroups/{haGroupUuid}/monitorIps/{monitorIp}";
+        info.httpMethod = "PUT";
+        info.path = "/vpc/hagroups/{uuid}/action";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "updateVpcHaGroup";
         return info;
     }
 
