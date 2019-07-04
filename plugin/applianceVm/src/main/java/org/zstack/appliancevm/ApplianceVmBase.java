@@ -612,6 +612,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 trigger.next();
             }
         });
+        chain.then(new ApplianceVmSyncConfigAfterAddToHaGroupFlow());
 
         boolean noRollbackOnFailure = ApplianceVmGlobalProperty.NO_ROLLBACK_ON_POST_FAILURE;
         chain.noRollback(noRollbackOnFailure);

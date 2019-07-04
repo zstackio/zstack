@@ -12,12 +12,12 @@ public class VpcHaGroupApplianceVmInventory  {
         return this.uuid;
     }
 
-    public java.lang.String VpcHaRouterUuid;
+    public java.lang.String vpcHaRouterUuid;
     public void setVpcHaRouterUuid(java.lang.String VpcHaRouterUuid) {
-        this.VpcHaRouterUuid = VpcHaRouterUuid;
+        this.vpcHaRouterUuid = VpcHaRouterUuid;
     }
     public java.lang.String getVpcHaRouterUuid() {
-        return this.VpcHaRouterUuid;
+        return this.vpcHaRouterUuid;
     }
 
 }

@@ -39,7 +39,7 @@ CREATE TABLE `VpcHaGroupVipRefVO` (
 
 CREATE TABLE  `zstack`.`VpcHaGroupApplianceVmRefVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
-    `VpcHaRouterUuid` varchar(32) DEFAULT NULL,
+    `vpcHaRouterUuid` varchar(32) DEFAULT NULL,
     PRIMARY KEY  (`uuid`),
     CONSTRAINT fkVpcHaGroupApplianceVmRefVOVpcHaGroupVO FOREIGN KEY (vpcHaRouterUuid) REFERENCES VpcHaGroupVO (uuid) ON DELETE CASCADE,
     CONSTRAINT fkVpcHaGroupApplianceVmRefVOApplianceVmVO FOREIGN KEY (uuid) REFERENCES ApplianceVmVO (uuid) ON DELETE CASCADE
