@@ -15,5 +15,5 @@ ALTER TABLE `zstack`.`LdapResourceRefVO` ADD UNIQUE INDEX(ldapUid,ldapServerUuid
 ALTER TABLE `zstack`.`LdapServerVO` ADD COLUMN `scope` varchar(255) NOT NULL;
 UPDATE `zstack`.`LdapServerVO` SET `scope` = "account" WHERE `scope` IS NULL;
 
-ALTER TABLE `zstack`.`IAM2VirtualIDVO` ADD COLUMN `type` varchar(32) NOT NULL;
+ALTER TABLE `zstack`.`IAM2VirtualIDVO` ADD COLUMN `type` varchar(32) DEFAULT NULL;
 UPDATE `zstack`.`IAM2VirtualIDVO` SET `type` = "ZStack" WHERE `type` IS NULL;
