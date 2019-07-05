@@ -1,11 +1,15 @@
 package org.zstack.identity;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.cloudbus.EventCallback;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.core.db.*;
+import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
 import org.zstack.utils.Utils;
@@ -13,13 +17,27 @@ import org.zstack.utils.logging.CLogger;
 import static org.zstack.core.Platform.*;
 
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
-public class Session {
+public class Session implements Component {
     private static final CLogger logger = Utils.getLogger(Session.class);
+
+    @Autowired
+    private ThreadFacade thdf;
+    @Autowired
+    private DatabaseFacade dbf;
+    @Autowired
+    private EventFacade evtf;
+
+    private Future<Void> expiredSessionCollector;
 
     private static Map<String, SessionInventory> sessions = new ConcurrentHashMap<>();
 
@@ -81,10 +99,6 @@ public class Session {
             }
         }.execute();
 
-        for (RenewSessionExtensionPoint ext : Platform.getComponentLoader().getPluginRegistry().getExtensionList(RenewSessionExtensionPoint.class)) {
-            ext.renewSession(uuid, session.getExpiredDate());
-        }
-
         return session;
     }
 
@@ -142,6 +156,10 @@ public class Session {
         }.execute();
     }
 
+    public static Map<String, SessionInventory> getSessionsCopy() {
+        return new HashMap<>(sessions);
+    }
+
     public static SessionInventory getSession(String uuid) {
         SessionInventory s = sessions.get(uuid);
         if (s == null) {
@@ -155,5 +173,147 @@ public class Session {
         }
 
         return s;
+    }
+
+    @Override
+    public boolean start() {
+        startCleanUpStaleSessionTask();
+        setupCanonicalEvents();
+        return true;
+    }
+
+    private void startCleanUpStaleSessionTask() {
+        final int interval = IdentityGlobalConfig.SESSION_CLEANUP_INTERVAL.value(Integer.class);
+        expiredSessionCollector = thdf.submitPeriodicTask(new PeriodicTask() {
+            @Transactional
+            private List<String> deleteExpiredSessions() {
+                String sql = "select s.uuid from SessionVO s where CURRENT_TIMESTAMP  >= s.expiredDate";
+                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                List<String> uuids = q.getResultList();
+                if (!uuids.isEmpty()) {
+                    String dsql = "delete from SessionVO s where s.uuid in :uuids";
+                    Query dq = dbf.getEntityManager().createQuery(dsql);
+                    dq.setParameter("uuids", uuids);
+                    dq.executeUpdate();
+                }
+                return uuids;
+            }
+
+            @Transactional(readOnly = true)
+            private Timestamp getCurrentSqlDate() {
+                Query query = dbf.getEntityManager().createNativeQuery("select current_timestamp()");
+                return (Timestamp) query.getSingleResult();
+            }
+
+            private void deleteExpiredCachedSessions() {
+                Timestamp curr = getCurrentSqlDate();
+                sessions.entrySet().removeIf(entry -> curr.after(entry.getValue().getExpiredDate()));
+            }
+
+            @Override
+            public void run() {
+                List<String> uuids = deleteExpiredSessions();
+                for (String uuid : uuids) {
+                    sessions.remove(uuid);
+                }
+
+                deleteExpiredCachedSessions();
+            }
+
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return interval;
+            }
+
+            @Override
+            public String getName() {
+                return "ExpiredSessionCleanupThread";
+            }
+
+        });
+    }
+
+    @Override
+    public boolean stop() {
+        if (expiredSessionCollector != null) {
+            expiredSessionCollector.cancel(true);
+        }
+
+        return true;
+    }
+
+    private void setupCanonicalEvents() {
+        evtf.on(IdentityCanonicalEvents.ACCOUNT_DELETED_PATH, new EventCallback() {
+            @Override
+            public void run(Map tokens, Object data) {
+                // as a foreign key would clean SessionVO after account deleted, just clean memory sessions here
+                removeMemorySessionsAccordingToDB(tokens, data);
+                removeMemorySessionsAccordingToAccountUuid(tokens, data);
+            }
+
+            private void removeMemorySessionsAccordingToDB(Map tokens, Object data) {
+                IdentityCanonicalEvents.AccountDeletedData d = (IdentityCanonicalEvents.AccountDeletedData) data;
+
+                SimpleQuery<SessionVO> q = dbf.createQuery(SessionVO.class);
+                q.select(SessionVO_.uuid);
+                q.add(SessionVO_.accountUuid, SimpleQuery.Op.EQ, d.getAccountUuid());
+                List<String> suuids = q.listValue();
+
+                for (String uuid : suuids) {
+                    logout(uuid);
+                }
+
+                if (!suuids.isEmpty()) {
+                    logger.debug(String.format("successfully removed %s sessions for the deleted account[%s]",
+                            suuids.size(),
+                            d.getAccountUuid()));
+                }
+            }
+
+            private void removeMemorySessionsAccordingToAccountUuid(Map tokens, Object data) {
+                IdentityCanonicalEvents.AccountDeletedData d = (IdentityCanonicalEvents.AccountDeletedData) data;
+
+                List<String> suuids = sessions.entrySet().stream()
+                        .filter(it -> it.getValue().getAccountUuid().equals(d.getAccountUuid()))
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toList());
+
+                for (String uuid : suuids) {
+                    logout(uuid);
+                }
+
+                if (!suuids.isEmpty()) {
+                    logger.debug(String.format("successfully removed %s sessions for the deleted account[%s]",
+                            suuids.size(),
+                            d.getAccountUuid()));
+                }
+            }
+        });
+
+        evtf.on(IdentityCanonicalEvents.USER_DELETED_PATH, new EventCallback() {
+            @Override
+            public void run(Map tokens, Object data) {
+                IdentityCanonicalEvents.UserDeletedData d = (IdentityCanonicalEvents.UserDeletedData) data;
+
+                SimpleQuery<SessionVO> q = dbf.createQuery(SessionVO.class);
+                q.select(SessionVO_.uuid);
+                q.add(SessionVO_.userUuid, SimpleQuery.Op.EQ, d.getUserUuid());
+                List<String> suuids = q.listValue();
+
+                for (String uuid : suuids) {
+                    logout(uuid);
+                }
+
+                if (!suuids.isEmpty()) {
+                    logger.debug(String.format("successfully removed %s sessions for the deleted user[%s]", suuids.size(),
+                            d.getUserUuid()));
+                }
+            }
+        });
     }
 }
