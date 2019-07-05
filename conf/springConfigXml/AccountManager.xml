@@ -48,8 +48,13 @@
             <zstack:extension interface="org.zstack.core.db.SoftDeleteEntityExtensionPoint"/>
             <zstack:extension interface="org.zstack.core.db.HardDeleteEntityExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
-            <zstack:extension interface="org.zstack.identity.RenewSessionExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.rest.RestAuthenticationBackend"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="Session" class="org.zstack.identity.Session">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" order="9002"/>
         </zstack:plugin>
     </bean>
 

@@ -62,7 +62,7 @@ import static org.zstack.utils.CollectionDSL.list;
 
 public class AccountManagerImpl extends AbstractService implements AccountManager, PrepareDbInitialValueExtensionPoint,
         SoftDeleteEntityExtensionPoint, HardDeleteEntityExtensionPoint,
-        ApiMessageInterceptor, RenewSessionExtensionPoint, RestAuthenticationBackend {
+        ApiMessageInterceptor, RestAuthenticationBackend {
     private static final CLogger logger = Utils.getLogger(AccountManagerImpl.class);
 
     @Autowired
@@ -88,7 +88,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private Map<String, Class> resourceTypeClassMap = new HashMap<>();
     private Map<String, Class> childrenResourceTypeClassMap = new HashMap<>();
     private List<Class> resourceTypes;
-    private Map<String, SessionInventory> sessions = new ConcurrentHashMap<>();
     private Map<Class, List<Quota>> messageQuotaMap = new HashMap<>();
     private Map<String, Quota> nameQuotaMap = new HashMap<>();
     private HashSet<Class> accountApiControl = new HashSet<>();
@@ -342,7 +341,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private void handle(APIValidateSessionMsg msg) {
         APIValidateSessionReply reply = new APIValidateSessionReply();
 
-        SessionInventory s = sessions.get(msg.getSessionUuid());
+        SessionInventory s = Session.getSession(msg.getSessionUuid());
         Timestamp current = dbf.getCurrentSqlTime();
         boolean valid = true;
 
@@ -373,7 +372,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void handle(APILogOutMsg msg) {
         APILogOutReply reply = new APILogOutReply();
-        SessionInventory session = sessions.get(msg.getSessionUuid());
+        SessionInventory session = Session.getSession(msg.getSessionUuid());
         if (session == null) {
             SessionVO svo = dbf.findByUuid(msg.getSessionUuid(), SessionVO.class);
             session = svo == null ? null : SessionInventory.valueOf(svo);
@@ -384,28 +383,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private SessionInventory getSession(String accountUuid, String userUuid) {
-        int maxLoginTimes = org.zstack.identity.IdentityGlobalConfig.MAX_CONCURRENT_SESSION.value(Integer.class);
-        SimpleQuery<SessionVO> query = dbf.createQuery(SessionVO.class);
-        query.add(SessionVO_.accountUuid, Op.EQ, accountUuid);
-        query.add(SessionVO_.userUuid, Op.EQ, userUuid);
-        long count = query.count();
-        if (count >= maxLoginTimes) {
-            // please don't update the bellow code, ui used it
-            String err = String.format("Login sessions hit limit of max allowed concurrent login sessions, max allowed: %s", maxLoginTimes);
-            throw new BadCredentialsException(err);
-        }
-
-        int sessionTimeout = IdentityGlobalConfig.SESSION_TIMEOUT.value(Integer.class);
-        SessionVO svo = new SessionVO();
-        svo.setUuid(Platform.getUuid());
-        svo.setAccountUuid(accountUuid);
-        svo.setUserUuid(userUuid);
-        long expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(sessionTimeout);
-        svo.setExpiredDate(new Timestamp(expiredTime));
-        svo = dbf.persistAndRefresh(svo);
-        SessionInventory session = SessionInventory.valueOf(svo);
-        sessions.put(session.getUuid(), session);
-        return session;
+        return Session.login(accountUuid, userUuid);
     }
 
     private void handle(APILogInByUserMsg msg) {
@@ -607,10 +585,8 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             addResourceType();
             buildResourceTypes();
             buildActions();
-            startExpiredSessionCollector();
             collectDefaultQuota();
             configureGlobalConfig();
-            setupCanonicalEvents();
             updateResourceVONameOnEntityUpdate();
 
             for (ReportApiAccountControlExtensionPoint ext : pluginRgty.getExtensionList(ReportApiAccountControlExtensionPoint.class)) {
@@ -634,76 +610,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                     if (name != null) {
                         rvo.setResourceName(name);
                     }
-                }
-            }
-        });
-    }
-
-    private void setupCanonicalEvents() {
-        evtf.on(IdentityCanonicalEvents.ACCOUNT_DELETED_PATH, new EventCallback() {
-            @Override
-            public void run(Map tokens, Object data) {
-                // as a foreign key would clean SessionVO after account deleted, just clean memory sessions here
-                removeMemorySessionsAccordingToDB(tokens, data);
-                removeMemorySessionsAccordingToAccountUuid(tokens, data);
-            }
-
-            private void removeMemorySessionsAccordingToDB(Map tokens, Object data) {
-                AccountDeletedData d = (AccountDeletedData) data;
-
-                SimpleQuery<SessionVO> q = dbf.createQuery(SessionVO.class);
-                q.select(SessionVO_.uuid);
-                q.add(SessionVO_.accountUuid, Op.EQ, d.getAccountUuid());
-                List<String> suuids = q.listValue();
-
-                for (String uuid : suuids) {
-                    logOutSession(uuid);
-                }
-
-                if (!suuids.isEmpty()) {
-                    logger.debug(String.format("successfully removed %s sessions for the deleted account[%s]",
-                            suuids.size(),
-                            d.getAccountUuid()));
-                }
-            }
-
-            private void removeMemorySessionsAccordingToAccountUuid(Map tokens, Object data) {
-                AccountDeletedData d = (AccountDeletedData) data;
-
-                List<String> suuids = sessions.entrySet().stream()
-                        .filter(it -> it.getValue().getAccountUuid().equals(d.getAccountUuid()))
-                        .map(Map.Entry::getKey)
-                        .collect(Collectors.toList());
-
-                for (String uuid : suuids) {
-                    logOutSession(uuid);
-                }
-
-                if (!suuids.isEmpty()) {
-                    logger.debug(String.format("successfully removed %s sessions for the deleted account[%s]",
-                            suuids.size(),
-                            d.getAccountUuid()));
-                }
-            }
-        });
-
-        evtf.on(IdentityCanonicalEvents.USER_DELETED_PATH, new EventCallback() {
-            @Override
-            public void run(Map tokens, Object data) {
-                UserDeletedData d = (UserDeletedData) data;
-
-                SimpleQuery<SessionVO> q = dbf.createQuery(SessionVO.class);
-                q.select(SessionVO_.uuid);
-                q.add(SessionVO_.userUuid, Op.EQ, d.getUserUuid());
-                List<String> suuids = q.listValue();
-
-                for (String uuid : suuids) {
-                    logOutSession(uuid);
-                }
-
-                if (!suuids.isEmpty()) {
-                    logger.debug(String.format("successfully removed %s sessions for the deleted user[%s]", suuids.size(),
-                            d.getUserUuid()));
                 }
             }
         });
@@ -951,63 +857,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         return null;
     }
 
-    private void startExpiredSessionCollector() {
-        final int interval = IdentityGlobalConfig.SESSION_CLEANUP_INTERVAL.value(Integer.class);
-        expiredSessionCollector = thdf.submitPeriodicTask(new PeriodicTask() {
-
-            @Transactional
-            private List<String> deleteExpiredSessions() {
-                String sql = "select s.uuid from SessionVO s where CURRENT_TIMESTAMP  >= s.expiredDate";
-                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                List<String> uuids = q.getResultList();
-                if (!uuids.isEmpty()) {
-                    String dsql = "delete from SessionVO s where s.uuid in :uuids";
-                    Query dq = dbf.getEntityManager().createQuery(dsql);
-                    dq.setParameter("uuids", uuids);
-                    dq.executeUpdate();
-                }
-                return uuids;
-            }
-
-            @Transactional(readOnly = true)
-            private Timestamp getCurrentSqlDate() {
-                Query query = dbf.getEntityManager().createNativeQuery("select current_timestamp()");
-                return (Timestamp) query.getSingleResult();
-            }
-
-            private void deleteExpiredCachedSessions() {
-                Timestamp curr = getCurrentSqlDate();
-                sessions.entrySet().removeIf(entry -> curr.after(entry.getValue().getExpiredDate()));
-            }
-
-            @Override
-            public void run() {
-                List<String> uuids = deleteExpiredSessions();
-                for (String uuid : uuids) {
-                    sessions.remove(uuid);
-                }
-
-                deleteExpiredCachedSessions();
-            }
-
-            @Override
-            public TimeUnit getTimeUnit() {
-                return TimeUnit.SECONDS;
-            }
-
-            @Override
-            public long getInterval() {
-                return interval;
-            }
-
-            @Override
-            public String getName() {
-                return "ExpiredSessionCleanupThread";
-            }
-
-        });
-    }
-
     private void buildActions() {
         BeanUtils.reflections.getSubTypesOf(APIMessage.class).forEach(clz -> {
             Action a = clz.getAnnotation(Action.class);
@@ -1186,7 +1035,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void logOutSession(String sessionUuid) {
-        SessionInventory session = sessions.get(sessionUuid);
+        SessionInventory session = Session.getSession(sessionUuid);
         if (session == null) {
             SessionVO svo = dbf.findByUuid(sessionUuid, SessionVO.class);
             session = svo == null ? null : SessionInventory.valueOf(svo);
@@ -1196,9 +1045,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             return;
         }
 
-        sessions.remove(sessionUuid);
         Session.logout(sessionUuid);
-        dbf.removeByPrimaryKey(sessionUuid, SessionVO.class);
     }
 
     @Transactional(readOnly = true)
@@ -1488,15 +1335,10 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                         "session uuid is null"));
             }
 
-            SessionInventory session = sessions.get(msg.getSession().getUuid());
+            SessionInventory session = Session.getSession(msg.getSession().getUuid());
             if (session == null) {
-                SessionVO svo = dbf.findByUuid(msg.getSession().getUuid(), SessionVO.class);
-                if (svo == null) {
-                    throw new ApiMessageInterceptionException(err(IdentityErrors.INVALID_SESSION,
-                            "Session expired"));
-                }
-                session = SessionInventory.valueOf(svo);
-                sessions.put(session.getUuid(), session);
+                throw new ApiMessageInterceptionException(err(IdentityErrors.INVALID_SESSION,
+                        "Session expired"));
             }
 
             Timestamp curr = getCurrentSqlDate();
@@ -1829,15 +1671,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     public Map<String, SessionInventory> getSessionsCopy() {
-        return new HashMap<>(sessions);
-    }
-
-    @Override
-    public void renewSession(String sessionUuid, Timestamp expireTime) {
-        SessionInventory session = sessions.get(sessionUuid);
-        if (session != null) {
-            session.setExpiredDate(expireTime);
-        }
+        return Session.getSessionsCopy();
     }
 
     @Override
