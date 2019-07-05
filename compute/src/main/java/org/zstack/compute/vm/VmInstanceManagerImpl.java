@@ -1070,6 +1070,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         ReturnIpMsg returnIpMsg = new ReturnIpMsg();
                         returnIpMsg.setUsedIpUuid(ip.getUuid());
                         returnIpMsg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                        bus.makeTargetServiceIdByResourceUuid(returnIpMsg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
                         msgs.add(returnIpMsg);
                     }
                     new While<>(msgs).all((msg, com) -> bus.send(msg, new CloudBusCallBack(com) {
