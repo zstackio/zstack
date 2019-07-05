@@ -459,3 +459,91 @@ CREATE TABLE `zstack`.`PhysicalDriveSmartSelfTestHistoryVO` (
     CONSTRAINT fkPhysicalDriveSmartSelfTestHistoryVORaidPhysicalDriveVO FOREIGN KEY (raidPhysicalDriveUuid) REFERENCES RaidPhysicalDriveVO (uuid) ON DELETE CASCADE,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `VpcFirewallVO` (
+  `uuid` varchar(32) NOT NULL,
+  `description` varchar(2048) DEFAULT NULL,
+  `name` varchar(255) NOT NULL,
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`uuid`),
+  UNIQUE KEY `uuid` (`uuid`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `VpcFirewallRuleSetVO` (
+  `uuid` varchar(32) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `vyosName` varchar(28) NOT NULL,
+  `vpcFirewallUuid` varchar(32) NOT NULL,
+  `actionType` varchar(255) NOT NULL,
+  `description` varchar(2048) DEFAULT NULL,
+  `enableDefaultLog` tinyint(1) NOT NULL DEFAULT '0',
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `isDefault` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`uuid`),
+  UNIQUE KEY `uuid` (`uuid`) USING BTREE,
+  KEY `fkVpcFirewallRuleSetVOVpcFirewallVO` (`vpcFirewallUuid`),
+  CONSTRAINT `fkVpcFirewallRuleSetVOVpcFirewallVO` FOREIGN KEY (`vpcFirewallUuid`) REFERENCES `VpcFirewallVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `VpcFirewallRuleVO` (
+  `uuid` varchar(32) NOT NULL,
+  `vpcFirewallUuid` varchar(32) NOT NULL,
+  `ruleSetUuid` varchar(32) NOT NULL,
+  `ruleSetName` varchar(255) NOT NULL,
+  `action` varchar(255) NOT NULL,
+  `protocol` varchar(255) DEFAULT NULL,
+  `sourcePort` varchar(255) DEFAULT NULL,
+  `destPort` varchar(255) DEFAULT NULL,
+  `sourceIp` varchar(255) DEFAULT NULL,
+  `destIp` varchar(255) DEFAULT NULL,
+  `ruleNumber` int(10) NOT NULL,
+  `icmpTypeName` varchar(255) DEFAULT NULL,
+  `allowStates` varchar(255) DEFAULT NULL,
+  `tcpFlag` varchar(255) DEFAULT NULL,
+  `enableLog` tinyint(1) NOT NULL DEFAULT '0',
+  `state` varchar(32) NOT NULL DEFAULT '0',
+  `isDefault` tinyint(1) NOT NULL DEFAULT '0',
+  `description` varchar(2048) DEFAULT NULL,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`uuid`),
+  UNIQUE KEY `uuid` (`uuid`) USING BTREE,
+  KEY `fkVpcFirewallRuleVOVpcFirewallVO` (`vpcFirewallUuid`),
+  KEY `fkVpcFirewallRuleVOVpcFirewallRuleSetVO` (`ruleSetUuid`),
+  CONSTRAINT `fkVpcFirewallRuleVOVpcFirewallRuleSetVO` FOREIGN KEY (`ruleSetUuid`) REFERENCES `VpcFirewallRuleSetVO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `fkVpcFirewallRuleVOVpcFirewallVO` FOREIGN KEY (`vpcFirewallUuid`) REFERENCES `VpcFirewallVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `VpcFirewallRuleSetL3RefVO` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `ruleSetUuid` varchar(32) NOT NULL,
+  `l3NetworkUuid` varchar(32) NOT NULL,
+  `vpcFirewallUuid` varchar(32) NOT NULL,
+  `packetsForwardType` varchar(32) NOT NULL,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`) USING BTREE,
+  KEY `fkVpcFirewallRuleSetL3RefVOL3NetworkEO` (`l3NetworkUuid`) USING BTREE,
+  KEY `fkVpcFirewallRuleSetL3RefVOVpcFirewallRuleSetVO` (`ruleSetUuid`) USING BTREE,
+  KEY `fkVpcFirewallRuleSetL3RefVOVpcFirewallVO` (`vpcFirewallUuid`) USING BTREE,
+  CONSTRAINT `fkVpcFirewallRuleSetL3RefVOL3NetworkEO` FOREIGN KEY (`l3NetworkUuid`) REFERENCES `L3NetworkEO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `fkVpcFirewallRuleSetL3RefVOVpcFirewallRuleSetVO` FOREIGN KEY (`ruleSetUuid`) REFERENCES `VpcFirewallRuleSetVO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `fkVpcFirewallRuleSetL3RefVOVpcFirewallVO` FOREIGN KEY (`vpcFirewallUuid`) REFERENCES `VpcFirewallVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `VpcFirewallVRouterRefVO` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `vRouterUuid` varchar(32) NOT NULL,
+  `vpcFirewallUuid` varchar(32) NOT NULL,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`) USING BTREE,
+  KEY `VpcFirewallVRouterRefVOVpcFirewallVO` (`vpcFirewallUuid`),
+  KEY `VpcFirewallVRouterRefVOVirtualRouteVmVO` (`vRouterUuid`),
+  CONSTRAINT `VpcFirewallVRouterRefVOVpcFirewallVO` FOREIGN KEY (`vpcFirewallUuid`) REFERENCES `VpcFirewallVO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `VpcFirewallVRouterRefVOVirtualRouteVmVO` FOREIGN KEY (`vRouterUuid`) REFERENCES `VirtualRouterVmVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
