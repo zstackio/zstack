@@ -30,7 +30,7 @@ public class CallBackNetworkChecker implements AnsibleChecker {
     private int callBackPort = 8080;
 
     private static StringDSL.StringWrapper script = ln(
-            "nmap -sS -P0 -n -p {0} {1}|grep \"1 host up\""
+            "sudo nmap -sS -P0 -n -p {0} {1}|grep \"1 host up\""
     );
 
     @Override
