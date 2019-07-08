@@ -21,8 +21,6 @@ public interface VirtualRouterHaGroupExtensionPoint {
 
     void syncVirtualRouterHaConfigToBackend(String vrUuid, Completion completion);
 
-    void allocateVirtualRouterHaConfig(String vrUuid, Completion completion);
-
     String getVirtualRouterUuidByVip(String vipUuid);
 
     String getPeerUuid(String vrUuid);
