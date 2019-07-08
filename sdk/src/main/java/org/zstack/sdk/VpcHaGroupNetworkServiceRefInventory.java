@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class VpcHaGroupNetowrkServiceRefInventory  {
+public class VpcHaGroupNetworkServiceRefInventory  {
 
     public java.lang.Long id;
     public void setId(java.lang.Long id) {

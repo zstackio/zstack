@@ -227,7 +227,7 @@ public class SourceClassMap {
 			put("org.zstack.header.vpc.ha.VpcHaGroupApplianceVmInventory", "org.zstack.sdk.VpcHaGroupApplianceVmInventory");
 			put("org.zstack.header.vpc.ha.VpcHaGroupInventory", "org.zstack.sdk.VpcHaGroupInventory");
 			put("org.zstack.header.vpc.ha.VpcHaGroupMonitorIpInventory", "org.zstack.sdk.VpcHaGroupMonitorIpInventory");
-			put("org.zstack.header.vpc.ha.VpcHaGroupNetowrkServiceRefInventory", "org.zstack.sdk.VpcHaGroupNetowrkServiceRefInventory");
+			put("org.zstack.header.vpc.ha.VpcHaGroupNetworkServiceRefInventory", "org.zstack.sdk.VpcHaGroupNetworkServiceRefInventory");
 			put("org.zstack.header.vpc.ha.VpcHaGroupVipRefInventory", "org.zstack.sdk.VpcHaGroupVipRefInventory");
 			put("org.zstack.header.zone.ZoneInventory", "org.zstack.sdk.ZoneInventory");
 			put("org.zstack.hybrid.account.HybridAccountInventory", "org.zstack.sdk.HybridAccountInventory");
@@ -757,7 +757,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VpcHaGroupApplianceVmInventory", "org.zstack.header.vpc.ha.VpcHaGroupApplianceVmInventory");
 			put("org.zstack.sdk.VpcHaGroupInventory", "org.zstack.header.vpc.ha.VpcHaGroupInventory");
 			put("org.zstack.sdk.VpcHaGroupMonitorIpInventory", "org.zstack.header.vpc.ha.VpcHaGroupMonitorIpInventory");
-			put("org.zstack.sdk.VpcHaGroupNetowrkServiceRefInventory", "org.zstack.header.vpc.ha.VpcHaGroupNetowrkServiceRefInventory");
+			put("org.zstack.sdk.VpcHaGroupNetworkServiceRefInventory", "org.zstack.header.vpc.ha.VpcHaGroupNetworkServiceRefInventory");
 			put("org.zstack.sdk.VpcHaGroupVipRefInventory", "org.zstack.header.vpc.ha.VpcHaGroupVipRefInventory");
 			put("org.zstack.sdk.VpcRouterDnsInventory", "org.zstack.header.vpc.VpcRouterDnsInventory");
 			put("org.zstack.sdk.VpcRouterVmInventory", "org.zstack.header.vpc.VpcRouterVmInventory");
