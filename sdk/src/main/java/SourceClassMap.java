@@ -253,6 +253,8 @@ public class SourceClassMap {
 			put("org.zstack.iam2.entity.IAM2AttributeInventory", "org.zstack.sdk.iam2.entity.IAM2AttributeInventory");
 			put("org.zstack.iam2.entity.IAM2OrganizationAttributeInventory", "org.zstack.sdk.iam2.entity.IAM2OrganizationAttributeInventory");
 			put("org.zstack.iam2.entity.IAM2OrganizationInventory", "org.zstack.sdk.iam2.entity.IAM2OrganizationInventory");
+			put("org.zstack.iam2.entity.IAM2OrganizationProjectRefInventory", "org.zstack.sdk.iam2.entity.IAM2OrganizationProjectRefInventory");
+			put("org.zstack.iam2.entity.IAM2ProjectAccountRefInventory", "org.zstack.sdk.iam2.entity.IAM2ProjectAccountRefInventory");
 			put("org.zstack.iam2.entity.IAM2ProjectAttributeInventory", "org.zstack.sdk.iam2.entity.IAM2ProjectAttributeInventory");
 			put("org.zstack.iam2.entity.IAM2ProjectInventory", "org.zstack.sdk.iam2.entity.IAM2ProjectInventory");
 			put("org.zstack.iam2.entity.IAM2ProjectTemplateInventory", "org.zstack.sdk.iam2.entity.IAM2ProjectTemplateInventory");
@@ -843,6 +845,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.iam2.entity.IAM2AttributeInventory", "org.zstack.iam2.entity.IAM2AttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2OrganizationAttributeInventory", "org.zstack.iam2.entity.IAM2OrganizationAttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2OrganizationInventory", "org.zstack.iam2.entity.IAM2OrganizationInventory");
+			put("org.zstack.sdk.iam2.entity.IAM2OrganizationProjectRefInventory", "org.zstack.iam2.entity.IAM2OrganizationProjectRefInventory");
+			put("org.zstack.sdk.iam2.entity.IAM2ProjectAccountRefInventory", "org.zstack.iam2.entity.IAM2ProjectAccountRefInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2ProjectAttributeInventory", "org.zstack.iam2.entity.IAM2ProjectAttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2ProjectInventory", "org.zstack.iam2.entity.IAM2ProjectInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2ProjectTemplateInventory", "org.zstack.iam2.entity.IAM2ProjectTemplateInventory");
