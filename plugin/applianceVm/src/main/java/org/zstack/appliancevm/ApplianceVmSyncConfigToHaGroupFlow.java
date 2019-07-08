@@ -55,8 +55,6 @@ public class ApplianceVmSyncConfigToHaGroupFlow implements Flow {
         List<String> systemTags = null;
         if (spec.getMessage() instanceof APIStartVmInstanceMsg) {
             systemTags = ((APIStartVmInstanceMsg)spec.getMessage()).getSystemTags();
-        } else if (spec.getMessage() instanceof APIRebootVmInstanceMsg) {
-            systemTags = ((APIRebootVmInstanceMsg)spec.getMessage()).getSystemTags();
         } else {
             chain.next();
             return;
@@ -89,64 +87,6 @@ public class ApplianceVmSyncConfigToHaGroupFlow implements Flow {
             return;
         }
 
-        /* make a new allocated ip for default public nic */
-        for (VmNicVO nic : applianceVmVO.getVmNics()) {
-            if (applianceVmVO.getDefaultRouteL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
-                VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.ip, nic.getIp()).eq(VipVO_.l3NetworkUuid, nic.getL3NetworkUuid()).find();
-                if (vipVO != null) {
-
-                    Long[] usedIpInLongs;
-                    List<IpRangeVO> ipRangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, nic.getL3NetworkUuid()).list();
-                    ipRangeVOS = ipRangeVOS.stream().sorted(new Comparator<IpRangeVO>() {
-                        @Override
-                        public int compare(IpRangeVO r1, IpRangeVO r2) {
-                            return r1.getStartIp().compareTo(r2.getStartIp());
-                        }
-                    }).collect(Collectors.toList());
-
-                    List<String> usedIps = Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, nic.getL3NetworkUuid()).select(UsedIpVO_.ip)
-                            .orderBy(UsedIpVO_.ip, SimpleQuery.Od.ASC).listValues();
-                    if (usedIps == null || usedIps.isEmpty()) {
-                        usedIpInLongs = new Long[0];
-                    } else {
-                        usedIpInLongs = new Long[usedIps.size()];
-                        int i = 0;
-                        for (String ip : usedIps) {
-                            usedIpInLongs[i++] = NetworkUtils.ipv4StringToLong(ip);
-                        }
-                    }
-
-                    String startIp = ipRangeVOS.get(0).getStartIp();
-                    String endIp = ipRangeVOS.get(ipRangeVOS.size() -1).getEndIp();
-                    String ip = NetworkUtils.findFirstAvailableIpv4Address(startIp, endIp, usedIpInLongs);
-
-                    AllocateIpMsg amsg = new AllocateIpMsg();
-                    amsg.setL3NetworkUuid(nic.getL3NetworkUuid());
-                    if (ip != null) {
-                        amsg.setRequiredIp(ip);
-                    }
-                    bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
-                    AllocateIpReply reply = (AllocateIpReply)bus.call(amsg);
-                    if (!reply.isSuccess()) {
-                        chain.fail(reply.getError());
-                        return;
-                    }
-
-                    UsedIpInventory usedIp = reply.getIpInventory();
-                    data.put(VmInstanceConstant.Params.ApplianceVmSyncHaConfig_oldUsedIpUuid.toString(), nic.getUsedIpUuid());
-                    data.put(VmInstanceConstant.Params.ApplianceVmSyncHaConfig_oldUsedIp.toString(), nic.getIp());
-                    data.put(VmInstanceConstant.Params.ApplianceVmSyncHaConfig_nic.toString(), nic);
-                    data.put(VmInstanceConstant.Params.ApplianceVmSyncHaConfig_newUsedIp.toString(), usedIp);
-                    SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, nic.getUuid()).set(VmNicVO_.usedIpUuid, usedIp.getUuid())
-                            .set(VmNicVO_.ip, usedIp.getIp()).update();
-                    SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, usedIp.getUuid()).set(UsedIpVO_.vmNicUuid, nic.getUuid()).update();
-
-                    VmInstanceVO vmInstanceVO = dbf.findByUuid(inv.getUuid(), VmInstanceVO.class);
-                    spec.setVmInventory(VmInstanceInventory.valueOf(vmInstanceVO));
-                }
-            }
-        }
-
         SQL.New(ApplianceVmVO.class).eq(ApplianceVmVO_.uuid, inv.getUuid()).set(ApplianceVmVO_.haStatus, ApplianceVmHaStatus.Backup).update();
 
         for (ApplianceVmSyncConfigToHaGroupExtensionPoint exp : exps) {
@@ -154,7 +94,7 @@ public class ApplianceVmSyncConfigToHaGroupFlow implements Flow {
         }
 
         data.put(VmInstanceConstant.Params.ApplianceVmSyncHaConfig_applianceVm.toString(), applianceVmVO);
-        data.put(VmInstanceConstant.Params.ApplianceVmSyncHaConfig_haUuid, haUuid);
+        data.put(VmInstanceConstant.Params.ApplianceVmSyncHaConfig_haUuid.toString(), haUuid);
         chain.next();
     }
 
@@ -162,19 +102,6 @@ public class ApplianceVmSyncConfigToHaGroupFlow implements Flow {
     public void rollback(FlowRollback trigger, Map data) {
         ApplianceVmVO applianceVmVO = (ApplianceVmVO)data.get(VmInstanceConstant.Params.ApplianceVmSyncHaConfig_applianceVm.toString());
         String haUuid = (String)data.get(VmInstanceConstant.Params.ApplianceVmSyncHaConfig_haUuid.toString());
-        VmNicVO nicVO = (VmNicVO)data.get(VmInstanceConstant.Params.ApplianceVmSyncHaConfig_nic.toString());
-        UsedIpInventory usedIp = (UsedIpInventory)data.get(VmInstanceConstant.Params.ApplianceVmSyncHaConfig_newUsedIp.toString());
-        String oldIp = (String)data.get(VmInstanceConstant.Params.ApplianceVmSyncHaConfig_oldUsedIp.toString());
-        String oldUuid = (String)data.get(VmInstanceConstant.Params.ApplianceVmSyncHaConfig_oldUsedIpUuid.toString());
-
-        if (nicVO != null && oldUuid != null) {
-            SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, nicVO.getUuid()).set(VmNicVO_.usedIpUuid, oldUuid).set(VmNicVO_.ip, oldIp).update();
-            ReturnIpMsg rmsg = new ReturnIpMsg();
-            rmsg.setL3NetworkUuid(nicVO.getL3NetworkUuid());
-            rmsg.setUsedIpUuid(usedIp.getUuid());
-            rmsg.setServiceId(bus.makeLocalServiceId(L3NetworkConstant.SERVICE_ID));
-            bus.send(rmsg);
-        }
 
         if (haUuid == null || applianceVmVO == null) {
             trigger.rollback();

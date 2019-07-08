@@ -725,7 +725,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     }
 
     @Override
-    public void detachEipToVirtualRouter(List<String> eipUuids, String vrUuid) {
+    public void detachEipFromVirtualRouter(List<String> eipUuids, String vrUuid) {
 
     }
 

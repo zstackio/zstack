@@ -19,7 +19,7 @@ public interface EipBackend {
 
     void attachEipToVirtualRouter(List<String> eipUuids, String vrUuid);
 
-    void detachEipToVirtualRouter(List<String> eipUuids, String vrUuid);
+    void detachEipFromVirtualRouter(List<String> eipUuids, String vrUuid);
 
     List<String> getEipUuidsOnVirtualRouter(String vrUuid);
 }

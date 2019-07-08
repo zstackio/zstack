@@ -214,7 +214,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
     }
 
     @Override
-    public void detachEipToVirtualRouter(List<String> eipUuids, String vrUuid) {
+    public void detachEipFromVirtualRouter(List<String> eipUuids, String vrUuid) {
         SQL.New(VirtualRouterEipRefVO.class).in(VirtualRouterEipRefVO_.eipUuid, eipUuids).delete();
     }
 
@@ -278,7 +278,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         VirtualRouterVmVO vrvo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
         if (vrvo.getState() != VmInstanceState.Running) {
             // rule will be synced when vr state changes to Running
-            detachEipToVirtualRouter(asList(struct.getEip().getUuid()), vrUuid);
+            detachEipFromVirtualRouter(asList(struct.getEip().getUuid()), vrUuid);
             completion.success();
             return;
         }
@@ -385,7 +385,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         revokeEip(vrUuid, struct, new Completion(completion) {
             @Override
             public void success() {
-                detachEipToVirtualRouter(asList(struct.getEip().getUuid()), vrUuid);
+                detachEipFromVirtualRouter(asList(struct.getEip().getUuid()), vrUuid);
                 revokeEipOnHaRouter(vrUuid, struct);
                 completion.success();
             }
@@ -394,7 +394,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
             public void fail(ErrorCode errorCode) {
                 // We need to remove the 'ref' record, otherwise the next time when
                 // deleting EIP is requested, we will get ConstraintViolationException.
-                detachEipToVirtualRouter(asList(struct.getEip().getUuid()), vrUuid);
+                detachEipFromVirtualRouter(asList(struct.getEip().getUuid()), vrUuid);
                 completion.fail(errorCode);
             }
         });
@@ -593,7 +593,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 if (eips == null || eips.isEmpty()) {
                     completion.success();
                 } else {
-                    detachEipToVirtualRouter(eips.stream().map(t -> t.get(5, String.class)).collect(Collectors.toList()), nic.getVmInstanceUuid());
+                    detachEipFromVirtualRouter(eips.stream().map(t -> t.get(5, String.class)).collect(Collectors.toList()), nic.getVmInstanceUuid());
                     completion.success();
                 }
             }

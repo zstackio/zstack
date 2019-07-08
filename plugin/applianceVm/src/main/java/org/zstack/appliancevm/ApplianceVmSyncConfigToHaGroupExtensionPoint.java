@@ -7,4 +7,5 @@ package org.zstack.appliancevm;
 public interface ApplianceVmSyncConfigToHaGroupExtensionPoint {
     void applianceVmSyncConfigToHa(ApplianceVmInventory inv, String haUuid);
     void applianceVmSyncConfigToHaRollback(ApplianceVmInventory inv, String haUuid);
+    void applianceVmSyncConfigAfterAddToHaGroup(ApplianceVmInventory inv, String haUuid);
 }

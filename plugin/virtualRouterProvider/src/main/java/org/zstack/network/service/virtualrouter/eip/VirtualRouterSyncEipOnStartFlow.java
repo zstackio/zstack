@@ -228,7 +228,7 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
         List<String> eipUuids = (List<String>) data.get(VirtualRouterSyncEipOnStartFlow.class.getName());
         EipBackend eipBackend = (EipBackend)data.get(Param.BACKEND.toString());
         if (eipUuids != null) {
-            eipBackend.detachEipToVirtualRouter(eipUuids, vr.getUuid());
+            eipBackend.detachEipFromVirtualRouter(eipUuids, vr.getUuid());
         }
 
         trigger.rollback();
