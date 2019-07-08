@@ -99,4 +99,5 @@
     <import resource="springConfigXml/LongJobManager.xml" />
     <import resource="springConfigXml/captcha.xml"/>
     <import resource="springConfigXml/LogConfiguration.xml"/>
+    <import resource="springConfigXml/log.xml"/>
 </beans>

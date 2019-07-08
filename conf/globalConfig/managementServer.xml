@@ -15,4 +15,21 @@
         <defaultValue>0</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+
+    <config>
+        <name>log.delete.accumulatedFileSize</name>
+        <category>managementServer</category>
+        <defaultValue>-1</defaultValue>
+        <type>java.lang.Integer</type>
+        <description>Maximum retention size of the log, unit: GB</description>
+    </config>
+
+    <config>
+        <name>log.delete.lastModified</name>
+        <category>managementServer</category>
+        <defaultValue>-1</defaultValue>
+        <type>java.lang.Integer</type>
+        <description>Maximum number of days to keep logs</description>
+    </config>
+
 </globalConfig>

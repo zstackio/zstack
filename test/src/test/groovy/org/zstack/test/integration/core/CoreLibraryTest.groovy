@@ -13,6 +13,7 @@ class CoreLibraryTest extends Test {
             include("CloudBusAopProxy.xml")
             include("ZoneManager.xml")
             include("webhook.xml")
+            include("log.xml")
         }
     }
 
