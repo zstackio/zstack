@@ -410,11 +410,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         try {
             UsedIpVO vo = new UsedIpVO(ipRange.getUuid(), ip);
             vo.setIpInLong(NetworkUtils.ipv4StringToLong(ip));
-            /* for ha, same ip will used by 2 nic, so add a number prefix */
-            Long count = Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, ipRange.getL3NetworkUuid()).eq(UsedIpVO_.ip, ip).count();
-            String uuid = ipRange.getUuid() + ip + count.toString();
-            uuid = UUID.nameUUIDFromBytes(uuid.getBytes()).toString().replaceAll("-", "");
-            vo.setUuid(uuid);
+            vo.setUuid(Platform.getUuid());
             vo.setL3NetworkUuid(ipRange.getL3NetworkUuid());
             vo.setNetmask(ipRange.getNetmask());
             vo.setGateway(ipRange.getGateway());
@@ -450,13 +446,15 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     public boolean isIpRangeFull(IpRangeVO vo) {
         SimpleQuery<UsedIpVO> query = dbf.createQuery(UsedIpVO.class);
         query.add(UsedIpVO_.ipRangeUuid, Op.EQ, vo.getUuid());
-        long used = query.count();
+        query.select(UsedIpVO_.ip);
+        List<Long> used = query.listValue();
+        used = used.stream().distinct().collect(Collectors.toList());
 
         if (vo.getIpVersion() == IPv6Constants.IPv4) {
             int total = NetworkUtils.getTotalIpInRange(vo.getStartIp(), vo.getEndIp());
-            return used >= total;
+            return used.size() >= total;
         } else {
-            return IPv6NetworkUtils.isIpv6RangeFull(vo.getStartIp(), vo.getEndIp(), used);
+            return IPv6NetworkUtils.isIpv6RangeFull(vo.getStartIp(), vo.getEndIp(), used.size());
         }
     }
 
@@ -468,13 +466,13 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             query.add(UsedIpVO_.ipRangeUuid, Op.EQ, vo.getUuid());
             List<Long> used = query.listValue();
             Collections.sort(used);
-            return used.stream().map(l -> new BigInteger(String.valueOf(l))).collect(Collectors.toList());
+            return used.stream().distinct().map(l -> new BigInteger(String.valueOf(l))).collect(Collectors.toList());
         } else {
             SimpleQuery<UsedIpVO> query = dbf.createQuery(UsedIpVO.class);
             query.select(UsedIpVO_.ip);
             query.add(UsedIpVO_.ipRangeUuid, Op.EQ, vo.getUuid());
             List<String> used = query.listValue();
-            return used.stream().map(IPv6NetworkUtils::getBigIntegerFromString).sorted().collect(Collectors.toList());
+            return used.stream().distinct().map(IPv6NetworkUtils::getBigIntegerFromString).sorted().collect(Collectors.toList());
         }
     }
 
