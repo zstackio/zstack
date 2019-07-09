@@ -5,6 +5,7 @@ import org.springframework.ldap.NamingException;
 import org.springframework.ldap.control.PagedResultsDirContextProcessor;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.LdapTemplate;
+import org.springframework.ldap.core.NameAwareAttribute;
 import org.springframework.ldap.core.support.AbstractContextMapper;
 import org.springframework.ldap.core.support.DefaultDirObjectFactory;
 import org.springframework.ldap.core.support.DefaultTlsDirContextAuthenticationStrategy;
@@ -103,7 +104,7 @@ public class LdapUtil {
     }
 
     LdapTemplateContextSource loadLdap(LdapServerInventory inv) {
-        LdapContextSource ldapContextSource = buildLdapContextSource(inv, new HashMap<>());
+        LdapContextSource ldapContextSource = buildLdapContextSource(inv, getBaseEnvProperties());
 
         LdapTemplate ldapTemplate;
         ldapTemplate = new LdapTemplate();
@@ -170,6 +171,73 @@ public class LdapUtil {
 
         // default WindowsAD
         return LdapConstant.WindowsAD.DN_KEY;
+    }
+
+    public Map<String, Object> getBaseEnvProperties() {
+        String ldapServerUuid = Q.New(LdapServerVO.class)
+                .select(LdapServerVO_.uuid)
+                .eq(LdapServerVO_.scope, scope)
+                .findValue();
+        String type = LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
+
+        Map<String, Object> properties = new HashMap<>();
+        if(LdapConstant.WindowsAD.TYPE.equals(type)){
+            properties.put("java.naming.ldap.attributes.binary","objectGUID");
+        }
+
+        return properties;
+    }
+
+    public String decodeGlobalUuid(NameAwareAttribute attribute) throws javax.naming.NamingException {
+        String ldapServerUuid = Q.New(LdapServerVO.class)
+                .select(LdapServerVO_.uuid)
+                .eq(LdapServerVO_.scope, scope)
+                .findValue();
+        String type = LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
+
+        if(LdapConstant.WindowsAD.TYPE.equals(type)){
+            byte[] GUID = (byte[]) attribute.get();
+
+            String strGUID;
+            String byteGUID = "";
+
+
+            //Convert the GUID into string using the byte format
+            for (int c=0;c<GUID.length;c++) {
+                byteGUID = byteGUID + "\\" + addLeadingZero((int)GUID[c] & 0xFF);
+            }
+            strGUID = "{";
+            strGUID = strGUID + addLeadingZero((int)GUID[3] & 0xFF);
+            strGUID = strGUID + addLeadingZero((int)GUID[2] & 0xFF);
+            strGUID = strGUID + addLeadingZero((int)GUID[1] & 0xFF);
+            strGUID = strGUID + addLeadingZero((int)GUID[0] & 0xFF);
+            strGUID = strGUID + "-";
+            strGUID = strGUID + addLeadingZero((int)GUID[5] & 0xFF);
+            strGUID = strGUID + addLeadingZero((int)GUID[4] & 0xFF);
+            strGUID = strGUID + "-";
+            strGUID = strGUID + addLeadingZero((int)GUID[7] & 0xFF);
+            strGUID = strGUID + addLeadingZero((int)GUID[6] & 0xFF);
+            strGUID = strGUID + "-";
+            strGUID = strGUID + addLeadingZero((int)GUID[8] & 0xFF);
+            strGUID = strGUID + addLeadingZero((int)GUID[9] & 0xFF);
+            strGUID = strGUID + "-";
+            strGUID = strGUID + addLeadingZero((int)GUID[10] & 0xFF);
+            strGUID = strGUID + addLeadingZero((int)GUID[11] & 0xFF);
+            strGUID = strGUID + addLeadingZero((int)GUID[12] & 0xFF);
+            strGUID = strGUID + addLeadingZero((int)GUID[13] & 0xFF);
+            strGUID = strGUID + addLeadingZero((int)GUID[14] & 0xFF);
+            strGUID = strGUID + addLeadingZero((int)GUID[15] & 0xFF);
+            strGUID = strGUID + "}";
+
+            return strGUID;
+        }
+
+        return attribute.get(0).toString();
+    }
+
+    public String addLeadingZero(int k) {
+        return (k <= 0xF) ? "0" + Integer.toHexString(k) : Integer
+                .toHexString(k);
     }
 
     public String getGlobalUuidKey() {
