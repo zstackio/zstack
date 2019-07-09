@@ -105,6 +105,9 @@ public class SourceClassMap {
 			put("org.zstack.header.baremetal.network.BaremetalVlanNicInventory", "org.zstack.sdk.BaremetalVlanNicInventory");
 			put("org.zstack.header.baremetal.preconfiguration.PreconfigurationTemplateInventory", "org.zstack.sdk.PreconfigurationTemplateInventory");
 			put("org.zstack.header.baremetal.pxeserver.BaremetalPxeServerInventory", "org.zstack.sdk.BaremetalPxeServerInventory");
+			put("org.zstack.header.bootstrap.MiniCandidateHostStruct", "org.zstack.sdk.MiniCandidateHostStruct");
+			put("org.zstack.header.bootstrap.MiniHostInfo", "org.zstack.sdk.MiniHostInfo");
+			put("org.zstack.header.bootstrap.MiniNetworkConfigStruct", "org.zstack.sdk.MiniNetworkConfigStruct");
 			put("org.zstack.header.cloudformation.CloudFormationStackEventInventory", "org.zstack.sdk.CloudFormationStackEventInventory");
 			put("org.zstack.header.cloudformation.PreviewResourceStruct", "org.zstack.sdk.PreviewResourceStruct");
 			put("org.zstack.header.cloudformation.ResourceStackInventory", "org.zstack.sdk.ResourceStackInventory");
@@ -586,6 +589,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MdevDeviceStatus", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceStatus");
 			put("org.zstack.sdk.MdevDeviceType", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceType");
 			put("org.zstack.sdk.MediaInventory", "org.zstack.monitoring.media.MediaInventory");
+			put("org.zstack.sdk.MiniCandidateHostStruct", "org.zstack.header.bootstrap.MiniCandidateHostStruct");
+			put("org.zstack.sdk.MiniHostInfo", "org.zstack.header.bootstrap.MiniHostInfo");
+			put("org.zstack.sdk.MiniNetworkConfigStruct", "org.zstack.header.bootstrap.MiniNetworkConfigStruct");
 			put("org.zstack.sdk.MiniStorageHostRefInventory", "org.zstack.storage.primary.ministorage.MiniStorageHostRefInventory");
 			put("org.zstack.sdk.MiniStorageInventory", "org.zstack.storage.primary.ministorage.MiniStorageInventory");
 			put("org.zstack.sdk.MiniStorageResourceReplicationInventory", "org.zstack.storage.primary.ministorage.MiniStorageResourceReplicationInventory");
