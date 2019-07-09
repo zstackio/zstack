@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
         responseClass = APIRevertVolumeFromSnapshotEvent.class
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 24)
-public class APIRevertVolumeFromSnapshotMsg extends APIMessage implements VolumeSnapshotMessage, APIAuditor {
+public class APIRevertVolumeFromSnapshotMsg extends APIMessage implements RevertVolumeSnapshotMessage, APIAuditor {
     /**
      * @desc volume snapshot uuid
      * <p>

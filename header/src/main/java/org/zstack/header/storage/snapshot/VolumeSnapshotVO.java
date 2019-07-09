@@ -2,6 +2,7 @@ package org.zstack.header.storage.snapshot;
 
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.EntityGraph;
@@ -31,6 +32,12 @@ public class VolumeSnapshotVO extends VolumeSnapshotAO implements OwnedByAccount
     @NoView
     private List<VolumeSnapshotBackupStorageRefVO> backupStorageRefs = new ArrayList<VolumeSnapshotBackupStorageRefVO>();
 
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "uuid", referencedColumnName = "volumeSnapshotUuid", insertable = false, updatable = false)
+    @NoView
+    private VolumeSnapshotGroupRefVO groupRef;
+
     @Transient
     private String accountUuid;
 
@@ -50,5 +57,13 @@ public class VolumeSnapshotVO extends VolumeSnapshotAO implements OwnedByAccount
 
     public void setBackupStorageRefs(List<VolumeSnapshotBackupStorageRefVO> backupStorageRefs) {
         this.backupStorageRefs = backupStorageRefs;
+    }
+
+    public VolumeSnapshotGroupRefVO getGroupRef() {
+        return groupRef;
+    }
+
+    public void setGroupRef(VolumeSnapshotGroupRefVO groupRef) {
+        this.groupRef = groupRef;
     }
 }

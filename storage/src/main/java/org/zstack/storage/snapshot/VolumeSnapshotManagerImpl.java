@@ -18,7 +18,6 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -28,7 +27,7 @@ import org.zstack.header.message.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
@@ -37,6 +36,8 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
+import org.zstack.storage.snapshot.group.VolumeSnapshotGroupChecker;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.storage.volume.VolumeJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.storage.volume.VolumeSystemTags;
@@ -106,11 +107,25 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         }
     }
 
+    private void passThrough(VolumeSnapshotGroupMessage msg) {
+        VolumeSnapshotGroupVO vo = dbf.findByUuid(msg.getGroupUuid(), VolumeSnapshotGroupVO.class);
+        if (vo == null) {
+            throw new OperationFailureException(err(SysErrors.RESOURCE_NOT_FOUND,
+                    "cannot find volume snapshot[uuid:%s]", msg.getGroupUuid()
+            ));
+        }
+
+        VolumeSnapshotGroupBase group = new VolumeSnapshotGroupBase(vo);
+        group.handleMessage((Message) msg);
+    }
+
     @Override
     @MessageSafe
     public void handleMessage(Message msg) {
         if (msg instanceof VolumeSnapshotMessage) {
             passThrough((VolumeSnapshotMessage) msg);
+        } else if (msg instanceof VolumeSnapshotGroupMessage) {
+            passThrough((VolumeSnapshotGroupMessage) msg);
         } else if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
         } else {
@@ -298,6 +313,12 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 bus.publish(event);
             }
         });
+    }
+
+    private void handle(APICheckVolumeSnapshotGroupAvailabilityMsg msg) {
+        APICheckVolumeSnapshotGroupAvailabilityReply reply = new APICheckVolumeSnapshotGroupAvailabilityReply();
+        reply.setResults(VolumeSnapshotGroupChecker.getAvailability(msg.getUuids()));
+        bus.reply(msg, reply);
     }
 
 /*
@@ -821,43 +842,12 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         }).start();
     }
 
-//    private void handle(APICreateVolumeSnapshotSchedulerJobMsg msg) {
-//        APICreateVolumeSnapshotSchedulerJobEvent evt = new APICreateVolumeSnapshotSchedulerJobEvent(msg.getId());
-//
-//        CreateVolumeSnapshotJob job = new CreateVolumeSnapshotJob(msg);
-//        job.setVolumeUuid(msg.getVolumeUuid());
-//        job.setTargetResourceUuid(msg.getVolumeUuid());
-//        job.setSnapShotName(msg.getSnapShotName());
-//        job.setSnapShotDescription(msg.getVolumeSnapshotDescription());
-//        job.setAccountUuid(msg.getSession().getAccountUuid());
-//
-//        SchedulerJobVO vo = new SchedulerJobVO();
-//        if (job.getResourceUuid() != null) {
-//            vo.setUuid(job.getResourceUuid());
-//        } else {
-//            vo.setUuid(Platform.getUuid());
-//        }
-//        vo.setName(msg.getName());
-//        vo.setDescription(msg.getDescription());
-//        vo.setTargetResourceUuid(msg.getVolumeUuid());
-//        vo.setJobData(JSONObjectUtil.toJsonString(job));
-//        vo.setManagementNodeUuid(Platform.getManagementServerId());
-//        vo.setJobClassName(job.getClass().getName());
-//        dbf.persistAndRefresh(vo);
-//        acntMgr.createAccountResourceRef(msg.getSession().getAccountUuid(), vo.getUuid(), SchedulerJobVO.class);
-//
-//        evt.setInventory(SchedulerJobInventory.valueOf(vo));
-//        bus.publish(evt);
-//    }
-
     private void handleApiMessage(APIMessage msg) {
-//        if (msg instanceof APIGetVolumeSnapshotTreeMsg) {
-//            handle((APIGetVolumeSnapshotTreeMsg) msg);
         if (msg instanceof APIBatchDeleteVolumeSnapshotMsg) {
             handle((APIBatchDeleteVolumeSnapshotMsg) msg);
-//        } else if (msg instanceof APICreateVolumeSnapshotSchedulerJobMsg) {
-//            handle((APICreateVolumeSnapshotSchedulerJobMsg) msg);
-        } else {
+        } else if (msg instanceof APICheckVolumeSnapshotGroupAvailabilityMsg) {
+            handle((APICheckVolumeSnapshotGroupAvailabilityMsg) msg);
+        } else  {
             bus.dealWithUnknownMessage(msg);
         }
     }
@@ -1008,6 +998,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 if (!new QuotaUtil().isAdminAccount(msg.getSession().getAccountUuid())) {
                     if (msg instanceof APICreateVolumeSnapshotMsg) {
                         check((APICreateVolumeSnapshotMsg) msg, pairs);
+                    } else if (msg instanceof APICreateVolumeSnapshotGroupMsg) {
+                        check((APICreateVolumeSnapshotGroupMsg) msg, pairs);
                     } else if (msg instanceof APIChangeResourceOwnerMsg) {
                         check((APIChangeResourceOwnerMsg) msg, pairs);
                     } else if (msg instanceof APIRecoverDataVolumeMsg) {
@@ -1105,6 +1097,12 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, 1, pairs);
             }
 
+            private void check(APICreateVolumeSnapshotGroupMsg msg, Map<String, Quota.QuotaPair> pairs) {
+                String resourceTargetOwnerUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
+                int snapCount = msg.getVmInstance().getAllVolumes().size();
+                checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, snapCount, pairs);
+            }
+
             private void check(APIRecoverDataVolumeMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 String resourceTargetOwnerUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
                 long cnt = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, msg.getVolumeUuid()).count();
@@ -1141,6 +1139,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         quota.addPair(p);
 
         quota.addMessageNeedValidation(APICreateVolumeSnapshotMsg.class);
+        quota.addMessageNeedValidation(APICreateVolumeSnapshotGroupMsg.class);
         quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
         quota.addMessageNeedValidation(APIRecoverDataVolumeMsg.class);
         quota.addMessageNeedValidation(VolumeCreateSnapshotMsg.class);

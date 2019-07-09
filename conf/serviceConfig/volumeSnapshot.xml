@@ -41,4 +41,24 @@
         <name>org.zstack.header.storage.snapshot.APIGetVolumeSnapshotSizeMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.header.storage.snapshot.group.APIQueryVolumeSnapshotGroupMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.group.APIUngroupVolumeSnapshotGroupMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.group.APICheckVolumeSnapshotGroupAvailabilityMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.group.APIDeleteVolumeSnapshotGroupMsg</name>
+    </message>
 </service>

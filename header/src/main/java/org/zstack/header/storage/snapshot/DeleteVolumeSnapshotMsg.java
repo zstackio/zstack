@@ -1,23 +1,16 @@
 package org.zstack.header.storage.snapshot;
 
+import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.NeedReplyMessage;
 
 /**
  * Created by kayo on 2018/5/9.
  */
-public class DeleteVolumeSnapshotMsg extends NeedReplyMessage implements VolumeSnapshotMessage {
-    private APIDeleteVolumeSnapshotMsg apiMessage;
+public class DeleteVolumeSnapshotMsg extends NeedReplyMessage implements DeleteVolumeSnapshotMessage {
     private String snapshotUuid;
     private String volumeUuid;
     private String treeUuid;
-
-    public APIDeleteVolumeSnapshotMsg getApiMessage() {
-        return apiMessage;
-    }
-
-    public void setApiMessage(APIDeleteVolumeSnapshotMsg apiMessage) {
-        this.apiMessage = apiMessage;
-    }
+    private String deletionMode;
 
     public void setSnapshotUuid(String snapshotUuid) {
         this.snapshotUuid = snapshotUuid;
@@ -31,6 +24,15 @@ public class DeleteVolumeSnapshotMsg extends NeedReplyMessage implements VolumeS
     @Override
     public String getVolumeUuid() {
         return volumeUuid;
+    }
+
+    public void setDeletionMode(APIDeleteMessage.DeletionMode deletionMode) {
+        this.deletionMode = deletionMode.toString();
+    }
+
+    @Override
+    public APIDeleteMessage.DeletionMode getDeletionMode() {
+        return APIDeleteMessage.DeletionMode.valueOf(deletionMode);
     }
 
     @Override

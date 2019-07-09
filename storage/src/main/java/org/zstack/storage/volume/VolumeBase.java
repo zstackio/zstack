@@ -41,6 +41,9 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.OverlayMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeConstant.Capability;
@@ -57,8 +60,10 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.getUuid;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -1244,6 +1249,8 @@ public class VolumeBase implements Volume {
             handle((APIChangeVolumeStateMsg) msg);
         } else if (msg instanceof APICreateVolumeSnapshotMsg) {
             handle((APICreateVolumeSnapshotMsg) msg);
+        } else if (msg instanceof APICreateVolumeSnapshotGroupMsg) {
+            handle((APICreateVolumeSnapshotGroupMsg) msg);
         } else if (msg instanceof APIDeleteDataVolumeMsg) {
             handle((APIDeleteDataVolumeMsg) msg);
         } else if (msg instanceof APIDetachDataVolumeFromVmMsg) {
@@ -1925,6 +1932,75 @@ public class VolumeBase implements Volume {
             @Override
             public String getName() {
                 return String.format("create-snapshot-for-volume-%s", self.getUuid());
+            }
+        });
+    }
+
+
+    private void handle(APICreateVolumeSnapshotGroupMsg msg) {
+        APICreateVolumeSnapshotGroupEvent evt = new APICreateVolumeSnapshotGroupEvent(msg.getId());
+
+        CreateVolumesSnapshotMsg cmsg = new CreateVolumesSnapshotMsg();
+        List<CreateVolumesSnapshotsJobStruct> volumesSnapshotsJobs = new ArrayList<>();
+        cmsg.setAccountUuid(msg.getSession().getAccountUuid());
+
+        VmInstanceInventory vm = msg.getVmInstance();
+        Map<String, VolumeInventory> vols = vm.getAllVolumes().stream().collect(Collectors.toMap(VolumeInventory::getUuid, it -> it));
+        for (VolumeInventory vol : vols.values()) {
+            CreateVolumesSnapshotsJobStruct volumesSnapshotsJob = new CreateVolumesSnapshotsJobStruct();
+
+            volumesSnapshotsJob.setVolumeUuid(vol.getUuid());
+            volumesSnapshotsJob.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
+            volumesSnapshotsJob.setResourceUuid(getUuid());
+            volumesSnapshotsJob.setName(msg.getName());
+            volumesSnapshotsJob.setDescription(msg.getDescription());
+            volumesSnapshotsJobs.add(volumesSnapshotsJob);
+        }
+        cmsg.setVolumeSnapshotJobs(volumesSnapshotsJobs);
+
+        bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, msg.getRootVolumeUuid());
+        bus.send(cmsg, new CloudBusCallBack(evt) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                    bus.publish(evt);
+                    return;
+                }
+
+
+                CreateVolumesSnapshotReply r = reply.castReply();
+                VolumeSnapshotGroupVO group = createGroup(r);
+                logger.debug(String.format("created volume snapshot group[uuid:%s] for vm[uuid:%s]",
+                        group.getUuid(), vm.getUuid()));
+                evt.setInventory(VolumeSnapshotGroupInventory.valueOf(dbf.reload(group)));
+                bus.publish(evt);
+            }
+
+            private VolumeSnapshotGroupVO createGroup(CreateVolumesSnapshotReply r) {
+                List<VolumeSnapshotGroupRefVO> refs = new ArrayList<>();
+                VolumeSnapshotGroupVO group = new VolumeSnapshotGroupVO();
+                group.setUuid(getUuid());
+                group.setSnapshotCount(vm.getAllVolumes().size());
+                group.setName(msg.getName());
+                group.setDescription(msg.getDescription());
+                group.setVmInstanceUuid(vm.getUuid());
+                for (VolumeSnapshotInventory inv : r.getInventories()) {
+                    VolumeSnapshotGroupRefVO ref = new VolumeSnapshotGroupRefVO();
+                    ref.setVolumeUuid(inv.getVolumeUuid());
+                    ref.setVolumeName(inv.getName());
+                    ref.setVolumeType(inv.getVolumeType());
+                    ref.setVolumeSnapshotGroupUuid(group.getUuid());
+                    ref.setVolumeSnapshotUuid(inv.getUuid());
+                    ref.setVolumeSnapshotName(inv.getName());
+                    ref.setVolumeSnapshotInstallPath(inv.getPrimaryStorageInstallPath());
+                    ref.setDeviceId(vols.get(inv.getVolumeUuid()).getDeviceId());
+                    refs.add(ref);
+                }
+
+                dbf.persist(group);
+                dbf.persistCollection(refs);
+                return group;
             }
         });
     }

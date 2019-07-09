@@ -1,0 +1,79 @@
+package org.zstack.storage.snapshot.group;
+
+import org.zstack.core.db.Q;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupAvailability;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
+import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
+
+import javax.persistence.Tuple;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.i18n;
+
+/**
+ * Created by MaJin on 2019/7/12.
+ */
+public class VolumeSnapshotGroupChecker {
+    public static boolean isAvailable(String uuid) {
+        return getAvailability(uuid).isAvailable();
+    }
+
+    public static List<VolumeSnapshotGroupAvailability> getAvailability(List<String> uuids) {
+        List<VolumeSnapshotGroupAvailability> results = new ArrayList<>();
+        List<VolumeSnapshotGroupVO> groups = Q.New(VolumeSnapshotGroupVO.class)
+                .in(VolumeSnapshotGroupVO_.uuid, uuids)
+                .list();
+
+        Map<String, String> groupVmRef = groups.stream().collect(Collectors.toMap(ResourceVO::getUuid, VolumeSnapshotGroupVO::getVmInstanceUuid));
+        Map<String, Map<String, String>> vmAttachedVols = Q.New(VolumeVO.class)
+                .in(VolumeVO_.vmInstanceUuid, groupVmRef.values())
+                .select(VolumeVO_.vmInstanceUuid, VolumeVO_.uuid, VolumeVO_.name).listTuple().stream()
+                .collect(Collectors.groupingBy(t -> t.get(0, String.class),
+                        Collectors.toMap(it -> ((Tuple) it).get(1, String.class), it -> ((Tuple) it).get(2, String.class))));
+
+        for (VolumeSnapshotGroupVO group : groups) {
+            results.add(getAvailability(group, vmAttachedVols.get(group.getVmInstanceUuid())));
+        }
+
+        return results;
+    }
+
+    public static VolumeSnapshotGroupAvailability getAvailability(String uuid) {
+        VolumeSnapshotGroupVO group = Q.New(VolumeSnapshotGroupVO.class).eq(VolumeSnapshotGroupVO_.uuid, uuid).find();
+        return getAvailability(group);
+    }
+
+    public static VolumeSnapshotGroupAvailability getAvailability(VolumeSnapshotGroupVO group) {
+        List<Tuple> attachedVolUuids = Q.New(VolumeVO.class).select(VolumeVO_.uuid, VolumeVO_.name)
+                .eq(VolumeVO_.vmInstanceUuid, group.getVmInstanceUuid())
+                .listTuple();
+        return getAvailability(group, attachedVolUuids.stream().collect(
+                Collectors.toMap(it -> it.get(0, String.class), it -> it.get(1, String.class))));
+    }
+
+    private static VolumeSnapshotGroupAvailability getAvailability(VolumeSnapshotGroupVO group, Map<String, String> attachedVolUuidName) {
+        List<String> reason = new ArrayList<>();
+
+        Set<String> attachedUuids = new HashSet<>(attachedVolUuidName.keySet());
+        for (VolumeSnapshotGroupRefVO ref : group.getVolumeSnapshotRefs()) {
+            if (ref.isSnapshotDeleted()) {
+                reason.add(i18n("snapshot[uuid:%s, name:%s] in the group has been deleted.",
+                        ref.getVolumeSnapshotUuid(), ref.getVolumeSnapshotName()));
+            } else if (!attachedUuids.contains(ref.getVolumeUuid())) {
+                reason.add(i18n("volume[uuid:%s, name:%s] is no longer attached.", ref.getVolumeUuid(), ref.getVolumeName()));
+            }
+
+            attachedVolUuidName.remove(ref.getVolumeUuid());
+        }
+
+        attachedVolUuidName.forEach((uuid, name) ->
+                reason.add(i18n("new volume[uuid:%s, name:%s] attached after snapshot point.",uuid, name)));
+
+        return new VolumeSnapshotGroupAvailability(group.getUuid(), String.join("\n", reason));
+    }
+}

@@ -25,6 +25,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.volume.APICreateVolumeSnapshotGroupMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.volume.APICreateDataVolumeFromVolumeSnapshotMsg</name>
     </message>
 

@@ -1,23 +1,17 @@
 package org.zstack.header.storage.snapshot;
 
+import net.schmizz.sshj.connection.channel.direct.Session;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.NeedReplyMessage;
 
 /**
  * Created by kayo on 2018/5/9.
  */
-public class RevertVolumeSnapshotMsg extends NeedReplyMessage implements VolumeSnapshotMessage {
-    private APIRevertVolumeFromSnapshotMsg apiMessage;
+public class RevertVolumeSnapshotMsg extends NeedReplyMessage implements RevertVolumeSnapshotMessage {
     private String snapshotUuid;
     private String volumeUuid;
     private String treeUuid;
-
-    public APIRevertVolumeFromSnapshotMsg getApiMessage() {
-        return apiMessage;
-    }
-
-    public void setApiMessage(APIRevertVolumeFromSnapshotMsg apiMessage) {
-        this.apiMessage = apiMessage;
-    }
+    private SessionInventory session;
 
     public void setSnapshotUuid(String snapshotUuid) {
         this.snapshotUuid = snapshotUuid;
@@ -46,5 +40,14 @@ public class RevertVolumeSnapshotMsg extends NeedReplyMessage implements VolumeS
     @Override
     public String getTreeUuid() {
         return treeUuid;
+    }
+
+    @Override
+    public SessionInventory getSession() {
+        return session;
+    }
+
+    public void setSession(SessionInventory session) {
+        this.session = session;
     }
 }
