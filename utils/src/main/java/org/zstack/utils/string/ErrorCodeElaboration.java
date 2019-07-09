@@ -17,10 +17,16 @@ public class ErrorCodeElaboration {
     private String extension_en;
     private String source = "zstack";
     private double distance = 0;
+    private ElaborationSearchMethod method = ElaborationSearchMethod.distance;
     private String formatSrcError;
     private String url;
 
     public ErrorCodeElaboration() {
+    }
+
+    public ErrorCodeElaboration(String en, String cn) {
+        message_en = en;
+        message_cn = cn;
     }
 
     public ErrorCodeElaboration(ErrorCodeElaboration other) {
@@ -39,6 +45,7 @@ public class ErrorCodeElaboration {
         distance = other.distance;
         formatSrcError = other.formatSrcError;
         url = other.url;
+        method = other.method;
     }
 
     public String getCategory() {
@@ -159,5 +166,13 @@ public class ErrorCodeElaboration {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public ElaborationSearchMethod getMethod() {
+        return method;
+    }
+
+    public void setMethod(ElaborationSearchMethod method) {
+        this.method = method;
     }
 }

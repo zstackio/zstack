@@ -691,6 +691,9 @@ public class Platform {
     }
 
     private synchronized static void insertLogError(String content, ErrorCodeElaboration err, boolean matched) {
+        if (!CoreGlobalProperty.RECORD_TO_DB_ELABORATION) {
+            return;
+        }
         DatabaseFacade dbf = getComponentLoader().getComponent(DatabaseFacade.class);
         String md5Sum = StringDSL.getMd5Sum(content);
         ElaborationVO mvo = Q.New(ElaborationVO.class).eq(ElaborationVO_.md5sum, md5Sum).find();
@@ -710,13 +713,13 @@ public class Platform {
         }
     }
 
-    private static String elaborate(String description) {
+    private static ErrorCodeElaboration elaborate(String description) {
         ErrorCodeElaboration elaboration = StringSimilarity.findSimilary(description);
         if (elaboration != null) {
             String formatStr = elaboration.getFormatSrcError();
             if (StringSimilarity.matched(elaboration, description)) {
                 insertLogError(formatStr, elaboration, true);
-                return StringSimilarity.formatElaboration(elaboration);
+                return elaboration;
             } else {
                 insertLogError(formatStr, elaboration, false);
                 return null;
@@ -727,13 +730,13 @@ public class Platform {
 
     private static List<Enum> excludeCode = CollectionDSL.list(SysErrors.INTERNAL, SysErrors.OPERATION_ERROR, SysErrors.INVALID_ARGUMENT_ERROR, SysErrors.TIMEOUT);
 
-    private static String elaborate(Enum errCode, String description,  String details, Object...args) {
+    private static ErrorCodeElaboration elaborate(Enum errCode, String description,  String details) {
         ErrorCodeElaboration elaboration = StringSimilarity.findSimilary(details);
         if (elaboration != null) {
             String formatStr = elaboration.getFormatSrcError();
             if (StringSimilarity.matched(elaboration, details)) {
                 insertLogError(formatStr, elaboration, true);
-                return StringSimilarity.formatElaboration(elaboration, args);
+                return elaboration;
             } else {
                 if (excludeCode.contains(errCode)) {
                     insertLogError(formatStr, elaboration, false);
@@ -768,7 +771,14 @@ public class Platform {
         ErrorCode result = errf.instantiateErrorCode(errCode, details, cause);
         if (CoreGlobalProperty.ENABLE_ELABORATION) {
             try {
-                result.setElaboration(elaborate(errCode, result.getDescription(), fmt, args));
+                long start = System.currentTimeMillis();
+                ErrorCodeElaboration ela = elaborate(errCode, result.getDescription(), fmt);
+                long end = System.currentTimeMillis();
+                if (ela != null) {
+                    result.setElaboration(StringSimilarity.formatElaboration(ela, args));
+                    result.setMessages(new ErrorCodeElaboration(ela.getMessage_en(), ela.getMessage_cn()));
+                    result.setCost(String.valueOf(end-start) + "ms");
+                }
             } catch (Throwable e) {
                 logger.warn("exception happened when found elaboration");
                 logger.warn(e.getMessage());

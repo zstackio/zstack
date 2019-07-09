@@ -12,8 +12,6 @@ import org.zstack.utils.path.PathUtil;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created by mingjian.deng on 2018/11/28.
@@ -25,11 +23,6 @@ public class StringSimilarity {
     public static File classPathFolder = PathUtil.findFolderOnClassPath(StringSimilarity.elaborateFolder);
     private static final double threshold = 0.1;
     private static final int mapLength = 1500;
-    private static final Pattern uuidPattern = Pattern.compile("[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}");
-    private static final Pattern ipv4Pattern = Pattern.compile("([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.([01]?\\d\\d?|2[0-4]\\d|25[0-5])");
-
-    private static final String uuidReplace = "\\${uuid}";
-    private static final String ipv4Replace = "\\${ip}";
 
     // matched errors
     private static Map<String, ErrorCodeElaboration> errors = new LinkedHashMap<String, ErrorCodeElaboration>(mapLength, 0.9f, true) {
@@ -176,27 +169,8 @@ public class StringSimilarity {
         return l.distance(str, sub);
     }
 
-    private static String replacePattern(String str, Pattern pattern, String replaceStr) {
-        List<String> founds = new ArrayList<>();
-        Matcher m = pattern.matcher(str);
-
-        while (m.find()) {
-            if (!founds.contains(m.group())) {
-                founds.add(m.group());
-            }
-        }
-
-        for (String found: founds) {
-            str = str.replaceAll(found, replaceStr);
-        }
-
-        return str;
-    }
-
     //TODO: could be extensions here
     private static String formatSrc(String str) {
-//        str = replacePattern(str, uuidPattern, uuidReplace);
-//        str = replacePattern(str, ipv4Pattern, ipv4Replace);
         return str;
     }
 
@@ -221,35 +195,64 @@ public class StringSimilarity {
         }
 
         logger.debug(String.format("missed hit errors: %s", formatSub));
-        ErrorCodeElaboration err = findSimilaryInner(formatSub);
+        long start = System.currentTimeMillis();
+        ErrorCodeElaboration err = findSimilaryRegex(formatSub);
+
         if (err != null) {
             err.setFormatSrcError(formatSub);
             errors.put(formatSub, err);
+        } else {
+            err = findSimilaryDistance(formatSub);
+            if (err != null) {
+                err.setFormatSrcError(formatSub);
+                errors.put(formatSub, err);
+            }
         }
+
+        long end = System.currentTimeMillis();
+        logger.debug(String.format("spend %s ms to search elaboration \"%s\"", end - start,
+                sub.length() > 50 ? sub.substring(0 , 50) + "..." : sub));
 
         return err;
     }
 
-    private static ErrorCodeElaboration findSimilaryInner(String sub) {
+    private static ErrorCodeElaboration findSimilaryRegex(String sub) {
         ErrorCodeElaboration result = null;
-        long start = System.currentTimeMillis();
         for (ErrorCodeElaboration elaboration: elaborations) {
+            if (ElaborationSearchMethod.distance == elaboration.getMethod()) {
+                continue;
+            }
+            double distance = getSimilary(elaboration.getRegex(), sub);
             if (result == null) {
                 result = new ErrorCodeElaboration(elaboration);
-                result.setDistance(getSimilary(elaboration.getRegex(), sub));
+                result.setDistance(distance);
             } else {
-                double distance = getSimilary(elaboration.getRegex(), sub);
                 if (distance < result.getDistance()) {
                     result = new ErrorCodeElaboration(elaboration);
                     result.setDistance(distance);
                 }
             }
         }
-        long end = System.currentTimeMillis();
-        logger.debug(String.format("spend %s ms to search elaboration \"%s\"", end - start,
-                sub.length() > 50 ? sub.substring(0 , 50) + "..." : sub));
-        if (result == null) {
-            return null;
+
+        return result;
+    }
+
+    private static ErrorCodeElaboration findSimilaryDistance(String sub) {
+        ErrorCodeElaboration result = null;
+        for (ErrorCodeElaboration elaboration: elaborations) {
+            if (ElaborationSearchMethod.regex == elaboration.getMethod()) {
+                continue;
+            }
+            double distance = getSimilary(elaboration.getRegex(), sub);
+            if (result == null) {
+                result = new ErrorCodeElaboration(elaboration);
+                result.setDistance(distance);
+            } else {
+                if (distance < result.getDistance()) {
+                    result = new ErrorCodeElaboration(elaboration);
+                    result.setDistance(distance);
+                }
+            }
         }
 
         return result;

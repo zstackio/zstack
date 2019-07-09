@@ -1,7 +1,9 @@
 package org.zstack.header.errorcode;
 
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.string.ErrorCodeElaboration;
 
 import java.io.Serializable;
 import java.util.LinkedHashMap;
@@ -13,6 +15,9 @@ public class ErrorCode implements Serializable, Cloneable {
     private String description;
     private String details;
     private String elaboration;
+    @APINoSee
+    private ErrorCodeElaboration messages;
+    private String cost;
     private ErrorCode cause;
     private LinkedHashMap opaque;
 
@@ -56,6 +61,7 @@ public class ErrorCode implements Serializable, Cloneable {
         this.description = other.description;
         this.details = other.details;
         this.elaboration = other.elaboration;
+        this.messages = other.messages;
         this.cause = other.cause;
     }
 
@@ -181,5 +187,21 @@ public class ErrorCode implements Serializable, Cloneable {
         } while (true);
 
         return root.getDetails() == null ? root.getDescription() : root.getDetails();
+    }
+
+    public ErrorCodeElaboration getMessages() {
+        return messages;
+    }
+
+    public void setMessages(ErrorCodeElaboration messages) {
+        this.messages = messages;
+    }
+
+    public String getCost() {
+        return cost;
+    }
+
+    public void setCost(String cost) {
+        this.cost = cost;
     }
 }
