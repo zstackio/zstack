@@ -132,6 +132,10 @@ public class SourceClassMap {
 			put("org.zstack.header.errorcode.ElaborationInventory", "org.zstack.sdk.ElaborationInventory");
 			put("org.zstack.header.errorcode.ErrorCode", "org.zstack.sdk.ErrorCode");
 			put("org.zstack.header.errorcode.ErrorCodeList", "org.zstack.sdk.ErrorCodeList");
+			put("org.zstack.header.flowMeter.FlowCollectorInventory", "org.zstack.sdk.FlowCollectorInventory");
+			put("org.zstack.header.flowMeter.FlowCounter", "org.zstack.sdk.FlowCounter");
+			put("org.zstack.header.flowMeter.FlowMeterInventory", "org.zstack.sdk.FlowMeterInventory");
+			put("org.zstack.header.flowMeter.NetworkRouterFlowMeterRefInventory", "org.zstack.sdk.NetworkRouterFlowMeterRefInventory");
 			put("org.zstack.header.host.AddHostFromFileResult", "org.zstack.sdk.AddHostFromFileResult");
 			put("org.zstack.header.host.HostInventory", "org.zstack.sdk.HostInventory");
 			put("org.zstack.header.host.HostNetworkBondingInventory", "org.zstack.sdk.HostNetworkBondingInventory");
@@ -545,6 +549,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ErrorCodeList", "org.zstack.header.errorcode.ErrorCodeList");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
 			put("org.zstack.sdk.FiberChannelStorageInventory", "org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory");
+			put("org.zstack.sdk.FlowCollectorInventory", "org.zstack.header.flowMeter.FlowCollectorInventory");
+			put("org.zstack.sdk.FlowCounter", "org.zstack.header.flowMeter.FlowCounter");
+			put("org.zstack.sdk.FlowMeterInventory", "org.zstack.header.flowMeter.FlowMeterInventory");
 			put("org.zstack.sdk.FreeIpInventory", "org.zstack.header.network.l3.FreeIpInventory");
 			put("org.zstack.sdk.FusionstorBackupStorageInventory", "org.zstack.storage.fusionstor.backup.FusionstorBackupStorageInventory");
 			put("org.zstack.sdk.FusionstorBackupStorageMonInventory", "org.zstack.storage.fusionstor.backup.FusionstorBackupStorageMonInventory");
@@ -627,6 +634,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.NasProtocolType", "org.zstack.nas.NasProtocolType");
 			put("org.zstack.sdk.Neighbor", "org.zstack.header.protocol.Neighbor");
 			put("org.zstack.sdk.NetworkRouterAreaRefInventory", "org.zstack.header.protocol.NetworkRouterAreaRefInventory");
+			put("org.zstack.sdk.NetworkRouterFlowMeterRefInventory", "org.zstack.header.flowMeter.NetworkRouterFlowMeterRefInventory");
 			put("org.zstack.sdk.NetworkServiceL3NetworkRefInventory", "org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.sdk.NetworkServiceProviderInventory", "org.zstack.header.network.service.NetworkServiceProviderInventory");
 			put("org.zstack.sdk.OssBucketInventory", "org.zstack.header.aliyun.oss.OssBucketInventory");
