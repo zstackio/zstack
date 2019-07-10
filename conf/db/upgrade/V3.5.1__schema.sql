@@ -55,3 +55,6 @@ CREATE TABLE  `zstack`.`VpcHaGroupNetworkServiceRefVO` (
     PRIMARY KEY (`id`),
     CONSTRAINT fkVpcHaGroupNetworkServiceRefVOVpcHaGroupVO FOREIGN KEY (vpcHaRouterUuid) REFERENCES VpcHaGroupVO (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`NetworkRouterAreaRefVO` DROP FOREIGN KEY fkNetworkRouterAreaRefVOVpcRouterVmVO;
+ALTER TABLE `zstack`.`NetworkRouterAreaRefVO` ADD COLUMN `applianceVmType` varchar(255) DEFAULT "vpcvrouter";
