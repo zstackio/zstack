@@ -60,6 +60,8 @@ public class CoreGlobalProperty {
     public static boolean UPDATE_PKG_WHEN_CONNECT;
     @GlobalProperty(name = "syncNodeTime", defaultValue = "true")
     public static boolean SYNC_NODE_TIME;
-    @GlobalProperty(name = "enableElaboration", defaultValue = "false")
+    @GlobalProperty(name = "enableElaboration", defaultValue = "true")
     public static boolean ENABLE_ELABORATION;
+    @GlobalProperty(name = "recordElaboration", defaultValue = "false")
+    public static boolean RECORD_TO_DB_ELABORATION;
 }
