@@ -21,7 +21,8 @@
         <module>eip</module>
         <module>mediator</module>
         <module>localstorage</module>
-        <module>ceph</module>
+        <module>surfs</module>
+	<module>ceph</module>
         <module>fusionstor</module>
         <module>loadBalancer</module>
         <module>flatNetworkProvider</module>
