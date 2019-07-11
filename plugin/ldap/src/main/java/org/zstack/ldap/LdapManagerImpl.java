@@ -16,6 +16,7 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -23,8 +24,12 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.captcha.Captcha;
+import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
@@ -308,24 +313,52 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     private void handle(APIDeleteLdapServerMsg msg) {
         APIDeleteLdapServerEvent evt = new APIDeleteLdapServerEvent(msg.getId());
 
-        for (DeleteLdapServerExtensionPoint ext : pluginRgty.getExtensionList(DeleteLdapServerExtensionPoint.class)) {
-            ext.beforeDeleteLdapServer(msg.getUuid());
-        }
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName("delete-ldap-server");
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "before-delete-ldap-server";
 
-        new SQLBatch() {
             @Override
-            protected void scripts() {
-                if (!q(LdapServerVO.class).eq(LdapServerVO_.uuid, msg.getUuid()).isExists()) {
-                    return;
-                }
-
-                LdapServerVO vo = q(LdapServerVO.class).eq(LdapServerVO_.uuid, msg.getUuid()).find();
-                remove(vo);
-                flush();
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(pluginRgty.getExtensionList(DeleteLdapServerExtensionPoint.class)).each((ext, whileCompletion) -> {
+                    ext.beforeDeleteLdapServer(msg.getUuid(), new NoErrorCompletion(whileCompletion) {
+                        @Override
+                        public void done() {
+                            whileCompletion.done();
+                        }
+                    });
+                }).run(new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        trigger.next();
+                    }
+                });
             }
-        }.execute();
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        if (!q(LdapServerVO.class).eq(LdapServerVO_.uuid, msg.getUuid()).isExists()) {
+                            return;
+                        }
 
-        bus.publish(evt);
+                        LdapServerVO vo = q(LdapServerVO.class).eq(LdapServerVO_.uuid, msg.getUuid()).find();
+                        remove(vo);
+                        flush();
+                    }
+                }.execute();
+
+                bus.publish(evt);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                evt.setError(errCode);
+                bus.publish(evt);
+            }
+        }).start();
     }
 
     private void handle(APIGetLdapEntryMsg msg) {
