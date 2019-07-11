@@ -42,6 +42,7 @@ import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.e;
@@ -477,6 +478,7 @@ public class L3BasicNetwork implements L3Network {
         q.add(UsedIpVO_.ipRangeUuid, Op.EQ, ipr.getUuid());
 
         List<String> used = q.listValue();
+        used = used.stream().distinct().collect(Collectors.toList());
 
         List<String> spareIps = new ArrayList<>();
         if (ipr.getIpVersion() == IPv6Constants.IPv6) {
