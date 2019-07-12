@@ -143,7 +143,7 @@ public class LdapUtil {
 
     public String getLdapUseAsLoginName(){
         String ldapServerUuid = Q.New(LdapServerVO.class).select(LdapServerVO_.uuid)
-                .eq(LdapServerVO_.scope, AccountConstant.LOGIN_TYPE)
+                .eq(LdapServerVO_.scope, scope)
                 .findValue();
 
         PatternedSystemTag tag = LdapSystemTags.LDAP_USE_AS_LOGIN_NAME;
@@ -539,8 +539,6 @@ public class LdapUtil {
 
             LdapServerVO ldapServerVO = getLdapServer();
             LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
-            ldapServerInventory.setUsername(fullUserDn);
-            ldapServerInventory.setPassword(password);
             LdapTemplateContextSource ldapTemplateContextSource2 = loadLdap(ldapServerInventory);
 
             AndFilter filter = new AndFilter();
