@@ -59,7 +59,12 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
             msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
             msg.setHostUuid(spec.getRequiredHostUuid());
         } else {
-            msg.setAllocatorStrategy(HostAllocatorConstant.LEAST_VM_PREFERRED_HOST_ALLOCATOR_STRATEGY_TYPE);
+            String allocatorStrategy = spec.getVmInventory().getAllocatorStrategy();
+            if (allocatorStrategy != null) {
+                msg.setAllocatorStrategy(allocatorStrategy);
+            } else {
+                msg.setAllocatorStrategy(HostAllocatorConstant.LEAST_VM_PREFERRED_HOST_ALLOCATOR_STRATEGY_TYPE);
+            }
         }
         msg.setL3NetworkUuids(CollectionUtils.transformToList(VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()),
                 new Function<String, L3NetworkInventory>() {
