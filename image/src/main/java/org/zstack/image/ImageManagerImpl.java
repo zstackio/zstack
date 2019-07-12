@@ -1132,7 +1132,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         vo.setState(ImageState.Enabled);
         vo.setUrl(msgData.getUrl());
         vo.setDescription(msgData.getDescription());
-        vo.setPlatform(ImagePlatform.valueOf(msgData.getPlatform()));
+        if (msgData.getPlatform() != null) {
+            vo.setPlatform(ImagePlatform.valueOf(msgData.getPlatform()));
+        }
 
         ImageFactory factory = getImageFacotry(ImageType.valueOf(imageType));
         final ImageVO ivo = new SQLBatchWithReturn<ImageVO>() {
