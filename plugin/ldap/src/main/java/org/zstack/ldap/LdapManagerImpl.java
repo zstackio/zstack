@@ -16,6 +16,7 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -23,8 +24,12 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.captcha.Captcha;
+import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
@@ -59,6 +64,8 @@ import static org.zstack.utils.CollectionDSL.map;
 public class LdapManagerImpl extends AbstractService implements LdapManager {
     private static final CLogger logger = Utils.getLogger(LdapManagerImpl.class);
 
+    private static final LdapEffectiveScope scope = new LdapEffectiveScope(AccountConstant.LOGIN_TYPE);
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -72,26 +79,6 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     @Autowired
     private Captcha captcha;
 
-
-    @Transactional(readOnly = true)
-    private LdapServerVO getLdapServer() {
-        SimpleQuery<LdapServerVO> sq = dbf.createQuery(LdapServerVO.class);
-        List<LdapServerVO> ldapServers = sq.list();
-        if (ldapServers.isEmpty()) {
-            throw new CloudRuntimeException("No ldap server record in database.");
-        }
-        if (ldapServers.size() > 1) {
-            throw new CloudRuntimeException("More than one ldap server record in database.");
-        }
-        return ldapServers.get(0);
-    }
-
-    protected LdapTemplateContextSource readLdapServerConfiguration() {
-        LdapServerVO ldapServerVO = getLdapServer();
-        LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
-        return new LdapUtil().loadLdap(ldapServerInventory);
-    }
-
     @MessageSafe
     public void handleMessage(Message msg) {
         if (msg instanceof APIMessage) {
@@ -102,13 +89,10 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     }
 
     private void handleLocalMessage(Message msg) {
-
-
         bus.dealWithUnknownMessage(msg);
     }
 
     private void handleApiMessage(APIMessage msg) {
-
         if (msg instanceof APILogInByLdapMsg) {
             handle((APILogInByLdapMsg) msg);
         } else if (msg instanceof APIAddLdapServerMsg) {
@@ -132,103 +116,15 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         }
     }
 
-    public boolean isValid(String uid, String password) {
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
-        String ldapUseAsLoginName = LdapUtil.getLdapUseAsLoginName();
-        try {
-            boolean valid;
-            String fullUserDn = getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), ldapUseAsLoginName, uid);
-            if (fullUserDn.equals("") || password.equals("")) {
-                return false;
-            }
-
-            LdapServerVO ldapServerVO = getLdapServer();
-            LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
-            ldapServerInventory.setUsername(fullUserDn);
-            ldapServerInventory.setPassword(password);
-            LdapTemplateContextSource ldapTemplateContextSource2 = new LdapUtil().loadLdap(ldapServerInventory);
-
-            AndFilter filter = new AndFilter();
-            filter.and(new EqualsFilter(ldapUseAsLoginName, uid));
-            valid = ldapTemplateContextSource2.getLdapTemplate().
-                    authenticate("", filter.toString(), password);
-            logger.info(String.format("isValid[%s:%s, dn:%s, valid:%s]", ldapUseAsLoginName, uid, fullUserDn, valid));
-            return valid;
-        } catch (NamingException e) {
-            logger.info("isValid fail userName:" + uid, e);
-            return false;
-        } catch (Exception e) {
-            logger.info("isValid error userName:" + uid, e);
-            return false;
-        }
-    }
-
-    @Override
-    public String getFullUserDn(String uid) {
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
-        String ldapUseAsLoginName = LdapUtil.getLdapUseAsLoginName();
-        String fullUserDn = null;
-        try {
-            fullUserDn = getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), ldapUseAsLoginName, uid);
-
-            if (fullUserDn.equals("")) {
-                return null;
-            }
-        } catch (Exception e) {
-            logger.debug(String.format("Get user dn of uid[%s] failed ", uid));
-        }
-
-        return fullUserDn;
-    }
-
     @Transactional
     private LdapAccountRefInventory bindLdapAccount(String accountUuid, String ldapUid) {
         LdapAccountRefVO ref = new LdapAccountRefVO();
         ref.setUuid(Platform.getUuid());
         ref.setAccountUuid(accountUuid);
-        ref.setLdapServerUuid(getLdapServer().getUuid());
+        ref.setLdapServerUuid(ldapUtil.getLdapServer().getUuid());
         ref.setLdapUid(ldapUid);
         ref = dbf.persistAndRefresh(ref);
         return LdapAccountRefInventory.valueOf(ref);
-    }
-
-    private String getPartialUserDn(LdapTemplateContextSource ldapTemplateContextSource,String key, String value) {
-        return getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), key, value).
-                replace("," + ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString(), "");
-    }
-
-    public String getFullUserDn(LdapTemplate ldapTemplate, String key, String val) {
-        EqualsFilter f = new EqualsFilter(key, val);
-        return getFullUserDn(ldapTemplate, f.toString());
-    }
-
-    private String getFullUserDn(LdapTemplate ldapTemplate, String filter) {
-        String dn;
-        try {
-            List<Object> result = ldapTemplate.search("", filter, new AbstractContextMapper<Object>() {
-                @Override
-                protected Object doMapFromContext(DirContextOperations ctx) {
-                    return ctx.getNameInNamespace();
-                }
-            });
-            if (result.size() == 1) {
-                dn = result.get(0).toString();
-            } else if (result.size() > 1) {
-                throw new OperationFailureException(err(
-                        LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "More than one ldap search result"));
-            } else {
-                return "";
-            }
-            logger.info(String.format("getDn success filter:%s, dn:%s", filter, dn));
-        } catch (NamingException e) {
-            LdapServerVO ldapServerVO = getLdapServer();
-            throw new OperationFailureException(err(
-                    LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "You'd better check the ldap server[url:%s, baseDN:%s, encryption:%s, username:%s, password:******]" +
-                            " configuration and test connection first.getDn error filter:%s",
-                    ldapServerVO.getUrl(), ldapServerVO.getBase(),
-                    ldapServerVO.getEncryption(), ldapServerVO.getUsername(), filter));
-        }
-        return dn;
     }
 
 
@@ -273,99 +169,9 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         return true;
     }
 
-    public void findLdapDnMemberOfList(LdapTemplate ldapTemplate, String ldapDn, List<String> resultDnList, List<String> dnIgnoreList){
-        if(dnIgnoreList.contains(ldapDn)){
-            return;
-        }
-
-        AndFilter filter = new AndFilter();
-        filter.and(new EqualsFilter(LdapUtil.getMemberKey(), ldapDn));
-
-        List<Object> groupList = ldapTemplate.search("", filter.toString(), new AbstractContextMapper<Object>() {
-            @Override
-            protected Object doMapFromContext(DirContextOperations ctx) {
-                return ctx.getNameInNamespace();
-            }
-        });
-
-        if(groupList.isEmpty()){
-            dnIgnoreList.add(ldapDn);
-            return;
-        }
-
-        for(Object groupObj : groupList){
-            if(groupObj == null || !(groupObj instanceof String)){
-                continue;
-            }
-
-            String groupDn = (String)groupObj;
-
-            if(resultDnList.contains(groupDn)){
-                continue;
-            }
-
-            resultDnList.add(groupDn);
-            findLdapDnMemberOfList(ldapTemplate, groupDn, resultDnList, dnIgnoreList);
-        }
-    }
-
     @Override
-    public LdapAccountRefVO findLdapAccountRefVO(String ldapDn){
-
-        LdapAccountRefVO ldapAccountRefVO = Q.New(LdapAccountRefVO.class)
-                .eq(LdapAccountRefVO_.ldapUid, ldapDn).find();
-
-        if(ldapAccountRefVO != null){
-            return ldapAccountRefVO;
-        }
-
-        ldapAccountRefVO = findLdapAccountRefByAffiliatedGroup(ldapDn);
-        return ldapAccountRefVO;
-    }
-
-    /**
-     * step 1: Query the ldap group where the ldap user is located（all group）
-     * step 2: Check if there is a ldap group bound to the ZStack account
-     *              No ZStackAccount-LdapGroup binding，return null
-     *              Only one ZStackAccount-LdapGroup binding，return it
-     *              Multiple ZStackAccount-LdapGroup bindings，throw exception
-     */
-    private LdapAccountRefVO findLdapAccountRefByAffiliatedGroup(String ldapDn){
-
-        List<String> ldapDnList = Q.New(LdapAccountRefVO.class)
-                .select(LdapAccountRefVO_.ldapUid)
-                .listValues();
-
-        if(ldapDnList.isEmpty()){
-            return null;
-        }
-
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
-        LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
-
-        List<String> groupDnList = new ArrayList();
-        findLdapDnMemberOfList(ldapTemplate, ldapDn, groupDnList, new ArrayList<>());
-
-        if(groupDnList.isEmpty()){
-            return null;
-        }
-
-        ldapDnList.retainAll(groupDnList);
-
-        if(ldapDnList.isEmpty()){
-            return null;
-        }
-
-        List<LdapAccountRefVO> vos = Q.New(LdapAccountRefVO.class)
-                .in(LdapAccountRefVO_.ldapUid, ldapDnList)
-                .list();
-
-        if(vos.size() == 1){
-            return vos.get(0);
-        }
-
-        List<String> accountList = vos.stream().map(LdapAccountRefVO::getAccountUuid).distinct().collect(Collectors.toList());
-        throw new CloudRuntimeException(String.format("The ldapUid[%s] is bound to multiple accounts: %s", ldapDn, accountList.toString()));
+    public boolean isValid(String uid, String password) {
+        return ldapUtil.isValid(uid, password);
     }
 
     private void handle(APILogInByLdapMsg msg) {
@@ -379,9 +185,9 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             return;
         }
 
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
-        String dn = getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), LdapUtil.getLdapUseAsLoginName(), ldapLoginName);
-        LdapAccountRefVO vo = findLdapAccountRefVO(dn);
+        LdapTemplateContextSource ldapTemplateContextSource = ldapUtil.readLdapServerConfiguration();
+        String dn = ldapUtil.getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), ldapUtil.getLdapUseAsLoginName(), ldapLoginName);
+        LdapAccountRefVO vo = ldapUtil.findLdapAccountRefVO(dn);
 
         if (vo == null) {
             reply.setError(err(IdentityErrors.AUTHENTICATION_ERROR,
@@ -411,9 +217,9 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     private void handle(APIAddLdapServerMsg msg) {
         APIAddLdapServerEvent evt = new APIAddLdapServerEvent(msg.getId());
 
-        SimpleQuery<LdapServerVO> sq = dbf.createQuery(LdapServerVO.class);
-        List<LdapServerVO> ldapServers = sq.list();
-        if (!ldapServers.isEmpty()) {
+        if (Q.New(LdapServerVO.class)
+                .eq(LdapServerVO_.scope, msg.getScope())
+                .count() == 1) {
             evt.setError(err(LdapErrors.MORE_THAN_ONE_LDAP_SERVER,
                     "There has been a ldap server record. " +
                             "You'd better remove it before adding a new one!"));
@@ -430,6 +236,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         ldapServerVO.setUsername(msg.getUsername());
         ldapServerVO.setPassword(msg.getPassword());
         ldapServerVO.setEncryption(msg.getEncryption());
+        ldapServerVO.setScope(msg.getScope());
 
         ldapServerVO = dbf.persistAndRefresh(ldapServerVO);
         LdapServerInventory inv = LdapServerInventory.valueOf(ldapServerVO);
@@ -438,6 +245,10 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         this.saveLdapCleanBindingFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
         this.saveLdapServerTypeTag(msg.getSystemTags(), ldapServerVO.getUuid());
         this.saveLdapUseAsLoginNameTag(msg.getSystemTags(), ldapServerVO.getUuid());
+
+        for (AddLdapExtensionPoint ext : pluginRgty.getExtensionList(AddLdapExtensionPoint.class)) {
+            ext.afterAddLdapServer(msg, ldapServerVO.getUuid());
+        }
 
         bus.publish(evt);
     }
@@ -502,45 +313,58 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     private void handle(APIDeleteLdapServerMsg msg) {
         APIDeleteLdapServerEvent evt = new APIDeleteLdapServerEvent(msg.getId());
 
-        new SQLBatch() {
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName("delete-ldap-server");
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "before-delete-ldap-server";
+
             @Override
-            protected void scripts() {
-                if (!q(LdapServerVO.class).eq(LdapServerVO_.uuid, msg.getUuid()).isExists()) {
-                    return;
-                }
-
-                LdapServerVO vo = q(LdapServerVO.class).eq(LdapServerVO_.uuid, msg.getUuid()).find();
-                remove(vo);
-                flush();
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(pluginRgty.getExtensionList(DeleteLdapServerExtensionPoint.class)).each((ext, whileCompletion) -> {
+                    ext.beforeDeleteLdapServer(msg.getUuid(), new NoErrorCompletion(whileCompletion) {
+                        @Override
+                        public void done() {
+                            whileCompletion.done();
+                        }
+                    });
+                }).run(new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        trigger.next();
+                    }
+                });
             }
-        }.execute();
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        if (!q(LdapServerVO.class).eq(LdapServerVO_.uuid, msg.getUuid()).isExists()) {
+                            return;
+                        }
 
-        bus.publish(evt);
-    }
+                        LdapServerVO vo = q(LdapServerVO.class).eq(LdapServerVO_.uuid, msg.getUuid()).find();
+                        remove(vo);
+                        flush();
+                    }
+                }.execute();
 
-    private String[] getReturningAttributes() {
-        Set<String> returnedAttSet = new HashSet<>();
-
-        String queryLdapEntryReturnAttributes = LdapGlobalConfig.QUERY_LDAP_ENTRY_RETURN_ATTRIBUTES.value();
-        if(StringUtils.isNotEmpty(queryLdapEntryReturnAttributes)){
-            String separator = LdapGlobalConfig.QUERY_LDAP_ENTRY_RETURN_ATTRIBUTE_SEPARATOR.value();
-            separator = separator != null ? separator : LdapConstant.QUERY_LDAP_ENTRY_RETURN_ATTRIBUTE_SEPARATOR;
-            String[] attributes = queryLdapEntryReturnAttributes.split(separator);
-
-            returnedAttSet.addAll(Arrays.asList(attributes));
-        }
-
-        returnedAttSet.addAll(Arrays.asList(LdapConstant.QUERY_LDAP_ENTRY_MUST_RETURN_ATTRIBUTES));
-
-        returnedAttSet.add(LdapUtil.getLdapUseAsLoginName());
-
-        return returnedAttSet.toArray(new String[]{});
+                bus.publish(evt);
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                evt.setError(errCode);
+                bus.publish(evt);
+            }
+        }).start();
     }
 
     private void handle(APIGetLdapEntryMsg msg) {
         APIGetLdapEntryReply reply = new APIGetLdapEntryReply();
 
-        List<Object> result = this.searchLdapEntry(msg.getLdapFilter(), msg.getLimit(), null);
+        List<Object> result = ldapUtil.searchLdapEntry(msg.getLdapFilter(), msg.getLimit(), null);
         reply.setInventories(result);
 
         bus.reply(msg, reply);
@@ -556,9 +380,9 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
                 .select(LdapAccountRefVO_.ldapUid)
                 .listValues();
 
-        List<Object> result = this.searchLdapEntry(andFilter.toString(), msg.getLimit(), new ResultFilter() {
+        List<Object> result = ldapUtil.searchLdapEntry(andFilter.toString(), msg.getLimit(), new ResultFilter() {
             @Override
-            boolean needSelect(String dn) {
+            public boolean needSelect(String dn) {
                 return !boundLdapEntryList.contains(dn);
             }
         });
@@ -566,82 +390,6 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         reply.setInventories(result);
 
         bus.reply(msg, reply);
-    }
-
-    /**
-     * @param filter
-     * @param count
-     *           count is null, return all
-     * @param resultFilter
-     *           resultFilter is null, do not check result
-     *
-     * @return
-     */
-    private List<Object> searchLdapEntry(String filter, Integer count, ResultFilter resultFilter){
-        List<Object> result = new ArrayList<>();
-
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
-        LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
-
-        SearchControls searchCtls = new SearchControls();
-        searchCtls.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        searchCtls.setReturningAttributes(this.getReturningAttributes());
-
-        PagedResultsDirContextProcessor processor = new PagedResultsDirContextProcessor(1000);
-
-        try {
-            do {
-                List<Object> subResult = ldapTemplate.search("", filter, searchCtls, new AbstractContextMapper<Object>() {
-                    @Override
-                    protected Object doMapFromContext(DirContextOperations ctx) {
-                        if (resultFilter != null && !resultFilter.needSelect(ctx.getNameInNamespace())){
-                            return null;
-                        }
-
-                        Map<String, Object> result = new HashMap<>();
-                        result.put(LdapConstant.LDAP_DN_KEY, ctx.getNameInNamespace());
-
-                        List<Object> list = new ArrayList<>();
-                        result.put("attributes", list);
-
-                        Attributes attributes = ctx.getAttributes();
-                        NamingEnumeration it = attributes.getAll();
-                        try {
-                            while (it.hasMore()){
-                                list.add(it.next());
-                            }
-                        } catch (javax.naming.NamingException e){
-                            logger.error("query ldap entry attributes fail", e.getCause());
-                            throw new OperationFailureException(operr("query ldap entry fail, %s", e.toString()));
-                        }
-
-                        return result;
-                    }
-                }, processor);
-
-                subResult.removeIf(Objects::isNull);
-                result.addAll(subResult);
-
-            } while (processor.hasMore() && (count == null || count > result.size()));
-
-            if (count == null){
-                return result;
-            }
-
-            if (result.size() <= count){
-                return result;
-            }
-
-            return result.subList(0, count);
-
-        } catch (Exception e){
-            logger.error("query ldap entry fail", e);
-            throw new OperationFailureException(operr("query ldap entry[filter: %s] fail, %s", filter, e.toString()));
-        }
-    }
-
-    abstract class ResultFilter{
-        abstract boolean needSelect(String dn);
     }
 
     private void handle(APICreateLdapBindingMsg msg) {
@@ -658,12 +406,12 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             return;
         }
 
-        String ldapUseAsLoginName = LdapUtil.getLdapUseAsLoginName();
+        String ldapUseAsLoginName = ldapUtil.getLdapUseAsLoginName();
 
         // bind op
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
+        LdapTemplateContextSource ldapTemplateContextSource = ldapUtil.readLdapServerConfiguration();
         String fullDn = msg.getLdapUid();
-        if (!validateDnExist(ldapTemplateContextSource, fullDn)) {
+        if (!ldapUtil.validateDnExist(ldapTemplateContextSource, fullDn)) {
             throw new OperationFailureException(err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
                     "cannot find dn[%s] on ldap server[Address:%s, BaseDN:%s].", fullDn,
                     String.join(", ", ldapTemplateContextSource.getLdapContextSource().getUrls()),
@@ -681,39 +429,6 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             }
         }
         bus.publish(evt);
-    }
-
-    private boolean validateDnExist(LdapTemplateContextSource ldapTemplateContextSource, String fullDn){
-        try {
-            String dn = fullDn.replace("," + ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString(), "");
-            Object result = ldapTemplateContextSource.getLdapTemplate().lookup(dn, new AbstractContextMapper<Object>() {
-                @Override
-                protected Object doMapFromContext(DirContextOperations ctx) {
-                    Attributes group = ctx.getAttributes();
-                    return group;
-                }
-            });
-            return result != null;
-        }catch (Exception e){
-            logger.warn(String.format("validateDnExist[%s] fail", fullDn), e);
-            return false;
-        }
-    }
-
-    private boolean validateDnExist(LdapTemplateContextSource ldapTemplateContextSource, String fullDn, Filter filter){
-        try {
-            String dn = fullDn.replace("," + ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString(), "");
-            List<Object> result = ldapTemplateContextSource.getLdapTemplate().search(dn, filter.toString(), new AbstractContextMapper<Object>() {
-                @Override
-                protected Object doMapFromContext(DirContextOperations ctx) {
-                    return ctx.getNameInNamespace();
-                }
-            });
-            return result.contains(fullDn);
-        }catch (Exception e){
-            logger.warn(String.format("validateDnExist[dn=%s, filter=%s] fail", fullDn, filter.toString()), e);
-            return false;
-        }
     }
 
     private void handle(APIDeleteLdapBindingMsg msg) {
@@ -737,12 +452,12 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
 
         ArrayList<String> accountUuidList = new ArrayList<>();
         ArrayList<String> ldapAccountRefUuidList = new ArrayList<>();
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
+        LdapTemplateContextSource ldapTemplateContextSource = ldapUtil.readLdapServerConfiguration();
 
         for (LdapAccountRefVO ldapAccRefVO : refList) {
             // no data in ldap
             String ldapDn = ldapAccRefVO.getLdapUid();
-            if(!validateDnExist(ldapTemplateContextSource, ldapDn)){
+            if(!ldapUtil.validateDnExist(ldapTemplateContextSource, ldapDn)){
                 accountUuidList.add(ldapAccRefVO.getAccountUuid());
                 ldapAccountRefUuidList.add(ldapAccRefVO.getUuid());
                 continue;
@@ -755,7 +470,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             }
 
             HardcodedFilter hardcodedFilter = new HardcodedFilter(filter);
-            if(validateDnExist(ldapTemplateContextSource, ldapDn, hardcodedFilter)){
+            if(ldapUtil.validateDnExist(ldapTemplateContextSource, ldapDn, hardcodedFilter)){
                 accountUuidList.add(ldapAccRefVO.getAccountUuid());
                 ldapAccountRefUuidList.add(ldapAccRefVO.getUuid());
             }

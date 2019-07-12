@@ -26,4 +26,7 @@ public class LdapSystemTags {
     public static String LDAP_USE_AS_LOGIN_NAME_TOKEN = "ldapUseAsLoginName";
     public static PatternedSystemTag LDAP_USE_AS_LOGIN_NAME = new PatternedSystemTag(String.format("ldapUseAsLoginName::{%s}", LDAP_USE_AS_LOGIN_NAME_TOKEN), LdapServerVO.class);
 
+    public static String LDAP_URLS_TOKEN = "ldapUrls";
+    public static PatternedSystemTag LDAP_URLS = new PatternedSystemTag(String.format("ldapUrls::{%s}", LDAP_URLS_TOKEN), LdapServerVO.class);
+
 }

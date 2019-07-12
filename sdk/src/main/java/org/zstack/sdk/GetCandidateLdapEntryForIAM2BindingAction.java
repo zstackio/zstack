@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddLdapServerAction extends AbstractAction {
+public class GetCandidateLdapEntryForIAM2BindingAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddLdapServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddLdapServerResult value;
+        public org.zstack.sdk.GetLdapEntryResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,29 +25,11 @@ public class AddLdapServerAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ldapFilter;
 
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String url;
-
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String base;
-
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String username;
-
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String password;
-
-    @Param(required = true, validValues = {"None","TLS"}, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String encryption;
-
-    @Param(required = true, validValues = {"account","IAM2"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String scope = "account";
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
+    public java.lang.Integer limit = 2500;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -64,12 +46,6 @@ public class AddLdapServerAction extends AbstractAction {
     @Param(required = false)
     public String accessKeySecret;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -78,8 +54,8 @@ public class AddLdapServerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddLdapServerResult value = res.getResult(org.zstack.sdk.AddLdapServerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddLdapServerResult() : value; 
+        org.zstack.sdk.GetLdapEntryResult value = res.getResult(org.zstack.sdk.GetLdapEntryResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetLdapEntryResult() : value; 
 
         return ret;
     }
@@ -108,11 +84,11 @@ public class AddLdapServerAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/ldap/servers";
+        info.httpMethod = "GET";
+        info.path = "/iam2/ldap/entries/candidates";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

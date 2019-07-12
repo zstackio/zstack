@@ -17,6 +17,7 @@ public class LdapServerVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<LdapServerVO, String> username;
     public static volatile SingularAttribute<LdapServerVO, String> password;
     public static volatile SingularAttribute<LdapServerVO, String> encryption;
+    public static volatile SingularAttribute<LdapServerVO, String> scope;
     public static volatile SingularAttribute<LdapServerVO, Timestamp> createDate;
     public static volatile SingularAttribute<LdapServerVO, Timestamp> lastOpDate;
 }
