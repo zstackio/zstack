@@ -191,7 +191,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     List<Tuple> ts = q.getResultList();
                     ret.total = calcTotalIp(ts);
 
-                    sql = "select count(uip) from UsedIpVO uip where uip.ipRangeUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
+                    sql = "select count(distinct uip.ip) from UsedIpVO uip where uip.ipRangeUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
                     TypedQuery<Long> cq = dbf.getEntityManager().createQuery(sql, Long.class);
                     cq.setParameter("uuids", msg.getIpRangeUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
@@ -206,7 +206,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     List<Tuple> ts = q.getResultList();
                     ret.total = calcTotalIp(ts);
 
-                    sql = "select count(uip) from UsedIpVO uip where uip.l3NetworkUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
+                    sql = "select count(distinct uip.ip) from UsedIpVO uip where uip.l3NetworkUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
                     TypedQuery<Long> cq = dbf.getEntityManager().createQuery(sql, Long.class);
                     cq.setParameter("uuids", msg.getL3NetworkUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
@@ -221,7 +221,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     List<Tuple> ts = q.getResultList();
                     ret.total = calcTotalIp(ts);
 
-                    sql = "select count(uip) from UsedIpVO uip, L3NetworkVO l3, ZoneVO zone where uip.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
+                    sql = "select count(distinct uip.ip) from UsedIpVO uip, L3NetworkVO l3, ZoneVO zone where uip.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
                     TypedQuery<Long> cq = dbf.getEntityManager().createQuery(sql, Long.class);
                     cq.setParameter("uuids", msg.getZoneUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
