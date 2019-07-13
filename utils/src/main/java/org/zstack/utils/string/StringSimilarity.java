@@ -12,6 +12,7 @@ import org.zstack.utils.path.PathUtil;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Created by mingjian.deng on 2018/11/28.
@@ -38,9 +39,12 @@ public class StringSimilarity {
     // initial errors from json files
     private static List<ErrorCodeElaboration> elaborations = initialElaborations();
 
-    public static boolean matched(ErrorCodeElaboration err, String details) {
+    public static boolean matched(ErrorCodeElaboration err) {
         if (err == null) {
             return false;
+        }
+        if (ElaborationSearchMethod.regex == err.getMethod()) {
+            return true;
         }
         if (err.getDistance() > threshold) {
             return false;
@@ -185,7 +189,7 @@ public class StringSimilarity {
         return false;
     }
 
-    public static ErrorCodeElaboration findSimilary(String sub) {
+    public static ErrorCodeElaboration findSimilary(String sub, Object...args) {
         if (sub == null || sub.isEmpty() || isRedundance(sub)) {
             return null;
         }
@@ -194,19 +198,22 @@ public class StringSimilarity {
             return errors.get(formatSub);
         }
 
-        logger.debug(String.format("missed hit errors: %s", formatSub));
+        ErrorCodeElaboration err = null;
         long start = System.currentTimeMillis();
-        ErrorCodeElaboration err = findSimilaryRegex(formatSub);
+        try {
+            err = findSimilaryRegex(String.format(formatSub, args));
+        } catch (Exception e) {
+            logger.warn("exception happened when format error message");
+            logger.warn(e.getMessage());
+        }
+
+        if (err == null) {
+            err = findSimilaryDistance(formatSub);
+        }
 
         if (err != null) {
             err.setFormatSrcError(formatSub);
             errors.put(formatSub, err);
-        } else {
-            err = findSimilaryDistance(formatSub);
-            if (err != null) {
-                err.setFormatSrcError(formatSub);
-                errors.put(formatSub, err);
-            }
         }
 
         long end = System.currentTimeMillis();
@@ -217,24 +224,16 @@ public class StringSimilarity {
     }
 
     private static ErrorCodeElaboration findSimilaryRegex(String sub) {
-        ErrorCodeElaboration result = null;
         for (ErrorCodeElaboration elaboration: elaborations) {
             if (ElaborationSearchMethod.distance == elaboration.getMethod()) {
                 continue;
             }
-            double distance = getSimilary(elaboration.getRegex(), sub);
-            if (result == null) {
-                result = new ErrorCodeElaboration(elaboration);
-                result.setDistance(distance);
-            } else {
-                if (distance < result.getDistance()) {
-                    result = new ErrorCodeElaboration(elaboration);
-                    result.setDistance(distance);
-                }
+            if (isRegexMatched(elaboration.getRegex(), sub)) {
+                return elaboration;
             }
         }
 
-        return result;
+        return null;
     }
 
     private static ErrorCodeElaboration findSimilaryDistance(String sub) {
@@ -276,6 +275,10 @@ public class StringSimilarity {
 
         buffer.deleteCharAt(buffer.lastIndexOf("\n"));
         return String.format(buffer.toString(), args);
+    }
+
+    private static boolean isRegexMatched(String regex, String sub) {
+        return Pattern.matches(regex, sub);
     }
 
     private static double getSimilary(String str, String sub) {

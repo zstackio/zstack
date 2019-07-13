@@ -22,6 +22,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.inerr;
@@ -50,7 +51,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
 
     private HostAllocationPaginationInfo paginationInfo;
 
-    private Set<String> seriesErrorWhenPagination = new HashSet<String>();
+    private Set<ErrorCode> seriesErrorWhenPagination = new HashSet<>();
 
     @Autowired
     private ErrorFacade errf;
@@ -164,7 +165,7 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
                                 "because of pagination, will start over allocation again; " +
                                 "current pagination info %s; failure details: %s",
                         JSONObjectUtil.toJsonString(paginationInfo), ofe.getErrorCode().getDetails()));
-                seriesErrorWhenPagination.add(String.format("{%s}", ofe.getErrorCode().getDetails()));
+                seriesErrorWhenPagination.add(ofe.getErrorCode());
                 startOver();
             } else {
                 fail(ofe.getErrorCode());
@@ -253,9 +254,9 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
                     lastFlow.getClass().getName(), errorCode.getDetails()));
             this.errorCode = errorCode;
         } else {
-            this.errorCode = err(HostAllocatorError.NO_AVAILABLE_HOST, "unable to allocate hosts; due to pagination is enabled, " +
+            this.errorCode = err(HostAllocatorError.NO_AVAILABLE_HOST, seriesErrorWhenPagination.iterator().next(), "unable to allocate hosts; due to pagination is enabled, " +
                     "there might be several allocation failures happened before;" +
-                    " the error list is %s", seriesErrorWhenPagination);
+                    " the error list is %s", seriesErrorWhenPagination.stream().map(ErrorCode::getDetails).collect(Collectors.toList()));
             logger.debug(this.errorCode.getDetails());
         }
 

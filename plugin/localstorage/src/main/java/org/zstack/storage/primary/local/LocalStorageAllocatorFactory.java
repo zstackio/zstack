@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
@@ -27,7 +28,7 @@ import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-import javax.persistence.Tuple;
+
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -303,5 +304,10 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         }
 
         return LocalStorageConstants.LOCAL_STORAGE_MIGRATE_VM_ALLOCATOR_TYPE;
+    }
+
+    @Override
+    public String filterErrorReason() {
+        return Platform.i18n("localstorage allocator failed");
     }
 }

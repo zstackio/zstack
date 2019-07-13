@@ -25,8 +25,11 @@ public class CheckElaborationContentAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = false, noTrim = false)
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String elaborateFile;
+
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String elaborateContent;
 
     @Param(required = false)
     public java.util.List systemTags;

@@ -8,6 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
@@ -17,6 +18,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class HostStateAndHypervisorAllocatorFlow extends AbstractHostAllocatorFlow {
@@ -78,27 +81,23 @@ public class HostStateAndHypervisorAllocatorFlow extends AbstractHostAllocatorFl
 
         if (ret.isEmpty()) {
             if (CollectionUtils.isEmpty(candidates)) {
-                fail(String.format("no host having state=Enabled status=Connected hypervisorType=%s found",
+                fail(operr("no host having state=Enabled status=Connected hypervisorType=%s found",
                         spec.getHypervisorType()));
             }
 
-            String error;
+            ErrorCode error;
             if (isNoConnectedHost()) {
-                error = String.format("no Connected hosts found in the [%s] candidate hosts", candidates.size());
+                error = operr("no Connected hosts found in the [%s] candidate hosts", candidates.size());
             } else if (isNoEnabledHost()) {
-                error = String.format("no Enabled hosts found in the [%s] candidate hosts", candidates.size());
+                error = operr("no Enabled hosts found in the [%s] candidate hosts", candidates.size());
             } else if (isNoHypervisor(spec.getHypervisorType())) {
-                error = String.format("no Enabled hosts found in the [%s] candidate hosts having the hypervisor type [%s]",
-                        candidates.size(), spec.getHypervisorType());
+                error = operr("no Enabled hosts found in the [%s] candidate hosts having the hypervisor type [%s]", candidates.size(), spec.getHypervisorType());
             } else {
-                StringBuilder sb = new StringBuilder("no host having");
-                sb.append(String.format(" state=Enabled"));
-                sb.append(String.format(" status=Connected"));
                 if (spec.getHypervisorType() != null) {
-                    sb.append(String.format(" hypervisorType=%s", spec.getHypervisorType()));
+                    error = operr("no host having state=Enabled status=Connected hypervisorType=%s found", spec.getHypervisorType());
+                } else {
+                    error = operr("no host having state=Enabled status=Connected found");
                 }
-                sb.append(" found");
-                error = sb.toString();
             }
 
             fail(error);

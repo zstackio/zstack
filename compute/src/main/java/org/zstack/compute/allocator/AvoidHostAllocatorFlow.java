@@ -1,10 +1,9 @@
 package org.zstack.compute.allocator;
 
 import org.springframework.beans.factory.annotation.Autowire;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.allocator.*;
+import org.zstack.core.Platform;
+import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.host.HostVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
@@ -28,7 +27,7 @@ public class AvoidHostAllocatorFlow extends AbstractHostAllocatorFlow {
         });
 
         if (ret.isEmpty()) {
-            fail(String.format("after rule out avoided host%s, there is no host left in candidates", spec.getAvoidHostUuids()));
+            fail(Platform.operr("after rule out avoided host%s, there is no host left in candidates", spec.getAvoidHostUuids()));
         } else {
             next(ret);
         }

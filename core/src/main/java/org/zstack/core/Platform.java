@@ -22,10 +22,7 @@ import org.zstack.core.statemachine.StateMachineImpl;
 import org.zstack.header.Component;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.core.encrypt.ENCRYPT;
-import org.zstack.header.errorcode.ElaborationVO;
-import org.zstack.header.errorcode.ElaborationVO_;
-import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.errorcode.*;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.utils.*;
@@ -717,7 +714,7 @@ public class Platform {
         ErrorCodeElaboration elaboration = StringSimilarity.findSimilary(description);
         if (elaboration != null) {
             String formatStr = elaboration.getFormatSrcError();
-            if (StringSimilarity.matched(elaboration, description)) {
+            if (StringSimilarity.matched(elaboration)) {
                 insertLogError(formatStr, elaboration, true);
                 return elaboration;
             } else {
@@ -730,11 +727,11 @@ public class Platform {
 
     private static List<Enum> excludeCode = CollectionDSL.list(SysErrors.INTERNAL, SysErrors.OPERATION_ERROR, SysErrors.INVALID_ARGUMENT_ERROR, SysErrors.TIMEOUT);
 
-    private static ErrorCodeElaboration elaborate(Enum errCode, String description,  String details) {
-        ErrorCodeElaboration elaboration = StringSimilarity.findSimilary(details);
+    private static ErrorCodeElaboration elaborate(Enum errCode, String description,  String details, Object...args) {
+        ErrorCodeElaboration elaboration = StringSimilarity.findSimilary(details, args);
         if (elaboration != null) {
             String formatStr = elaboration.getFormatSrcError();
-            if (StringSimilarity.matched(elaboration, details)) {
+            if (StringSimilarity.matched(elaboration)) {
                 insertLogError(formatStr, elaboration, true);
                 return elaboration;
             } else {
@@ -769,15 +766,43 @@ public class Platform {
             }
         }
         ErrorCode result = errf.instantiateErrorCode(errCode, details, cause);
+        // start to generate elaboration...
         if (CoreGlobalProperty.ENABLE_ELABORATION) {
             try {
-                long start = System.currentTimeMillis();
-                ErrorCodeElaboration ela = elaborate(errCode, result.getDescription(), fmt);
-                long end = System.currentTimeMillis();
-                if (ela != null) {
-                    result.setElaboration(StringSimilarity.formatElaboration(ela, args));
-                    result.setMessages(new ErrorCodeElaboration(ela.getMessage_en(), ela.getMessage_cn()));
-                    result.setCost(String.valueOf(end-start) + "ms");
+                ErrorCode coreError = cause == null ? getCoreError(result) : getCoreError(cause);
+                // use the core cause as elaboration if it existed
+                if (coreError.getElaboration() != null) {
+                    result.setCost(coreError.getCost());
+                    result.setElaboration(coreError.getElaboration());
+                    result.setMessages(coreError.getMessages());
+                } else if (cause instanceof ErrorCodeList && ((ErrorCodeList) cause).getCauses() != null) {
+                    // suppose elaborations are existed in causes...
+                    ErrorCodeList errList = (ErrorCodeList)cause;
+                    String costs = null;
+                    String elas = null;
+                    ErrorCodeElaboration messages = null;
+                    for (ErrorCode c: errList.getCauses()) {
+                        ErrorCode lcError = getCoreError(c);
+                        if (lcError.getElaboration() != null) {
+                            costs = costs == null ? lcError.getCost() : addTwoCosts(costs, lcError.getCost());
+                            elas = elas == null ? lcError.getElaboration() : String.join(",", elas, lcError.getElaboration());
+                            messages = messages == null ? lcError.getMessages() : messages.addElaborationMessage(lcError.getMessages());
+                        }
+                    }
+                    result.setCost(costs);
+                    result.setElaboration(elas);
+                    result.setMessages(messages);
+                }
+
+                if (result.getElaboration() == null) {
+                    long start = System.currentTimeMillis();
+                    ErrorCodeElaboration ela = elaborate(errCode, result.getDescription(), fmt, args);
+                    if (ela != null) {
+                        long end = System.currentTimeMillis();
+                        result.setCost(String.valueOf(end-start) + "ms");
+                        result.setElaboration(StringSimilarity.formatElaboration(ela, args));
+                        result.setMessages(new ErrorCodeElaboration(ela.getMessage_en(), ela.getMessage_cn(), args));
+                    }
                 }
             } catch (Throwable e) {
                 logger.warn("exception happened when found elaboration");
@@ -788,8 +813,27 @@ public class Platform {
         return result;
     }
 
+    private static String addTwoCosts(String origin, String increase) {
+        Long c1 = Long.valueOf(origin.substring(0, origin.length() - 2).trim());
+        Long c2 = Long.valueOf(increase.substring(0, increase.length() - 2).trim());
+        return String.valueOf(c1 + c2) + "ms";
+    }
+
+    private static ErrorCode getCoreError(ErrorCode result) {
+        if (result.getCause() == null) {
+            return result;
+        } else {
+            return getCoreError(result.getCause());
+        }
+    }
+
     public static ErrorCode inerr(String fmt, Object...args) {
         return err(SysErrors.INTERNAL, fmt, args);
+    }
+
+    // format error code from expand components
+    public static ErrorCode experr(String fmt, String err, Object...args) {
+        return operr(fmt, err, args);
     }
 
     public static ErrorCode operr(String fmt, Object...args) {

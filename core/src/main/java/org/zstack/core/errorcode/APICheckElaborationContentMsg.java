@@ -15,8 +15,10 @@ import org.zstack.header.rest.RestRequest;
         parameterName = "params"
 )
 public class APICheckElaborationContentMsg extends APISyncCallMessage {
-    @APIParam(nonempty = true, emptyString = false)
+    @APIParam(nonempty = true, emptyString = false, required = false)
     private String elaborateFile;
+    @APIParam(required = false, nonempty = true, emptyString = false)
+    private String elaborateContent;
 
     public String getElaborateFile() {
         return elaborateFile;
@@ -24,6 +26,14 @@ public class APICheckElaborationContentMsg extends APISyncCallMessage {
 
     public void setElaborateFile(String elaborateFile) {
         this.elaborateFile = elaborateFile;
+    }
+
+    public String getElaborateContent() {
+        return elaborateContent;
+    }
+
+    public void setElaborateContent(String elaborateContent) {
+        this.elaborateContent = elaborateContent;
     }
 
     public static APICheckElaborationContentMsg __example__() {

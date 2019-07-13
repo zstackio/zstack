@@ -1,5 +1,6 @@
 package org.zstack.kvm;
 
+import org.zstack.core.Platform;
 import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.host.HostVO;
@@ -55,5 +56,10 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
         }
 
         return result;
+    }
+
+    @Override
+    public String filterErrorReason() {
+        return Platform.i18n("cannot adapt version for the bellow rpm: livirt / qemu / cpumodel");
     }
 }

@@ -3,6 +3,7 @@ package org.zstack.compute.allocator;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -122,7 +123,7 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         });
 
         if (candidates.isEmpty()) {
-            fail(String.format("no host found in zones[uuids:%s] that attaches to backup storage where image[%s] is on", zoneUuids, spec.getImage().getUuid()));
+            fail(Platform.operr("no host found in zones[uuids:%s] that attaches to backup storage where image[%s] is on", zoneUuids, spec.getImage().getUuid()));
         } else {
             next(candidates);
         }
