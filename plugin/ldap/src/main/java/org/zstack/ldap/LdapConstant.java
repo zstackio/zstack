@@ -13,6 +13,7 @@ public interface LdapConstant {
     interface WindowsAD{
         String TYPE = "WindowsAD";
         String MEMBER_KEY = "member";
+        String MEMBER_OF_KEY = "memberOf";
         String DN_KEY = "distinguishedName";
         String GLOBAL_UUID_KEY = "objectGUID";
     }
@@ -20,6 +21,7 @@ public interface LdapConstant {
     interface OpenLdap{
         String TYPE = "OpenLdap";
 		String MEMBER_KEY = "uniqueMember";
+        String MEMBER_OF_KEY = "memberOf";
         String DN_KEY = "entryDN";
         String GLOBAL_UUID_KEY = "entryUUID";
     }
