@@ -24,6 +24,7 @@ public class VolumeSnapshotGroupRefInventory {
     private String volumeSnapshotUuid;
     private String volumeSnapshotGroupUuid;
     private int deviceId;
+    private boolean snapshotDeleted;
     private String volumeUuid;
     private String volumeName;
     private String volumeType;
@@ -56,11 +57,25 @@ public class VolumeSnapshotGroupRefInventory {
         this.deviceId = deviceId;
     }
 
+    public boolean isSnapshotDeleted() {
+        return snapshotDeleted;
+    }
+
+    public void setSnapshotDeleted(boolean snapshotDeleted) {
+        this.snapshotDeleted = snapshotDeleted;
+    }
+
     public static VolumeSnapshotGroupRefInventory valueOf(VolumeSnapshotGroupRefVO vo) {
         VolumeSnapshotGroupRefInventory ref = new VolumeSnapshotGroupRefInventory();
         ref.deviceId = vo.getDeviceId();
         ref.volumeSnapshotGroupUuid = vo.getVolumeSnapshotGroupUuid();
         ref.volumeSnapshotUuid = vo.getVolumeSnapshotUuid();
+        ref.snapshotDeleted = vo.isSnapshotDeleted();
+        ref.volumeName = vo.getVolumeName();
+        ref.volumeUuid = vo.getVolumeUuid();
+        ref.volumeType = vo.getVolumeType();
+        ref.volumeSnapshotInstallPath = vo.getVolumeSnapshotInstallPath();
+        ref.volumeSnapshotName = vo.getVolumeSnapshotName();
         ref.createDate = vo.getCreateDate();
         ref.lastOpDate = vo.getLastOpDate();
         return ref;

@@ -1988,7 +1988,7 @@ public class VolumeBase implements Volume {
                 for (VolumeSnapshotInventory inv : r.getInventories()) {
                     VolumeSnapshotGroupRefVO ref = new VolumeSnapshotGroupRefVO();
                     ref.setVolumeUuid(inv.getVolumeUuid());
-                    ref.setVolumeName(inv.getName());
+                    ref.setVolumeName(vols.get(inv.getVolumeUuid()).getName());
                     ref.setVolumeType(inv.getVolumeType());
                     ref.setVolumeSnapshotGroupUuid(group.getUuid());
                     ref.setVolumeSnapshotUuid(inv.getUuid());

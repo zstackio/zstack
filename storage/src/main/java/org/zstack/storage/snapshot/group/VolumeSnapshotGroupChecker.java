@@ -31,7 +31,7 @@ public class VolumeSnapshotGroupChecker {
 
         Map<String, String> groupVmRef = groups.stream().collect(Collectors.toMap(ResourceVO::getUuid, VolumeSnapshotGroupVO::getVmInstanceUuid));
         Map<String, Map<String, String>> vmAttachedVols = Q.New(VolumeVO.class)
-                .in(VolumeVO_.vmInstanceUuid, groupVmRef.values())
+                .in(VolumeVO_.vmInstanceUuid, groupVmRef.values().stream().distinct().collect(Collectors.toList()))
                 .select(VolumeVO_.vmInstanceUuid, VolumeVO_.uuid, VolumeVO_.name).listTuple().stream()
                 .collect(Collectors.groupingBy(t -> t.get(0, String.class),
                         Collectors.toMap(it -> ((Tuple) it).get(1, String.class), it -> ((Tuple) it).get(2, String.class))));
@@ -58,22 +58,35 @@ public class VolumeSnapshotGroupChecker {
 
     private static VolumeSnapshotGroupAvailability getAvailability(VolumeSnapshotGroupVO group, Map<String, String> attachedVolUuidName) {
         List<String> reason = new ArrayList<>();
+        List<String> deletedSnapshotInfos = new ArrayList<>();
+        List<String> detachedVolInfos = new ArrayList<>();
 
         Set<String> attachedUuids = new HashSet<>(attachedVolUuidName.keySet());
+        Map<String, String> newAttachedVol = new HashMap<>(attachedVolUuidName);
         for (VolumeSnapshotGroupRefVO ref : group.getVolumeSnapshotRefs()) {
             if (ref.isSnapshotDeleted()) {
-                reason.add(i18n("snapshot[uuid:%s, name:%s] in the group has been deleted.",
-                        ref.getVolumeSnapshotUuid(), ref.getVolumeSnapshotName()));
+                deletedSnapshotInfos.add(String.format("[uuid:%s, name:%s]", ref.getVolumeSnapshotUuid(), ref.getVolumeSnapshotName()));
             } else if (!attachedUuids.contains(ref.getVolumeUuid())) {
-                reason.add(i18n("volume[uuid:%s, name:%s] is no longer attached.", ref.getVolumeUuid(), ref.getVolumeName()));
+                detachedVolInfos.add(String.format("[uuid:%s, name:%s]", ref.getVolumeUuid(), ref.getVolumeName()));
             }
 
-            attachedVolUuidName.remove(ref.getVolumeUuid());
+            newAttachedVol.remove(ref.getVolumeUuid());
         }
 
-        attachedVolUuidName.forEach((uuid, name) ->
-                reason.add(i18n("new volume[uuid:%s, name:%s] attached after snapshot point.",uuid, name)));
+        if (!deletedSnapshotInfos.isEmpty()) {
+            reason.add(i18n("snapshot(s) %s in the group has been deleted.", String.join(", ", deletedSnapshotInfos)));
+        }
 
+        if (!detachedVolInfos.isEmpty()) {
+            reason.add(i18n("volume(s) %s is no longer attached.", String.join(", ", detachedVolInfos)));
+        }
+
+        if (!newAttachedVol.isEmpty()) {
+            String volInfos = String.join(", ", newAttachedVol.entrySet().stream().map(e ->
+                    String.format("[uuid:%s, name:%s]", e.getKey(), e.getValue()))
+                    .collect(Collectors.toList()));
+            reason.add(i18n("new volume(s) %s attached after snapshot point.", volInfos));
+        }
         return new VolumeSnapshotGroupAvailability(group.getUuid(), String.join("\n", reason));
     }
 }
