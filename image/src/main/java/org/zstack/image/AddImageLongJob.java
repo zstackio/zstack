@@ -5,11 +5,13 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Constants;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -24,6 +26,11 @@ import org.zstack.longjob.LongJobUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.List;
+
+import static org.zstack.longjob.LongJobUtils.cancelErr;
+import static org.zstack.longjob.LongJobUtils.jobCanceled;
 
 
 /**
@@ -49,7 +56,8 @@ public class AddImageLongJob implements LongJob {
             job.setJobData(JSONObjectUtil.toJsonString(msg));
             dbf.update(job);
         }
-        bus.makeLocalServiceId(msg, ImageConstant.SERVICE_ID);
+
+        bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, msg.getResourceUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
@@ -59,7 +67,11 @@ public class AddImageLongJob implements LongJob {
 
                     auditResourceUuid = r.getInventory().getUuid();
                     evt.setInventory(r.getInventory());
-                    completion.success(evt);
+                    if (jobCanceled(job.getUuid())) {
+                        deleteAfterCancel(msg, job, completion);
+                    } else {
+                        completion.success(evt);
+                    }
                 } else {
                     auditResourceUuid = msg.getResourceUuid();
                     completion.fail(reply.getError());
@@ -91,10 +103,48 @@ public class AddImageLongJob implements LongJob {
         });
     }
 
+    private void deleteAfterCancel(AddImageMsg msg, LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
+        new While<>(msg.getBackupStorageUuids()).all((bsUuid, compl) -> {
+            ExpungeImageMsg emsg = new ExpungeImageMsg();
+            emsg.setBackupStorageUuid(bsUuid);
+            emsg.setImageUuid(msg.getResourceUuid());
+            bus.makeTargetServiceIdByResourceUuid(emsg, ImageConstant.SERVICE_ID, msg.getResourceUuid());
+            bus.send(emsg, new CloudBusCallBack(compl) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(reply.getError().toString());
+                    }
+
+                    compl.done();
+                }
+            });
+        }).run(new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                completion.fail(cancelErr(job.getUuid()));
+            }
+        });
+    }
+
     @Override
-    public void cancel(LongJobVO job, Completion completion) {
-        // TODO
-        completion.fail(Platform.operr("not supported"));
+    public void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {
+        CancelAddImageMsg msg = new CancelAddImageMsg();
+        AddImageMsg amsg = JSONObjectUtil.toObject(job.getJobData(), AddImageMsg.class);
+        msg.setMsg(amsg);
+        msg.setImageUuid(amsg.getResourceUuid());
+        msg.setCancellationApiId(job.getApiId());
+        bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, msg.getImageUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    completion.success(false);
+                } else {
+                    completion.fail(reply.getError());
+                }
+            }
+        });
     }
 
     @Override

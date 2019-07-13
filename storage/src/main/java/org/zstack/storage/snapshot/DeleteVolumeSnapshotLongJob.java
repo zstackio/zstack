@@ -48,7 +48,7 @@ public class DeleteVolumeSnapshotLongJob implements LongJob {
     }
 
     @Override
-    public void cancel(LongJobVO job, Completion completion) {
+    public void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {
         // TODO
         completion.fail(Platform.operr("not supported"));
     }

@@ -2,6 +2,7 @@ package org.zstack.longjob;
 
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.method.P;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -52,8 +53,7 @@ import static org.zstack.core.db.DBSourceUtils.isDBConnected;
 import static org.zstack.core.db.DBSourceUtils.waitDBConnected;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.longjob.LongJobConstants.LongJobOperation;
-import static org.zstack.longjob.LongJobUtils.jobCompleted;
-import static org.zstack.longjob.LongJobUtils.updateByUuid;
+import static org.zstack.longjob.LongJobUtils.*;
 
 /**
  * Created by GuoYi on 11/14/17.
@@ -255,17 +255,20 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         LongJob job = longJobFactory.getLongJob(vo.getJobName());
         logger.info(String.format("longjob [uuid:%s, name:%s] has been marked canceling", vo.getUuid(), vo.getName()));
 
-        job.cancel(vo, new Completion(completion) {
+        job.cancel(vo, new ReturnValueCompletion<Boolean>(completion) {
             @Override
-            public void success() {
-                updateByUuid(uuid, it -> it.setState(LongJobState.Canceled));
-                logger.info(String.format("longjob [uuid:%s, name:%s] has been canceled", vo.getUuid(), vo.getName()));
+            public void success(Boolean cancelled) {
+                if (cancelled) {
+                    updateByUuid(uuid, it -> it.setState(LongJobState.Canceled));
+                    logger.info(String.format("longjob [uuid:%s, name:%s] has been canceled", vo.getUuid(), vo.getName()));
+                } else {
+                    logger.debug(String.format("wait for canceling longjob [uuid:%s, name:%s] rollback", vo.getUuid(), vo.getName()));
+                }
                 completion.success();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                updateByUuid(uuid, it -> it.setState(LongJobState.Failed));
                 logger.error(String.format("failed to cancel longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
                 completion.fail(errorCode);
             }
@@ -375,7 +378,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             public void success(APIEvent evt) {
                 reportProgress("100");
                 updateByUuid(longJobUuid, it -> {
-                    it.setState(LongJobState.Succeeded);
+                    setStateWhenSuccess(it);
                     if (it.getJobResult() == null || it.getJobResult().isEmpty()) {
                         it.setJobResult("Succeeded");
                     }
@@ -394,7 +397,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 LongJobVO vo = updateByUuid(longJobUuid, it -> {
                     setStateWhenFail(it, errorCode);
                     if (it.getJobResult() == null || it.getJobResult().isEmpty()) {
-                        it.setJobResult("Failed : " + errorCode.toString());
+                        it.setJobResult("Failed : " + wrapErrorCode(it, errorCode).toString());
                     }
                 });
 
@@ -405,6 +408,22 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> it.apply(evt));
 
                 logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
+            }
+
+            private ErrorCode wrapErrorCode(LongJobVO job, ErrorCode err) {
+                if (Arrays.asList(LongJobState.Canceling, LongJobState.Canceled).contains(vo.getState()) && !err.isError(LongJobErrors.CANCELED)) {
+                    return cancelErr(job.getUuid(), err);
+                } else {
+                    return err;
+                }
+            }
+
+            private void setStateWhenSuccess(LongJobVO vo) {
+                if (Arrays.asList(LongJobState.Canceling, LongJobState.Canceled).contains(vo.getState())) {
+                    vo.setState(LongJobState.Canceled);
+                } else {
+                    vo.setState(LongJobState.Succeeded);
+                }
             }
 
             private void setStateWhenFail(LongJobVO vo, ErrorCode errorCode) {

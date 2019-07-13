@@ -9,7 +9,7 @@ import org.zstack.header.message.APIEvent;
  */
 public interface LongJob {
     void start(LongJobVO job, ReturnValueCompletion<APIEvent> completion);
-    void cancel(LongJobVO job, Completion completion);
+    void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion);
     default void resume(LongJobVO job) {
         job.setJobResult("Failed because management node restarted.");
         job.setState(LongJobState.Failed);

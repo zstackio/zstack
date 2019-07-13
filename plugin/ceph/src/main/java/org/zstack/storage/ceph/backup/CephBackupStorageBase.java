@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.agent.AgentConstant;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -346,6 +347,40 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
     }
 
+    public static class CancelDownloadCmd extends AgentCommand {
+        String url;
+        String installPath;
+        String imageUuid;
+
+        public String getImageUuid() {
+            return imageUuid;
+        }
+
+        public void setImageUuid(String imageUuid) {
+            this.imageUuid = imageUuid;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
+        }
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+    }
+
+    public static class CancelDownloadRsp extends AgentResponse {
+
+    }
+
     public static class DeleteCmd extends AgentCommand {
         String installPath;
 
@@ -608,6 +643,15 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         public void setDstMonSshPort(int dstMonSshPort) {
             this.dstMonSshPort = dstMonSshPort;
+        }
+    }
+
+    public static class CancelCommand extends AgentCommand implements org.zstack.header.agent.CancelCommand {
+        private String cancellationApiId;
+
+        @Override
+        public void setCancellationApiId(String cancellationApiId) {
+            this.cancellationApiId = cancellationApiId;
         }
     }
 
@@ -1024,6 +1068,27 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
 
         caller.call();
+    }
+
+    @Override
+    protected void handle(final CancelDownloadImageMsg msg) {
+        CancelDownloadImageReply reply = new CancelDownloadImageReply();
+
+        CancelCommand cmd = new CancelCommand();
+        cmd.setCancellationApiId(msg.getCancellationApiId());
+
+        new HttpCaller<>(AgentConstant.CANCEL_JOB, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(AgentResponse rsp) {
+                bus.reply(msg, reply);
+            }
+        }).tryNext().call();
     }
 
     @Override

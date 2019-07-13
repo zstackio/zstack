@@ -37,6 +37,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.CancelDownloadImageMsg;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
@@ -94,6 +95,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     protected static List<TrashType> trashLists = CollectionDSL.list(TrashType.MigrateImage);
 
     abstract protected void handle(DownloadImageMsg msg);
+
+    abstract protected void handle(CancelDownloadImageMsg msg);
 
     abstract protected void handle(DownloadVolumeMsg msg);
 
@@ -224,6 +227,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             handle((ReturnBackupStorageMsg) msg);
         } else if (msg instanceof DownloadVolumeMsg) {
             handleBase((DownloadVolumeMsg) msg);
+        } else if (msg instanceof CancelDownloadImageMsg) {
+            handleBase((CancelDownloadImageMsg) msg);
         } else if (msg instanceof DeleteBitsOnBackupStorageMsg) {
             handleBase((DeleteBitsOnBackupStorageMsg) msg);
         } else if (msg instanceof PingBackupStorageMsg) {
@@ -303,6 +308,11 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     private void handleBase(DownloadVolumeMsg msg) {
         checkState(msg);
+        checkStatus(msg);
+        handle(msg);
+    }
+
+    private void handleBase(CancelDownloadImageMsg msg) {
         checkStatus(msg);
         handle(msg);
     }

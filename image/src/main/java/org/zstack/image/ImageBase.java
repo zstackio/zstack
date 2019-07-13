@@ -24,6 +24,7 @@ import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.SharedResourceVO;
@@ -112,6 +113,8 @@ public class ImageBase implements Image {
     private void handleLocalMessage(Message msg) {
         if (msg instanceof ImageDeletionMsg) {
             handle((ImageDeletionMsg) msg);
+        } else if (msg instanceof CancelAddImageMsg) {
+            handle((CancelAddImageMsg) msg);
         } else if (msg instanceof ExpungeImageMsg) {
             handle((ExpungeImageMsg) msg);
         } else if (msg instanceof SyncImageSizeMsg) {
@@ -461,6 +464,40 @@ public class ImageBase implements Image {
                 bus.reply(msg, reply);
             }
         }).start();
+    }
+
+    private void handle(CancelAddImageMsg msg) {
+        CancelDownloadImageReply reply = new CancelDownloadImageReply();
+
+        AddImageMsg amsg = msg.getMsg();
+        List<String> bsUuids = amsg.getBackupStorageUuids();
+        ImageInventory img = ImageInventory.valueOf(dbf.findByUuid(msg.getImageUuid(), ImageVO.class));
+        ErrorCodeList err = new ErrorCodeList();
+        new While<>(bsUuids).all((bsUuid, compl) -> {
+            CancelDownloadImageMsg cmsg = new CancelDownloadImageMsg();
+            cmsg.setImageInventory(img);
+            cmsg.setBackupStorageUuid(bsUuid);
+            cmsg.setCancellationApiId(msg.getCancellationApiId());
+            bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
+            bus.send(cmsg, new CloudBusCallBack(compl) {
+                @Override
+                public void run(MessageReply r) {
+                    if (!r.isSuccess()) {
+                        err.getCauses().add(r.getError());
+                    }
+                    compl.done();
+                }
+            });
+        }).run(new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                if (!err.getCauses().isEmpty()) {
+                    reply.setError(err.getCauses().get(0));
+                }
+                bus.reply(msg, reply);
+            }
+        });
+
     }
 
 

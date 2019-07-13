@@ -1,6 +1,7 @@
 package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.agent.AgentConstant
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.utils.gson.JSONObjectUtil
@@ -60,6 +61,10 @@ class SftpBackupStorageSpec extends BackupStorageSpec {
                 rsp.actualSize = 0
                 rsp.size = 0
                 return rsp
+            }
+
+            simulator(AgentConstant.CANCEL_JOB) {
+                def rsp = new SftpBackupStorageCommands.AgentResponse()
             }
 
             simulator(SftpBackupStorageConstant.DELETE_PATH) {

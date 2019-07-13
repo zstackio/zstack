@@ -1,5 +1,6 @@
 package org.zstack.longjob;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -7,6 +8,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.progress.ProgressReportService;
+import org.zstack.header.Constants;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.longjob.LongJobErrors;
@@ -44,6 +46,13 @@ public class LongJobUtils {
 
     public static boolean jobCanceled(String longJobUuid) {
         LongJobState state = Q.New(LongJobVO.class).eq(LongJobVO_.uuid,longJobUuid).select(LongJobVO_.state).findValue();
+        return canceledStates.contains(state);
+    }
+
+    public static boolean jobCanceled() {
+        LongJobState state = Q.New(LongJobVO.class).select(LongJobVO_.state)
+                .eq(LongJobVO_.apiId, ThreadContext.get(Constants.THREAD_CONTEXT_API))
+                .findValue();
         return canceledStates.contains(state);
     }
 

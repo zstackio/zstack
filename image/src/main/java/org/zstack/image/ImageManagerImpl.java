@@ -130,7 +130,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         handleAddImageMsg(data, evt);
     }
 
-
     private void handle(CreateRootVolumeTemplateFromRootVolumeMsg msg) {
         CreateRootVolumeTemplateFromRootVolumeData data = new CreateRootVolumeTemplateFromRootVolumeData(msg);
         BeanUtils.copyProperties(msg, data);
