@@ -125,8 +125,11 @@ public class LdapUtil {
         return new LdapTemplateContextSource(ldapTemplate, ldapContextSource);
     }
 
-    public static String getMemberKey(){
-        String ldapServerUuid = Q.New(LdapServerVO.class).select(LdapServerVO_.uuid).findValue();
+    public String getMemberKey(){
+        String ldapServerUuid = Q.New(LdapServerVO.class)
+                .select(LdapServerVO_.uuid)
+                .eq(LdapServerVO_.scope, scope)
+                .findValue();
         String type = LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
 
         if(LdapConstant.WindowsAD.TYPE.equals(type)){
@@ -238,6 +241,25 @@ public class LdapUtil {
     public String addLeadingZero(int k) {
         return (k <= 0xF) ? "0" + Integer.toHexString(k) : Integer
                 .toHexString(k);
+    }
+
+    public String getMemberOfKey() {
+        String ldapServerUuid = Q.New(LdapServerVO.class)
+                .select(LdapServerVO_.uuid)
+                .eq(LdapServerVO_.scope, scope)
+                .findValue();
+        String type = LdapSystemTags.LDAP_SERVER_TYPE.getTokenByResourceUuid(ldapServerUuid, LdapSystemTags.LDAP_SERVER_TYPE_TOKEN);
+
+        if(LdapConstant.WindowsAD.TYPE.equals(type)){
+            return LdapConstant.WindowsAD.MEMBER_OF_KEY;
+        }
+
+        if(LdapConstant.OpenLdap.TYPE.equals(type)){
+            return LdapConstant.OpenLdap.MEMBER_OF_KEY;
+        }
+
+        // default WindowsAD
+        return LdapConstant.WindowsAD.MEMBER_OF_KEY;
     }
 
     public String getGlobalUuidKey() {
@@ -408,7 +430,7 @@ public class LdapUtil {
         }
 
         AndFilter filter = new AndFilter();
-        filter.and(new EqualsFilter(LdapUtil.getMemberKey(), ldapDn));
+        filter.and(new EqualsFilter(getMemberKey(), ldapDn));
 
         List<Object> groupList = ldapTemplate.search("", filter.toString(), new AbstractContextMapper<Object>() {
             @Override
