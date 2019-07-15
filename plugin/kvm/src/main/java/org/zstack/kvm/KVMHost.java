@@ -21,6 +21,7 @@ import org.zstack.core.ansible.*;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
@@ -79,6 +80,9 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.core.progress.ProgressReportService.getTaskStage;
+import static org.zstack.core.progress.ProgressReportService.markTaskStage;
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -1104,31 +1108,26 @@ public class KVMHost extends HostBase implements Host {
         }).start();
     }
 
-    private void migrateVm(final Iterator<MigrateStruct> it, final Completion completion) {
+    private void migrateVm(final MigrateStruct s, final Completion completion) {
+        final TaskProgressRange parentStage = getTaskStage();
+        final TaskProgressRange MIGRATE_VM_STAGE = new TaskProgressRange(0, 90);
+
         final String dstHostMigrateIp, dstHostMnIp, dstHostUuid;
         final String vmUuid;
         final StorageMigrationPolicy storageMigrationPolicy;
         final boolean migrateFromDestination;
         final String srcHostMigrateIp, srcHostMnIp, srcHostUuid;
-        synchronized (it) {
-            if (!it.hasNext()) {
-                completion.success();
-                return;
-            }
 
-            MigrateStruct s = it.next();
-            vmUuid = s.vmUuid;
-            dstHostMigrateIp = s.dstHostMigrateIp;
-            dstHostMnIp = s.dstHostMnIp;
-            dstHostUuid = s.dstHostUuid;
+        vmUuid = s.vmUuid;
+        dstHostMigrateIp = s.dstHostMigrateIp;
+        dstHostMnIp = s.dstHostMnIp;
+        dstHostUuid = s.dstHostUuid;
 
-            storageMigrationPolicy = s.storageMigrationPolicy;
-            migrateFromDestination = s.migrateFromDestition;
-            srcHostMigrateIp = s.srcHostMigrateIp;
-            srcHostMnIp = s.srcHostMnIp;
-            srcHostUuid = s.srcHostUuid;
-        }
-
+        storageMigrationPolicy = s.storageMigrationPolicy;
+        migrateFromDestination = s.migrateFromDestition;
+        srcHostMigrateIp = s.srcHostMigrateIp;
+        srcHostMnIp = s.srcHostMnIp;
+        srcHostUuid = s.srcHostUuid;
 
         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
         q.select(VmInstanceVO_.internalId);
@@ -1145,6 +1144,8 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        TaskProgressRange stage = markTaskStage(parentStage, MIGRATE_VM_STAGE);
+
                         MigrateVmCmd cmd = new MigrateVmCmd();
                         cmd.setDestHostIp(dstHostMigrateIp);
                         cmd.setSrcHostIp(srcHostMigrateIp);
@@ -1173,6 +1174,7 @@ public class KVMHost extends HostBase implements Host {
                                             vmUuid, self.getUuid(), self.getManagementIp(), dstHostMigrateIp);
                                     logger.debug(info);
 
+                                    reportProgress(stage.getEnd().toString());
                                     trigger.next();
                                 }
                             }
@@ -1258,8 +1260,8 @@ public class KVMHost extends HostBase implements Host {
                         String info = String.format("successfully migrated vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s]",
                                 vmUuid, self.getUuid(), self.getManagementIp(), dstHostMigrateIp);
                         logger.debug(info);
-
-                        migrateVm(it, completion);
+                        reportProgress(parentStage.getEnd().toString());
+                        completion.success();
                     }
                 });
 
@@ -1324,12 +1326,10 @@ public class KVMHost extends HostBase implements Host {
     private void migrateVm(final MigrateVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStatus();
 
-        List<MigrateStruct> lst = new ArrayList<>();
         MigrateStruct s = buildMigrateStuct(msg);
-        lst.add(s);
 
         final MigrateVmOnHypervisorReply reply = new MigrateVmOnHypervisorReply();
-        migrateVm(lst.iterator(), new Completion(msg, completion) {
+        migrateVm(s, new Completion(msg, completion) {
             @Override
             public void success() {
                 bus.reply(msg, reply);

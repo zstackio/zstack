@@ -76,6 +76,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.*;
 
 
@@ -4869,11 +4870,13 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
+                reportProgress("0");
                 migrateVm(msg, new Completion(chain) {
                     @Override
                     public void success() {
                         APIMigrateVmEvent evt = new APIMigrateVmEvent(msg.getId());
                         evt.setInventory(VmInstanceInventory.valueOf(self));
+                        reportProgress("100");
                         bus.publish(evt);
                         chain.next();
                     }
