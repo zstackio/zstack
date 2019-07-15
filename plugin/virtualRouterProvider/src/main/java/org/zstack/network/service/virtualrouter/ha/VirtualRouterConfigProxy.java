@@ -15,15 +15,15 @@ public abstract class VirtualRouterConfigProxy {
     @Autowired
     protected PluginRegistry  pluginRgty;
 
-    protected abstract void attachNetworkSericeToVirtualRouter(String vrUuid, String type, List<String> serviceUuids);
-    protected abstract void detachNetworkSericeFromVirtualRouter(String vrUuid, String type, List<String> serviceUuids);
-    protected abstract List<String> getVrUuidsFromByNetworkService(String serviceUuid);
-    protected abstract List<String> getServiceUuidsFromByVRouter(String vrUuid);
+    protected abstract void attachNetworkServiceToVirtualRouter(String vrUuid, String type, List<String> serviceUuids);
+    protected abstract void detachNetworkServiceFromVirtualRouter(String vrUuid, String type, List<String> serviceUuids);
+    protected abstract List<String> getVrUuidsByNetworkService(String serviceUuid);
+    protected abstract List<String> getServiceUuidsByVRouter(String vrUuid);
 
-    final public void attachNetworkSerice(String vrUuid, String type, List<String> serviceUuids) {
+    final public void attachNetworkService(String vrUuid, String type, List<String> serviceUuids) {
         VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
         if (!vrVo.isHaEnabled()) {
-            attachNetworkSericeToVirtualRouter(vrUuid, type, serviceUuids);
+            attachNetworkServiceToVirtualRouter(vrUuid, type, serviceUuids);
         } else {
             for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
                 ext.attachNetworkServiceToHaRouter(type, serviceUuids, vrUuid);
@@ -31,10 +31,10 @@ public abstract class VirtualRouterConfigProxy {
         }
     }
 
-    final public void DetachNetworkSerice(String vrUuid, String type, List<String> serviceUuids) {
+    final public void DetachNetworkService(String vrUuid, String type, List<String> serviceUuids) {
         VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
         if (!vrVo.isHaEnabled()) {
-            detachNetworkSericeFromVirtualRouter(vrUuid, type, serviceUuids);
+            detachNetworkServiceFromVirtualRouter(vrUuid, type, serviceUuids);
         } else {
             for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
                 ext.detachNetworkServiceFromHaRouter(type, serviceUuids, vrUuid);
@@ -42,9 +42,9 @@ public abstract class VirtualRouterConfigProxy {
         }
     }
 
-    final public List<String> getVrUuidsFromByNetworkService(String type, String serviceUuid) {
-        List<String> vrUuids = getVrUuidsFromByNetworkService(serviceUuid);
-        if (vrUuids != null || vrUuids.isEmpty()) {
+    final public List<String> getVrUuidsByNetworkService(String type, String serviceUuid) {
+        List<String> vrUuids = getVrUuidsByNetworkService(serviceUuid);
+        if (vrUuids != null && !vrUuids.isEmpty()) {
             return vrUuids;
         }
 
@@ -56,10 +56,10 @@ public abstract class VirtualRouterConfigProxy {
         return vrUuids;
     }
 
-    final public List<String> getServiceUuidsFromByRouterUuid(String vrUuid, String type) {
+    final public List<String> getServiceUuidsByRouterUuid(String vrUuid, String type) {
         VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
         if (!vrVo.isHaEnabled()) {
-            return getServiceUuidsFromByVRouter(vrUuid);
+            return getServiceUuidsByVRouter(vrUuid);
         } else {
             for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
                 return ext.getNetworkServicesFromHaVrUuid(type, vrUuid);

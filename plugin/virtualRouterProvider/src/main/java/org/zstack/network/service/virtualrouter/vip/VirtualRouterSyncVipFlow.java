@@ -11,37 +11,27 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.network.service.NetworkServiceType;
-import org.zstack.network.service.eip.EipConstant;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
-import org.zstack.network.service.virtualrouter.VirtualRouterManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
-import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static org.zstack.network.service.lb.LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE;
-
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterSyncVipFlow implements Flow {
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
-    protected VipManager vipManager;
+    @Qualifier("VirtualRouterVipBackend")
+    protected VirtualRouterVipBackend vipExt;
     @Autowired
-    protected VirtualRouterManager vrMgr;
+    protected VipConfigProxy proxy;
 
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
 
-        String serviceProvderType = vrMgr.getVirtualRouterServiceProviderType(vr.getUuid(), null);
-        VirtualRouterVipBackend vipExt = (VirtualRouterVipBackend)vipManager.getVipBackend(serviceProvderType);
-
-        List<String> vrVips = vipExt.getAllVipsOnThisRouter(vr.getUuid());
-
+        List<String> vrVips = proxy.getServiceUuidsByRouterUuid(vr.getUuid(), VipVO.class.getSimpleName());
         List<String> peerL3Vips = null;
         if (vr.getGuestL3Networks() != null && !vr.getGuestL3Networks().isEmpty()) {
             peerL3Vips = Q.New(VipPeerL3NetworkRefVO.class).select(VipPeerL3NetworkRefVO_.vipUuid)
@@ -62,7 +52,7 @@ public class VirtualRouterSyncVipFlow implements Flow {
             }
         }
 
-        if (vipUuids == null) {
+        if (vipUuids == null || vipUuids.isEmpty()) {
             chain.next();
             return;
         }
@@ -70,13 +60,12 @@ public class VirtualRouterSyncVipFlow implements Flow {
         List<VipVO> vips = vipUuids.stream()
                 .map(uuid -> (VipVO)Q.New(VipVO.class).eq(VipVO_.uuid, uuid).find())
                 .collect(Collectors.toList());
+
         List<VipInventory> invs = VipInventory.valueOf(vips);
         vipExt.createVipOnVirtualRouterVm(vr, invs, new Completion(chain) {
             @Override
             public void success() {
-                vipExt.attachVipToVirtualRouter(vr.getUuid(),
-                        vips.stream().map(VipVO::getUuid).collect(Collectors.toList()));
-
+                proxy.attachNetworkService(vr.getUuid(), VipVO.class.getSimpleName(), vips.stream().map(VipVO::getUuid).collect(Collectors.toList()));
                 chain.next();
             }
 

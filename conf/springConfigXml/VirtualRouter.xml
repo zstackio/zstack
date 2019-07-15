@@ -225,4 +225,10 @@
 
     <bean id="VirtualRouterHaBackend" class="org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend">
     </bean>
+
+    <bean id="VipConfigProxy" class="org.zstack.network.service.virtualrouter.vip.VipConfigProxy">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.appliancevm.ApplianceVmSyncConfigToHaGroupExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>

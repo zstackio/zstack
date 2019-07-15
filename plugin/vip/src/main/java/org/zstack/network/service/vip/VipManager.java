@@ -13,6 +13,4 @@ public interface VipManager extends Service {
     FlowChain getReleaseVipChain();
 
     VipFactory getVipFactory(String networkServiceProviderType);
-
-    VipBackend getVipBackend(String networkServiceProviderType);
 }
