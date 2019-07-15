@@ -29,8 +29,6 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import static org.zstack.network.service.lb.LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE;
-
 /**
  * Created by frank on 8/17/2015.
  */
@@ -236,7 +234,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
         List<String> lbUuids = (List<String>) data.get(VirtualRouterSyncLbOnStartFlow.class);
         if (lbUuids != null) {
-            proxy.DetachNetworkService(vr.getUuid(), LoadBalancerVO.class.getSimpleName(), lbUuids);
+            proxy.detachNetworkService(vr.getUuid(), LoadBalancerVO.class.getSimpleName(), lbUuids);
         }
         trigger.rollback();
     }

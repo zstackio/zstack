@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -16,15 +15,10 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.eip.EipBackend;
-import org.zstack.network.service.eip.EipConstant;
-import org.zstack.network.service.eip.EipGlobalConfig;
-import org.zstack.network.service.eip.EipManager;
+import org.zstack.network.service.eip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SyncEipRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
@@ -61,11 +55,7 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
     @Autowired
-    protected PluginRegistry pluginRgty;
-    @Autowired
-    protected EipManager eipManager;
-    @Autowired
-    protected NetworkServiceManager nwMgr;
+    protected EipConfigProxy proxy;
 
     @Transactional(readOnly = true)
     private List<EipTO> findEipOnThisRouter(VirtualRouterVmInventory vr, List<String> eipUuids) {
@@ -115,7 +105,6 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
     }
 
     private List<EipTO> findEipOnThisRouter(final VirtualRouterVmInventory vr, Map<String, Object> data, boolean isNewCreated) throws OperationFailureException {
-        EipBackend eipBackend = (EipBackend)data.get(Param.BACKEND.toString());
         List<String> eipUuids = new ArrayList<>();
         if (isNewCreated) {
             final List<VmNicInventory> guestNics = vr.getGuestNics();
@@ -138,11 +127,11 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
                 }
             }.call();
 
-            eipBackend.attachEipToVirtualRouter(eipUuids, vr.getUuid());
+            proxy.attachNetworkService(vr.getUuid(), EipVO.class.getSimpleName(), eipUuids);
             data.put(VirtualRouterSyncEipOnStartFlow.class.getName(), eipUuids);
 
         } else {
-            eipUuids = eipBackend.getEipUuidsOnVirtualRouter(vr.getUuid());
+            eipUuids = proxy.getServiceUuidsByRouterUuid(vr.getUuid(), EipVO.class.getSimpleName());
         }
 
         if (eipUuids.isEmpty()) {
@@ -169,11 +158,6 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
             trigger.next();
             return;
         }
-
-        NetworkServiceProviderType providerType = nwMgr.getTypeOfNetworkServiceProviderForService(guestNics.get(0).getL3NetworkUuid(), EipConstant.EIP_TYPE);
-        EipBackend eipBackend = eipManager.getEipBackend(providerType.toString(), guestNics.get(0).getL3NetworkUuid());
-        data.put(Param.BACKEND.toString(), eipBackend);
-
         new VirtualRouterRoleManager().makeEipRole(vr.getUuid());
 
         boolean isNewCreated = data.containsKey(Param.IS_NEW_CREATED.toString());
@@ -226,10 +210,7 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
     public void rollback(FlowRollback trigger, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
         List<String> eipUuids = (List<String>) data.get(VirtualRouterSyncEipOnStartFlow.class.getName());
-        EipBackend eipBackend = (EipBackend)data.get(Param.BACKEND.toString());
-        if (eipUuids != null) {
-            eipBackend.detachEipFromVirtualRouter(eipUuids, vr.getUuid());
-        }
+        proxy.detachNetworkService(vr.getUuid(), EipVO.class.getSimpleName(), eipUuids);
 
         trigger.rollback();
     }

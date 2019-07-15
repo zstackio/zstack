@@ -27,7 +27,6 @@ import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.portforwarding.*;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.*;
@@ -290,7 +289,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
         revokeRuleOnVirualRouter(struct, vr, new Completion(completion) {
             @Override
             public void success() {
-                proxy.DetachNetworkService(vr.getUuid(), PortForwardingRuleVO.class.getSimpleName(), asList(struct.getRule().getUuid()));
+                proxy.detachNetworkService(vr.getUuid(), PortForwardingRuleVO.class.getSimpleName(), asList(struct.getRule().getUuid()));
                 revokeRuleOnHaVirtualRouter(struct, vr, completion);
             }
 
@@ -473,7 +472,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
                 } else {
                     List<Tuple> pfs = findPortForwardingTuplesOnVmNic(nic);
                     List<String> ruleUuids = pfs.stream().map(p -> p.get(0, PortForwardingRuleVO.class).getUuid()).collect(Collectors.toList());
-                    proxy.DetachNetworkService(vr.getUuid(), PortForwardingRuleVO.class.getSimpleName(), ruleUuids);
+                    proxy.detachNetworkService(vr.getUuid(), PortForwardingRuleVO.class.getSimpleName(), ruleUuids);
                     for (Tuple t : pfs) {
                         PortForwardingRuleVO rule = t.get(0, PortForwardingRuleVO.class);
                         new SQLBatch(){

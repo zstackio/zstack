@@ -13,13 +13,10 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.portforwarding.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SyncPortForwardingRuleCmd;
@@ -210,7 +207,7 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
         VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
         List<String> ruleUuids = (List<String>) data.get(VirtualRouterSyncPortForwardingRulesOnStartFlow.class.getName());
 
-        proxy.DetachNetworkService(vr.getUuid(), PortForwardingRuleVO.class.getSimpleName(), ruleUuids);
+        proxy.detachNetworkService(vr.getUuid(), PortForwardingRuleVO.class.getSimpleName(), ruleUuids);
 
         chain.rollback();
     }
