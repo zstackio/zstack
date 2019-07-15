@@ -29,10 +29,4 @@ public interface LoadBalancerBackend {
 
     String getNetworkServiceProviderType();
 
-    List<String> getAllLbUuidsOnVr(String vrUuid);
-
-    void attachLoadBalancerToVirtualRouter(List<String> lbUuids, String vrUuid);
-    void detachLoadBalancerFromVirtualRouter(List<String> lbUuids, String vrUuid);
-    void syncOnStart(String vrUuid, List<LoadBalancerStruct> structs, final Completion completion);
-    void refresh(String vrUuid, LoadBalancerStruct struct, final Completion completion);
 }
