@@ -36,14 +36,6 @@ public class ErrorCode  {
         return this.elaboration;
     }
 
-    public java.lang.String cost;
-    public void setCost(java.lang.String cost) {
-        this.cost = cost;
-    }
-    public java.lang.String getCost() {
-        return this.cost;
-    }
-
     public ErrorCode cause;
     public void setCause(ErrorCode cause) {
         this.cause = cause;
