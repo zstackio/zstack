@@ -518,7 +518,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        PortForwardingBackend bkd = getPortForwardingBackend(providerType.toString(), struct.getGuestL3Network().getUuid());
+                        PortForwardingBackend bkd = getPortForwardingBackend(providerType);
                         bkd.revokePortForwardingRule(struct, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -847,6 +847,10 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         return true;
     }
 
+    public PortForwardingBackend getPortForwardingBackend(NetworkServiceProviderType nspType) {
+        return getPortForwardingBackend(nspType.toString());
+    }
+
     @Override
     public String getVipUse() {
         return PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE;
@@ -868,7 +872,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         PortForwardingStruct struct = makePortForwardingStruct(PortForwardingRuleInventory.valueOf(rule));
         final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(struct.getGuestL3Network().getUuid(),
                 NetworkServiceType.PortForwarding);
-        PortForwardingBackend bkd = getPortForwardingBackend(providerType.toString(), struct.getGuestL3Network().getUuid());
+        PortForwardingBackend bkd = getPortForwardingBackend(providerType);
         bkd.revokePortForwardingRule(struct, new Completion(completion) {
             @Override
             public void success() {
@@ -911,13 +915,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
     }
 
     @Override
-    public PortForwardingBackend getPortForwardingBackend(String providerType, String l3NetworkUuid) {
-        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-            String newProviderType = ext.getL3NetworkServiceProviderTypeOfHaRouter(l3NetworkUuid);
-            if (newProviderType != null) {
-                providerType = newProviderType;
-            }
-        }
+    public PortForwardingBackend getPortForwardingBackend(String providerType) {
 
         PortForwardingBackend bkd = backends.get(providerType);
         DebugUtils.Assert(bkd != null, String.format("cannot find PortForwardingBackend[type:%s]", providerType));
@@ -965,7 +963,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        PortForwardingBackend bkd = getPortForwardingBackend(providerType, struct.getGuestL3Network().getUuid());
+                        PortForwardingBackend bkd = getPortForwardingBackend(providerType);
                         bkd.applyPortForwardingRule(struct, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -1010,7 +1008,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        PortForwardingBackend bkd = getPortForwardingBackend(providerType, struct.getGuestL3Network().getUuid());
+                        PortForwardingBackend bkd = getPortForwardingBackend(providerType);
                         bkd.revokePortForwardingRule(struct, new Completion(trigger) {
                             @Override
                             public void success() {

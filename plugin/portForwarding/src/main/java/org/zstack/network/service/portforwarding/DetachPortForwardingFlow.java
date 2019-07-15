@@ -25,7 +25,7 @@ public class DetachPortForwardingFlow extends NoRollbackFlow {
         String providerType = (String) data.get(PortForwardingConstant.Params.PORTFORWARDING_SERVICE_PROVIDER_TYPE.toString());
         final PortForwardingStruct struct = (PortForwardingStruct) data.get(PortForwardingConstant.Params.PORTFORWARDING_STRUCT.toString());
 
-        PortForwardingBackend bkd = pfMgr.getPortForwardingBackend(providerType, struct.getGuestL3Network().getUuid());
+        PortForwardingBackend bkd = pfMgr.getPortForwardingBackend(providerType);
         bkd.revokePortForwardingRule(struct, new Completion(trigger) {
             @Override
             public void success() {
