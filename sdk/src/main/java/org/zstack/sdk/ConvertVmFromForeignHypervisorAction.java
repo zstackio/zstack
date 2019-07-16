@@ -37,6 +37,9 @@ public class ConvertVmFromForeignHypervisorAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String conversionHostUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sshPrivKey;
+
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,1024L}, noTrim = false)
     public java.lang.Integer cpuNum;
 
@@ -72,6 +75,12 @@ public class ConvertVmFromForeignHypervisorAction extends AbstractAction {
 
     @Param(required = false, validValues = {"CapacityOptimized","EfficiencyFirst"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String convertStrategy = "CapacityOptimized";
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean pauseVm = false;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List volumeFilters;
 
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String longJobName;
