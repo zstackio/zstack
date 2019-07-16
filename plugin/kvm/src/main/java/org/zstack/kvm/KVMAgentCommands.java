@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.zstack.core.validation.ConditionalValidation;
+import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.vm.VmBootDevice;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
@@ -1612,7 +1613,7 @@ public class KVMAgentCommands {
     public static class ApplySecurityGroupRuleResponse extends AgentResponse {
     }
 
-    public static class MigrateVmCmd extends AgentCommand {
+    public static class MigrateVmCmd extends AgentCommand implements HasThreadContext {
         private String vmUuid;
         private String destHostIp;
         private String storageMigrationPolicy;
