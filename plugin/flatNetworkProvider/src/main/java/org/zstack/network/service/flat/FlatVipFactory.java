@@ -4,8 +4,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.message.Message;
 import org.zstack.network.service.vip.*;
 
-import java.util.List;
-
 /**
  * Created by xing5 on 2016/12/5.
  */
@@ -35,13 +33,7 @@ public class FlatVipFactory implements VipFactory {
                 bus.dealWithUnknownMessage(msg);
             }
 
-            @Override
-            public void attachVipToVirtualRouter(String vrUuid, List<String> vipUuids) {}
         };
     }
 
-    @Override
-    public VipBaseBackend getVip(String vrUuid, VipVO self) {
-        return null;
-    }
 }

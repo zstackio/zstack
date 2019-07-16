@@ -7,6 +7,4 @@ public interface VipFactory {
     String getNetworkServiceProviderType();
 
     VipBaseBackend getVip(VipVO self);
-
-    VipBaseBackend getVip(String vrUuid, VipVO self);
 }

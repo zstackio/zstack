@@ -3,6 +3,7 @@ package org.zstack.network.service.virtualrouter.lb;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
@@ -42,7 +43,8 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
     @Autowired
     private LoadBalancerManager lbMgr;
     @Autowired
-    private VipManager vipManager;
+    @Qualifier("VirtualRouterVipBackend")
+    protected VirtualRouterVipBackend vipExt;
 
     private LoadBalancerStruct makeStruct(LoadBalancerVO vo) {
         LoadBalancerStruct struct = new LoadBalancerStruct();
@@ -98,8 +100,6 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
         new VirtualRouterRoleManager().makeLoadBalancerRole(vr.getUuid());
 
         String serviceProviderType = vrMgr.getVirtualRouterServiceProviderType(vr.getUuid(), LB_NETWORK_SERVICE_TYPE);
-        VirtualRouterVipBackend vipExt = (VirtualRouterVipBackend)vipManager.getVipBackend(serviceProviderType);
-
         LoadBalancerBackend backend = lbMgr.getBackend(serviceProviderType);
         data.put(Param.BACKEND.toString(), backend);
 

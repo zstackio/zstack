@@ -54,7 +54,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
     @Autowired
-    private VipManager vipMgr;
+    private VipConfigProxy proxy;
 
     private String getOwnerMac(VirtualRouterVmInventory vr, VipInventory vip) {
         for (VmNicInventory nic : vr.getVmNics()) {
@@ -295,28 +295,6 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         });
     }
 
-    protected List<String> getAllVipsOnThisRouter(String vrUuid) {
-        return Q.New(VirtualRouterVipVO.class).select(VirtualRouterVipVO_.uuid)
-                .eq(VirtualRouterVipVO_.virtualRouterVmUuid, vrUuid).listValues();
-    }
-
-    protected void attachVipToVirtualRouter(String vrUuid, List<String> vipUuids) {
-        List<VirtualRouterVipVO> vrvips = new ArrayList<>();
-        for (String uuid : vipUuids) {
-            VirtualRouterVipVO vo = dbf.findByUuid(uuid, VirtualRouterVipVO.class);
-            if (vo == null) {
-                vo = new VirtualRouterVipVO();
-                vo.setUuid(uuid);
-                vo.setVirtualRouterVmUuid(vrUuid);
-                vrvips.add(vo);
-            }
-        }
-
-        if (!vrvips.isEmpty()) {
-            dbf.persistCollection(vrvips);
-        }
-    }
-
     @Override
     public void afterAttachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
         completion.done();
@@ -340,10 +318,6 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
             completion.success();
             return;
         }
-
-        VipVO vipvo = dbf.findByUuid(vips.get(0).getVipUuid(), VipVO.class);
-        VipFactory f = vipMgr.getVipFactory(vipvo.getServiceProvider());
-        VipBaseBackend backend = f.getVip(nic.getVmInstanceUuid(), vipvo);
 
         CreateVipCmd cmd = new CreateVipCmd();
         cmd.setVips(vips);
@@ -371,7 +345,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                     completion.fail(err);
                 } else {
                     List<String> vipUuids = vips.stream().map(v -> v.getVipUuid()).distinct().collect(Collectors.toList());
-                    backend.attachVipToVirtualRouter(nic.getVmInstanceUuid(), vipUuids);
+                    proxy.attachNetworkService(nic.getVmInstanceUuid(), VipVO.class.getSimpleName(), vipUuids);
                     completion.success();
                 }
             }

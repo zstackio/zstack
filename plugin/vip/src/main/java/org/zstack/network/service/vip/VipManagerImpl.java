@@ -80,8 +80,8 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
     protected EventFacade evtf;
 
     private Map<String, VipReleaseExtensionPoint> vipReleaseExts = new HashMap<String, VipReleaseExtensionPoint>();
+    private Map<String, VipBackend> vipBackends = new HashMap<String, VipBackend>();
     private Map<String, VipFactory> factories = new HashMap<>();
-    private Map<String, VipBackend> backendMap = new HashMap<>();
 
     private List<String> releaseVipByApiFlowNames;
     private FlowChainBuilder releaseVipByApiFlowChainBuilder;
@@ -97,6 +97,17 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
             vipReleaseExts.put(extp.getVipUse(), extp);
         }
 
+        exts = pluginRgty.getExtensionByInterfaceName(VipBackend.class.getName());
+        for (PluginExtension ext : exts) {
+            VipBackend extp = (VipBackend) ext.getInstance();
+            VipBackend old = vipBackends.get(extp.getServiceProviderTypeForVip());
+            if (old != null) {
+                throw new CloudRuntimeException(
+                        String.format("duplicate VipBackend[%s, %s] for provider type[%s]", old.getClass().getName(), extp.getClass().getName(), extp.getServiceProviderTypeForVip())
+                );
+            }
+            vipBackends.put(extp.getServiceProviderTypeForVip(), extp);
+        }
         for (VipFactory ext : pluginRgty.getExtensionList(VipFactory.class)) {
             VipFactory old = factories.get(ext.getNetworkServiceProviderType());
             if (old != null) {
@@ -107,15 +118,6 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
             factories.put(ext.getNetworkServiceProviderType(), ext);
         }
 
-        for (VipBackend ext : pluginRgty.getExtensionList(VipBackend.class)) {
-            VipBackend old = backendMap.get(ext.getServiceProviderTypeForVip());
-            if (old != null) {
-                throw new CloudRuntimeException(String.format("duplicate VipBackend[%s, %s] for the network service provider type[%s]",
-                        old.getClass(), ext.getClass(), ext.getServiceProviderTypeForVip()));
-            }
-
-            backendMap.put(ext.getServiceProviderTypeForVip(), ext);
-        }
     }
 
     public VipReleaseExtensionPoint getVipReleaseExtensionPoint(String use) {
@@ -139,12 +141,6 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         return f;
     }
 
-    @Override
-    public VipBackend getVipBackend(String networkServiceProviderType) {
-        VipBackend f = backendMap.get(networkServiceProviderType);
-        DebugUtils.Assert(f != null, String.format("cannot find the VipBackend for the network service provider type[%s]", networkServiceProviderType));
-        return f;
-    }
 
     @Override
     @MessageSafe
