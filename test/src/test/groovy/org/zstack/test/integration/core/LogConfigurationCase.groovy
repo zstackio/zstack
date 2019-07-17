@@ -3,6 +3,7 @@ package org.zstack.test.integration.core
 import org.zstack.core.log.Log4jXMLModifier
 import org.zstack.core.log.LogConstant
 import org.zstack.core.log.LogGlobalConfig
+import org.zstack.core.log.LogGlobalProperty
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -34,6 +35,7 @@ class LogConfigurationCase extends SubCase {
     }
 
     void testUpdateLogConfig() {
+        LogGlobalProperty.LOG_RETENTION_SIZE_GB = -2
         updateGlobalConfig {
             category = LogGlobalConfig.CATEGORY
             name = LogGlobalConfig.LOG_DELETE_LAST_MODIFIED.getName()
@@ -69,5 +71,14 @@ class LogConfigurationCase extends SubCase {
         log4jXMLModifier = new Log4jXMLModifier()
         assert "-1 MB" == log4jXMLModifier.getLogRetentionSize(LogConstant.MN_SERVER_LOG_ROLLINGFILE)
         assert "-1 MB" == log4jXMLModifier.getLogRetentionSize(LogConstant.MN_API_LOG_ROLLINGFILE)
+
+        LogGlobalProperty.LOG_RETENTION_SIZE_GB = 200
+        expect(AssertionError.class){
+            updateGlobalConfig {
+                category = LogGlobalConfig.CATEGORY
+                name = LogGlobalConfig.LOG_DELETE_ACCUMULATED_FILE_SIZE.getName()
+                value = "300"
+            }
+        }
     }
 }

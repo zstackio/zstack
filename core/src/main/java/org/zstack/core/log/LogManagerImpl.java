@@ -64,6 +64,12 @@ public class LogManagerImpl implements Component, ManagementNodeReadyExtensionPo
         LogGlobalConfig.LOG_DELETE_ACCUMULATED_FILE_SIZE.installBeforeUpdateExtension(new GlobalConfigBeforeUpdateExtensionPoint() {
             @Override
             public void beforeUpdateExtensionPoint(GlobalConfig oldConfig, String newValue) {
+                if (isRetentionSizePropertyConfigured()) {
+                    if (!newValue.equals(Integer.toString(LogGlobalProperty.LOG_RETENTION_SIZE_GB))) {
+                        throw new GlobalConfigException("The log size has been configured in the zstack.properties");
+                    }
+                }
+
                 try {
                     Log4jXMLModifier log4jXMLModifier = new Log4jXMLModifier();
                     log4jXMLModifier.validateLog4jXML();
@@ -145,8 +151,26 @@ public class LogManagerImpl implements Component, ManagementNodeReadyExtensionPo
         }
     }
 
+    private void syncLogGlobalConfig() {
+        if (!isRetentionSizePropertyConfigured()) {
+            return;
+        }
+
+        LogGlobalConfig.LOG_DELETE_ACCUMULATED_FILE_SIZE.updateValue(LogGlobalProperty.LOG_RETENTION_SIZE_GB);
+    }
+
+    private boolean isRetentionSizePropertyConfigured() {
+        String value = Integer.toString(LogGlobalProperty.LOG_RETENTION_SIZE_GB);
+        if (LogConstant.PROPERTY_LOG_RETENTION_SIZE_GB_DEFAULT_VALUE.equals(value)) {
+            return false;
+        }
+
+        return true;
+    }
+
     @Override
     public void managementNodeReady() {
+        syncLogGlobalConfig();
         checkAndSyncLog4jXML();
     }
 
