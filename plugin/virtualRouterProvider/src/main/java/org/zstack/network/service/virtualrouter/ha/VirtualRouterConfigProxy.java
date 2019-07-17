@@ -31,7 +31,7 @@ public abstract class VirtualRouterConfigProxy {
         }
     }
 
-    final public void DetachNetworkService(String vrUuid, String type, List<String> serviceUuids) {
+    final public void detachNetworkService(String vrUuid, String type, List<String> serviceUuids) {
         VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
         if (!vrVo.isHaEnabled()) {
             detachNetworkServiceFromVirtualRouter(vrUuid, type, serviceUuids);

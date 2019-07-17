@@ -708,29 +708,4 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     public String getNetworkServiceProviderType() {
         return FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING;
     }
-
-    @Override
-    public void applyEip(String vrUuid, EipStruct struct, Completion completion) {
-        completion.success();
-    }
-
-    @Override
-    public void revokeEip(String vrUuid, EipStruct struct, Completion completion) {
-        completion.success();
-    }
-
-    @Override
-    public void attachEipToVirtualRouter(List<String> eipUuids, String vrUuid) {
-
-    }
-
-    @Override
-    public void detachEipFromVirtualRouter(List<String> eipUuids, String vrUuid) {
-
-    }
-
-    @Override
-    public List<String> getEipUuidsOnVirtualRouter(String vrUuid) {
-        return null;
-    }
 }

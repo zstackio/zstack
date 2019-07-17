@@ -231,4 +231,22 @@
             <zstack:extension interface="org.zstack.appliancevm.ApplianceVmSyncConfigToHaGroupExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="LbConfigProxy" class="org.zstack.network.service.virtualrouter.lb.LbConfigProxy">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.appliancevm.ApplianceVmSyncConfigToHaGroupExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="PortForwardingConfigProxy" class="org.zstack.network.service.virtualrouter.portforwarding.PortForwardingConfigProxy">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.appliancevm.ApplianceVmSyncConfigToHaGroupExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="EipConfigProxy" class="org.zstack.network.service.virtualrouter.eip.EipConfigProxy">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.appliancevm.ApplianceVmSyncConfigToHaGroupExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>
