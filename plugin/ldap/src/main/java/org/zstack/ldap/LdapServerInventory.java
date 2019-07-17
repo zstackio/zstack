@@ -18,6 +18,7 @@ public class LdapServerInventory {
     private String url;
     private String base;
     private String username;
+    private String scope;
 
     @APINoSee
     private String password;
@@ -37,6 +38,7 @@ public class LdapServerInventory {
         inv.setEncryption(vo.getEncryption());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
+        inv.setScope(vo.getScope());
         return inv;
     }
 
@@ -126,5 +128,13 @@ public class LdapServerInventory {
 
     public void setEncryption(String encryption) {
         this.encryption = encryption;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 }

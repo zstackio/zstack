@@ -28,6 +28,14 @@ public class IAM2VirtualIDInventory  {
         return this.description;
     }
 
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
+    }
+
     public State state;
     public void setState(State state) {
         this.state = state;

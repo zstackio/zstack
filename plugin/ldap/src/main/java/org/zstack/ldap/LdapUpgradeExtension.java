@@ -104,7 +104,7 @@ public class LdapUpgradeExtension implements Component {
     private LdapTemplateContextSource readLdapServerConfiguration() {
         LdapServerVO ldapServerVO = Q.New(LdapServerVO.class).find();
         LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
-        return new LdapUtil().loadLdap(ldapServerInventory);
+        return LdapManager.ldapUtil.loadLdap(ldapServerInventory);
     }
 
     @Override
