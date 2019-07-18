@@ -9,6 +9,8 @@ public interface LdapConstant {
 
     String LDAP_OU_KEY = "ou";
 
+    String LDAP_SSL_PREFIX = "ldaps";
+
     // Empty default
     interface WindowsAD{
         String TYPE = "WindowsAD";

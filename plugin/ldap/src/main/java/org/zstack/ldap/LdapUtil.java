@@ -28,8 +28,11 @@ import org.zstack.utils.logging.CLogger;
 import javax.naming.NamingEnumeration;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.SearchControls;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
+import javax.net.ssl.*;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,6 +52,24 @@ public class LdapUtil {
 
     public LdapUtil(String scope) {
         this.scope = scope;
+    }
+
+    private void setSsl() throws NoSuchAlgorithmException, KeyManagementException {
+        SSLContext ctx = SSLContext.getInstance("TLS");
+        X509TrustManager tm = new X509TrustManager() {
+
+            public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException {
+            }
+
+            public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException {
+            }
+
+            public X509Certificate[] getAcceptedIssuers() {
+                return null;
+            }
+        };
+        ctx.init(null, new TrustManager[]{tm}, null);
+        SSLContext.setDefault(ctx);
     }
 
     private String scope;
@@ -94,7 +115,15 @@ public class LdapUtil {
         ldapContextSource.setPassword(inv.getPassword());
         ldapContextSource.setDirObjectFactory(DefaultDirObjectFactory.class);
         if (inv.getEncryption().equals(LdapEncryptionType.TLS.toString())) {
-            setTls(ldapContextSource);
+            if (urls.get(0).contains(LdapConstant.LDAP_SSL_PREFIX)) {
+                try {
+                    setSsl();
+                } catch (NoSuchAlgorithmException | KeyManagementException e) {
+                    logger.debug("Failed to init ssl skip it and connection failure will occurs");
+                }
+            } else {
+                setTls(ldapContextSource);
+            }
         }
         ldapContextSource.setCacheEnvironmentProperties(false);
         ldapContextSource.setPooled(false);
