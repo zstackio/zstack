@@ -44,6 +44,14 @@ public class RaidControllerInventory  {
         return this.sasAddress;
     }
 
+    public java.lang.String hostUuid;
+    public void setHostUuid(java.lang.String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
+    public java.lang.String getHostUuid() {
+        return this.hostUuid;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
@@ -58,6 +66,14 @@ public class RaidControllerInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
+    }
+
+    public java.lang.Integer adapterNumber;
+    public void setAdapterNumber(java.lang.Integer adapterNumber) {
+        this.adapterNumber = adapterNumber;
+    }
+    public java.lang.Integer getAdapterNumber() {
+        return this.adapterNumber;
     }
 
     public java.util.List raidPhysicalDrives;

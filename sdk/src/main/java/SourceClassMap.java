@@ -378,6 +378,7 @@ public class SourceClassMap {
 			put("org.zstack.storage.device.localRaid.LocateStatus", "org.zstack.sdk.LocateStatus");
 			put("org.zstack.storage.device.localRaid.RaidControllerInventory", "org.zstack.sdk.RaidControllerInventory");
 			put("org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory", "org.zstack.sdk.RaidPhysicalDriveInventory");
+			put("org.zstack.storage.device.localRaid.SmartDataStruct", "org.zstack.sdk.SmartDataStruct");
 			put("org.zstack.storage.fusionstor.backup.FusionstorBackupStorageInventory", "org.zstack.sdk.FusionstorBackupStorageInventory");
 			put("org.zstack.storage.fusionstor.backup.FusionstorBackupStorageMonInventory", "org.zstack.sdk.FusionstorBackupStorageMonInventory");
 			put("org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageInventory", "org.zstack.sdk.FusionstorPrimaryStorageInventory");
@@ -751,6 +752,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ShellResult", "org.zstack.kvm.APIKvmRunShellEvent$ShellResult");
 			put("org.zstack.sdk.SimulatorHostInventory", "org.zstack.header.simulator.SimulatorHostInventory");
 			put("org.zstack.sdk.SnapShotSpendingInventory", "org.zstack.billing.spendingcalculator.snapshot.SnapShotSpendingInventory");
+			put("org.zstack.sdk.SmartDataStruct", "org.zstack.storage.device.localRaid.SmartDataStruct");
+			put("org.zstack.sdk.SnapShotSpendingInventory", "org.zstack.billing.SnapShotSpendingInventory");
 			put("org.zstack.sdk.SnapshotLeafInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotTree$SnapshotLeafInventory");
 			put("org.zstack.sdk.SnapshotSpending", "org.zstack.billing.spendingcalculator.snapshot.SnapshotSpending");
 			put("org.zstack.sdk.Spending", "org.zstack.billing.Spending");

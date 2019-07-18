@@ -44,12 +44,12 @@ public class RaidPhysicalDriveInventory  {
         return this.description;
     }
 
-    public java.lang.Integer enclosureDeviceID;
-    public void setEnclosureDeviceID(java.lang.Integer enclosureDeviceID) {
-        this.enclosureDeviceID = enclosureDeviceID;
+    public java.lang.Integer enclosureDeviceId;
+    public void setEnclosureDeviceId(java.lang.Integer enclosureDeviceId) {
+        this.enclosureDeviceId = enclosureDeviceId;
     }
-    public java.lang.Integer getEnclosureDeviceID() {
-        return this.enclosureDeviceID;
+    public java.lang.Integer getEnclosureDeviceId() {
+        return this.enclosureDeviceId;
     }
 
     public java.lang.Integer slotNumber;
@@ -58,6 +58,14 @@ public class RaidPhysicalDriveInventory  {
     }
     public java.lang.Integer getSlotNumber() {
         return this.slotNumber;
+    }
+
+    public java.lang.Integer deviceId;
+    public void setDeviceId(java.lang.Integer deviceId) {
+        this.deviceId = deviceId;
+    }
+    public java.lang.Integer getDeviceId() {
+        return this.deviceId;
     }
 
     public java.lang.Integer diskGroup;
