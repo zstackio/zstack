@@ -1,7 +1,10 @@
 package org.zstack.test.integration.kvm.nic
 
 import org.zstack.compute.vm.VmSystemTags
+import org.zstack.core.db.Q
 import org.zstack.header.network.l3.L3NetworkStateEvent
+import org.zstack.header.network.l3.UsedIpVO
+import org.zstack.header.network.l3.UsedIpVO_
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmNicVO
 import org.zstack.sdk.IpRangeInventory
@@ -78,10 +81,13 @@ class VmNicBasicCase extends SubCase {
         assert nic.vmInstanceUuid == null
         assert nic.ip != null
         assert nic.mac != null
+        assert nic.usedIps.size() != 0
 
         IpRangeInventory ipRangeInventory = pubL3.ipRanges.get(0)
         assert nic.gateway == ipRangeInventory.gateway
         assert nic.netmask == ipRangeInventory.netmask
+
+        assert Q.New(UsedIpVO.class).eq(UsedIpVO_.vmNicUuid, nic.uuid).isExists()
 
         // an used static ip
         expect(AssertionError.class) {
@@ -181,9 +187,8 @@ class VmNicBasicCase extends SubCase {
         VmNicVO vmNicVO = dbFindByUuid(nic.uuid, VmNicVO.class)
         assert vmNicVO == null
 
-        /* TODO shixin.ruan fix it: add casacde for vmnic and usedip
         UsedIpVO usedIpVO = dbFindByUuid(usedIpUuid, UsedIpVO.class)
-        assert usedIpVO == null*/
+        assert usedIpVO == null
     }
 
     @Override
