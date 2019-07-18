@@ -12,14 +12,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.message.MessageReply;
-import org.zstack.network.service.vip.VipConstant;
-import org.zstack.network.service.vip.VipDeletionMsg;
-import org.zstack.network.service.vip.VipVO;
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
-import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
-import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
