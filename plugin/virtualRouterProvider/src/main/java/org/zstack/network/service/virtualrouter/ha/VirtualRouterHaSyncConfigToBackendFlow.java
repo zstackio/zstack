@@ -38,7 +38,7 @@ public class VirtualRouterHaSyncConfigToBackendFlow implements Flow {
         List<ErrorCode> errs = new ArrayList<>();
         List<VirtualRouterHaGroupExtensionPoint> exts = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
         new While<>(exts).each((ext, compl) -> {
-            ext.syncVirtualRouterHaConfigToBackend(vr.getUuid(), new Completion(chain) {
+            ext.syncVirtualRouterHaConfigToBackend(vr.getUuid(), new Completion(compl) {
                 @Override
                 public void success() {
                     compl.done();
