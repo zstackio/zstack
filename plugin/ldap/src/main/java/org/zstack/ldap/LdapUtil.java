@@ -43,11 +43,23 @@ import static org.zstack.utils.CollectionDSL.list;
 public class LdapUtil {
     private static final CLogger logger = Utils.getLogger(LdapUtil.class);
 
+    public LdapUtil() {
+
+    }
+
     public LdapUtil(String scope) {
         this.scope = scope;
     }
 
     private String scope;
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
 
     void setTls(LdapContextSource ldapContextSource) {
         // set tls
