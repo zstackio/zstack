@@ -13,4 +13,7 @@ public class LocalStoragePrimaryStorageGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig ALLOW_LIVE_MIGRATION = new GlobalConfig(CATEGORY, "liveMigrationWithStorage.allow");
+
+    @GlobalConfigValidation(validValues = {"none", "metadata", "falloc", "full"})
+    public static GlobalConfig QCOW2_ALLOCATION = new GlobalConfig(CATEGORY, "qcow2.allocation");
 }

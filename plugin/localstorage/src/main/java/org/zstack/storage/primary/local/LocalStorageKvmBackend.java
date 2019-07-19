@@ -167,7 +167,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
-    public static class CreateEmptyVolumeCmd extends AgentCommand {
+    public static class CreateEmptyVolumeCmd extends Qcow2Cmd {
         private String installUrl;
         private long size;
         private String accountUuid;
@@ -672,6 +672,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public String filePath;
     }
 
+    public static class Qcow2Cmd extends AgentCommand {
+        public String preallocation = buildQcow2Options();
+    }
+
     public static final String INIT_PATH = "/localstorage/init";
     public static final String GET_PHYSICAL_CAPACITY_PATH = "/localstorage/getphysicalcapacity";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/localstorage/volume/createempty";
@@ -759,6 +763,16 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 PrimaryStoragePathMaker.makeImageFromSnapshotWorkspacePath(imageUuid),
                 String.format("%s.qcow2", imageUuid)
         );
+    }
+
+    public static String buildQcow2Options() {
+        StringBuilder options = new StringBuilder();
+
+        if (LocalStorageConstants.VALID_QCOW2_ALLOCATION.contains(LocalStoragePrimaryStorageGlobalConfig.QCOW2_ALLOCATION.value()) &&
+                !LocalStoragePrimaryStorageGlobalConfig.QCOW2_ALLOCATION.value().equals("none")) {
+            options.append(String.format(" -o preallocation=%s ", LocalStoragePrimaryStorageGlobalConfig.QCOW2_ALLOCATION.value()));
+        }
+        return options.toString();
     }
 
     @Override
