@@ -3,21 +3,20 @@ package org.zstack.compute.allocator;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.allocator.*;
+import org.zstack.header.allocator.AbstractHostAllocatorFlow;
+import org.zstack.header.allocator.DiskOfferingTagAllocatorExtensionPoint;
+import org.zstack.header.allocator.InstanceOfferingTagAllocatorExtensionPoint;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
-import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
-import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -66,7 +65,7 @@ public class TagAllocatorFlow extends AbstractHostAllocatorFlow {
                     tmp = ret;
 
                     if (tmp.isEmpty()) {
-                        fail(String.format("InstanceOfferingTagAllocatorExtensionPoint[%s] return zero candidate host", extp.getClass().getName()));
+                        fail(Platform.operr("InstanceOfferingTagAllocatorExtensionPoint[%s] return zero candidate host", extp.getClass().getName()));
                         return;
                     } else {
                         logger.debug(String.format("[Host Allocation]: InstanceOfferingTagAllocatorExtensionPoint[%s] successfully found %s candidate hosts for vm[uuid:%s, name:%s]",
@@ -102,7 +101,7 @@ public class TagAllocatorFlow extends AbstractHostAllocatorFlow {
                     tmp = ret;
 
                     if (tmp.isEmpty()) {
-                        fail(String.format("DiskOfferingTagAllocatorExtensionPoint[%s] return zero candidate host", extp.getClass().getName()));
+                        fail(Platform.operr("DiskOfferingTagAllocatorExtensionPoint[%s] return zero candidate host", extp.getClass().getName()));
                         return;
                     } else {
                         logger.debug(String.format("[Host Allocation]: DiskOfferingTagAllocatorExtensionPoint[%s] successfully found %s candidate hosts for vm[uuid:%s, name:%s]",

@@ -77,6 +77,16 @@ public abstract class AbstractHostAllocatorFlow {
         }
     }
 
+    protected void fail(ErrorCode reason) {
+        if (paginationInfo != null && !trigger.isFirstFlow(this)) {
+            reason.setCode(HostAllocatorConstant.PAGINATION_INTERMEDIATE_ERROR.getCode());
+            reason.setDescription(HostAllocatorConstant.PAGINATION_INTERMEDIATE_ERROR.getDescription());
+        } else {
+            reason.setCode(HostAllocatorError.NO_AVAILABLE_HOST.toString());
+        }
+        throw new OperationFailureException(reason);
+    }
+
     protected boolean usePagination() {
         return paginationInfo != null && trigger.isFirstFlow(this);
     }

@@ -20,6 +20,7 @@ import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.*;
@@ -1663,7 +1664,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                             @Override
                             public void done() {
                                 if (!errorCodes.isEmpty()) {
-                                    trigger.fail(operr("unable to connect mons").causedBy(errorCodes));
+                                    trigger.fail(operr(new ErrorCodeList().causedBy(errorCodes), "unable to connect mons"));
                                 } else {
                                     trigger.next();
                                 }
@@ -1706,7 +1707,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                             public void done() {
                                 // one fail, all fail
                                 if (!errors.isEmpty()) {
-                                    trigger.fail(operr("unable to add mon to ceph backup storage").causedBy(errors));
+                                    trigger.fail(operr(new ErrorCodeList().causedBy(errors), "unable to add mon to ceph backup storage"));
                                 } else {
                                     trigger.next();
                                 }

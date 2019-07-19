@@ -11,6 +11,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageStatus;
@@ -155,8 +156,8 @@ public class DownloadIsoForVmExtension implements PreVmInstantiateResourceExtens
                     return;
                 }
 
-                ErrorCode ec = operr("unable to download iso to primary storage, becasue: %s",
-                        errorCodes.get(0).getDetails()).causedBy(errorCodes);
+                ErrorCode ec = operr(new ErrorCodeList().causedBy(errorCodes), "unable to download iso to primary storage, becasue: %s",
+                        errorCodes.get(0).getDetails());
 
                 completion.fail(ec);
             }

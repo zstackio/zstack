@@ -9,4 +9,5 @@ import java.util.List;
  */
 public interface HostAllocatorFilterExtensionPoint {
     List<HostVO> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec);
+    String filterErrorReason();
 }

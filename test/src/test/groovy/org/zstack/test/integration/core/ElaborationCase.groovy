@@ -5,12 +5,15 @@ import org.zstack.core.db.Q
 import org.zstack.header.errorcode.ElaborationVO
 import org.zstack.header.errorcode.ElaborationVO_
 import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.errorcode.ErrorCodeList
 import org.zstack.header.identity.IdentityErrors
 import org.zstack.sdk.ElaborationInventory
 import org.zstack.sdk.GetElaborationCategoriesResult
 import org.zstack.sdk.GetElaborationsResult
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+
+import static org.zstack.core.Platform.operr
 /**
  * Created by mingjian.deng on 2018/11/28.*/
 class ElaborationCase extends SubCase {
@@ -41,19 +44,20 @@ class ElaborationCase extends SubCase {
             testRefreshElaboration()
             testElaborationWithLongName()
             testElaborationWithUnknownFormatConversion()
+            testErrorList()
         }
     }
 
     void testElaborationWithLongName() {
         def err = Platform.operr("host[uuid:%s, name:%s] is in status[%s], cannot perform required operation", Platform.uuid, "long long long long long long long long long host name", "Connecting") as ErrorCode
         assert err.elaboration != null
-        assert err.elaboration.trim() == "错误信息: 物理机不能进行该操作\n可能原因: 物理机正处于[Connecting]状态,当前状态不允许进行该操作\n操作建议: 请等待物理机退出[Connecting]状态"
+        assert err.elaboration.trim() == "错误信息: 物理机[long long long long long long long long long host name]正处于[Connecting]状态, 当前状态不允许进行该操作\n可能原因: 物理机正处于[Connecting]状态,当前状态不允许进行该操作\n操作建议: 请等待物理机退出[Connecting]状态"
     }
 
     void testElaboration() {
         def err = Platform.operr("certificate has expired or is not yet valid") as ErrorCode
         assert err.elaboration != null
-        assert err.elaboration.trim() == "错误信息: 当前系统时间不在镜像仓库证书有效期内\n可能原因: 调整过镜像仓库服务器的系统时间，或者证书被修改\n操作建议: 检查镜像服务器系统时间，或重置镜像仓库证书"
+        assert err.elaboration.trim() == "错误信息: 当前系统时间不在镜像仓库证书有效期内, 调整过镜像仓库服务器的系统时间，或者证书被修改\n可能原因: 调整过镜像仓库服务器的系统时间，或者证书被修改\n操作建议: 检查镜像服务器系统时间，或重置镜像仓库证书"
 
         err = Platform.operr("The state of vm[uuid:%s] is %s. Only these state[Running,Stopped] is allowed to update cpu or memory.", Platform.uuid, "Rebooting") as ErrorCode
         assert err.elaboration != null
@@ -70,10 +74,6 @@ class ElaborationCase extends SubCase {
         missed = Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "test for missed error").find() as ElaborationVO
         assert missed.distance > 0
         assert missed.repeats == 2
-
-        err = Platform.operr("shell command[sudo PYTHONPATH=/usr/local/zstack/ansible/files/zstacklib timeout 1800 python /usr/local/zstack/ansible/kvm.py -i /usr/local/zstack/ansible/hosts --private-key /usr/local/zstack/apache-tomcat-7.0.35/webapps/zstack/WEB-INF/classes/ansible/rsaKeys/id_rsa -e '{\"chrony_servers\":\"\",\"trusted_host\":\"\",\"remote_port\":\"22\",\"update_packages\":\"false\",\"zstack_root\":\"/var/lib/zstack\",\"remote_user\":\"root\",\"hostname\":\"10-0-121-175.zstack.org\",\"pkg_kvmagent\":\"kvmagent-3.2.0.tar.gz\",\"post_url\":\"http://172.20.11.235:8080/zstack/kvm/ansiblelog/%s\\n\",\"remote_pass\":\"******\",\"host\":\"172.20.11.235\",\"pip_url\":\"http://172.20.11.235:8080/zstack/static/pypi/simple\",\"zstack_repo\":\"\\\"zstack-mn,qemu-kvm-ev-mn\\\"\",\"yum_server\":\"172.20.11.235:8080\",\"pkg_zstacklib\":\"zstacklib-3.2.0.tar.gz\"}'] failed\n ret code: 1", Platform.uuid)
-        assert err.elaboration != null
-        assert err.elaboration.contains("pip安装失败")
 
         err = Platform.err(IdentityErrors.INVALID_SESSION, "xxxxxxxxx") as ErrorCode
         assert err.elaboration != null
@@ -169,5 +169,17 @@ class ElaborationCase extends SubCase {
         assert err.details == "%!s(int=0) %!s(bytes.readOp=0)"
         def missed = Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "%!s(int=0) %!s(bytes.readOp=0)").find() as ElaborationVO
         assert !missed.matched
+    }
+
+    void testErrorList() {
+        def list = new ArrayList<ErrorCode>()
+        def err1 = operr("host[uuid:%s, name:%s] is in state[%s], cannot perform required operation", Platform.uuid, "host-1", "Maintenance") as ErrorCode
+        def err2 = operr("host[uuid:%s, name:%s] is in state[%s], cannot perform required operation", Platform.uuid, "host-2", "Maintenance") as ErrorCode
+
+        list.addAll([err1, err2])
+        def errlist = new ErrorCodeList().causedBy(list)
+
+        def err = operr(errlist, "unable to commit backup storage because: %s", err1.details)
+        assert err.messages.message_cn == "物理机[host-1]正处于[Maintenance]状态, 当前状态不允许进行该操作,物理机[host-2]正处于[Maintenance]状态, 当前状态不允许进行该操作"
     }
 }

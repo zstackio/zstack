@@ -1,6 +1,5 @@
 package org.zstack.storage.primary.local;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -9,6 +8,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
@@ -44,14 +45,14 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
 
     private class Result {
         List<PrimaryStorageVO> result;
-        String error;
+        ErrorCode err;
     }
 
     @Transactional(readOnly = true)
     private Result allocate(Map data) {
         PrimaryStorageAllocationSpec spec = (PrimaryStorageAllocationSpec) data.get(AllocatorParams.SPEC);
         TypedQuery<LocalStorageHostRefVO> query;
-        String errorInfo;
+        Result ret = new Result();
         long reservedCapacity = SizeUtils.sizeStringToBytes(PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value());
 
         if (spec.getRequiredPrimaryStorageUuid() != null) {
@@ -72,7 +73,8 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             query.setParameter("hstate", HostState.Enabled);
             query.setParameter("hstatus", HostStatus.Connected);
             query.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
-            errorInfo = String.format("required local primary storage[uuid:%s] cannot satisfy conditions[state: %s, status: %s]," +
+
+            ret.err = operr("required local primary storage[uuid:%s] cannot satisfy conditions[state: %s, status: %s]," +
                             " or hosts providing the primary storage don't satisfy conditions[state: %s, status: %s, size > %s bytes]",
                     spec.getRequiredPrimaryStorageUuid(),
                     PrimaryStorageState.Enabled,
@@ -100,7 +102,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             query.setParameter("hstate", HostState.Enabled);
             query.setParameter("hstatus", HostStatus.Connected);
             query.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
-            errorInfo = String.format("the required host[uuid:%s] cannot satisfy conditions[state: %s, status: %s, size > %s bytes]," +
+            ret.err = operr("the required host[uuid:%s] cannot satisfy conditions[state: %s, status: %s, size > %s bytes]," +
                             " or doesn't belong to a local primary storage satisfying conditions[state: %s, status: %s]," +
                             " or its cluster doesn't attach to any local primary storage",
                     spec.getRequiredHostUuid(),
@@ -127,7 +129,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             query.setParameter("hstate", HostState.Enabled);
             query.setParameter("hstatus", HostStatus.Connected);
             query.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
-            errorInfo = String.format("no local primary storage in zone[uuid:%s] can satisfy conditions[state: %s, status: %s]" +
+            ret.err = operr("no local primary storage in zone[uuid:%s] can satisfy conditions[state: %s, status: %s]" +
                             " or contain hosts satisfying conditions[state: %s, status: %s, size > %s bytes]",
                     spec.getRequiredZoneUuid(),
                     PrimaryStorageState.Enabled,
@@ -152,7 +154,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             query.setParameter("hstatus", HostStatus.Connected);
             query.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
 
-            errorInfo = String.format("no local primary storage can satisfy conditions[state: %s, status: %s]" +
+            ret.err = operr("no local primary storage can satisfy conditions[state: %s, status: %s]" +
                             " or contain hosts satisfying conditions[state: %s, status: %s, size > %s bytes]",
                     PrimaryStorageState.Enabled,
                     PrimaryStorageStatus.Connected,
@@ -188,18 +190,18 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
         logger.debug(String.format("candidate hosts [%s]", candidateHosts.stream().map(LocalStorageHostRefVO::getHostUuid).collect(Collectors.toList())));
         if (!candidateHosts.isEmpty()) {
             Iterator<LocalStorageHostRefVO> it = candidateHosts.iterator();
-            List<String> err = new ArrayList<>();
+            List<ErrorCode> errs = new ArrayList<>();
             while (it.hasNext()) {
                 LocalStorageHostRefVO ref = it.next();
                 if (!physicalCapacityMgr.checkCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())
                         || !physicalCapacityMgr.checkRequiredCapacityByRatio(ref.getPrimaryStorageUuid(), ref.getTotalPhysicalCapacity(), spec.getTotalSize() == null ? spec.getSize() : spec.getTotalSize())) {
-                    err.add(String.format("{the physical capacity usage of the host[uuid:%s] has exceeded the threshold[%s]}",
+                    errs.add(operr("{the physical capacity usage of the host[uuid:%s] has exceeded the threshold[%s]}",
                             ref.getHostUuid(), physicalCapacityMgr.getRatio(ref.getPrimaryStorageUuid())));
                     it.remove();
                 }
             }
             if (candidateHosts.isEmpty()) {
-                errorInfo = StringUtils.join(err, ",");
+                ret.err = operr(new ErrorCodeList().causedBy(errs), "failed allocate localstorage");
             }
         }
         Set<String> candidates = new HashSet<>();
@@ -252,8 +254,6 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             }
         }
 
-        Result ret = new Result();
-        ret.error = errorInfo;
         ret.result = res;
         return ret;
     }
@@ -300,7 +300,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
     public void run(FlowTrigger trigger, Map data) {
         Result ret = allocate(data);
         if (ret.result.isEmpty()) {
-            throw new OperationFailureException(operr("%s", ret.error));
+            throw new OperationFailureException(ret.err);
         }
 
         data.put(AllocatorParams.CANDIDATES, ret.result);

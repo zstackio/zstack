@@ -1,12 +1,10 @@
 package org.zstack.compute.allocator;
 
 import org.springframework.beans.factory.annotation.Autowire;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.host.HostSystemTags;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.allocator.*;
-import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.core.Platform;
+import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.host.HostVO;
 
 import java.util.ArrayList;
@@ -61,7 +59,7 @@ public class HostOsVersionAllocatorFlow  extends AbstractHostAllocatorFlow {
         }
 
         if (ret.isEmpty()) {
-            fail(String.format("no candidate host has version[%s]", currentVersion));
+            fail(Platform.operr("no candidate host has version[%s]", currentVersion));
         } else {
             next(ret);
         }

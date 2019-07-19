@@ -3,6 +3,7 @@ package org.zstack.compute.allocator;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
@@ -57,7 +58,7 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
         ret = reserveMgr.filterOutHostsByReservedCapacity(ret, spec.getCpuCapacity(), spec.getMemoryCapacity());
 
         if (ret.isEmpty()) {
-            fail(String.format("no host having cpu[%s], memory[%s bytes] found",
+            fail(Platform.operr("no host having cpu[%s], memory[%s bytes] found",
                     spec.getCpuCapacity(), spec.getMemoryCapacity()));
         } else {
             next(ret);

@@ -1,0 +1,18 @@
+[
+  {
+    "category": "CLOUDFORMATION",
+    "code": "1000",
+    "method": "regex",
+    "regex": "Fn::Join must be array and contain 2 params, .*",
+    "message_cn": "Fn::Join后面的参数出错，该参数应包含2个参数，第一个为String,第二个为数组",
+    "message_en": "Fn::Join must be array and contain 2 params, array[0] must be String, array[1] must be array!"
+  },
+  {
+    "category": "CLOUDFORMATION",
+    "code": "1001",
+    "method": "regex",
+    "regex": "Param .* has no value or default value found!",
+    "message_cn": "Parameter中的[%1$s]字段没有输入，并且也没有缺省值",
+    "message_en": "Parameter [%1$s] has no value or default value found!"
+  }
+]

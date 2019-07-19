@@ -4,9 +4,9 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
@@ -172,14 +172,16 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
         candidates = allocateFromCandidates();
 
         if (candidates.isEmpty()) {
-            String err = spec.getVmOperation().equals(VmOperation.NewCreate.toString()) ?
-                    String.format("cannot find available primary storage[state: %s, status: %s, available capacity %s bytes]." +
-                            " Check the state/status of primary storage and make sure they have been attached to clusters",
-                            PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getDiskSize()) :
-                    String.format("cannot find available primary storage[state: %s or %s, status: %s]." +
-                            " Check the state/status of primary storage and make sure they have been attached to clusters",
-                            PrimaryStorageState.Enabled, PrimaryStorageState.Disabled, PrimaryStorageStatus.Connected);
-            fail(err);
+            if (spec.getVmOperation().equals(VmOperation.NewCreate.toString())) {
+                fail(Platform.operr("cannot find available primary storage[state: %s, status: %s, available capacity %s bytes]." +
+                        " Check the state/status of primary storage and make sure they have been attached to clusters",
+                        PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getDiskSize()));
+            } else {
+                fail(Platform.operr("cannot find available primary storage[state: %s or %s, status: %s]." +
+                        " Check the state/status of primary storage and make sure they have been attached to clusters",
+                        PrimaryStorageState.Enabled, PrimaryStorageState.Disabled, PrimaryStorageStatus.Connected));
+            }
+
         } else {
             next(candidates);
         }

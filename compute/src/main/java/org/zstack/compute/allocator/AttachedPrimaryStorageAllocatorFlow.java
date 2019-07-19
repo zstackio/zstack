@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.host.HostState;
@@ -75,7 +76,7 @@ public class AttachedPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFl
         candidates = allocate(psuuids, vm);
 
         if (candidates.isEmpty()) {
-            fail(String.format("no host found in clusters that have attached to primary storage%s", psuuids));
+            fail(Platform.operr("no host found in clusters that have attached to primary storage %s", psuuids));
         }  else {
             next(candidates);
         }

@@ -11,12 +11,97 @@
   {
     "category": "VM",
     "code": "1001",
-    "regex": "unable to allocate hosts; due to pagination is enabled, there might be several allocation failures happened before; the error list is [{no Enabled hosts found in the [1] candidate hosts}]",
-    "message_cn": "找不到合适的host来启动vm",
-    "message_en": "unable to allocate hosts",
-    "operation_cn": "请将合适的host置于Enable状态",
-    "operation_en": "please set host to Enabled state",
-    "causes_cn": "能用于启动该vm的host都不处于Enabled状态",
-    "causes_en": "no Enabled hosts found in the candidate hosts"
+    "method": "regex",
+    "regex": "no Enabled hosts found in the \\[[0-9]*] candidate hosts",
+    "message_cn": "找不到合适的host来启动vm, 因为满足分配条件的%1$s个hosts都不处于Enable状态",
+    "message_en": "unable to allocate hosts, because the %1$s hosts which satisfied to allocate are not in Enable status"
+  },
+  {
+    "category": "VM",
+    "code": "1002",
+    "method": "regex",
+    "regex": "no Connected hosts found in the \\[[0-9]*] candidate hosts",
+    "message_cn": "找不到合适的host来启动vm, 因为满足分配条件的%1$s个hosts都不处于Connected状态",
+    "message_en": "unable to allocate hosts, because the %1$s hosts which satisfied to allocate are not in Connected status"
+  },
+  {
+    "category": "VM",
+    "code": "1003",
+    "method": "regex",
+    "regex": "no Connected hosts found in the \\[[0-9]*] candidate hosts having the hypervisor type \\[.*]",
+    "message_cn": "找不到合适的host来启动vm, 因为满足分配条件的%1$s个hosts都不是%2$s的虚拟化类型",
+    "message_en": "unable to allocate hosts, because the %1$s hosts which satisfied to allocate are not %2$s hypervisor type"
+  },
+  {
+    "category": "VM",
+    "code": "1004",
+    "method": "regex",
+    "regex": "no host having cpu\\[[0-9]*], memory\\[[0-9]* bytes] found",
+    "message_cn": "找不到合适的host来启动vm, 因为可以用于分配vm的host都没有足够的资源: cpu [%1$s], 内存 [%2$s]",
+    "message_en": "unable to allocate hosts, because no hosts has enough resource: cpu [%1$s], memory [%2$s]"
+  },
+  {
+    "category": "VM",
+    "code": "1005",
+    "method": "regex",
+    "regex": "the vm.*, but the host is either not having enough CPU/memory or in the state\\[Enabled] or status\\[Connected] to start the vm",
+    "message_cn": "找不到合适的host来启动vm, 因为主存储是localstorage的vm只能启动在host[%2$s]上，但这个host没有足够的cpu/memory资源，或不处于Enabled/Connected 状态",
+    "message_en": "the vm using local primary storage, it can only be started on the host[%2$s], but the host is either not having enough cpu/memory, or in the Enabled/Connected status"
+  },
+  {
+    "category": "VM",
+    "code": "1006",
+    "method": "regex",
+    "regex": "after filtering, .* returns zero candidate host, it means: .*",
+    "message_cn": "创建云主机在[%1$s]这个过滤器后找不到满足条件的host了，这意味着 [%2$s]",
+    "message_en": "after filtering[%1$s] returns zero candidate host, it means: [%2$s]"
+  },
+  {
+    "category": "VM",
+    "code": "1007",
+    "method": "regex",
+    "regex": "No host with .* found",
+    "message_cn": "以下条件导致分配时没有可满足的host: %1$s",
+    "message_en": "No host with [%1$s] found"
+  },
+  {
+    "category": "VM",
+    "code": "1008",
+    "method": "regex",
+    "regex": "unable to start the vm.*It doesn't have any nic, please attach a nic and try again",
+    "message_cn": "网卡删除后，无法重启主机",
+    "message_en": "cannot start vm because it doesn't have any nic"
+  },
+  {
+    "category": "VM",
+    "code": "1009",
+    "method": "regex",
+    "regex": "The vm's root volume is on the local storage.* however, the host on which the root volume is has been deleted",
+    "message_cn": "云主机的根盘在localstorage的主存储上,并且该根盘所在的host己经被删除",
+    "message_en": "The vm's root volume is on the local storage. however, the host on which the root volume is has been deleted"
+  },
+  {
+    "category": "VM",
+    "code": "1010",
+    "method": "regex",
+    "regex": "no host having state=Enabled status=Connected.*found",
+    "message_cn": "找不到状态为Enabled/Connected的host",
+    "message_en": "no host having state=Enabled status=Connected found"
+  },
+  {
+    "category": "VM",
+    "code": "1011",
+    "method": "regex",
+    "regex": "no host found in clusters that has attached to L2Networks which have L3Networks.*",
+    "message_cn": "这个L3网络所在的L2网络加载的所有集群中，都没有host",
+    "message_en": "no host found in clusters that has attached to L2Networks which have L3Networks"
+  },
+  {
+    "category": "VM",
+    "code": "1012",
+    "method": "regex",
+    "regex": "no host found in clusters which have attached to all primary storage .* volumes locate",
+    "message_cn": "与vm的volume所在的主存储所关联的所有集群中，都没有host",
+    "message_en": "no host found in clusters which have attached to all primary storage which the vm's volumes locate"
   }
 ]

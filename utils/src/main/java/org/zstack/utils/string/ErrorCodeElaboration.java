@@ -24,9 +24,14 @@ public class ErrorCodeElaboration {
     public ErrorCodeElaboration() {
     }
 
-    public ErrorCodeElaboration(String en, String cn) {
-        message_en = en;
-        message_cn = cn;
+    public ErrorCodeElaboration(String en, String cn, Object...args) {
+        if (args != null) {
+            message_en = String.format(en, args);
+            message_cn = String.format(cn, args);
+        } else {
+            message_en = en;
+            message_cn = cn;
+        }
     }
 
     public ErrorCodeElaboration(ErrorCodeElaboration other) {
@@ -46,6 +51,21 @@ public class ErrorCodeElaboration {
         formatSrcError = other.formatSrcError;
         url = other.url;
         method = other.method;
+    }
+
+    public ErrorCodeElaboration addElaborationMessage(ErrorCodeElaboration other) {
+        if (message_en != null) {
+            message_en = message_en + "," + other.message_en;
+        } else {
+            message_en = other.message_en;
+        }
+
+        if (message_cn != null) {
+            message_cn = message_cn + "," + other.message_cn;
+        } else {
+            message_cn = other.message_cn;
+        }
+        return this;
     }
 
     public String getCategory() {

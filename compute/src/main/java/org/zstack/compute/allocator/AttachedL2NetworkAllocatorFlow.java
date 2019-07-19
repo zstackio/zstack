@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -99,7 +100,7 @@ public class AttachedL2NetworkAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
         if (candidates.isEmpty()) {
-            fail(String.format("no host found in clusters that has attached to L2Networks which have L3Networks%s", spec.getL3NetworkUuids()));
+            fail(Platform.operr("no host found in clusters that has attached to L2Networks which have L3Networks%s", spec.getL3NetworkUuids()));
         } else {
             next(candidates);
         }

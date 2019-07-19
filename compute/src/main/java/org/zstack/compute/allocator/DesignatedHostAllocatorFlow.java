@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.allocator.HostAllocatorConstant;
@@ -90,21 +91,20 @@ public class DesignatedHostAllocatorFlow extends AbstractHostAllocatorFlow {
         }
 
         if (candidates.isEmpty()) {
-            StringBuilder err = new StringBuilder("No host with ");
+            StringBuilder args = new StringBuilder();
             if (zoneUuid != null) {
-                err.append(String.format("zoneUuid=%s ", zoneUuid));
+                args.append(String.format("zoneUuid=%s", zoneUuid)).append(" ");
             }
             if (clusterUuid != null) {
-                err.append(String.format("clusterUuid=%s ", clusterUuid));
+                args.append(String.format("clusterUuid=%s", clusterUuid)).append(" ");
             }
             if (hostUuid != null) {
-                err.append(String.format("uuid=%s ", hostUuid));
+                args.append(String.format("hostUuid=%s", hostUuid)).append(" ");
             }
             if (spec.getHypervisorType() != null) {
-                err.append(String.format("hypervisorType=%s ", spec.getHypervisorType()));
+                args.append(String.format("hypervisorType=%s", spec.getHypervisorType())).append(" ");
             }
-            err.append("found");
-            fail(err.toString());
+            fail(Platform.operr("No host with %s found", args));
         } else {
             next(candidates);
         }

@@ -1,6 +1,7 @@
 package org.zstack.compute.allocator;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
@@ -29,7 +30,7 @@ public class FilterFlow extends AbstractHostAllocatorFlow {
             logger.debug(String.format("after being filtered by HostAllocatorFilterExtensionPoint[%s], candidates num: %s", filter.getClass(), candidates.size()));
 
             if (candidates.isEmpty()) {
-                fail(String.format("after filtering, HostAllocatorFilterExtensionPoint[%s] returns zero candidate host", filter.getClass()));
+                fail(Platform.operr("after filtering, HostAllocatorFilterExtensionPoint[%s] returns zero candidate host, it means: %s", filter.getClass().getSimpleName(), filter.filterErrorReason()));
             }
         }
 
