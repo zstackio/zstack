@@ -45,6 +45,14 @@ public class IAM2OrganizationInventory  {
         return this.type;
     }
 
+    public java.lang.String srcType;
+    public void setSrcType(java.lang.String srcType) {
+        this.srcType = srcType;
+    }
+    public java.lang.String getSrcType() {
+        return this.srcType;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
