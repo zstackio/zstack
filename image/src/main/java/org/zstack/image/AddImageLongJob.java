@@ -119,7 +119,7 @@ public class AddImageLongJob implements LongJob {
                     compl.done();
                 }
             });
-        }).run(new NoErrorCompletion(msg) {
+        }).run(new NoErrorCompletion(completion) {
             @Override
             public void done() {
                 completion.fail(cancelErr(job.getUuid()));

@@ -2,6 +2,7 @@ package org.zstack.kvm;
 
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
+import org.zstack.header.agent.CancelCommand;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.vm.PriorityConfigStruct;
 import org.zstack.header.vm.VmBootDevice;
@@ -2151,5 +2152,17 @@ public class KVMAgentCommands {
 
     public static class PrimaryStorageCommand extends AgentCommand {
         public String primaryStorageUuid;
+    }
+
+    public static class CancelCmd extends AgentCommand implements CancelCommand {
+        private String cancellationApiId;
+
+        @Override
+        public void setCancellationApiId(String cancellationApiId) {
+            this.cancellationApiId = cancellationApiId;
+        }
+    }
+
+    public static class CancelRsp extends AgentResponse {
     }
 }

@@ -25,6 +25,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.AsyncLatch;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
@@ -41,6 +42,8 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.primary.CancelCreateTemplateFromVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.*;
@@ -76,6 +79,8 @@ import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.header.Constants.THREAD_CONTEXT_API;
 import static org.zstack.header.Constants.THREAD_CONTEXT_TASK_NAME;
+import static org.zstack.longjob.LongJobUtils.buildErrIfCanceled;
+import static org.zstack.longjob.LongJobUtils.noncancelableErr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint,
@@ -141,8 +146,12 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             handle((AddImageMsg) msg);
         } else if (msg instanceof CreateRootVolumeTemplateFromRootVolumeMsg){
             handle((CreateRootVolumeTemplateFromRootVolumeMsg) msg);
+        } else if (msg instanceof CancelCreateRootVolumeTemplateFromRootVolumeMsg) {
+            handle((CancelCreateRootVolumeTemplateFromRootVolumeMsg) msg);
         } else if (msg instanceof CreateDataVolumeTemplateFromVolumeMsg){
             handle ((CreateDataVolumeTemplateFromVolumeMsg)msg);
+        } else if (msg instanceof CancelCreateDataVolumeTemplateFromVolumeMsg) {
+            handle((CancelCreateDataVolumeTemplateFromVolumeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1359,6 +1368,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         }
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-template-from-root-volume-%s", msgData.getRootVolumeUuid()));
+        chain.preCheck(data -> buildErrIfCanceled());
         chain.then(new ShareFlow() {
             ImageVO imageVO;
             VolumeInventory rootVolume;
@@ -1445,6 +1455,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                     public void rollback(FlowRollback trigger, Map data) {
                         if (imageVO != null) {
                             dbf.remove(imageVO);
+                            dbf.eoCleanup(ImageVO.class, imageVO.getUuid());
                         }
 
                         trigger.rollback();
@@ -1736,6 +1747,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-data-volume-template-from-volume-%s", msgData.getVolumeUuid()));
+        chain.preCheck(data -> buildErrIfCanceled());
         chain.then(new ShareFlow() {
             List<BackupStorageInventory> backupStorages = new ArrayList<>();
             ImageVO image;
@@ -1930,6 +1942,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        // FIXME: should create once and then upload different bs.
                         List<CreateDataVolumeTemplateFromDataVolumeMsg> cmsgs = CollectionUtils.transformToList(backupStorages, new Function<CreateDataVolumeTemplateFromDataVolumeMsg, BackupStorageInventory>() {
                             @Override
                             public CreateDataVolumeTemplateFromDataVolumeMsg call(BackupStorageInventory bs) {
@@ -2028,5 +2041,72 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 });
             }
         }).start();
+    }
+
+    private void handle(CancelCreateRootVolumeTemplateFromRootVolumeMsg msg) {
+        CancelCreateRootVolumeTemplateFromRootVolumeReply reply = new CancelCreateRootVolumeTemplateFromRootVolumeReply();
+        cancelCreateTemplateFromVolume(msg, msg.getRootVolumeUuid(), msg.getImageUuid(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(CancelCreateDataVolumeTemplateFromVolumeMsg msg) {
+        CancelCreateDataVolumeTemplateFromVolumeReply reply = new CancelCreateDataVolumeTemplateFromVolumeReply();
+        cancelCreateTemplateFromVolume(msg, msg.getVolumeUuid(), msg.getImageUuid(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void cancelCreateTemplateFromVolume(CancelMessage msg, String volumeUuid, String imageUuid, Completion completion) {
+        ImageVO image = dbf.findByUuid(imageUuid, ImageVO.class);
+        if (image == null || image.getBackupStorageRefs() == null || image.getBackupStorageRefs().isEmpty()) {
+            completion.fail(noncancelableErr(i18n("image[uuid:%s] is not on creating, please wait for it to cancel itself.", imageUuid)));
+            return;
+        }
+
+        VolumeVO volVO = dbf.findByUuid(volumeUuid, VolumeVO.class);
+        if (volVO == null) {
+            completion.fail(noncancelableErr(i18n("volume[uuid:%s] has been deleted. no need to cancel", volumeUuid)));
+            return;
+        }
+
+        List<String> bsUuids = image.getBackupStorageRefs().stream()
+                .map(ImageBackupStorageRefVO::getBackupStorageUuid)
+                .collect(Collectors.toList());
+
+        CancelCreateTemplateFromVolumeOnPrimaryStorageMsg cmsg = new CancelCreateTemplateFromVolumeOnPrimaryStorageMsg();
+        cmsg.setCancellationApiId(msg.getCancellationApiId());
+        cmsg.setBackupStorageUuids(bsUuids);
+        cmsg.setVolumeInventory(VolumeInventory.valueOf(volVO));
+        bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, cmsg.getPrimaryStorageUuid());
+        bus.send(cmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                completion.success();
+            }
+        });
     }
 }

@@ -19,6 +19,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import java.util.Arrays;
 import java.util.List;
 
@@ -43,6 +44,17 @@ public class LongJobUtils {
                 "long job[uuid:%s] has been canceled", longJobUuid);
     }
 
+    public static ErrorCode noncancelableErr(String error) {
+        return err(LongJobErrors.NONCANCELABLE, error);
+    }
+
+    public static ErrorCode buildErrIfCanceled() {
+        Tuple t = Q.New(LongJobVO.class).select(LongJobVO_.state, LongJobVO_.uuid)
+                .eq(LongJobVO_.apiId, ThreadContext.get(Constants.THREAD_CONTEXT_API))
+                .findTuple();
+
+        return t == null || !canceledStates.contains(t.get(0, LongJobState.class)) ? null : cancelErr(t.get(1, String.class));
+    }
 
     public static boolean jobCanceled(String longJobUuid) {
         LongJobState state = Q.New(LongJobVO.class).eq(LongJobVO_.uuid,longJobUuid).select(LongJobVO_.state).findValue();

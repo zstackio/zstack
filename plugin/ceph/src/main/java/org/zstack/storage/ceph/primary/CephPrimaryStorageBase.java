@@ -1,7 +1,9 @@
 package org.zstack.storage.ceph.primary;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
+import org.zstack.core.agent.AgentConstant;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
@@ -20,7 +22,9 @@ import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.Constants;
 import org.zstack.header.HasThreadContext;
+import org.zstack.header.agent.CancelCommand;
 import org.zstack.header.agent.ReloadableCommand;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
@@ -79,6 +83,7 @@ import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.longjob.LongJobUtils.buildErrIfCanceled;
 
 /**
  * Created by frank on 7/28/2015.
@@ -625,14 +630,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static class UnprotectedSnapshotRsp extends AgentResponse {
     }
 
-    public static class CpCmd extends AgentCommand implements HasThreadContext{
+    public static class CpCmd extends AgentCommand implements HasThreadContext {
         String sendCommandUrl;
         String resourceUuid;
         String srcPath;
         String dstPath;
     }
 
-    public static class UploadCmd extends AgentCommand implements HasThreadContext{
+    public static class UploadCmd extends AgentCommand implements HasThreadContext {
         public String sendCommandUrl;
         public String imageUuid;
         public String hostname;
@@ -941,6 +946,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setPrimaryStorageInstallPath(String primaryStorageInstallPath) {
             this.primaryStorageInstallPath = primaryStorageInstallPath;
+        }
+    }
+
+    public static class CancelCmd extends AgentCommand implements CancelCommand {
+        private String cancellationApiId;
+
+        @Override
+        public void setCancellationApiId(String cancellationApiId) {
+            this.cancellationApiId = cancellationApiId;
         }
     }
 
@@ -2250,6 +2264,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-snapshot-and-image-from-volume-%s", volumeUuid));
+        chain.preCheck(data -> buildErrIfCanceled());
         chain.then(new ShareFlow() {
 
             VolumeSnapshotInventory snapshot;
@@ -2348,6 +2363,25 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 });
             }
         }).start();
+    }
+
+    @Override
+    protected void handle(CancelCreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
+        final CancelCreateTemplateFromVolumeOnPrimaryStorageReply reply = new CancelCreateTemplateFromVolumeOnPrimaryStorageReply();
+        CancelCmd cmd = new CancelCmd();
+        cmd.setCancellationApiId(msg.getCancellationApiId());
+        new HttpCaller<>(AgentConstant.CANCEL_JOB, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(msg) {
+            @Override
+            public void success(AgentResponse rsp) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        }).specifyOrder(msg.getCancellationApiId()).tryNext().call();
     }
 
     @Override
@@ -3691,9 +3725,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             cmd.hostname = hostname;
         }
 
+        final String apiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
         final UploadBitsToBackupStorageReply reply = new UploadBitsToBackupStorageReply();
-
-        httpCall(path, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(msg) {
+        new HttpCaller<>(path, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(msg) {
             @Override
             public void success(CpRsp rsp) {
                 if (rsp.installPath != null) {
@@ -3707,7 +3741,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
-        });
+        }).specifyOrder(apiId).call();
     }
 
     private void handle(final CreateKvmSecretMsg msg) {

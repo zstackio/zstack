@@ -10,6 +10,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.managementnode.*;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.*;
@@ -31,9 +33,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.managementnode.ManagementNodeChangeListener;
-import org.zstack.header.managementnode.ManagementNodeInventory;
-import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -56,7 +55,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.longjob.LongJobUtils.noncancelableErr;
 
 public class HostManagerImpl extends AbstractService implements HostManager, ManagementNodeChangeListener,
         ManagementNodeReadyExtensionPoint {
@@ -202,6 +203,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             handle((AddHostMsg) msg);
         } else if (msg instanceof GetHostTaskMsg) {
             handle((GetHostTaskMsg) msg);
+        } else if (msg instanceof CancelHostTasksMsg) {
+            handle((CancelHostTasksMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -491,6 +494,68 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             public void fail(ErrorCode errorCode) {
                 evt.setError(errorCode);
                 bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(CancelHostTasksMsg msg) {
+        CancelHostsTaskReply reply = new CancelHostsTaskReply();
+        Set<String> runningSigs = thdf.getApiRunningTaskSignature(msg.getCancellationApiId());
+        msg.addSearchedMnId(Platform.getManagementServerId());
+        if (runningSigs != null) {
+            runningSigs.forEach(id -> Optional.ofNullable(Host.getUuidFromId(id)).ifPresent(msg::addHostUuid));
+        }
+
+        List<String> restMnIds = Q.New(ManagementNodeVO.class).select(ManagementNodeVO_.uuid)
+                .notIn(ManagementNodeVO_.uuid, msg.getSearchedMnIds())
+                .listValues();
+        if (!restMnIds.isEmpty()) {
+            CancelHostTasksMsg nmsg = new CancelHostTasksMsg();
+            nmsg.setHostUuids(msg.getHostUuids());
+            nmsg.setSearchedMnIds(msg.getSearchedMnIds());
+            nmsg.setCancellationApiId(msg.getCancellationApiId());
+            bus.makeServiceIdByManagementNodeId(nmsg, HostConstant.SERVICE_ID, restMnIds.get(0));
+            bus.send(nmsg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply r) {
+                    if (!r.isSuccess()) {
+                        reply.setError(r.getError());
+                    }
+                    bus.reply(msg, reply);
+                }
+            });
+            return;
+        }
+
+        if (msg.getHostUuids().isEmpty()) {
+            reply.setError(noncancelableErr(i18n("no running api[%s] task on hosts", msg.getCancellationApiId())));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        ErrorCodeList err = new ErrorCodeList();
+        new While<>(msg.getHostUuids()).all((hostUuid, compl) -> {
+            CancelHostTaskMsg cmsg = new CancelHostTaskMsg();
+            cmsg.setHostUuid(hostUuid);
+            cmsg.setCancellationApiId(msg.getCancellationApiId());
+            bus.makeLocalServiceId(cmsg, HostConstant.SERVICE_ID);
+            bus.send(cmsg, new CloudBusCallBack(compl) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        err.getCauses().add(reply.getError());
+                    }
+                    compl.done();
+                }
+            });
+        }).run(new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                if (!err.getCauses().isEmpty()) {
+                    reply.setError(err.getCauses().get(0));
+                }
+
+                bus.reply(msg, reply);
             }
         });
     }

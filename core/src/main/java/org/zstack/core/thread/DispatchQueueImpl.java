@@ -9,6 +9,7 @@ import org.zstack.core.debug.DebugSignalHandler;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.progress.ChainInfo;
 import org.zstack.header.core.progress.PendingTaskInfo;
+import org.zstack.header.Constants;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -17,6 +18,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,6 +33,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     private final HashMap<String, SyncTaskQueueWrapper> syncTasks = new HashMap<String, SyncTaskQueueWrapper>();
     private final Map<String, ChainTaskQueueWrapper> chainTasks = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, Set<String>> apiRunningSignature = new ConcurrentHashMap<>();
     private static final CLogger _logger = CLoggerImpl.getLogger(DispatchQueueImpl.class);
 
     @Override
@@ -91,6 +94,11 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             }
             return info;
         }
+    }
+
+    @Override
+    public Set<String> getApiRunningTaskSignature(String apiId) {
+        return apiRunningSignature.get(apiId);
     }
 
     public DispatchQueueImpl() {
@@ -359,16 +367,34 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                         // add to running queue
                         logger.debug(String.format("Start executing runningQueue: %s, task name: %s", syncSignature, cf.getTask().getName()));
                         runningQueue.offer(cf);
+                        Optional.ofNullable(getApiId(cf))
+                                .ifPresent(apiId -> apiRunningSignature.computeIfAbsent(apiId,
+                                        k -> new HashSet<>()).add(syncSignature));
                     }
 
                     cf.run(() -> {
                         synchronized (runningQueue) {
+                            Optional.ofNullable(getApiId(cf))
+                                    .ifPresent(apiId -> apiRunningSignature.computeIfPresent(apiId, (k, sigs) -> {
+                                        sigs.remove(syncSignature);
+                                        return sigs.isEmpty() ? null : sigs;
+                                    }));
                             runningQueue.remove(cf);
                             logger.debug(String.format("Finish executing runningQueue: %s, task name: %s", syncSignature, cf.getTask().getName()));
                         }
 
                         runQueue();
                     });
+                }
+
+
+                private String getApiId(DispatchQueueImpl.ChainFuture cf) {
+                    Map<String, String> tc = cf.getTask().threadContext;
+                    if (tc != null) {
+                        return tc.get(Constants.THREAD_CONTEXT_API);
+                    } else {
+                        return null;
+                    }
                 }
 
                 @Override

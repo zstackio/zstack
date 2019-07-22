@@ -1,5 +1,6 @@
 package org.zstack.storage.ceph.backup;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -17,6 +18,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.Constants;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
@@ -697,6 +699,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         private final TimeUnit unit;
         private final long timeout;
 
+        private String randomFactor = null;
         private boolean tryNext = false;
 
         HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback) {
@@ -718,6 +721,11 @@ public class CephBackupStorageBase extends BackupStorageBase {
             doCall();
         }
 
+        HttpCaller<T> specifyOrder(String randomFactor) {
+            this.randomFactor = randomFactor;
+            return this;
+        }
+
         HttpCaller<T> tryNext() {
             this.tryNext = true;
             return this;
@@ -734,7 +742,11 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 mons.add(new CephBackupStorageMonBase(monvo));
             }
 
-            Collections.shuffle(mons);
+            if (randomFactor != null) {
+                CollectionUtils.shuffleByKeySeed(mons, randomFactor, it -> it.getSelf().getUuid());
+            } else {
+                Collections.shuffle(mons);
+            }
 
             mons.removeIf(it -> it.getSelf().getStatus() != MonStatus.Connected);
             if (mons.isEmpty()) {
@@ -1067,7 +1079,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
             caller.tryNext();
         }
 
-        caller.call();
+        String apiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
+        caller.specifyOrder(apiId).call();
     }
 
     @Override
@@ -1088,7 +1101,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
             public void success(AgentResponse rsp) {
                 bus.reply(msg, reply);
             }
-        }).tryNext().call();
+        }).specifyOrder(msg.getCancellationApiId()).tryNext().call();
     }
 
     @Override

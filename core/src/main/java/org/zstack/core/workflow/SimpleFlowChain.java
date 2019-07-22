@@ -55,6 +55,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private boolean allowEmptyFlow;
     private FlowMarshaller flowMarshaller;
     private List<FlowChainProcessor> processors;
+    private java.util.function.Function<Map, ErrorCode> preCheck;
     private List<List<Runnable>> afterDone = new ArrayList<>();
     private List<List<Runnable>> afterError = new ArrayList<>();
     private List<List<Runnable>> afterFinal = new ArrayList<>();
@@ -241,6 +242,12 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     }
 
     @Override
+    public FlowChain preCheck(java.util.function.Function<Map, ErrorCode> checker) {
+        this.preCheck = checker;
+        return this;
+    }
+
+    @Override
     public void setProcessors(List<FlowChainProcessor> processors) {
         this.processors = processors;
     }
@@ -320,6 +327,15 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             String info = String.format("[FlowChain(%s): %s] start executing flow[%s]", id, name, flowName);
             logger.debug(info);
             collectAfterRunnable(toRun);
+
+            if (preCheck != null) {
+                logger.debug(String.format("[FlowChain(%s): %s] start executing pre-check for flow[%s]", id, name, flowName));
+                ErrorCode err = preCheck.apply(data);
+                if (err != null) {
+                    this.fail(err);
+                    return;
+                }
+            }
             toRun.run(this, data);
         } catch (OperationFailureException oe) {
             String errInfo = oe.getErrorCode() != null ? oe.getErrorCode().toString() : "";

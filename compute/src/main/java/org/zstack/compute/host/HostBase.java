@@ -97,7 +97,6 @@ public abstract class HostBase extends AbstractHost {
         }
     }
 
-
     protected final String id;
 
     protected abstract void pingHook(Completion completion);
@@ -112,7 +111,7 @@ public abstract class HostBase extends AbstractHost {
 
     protected HostBase(HostVO self) {
         this.self = self;
-        id = "Host-" + self.getUuid();
+        id = Host.buildId(self.getUuid());
     }
 
     @Override

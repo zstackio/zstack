@@ -3,6 +3,7 @@ package org.zstack.core.thread;
 import org.zstack.header.core.progress.ChainInfo;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 public interface DispatchQueue {
@@ -19,4 +20,6 @@ public interface DispatchQueue {
     boolean isChainTaskRunning(String signature);
 
     ChainInfo getChainTaskInfo(String signature);
+
+    Set<String> getApiRunningTaskSignature(String apiId);
 }

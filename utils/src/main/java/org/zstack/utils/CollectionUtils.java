@@ -102,8 +102,9 @@ public class CollectionUtils {
         return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
-    public static <T> void shuffleByKeySeed(List<T> list, String keySeed, java.util.function.Function<? super T, ? extends Comparable> keyExtractor) {
-        Collections.sort(list, Comparator.comparing(keyExtractor));
+    @SuppressWarnings("unchecked")
+    public static <T> void shuffleByKeySeed(List<T> list, String keySeed, java.util.function.Function<? super T, Comparable> keyExtractor) {
+        list.sort(Comparator.comparing(keyExtractor));
 
         long seed = 0;
         char[] keyArrary = keySeed.toCharArray();

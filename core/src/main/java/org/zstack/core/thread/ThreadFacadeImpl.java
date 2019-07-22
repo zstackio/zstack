@@ -7,10 +7,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -226,8 +223,14 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
         return dpq.isChainTaskRunning(signature);
     }
 
+    @Override
     public ChainInfo getChainTaskInfo(String signature) {
         return dpq.getChainTaskInfo(signature);
+    }
+
+    @Override
+    public Set<String> getApiRunningTaskSignature(String apiId) {
+        return dpq.getApiRunningTaskSignature(apiId);
     }
 
     public static interface TimeoutTaskReceipt {
