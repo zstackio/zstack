@@ -359,8 +359,11 @@ public class SourceClassMap {
 			put("org.zstack.resourceconfig.ResourceConfigInventory", "org.zstack.sdk.ResourceConfigInventory");
 			put("org.zstack.sns.SNSApplicationEndpointInventory", "org.zstack.sdk.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sns.SNSApplicationPlatformInventory", "org.zstack.sdk.sns.SNSApplicationPlatformInventory");
+			put("org.zstack.sns.SNSSmsEndpointInventory", "org.zstack.sdk.sns.SNSSmsEndpointInventory");
+			put("org.zstack.sns.SNSSmsReceiverInventory", "org.zstack.sdk.sns.SNSSmsReceiverInventory");
 			put("org.zstack.sns.SNSSubscriberInventory", "org.zstack.sdk.sns.SNSSubscriberInventory");
 			put("org.zstack.sns.SNSTopicInventory", "org.zstack.sdk.sns.SNSTopicInventory");
+			put("org.zstack.sns.SmsReceiverType", "org.zstack.sdk.sns.SmsReceiverType");
 			put("org.zstack.sns.platform.dingtalk.SNSDingTalkAtPersonInventory", "org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkAtPersonInventory");
 			put("org.zstack.sns.platform.dingtalk.SNSDingTalkEndpointInventory", "org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkEndpointInventory");
 			put("org.zstack.sns.platform.email.SNSEmailAddressInventory", "org.zstack.sdk.sns.platform.email.SNSEmailAddressInventory");
@@ -462,6 +465,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.alarm.EventSubscriptionLabelInventory", "org.zstack.sdk.zwatch.alarm.EventSubscriptionLabelInventory");
 			put("org.zstack.zwatch.alarm.EventSubscriptionState", "org.zstack.sdk.zwatch.alarm.EventSubscriptionState");
 			put("org.zstack.zwatch.alarm.sns.SNSTextTemplateInventory", "org.zstack.sdk.zwatch.alarm.sns.SNSTextTemplateInventory");
+			put("org.zstack.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory", "org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory");
 			put("org.zstack.zwatch.api.APIGetAllEventMetadataReply$EventStruct", "org.zstack.sdk.zwatch.api.EventStruct");
 			put("org.zstack.zwatch.api.APIGetAllMetricMetadataReply$MetricStruct", "org.zstack.sdk.zwatch.api.MetricStruct");
 			put("org.zstack.zwatch.datatype.AlarmData", "org.zstack.sdk.zwatch.datatype.AlarmData");
@@ -906,8 +910,11 @@ public class SourceClassMap {
 			put("org.zstack.sdk.identity.role.RoleType", "org.zstack.header.identity.role.RoleType");
 			put("org.zstack.sdk.sns.SNSApplicationEndpointInventory", "org.zstack.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");
+			put("org.zstack.sdk.sns.SNSSmsEndpointInventory", "org.zstack.sns.SNSSmsEndpointInventory");
+			put("org.zstack.sdk.sns.SNSSmsReceiverInventory", "org.zstack.sns.SNSSmsReceiverInventory");
 			put("org.zstack.sdk.sns.SNSSubscriberInventory", "org.zstack.sns.SNSSubscriberInventory");
 			put("org.zstack.sdk.sns.SNSTopicInventory", "org.zstack.sns.SNSTopicInventory");
+			put("org.zstack.sdk.sns.SmsReceiverType", "org.zstack.sns.SmsReceiverType");
 			put("org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkAtPersonInventory", "org.zstack.sns.platform.dingtalk.SNSDingTalkAtPersonInventory");
 			put("org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkEndpointInventory", "org.zstack.sns.platform.dingtalk.SNSDingTalkEndpointInventory");
 			put("org.zstack.sdk.sns.platform.email.SNSEmailAddressInventory", "org.zstack.sns.platform.email.SNSEmailAddressInventory");
@@ -937,6 +944,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionLabelInventory", "org.zstack.zwatch.alarm.EventSubscriptionLabelInventory");
 			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionState", "org.zstack.zwatch.alarm.EventSubscriptionState");
 			put("org.zstack.sdk.zwatch.alarm.sns.SNSTextTemplateInventory", "org.zstack.zwatch.alarm.sns.SNSTextTemplateInventory");
+			put("org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory", "org.zstack.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory");
 			put("org.zstack.sdk.zwatch.api.EventStruct", "org.zstack.zwatch.api.APIGetAllEventMetadataReply$EventStruct");
 			put("org.zstack.sdk.zwatch.api.MetricStruct", "org.zstack.zwatch.api.APIGetAllMetricMetadataReply$MetricStruct");
 			put("org.zstack.sdk.zwatch.datatype.AlarmData", "org.zstack.zwatch.datatype.AlarmData");
