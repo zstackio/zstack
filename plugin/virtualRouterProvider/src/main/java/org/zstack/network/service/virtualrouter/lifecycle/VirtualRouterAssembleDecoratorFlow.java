@@ -36,7 +36,6 @@ public class VirtualRouterAssembleDecoratorFlow extends NoRollbackFlow {
         ApplianceVmPostLifeCycleInfo info;
         if (spec.getCurrentVmOperation() == VmOperation.NewCreate) {
             final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
-
             info = new ApplianceVmPostLifeCycleInfo();
             info.setDefaultRouteL3Network(aspec.getDefaultRouteL3Network());
             VmNicInventory mgmtNic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
@@ -58,6 +57,8 @@ public class VirtualRouterAssembleDecoratorFlow extends NoRollbackFlow {
         } else {
             data.put(VirtualRouterConstant.Param.VR.toString(), VirtualRouterVmInventory.valueOf(dbf.findByUuid(spec.getVmInventory().getUuid(), VirtualRouterVmVO.class)));
         }
+
         trigger.next();
     }
+
 }

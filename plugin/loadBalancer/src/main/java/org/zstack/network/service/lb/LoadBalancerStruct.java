@@ -14,6 +14,7 @@ public class LoadBalancerStruct {
     private Map<String, VmNicInventory> vmNics;
     private List<LoadBalancerListenerInventory> listeners;
     private boolean init;
+    private boolean applyOnHaRouter = true;
 
     public Map<String, VmNicInventory> getVmNics() {
         return vmNics;
@@ -45,5 +46,13 @@ public class LoadBalancerStruct {
 
     public void setVmNics(Map<String, VmNicInventory> vmNics) {
         this.vmNics = vmNics;
+    }
+
+    public boolean isApplyOnHaRouter() {
+        return applyOnHaRouter;
+    }
+
+    public void setApplyOnHaRouter(boolean applyOnHaRouter) {
+        this.applyOnHaRouter = applyOnHaRouter;
     }
 }

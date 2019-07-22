@@ -569,6 +569,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
     protected FlowChain getStartVmWorkFlowChain(VmInstanceInventory inv) {
         FlowChain chain = super.getStartVmWorkFlowChain(inv);
         chain.setName(String.format("start-appliancevm-%s", inv.getUuid()));
+        chain.insert(new ApplianceVmSyncConfigToHaGroupFlow());
         chain.insert(new Flow() {
             String __name__ = "change-appliancevm-status-to-connecting";
             ApplianceVmStatus originStatus = getSelf().getStatus();
@@ -611,6 +612,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 trigger.next();
             }
         });
+        chain.then(new ApplianceVmSyncConfigAfterAddToHaGroupFlow());
 
         boolean noRollbackOnFailure = ApplianceVmGlobalProperty.NO_ROLLBACK_ON_POST_FAILURE;
         chain.noRollback(noRollbackOnFailure);

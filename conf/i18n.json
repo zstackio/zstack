@@ -19293,6 +19293,127 @@
     "fileName": "src/main/java/org/zstack/vpc/VpcVyosDeployZsnAgentFlow.java"
   },
   {
+    "raw": "there is no master router of router [uuid:%s]",
+    "en_US": "there is no master router of router [uuid:{0}]",
+    "zh_CN": "找不到路由器[uuid:{0}]的主路由器",
+    "arguments": [
+      "msg.getVmInstanceUuid()"
+    ],
+    "line": 242,
+    "fileName": "src/zstack/./premium/vpc/src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
+  },
+  {
+    "raw": "invalid monitor ip address [%s]",
+    "en_US": "invalid monitor ip address [{0}]",
+    "zh_CN": "不合法监控ip[{0}]",
+    "arguments": [
+      "ip"
+    ],
+    "line": 175,
+    "fileName": "src/zstack/./premium/vpc/src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
+  },
+  {
+    "raw": "there is no enough ip address in the network",
+    "en_US": "there is no enough ip address in the network",
+    "zh_CN": "没有足够多的IP地址",
+    "arguments": [],
+    "line": 225,
+    "fileName": "src/zstack/./premium/vpc/src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
+  },
+  {
+    "raw": "vpcHaRouter [uuid:%s] is deleted",
+    "en_US": "vpcHaRouter [uuid:{0}] is deleted",
+    "zh_CN": "高可用组[uuid:{0}]被删除",
+    "arguments": [
+      "vpcHaUuid"
+    ],
+    "line": 230,
+    "fileName": "src/zstack/./premium/vpc/src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
+  },
+  {
+    "raw": "there are more than 2 vpc routers attached to haGroup [uuid:%s]",
+    "en_US": "there are more than 2 vpc routers attached to haGroup [uuid:{0}]",
+    "zh_CN": "高可用组[uuid:{0}]已经有2个路由器了",
+    "arguments": [
+      "haUuid"
+    ],
+    "line": 260,
+    "fileName": "src/zstack/./premium/vpc/src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
+  },
+  {
+    "raw": "ha group management l3 and public l3 networks[uuid:%s] are different from offering l3 networks [uuid:%s]",
+    "en_US": "ha group management l3 and public l3 networks[uuid:{0}] are different from offering l3 networks [uuid:{1}]",
+    "zh_CN": "高可用组的管理网/公网网络uuid:{0}]和云路由规格中的L3网络[uuid:{1}]不同",
+    "arguments": [
+      "l3Uuids",
+      "offeringL3Uuids"
+    ],
+    "line": 289,
+    "fileName": "src/zstack/./premium/vpc/src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
+  },
+  {
+    "raw": "vpc router l3 networks [uuid:%s] are different from ha group l3 networks [uuid:%s], !!! please delete this router and recreate it",
+    "en_US": "vpc router l3 networks [uuid:{0}] are different from ha group l3 networks [uuid:{1}], !!! please delete this router and recreate it",
+    "zh_CN": "路由器[uuid:{0}]和高可用组的网络不同[uuid:{1}], !!!请删除它，然后创建一个新的",
+    "arguments": [
+      "vpcL3Uuids",
+      "vpcHaGroupL3Uuids"
+    ],
+    "line": 345,
+    "fileName": "src/zstack/./premium/vpc/src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
+  },
+  {
+    "raw": "vpc router has been attached to ha group [uuid:%s]",
+    "en_US": "vpc router has been attached to ha group [uuid:{0}]",
+    "zh_CN": "路由器没有加入高可用组[uuid:{0}]",
+    "arguments": [
+      "oldHaUuid"
+    ],
+    "line": 353,
+    "fileName": "src/zstack/./premium/vpc/src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
+  },
+  {
+    "raw": "there are more than 1 vpc routers attached to haGroup [uuid:%s]",
+    "en_US": "there are more than 1 vpc routers attached to haGroup [uuid:{0}]",
+    "zh_CN": "",
+    "arguments": [
+      "haUuid"
+    ],
+    "line": 357,
+    "fileName": "src/zstack/./premium/vpc/src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
+  },
+  {
+    "raw": "vpc router [uuid:%s] can not be upgraded to ha router because it public network is same to management network",
+    "en_US": "vpc router [uuid:{0}] can not be upgraded to ha router because it public network is same to management network",
+    "zh_CN": "高可用组[uuid:{0}]已经有多个路由器了",
+    "arguments": [
+      "haUuid"
+    ],
+    "line": 362,
+    "fileName": "src/zstack/./premium/vpc/src/main/java/org/zstack/vpc/ha/VpcHaGroupApiInterceptor.java"
+  },
+  {
+    "raw": "create affinityGroup for vpc router [uuid:%s] failed",
+    "en_US": "create affinityGroup for vpc router [uuid:{0}] failed",
+    "zh_CN": "创建vpc路由器[uuid:{0}]的亲和组失败",
+    "arguments": [
+      "ha.getName()"
+    ],
+    "line": 575,
+    "fileName": "src/zstack/./premium/vpc/src/main/java/org/zstack/vpc/ha/VpcHaGroupManagerImpl.java"
+  },
+  {
+    "raw": "failed to enable ha on virtual router[uuid:%s], %s",
+    "en_US": "failed to enable ha on virtual router[uuid:{0}], {1}",
+    "zh_CN": "路由器[uuid:{0}]加入高可用组失败，因为{1}",
+    "arguments": [
+      "vrUuid",
+      "ret.getError()"
+    ],
+    "line": 137,
+    "fileName": "src/zstack/./premium/vpc/src/main/java/org/zstack/vpc/ha/vyos/vyosVpcHaRouterBackendManagerImpl.java"
+  },
+  {
     "raw": "virtual router[uuid:%s] can not find",
     "en_US": "virtual router[uuid:{0}] can not find",
     "zh_CN": "云路由[uuid:{0}]未找到",

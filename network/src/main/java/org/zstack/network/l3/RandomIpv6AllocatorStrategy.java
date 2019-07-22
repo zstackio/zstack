@@ -10,6 +10,7 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
     public static final IpAllocatorType type = new IpAllocatorType(L3NetworkConstant.RANDOM_IPV6_ALLOCATOR_STRATEGY);
@@ -62,16 +63,16 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
         BigInteger start = IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getStartIp());
         BigInteger end = IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getEndIp());
 
-        long cnt = Q.New(UsedIpVO.class).eq(UsedIpVO_.ipRangeUuid, vo.getUuid()).count();
-        BigInteger num = start.add(new BigInteger(String.valueOf(cnt)));
+        List<String> ips = Q.New(UsedIpVO.class).select(UsedIpVO_.ip).eq(UsedIpVO_.ipRangeUuid, vo.getUuid()).listValues();
+        ips = ips.stream().distinct().collect(Collectors.toList());
+        BigInteger num = start.add(BigInteger.valueOf(ips.size()));
         if (num.compareTo(end) > 0) {
             return null;
         }
 
-        List<UsedIpVO> ips = Q.New(UsedIpVO.class).eq(UsedIpVO_.ipRangeUuid, vo.getUuid()).list();
         Set<BigInteger> usedIps = new HashSet<>();
-        for (UsedIpVO ip : ips) {
-            BigInteger address = IPv6NetworkUtils.ipv6AddressToBigInteger(ip.getIp());
+        for (String ip : ips) {
+            BigInteger address = IPv6NetworkUtils.ipv6AddressToBigInteger(ip);
             usedIps.add(address);
         }
 

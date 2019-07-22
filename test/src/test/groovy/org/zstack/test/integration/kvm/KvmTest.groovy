@@ -18,6 +18,10 @@ class KvmTest extends Test {
         kvm()
         ceph()
         vyos()
+        flatNetwork()
+        eip()
+        lb()
+        portForwarding()
     }
 
     @Override

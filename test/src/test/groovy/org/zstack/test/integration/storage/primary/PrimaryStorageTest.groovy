@@ -18,6 +18,9 @@ class PrimaryStorageTest extends Test {
         kvm()
         flatNetwork()
         securityGroup()
+        eip()
+        lb()
+        portForwarding()
     }
 
     @Override
