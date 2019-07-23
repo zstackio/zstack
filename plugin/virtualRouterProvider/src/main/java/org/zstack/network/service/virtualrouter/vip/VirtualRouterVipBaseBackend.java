@@ -5,11 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -17,12 +17,13 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l3.L3Network;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -32,10 +33,7 @@ import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 
@@ -52,41 +50,86 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
     private ApiTimeoutManager apiTimeoutManager;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private VipConfigProxy proxy;
+    @Autowired
+    private VirtualRouterHaBackend haBackend;
 
     public VirtualRouterVipBaseBackend(VipVO self) {
         super(self);
     }
 
+    protected void releaseVipOnHaHaRouter(VirtualRouterVmInventory vrInv, Completion completion) {
+        Map<String, Object> data = new HashMap<>();
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "releaseVip");
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), asList(getSelfInventory()));
+        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need releaseVip on backend", vrUuid));
+                    compl.success();
+                    return;
+                }
+
+                VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
+                List<VipInventory> vips = (List<VipInventory>)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                releaseVipOnVirtualRouterVm(vrInv, vips, compl);
+            }
+        }, data, completion);
+    }
+
+    protected void acquireVipOnHaBackend(VirtualRouterVmInventory vrInv, Completion completion) {
+        Map<String, Object> data = new HashMap<>();
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "applyVip");
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), asList(getSelfInventory()));
+        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need applyVip on backend", vrUuid));
+                    compl.success();
+                    return;
+                }
+
+                VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
+                List<VipInventory> vips = (List<VipInventory>)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                createVipOnVirtualRouterVm(vrInv, vips, compl);
+            }
+        }, data, completion);
+    }
+
     @Override
     protected void releaseVipOnBackend(Completion completion) {
-        final VirtualRouterVipVO vrvip = dbf.findByUuid(self.getUuid(), VirtualRouterVipVO.class);
-        if (vrvip == null) {
+        List<String> vrs = proxy.getVrUuidsByNetworkService(VipVO.class.getSimpleName(), self.getUuid());
+        if (vrs == null || vrs.isEmpty()) {
             completion.success();
             return;
         }
 
-        if (vrvip.getVirtualRouterVmUuid() == null) {
-            // the vr has been deleted
-            dbf.remove(vrvip);
-            completion.success();
-            return;
-        }
-
-        final VirtualRouterVmVO vrvo = dbf.findByUuid(vrvip.getVirtualRouterVmUuid(), VirtualRouterVmVO.class);
+        String vrUuid = vrs.get(0);
+        final VirtualRouterVmVO vrvo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+        VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrvo);
         if (vrvo.getState() != VmInstanceState.Running) {
             // vr will sync when becomes Running
-            dbf.remove(vrvip);
+            proxy.detachNetworkService(vrUuid, VipVO.class.getSimpleName(), asList(self.getUuid()));
+            releaseVipOnHaHaRouter(vrInv, completion);
+
             completion.success();
             return;
         }
 
-        releaseVipOnVirtualRouterVm(VirtualRouterVmInventory.valueOf(vrvo), asList(getSelfInventory()), new Completion(completion) {
+        releaseVipOnVirtualRouterVm(vrInv, asList(getSelfInventory()), new Completion(completion) {
             @Override
             public void success() {
                 logger.debug(String.format("successfully released vip[uuid:%s, name:%s, ip:%s] on virtual router vm[uuid:%s]",
                         self.getUuid(), self.getName(), self.getIp(), vrvo.getUuid()));
-                dbf.removeByPrimaryKey(vrvip.getUuid(), vrvip.getClass());
-                completion.success();
+                proxy.detachNetworkService(vrUuid, VipVO.class.getSimpleName(), asList(self.getUuid()));
+                releaseVipOnHaHaRouter(vrInv, completion);
             }
 
             @Override
@@ -97,7 +140,8 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
                 // may happen before so. In both cases, we delete the database reference here so next time the backend
                 // will try to apply the VIP again. It's virtualrouter/vyos's responsibility to succeed if a VIP is applied
                 // while it exists
-                dbf.removeByPrimaryKey(vrvip.getUuid(), vrvip.getClass());
+                proxy.detachNetworkService(vrUuid, VipVO.class.getSimpleName(), asList(self.getUuid()));
+                releaseVipOnHaHaRouter(vrInv, new NopeCompletion());
                 completion.fail(errorCode);
             }
         });
@@ -190,17 +234,19 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
     protected void acquireVipOnBackend(Completion completion) {
         refresh();
 
-        VirtualRouterVipVO vipvo = dbf.findByUuid(self.getUuid(), VirtualRouterVipVO.class);
+        List<String> vrs = proxy.getVrUuidsByNetworkService(VipVO.class.getSimpleName(), self.getUuid());
+        if (vrs != null && !vrs.isEmpty()) {
+            String vrUuid = vrs.get(0);
 
-        if (vipvo != null) {
+            logger.debug(String.format("vip already attached to virtual router [uuid:%s]", vrUuid));
             SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
             q.select(VmInstanceVO_.state);
-            q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, vipvo.getVirtualRouterVmUuid());
+            q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, vrUuid);
             VmInstanceState vrState = q.findValue();
 
             if (VmInstanceState.Running != vrState) {
                 completion.fail(operr("virtual router[uuid:%s, state:%s] is not running",
-                        vipvo.getVirtualRouterVmUuid(), vrState));
+                        vrUuid, vrState));
             } else {
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAcquireVipExtensionPoint.class),
                         new ForEachFunction<AfterAcquireVipExtensionPoint>() {
@@ -280,14 +326,7 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
             @Override
             public void handle(Map data) {
                 final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
-
-                if (!dbf.isExist(self.getUuid(), VirtualRouterVipVO.class)) {
-                    VirtualRouterVipVO vrvip = new VirtualRouterVipVO();
-                    vrvip.setUuid(self.getUuid());
-                    vrvip.setVirtualRouterVmUuid(vr.getUuid());
-                    dbf.persist(vrvip);
-                }
-
+                proxy.attachNetworkService(vr.getUuid(), VipVO.class.getSimpleName(), asList(self.getUuid()));
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAcquireVipExtensionPoint.class),
                         new ForEachFunction<AfterAcquireVipExtensionPoint>() {
                             @Override
@@ -297,7 +336,7 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
                             }
                         });
 
-                completion.success();
+                acquireVipOnHaBackend(vr, completion);
             }
         }).error(new FlowErrorHandler(completion) {
             @Override

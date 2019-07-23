@@ -1,8 +1,10 @@
 package org.zstack.network.service.virtualrouter;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.VmNicExtensionPoint;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
@@ -14,6 +16,7 @@ import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -32,6 +35,8 @@ public class VirtualRouterPingTracker extends PingTracker implements ManagementN
     private DatabaseFacade dbf;
     @Autowired
     private ResourceDestinationMaker destinationMaker;
+    @Autowired
+    protected PluginRegistry pluginRgty;
 
     public String getResourceName() {
         return "virtual router";
@@ -63,6 +68,10 @@ public class VirtualRouterPingTracker extends PingTracker implements ManagementN
         }
 
         PingVirtualRouterVmReply pr = reply.castReply();
+        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            ext.afterReceiveTracerReply(resourceUuid, pr);
+        }
+
         if (!pr.isDoReconnect() || pr.isConnected()) {
             return;
         }

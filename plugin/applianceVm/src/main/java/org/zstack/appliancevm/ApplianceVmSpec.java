@@ -34,6 +34,7 @@ public class ApplianceVmSpec implements Serializable {
     private String sshUsername = "root";
     private int sshPort = 22;
     private int agentPort = 7759;
+    private ApplianceVmHaSpec haSpec;
 
     public int getAgentPort() {
         return agentPort;
@@ -183,5 +184,13 @@ public class ApplianceVmSpec implements Serializable {
 
     public void setSyncCreate(boolean syncCreate) {
         this.syncCreate = syncCreate;
+    }
+
+    public ApplianceVmHaSpec getHaSpec() {
+        return haSpec;
+    }
+
+    public void setHaSpec(ApplianceVmHaSpec haSpec) {
+        this.haSpec = haSpec;
     }
 }

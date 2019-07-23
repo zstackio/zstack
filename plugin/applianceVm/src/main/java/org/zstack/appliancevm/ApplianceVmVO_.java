@@ -17,4 +17,5 @@ public class ApplianceVmVO_ extends VmInstanceVO_ {
     public static volatile SingularAttribute<ApplianceVmVO, String> managementNetworkUuid;
     public static volatile SingularAttribute<ApplianceVmVO, String> defaultRouteL3NetworkUuid;
     public static volatile SingularAttribute<ApplianceVmVO, ApplianceVmStatus> status;
+    public static volatile SingularAttribute<ApplianceVmVO, ApplianceVmHaStatus> haStatus;
 }

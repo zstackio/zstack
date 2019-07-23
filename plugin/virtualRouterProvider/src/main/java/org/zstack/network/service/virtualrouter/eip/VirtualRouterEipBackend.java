@@ -8,7 +8,6 @@ import org.zstack.appliancevm.ApplianceVmFirewallRuleInventory;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.*;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -21,17 +20,16 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.l3.L3NetworkVO_;
-import org.zstack.header.network.service.NetworkServiceProviderType;
-import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
 import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.eip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.CreateEipRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.RemoveEipRsp;
+import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -40,9 +38,10 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static org.zstack.core.Platform.*;
 
 /**
  */
@@ -62,6 +61,10 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
     private ApiTimeoutManager apiTimeoutManager;
     @Autowired
     private NetworkServiceManager nwServiceMgr;
+    @Autowired
+    private EipConfigProxy proxy;
+    @Autowired
+    private VirtualRouterHaBackend haBackend;
 
     public static final Set<VmInstanceState> SYNC_EIP_VM_STATES = ImmutableSet.<VmInstanceState> of(
             VmInstanceState.Running
@@ -133,7 +136,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 });
                 to.setPrivateMac(priMac);
                 to.setPublicMac(vr.getVmNics().stream().filter(
-                        nic -> nic.getL3NetworkUuid().equals(vr.getPublicNetworkUuid())).findFirst().get().getMac());
+                        nic -> nic.getL3NetworkUuid().equals(struct.getVip().getL3NetworkUuid())).findFirst().get().getMac());
                 to.setVipIp(struct.getVip().getIp());
                 to.setGuestIp(struct.getNic().getIp());
                 to.setSnatInboundTraffic(struct.isSnatInboundTraffic());
@@ -185,6 +188,51 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
 
     }
 
+    protected void applyEipOnHaRouter(String vrUuid, EipStruct struct, Completion completion) {
+        VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
+        Map<String, Object> data = new HashMap<>();
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "applyEip");
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
+        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need apply Eip on backend", vrUuid));
+                    compl.success();
+                    return;
+                }
+
+                VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
+                EipStruct s = (EipStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                applyEip(vr, s, compl);
+            }
+        }, data, completion);
+    }
+
+    protected void revokeEipOnHaRouter(String vrUuid, EipStruct struct, Completion completion) {
+        VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
+        Map<String, Object> data = new HashMap<>();
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "revokeEip");
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
+        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need revoke Eip on backend", vrUuid));
+                    compl.success();
+                    return;
+                }
+
+                EipStruct s = (EipStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                revokeEip(vrUuid, s, compl);
+            }
+        }, data, completion);
+    }
+
     @Override
     public void applyEip(final EipStruct struct, final Completion completion) {
         L3NetworkVO l3vo = dbf.findByUuid(struct.getNic().getL3NetworkUuid(), L3NetworkVO.class);
@@ -208,18 +256,8 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 applyEip(vr, struct, new Completion(completion) {
                     @Override
                     public void success() {
-                        SimpleQuery<VirtualRouterEipRefVO> q = dbf.createQuery(VirtualRouterEipRefVO.class);
-                        q.add(VirtualRouterEipRefVO_.eipUuid, Op.EQ, struct.getEip().getUuid());
-                        if (!q.isExists()) {
-                            // if virtual router is stopped outside zstack (e.g. the host rebbot)
-                            // database will still have VirtualRouterEipRefVO for this EIP.
-                            // in this case, don't create the record again
-                            VirtualRouterEipRefVO ref = new VirtualRouterEipRefVO();
-                            ref.setEipUuid(struct.getEip().getUuid());
-                            ref.setVirtualRouterVmUuid(vr.getUuid());
-                            dbf.persist(ref);
-                        }
-                        completion.success();
+                        proxy.attachNetworkService(vr.getUuid(), EipVO.class.getSimpleName(), asList(struct.getEip().getUuid()));
+                        applyEipOnHaRouter(vr.getUuid(), struct, completion);
                     }
 
                     @Override
@@ -236,21 +274,11 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         });
     }
 
-    @Override
-    public void revokeEip(final EipStruct struct, final Completion completion) {
-        SimpleQuery<VirtualRouterEipRefVO> q = dbf.createQuery(VirtualRouterEipRefVO.class);
-        q.add(VirtualRouterEipRefVO_.eipUuid, SimpleQuery.Op.EQ, struct.getEip().getUuid());
-        final VirtualRouterEipRefVO ref = q.find();
-        if (ref == null) {
-            // vr may have been deleted
-            completion.success();
-            return;
-        }
-
-        VirtualRouterVmVO vrvo = dbf.findByUuid(ref.getVirtualRouterVmUuid(), VirtualRouterVmVO.class);
+    public void revokeEip(String vrUuid, final EipStruct struct, final Completion completion) {
+        VirtualRouterVmVO vrvo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
         if (vrvo.getState() != VmInstanceState.Running) {
             // rule will be synced when vr state changes to Running
-            dbf.remove(ref);
+            proxy.detachNetworkService(vrUuid,EipVO.class.getSimpleName(), asList(struct.getEip().getUuid()));
             completion.success();
             return;
         }
@@ -274,6 +302,10 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                         return null;
                     }
                 });
+
+
+                to.setPublicMac(vr.getVmNics().stream().filter(
+                        nic -> nic.getL3NetworkUuid().equals(struct.getVip().getL3NetworkUuid())).findFirst().get().getMac());
 
                 to.setPrivateMac(priMac);
                 to.setSnatInboundTraffic(struct.isSnatInboundTraffic());
@@ -331,18 +363,62 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                         struct.getEip().getUuid(), struct.getEip().getName(), struct.getVip().getIp(), struct.getNic().getUuid(),
                         vr.getUuid());
                 logger.debug(info);
-                dbf.remove(ref);
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                // We need to remove the 'ref' record, otherwise the next time when
-                // deleting EIP is requested, we will get ConstraintViolationException.
-                dbf.remove(ref);
                 completion.fail(errCode);
             }
         }).start();
+    }
+
+    @Override
+    public void revokeEip(final EipStruct struct, final Completion completion) {
+        List<String> vrs = proxy.getVrUuidsByNetworkService(EipVO.class.getSimpleName(), struct.getEip().getUuid());
+        if (vrs == null || vrs.isEmpty()) {
+            logger.debug(String.format("can not find virtual router uuid when revoking eip [uuid:%s]", struct.getEip().getUuid()));
+            completion.success();
+            return;
+        }
+
+        String vrUuid = vrs.get(0);
+        revokeEip(vrUuid, struct, new Completion(completion) {
+            @Override
+            public void success() {
+                revokeEipOnHaRouter(vrUuid, struct, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        proxy.detachNetworkService(vrUuid, EipVO.class.getSimpleName(), asList(struct.getEip().getUuid()));
+                        completion.success();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                    }
+                });
+
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                // We need to remove the 'ref' record, otherwise the next time when
+                // deleting EIP is requested, we will get ConstraintViolationException.
+                revokeEipOnHaRouter(vrUuid, struct, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        proxy.detachNetworkService(vrUuid, EipVO.class.getSimpleName(), asList(struct.getEip().getUuid()));
+                        completion.fail(errorCode);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                    }
+                });
+            }
+        });
     }
 
     @Override
@@ -432,14 +508,17 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
             return null;
         }
 
-        List<Tuple> existsEips = SQL.New("select eip.vipIp, eip.guestIp, nic.l3NetworkUuid, nic.mac, vip.l3NetworkUuid, eip.uuid " +
-                "from EipVO eip, VirtualRouterEipRefVO ref, VmNicVO nic, VipVO vip " +
-                "where eip.vmNicUuid = nic.uuid " +
-                "and eip.uuid = ref.eipUuid " +
-                "and eip.vipUuid = vip.uuid " +
-                "and ref.virtualRouterVmUuid = :vrUuid", Tuple.class)
-                .param("vrUuid", nic.getVmInstanceUuid())
-                .list();
+        List<Tuple> existsEips = null;
+        List<String> existsEipUuids = proxy.getServiceUuidsByRouterUuid(nic.getVmInstanceUuid(), EipVO.class.getSimpleName());
+        if (existsEipUuids != null && !existsEipUuids.isEmpty()) {
+            existsEips = SQL.New("select eip.vipIp, eip.guestIp, nic.l3NetworkUuid, nic.mac, vip.l3NetworkUuid, eip.uuid " +
+                    "from EipVO eip, VmNicVO nic, VipVO vip " +
+                    "where eip.vmNicUuid = nic.uuid " +
+                    "and eip.uuid in (:eipUuids) " +
+                    "and eip.vipUuid = vip.uuid ", Tuple.class)
+                    .param("eipUuids", existsEipUuids)
+                    .list();
+        }
 
         if (existsEips != null && !existsEips.isEmpty() && attach) {
             eips.addAll(existsEips);
@@ -516,30 +595,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
             return new ArrayList<>();
         }
 
-        List<VirtualRouterEipRefVO> refs = new ArrayList<VirtualRouterEipRefVO>();
-        for (Tuple eipTuple : eips) {
-            /* eip can be bound to only 1 router */
-            VirtualRouterEipRefVO oldRef = Q.New(VirtualRouterEipRefVO.class).
-                    eq(VirtualRouterEipRefVO_.eipUuid, eipTuple.get(5, String.class))
-                    .notEq(VirtualRouterEipRefVO_.virtualRouterVmUuid, nic.getVmInstanceUuid()).find();
-            if (oldRef != null) {
-                throw new OperationFailureException(operr("Eip [uuid:%s] already bound to router [uuid:%s]", oldRef.getEipUuid(), oldRef.getVirtualRouterVmUuid()));
-            }
-
-            if (!Q.New(VirtualRouterEipRefVO.class)
-                    .eq(VirtualRouterEipRefVO_.eipUuid, eipTuple.get(5, String.class))
-                    .eq(VirtualRouterEipRefVO_.virtualRouterVmUuid, nic.getVmInstanceUuid())
-                    .isExists()) {
-                VirtualRouterEipRefVO ref = new VirtualRouterEipRefVO();
-                ref.setEipUuid(eipTuple.get(5, String.class));
-                ref.setVirtualRouterVmUuid(nic.getVmInstanceUuid());
-                refs.add(ref);
-            }
-        }
-        if (!refs.isEmpty()) {
-            dbf.persistCollection(refs);
-        }
-
+        proxy.attachNetworkService(nic.getVmInstanceUuid(), EipVO.class.getSimpleName(), eips.stream().map(e -> e.get(5, String.class)).collect(Collectors.toList()));
         return eips;
     }
 
@@ -553,27 +609,11 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         syncEipsOnVirtualRouter(nic, false, new Completion(completion) {
             @Override
             public void success() {
-
-                List<Tuple> eips = findEipTuplesOnVmNic(nic);;
+                List<Tuple> eips = findEipTuplesOnVmNic(nic);
                 if (eips == null || eips.isEmpty()) {
                     completion.success();
                 } else {
-                    for (Tuple eipTuple : eips) {
-                        VirtualRouterEipRefVO ref = Q.New(VirtualRouterEipRefVO.class)
-                                .eq(VirtualRouterEipRefVO_.eipUuid, eipTuple.get(5, String.class))
-                                .eq(VirtualRouterEipRefVO_.virtualRouterVmUuid, nic.getVmInstanceUuid())
-                                .find();
-                        if (ref != null) {
-                            dbf.remove(ref);
-
-                            UpdateQuery q = UpdateQuery.New(EipVO.class);
-                            q.condAnd(EipVO_.uuid, Op.EQ, eipTuple.get(5, String.class));
-                            q.set(EipVO_.vmNicUuid, null);
-                            q.set(EipVO_.guestIp, null);
-                            q.update();
-                        }
-                    }
-
+                    proxy.detachNetworkService(nic.getVmInstanceUuid(), EipVO.class.getSimpleName(), eips.stream().map(t -> t.get(5, String.class)).collect(Collectors.toList()));
                     completion.success();
                 }
             }

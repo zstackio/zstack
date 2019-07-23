@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -66,6 +67,11 @@ public class VirtualRouterCreateVipForPublicIpFlow implements Flow {
                             "no ip range for l3NetworkUuid %s", vr.getName(), vr.getUuid(), nic.getIp(), nic.getL3NetworkUuid());
             chain.fail(err);
             return ;
+        }
+
+        if (vr.isHaEnabled()) {
+            chain.next();
+            return;
         }
 
         /* vip db */

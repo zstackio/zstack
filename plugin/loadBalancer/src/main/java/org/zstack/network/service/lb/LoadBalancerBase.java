@@ -32,6 +32,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
+import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.vip.ModifyVipAttributesStruct;
@@ -80,8 +81,12 @@ public class LoadBalancerBase {
     @Autowired
     private PluginRegistry pluginRgty;
 
+    public static String getSyncId(String vipUuid) {
+        return String.format("operate-lb-with-vip-%s", vipUuid);
+    }
+
     private String getSyncId() {
-        return String.format("operate-lb-with-vip-%s", self.getVipUuid());
+        return getSyncId(self.getVipUuid());
     }
 
     private LoadBalancerVO self;
@@ -1182,8 +1187,10 @@ public class LoadBalancerBase {
         return true;
     }
 
+
     private LoadBalancerBackend getBackend() {
         DebugUtils.Assert(self.getProviderType() != null, "providerType cannot be null");
+
         return lbMgr.getBackend(self.getProviderType());
     }
 
