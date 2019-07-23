@@ -8,6 +8,8 @@ import org.zstack.core.db.Q;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.APIMessage;
 
+import java.sql.Timestamp;
+
 /**
  * Created by kayo on 2018/7/10.
  */
@@ -49,6 +51,22 @@ public class AccountLoginProcessor implements LoginProcessor {
         return resourceIdentity;
     }
 
+    protected Timestamp getLastOperatedTime(String resourceIdentity) {
+        Timestamp lastUpdatedTime = Q.New(AccountVO.class).select(AccountVO_.lastOpDate).eq(AccountVO_.uuid, resourceIdentity).findValue();
+
+        if (lastUpdatedTime == null) {
+            for(AccountLoginProcessorExtensionPoint ext : pluginRgty.getExtensionList(AccountLoginProcessorExtensionPoint.class)) {
+                lastUpdatedTime = ext.getLastOperatedTime(resourceIdentity);
+
+                if(lastUpdatedTime != null) {
+                    break;
+                }
+            }
+        }
+
+        return lastUpdatedTime;
+    }
+
     @Override
     public Result getMessageParams(APIMessage message) {
         APILogInByAccountMsg msg = (APILogInByAccountMsg) message;
@@ -57,6 +75,7 @@ public class AccountLoginProcessor implements LoginProcessor {
         r.setCaptchaUuid(msg.getCaptchaUuid());
         r.setTargetResourceIdentity(getResourceIdentity(msg.getAccountName()));
         r.setVerifyCode(msg.getVerifyCode());
+        r.setLastUpdatedTime(getLastOperatedTime(r.getTargetResourceIdentity()));
 
         return r;
     }

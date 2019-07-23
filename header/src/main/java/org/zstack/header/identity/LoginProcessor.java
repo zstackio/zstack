@@ -2,6 +2,8 @@ package org.zstack.header.identity;
 
 import org.zstack.header.message.APIMessage;
 
+import java.sql.Timestamp;
+
 /**
  * Created by kayo on 2018/7/9.
  */
@@ -10,6 +12,7 @@ public interface LoginProcessor {
         private String verifyCode;
         private String captchaUuid;
         private String targetResourceIdentity;
+        private Timestamp lastUpdatedTime;
 
         public String getVerifyCode() {
             return verifyCode;
@@ -33,6 +36,14 @@ public interface LoginProcessor {
 
         public void setTargetResourceIdentity(String targetResourceIdentity) {
             this.targetResourceIdentity = targetResourceIdentity;
+        }
+
+        public Timestamp getLastUpdatedTime() {
+            return lastUpdatedTime;
+        }
+
+        public void setLastUpdatedTime(Timestamp lastUpdatedTime) {
+            this.lastUpdatedTime = lastUpdatedTime;
         }
     }
 

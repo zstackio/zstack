@@ -14,10 +14,6 @@
         <class>org.zstack.core.job.JobQueueEntryVO</class>
         <class>org.zstack.core.config.GlobalConfigVO</class>
         <class>org.zstack.resourceconfig.ResourceConfigVO</class>
-        <class>org.zstack.header.scheduler.SchedulerVO</class>
-        <class>org.zstack.header.scheduler.SchedulerJobVO</class>
-        <class>org.zstack.header.scheduler.SchedulerTriggerVO</class>
-        <class>org.zstack.header.scheduler.SchedulerJobSchedulerTriggerRefVO</class>
         <class>org.zstack.header.managementnode.ManagementNodeVO</class>
         <class>org.zstack.header.managementnode.ManagementNodeContextVO</class>
         <class>org.zstack.header.zone.ZoneVO</class>
@@ -153,7 +149,6 @@
         <class>org.zstack.header.identity.role.SystemRoleVO</class>
         <class>org.zstack.header.identity.role.RolePolicyStatementVO</class>
         <class>org.zstack.header.core.captcha.CaptchaVO</class>
-        <class>org.zstack.header.core.captcha.LoginAttemptsVO</class>
         <class>org.zstack.header.errorcode.ElaborationVO</class>
         <class>org.zstack.header.vm.cdrom.VmCdRomVO</class>
     </persistence-unit>
