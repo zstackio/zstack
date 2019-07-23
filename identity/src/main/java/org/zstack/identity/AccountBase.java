@@ -83,8 +83,10 @@ public class AccountBase extends AbstractAccount {
     private void handle(APIUpdateAccountMsg msg) {
         AccountVO account = dbf.findByUuid(msg.getUuid(), AccountVO.class);
 
-        for(AccountUpdateExtensionPoint ext : pluginRgty.getExtensionList(AccountUpdateExtensionPoint.class)) {
-            ext.preUpdatePassword(account.getUuid(), account.getPassword(), msg.getPassword());
+        if (msg.getPassword() != null) {
+            for(PasswordUpdateExtensionPoint ext : pluginRgty.getExtensionList(PasswordUpdateExtensionPoint.class)) {
+                ext.preUpdatePassword(account.getUuid(), account.getPassword(), msg.getPassword());
+            }
         }
 
         if (msg.getName() != null) {
@@ -105,7 +107,7 @@ public class AccountBase extends AbstractAccount {
         account = dbf.updateAndRefresh(account);
 
         if (passwordUpdated) {
-            for(AccountUpdateExtensionPoint ext : pluginRgty.getExtensionList(AccountUpdateExtensionPoint.class)) {
+            for(PasswordUpdateExtensionPoint ext : pluginRgty.getExtensionList(PasswordUpdateExtensionPoint.class)) {
                 ext.afterUpdatePassword(account.getUuid(), oldPassword);
             }
         }
