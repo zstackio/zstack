@@ -445,3 +445,14 @@ CREATE TABLE `zstack`.`RaidPhysicalDriveVO` (
     CONSTRAINT fkRaidPhysicalDriveVORaidControllerVO FOREIGN KEY (raidControllerUuid) REFERENCES RaidControllerVO (uuid) ON DELETE CASCADE,
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `zstack`.`PhysicalDriveSmartSelfTestHistoryVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `raidPhysicalDriveUuid` varchar(32) default null,
+    `runningState` varchar(255) default null,
+    `testResult` varchar(255) default null,
+    `lastOpDate` timestamp not null default '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp not null default '0000-00-00 00:00:00',
+    CONSTRAINT fkPhysicalDriveSmartSelfTestHistoryVORaidPhysicalDriveVO FOREIGN KEY (raidPhysicalDriveUuid) REFERENCES RaidPhysicalDriveVO (uuid) ON DELETE CASCADE,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

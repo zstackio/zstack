@@ -28,12 +28,12 @@ public class SmartDataStruct  {
         return this.flag;
     }
 
-    public java.lang.Integer vlaue;
-    public void setVlaue(java.lang.Integer vlaue) {
-        this.vlaue = vlaue;
+    public java.lang.Integer value;
+    public void setValue(java.lang.Integer value) {
+        this.value = value;
     }
-    public java.lang.Integer getVlaue() {
-        return this.vlaue;
+    public java.lang.Integer getValue() {
+        return this.value;
     }
 
     public java.lang.Integer worst;
@@ -82,6 +82,14 @@ public class SmartDataStruct  {
     }
     public java.lang.Long getRawValue() {
         return this.rawValue;
+    }
+
+    public java.lang.String state;
+    public void setState(java.lang.String state) {
+        this.state = state;
+    }
+    public java.lang.String getState() {
+        return this.state;
     }
 
 }
