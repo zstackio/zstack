@@ -108,7 +108,7 @@ public abstract class HostBase extends AbstractHost {
 
     protected abstract void connectHook(ConnectHostInfo info, Completion complete);
 
-    protected abstract void updateOsHook(String exclude, Completion completion);
+    protected abstract void updateOsHook(UpdateHostOSMsg msg, Completion completion);
 
     protected HostBase(HostVO self) {
         this.self = self;
@@ -573,7 +573,7 @@ public abstract class HostBase extends AbstractHost {
 
             @Override
             public void run(SyncTaskChain chain) {
-                updateOsHook(msg.getExcludePackages(), new Completion(msg, chain) {
+                updateOsHook(msg, new Completion(msg, chain) {
                     @Override
                     public void success() {
                         bus.reply(msg, reply);

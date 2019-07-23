@@ -37,6 +37,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.identity.AccountManager;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -70,6 +71,8 @@ public class ClusterBase extends AbstractCluster {
     private TagManager tagMgr;
     @Autowired
     private AccountManager acntMgr;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
 	protected ClusterVO self;
 	protected final int threadSyncLevel = 1;
@@ -318,11 +321,14 @@ public class ClusterBase extends AbstractCluster {
                         .select(HostVO_.uuid)
                         .eq(HostVO_.clusterUuid, msg.getUuid())
                         .listValues();
+                Boolean enableExpRepo = rcf.getResourceConfigValue(
+                        ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_REPO, msg.getUuid(), Boolean.class);
                 new While<>(hostUuids).all((hostUuid, completion) -> {
                     UpdateHostOSMsg umsg = new UpdateHostOSMsg();
                     umsg.setUuid(hostUuid);
                     umsg.setClusterUuid(msg.getUuid());
                     umsg.setExcludePackages(msg.getExcludePackages());
+                    umsg.setEnableExperimentalRepo(enableExpRepo);
                     bus.makeTargetServiceIdByResourceUuid(umsg, HostConstant.SERVICE_ID, hostUuid);
                     bus.send(umsg, new CloudBusCallBack(completion) {
                         @Override
