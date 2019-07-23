@@ -196,6 +196,14 @@ class LocalStorageSpec extends PrimaryStorageSpec {
             simulator(LocalStorageKvmBackend.CREATE_INITIALIZED_FILE) {
                 return new LocalStorageKvmBackend.AgentResponse()
             }
+
+            simulator(LocalStorageKvmBackend.DOWNLOAD_BITS_FROM_KVM_HOST_PATH) {
+                return new LocalStorageKvmBackend.AgentResponse()
+            }
+
+            simulator(LocalStorageKvmBackend.CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH) {
+                return new LocalStorageKvmBackend.AgentResponse()
+            }
         }
     }
 
