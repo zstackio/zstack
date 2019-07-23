@@ -37,51 +37,21 @@ doc {
 		since "3.3.0"
 	}
 	field {
-		name "operation_cn"
-		desc "操作建议中文"
-		type "String"
-		since "3.3.0"
-	}
-	field {
-		name "operation_en"
-		desc "操作建议英文"
-		type "String"
-		since "3.3.0"
-	}
-	field {
-		name "causes_cn"
-		desc "错误可能原因中文"
-		type "String"
-		since "3.3.0"
-	}
-	field {
-		name "causes_en"
-		desc "错误可能原因英文"
-		type "String"
-		since "3.3.0"
-	}
-	field {
-		name "extension_cn"
-		desc "错误扩展内容中文"
-		type "String"
-		since "3.3.0"
-	}
-	field {
-		name "extension_en"
-		desc "错误扩展内容英文"
-		type "String"
-		since "3.3.0"
-	}
-	field {
 		name "source"
 		desc "错误来源"
 		type "String"
 		since "3.3.0"
 	}
 	field {
-		name "url"
-		desc "更多引用地址"
+		name "method"
+		desc "匹配方法，distance(字符串比较)或regex(正则)"
 		type "String"
-		since "3.3.0"
+		since "3.6.0"
+	}
+	field {
+		name "distance"
+		desc "若使用distance匹配，此处为精确度(1为最精确)"
+		type "Double"
+		since "3.6.0"
 	}
 }

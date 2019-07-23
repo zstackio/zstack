@@ -96,6 +96,20 @@ class ElaborationCase extends SubCase {
         assert result.contents.size() > 0
 
         result = getElaborations {
+            category = "ACCOUNT"
+            code = "1000"
+        } as GetElaborationsResult
+
+        assert result.contents.size() > 0
+
+        result = getElaborations {
+            category = "ACCOUNT"
+            code = "9999"
+        } as GetElaborationsResult
+
+        assert result.contents.size() == 0
+
+        result = getElaborations {
             regex = "certificate has expired or is not yet valid"
         } as GetElaborationsResult
 

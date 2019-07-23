@@ -201,10 +201,11 @@ public class StringSimilarity {
         ErrorCodeElaboration err = null;
         long start = System.currentTimeMillis();
         try {
-            err = findSimilaryRegex(String.format(formatSub, args));
+            err = findMostSimilaryRegex(String.format(formatSub, args));
         } catch (Exception e) {
             logger.warn("exception happened when format error message");
             logger.warn(e.getMessage());
+            err = findMostSimilaryRegex(formatSub);
         }
 
         if (err == null) {
@@ -223,7 +224,27 @@ public class StringSimilarity {
         return err;
     }
 
-    private static ErrorCodeElaboration findSimilaryRegex(String sub) {
+    // better precision, worse performance
+    private static ErrorCodeElaboration findMostSimilaryRegex(String sub) {
+        ErrorCodeElaboration matchE = null;
+        for (ErrorCodeElaboration elaboration: elaborations) {
+            if (ElaborationSearchMethod.distance == elaboration.getMethod()) {
+                continue;
+            }
+            if (isRegexMatched(elaboration.getRegex(), sub)) {
+                if (matchE == null) {
+                    matchE = elaboration;
+                } else if (elaboration.getRegex().length() > matchE.getRegex().length()) {
+                    matchE = elaboration;
+                }
+            }
+        }
+
+        return matchE;
+    }
+
+    // better performance(2x), worse precision
+    private static ErrorCodeElaboration findFirshSimilaryRegex(String sub) {
         for (ErrorCodeElaboration elaboration: elaborations) {
             if (ElaborationSearchMethod.distance == elaboration.getMethod()) {
                 continue;

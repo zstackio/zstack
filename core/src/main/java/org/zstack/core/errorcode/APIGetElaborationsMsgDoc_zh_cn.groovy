@@ -42,6 +42,16 @@ doc {
 					
 				}
 				column {
+					name "code"
+					enclosedIn ""
+					desc "错误代码，与category一起使用"
+					location "query"
+					type "String"
+					optional true
+					since "3.6.0"
+
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

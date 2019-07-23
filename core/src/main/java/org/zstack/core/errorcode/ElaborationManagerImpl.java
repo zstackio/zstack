@@ -473,7 +473,7 @@ public class ElaborationManagerImpl extends AbstractService {
         if (msg.getRegex() != null) {
             ErrorCodeElaboration e = StringSimilarity.findSimilary(msg.getRegex());
             if (StringSimilarity.matched(e)) {
-                if (msg.getCategory() != null && msg.getCategory().equals(e.getCategory())) {
+                if (msg.getCategory() != null && msg.getCategory().equalsIgnoreCase(e.getCategory())) {
                     reply.getContents().add(new ElaborationContent(e));
                 } else if (msg.getCategory() == null){
                     reply.getContents().add(new ElaborationContent(e));
@@ -482,8 +482,18 @@ public class ElaborationManagerImpl extends AbstractService {
         } else if (msg.getCategory() != null) {
             List<ErrorCodeElaboration> elaborations = StringSimilarity.getElaborations();
             elaborations.forEach(e -> {
-                if (e.getCategory().equals(msg.getCategory())) {
+                if (msg.getCategory().equalsIgnoreCase("all")) {
                     reply.getContents().add(new ElaborationContent(e));
+                    return;
+                }
+                if (e.getCategory().equalsIgnoreCase(msg.getCategory())) {
+                    if (msg.getCode() != null) {
+                        if (e.getCode().equalsIgnoreCase(msg.getCode())) {
+                            reply.getContents().add(new ElaborationContent(e));
+                        }
+                    } else {
+                        reply.getContents().add(new ElaborationContent(e));
+                    }
                 }
             });
         }
@@ -492,6 +502,8 @@ public class ElaborationManagerImpl extends AbstractService {
         if (msg.getCategory() == null && msg.getRegex() == null){
             throw new OperationFailureException(Platform.argerr("input args 'regex' or 'category' must be set"));
         }
+
+        Collections.sort(reply.getContents());
 
         bus.reply(msg, reply);
     }

@@ -7,20 +7,15 @@ import org.zstack.utils.string.ErrorCodeElaboration;
  * Created by mingjian.deng on 2019/1/4.
  */
 @SDK
-public class ElaborationContent {
+public class ElaborationContent implements Comparable<ElaborationContent> {
     private String category;
     private String code;
     private String regex;
     private String message_cn;
     private String message_en;
-    private String operation_cn;
-    private String operation_en;
-    private String causes_cn;
-    private String causes_en;
-    private String extension_cn;
-    private String extension_en;
     private String source = "zstack";
-    private String url;
+    private String method;
+    private Double distance;
 
     public ElaborationContent() {
     }
@@ -31,14 +26,9 @@ public class ElaborationContent {
         regex = error.getRegex();
         message_cn = error.getMessage_cn();
         message_en = error.getMessage_en();
-        operation_cn = error.getOperation_cn();
-        operation_en = error.getOperation_en();
-        causes_cn = error.getCauses_cn();
-        causes_en = error.getCauses_en();
-        extension_cn = error.getExtension_cn();
-        extension_en = error.getExtension_en();
+        method = error.getMethod().toString();
+        distance = error.getDistance();
         source = error.getSource();
-        url = error.getUrl();
     }
 
     public String getCategory() {
@@ -81,54 +71,6 @@ public class ElaborationContent {
         this.message_en = message_en;
     }
 
-    public String getOperation_cn() {
-        return operation_cn;
-    }
-
-    public void setOperation_cn(String operation_cn) {
-        this.operation_cn = operation_cn;
-    }
-
-    public String getOperation_en() {
-        return operation_en;
-    }
-
-    public void setOperation_en(String operation_en) {
-        this.operation_en = operation_en;
-    }
-
-    public String getCauses_cn() {
-        return causes_cn;
-    }
-
-    public void setCauses_cn(String causes_cn) {
-        this.causes_cn = causes_cn;
-    }
-
-    public String getCauses_en() {
-        return causes_en;
-    }
-
-    public void setCauses_en(String causes_en) {
-        this.causes_en = causes_en;
-    }
-
-    public String getExtension_cn() {
-        return extension_cn;
-    }
-
-    public void setExtension_cn(String extension_cn) {
-        this.extension_cn = extension_cn;
-    }
-
-    public String getExtension_en() {
-        return extension_en;
-    }
-
-    public void setExtension_en(String extension_en) {
-        this.extension_en = extension_en;
-    }
-
     public String getSource() {
         return source;
     }
@@ -137,11 +79,27 @@ public class ElaborationContent {
         this.source = source;
     }
 
-    public String getUrl() {
-        return url;
+    public String getMethod() {
+        return method;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    public Double getDistance() {
+        return distance;
+    }
+
+    public void setDistance(Double distance) {
+        this.distance = distance;
+    }
+
+    @Override
+    public int compareTo(ElaborationContent o) {
+        if (category.equalsIgnoreCase(o.category)) {
+            return code.compareTo(o.code);
+        }
+        return category.compareTo(o.category);
     }
 }

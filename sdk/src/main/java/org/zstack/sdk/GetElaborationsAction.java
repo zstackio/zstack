@@ -29,6 +29,9 @@ public class GetElaborationsAction extends AbstractAction {
     public java.lang.String category;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String code;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String regex;
 
     @Param(required = false)
