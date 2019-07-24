@@ -136,25 +136,6 @@ public class ElaborationManagerImpl extends AbstractService {
                         }
                     });
 
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "FileNameAlreadyExisted and DuplicatedFileName";
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            HashSet<String> sets = new HashSet<>();
-                            for (String file: files) {
-                                String name = PathUtil.fileName(file);
-                                if (!isClassPathFolder && errTemplates.contains(name)) {
-                                    results.add(new ElaborationCheckResult(file, null, ElaborationFailedReason.FileNameAlreadyExisted.toString()));
-                                }
-                                if (sets.contains(name)) {
-                                    results.add(new ElaborationCheckResult(file, null, ElaborationFailedReason.DuplicatedFileName.toString()));
-                                } else {
-                                    sets.add(name);
-                                }
-                            }
-                            trigger.next();
-                        }
-                    });
 
                     flow(new NoRollbackFlow() {
                         String __name__ = "InValidJsonArraySchema";
@@ -217,21 +198,22 @@ public class ElaborationManagerImpl extends AbstractService {
                         HashSet<String> sets = new HashSet<>();
                         contents.forEach((f, c) -> {
                             for (ErrorCodeElaboration err: c) {
+                                String content = String.format("%s.%s: [%s]", err.getCategory(), err.getCode(), err.getRegex());
                                 if (err.getRegex() == null || err.getRegex().isEmpty()) {
-                                    results.add(new ElaborationCheckResult(f, err.getCategory() + "." + err.getCode(), ElaborationFailedReason.RegexNotFound.toString()));
+                                    results.add(new ElaborationCheckResult(f, content, ElaborationFailedReason.RegexNotFound.toString()));
                                     continue;
                                 }
 
                                 if (err.getMessage_cn() == null || err.getMessage_cn().isEmpty()) {
-                                    results.add(new ElaborationCheckResult(f, err.getCategory() + "." + err.getCode(), ElaborationFailedReason.MessageNotFound.toString()));
+                                    results.add(new ElaborationCheckResult(f, content, ElaborationFailedReason.MessageNotFound.toString()));
                                 }
 
                                 if (!isClassPathFolder && StringSimilarity.regexContained(err.getRegex())) {
-                                    results.add(new ElaborationCheckResult(f, err.getCategory() + "." + err.getCode(), ElaborationFailedReason.RegexAlreadyExisted.toString()));
+                                    results.add(new ElaborationCheckResult(f, content, ElaborationFailedReason.RegexAlreadyExisted.toString()));
                                 }
 
                                 if (sets.contains(err.getRegex())) {
-                                    results.add(new ElaborationCheckResult(f, err.getCategory() + "." + err.getCode(), ElaborationFailedReason.DuplicatedRegex.toString()));
+                                    results.add(new ElaborationCheckResult(f, content, ElaborationFailedReason.DuplicatedRegex.toString()));
                                 } else {
                                     sets.add(err.getRegex());
                                 }
@@ -246,20 +228,11 @@ public class ElaborationManagerImpl extends AbstractService {
                     String __name__ = "CategoryNotFound and NotSameCategoriesInFile";
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        Map<String, String> categories = new HashMap<>();
                         contents.forEach((f, c) -> {
                             for (ErrorCodeElaboration err: c) {
+                                String content = String.format("%s.%s: [%s]", err.getCategory(), err.getCode(), err.getRegex());
                                 if (err.getCategory() == null || err.getCategory().isEmpty()) {
-                                    results.add(new ElaborationCheckResult(f, err.getCategory() + "." + err.getCode(), ElaborationFailedReason.CategoryNotFound.toString()));
-                                    continue;
-                                }
-
-                                if (categories.get(f) == null) {
-                                    categories.put(f, err.getCategory());
-                                } else {
-                                    if (!categories.get(f).equals(err.getCategory())) {
-                                        results.add(new ElaborationCheckResult(f, err.getCategory() + "." + err.getCode(), ElaborationFailedReason.NotSameCategoriesInFile.toString()));
-                                    }
+                                    results.add(new ElaborationCheckResult(f, content, ElaborationFailedReason.CategoryNotFound.toString()));
                                 }
                             }
                         });
@@ -392,7 +365,7 @@ public class ElaborationManagerImpl extends AbstractService {
                         if (returnValue.isEmpty()) {
                             trigger.next();
                         } else {
-                            trigger.fail(operr("%s", returnValue.get(0).getReason()));
+                            trigger.fail(operr("%s: %s", returnValue.get(0).getContent(), returnValue.get(0).getReason()));
                         }
                     }
 

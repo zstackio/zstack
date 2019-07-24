@@ -32,6 +32,16 @@ doc {
 					
 				}
 				column {
+					name "elaborateContent"
+					enclosedIn "params"
+					desc "要检查的文件内容，格式为json"
+					location "body"
+					type "String"
+					optional false
+					since "3.6.0"
+
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

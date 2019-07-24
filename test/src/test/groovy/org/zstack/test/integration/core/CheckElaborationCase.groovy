@@ -74,7 +74,6 @@ class CheckElaborationCase extends SubCase {
 
         assert reasons.contains(ElaborationFailedReason.RegexAlreadyExisted.toString())
         assert reasons.contains(ElaborationFailedReason.MessageNotFound.toString())
-        assert reasons.contains(ElaborationFailedReason.NotSameCategoriesInFile.toString())
     }
 
     void check2() {
@@ -104,7 +103,6 @@ class CheckElaborationCase extends SubCase {
         def reasons = new ArrayList()
         reasons.addAll(result.value.results.collect{it.reason})
 
-        assert reasons.contains(ElaborationFailedReason.DuplicatedFileName.toString())
         assert reasons.contains(ElaborationFailedReason.DuplicatedRegex.toString())
         assert reasons.contains(ElaborationFailedReason.InValidJsonSchema.toString())
         assert reasons.contains(ElaborationFailedReason.InValidJsonArraySchema.toString())

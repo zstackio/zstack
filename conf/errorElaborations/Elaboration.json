@@ -1,7 +1,56 @@
 [
   {
+    "category": "ACCOUNT",
+    "code": "1000",
+    "method": "distance",
+    "regex": "wrong account name or password",
+    "message_cn": "登陆帐号/密码出错",
+    "message_en": "wrong account name or password"
+  },
+  {
+    "category": "ACCOUNT",
+    "code": "1001",
+    "method": "distance",
+    "regex": "The session is invalid, either wrong session id or the session has been expired",
+    "message_cn": "session过期，或者提供了不正确的session id",
+    "message_en": "The session is invalid, either wrong session id or the session has been expired"
+  },
+  {
+    "category": "BS",
+    "code": "1001",
+    "method": "regex",
+    "regex": ".*certificate has expired or is not yet valid",
+    "message_cn": "当前系统时间不在镜像仓库证书有效期内, 调整过镜像仓库服务器的系统时间，或者证书被修改",
+    "message_en": "current System time has expired for imagestore certification, imagestore server system time or certification might be modified"
+  },
+  {
+    "category": "BS",
+    "code": "1002",
+    "method": "regex",
+    "regex": "duplicate backup storage. There has been an image store backup storage.*",
+    "message_cn": "重复的镜像仓库ip地址,该地址己经被[%1$s]使用",
+    "message_en": "duplicate backup storage. There has been an host[%1$s]"
+  },
+  {
+    "category": "CLOUDFORMATION",
+    "code": "1000",
+    "method": "regex",
+    "regex": "Fn::Join must be array and contain 2 params, .*",
+    "message_cn": "Fn::Join后面的参数出错，该参数应包含2个参数，第一个为String,第二个为数组",
+    "message_en": "Fn::Join must be array and contain 2 params, array[0] must be String, array[1] must be array!"
+  },
+  {
+    "category": "CLOUDFORMATION",
+    "code": "1001",
+    "method": "regex",
+    "regex": "Param .* has no value or default value found!",
+    "message_cn": "Parameter中的[%1$s]字段没有输入，并且也没有缺省值",
+    "message_en": "Parameter [%1$s] has no value or default value found!"
+  },
+  {
     "category": "Elaboration",
     "code": "1000",
+    "method": "distance",
     "regex": "%s is not existed or is empty folder",
     "message_cn": "不存在的文件: %1$s, 或文件夹为空",
     "message_en": "%1$s is not existed or is empty folder"
@@ -9,6 +58,7 @@
   {
     "category": "Elaboration",
     "code": "1001",
+    "method": "distance",
     "regex": "read error elaboration template files [%s] failed, due to: %s",
     "message_cn": "无法读取错误码文件: %1$s",
     "message_en": "read error elaboration template files [%1$s] failed"
@@ -16,6 +66,7 @@
   {
     "category": "Elaboration",
     "code": "1002",
+    "method": "distance",
     "regex": "input args 'regex' or 'category' must be set",
     "message_cn": "输入参数中'regex'或'category'必须设置",
     "message_en": "input args 'regex' or 'category' must be set"
@@ -23,6 +74,7 @@
   {
     "category": "Elaboration",
     "code": "1003",
+    "method": "distance",
     "regex": "%s is not a Long value Number",
     "message_cn": "输入参数中'%1$s'不是有效的Long字段",
     "message_en": "%1$s is not a Long value Number"
@@ -30,6 +82,7 @@
   {
     "category": "Elaboration",
     "code": "1004",
+    "method": "distance",
     "regex": "arg 'startTime' should format like 'yyyy-MM-dd HH:mm:ss' or '1545380003000'",
     "message_cn": "输入参数中'startTime'的格式应该类似'yyyy-MM-dd HH:mm:ss' 或者 '1545380003000'",
     "message_en": "arg 'startTime' should format like 'yyyy-MM-dd HH:mm:ss' or '1545380003000'"
@@ -37,8 +90,257 @@
   {
     "category": "Elaboration",
     "code": "1005",
+    "method": "distance",
     "regex": "elaboration code must be number!",
     "message_cn": "错误码必须是个数字",
     "message_en": "elaboration code must be number"
+  },
+  {
+    "category": "HOST",
+    "code": "1000",
+    "method": "distance",
+    "regex": "host is connecting, ping failed",
+    "message_cn": "物理机正在连接, 不能进行ping操作",
+    "message_en": "host is connecting, cannot ping"
+  },
+  {
+    "category": "HOST",
+    "code": "1001",
+    "method": "distance",
+    "regex": "User name or password or port number may be problematic",
+    "message_cn": "用户名、密码或者端口可能是错误的",
+    "message_en": "User name or password or port number may be problematic"
+  },
+  {
+    "category": "HOST",
+    "code": "1002",
+    "method": "distance",
+    "regex": "host[uuid:%s, name:%s] is in status[%s], cannot perform required operation",
+    "message_cn": "物理机[%2$s]正处于[%3$s]状态, 当前状态不允许进行该操作",
+    "message_en": "Host[%2$s] is in status [%3$s], and unable to perform required operation"
+  },
+  {
+    "category": "HOST",
+    "code": "1003",
+    "method": "distance",
+    "regex": "unable to do the operation because the host is in status of Disconnected",
+    "message_cn": "物理机正处于己失联[Disconnected]状态, 物理机不能进行该操作",
+    "message_en": "Host is in status [Disconnected] and unable to perform required operation"
+  },
+  {
+    "category": "HOST",
+    "code": "1004",
+    "method": "distance",
+    "regex": "unable to connect to KVM[ip:%s, username:root, sshPort:%s] to check the management node connectivity,please check if username/password is wrong; null",
+    "message_cn": "物理机的ssh端口与管理节点不通, 或者ssh端口的用户名密码有误, 不能连接物理机",
+    "message_en": "ssh port on host unable to connect to management node, or username/password is wrong"
+  },
+  {
+    "category": "HOST",
+    "code": "1005",
+    "method": "regex",
+    "regex": "shell command\\[sudo PYTHONPATH.*zstacklib-[0-9.]*tar.gz.*failed\n ret code: 1",
+    "message_cn": "pip安装失败。因为pip安装文件不完整，或者pip版本不正确",
+    "message_en": "pip install failed, pip install file broken"
+  },
+  {
+    "category": "HOST",
+    "code": "1006",
+    "method": "regex",
+    "regex": ".*can not update host\\[uuid:.*]which is connecting or creating, please wait.*",
+    "message_cn": "无法更新正在连接或创建的主机[uuid:%1$s]，请稍候",
+    "message_en": "can not update host[uuid:%1$s]which is connecting or creating, please wait"
+  },
+  {
+    "category": "L2Network",
+    "code": "1000",
+    "method": "distance",
+    "regex": "There has been a L2VlanNetwork[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s], vlan[%s]. Failed to attach L2VlanNetwork[uuid:%s]",
+    "message_cn": "L2VlanNetwork挂载失败，L2网络的物理接口[%4$s]已经被L2VlanNetwork网络[%2$s]挂载到集群上",
+    "message_en": "L2VlanNetwork attached failed, the physical interface[%4$s] has already been attached to the cluster by L2VlanNetwork[%2$s]"
+  },
+  {
+    "category": "L2Network",
+    "code": "1001",
+    "method": "distance",
+    "regex": "There has been a l2Network[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s]. Failed to attach l2Network[uuid:%s]",
+    "message_cn": "L2网络挂载失败, L2网络的物理接口[%4$s]已经被L2网络[%2$s]挂载到集群上",
+    "message_en": "L2Network attached failed, the physical interface[%4$s] has already been attached to the cluster by L2Network[%2$s]"
+  },
+  {
+    "category": "L2Network",
+    "code": "1002",
+    "method": "distance",
+    "regex": "failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]",
+    "message_cn": "L2网络挂载失败， 没有在kvm host上找到这个网络物理接口: [%1$s]",
+    "message_en": "L2 Network attached failed， failed to check physical network interfaces on kvm host: [%1$s]"
+  },
+  {
+    "category": "LICENSE",
+    "code": "1000",
+    "method": "distance",
+    "regex": "the license has been expired, please renew it",
+    "message_cn": "证书己过期",
+    "message_en": "the license has been expired"
+  },
+  {
+    "category": "MN",
+    "code": "1000",
+    "method": "distance",
+    "regex": "management node[uuid:%s] is unavailable",
+    "message_cn": "管理节点暂时不可访问",
+    "message_en": "management node is unavailable"
+  },
+  {
+    "category": "PS",
+    "code": "1001",
+    "method": "distance",
+    "regex": "failed to detach data volume[uuid:%s, installPath:%s] from vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because unable to detach the volume from the vm;it's still attached after 5 seconds",
+    "message_cn": "由于云主机操作系统限制可能会导致卸载云盘失败，请尝试对云主机关机后再次卸载",
+    "message_en": "Detach volume may fail due to limitations of the VM operating system, please try again after VM shut down."
+  },
+  {
+    "category": "PS",
+    "code": "1002",
+    "method": "regex",
+    "regex": ".*the physical capacity usage of the host.* has exceeded the threshold.*",
+    "message_cn": "物理机的物理容量己经超过了阈值[%2$s]",
+    "message_en": "the physical capacity usage of the host has exceeded the threshold[%2$s]."
+  },
+  {
+    "category": "PS",
+    "code": "1003",
+    "method": "regex",
+    "regex": "required local primary storage.* cannot satisfy conditions.*, or hosts providing the primary storage don't satisfy conditions\\[.*, size \u003e .*]",
+    "message_cn": "localstorage主存储的状态不是Enabled/Connected, 或者主存储内的物理机状态不满足条件：[状态为Enabled/Connected,存储容量 \u003e %6$s字节]",
+    "message_en": "local primary storage cannot satisfy conditions: status Enabled/Connected, or hosts providing the primary storage don't satisfy conditions: status Enabled/Connectd, size \u003e %6$s bytes"
+  },
+  {
+    "category": "PS",
+    "code": "1004",
+    "method": "regex",
+    "regex": "the required host.* or doesn't belong to a local primary storage satisfying conditions.* or its cluster doesn't attach to any local primary storage",
+    "message_cn": "所需要的物理机属于以下情况: 1 状态不为Enabled/Connected, 2 所属于的localstorage状态不为enabled/Connected, 3 所属的cluster没有挂载到任何localstorage上",
+    "message_en": "the required host belong to the bellow conditions: 1 status/state not Enabled/Connected, 2 the localstorages which belong to are not Enabled/Connected, 3 the cluster does not attached to any localstorage"
+  },
+  {
+    "category": "PS",
+    "code": "1005",
+    "method": "regex",
+    "regex": "no local primary storage in zone.* or contain hosts satisfying conditions.*",
+    "message_cn": "该zone内所有的localstorage都不满足以下条件: 1 状态为Enabled/Connected, 2 没有包含任何状态为Enabled/Connected,并且存储容量 \u003e %6$s字节的物理机",
+    "message_en": "no local primary storage in the zone is satisfing the bellow conditions: 1 status/state is Enabled/Connectd, 2 contains hosts which is Enabled/Connected and size \u003e %6$s bytes"
+  },
+  {
+    "category": "PS",
+    "code": "1006",
+    "method": "regex",
+    "regex": "no local primary storage can satisfy conditions.* or contain hosts satisfying conditions.*, size .*",
+    "message_cn": "所有的localstorage都不满足以下条件: 1 状态为Enabled/Connected, 2 没有包含任何状态为Enabled/Connected,并且存储容量 \u003e %6$s字节的物理机",
+    "message_en": "no local primary storage is satisfing the bellow conditions: 1 status/state is Enabled/Connectd, 2 contains hosts which is Enabled/Connected and size \u003e %6$s bytes"
+  },
+  {
+    "category": "VM",
+    "code": "1000",
+    "method": "distance",
+    "regex": "The state of vm[uuid:%s] is %s. Only these state[Running,Stopped] is allowed to update cpu or memory.",
+    "message_cn": "云主机的状态为%2$s,只有状态[Running,Stopped]允许升级CPU/内存",
+    "message_en": "vm status is %2$s now, only states[Running,Stopped] is allowed to update cpu or memory"
+  },
+  {
+    "category": "VM",
+    "code": "1001",
+    "method": "regex",
+    "regex": "no Enabled hosts found in the \\[[0-9]*] candidate hosts",
+    "message_cn": "找不到合适的host来启动vm, 因为满足分配条件的%1$s个hosts都不处于Enable状态",
+    "message_en": "unable to allocate hosts, because the %1$s hosts which satisfied to allocate are not in Enable status"
+  },
+  {
+    "category": "VM",
+    "code": "1002",
+    "method": "regex",
+    "regex": "no Connected hosts found in the \\[[0-9]*] candidate hosts",
+    "message_cn": "找不到合适的host来启动vm, 因为满足分配条件的%1$s个hosts都不处于Connected状态",
+    "message_en": "unable to allocate hosts, because the %1$s hosts which satisfied to allocate are not in Connected status"
+  },
+  {
+    "category": "VM",
+    "code": "1003",
+    "method": "regex",
+    "regex": "no Connected hosts found in the \\[[0-9]*] candidate hosts having the hypervisor type \\[.*]",
+    "message_cn": "找不到合适的host来启动vm, 因为满足分配条件的%1$s个hosts都不是%2$s的虚拟化类型",
+    "message_en": "unable to allocate hosts, because the %1$s hosts which satisfied to allocate are not %2$s hypervisor type"
+  },
+  {
+    "category": "VM",
+    "code": "1004",
+    "method": "regex",
+    "regex": "no host having cpu\\[[0-9]*], memory\\[[0-9]* bytes] found",
+    "message_cn": "找不到合适的host来启动vm, 因为可以用于分配vm的host都没有足够的资源: cpu [%1$s], 内存 [%2$s]",
+    "message_en": "unable to allocate hosts, because no hosts has enough resource: cpu [%1$s], memory [%2$s]"
+  },
+  {
+    "category": "VM",
+    "code": "1005",
+    "method": "regex",
+    "regex": "the vm.*, but the host is either not having enough CPU/memory or in the state\\[Enabled] or status\\[Connected] to start the vm",
+    "message_cn": "找不到合适的host来启动vm, 因为主存储是localstorage的vm只能启动在host[%2$s]上，但这个host没有足够的cpu/memory资源，或不处于Enabled/Connected 状态",
+    "message_en": "the vm using local primary storage, it can only be started on the host[%2$s], but the host is either not having enough cpu/memory, or in the Enabled/Connected status"
+  },
+  {
+    "category": "VM",
+    "code": "1006",
+    "method": "regex",
+    "regex": "after filtering, .* returns zero candidate host, it means: .*",
+    "message_cn": "创建云主机在[%1$s]这个过滤器后找不到满足条件的host了，这意味着 [%2$s]",
+    "message_en": "after filtering[%1$s] returns zero candidate host, it means: [%2$s]"
+  },
+  {
+    "category": "VM",
+    "code": "1007",
+    "method": "regex",
+    "regex": "No host with .* found",
+    "message_cn": "以下条件导致分配时没有可满足的host: %1$s",
+    "message_en": "No host with [%1$s] found"
+  },
+  {
+    "category": "VM",
+    "code": "1008",
+    "method": "regex",
+    "regex": "unable to start the vm.*It doesn't have any nic, please attach a nic and try again",
+    "message_cn": "网卡删除后，无法重启主机",
+    "message_en": "cannot start vm because it doesn't have any nic"
+  },
+  {
+    "category": "VM",
+    "code": "1009",
+    "method": "regex",
+    "regex": "The vm's root volume is on the local storage.* however, the host on which the root volume is has been deleted",
+    "message_cn": "云主机的根盘在localstorage的主存储上,并且该根盘所在的host己经被删除",
+    "message_en": "The vm's root volume is on the local storage. however, the host on which the root volume is has been deleted"
+  },
+  {
+    "category": "VM",
+    "code": "1010",
+    "method": "regex",
+    "regex": "no host having state=Enabled status=Connected.*found",
+    "message_cn": "找不到状态为Enabled/Connected的host",
+    "message_en": "no host having state=Enabled status=Connected found"
+  },
+  {
+    "category": "VM",
+    "code": "1011",
+    "method": "regex",
+    "regex": "no host found in clusters that has attached to L2Networks which have L3Networks.*",
+    "message_cn": "这个L3网络所在的L2网络加载的所有集群中，都没有host",
+    "message_en": "no host found in clusters that has attached to L2Networks which have L3Networks"
+  },
+  {
+    "category": "VM",
+    "code": "1012",
+    "method": "regex",
+    "regex": "no host found in clusters which have attached to all primary storage .* volumes locate",
+    "message_cn": "与vm的volume所在的主存储所关联的所有集群中，都没有host",
+    "message_en": "no host found in clusters which have attached to all primary storage which the vm's volumes locate"
   }
 ]
