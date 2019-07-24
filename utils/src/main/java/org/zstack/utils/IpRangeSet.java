@@ -3,6 +3,7 @@ package org.zstack.utils;
 import com.google.common.collect.*;
 import com.google.common.collect.RangeSet;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.net.util.SubnetUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.HashSet;
@@ -14,16 +15,25 @@ import java.util.stream.Collectors;
 
 public class IpRangeSet {
     private static Pattern rangePattern = Pattern.compile("^([\\d.]+)(-[\\d.]+)?$");
+    private static Pattern cidrPattern = Pattern.compile("^([\\d.]+\\/.+)$");
     private RangeSet<Long> rangeSet = TreeRangeSet.create();
 
     private static String IP_SET_SEPARATOR = ",";
     private static String IP_SET_INVERT_PREFIX = "^";
 
     private void closed(String origin){
-        Matcher matcher = rangePattern.matcher(origin);
-        if (matcher.matches()) {
-            Long start = NetworkUtils.ipv4StringToLong(matcher.group(1));
-            Long end = Optional.ofNullable(matcher.group(2)).map(it -> NetworkUtils.ipv4StringToLong(it.replaceFirst("-", ""))).orElse(start);
+        Matcher rangeMatcher = rangePattern.matcher(origin);
+        Matcher cidrMatcher = cidrPattern.matcher(origin);
+        if (rangeMatcher.matches()) {
+            Long start = NetworkUtils.ipv4StringToLong(rangeMatcher.group(1));
+            Long end = Optional.ofNullable(rangeMatcher.group(2)).map(it -> NetworkUtils.ipv4StringToLong(it.replaceFirst("-", ""))).orElse(start);
+            rangeSet.add(Range.closed(start, end));
+        } else if (cidrMatcher.matches() && NetworkUtils.isCidr(cidrMatcher.group(1))) {
+            String cidr = cidrMatcher.group(1);
+            SubnetUtils utils = new SubnetUtils(cidr);
+            SubnetUtils.SubnetInfo subnet = utils.getInfo();
+            Long start = NetworkUtils.ipv4StringToLong(subnet.getLowAddress());
+            Long end = NetworkUtils.ipv4StringToLong(subnet.getHighAddress());
             rangeSet.add(Range.closed(start, end));
         } else {
             throw new IllegalArgumentException(String.format("illegal word[%s] for ip range", origin));
@@ -32,6 +42,10 @@ public class IpRangeSet {
 
     private void remove(IpRangeSet exclude) {
        rangeSet.removeAll(exclude.rangeSet);
+    }
+
+    public boolean contains(Long ip) {
+        return rangeSet.contains(ip);
     }
 
     public long size() {
@@ -43,7 +57,7 @@ public class IpRangeSet {
         return size;
     }
 
-    public static Set<String> listAllIps(String word, long limit) {
+    public static IpRangeSet generateIpRangeSet(String word) {
         word = StringUtils.deleteWhitespace(word);
         String[] sets = word.split(IP_SET_SEPARATOR);
         IpRangeSet contain = new IpRangeSet();
@@ -57,6 +71,12 @@ public class IpRangeSet {
         }
 
         contain.remove(exclude);
+
+        return contain;
+    }
+
+    public static Set<String> listAllIps(String word, long limit) {
+        IpRangeSet contain = generateIpRangeSet(word);
 
         long size = contain.size();
         if (size == 0) {

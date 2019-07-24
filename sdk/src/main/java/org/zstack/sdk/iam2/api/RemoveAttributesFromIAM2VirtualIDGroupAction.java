@@ -46,6 +46,9 @@ public class RemoveAttributesFromIAM2VirtualIDGroupAction extends AbstractAction
     @Param(required = false)
     public String accessKeySecret;
 
+    @Param(required = false)
+    public String requestIp;
+
     @NonAPIParam
     public long timeout = -1;
 

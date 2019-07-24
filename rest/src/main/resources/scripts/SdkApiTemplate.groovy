@@ -214,6 +214,11 @@ class SdkApiTemplate implements SdkTemplate {
 """)
         }
 
+        output.add("""\
+    @Param(required = false)
+    public String requestIp;
+""")
+
         if (!APISyncCallMessage.class.isAssignableFrom(apiMessageClass)) {
             output.add("""\
     @NonAPIParam

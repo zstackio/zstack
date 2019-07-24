@@ -37,6 +37,9 @@ public class UpdateIAM2VirtualIDAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String password;
 
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String oldPassword;
+
     @Param(required = false)
     public java.util.List systemTags;
 
@@ -51,6 +54,9 @@ public class UpdateIAM2VirtualIDAction extends AbstractAction {
 
     @Param(required = false)
     public String accessKeySecret;
+
+    @Param(required = false)
+    public String requestIp;
 
     @NonAPIParam
     public long timeout = -1;

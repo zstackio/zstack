@@ -82,16 +82,35 @@ public class AccountBase extends AbstractAccount {
 
     private void handle(APIUpdateAccountMsg msg) {
         AccountVO account = dbf.findByUuid(msg.getUuid(), AccountVO.class);
+
+        if (msg.getPassword() != null) {
+            for(PasswordUpdateExtensionPoint ext : pluginRgty.getExtensionList(PasswordUpdateExtensionPoint.class)) {
+                ext.preUpdatePassword(account.getUuid(), account.getPassword(), msg.getPassword());
+            }
+        }
+
         if (msg.getName() != null) {
             account.setName(msg.getName());
         }
         if (msg.getDescription() != null) {
             account.setDescription(msg.getDescription());
         }
-        if (msg.getPassword() != null) {
+
+        boolean passwordUpdated = false;
+        String oldPassword = null;
+        if (msg.getPassword() != null && !msg.getPassword().equals(account.getPassword())) {
+            oldPassword = account.getPassword();
             account.setPassword(msg.getPassword());
+            passwordUpdated = true;
+
         }
         account = dbf.updateAndRefresh(account);
+
+        if (passwordUpdated) {
+            for(PasswordUpdateExtensionPoint ext : pluginRgty.getExtensionList(PasswordUpdateExtensionPoint.class)) {
+                ext.afterUpdatePassword(account.getUuid(), oldPassword);
+            }
+        }
 
         APIUpdateAccountEvent evt = new APIUpdateAccountEvent(msg.getId());
         evt.setInventory(AccountInventory.valueOf(account));
@@ -541,6 +560,10 @@ public class AccountBase extends AbstractAccount {
         if (!AccountConstant.INITIAL_SYSTEM_ADMIN_UUID.equals(msg.getAccountUuid()) && !user.getAccountUuid().equals(msg.getAccountUuid())) {
             throw new OperationFailureException(argerr("the user[uuid:%s] does not belong to the" +
                     " account[uuid:%s]", user.getUuid(), msg.getAccountUuid()));
+        }
+
+        if (msg.getOldPassword() != null && !msg.getOldPassword().equals(user.getPassword())){
+            throw new OperationFailureException(argerr("old password is not equal to the original password, cannot update the password of user[uuid:%s]", user.getUuid()));
         }
 
         boolean update = false;
