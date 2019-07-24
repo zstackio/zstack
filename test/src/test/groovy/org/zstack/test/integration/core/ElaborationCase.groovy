@@ -51,17 +51,17 @@ class ElaborationCase extends SubCase {
     void testElaborationWithLongName() {
         def err = Platform.operr("host[uuid:%s, name:%s] is in status[%s], cannot perform required operation", Platform.uuid, "long long long long long long long long long host name", "Connecting") as ErrorCode
         assert err.elaboration != null
-        assert err.elaboration.trim() == "错误信息: 物理机[long long long long long long long long long host name]正处于[Connecting]状态, 当前状态不允许进行该操作\n可能原因: 物理机正处于[Connecting]状态,当前状态不允许进行该操作\n操作建议: 请等待物理机退出[Connecting]状态"
+        assert err.elaboration.trim() == "错误信息: 物理机[long long long long long long long long long host name]正处于[Connecting]状态, 当前状态不允许进行该操作"
     }
 
     void testElaboration() {
         def err = Platform.operr("certificate has expired or is not yet valid") as ErrorCode
         assert err.elaboration != null
-        assert err.elaboration.trim() == "错误信息: 当前系统时间不在镜像仓库证书有效期内, 调整过镜像仓库服务器的系统时间，或者证书被修改\n可能原因: 调整过镜像仓库服务器的系统时间，或者证书被修改\n操作建议: 检查镜像服务器系统时间，或重置镜像仓库证书"
+        assert err.elaboration.trim() == "错误信息: 当前系统时间不在镜像仓库证书有效期内, 调整过镜像仓库服务器的系统时间，或者证书被修改"
 
         err = Platform.operr("The state of vm[uuid:%s] is %s. Only these state[Running,Stopped] is allowed to update cpu or memory.", Platform.uuid, "Rebooting") as ErrorCode
         assert err.elaboration != null
-        assert err.elaboration.trim() == "错误信息: 云主机的状态为Rebooting,只有状态[Running,Stopped]允许升级CPU/内存\n操作建议: 等待云主机进入[Running,Stopped]状态后，再升级CPU/内存"
+        assert err.elaboration.trim() == "错误信息: 云主机的状态为Rebooting,只有状态[Running,Stopped]允许升级CPU/内存"
 
         err = Platform.operr("test for missed error") as ErrorCode
         assert err.elaboration == null
