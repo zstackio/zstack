@@ -82,16 +82,33 @@ public class AccountBase extends AbstractAccount {
 
     private void handle(APIUpdateAccountMsg msg) {
         AccountVO account = dbf.findByUuid(msg.getUuid(), AccountVO.class);
+
+        for(AccountUpdateExtensionPoint ext : pluginRgty.getExtensionList(AccountUpdateExtensionPoint.class)) {
+            ext.preUpdatePassword(account.getUuid(), account.getPassword(), msg.getPassword());
+        }
+
         if (msg.getName() != null) {
             account.setName(msg.getName());
         }
         if (msg.getDescription() != null) {
             account.setDescription(msg.getDescription());
         }
-        if (msg.getPassword() != null) {
+
+        boolean passwordUpdated = false;
+        String oldPassword = null;
+        if (msg.getPassword() != null && !msg.getPassword().equals(account.getPassword())) {
+            oldPassword = account.getPassword();
             account.setPassword(msg.getPassword());
+            passwordUpdated = true;
+
         }
         account = dbf.updateAndRefresh(account);
+
+        if (passwordUpdated) {
+            for(AccountUpdateExtensionPoint ext : pluginRgty.getExtensionList(AccountUpdateExtensionPoint.class)) {
+                ext.afterUpdatePassword(account.getUuid(), oldPassword);
+            }
+        }
 
         APIUpdateAccountEvent evt = new APIUpdateAccountEvent(msg.getId());
         evt.setInventory(AccountInventory.valueOf(account));
