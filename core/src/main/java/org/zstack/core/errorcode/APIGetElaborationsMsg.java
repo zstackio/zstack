@@ -17,6 +17,8 @@ public class APIGetElaborationsMsg extends APISyncCallMessage {
     @APIParam(required = false)
     private String category;
     @APIParam(required = false)
+    private String code;
+    @APIParam(required = false)
     private String regex;
 
     public String getCategory() {
@@ -33,6 +35,14 @@ public class APIGetElaborationsMsg extends APISyncCallMessage {
 
     public void setRegex(String regex) {
         this.regex = regex;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public static APIGetElaborationsMsg __example__() {

@@ -44,54 +44,6 @@ public class ElaborationContent  {
         return this.message_en;
     }
 
-    public java.lang.String operation_cn;
-    public void setOperation_cn(java.lang.String operation_cn) {
-        this.operation_cn = operation_cn;
-    }
-    public java.lang.String getOperation_cn() {
-        return this.operation_cn;
-    }
-
-    public java.lang.String operation_en;
-    public void setOperation_en(java.lang.String operation_en) {
-        this.operation_en = operation_en;
-    }
-    public java.lang.String getOperation_en() {
-        return this.operation_en;
-    }
-
-    public java.lang.String causes_cn;
-    public void setCauses_cn(java.lang.String causes_cn) {
-        this.causes_cn = causes_cn;
-    }
-    public java.lang.String getCauses_cn() {
-        return this.causes_cn;
-    }
-
-    public java.lang.String causes_en;
-    public void setCauses_en(java.lang.String causes_en) {
-        this.causes_en = causes_en;
-    }
-    public java.lang.String getCauses_en() {
-        return this.causes_en;
-    }
-
-    public java.lang.String extension_cn;
-    public void setExtension_cn(java.lang.String extension_cn) {
-        this.extension_cn = extension_cn;
-    }
-    public java.lang.String getExtension_cn() {
-        return this.extension_cn;
-    }
-
-    public java.lang.String extension_en;
-    public void setExtension_en(java.lang.String extension_en) {
-        this.extension_en = extension_en;
-    }
-    public java.lang.String getExtension_en() {
-        return this.extension_en;
-    }
-
     public java.lang.String source;
     public void setSource(java.lang.String source) {
         this.source = source;
@@ -100,12 +52,20 @@ public class ElaborationContent  {
         return this.source;
     }
 
-    public java.lang.String url;
-    public void setUrl(java.lang.String url) {
-        this.url = url;
+    public java.lang.String method;
+    public void setMethod(java.lang.String method) {
+        this.method = method;
     }
-    public java.lang.String getUrl() {
-        return this.url;
+    public java.lang.String getMethod() {
+        return this.method;
+    }
+
+    public java.lang.Double distance;
+    public void setDistance(java.lang.Double distance) {
+        this.distance = distance;
+    }
+    public java.lang.Double getDistance() {
+        return this.distance;
     }
 
 }
