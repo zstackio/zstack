@@ -286,7 +286,7 @@ public class ZSClient {
 
         private void calculateAccessKeySignature(Request.Builder reqBuilder, String accessKeyId, String accessKeySecret, String path) throws Exception{
             Date date = new Date();
-            SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
+            SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH);
             String dateStr = sdf.format(date);
 
             StringBuilder sb = new StringBuilder();
