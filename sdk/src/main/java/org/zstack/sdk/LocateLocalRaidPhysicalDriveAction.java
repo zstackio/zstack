@@ -91,7 +91,7 @@ public class LocateLocalRaidPhysicalDriveAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/storage-devices/local-drive/physical-drives/{uuid}/actions";
+        info.path = "/storage-devices/local-raid/physical-drives/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "locateLocalRaidPhysicalDrive";

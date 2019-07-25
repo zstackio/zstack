@@ -82,7 +82,7 @@ public class GetLocalRaidPhysicalDriveSmartAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/storage-devices/local-drive/physical-drives/{uuid}/smart";
+        info.path = "/storage-devices/local-raid/physical-drives/{uuid}/smart";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
