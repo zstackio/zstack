@@ -13,7 +13,18 @@
             <Policies>
                 <SizeBasedTriggeringPolicy size="200 MB" />
             </Policies>
-            <DefaultRolloverStrategy max="1"/>
+            <DefaultRolloverStrategy max="1">
+                <Delete basePath="${sys:catalina.home}/logs/" maxDepth="2">
+                    <IfFileName glob="management-server-*.log.gz">
+                        <IfAny>
+                            <IfAny>
+                                <IfAccumulatedFileSize exceeds="-1 MB" />
+                                <IfLastModified age="-1d" />
+                            </IfAny>
+                        </IfAny>
+                    </IfFileName>
+                </Delete>
+            </DefaultRolloverStrategy>
         </RollingFile>
 
         <RollingFile name="DiskCapacityLogger" fileName="disk-capacity.log"
@@ -46,7 +57,16 @@
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB" />
             </Policies>
-            <DefaultRolloverStrategy max="20"/>
+            <DefaultRolloverStrategy max="20">
+                <Delete basePath="${sys:catalina.home}/logs/" maxDepth="2">
+                    <IfFileName glob="zstack-api-*.log.gz">
+                        <IfAny>
+                            <IfAccumulatedFileSize exceeds="-1 MB" />
+                            <IfLastModified age="-1d" />
+                        </IfAny>
+                    </IfFileName>
+                </Delete>
+            </DefaultRolloverStrategy>
         </RollingFile>
 
         <Async name="Async" ignoreExceptions="false" bufferSize="512">

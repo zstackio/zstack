@@ -335,6 +335,7 @@ public class GlobalConfig {
                 ext.beforeUpdateExtensionPoint(origin, newValue);
             } catch (Throwable t) {
                 logger.warn(String.format("unhandled exception when calling %s", ext.getClass()), t);
+                throw t;
             }
         }
 
@@ -344,6 +345,7 @@ public class GlobalConfig {
                     ext.beforeUpdateExtensionPoint(origin, newValue);
                 } catch (Throwable t) {
                     logger.warn(String.format("unhandled exception when calling %s", ext.getClass()), t);
+                    throw t;
                 }
             }
         }

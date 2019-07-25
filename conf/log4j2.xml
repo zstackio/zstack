@@ -9,7 +9,18 @@
             <Policies>
                 <SizeBasedTriggeringPolicy size="450 MB"/>
             </Policies>
-            <DefaultRolloverStrategy max="50"/>
+            <DefaultRolloverStrategy max="50">
+                <Delete basePath="${sys:catalina.home}/logs/" maxDepth="2">
+                    <IfFileName glob="management-server-*.log.gz">
+                        <IfAny>
+                            <IfAny>
+                                <IfAccumulatedFileSize exceeds="-1 MB" />
+                                <IfLastModified age="-1d" />
+                            </IfAny>
+                        </IfAny>
+                    </IfFileName>
+                </Delete>
+            </DefaultRolloverStrategy>
         </RollingFile>
 
 	    <RollingFile name="ApiRequestLogger" fileName="${sys:catalina.home}/logs/zstack-api.log"
@@ -20,7 +31,16 @@
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB" />
             </Policies>
-            <DefaultRolloverStrategy max="50"/>
+            <DefaultRolloverStrategy max="50">
+	           	<Delete basePath="${sys:catalina.home}/logs/" maxDepth="2">
+	          		<IfFileName glob="zstack-api-*.log.gz">
+                        <IfAny>
+                            <IfAccumulatedFileSize exceeds="-1 MB" />
+                            <IfLastModified age="-1d" />
+                        </IfAny>
+                    </IfFileName>
+	        	</Delete>
+            </DefaultRolloverStrategy>
         </RollingFile>
 
         <RollingFile name="DiskCapacityLogger" fileName="${sys:catalina.home}/logs/zstack-disk-capacity.log"
@@ -45,7 +65,6 @@
             </Policies>
             <DefaultRolloverStrategy max="50"/>
         </RollingFile>
-
 
         <Async name="Async" ignoreExceptions="false" bufferSize="512">
             <AppenderRef ref="RollingFile"/>
