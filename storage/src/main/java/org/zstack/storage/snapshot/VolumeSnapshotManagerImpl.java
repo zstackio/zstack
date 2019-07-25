@@ -1099,7 +1099,11 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
             private void check(APICreateVolumeSnapshotGroupMsg msg, Map<String, Quota.QuotaPair> pairs) {
                 String resourceTargetOwnerUuid = new QuotaUtil().getResourceOwnerAccountUuid(msg.getVolumeUuid());
-                int snapCount = msg.getVmInstance().getAllVolumes().size();
+                long snapCount = SQL.New("select count(vol) from VolumeVO vol" +
+                        " where vol.vmInstanceUuid =" +
+                        " (select v.vmInstanceUuid from VolumeVO v where v.uuid = :uuid)", Long.class)
+                        .param("uuid", msg.getRootVolumeUuid())
+                        .find();
                 checkVolumeSnapshotNumQuota(msg.getSession().getAccountUuid(), resourceTargetOwnerUuid, snapCount, pairs);
             }
 
