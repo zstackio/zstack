@@ -94,4 +94,34 @@ CREATE TABLE  `zstack`.`HistoricalPasswordVO` (
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- -----------------------------------------------------------------------------------
+--  to create AccountResourceRefVO for PciDeviceSpecVO that are created before 3.5.0.1
+-- -----------------------------------------------------------------------------------
+DELIMITER $$
+CREATE PROCEDURE generatePciDeviceSpecVOAccountRef()
+    BEGIN
+        DECLARE pciSpecUuid VARCHAR(32);
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE cur CURSOR FOR SELECT uuid FROM `zstack`.`PciDeviceSpecVO` where uuid not in (SELECT DISTINCT resourceUuid from `zstack`.`AccountResourceRefVO` where resourceType="PciDeviceSpecVO");
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO pciSpecUuid;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            INSERT INTO `zstack`.`AccountResourceRefVO` (`accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`, `concreteResourceType`)
+            VALUES ("36c27e8ff05c4780bf6d2fa65700f22e", "36c27e8ff05c4780bf6d2fa65700f22e", pciSpecUuid, "PciDeviceSpecVO", 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), "org.zstack.pciDevice.specification.pci.PciDeviceSpecVO");
+        END LOOP;
+        CLOSE cur;
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+SET FOREIGN_KEY_CHECKS = 0;
+CALL generatePciDeviceSpecVOAccountRef();
+SET FOREIGN_KEY_CHECKS = 1;
+DROP PROCEDURE IF EXISTS generatePciDeviceSpecVOAccountRef;
+
 ALTER TABLE `zstack`.`PciDeviceVO` ADD COLUMN `iommuGroup` VARCHAR(255) DEFAULT NULL;
