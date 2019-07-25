@@ -352,6 +352,11 @@ public class ZSClient {
             } else {
                 reqBuilder.addHeader(Constants.HEADER_AUTHORIZATION, String.format("%s %s", Constants.OAUTH, qaction.sessionId));
             }
+
+            if (qaction.requestIp != null) {
+                reqBuilder.addHeader(Constants.HEADER_REQUEST_IP, qaction.requestIp);
+            }
+
             reqBuilder.url(urlBuilder.build()).get();
         }
 
@@ -453,6 +458,11 @@ public class ZSClient {
                 reqBuilder.url(builder.build()).method(info.httpMethod, RequestBody.create(Constants.JSON, gson.toJson(m)));
             }
 
+            Object requestIp = action.getParameterValue(Constants.REQUEST_IP, false);
+            if (requestIp != null) {
+                reqBuilder.addHeader(Constants.HEADER_REQUEST_IP, String.valueOf(requestIp));
+            }
+
             if (!info.needSession) {
                 return;
             }
@@ -503,6 +513,7 @@ public class ZSClient {
             final long i = this.getInterval();
 
             final Object sessionId = action.getParameterValue(Constants.SESSION_ID);
+            final Object requestIp = action.getParameterValue(Constants.REQUEST_IP);
             final Timer timer = new Timer();
 
             timer.schedule(new TimerTask() {
@@ -516,12 +527,17 @@ public class ZSClient {
 
                 @Override
                 public void run() {
-                    Request req = new Request.Builder()
+                    Request.Builder builder = new Request.Builder()
                             .url(url)
                             .addHeader(Constants.HEADER_AUTHORIZATION, String.format("%s %s", Constants.OAUTH, sessionId))
                             .addHeader(Constants.HEADER_JSON_SCHEMA, Boolean.TRUE.toString())
-                            .get()
-                            .build();
+                            .get();
+
+                    if (requestIp != null) {
+                        builder.addHeader(Constants.HEADER_REQUEST_IP, String.valueOf(requestIp));
+                    }
+
+                    Request req = builder.build();
 
                     try {
                         try (Response response = http.newCall(req).execute()) {
@@ -582,14 +598,20 @@ public class ZSClient {
             long interval = this.getInterval();
 
             Object sessionId = action.getParameterValue(Constants.SESSION_ID);
+            Object requestIp = action.getParameterValue(Constants.REQUEST_IP);
 
             while (current < expiredTime) {
-                Request req = new Request.Builder()
+                Request.Builder builder = new Request.Builder()
                         .url(url)
                         .addHeader(Constants.HEADER_AUTHORIZATION, String.format("%s %s", Constants.OAUTH, sessionId))
                         .addHeader(Constants.HEADER_JSON_SCHEMA, Boolean.TRUE.toString())
-                        .get()
-                        .build();
+                        .get();
+
+                if (requestIp != null) {
+                    builder.addHeader(Constants.HEADER_REQUEST_IP, String.valueOf(requestIp));
+                }
+
+                Request req = builder.build();
 
                 try {
                     try (Response response = http.newCall(req).execute()) {

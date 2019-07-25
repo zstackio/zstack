@@ -10,6 +10,7 @@ interface Constants {
     String HEADER_AUTHORIZATION = "Authorization";
     String OAUTH = "OAuth";
     String LOCATION = "location";
+    String REQUEST_IP = "requestIp";
 
     MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
@@ -22,6 +23,7 @@ interface Constants {
     String HEADER_API_TIMEOUT = "X-API-Timeout";
     String HEADER_WEBHOOK = "X-Web-Hook";
     String HEADER_JOB_SUCCESS = "X-Job-Success";
+    String HEADER_REQUEST_IP = "X-Request-Ip";
     String HEADER_DATE = "date";
     String HEADER_CONTENT_TYPE = "Content-Type";
 

@@ -40,6 +40,9 @@ public class LogOutAction extends AbstractAction {
     @NonAPIParam
     public boolean isSuppressCredentialCheck = true;
 
+    @Param(required = false)
+    public String requestIp;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
