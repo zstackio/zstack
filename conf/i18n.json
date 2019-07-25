@@ -17966,9 +17966,9 @@
     "fileName": "src/main/java/org/zstack/storage/snapshot/group/VolumeSnapshotGroupChecker.java"
   },
   {
-    "raw": "volume(s) %s is no longer attached.",
-    "en_US": "volume(s) {0} is no longer attached.",
-    "zh_CN": "快照组里的云盘{0}没有被加载到这个云主机上",
+    "raw": "volume(s) %s is no longer attached, please re-attach it.",
+    "en_US": "volume(s) {0} is no longer attached, please re-attach it.",
+    "zh_CN": "云盘{0}已被卸载，请重新加载",
     "arguments": [
       "String.join(\", \", detachedVolInfos)"
     ],
@@ -17976,9 +17976,9 @@
     "fileName": "src/main/java/org/zstack/storage/snapshot/group/VolumeSnapshotGroupChecker.java"
   },
   {
-    "raw": "new volume(s) %s attached after snapshot point.",
-    "en_US": "new volume(s) {0} attached after snapshot point.",
-    "zh_CN": "在快照点之后加载了新的云盘{0}",
+    "raw": "new volume(s) %s attached after snapshot point, please detach it.",
+    "en_US": "new volume(s) {0} attached after snapshot point, please detach it.",
+    "zh_CN": "在快照点之后加载了新的云盘{0}，请卸载",
     "arguments": [
       "volInfos"
     ],

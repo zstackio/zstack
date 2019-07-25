@@ -1957,6 +1957,7 @@ public class VolumeBase implements Volume {
             volumesSnapshotsJobs.add(volumesSnapshotsJob);
         }
         cmsg.setVolumeSnapshotJobs(volumesSnapshotsJobs);
+        cmsg.setConsistentType(ConsistentType.None);
 
         bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, msg.getRootVolumeUuid());
         bus.send(cmsg, new CloudBusCallBack(evt) {

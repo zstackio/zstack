@@ -78,14 +78,14 @@ public class VolumeSnapshotGroupChecker {
         }
 
         if (!detachedVolInfos.isEmpty()) {
-            reason.add(i18n("volume(s) %s is no longer attached.", String.join(", ", detachedVolInfos)));
+            reason.add(i18n("volume(s) %s is no longer attached, please re-attach it.", String.join(", ", detachedVolInfos)));
         }
 
         if (!newAttachedVol.isEmpty()) {
             String volInfos = String.join(", ", newAttachedVol.entrySet().stream().map(e ->
                     String.format("[uuid:%s, name:%s]", e.getKey(), e.getValue()))
                     .collect(Collectors.toList()));
-            reason.add(i18n("new volume(s) %s attached after snapshot point.", volInfos));
+            reason.add(i18n("new volume(s) %s attached after snapshot point, please detach it.", volInfos));
         }
         return new VolumeSnapshotGroupAvailability(group.getUuid(), String.join("\n", reason));
     }

@@ -727,33 +727,35 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
     @Override
     public void beforeTakeLiveSnapshotsOnVolumes(CreateVolumesSnapshotOverlayInnerMsg msg, TakeVolumesSnapshotOnKvmMsg otmsg, Map flowData, Completion completion) {
-        Integer isCephPs = 0;
+        List<CreateVolumesSnapshotsJobStruct> cephStructs = new ArrayList<>();
         for (CreateVolumesSnapshotsJobStruct struct : msg.getVolumeSnapshotJobs()) {
             if (Q.New(CephPrimaryStorageVO.class)
                     .eq(CephPrimaryStorageVO_.uuid, struct.getPrimaryStorageUuid())
                     .isExists()) {
-                isCephPs += 1;
+                cephStructs.add(struct);
+                otmsg.getSnapshotJobs().removeIf(it -> it.getVolumeUuid().equals(struct.getVolumeUuid()));
             }
         }
 
-        if (isCephPs.equals(0)) {
+        if (cephStructs.isEmpty()) {
             completion.success();
             return;
         }
 
-        if (isCephPs < msg.getVolumeSnapshotJobs().size()) {
-            throw new OperationFailureException(operr("not support take volumes snapshots " +
+        if (cephStructs.size() == msg.getVolumeSnapshotJobs().size()) {
+            flowData.put(VolumeSnapshotConstant.NEED_BLOCK_STREAM_ON_HYPERVISOR, false);
+            flowData.put(VolumeSnapshotConstant.NEED_TAKE_SNAPSHOTS_ON_HYPERVISOR, false);
+        } else if (msg.getConsistentType() != ConsistentType.None) {
+            completion.fail(operr("not support take volumes snapshots " +
                     "on multiple ps when including ceph"));
+            return;
         }
 
         logger.info(String.format("take snapshots for volumes[%s] on %s",
                 msg.getLockedVolumeUuids(), getClass().getCanonicalName()));
 
-        flowData.put(VolumeSnapshotConstant.NEED_BLOCK_STREAM_ON_HYPERVISOR, false);
-        flowData.put(VolumeSnapshotConstant.NEED_TAKE_SNAPSHOTS_ON_HYPERVISOR, false);
-
         ErrorCodeList errList = new ErrorCodeList();
-        new While<>(msg.getVolumeSnapshotJobs()).all((struct, whileCompletion) -> {
+        new While<>(cephStructs).all((struct, whileCompletion) -> {
             VolumeSnapshotVO vo = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, struct.getResourceUuid()).find();
             if (vo.getStatus().equals(VolumeSnapshotStatus.Ready)) {
                 logger.warn(String.format("snapshot %s on volume %s is ready, no need to create again!",

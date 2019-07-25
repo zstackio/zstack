@@ -12,7 +12,7 @@ import java.util.List;
 public class CreateVolumesSnapshotMsg extends NeedReplyMessage implements NeedQuotaCheckMessage, VolumeMessage {
     private String accountUuid;
 
-    private Boolean atomic = true;
+    private ConsistentType consistentType = ConsistentType.Crash;
 
     private List<CreateVolumesSnapshotsJobStruct> volumeSnapshotJobs;
 
@@ -32,16 +32,16 @@ public class CreateVolumesSnapshotMsg extends NeedReplyMessage implements NeedQu
         this.volumeSnapshotJobs = volumeSnapshotJobs;
     }
 
-    public Boolean getAtomic() {
-        return atomic;
-    }
-
-    public void setAtomic(Boolean atomic) {
-        this.atomic = atomic;
-    }
-
     @Override
     public String getVolumeUuid() {
         return volumeSnapshotJobs.get(0).getVolumeUuid();
+    }
+
+    public ConsistentType getConsistentType() {
+        return consistentType;
+    }
+
+    public void setConsistentType(ConsistentType consistentType) {
+        this.consistentType = consistentType;
     }
 }
