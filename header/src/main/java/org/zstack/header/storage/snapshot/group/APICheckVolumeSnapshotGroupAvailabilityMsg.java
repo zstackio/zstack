@@ -2,6 +2,7 @@ package org.zstack.header.storage.snapshot.group;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
@@ -18,6 +19,7 @@ import java.util.List;
         responseClass = APICheckVolumeSnapshotGroupAvailabilityReply.class
 )
 public class APICheckVolumeSnapshotGroupAvailabilityMsg extends APISyncCallMessage {
+    @APIParam(resourceType = VolumeSnapshotGroupVO.class)
     private List<String> uuids;
 
     public List<String> getUuids() {

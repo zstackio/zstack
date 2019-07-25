@@ -28,6 +28,14 @@ public class VolumeSnapshotGroupRefInventory  {
         return this.deviceId;
     }
 
+    public boolean snapshotDeleted;
+    public void setSnapshotDeleted(boolean snapshotDeleted) {
+        this.snapshotDeleted = snapshotDeleted;
+    }
+    public boolean getSnapshotDeleted() {
+        return this.snapshotDeleted;
+    }
+
     public java.lang.String volumeUuid;
     public void setVolumeUuid(java.lang.String volumeUuid) {
         this.volumeUuid = volumeUuid;

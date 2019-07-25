@@ -25,7 +25,7 @@ public class CheckVolumeSnapshotGroupAvailabilityAction extends AbstractAction {
         }
     }
 
-    @Param(required = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List uuids;
 
     @Param(required = false)
