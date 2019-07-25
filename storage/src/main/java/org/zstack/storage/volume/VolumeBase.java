@@ -1952,7 +1952,7 @@ public class VolumeBase implements Volume {
             volumesSnapshotsJob.setVolumeUuid(vol.getUuid());
             volumesSnapshotsJob.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
             volumesSnapshotsJob.setResourceUuid(getUuid());
-            volumesSnapshotsJob.setName(msg.getName());
+            volumesSnapshotsJob.setName(msg.getName() + "-" + vol.getName());
             volumesSnapshotsJob.setDescription(msg.getDescription());
             volumesSnapshotsJobs.add(volumesSnapshotsJob);
         }
