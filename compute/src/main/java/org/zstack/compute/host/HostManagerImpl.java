@@ -4,10 +4,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.*;
@@ -51,6 +53,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -120,6 +123,38 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
     private void handle(APIGetHostTaskMsg msg) {
         APIGetHostTaskReply reply = new APIGetHostTaskReply();
+        Map<String, List<String>> mnIds = msg.getHostUuids().stream().collect(
+                Collectors.groupingBy(huuid -> destMaker.makeDestination(huuid))
+        );
+        
+        new While<>(mnIds.entrySet()).all((e, compl) -> {
+            GetHostTaskMsg gmsg = new GetHostTaskMsg();
+            gmsg.setHostUuids(e.getValue());
+            bus.makeServiceIdByManagementNodeId(gmsg, HostConstant.SERVICE_ID, e.getKey());
+            bus.send(gmsg, new CloudBusCallBack(compl) {
+                @Override
+                public void run(MessageReply r) {
+                    if (r.isSuccess()) {
+                        GetHostTaskReply gr = r.castReply();
+                        reply.getResults().putAll(gr.getResults());
+                    } else {
+                        logger.error("get host task fail, because " + r.getError().getDetails());
+                    }
+
+                    compl.done();
+                }
+            });
+
+        }).run(new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(GetHostTaskMsg msg) {
+        GetHostTaskReply reply = new GetHostTaskReply();
         List<HostVO> vos = Q.New(HostVO.class).in(HostVO_.uuid, msg.getHostUuids()).list();
         vos.forEach(vo -> {
             HypervisorFactory factory = this.getHypervisorFactory(HypervisorType.valueOf(vo.getHypervisorType()));
@@ -165,6 +200,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             passThrough((HostMessage) msg);
         } else if (msg instanceof AddHostMsg){
             handle((AddHostMsg) msg);
+        } else if (msg instanceof GetHostTaskMsg) {
+            handle((GetHostTaskMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
