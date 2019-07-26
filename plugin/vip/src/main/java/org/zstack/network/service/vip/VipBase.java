@@ -34,6 +34,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
 import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.utils.CollectionUtils;
@@ -46,6 +47,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
@@ -710,7 +712,7 @@ public class VipBase {
         }
 
         final String issuer = VipVO.class.getSimpleName();
-        final List<VipInventory> ctx = Arrays.asList(VipInventory.valueOf(self));
+        final List<VipInventory> ctx = asList(VipInventory.valueOf(self));
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-vip-%s", self.getUuid()));
         chain.then(new ShareFlow() {
@@ -835,6 +837,18 @@ public class VipBase {
             if (enic == null || enic.getVmInstanceUuid().equals(nnic.getVmInstanceUuid())) {
                 continue;
             }
+
+            Boolean sameHaGroup = false;
+            for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+                sameHaGroup = ext.isVirtualRouterInSameHaPair(asList(nnic.getVmInstanceUuid(), enic.getVmInstanceUuid()));
+                if (sameHaGroup) {
+                    break;
+                }
+            }
+            if (sameHaGroup) {
+                continue;
+            }
+
             throw new CloudRuntimeException(String.format("the request to add peer l3[uuid:%s] with vip[uuid:%s] has " +
                             "attched vr[uuid:%s] and is not vr[uuid:%s] which exists peer l3 attached", peerL3NetworkUuid, self.getUuid(),
                     nnic.getVmInstanceUuid(), enic.getVmInstanceUuid()));
