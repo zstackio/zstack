@@ -148,7 +148,7 @@
     "code": "1006",
     "method": "regex",
     "regex": ".*can not update host\\[uuid:.*]which is connecting or creating, please wait.*",
-    "message_cn": "无法更新正在连接或创建的主机[uuid:%1$s]，请稍候",
+    "message_cn": "无法更新正在连接或创建的物理机[uuid:%1$s]，请稍候",
     "message_en": "can not update host[uuid:%1$s]which is connecting or creating, please wait"
   },
   {
@@ -204,8 +204,8 @@
     "code": "1002",
     "method": "regex",
     "regex": ".*the physical capacity usage of the host.* has exceeded the threshold.*",
-    "message_cn": "物理机的物理容量己经超过了阈值[%2$s]",
-    "message_en": "the physical capacity usage of the host has exceeded the threshold[%2$s]."
+    "message_cn": "物理机[uuid:%1$s]的己用容量超过了阈值[%2$s]",
+    "message_en": "the physical capacity usage of the host[uuid:%1$s] has exceeded the threshold[%2$s]."
   },
   {
     "category": "PS",
@@ -308,7 +308,7 @@
     "code": "1008",
     "method": "regex",
     "regex": "unable to start the vm.*It doesn't have any nic, please attach a nic and try again",
-    "message_cn": "网卡删除后，无法重启主机",
+    "message_cn": "网卡删除后，无法启动主机",
     "message_en": "cannot start vm because it doesn't have any nic"
   },
   {
