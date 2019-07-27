@@ -2,7 +2,7 @@ package org.zstack.sdk.iam2.api;
 
 
 
-public class ErrorResult {
+public class ErrorResult  {
 
     public int line;
     public void setLine(int line) {
