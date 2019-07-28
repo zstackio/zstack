@@ -18,13 +18,9 @@ public interface VirtualRouterHaGroupExtensionPoint {
 
     void syncVirtualRouterHaConfigToBackend(String vrUuid, Completion completion);
 
-    String getVirtualRouterUuidByVip(String vipUuid);
-
     String getPeerUuid(String vrUuid);
 
     void submitTaskToHaRouter(VirtualRouterHaCallbackInterface callback, Map<String, Object> data, Completion completion);
-
-    List<String> getAllVipsOnThisRouter(String vrUuid);
 
     void attachNetworkServiceToHaRouter(String type, List<String> uuids, String vrUuid);
     void attachNetworkServiceToHaRouter(String type, List<String> uuids, String vrUuid, boolean override);
