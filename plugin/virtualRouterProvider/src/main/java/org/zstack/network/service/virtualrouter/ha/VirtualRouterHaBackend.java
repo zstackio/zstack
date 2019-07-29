@@ -100,15 +100,6 @@ public class VirtualRouterHaBackend {
         exps.get(0).submitTaskToHaRouter(callback, data, completion);
     }
 
-    public List<String> getAllVipsOnThisRouter(String vrUuid) {
-        List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
-        if (exps.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        return exps.get(0).getAllVipsOnThisRouter(vrUuid);
-    }
-
     public boolean isSnatDisabledOnRouter(String vrUuid) {
         VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
         if (!vrVO.isHaEnabled()) {
