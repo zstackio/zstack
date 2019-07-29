@@ -74,18 +74,20 @@ public class VolumeSnapshotGroupChecker {
         }
 
         if (!deletedSnapshotInfos.isEmpty()) {
-            reason.add(i18n("snapshot(s) %s in the group has been deleted.", String.join(", ", deletedSnapshotInfos)));
+            reason.add(i18n("snapshot(s) %s in the group has been deleted, can only revert one by one.", String.join(", ", deletedSnapshotInfos)));
         }
 
         if (!detachedVolInfos.isEmpty()) {
-            reason.add(i18n("volume(s) %s is no longer attached, please re-attach it.", String.join(", ", detachedVolInfos)));
+            reason.add(i18n("volume(s) %s is no longer attached, can only revert one by one. " +
+                    "If you need to group revert, please re-attach it.", String.join(", ", detachedVolInfos)));
         }
 
         if (!newAttachedVol.isEmpty()) {
             String volInfos = String.join(", ", newAttachedVol.entrySet().stream().map(e ->
                     String.format("[uuid:%s, name:%s]", e.getKey(), e.getValue()))
                     .collect(Collectors.toList()));
-            reason.add(i18n("new volume(s) %s attached after snapshot point, please detach it.", volInfos));
+            reason.add(i18n("new volume(s) %s attached after snapshot point, can only revert one by one. " +
+                    "If you need to group revert, please detach it.", volInfos));
         }
         return new VolumeSnapshotGroupAvailability(group.getUuid(), String.join("\n", reason));
     }
