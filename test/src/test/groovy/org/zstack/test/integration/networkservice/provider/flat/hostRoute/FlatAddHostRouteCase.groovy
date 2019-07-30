@@ -28,7 +28,7 @@ class FlatAddHostRouteCase extends SubCase {
 
     @Override
     void clean() {
-        env.cleanSimulatorHandlers();
+        env.cleanSimulatorHandlers()
         env.delete()
     }
 
@@ -44,7 +44,7 @@ class FlatAddHostRouteCase extends SubCase {
     }
 
     void testAddDns() {
-        List<FlatDhcpBackend.ApplyDhcpCmd> cmds = new ArrayList<>();
+        List<FlatDhcpBackend.ApplyDhcpCmd> cmds = new ArrayList<>()
         env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
             FlatDhcpBackend.ApplyDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
             cmds.add(cmd)
@@ -77,7 +77,7 @@ class FlatAddHostRouteCase extends SubCase {
             }
         }
 
-        List<FlatDhcpBackend.ApplyDhcpCmd> cmds1 = new ArrayList<>();
+        List<FlatDhcpBackend.ApplyDhcpCmd> cmds1 = new ArrayList<>()
         env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
             FlatDhcpBackend.ApplyDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
             cmds1.add(cmd)
@@ -108,7 +108,7 @@ class FlatAddHostRouteCase extends SubCase {
             }
         }
 
-        List<FlatDhcpBackend.ApplyDhcpCmd> cmds2 = new ArrayList<>();
+        List<FlatDhcpBackend.ApplyDhcpCmd> cmds2 = new ArrayList<>()
         env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
             FlatDhcpBackend.ApplyDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
             cmds2.add(cmd)
@@ -139,7 +139,7 @@ class FlatAddHostRouteCase extends SubCase {
             }
         }
 
-        List<FlatDhcpBackend.ApplyDhcpCmd> cmds3 = new ArrayList<>();
+        List<FlatDhcpBackend.ApplyDhcpCmd> cmds3 = new ArrayList<>()
         env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
             FlatDhcpBackend.ApplyDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
             cmds3.add(cmd)

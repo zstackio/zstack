@@ -11,6 +11,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigBeforeUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -1401,6 +1402,28 @@ public class VmInstanceManagerImpl extends AbstractService implements
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
                 startVmExpungeTask();
+            }
+        });
+        VmGlobalConfig.MULTI_VNIC_SUPPORT.installBeforeUpdateExtension(new GlobalConfigBeforeUpdateExtensionPoint() {
+            @Override
+            public void beforeUpdateExtensionPoint(GlobalConfig oldConfig, String newValue) {
+                if (!oldConfig.value(Boolean.class) || "true".equalsIgnoreCase(newValue)) {
+                    return;
+                }
+
+                List<Tuple> tuples;
+                String sql = "select vmInstanceUuid, l3NetworkUuid, count(*) from VmNicVO group by vmInstanceUuid, l3NetworkUuid";
+                TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                tuples = q.getResultList();
+                if (tuples == null || tuples.isEmpty()) {
+                    return;
+                }
+                for (Tuple tuple: tuples) {
+                    if (tuple.get(2, Long.class) > 1) {
+                        throw new ApiMessageInterceptionException(operr("unable to enable this function. There are multi nics of L3 network[uuid:%s] in the vm[uuid: %s]",
+                                    tuple.get(0, String.class), tuple.get(1, String.class)));
+                    }
+                }
             }
         });
     }

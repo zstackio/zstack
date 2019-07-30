@@ -162,7 +162,7 @@ class OneVmDhcpCase extends SubCase {
             return rsp
         }
 
-        assert Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.value()) == 1450;
+        assert Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.value()) == 1450
 
         updateGlobalConfig {
             category = NetworkServiceGlobalConfig.CATEGORY
@@ -197,10 +197,10 @@ class OneVmDhcpCase extends SubCase {
         }
 
         DhcpInfo info = cmd.dhcp[0]
-        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value()));
-        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VLAN.value()));
-        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.value()));
-        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_DUMMY.value()));
+        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value()))
+        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VLAN.value()))
+        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.value()))
+        assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_DUMMY.value()))
 
         setL3NetworkMtu {
             delegate.mtu = 1450

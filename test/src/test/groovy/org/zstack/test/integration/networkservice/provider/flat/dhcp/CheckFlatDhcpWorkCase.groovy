@@ -143,22 +143,22 @@ class CheckFlatDhcpWorkCase extends SubCase{
     void checkDhcpWork(){
         VmInstanceInventory vm = env.inventoryByName("vm")
         final L3NetworkInventory l31 = env.inventoryByName("l3-1")
-        final L3NetworkInventory l32 = env.inventoryByName("l3-2");
+        final L3NetworkInventory l32 = env.inventoryByName("l3-2")
 
         VmNicInventory n = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
             @Override
             public VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(l31.getUuid()) ? arg : null;
+                return arg.getL3NetworkUuid().equals(l31.getUuid()) ? arg : null
             }
-        });
+        })
         assert n.getDeviceId() ==0
 
         n = CollectionUtils.find(vm.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
             @Override
             public VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(l32.getUuid()) ? arg : null;
+                return arg.getL3NetworkUuid().equals(l32.getUuid()) ? arg : null
             }
-        });
+        })
         assert n.getDeviceId() == 1
 
         List<FlatDhcpBackend.DhcpInfo> dhcpInfoList = new ArrayList<FlatDhcpBackend.DhcpInfo>()
@@ -170,18 +170,18 @@ class CheckFlatDhcpWorkCase extends SubCase{
         }
         goOn:
         for (FlatDhcpBackend.ApplyDhcpCmd cmd : dhcpInfoList) {
-            FlatDhcpBackend.DhcpInfo info = cmd.dhcp.get(0);
+            FlatDhcpBackend.DhcpInfo info = cmd.dhcp.get(0)
             if (!info.isDefaultL3Network && info.hostname != null) {
-                Assert.fail(String.format("wrong hostname set. %s", JSONObjectUtil.toJsonString(info)));
+                Assert.fail(String.format("wrong hostname set. %s", JSONObjectUtil.toJsonString(info)))
             }
 
             for (VmNicInventory nic : vm.getVmNics()) {
                 if (info.ip.equals(nic.getIp()) && info.gateway.equals(nic.getGateway()) && info.netmask.equals(nic.getNetmask())) {
-                    break goOn;
+                    break goOn
                 }
             }
 
-            Assert.fail(String.format("nic %s", JSONObjectUtil.toJsonString(cmd.dhcp)));
+            Assert.fail(String.format("nic %s", JSONObjectUtil.toJsonString(cmd.dhcp)))
         }
     }
 
