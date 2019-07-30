@@ -6,4 +6,8 @@ public interface IpAllocateMessage {
     String getL3NetworkUuid();
 
     String getRequiredIp();
+
+    default String getExcludedIp() {
+        return null;
+    }
 }

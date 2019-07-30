@@ -6,6 +6,7 @@ public class AllocateIpMsg extends NeedReplyMessage implements L3NetworkMessage,
     private String allocateStrategy;
     private String l3NetworkUuid;
     private String requiredIp;
+    private String excludedIp;
 
     public String getRequiredIp() {
         return requiredIp;
@@ -31,5 +32,14 @@ public class AllocateIpMsg extends NeedReplyMessage implements L3NetworkMessage,
     @Override
     public String getL3NetworkUuid() {
         return l3NetworkUuid;
+    }
+
+    @Override
+    public String getExcludedIp() {
+        return excludedIp;
+    }
+
+    public void setExcludedIp(String excludedIp) {
+        this.excludedIp = excludedIp;
     }
 }

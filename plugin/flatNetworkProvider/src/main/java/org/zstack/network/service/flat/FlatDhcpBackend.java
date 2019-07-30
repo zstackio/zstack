@@ -2,6 +2,7 @@ package org.zstack.network.service.flat;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.StaticIpOperator;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -265,11 +266,15 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     String allocateDhcpIp(String l3Uuid) {
-        return allocateDhcpIp(l3Uuid, true, null);
+        return allocateDhcpIp(l3Uuid, null);
+    }
+
+    String allocateDhcpIp(String l3Uuid, String excludedIp) {
+        return allocateDhcpIp(l3Uuid, true, null, excludedIp);
     }
 
     @Deferred
-    private String allocateDhcpIp(String l3Uuid, boolean allocate_ip, String requiredIp) {
+    private String allocateDhcpIp(String l3Uuid, boolean allocate_ip, String requiredIp, String excludedIp) {
         L3NetworkVO l3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
 
         if (!isProvidedByMe(L3NetworkInventory.valueOf(l3))) {
@@ -302,6 +307,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             if (requiredIp != null) {
                 amsg.setRequiredIp(requiredIp);
             }
+            amsg.setExcludedIp(excludedIp);
             bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, l3Uuid);
             MessageReply reply = bus.call(amsg);
             if (!reply.isSuccess()) {
@@ -329,6 +335,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             exp.afterAllocateDhcpServerIP(l3Uuid, dhcpServerIp);
         }
         return dhcpServerIp;
+    }
+
+    private String allocateDhcpIp(String l3Uuid, boolean allocate_ip, String requiredIp) {
+        return allocateDhcpIp(l3Uuid, allocate_ip, requiredIp, null);
     }
 
     private void handle(final FlatDhcpAcquireDhcpServerIpMsg msg) {
@@ -895,13 +905,15 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public void beforeStartNewCreatedVm(VmInstanceSpec spec) {
         String providerUuid = new NetworkServiceProviderLookup().lookupUuidByType(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
 
+        Map<String, String> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(spec.getVmInventory().getUuid());
         // make sure the Flat DHCP acquired DHCP server IP before starting VMs,
         // otherwise it may not be able to get IP when lots of VMs start concurrently
         // because the logic of VM acquiring IP is ahead flat DHCP acquiring IP
         for (L3NetworkInventory l3 :VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks())) {
             List<String> serviceTypes = l3.getNetworkServiceTypesFromProvider(providerUuid);
             if (serviceTypes.contains(NetworkServiceType.DHCP.toString())) {
-                allocateDhcpIp(l3.getUuid());
+                String staticIp = vmStaticIps.get(l3.getUuid());
+                allocateDhcpIp(l3.getUuid(), staticIp);
             }
         }
     }
