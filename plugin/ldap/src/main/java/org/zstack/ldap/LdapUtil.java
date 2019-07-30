@@ -437,10 +437,10 @@ public class LdapUtil {
         sq.add(LdapServerVO_.scope, SimpleQuery.Op.EQ, scope);
         List<LdapServerVO> ldapServers = sq.list();
         if (ldapServers.isEmpty()) {
-            throw new CloudRuntimeException("No ldap server record in database.");
+            throw new CloudRuntimeException("No LDAP/AD server record in database.");
         }
         if (ldapServers.size() > 1) {
-            throw new CloudRuntimeException("More than one ldap server record in database.");
+            throw new CloudRuntimeException("More than one LDAP/AD server record in database.");
         }
         return ldapServers.get(0);
     }
@@ -582,7 +582,7 @@ public class LdapUtil {
         } catch (NamingException e) {
             LdapServerVO ldapServerVO = getLdapServer();
             throw new OperationFailureException(err(
-                    LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "You'd better check the ldap server[url:%s, baseDN:%s, encryption:%s, username:%s, password:******]" +
+                    LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID, "You'd better check the LDAP/AD server[url:%s, baseDN:%s, encryption:%s, username:%s, password:******]" +
                             " configuration and test connection first.getDn error filter:%s",
                     ldapServerVO.getUrl(), ldapServerVO.getBase(),
                     ldapServerVO.getEncryption(), ldapServerVO.getUsername(), filter));
