@@ -3,10 +3,7 @@ package org.zstack.storage.volume;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
@@ -23,6 +20,7 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
@@ -83,10 +81,35 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             validate((APICreateDataVolumeFromVolumeTemplateMsg) msg);
         } else if (msg instanceof APIRecoverDataVolumeMsg) {
             validate((APIRecoverDataVolumeMsg) msg);
+        } else if (msg instanceof APICreateVolumeSnapshotGroupMsg) {
+            validate((APICreateVolumeSnapshotGroupMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APICreateVolumeSnapshotGroupMsg msg) {
+        VmInstanceVO vmvo = SQL.New("select vm from VmInstanceVO vm, VolumeVO vol" +
+                " where vol.uuid = :volUuid" +
+                " and vol.type = :volType" +
+                " and vm.uuid = vol.vmInstanceUuid", VmInstanceVO.class)
+                .param("volType", VolumeType.Root)
+                .param("volUuid", msg.getRootVolumeUuid())
+                .find();
+
+        if (vmvo == null) {
+            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] is root volume", msg.getRootVolumeUuid()));
+        }
+
+        for (VolumeVO vol : vmvo.getAllVolumes()) {
+            if (vol.getStatus() != VolumeStatus.Ready) {
+                throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is not in status Ready, " +
+                        "current is %s, can't create snapshot", vol.getUuid(), vol.getStatus()));
+            }
+        }
+
+        msg.setVmInstance(VmInstanceInventory.valueOf(vmvo));
     }
 
     private void validate(APIRecoverDataVolumeMsg msg) {

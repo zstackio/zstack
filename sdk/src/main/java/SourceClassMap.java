@@ -208,6 +208,11 @@ public class SourceClassMap {
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotInventory", "org.zstack.sdk.VolumeSnapshotInventory");
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotTree$SnapshotLeafInventory", "org.zstack.sdk.SnapshotLeafInventory");
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotTreeInventory", "org.zstack.sdk.VolumeSnapshotTreeInventory");
+			put("org.zstack.header.storage.snapshot.group.DeleteSnapshotGroupResult", "org.zstack.sdk.DeleteSnapshotGroupResult");
+			put("org.zstack.header.storage.snapshot.group.RevertSnapshotGroupResult", "org.zstack.sdk.RevertSnapshotGroupResult");
+			put("org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupAvailability", "org.zstack.sdk.VolumeSnapshotGroupAvailability");
+			put("org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory", "org.zstack.sdk.VolumeSnapshotGroupInventory");
+			put("org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefInventory", "org.zstack.sdk.VolumeSnapshotGroupRefInventory");
 			put("org.zstack.header.storageDevice.ScsiLunClusterStatusInventory", "org.zstack.sdk.ScsiLunClusterStatusInventory");
 			put("org.zstack.header.storageDevice.ScsiLunHostRefInventory", "org.zstack.sdk.ScsiLunHostRefInventory");
 			put("org.zstack.header.storageDevice.ScsiLunInventory", "org.zstack.sdk.ScsiLunInventory");
@@ -516,6 +521,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.DataVolumeBillingInventory", "org.zstack.billing.generator.volume.data.DataVolumeBillingInventory");
 			put("org.zstack.sdk.DataVolumeSpending", "org.zstack.billing.spendingcalculator.volume.data.DataVolumeSpending");
 			put("org.zstack.sdk.DataVolumeSpendingInventory", "org.zstack.billing.spendingcalculator.volume.data.DataVolumeSpendingInventory");
+			put("org.zstack.sdk.DeleteSnapshotGroupResult", "org.zstack.header.storage.snapshot.group.DeleteSnapshotGroupResult");
 			put("org.zstack.sdk.DiskOfferingInventory", "org.zstack.header.configuration.DiskOfferingInventory");
 			put("org.zstack.sdk.ESXHostInventory", "org.zstack.vmware.ESXHostInventory");
 			put("org.zstack.sdk.EcsImageInventory", "org.zstack.header.aliyun.image.EcsImageInventory");
@@ -672,6 +678,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ResourceStackInventory", "org.zstack.header.cloudformation.ResourceStackInventory");
 			put("org.zstack.sdk.ResourceStruct", "org.zstack.cloudformation.template.struct.ResourceStruct");
 			put("org.zstack.sdk.ResourceType", "org.zstack.cloudformation.template.struct.ResourceType");
+			put("org.zstack.sdk.RevertSnapshotGroupResult", "org.zstack.header.storage.snapshot.group.RevertSnapshotGroupResult");
 			put("org.zstack.sdk.RootVolumeBillingInventory", "org.zstack.billing.generator.volume.root.RootVolumeBillingInventory");
 			put("org.zstack.sdk.RootVolumeSpending", "org.zstack.billing.spendingcalculator.volume.root.RootVolumeSpending");
 			put("org.zstack.sdk.RootVolumeSpendingInventory", "org.zstack.billing.spendingcalculator.volume.root.RootVolumeSpendingInventory");
@@ -767,6 +774,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VolumeFormatReplyStruct", "org.zstack.header.volume.APIGetVolumeFormatReply$VolumeFormatReplyStruct");
 			put("org.zstack.sdk.VolumeInventory", "org.zstack.header.volume.VolumeInventory");
 			put("org.zstack.sdk.VolumeSnapshotBackupStorageRefInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageRefInventory");
+			put("org.zstack.sdk.VolumeSnapshotGroupAvailability", "org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupAvailability");
+			put("org.zstack.sdk.VolumeSnapshotGroupInventory", "org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory");
+			put("org.zstack.sdk.VolumeSnapshotGroupRefInventory", "org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefInventory");
 			put("org.zstack.sdk.VolumeSnapshotInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotInventory");
 			put("org.zstack.sdk.VolumeSnapshotTreeInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotTreeInventory");
 			put("org.zstack.sdk.VpcHaGroupApplianceVmInventory", "org.zstack.header.vpc.ha.VpcHaGroupApplianceVmInventory");

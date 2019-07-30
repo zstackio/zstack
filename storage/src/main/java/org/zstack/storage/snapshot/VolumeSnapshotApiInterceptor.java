@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -12,14 +13,15 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.volume.APICreateVolumeSnapshotMsg;
-import org.zstack.header.volume.VolumeStatus;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.volume.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.storage.snapshot.VolumeSnapshotMessageRouter.getResourceIdToRouteMsg;
 
 import javax.persistence.Tuple;
 import java.util.List;
@@ -39,15 +41,10 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
     private void setServiceId(APIMessage msg) {
         if (msg instanceof VolumeSnapshotMessage) {
             VolumeSnapshotMessage vmsg = (VolumeSnapshotMessage) msg;
-            SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
-            q.select(VolumeSnapshotVO_.volumeUuid, VolumeSnapshotVO_.treeUuid);
-            q.add(VolumeSnapshotVO_.uuid, SimpleQuery.Op.EQ, vmsg.getSnapshotUuid());
-            Tuple t = q.findTuple();
-            String volumeUuid = t.get(0, String.class);
-            String treeUuid = t.get(1, String.class);
-            vmsg.setVolumeUuid(volumeUuid);
-            vmsg.setTreeUuid(treeUuid);
-            String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
+            VolumeSnapshotVO snapshot = dbf.findByUuid(vmsg.getSnapshotUuid(), VolumeSnapshotVO.class);
+            vmsg.setVolumeUuid(snapshot.getVolumeUuid());
+            vmsg.setTreeUuid(snapshot.getTreeUuid());
+            String resourceUuid = getResourceIdToRouteMsg(snapshot);
             bus.makeTargetServiceIdByResourceUuid(msg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
         }
     }

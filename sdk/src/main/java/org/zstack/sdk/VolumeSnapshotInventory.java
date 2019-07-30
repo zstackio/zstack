@@ -148,4 +148,12 @@ public class VolumeSnapshotInventory  {
         return this.backupStorageRefs;
     }
 
+    public java.lang.String groupUuid;
+    public void setGroupUuid(java.lang.String groupUuid) {
+        this.groupUuid = groupUuid;
+    }
+    public java.lang.String getGroupUuid() {
+        return this.groupUuid;
+    }
+
 }

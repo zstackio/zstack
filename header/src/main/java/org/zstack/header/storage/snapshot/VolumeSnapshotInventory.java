@@ -3,6 +3,7 @@ package org.zstack.header.storage.snapshot;
 import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefInventory;
 import org.zstack.header.volume.VolumeInventory;
 
 import javax.persistence.JoinColumn;
@@ -54,9 +55,12 @@ import java.util.List;
                 foreignKey = "primaryStorageUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "backupStorageRef", inventoryClass = VolumeSnapshotBackupStorageRefInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "backupStorageUuid"),
+        @ExpandedQuery(expandedField = "groupRef", inventoryClass = VolumeSnapshotGroupRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "volumeSnapshotUuid"),
 })
 @ExpandedQueryAliases({
-        @ExpandedQueryAlias(alias = "backupStorage", expandedField = "backupStorageRef.backupStorage")
+        @ExpandedQueryAlias(alias = "backupStorage", expandedField = "backupStorageRef.backupStorage"),
+        @ExpandedQueryAlias(alias = "group", expandedField = "groupRef.volumeSnapshotGroup")
 })
 public class VolumeSnapshotInventory {
     /**
@@ -158,6 +162,10 @@ public class VolumeSnapshotInventory {
             joinColumn = @JoinColumn(name = "volumeSnapshotUuid"))
     private List<VolumeSnapshotBackupStorageRefInventory> backupStorageRefs;
 
+    @Queryable(mappingClass = VolumeSnapshotGroupRefInventory.class,
+            joinColumn = @JoinColumn(name = "volumeSnapshotUuid", referencedColumnName = "volumeSnapshotGroupUuid"))
+    private String groupUuid;
+
     public static VolumeSnapshotInventory valueOf(VolumeSnapshotVO vo) {
         VolumeSnapshotInventory inv = new VolumeSnapshotInventory();
         inv.setName(vo.getName());
@@ -178,6 +186,9 @@ public class VolumeSnapshotInventory {
         inv.setVolumeType(vo.getVolumeType());
         inv.setTreeUuid(vo.getTreeUuid());
         inv.setBackupStorageRefs(VolumeSnapshotBackupStorageRefInventory.valueOf(vo.getBackupStorageRefs()));
+        if (vo.getGroupRef() != null) {
+            inv.setGroupUuid(vo.getGroupRef().getVolumeSnapshotGroupUuid());
+        }
         return inv;
     }
 
@@ -341,5 +352,13 @@ public class VolumeSnapshotInventory {
 
     public void setLatest(boolean latest) {
         this.latest = latest;
+    }
+
+    public String getGroupUuid() {
+        return groupUuid;
+    }
+
+    public void setGroupUuid(String groupUuid) {
+        this.groupUuid = groupUuid;
     }
 }

@@ -154,9 +154,10 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
-            simulator(LocalStorageKvmBackend.REVERT_SNAPSHOT_PATH) {
+            simulator(LocalStorageKvmBackend.REVERT_SNAPSHOT_PATH) { HttpEntity<String> e ->
+                def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.RevertVolumeFromSnapshotCmd.class)
                 def rsp = new LocalStorageKvmBackend.RevertVolumeFromSnapshotRsp()
-                rsp.newVolumeInstallPath = "/new/snapshot/install/path"
+                rsp.newVolumeInstallPath = cmd.snapshotInstallPath + "/newpath"
                 return rsp
             }
 
