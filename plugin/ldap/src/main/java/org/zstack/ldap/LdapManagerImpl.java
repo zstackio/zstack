@@ -221,7 +221,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
                 .eq(LdapServerVO_.scope, msg.getScope())
                 .count() == 1) {
             evt.setError(err(LdapErrors.MORE_THAN_ONE_LDAP_SERVER,
-                    "There has been a ldap server record. " +
+                    "There has been a LDAP/AD server record. " +
                             "You'd better remove it before adding a new one!"));
             bus.publish(evt);
             return;
@@ -413,7 +413,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         String fullDn = msg.getLdapUid();
         if (!ldapUtil.validateDnExist(ldapTemplateContextSource, fullDn)) {
             throw new OperationFailureException(err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_UID,
-                    "cannot find dn[%s] on ldap server[Address:%s, BaseDN:%s].", fullDn,
+                    "cannot find dn[%s] on LDAP/AD server[Address:%s, BaseDN:%s].", fullDn,
                     String.join(", ", ldapTemplateContextSource.getLdapContextSource().getUrls()),
                     ldapTemplateContextSource.getLdapContextSource().getBaseLdapPathAsString()));
         }
@@ -494,7 +494,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         LdapServerVO ldapServerVO = dbf.findByUuid(msg.getLdapServerUuid(), LdapServerVO.class);
         if (ldapServerVO == null) {
             evt.setError(err(LdapErrors.UNABLE_TO_GET_SPECIFIED_LDAP_SERVER_RECORD,
-                    "Cannot find the specified ldap server[uuid:%s] in database.",
+                    "Cannot find the specified LDAP/AD server[uuid:%s] in database.",
                     msg.getLdapServerUuid()));
             bus.publish(evt);
             return;

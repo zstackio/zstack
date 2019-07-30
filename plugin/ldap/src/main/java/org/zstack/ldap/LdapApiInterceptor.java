@@ -64,7 +64,7 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIAddLdapServerMsg msg) {
         if (!LdapEffectiveScope.hasScope(msg.getScope())) {
-            throw new ApiMessageInterceptionException(argerr("unsupported ldap server scope"));
+            throw new ApiMessageInterceptionException(argerr("unsupported LDAP/AD server scope"));
         }
 
         LdapServerInventory inv = new LdapServerInventory();
@@ -121,7 +121,7 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
 
     private void validateLdapServerExist(){
         if(!Q.New(LdapServerVO.class).isExists()){
-            throw new ApiMessageInterceptionException(argerr("There is no ldap server in the system, Please add a ldap server first."));
+            throw new ApiMessageInterceptionException(argerr("There is no LDAP/AD server in the system, Please add a LDAP/AD server first."));
         }
     }
 
@@ -138,14 +138,14 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
             ldapTemplateContextSource.getLdapTemplate().authenticate("", filter.toString(), "");
             logger.info("LDAP connection was successful");
         } catch (AuthenticationException e) {
-            logger.debug("Cannot connect to LDAP server, Invalid Credentials, please checkout User DN and password", e);
-            return operr("Cannot connect to LDAP server, Invalid Credentials, please checkout User DN and password");
+            logger.debug("Cannot connect to LDAP/AD server, Invalid Credentials, please checkout User DN and password", e);
+            return operr("Cannot connect to LDAP/AD server, Invalid Credentials, please checkout User DN and password");
         } catch (CommunicationException e) {
-            logger.debug("Cannot connect to LDAP server, communication false, please checkout IP, port and Base DN", e);
-            return operr("Cannot connect to LDAP server, communication false, please checkout IP, port and Base DN");
+            logger.debug("Cannot connect to LDAP/AD server, communication false, please checkout IP, port and Base DN", e);
+            return operr("Cannot connect to LDAP/AD server, communication false, please checkout IP, port and Base DN");
         } catch (Exception e) {
-            logger.debug("Cannot connect to LDAP server", e);
-            return operr("Cannot connect to LDAP server, %s", e.toString());
+            logger.debug("Cannot connect to LDAP/AD server", e);
+            return operr("Cannot connect to LDAP/AD server, %s", e.toString());
         }
 
         return null;

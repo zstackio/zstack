@@ -6469,7 +6469,7 @@
   {
     "raw": "duplicate virtualID name[%s]",
     "en_US": "duplicate virtualID name[{0}]",
-    "zh_CN": "",
+    "zh_CN": "重复的用户名[{0}]",
     "arguments": [
       "msg.getName()"
     ],
@@ -6479,7 +6479,7 @@
   {
     "raw": "duplicate project name[%s]",
     "en_US": "duplicate project name[{0}]",
-    "zh_CN": "",
+    "zh_CN": "重复的项目名[{0}]",
     "arguments": [
       "msg.getName()"
     ],
@@ -6489,7 +6489,7 @@
   {
     "raw": "invalid project name[%s], there has been an account or project with the same name",
     "en_US": "invalid project name[{0}], there has been an account or project with the same name",
-    "zh_CN": "",
+    "zh_CN": "无效的项目名[{0}]，已经存在已经账户或者项目使用了相同的名字",
     "arguments": [
       "msg.getName()"
     ],
@@ -6499,7 +6499,7 @@
   {
     "raw": "organizations%s are company that cannot be children of other organization",
     "en_US": "organizations{0} are company that cannot be children of other organization",
-    "zh_CN": "",
+    "zh_CN": "组织{0}类型是子公司，不能设置为其它组织的部门",
     "arguments": [
       "uuids"
     ],
@@ -6509,7 +6509,7 @@
   {
     "raw": "can not operate stale virtual ids: %s",
     "en_US": "can not operate stale virtual ids: {0}",
-    "zh_CN": "",
+    "zh_CN": "无法操作无效的用户: {0}",
     "arguments": [
       "staleVirtualIDs"
     ],
@@ -6519,7 +6519,7 @@
   {
     "raw": "virtual ids%s not in the project the group[uuid:%s] belongs to",
     "en_US": "virtual ids{0} not in the project the group[uuid:{1}] belongs to",
-    "zh_CN": "",
+    "zh_CN": "用户{0}不在用户组[uuid:{1}]所在的项目中",
     "arguments": [
       "wrong",
       "msg.getGroupUuid()"
@@ -6530,7 +6530,7 @@
   {
     "raw": "attribute[name:%s] is a system attribute that cannot be updated",
     "en_US": "attribute[name:{0}] is a system attribute that cannot be updated",
-    "zh_CN": "",
+    "zh_CN": "属性[名称：{0}]是一个系统属性，无法被更新",
     "arguments": [],
     "line": 68,
     "fileName": "src/main/java/org/zstack/iam2/attribute/SystemAttributes.java"
@@ -6538,7 +6538,7 @@
   {
     "raw": "virtual ID[uuid:%s] not existing",
     "en_US": "virtual ID[uuid:{0}] not existing",
-    "zh_CN": "",
+    "zh_CN": "用户[uuid:{0}]不存在",
     "arguments": [
       "inv.getValue()"
     ],
@@ -6548,7 +6548,7 @@
   {
     "raw": "organization[uuid:%s] already has a supervisor",
     "en_US": "organization[uuid:{0}] already has a supervisor",
-    "zh_CN": "",
+    "zh_CN": "组织[uuid:{0}]已经设置了负责人",
     "arguments": [
       "oinv.getOrganizationUuid()"
     ],
@@ -6558,7 +6558,7 @@
   {
     "raw": "the project[uuid:%s, name:%s] already has a retire policy",
     "en_US": "the project[uuid:{0}, name:{1}] already has a retire policy",
-    "zh_CN": "",
+    "zh_CN": "项目[uuid:{0}, name:{1}]已经设置了回收策略",
     "arguments": [
       "pinv.getUuid()",
       "pinv.getName()"
@@ -6569,7 +6569,7 @@
   {
     "raw": "invalid value, no \u0027at\u0027, \u0027after\u0027 or \u0027exceed\u0027 found",
     "en_US": "invalid value, no \u0027at\u0027, \u0027after\u0027 or \u0027exceed\u0027 found",
-    "zh_CN": "",
+    "zh_CN": "无效的值，找不到关键字no 'at', 'after' or 'exceed'",
     "arguments": [],
     "line": 52,
     "fileName": "src/main/java/org/zstack/iam2/attribute/project/RetirePolicy.java"
@@ -6577,7 +6577,7 @@
   {
     "raw": "invalid value, %s",
     "en_US": "invalid value, {0}",
-    "zh_CN": "",
+    "zh_CN": "无效的值, {0}",
     "arguments": [
       "value"
     ],
@@ -6587,7 +6587,7 @@
   {
     "raw": "invalid means[%s], allowed means are %s",
     "en_US": "invalid means[{0}], allowed means are {1}",
-    "zh_CN": "",
+    "zh_CN": "无效的回收方法[{0}]，允许的方法是{1}",
     "arguments": [
       "ss[0]",
       "Means.values()"
@@ -6598,7 +6598,7 @@
   {
     "raw": "invalid spending value[%s], it should be in format of for example 10.001",
     "en_US": "invalid spending value[{0}], it should be in format of for example 10.001",
-    "zh_CN": "",
+    "zh_CN": "无效的费用[{0}], 费用格式应该符合例如：10.001",
     "arguments": [
       "policyValue"
     ],
@@ -6608,7 +6608,7 @@
   {
     "raw": "invalid spending value[%s], spending value should between 0 and %f",
     "en_US": "invalid spending value[{0}], spending value should between 0 and {1}",
-    "zh_CN": "",
+    "zh_CN": "无效的费用[{0}], 费用范围应该在0到{1}之间",
     "arguments": [
       "policyValue",
       "Double.MAX_VALUE"
@@ -6619,7 +6619,7 @@
   {
     "raw": "invalid time[%s], it should be in format of for example 10m, 1h, 2d",
     "en_US": "invalid time[{0}], it should be in format of for example 10m, 1h, 2d",
-    "zh_CN": "",
+    "zh_CN": "无效的时间[{0}]，时间格式需要符合例如：10m, 1h, 2d",
     "arguments": [
       "policyValue"
     ],
@@ -6629,7 +6629,7 @@
   {
     "raw": "invalid date[%s], it should be in format of yyyy-MM-dd HH:mm:ss",
     "en_US": "invalid date[{0}], it should be in format of yyyy-MM-dd HH:mm:ss",
-    "zh_CN": "",
+    "zh_CN": "无效的日期，日期格式需要符合：yyyy-MM-dd HH:mm:ss",
     "arguments": [
       "policyValue"
     ],
@@ -6639,7 +6639,7 @@
   {
     "raw": "invalid date or time[%s], it cannot be before current time[%s]",
     "en_US": "invalid date or time[{0}], it cannot be before current time[{1}]",
-    "zh_CN": "",
+    "zh_CN": "无效的日期或时间，回收时间不能在当前时间之前[{1}]",
     "arguments": [
       "policyValue",
       "dateFormat.format(new Timestamp(System.currentTimeMillis()))"
@@ -6650,7 +6650,7 @@
   {
     "raw": "virtual ID[uuid:%s] already has admin related attributes, can not add %s",
     "en_US": "virtual ID[uuid:{0}] already has admin related attributes, can not add {1}",
-    "zh_CN": "",
+    "zh_CN": "用户[uuid:{0}]已经有管理员属性了，无法继续添加属性{1}",
     "arguments": [
       "vid",
       "attributeName"
@@ -6661,7 +6661,7 @@
   {
     "raw": "cannot find zone[uuid:%s]",
     "en_US": "cannot find zone[uuid:{0}]",
-    "zh_CN": "",
+    "zh_CN": "找不到区域[uuid:{0}]",
     "arguments": [
       "inv.getValue()"
     ],
@@ -6671,7 +6671,7 @@
   {
     "raw": "project[uuid:%s] already has a project admin",
     "en_US": "project[uuid:{0}] already has a project admin",
-    "zh_CN": "",
+    "zh_CN": "项目[uuid:{0}]已经设置过项目管理员了",
     "arguments": [
       "inv.getValue()"
     ],
@@ -6681,7 +6681,7 @@
   {
     "raw": "project[uuid:%s] not existing",
     "en_US": "project[uuid:{0}] not existing",
-    "zh_CN": "",
+    "zh_CN": "项目[uuid:{0}]不存在",
     "arguments": [
       "inv.getValue()"
     ],
@@ -6691,7 +6691,7 @@
   {
     "raw": "can not add privilege admin[uuids:%s] to project[uuid:%s]",
     "en_US": "can not add privilege admin[uuids:{0}] to project[uuid:{1}]",
-    "zh_CN": "",
+    "zh_CN": "无法将特殊管理员用户[uuids:{0}]加入到项目中去",
     "arguments": [
       "String.join(\",\", privilegeAdminUuids)",
       "msg.getProjectUuid()"
@@ -6702,7 +6702,7 @@
   {
     "raw": "the operation is not permitted by white list of virtual-id[uuid:%s]",
     "en_US": "the operation is not permitted by white list of virtual-id[uuid:{0}]",
-    "zh_CN": "",
+    "zh_CN": "无法操作，操作不存在用户[uuid:{0}]白名单中",
     "arguments": [
       "rbacEntity.getApiMessage().getSession().getUserUuid()"
     ],
@@ -6712,7 +6712,7 @@
   {
     "raw": "the operation is denied by black list of virtual-id[uuid:%s]",
     "en_US": "the operation is denied by black list of virtual-id[uuid:{0}]",
-    "zh_CN": "",
+    "zh_CN": "无法操作，操作被用户[uuid:{0}]黑名单拒绝",
     "arguments": [
       "rbacEntity.getApiMessage().getSession().getUserUuid()"
     ],
@@ -6722,7 +6722,7 @@
   {
     "raw": "project of account[uuid:%s] not exists",
     "en_US": "project of account[uuid:{0}] not exists",
-    "zh_CN": "",
+    "zh_CN": "账户为[uuid:{0}]的项目不存在",
     "arguments": [
       "session.getAccountUuid()"
     ],
@@ -6732,7 +6732,7 @@
   {
     "raw": "project[uuid:%s] is retired, reject all operations",
     "en_US": "project[uuid:{0}] is retired, reject all operations",
-    "zh_CN": "",
+    "zh_CN": "项目[uuid:{0}]已经过期，无法操作",
     "arguments": [
       "projectUuid"
     ],
@@ -8171,8 +8171,8 @@
     "fileName": "src/main/java/org/zstack/kvm/KvmVmSyncPingTask.java"
   },
   {
-    "raw": "unsupported ldap server scope",
-    "en_US": "unsupported ldap server scope",
+    "raw": "unsupported LDAP/AD server scope",
+    "en_US": "unsupported LDAP/AD server scope",
     "zh_CN": "",
     "arguments": [],
     "line": 67,
@@ -8191,24 +8191,24 @@
     "fileName": "src/main/java/org/zstack/ldap/LdapApiInterceptor.java"
   },
   {
-    "raw": "Cannot connect to LDAP server, Invalid Credentials, please checkout User DN and password",
-    "en_US": "Cannot connect to LDAP server, Invalid Credentials, please checkout User DN and password",
+    "raw": "Cannot connect to LDAP/AD server, Invalid Credentials, please checkout User DN and password",
+    "en_US": "Cannot connect to LDAP/AD server, Invalid Credentials, please checkout User DN and password",
     "zh_CN": "",
     "arguments": [],
     "line": 142,
     "fileName": "src/main/java/org/zstack/ldap/LdapApiInterceptor.java"
   },
   {
-    "raw": "Cannot connect to LDAP server, communication false, please checkout IP, port and Base DN",
-    "en_US": "Cannot connect to LDAP server, communication false, please checkout IP, port and Base DN",
+    "raw": "Cannot connect to LDAP/AD server, communication false, please checkout IP, port and Base DN",
+    "en_US": "Cannot connect to LDAP/AD server, communication false, please checkout IP, port and Base DN",
     "zh_CN": "",
     "arguments": [],
     "line": 145,
     "fileName": "src/main/java/org/zstack/ldap/LdapApiInterceptor.java"
   },
   {
-    "raw": "Cannot connect to LDAP server, %s",
-    "en_US": "Cannot connect to LDAP server, {0}",
+    "raw": "Cannot connect to LDAP/AD server, %s",
+    "en_US": "Cannot connect to LDAP/AD server, {0}",
     "zh_CN": "不能连接LDAP服务，{0}",
     "arguments": [
       "e.toString()"
@@ -8447,8 +8447,8 @@
     "fileName": "src/main/java/org/zstack/log4j2/appender/syslog/SyslogAppenderProxyFactory.java"
   },
   {
-    "raw": "There is no ldap server in the system, Please add a ldap server first.",
-    "en_US": "There is no ldap server in the system, Please add a ldap server first.",
+    "raw": "There is no LDAP/AD server in the system, Please add a LDAP/AD server first.",
+    "en_US": "There is no LDAP/AD server in the system, Please add a LDAP/AD server first.",
     "zh_CN": "在系统中没有LDAP服务，请先添加一个LDAP服务",
     "arguments": [],
     "line": 45,
@@ -8518,8 +8518,8 @@
     "fileName": "src/main/java/org/zstack/login/LdapLoginManagerImpl.java"
   },
   {
-    "raw": "Can not sync ldap server whose scope is not %s",
-    "en_US": "Can not sync ldap server whose scope is not {0}",
+    "raw": "Can not sync LDAP/AD server whose scope is not %s",
+    "en_US": "Can not sync LDAP/AD server whose scope is not {0}",
     "zh_CN": "",
     "arguments": [
       "scope.toString()"

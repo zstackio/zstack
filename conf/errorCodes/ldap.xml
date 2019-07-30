@@ -3,17 +3,17 @@
 
     <code>
         <id>1000</id>
-        <description>Failed to connect ldap server.</description>
+        <description>Failed to connect LDAP/AD server.</description>
     </code>
 
     <code>
         <id>1001</id>
-        <description>There shouldn't be more than one ldap server.</description>
+        <description>There shouldn't be more than one LDAP/AD server.</description>
     </code>
 
     <code>
         <id>1002</id>
-        <description>Cannot find entry on ldap server.</description>
+        <description>Cannot find entry on LDAP/AD server.</description>
     </code>
 
     <code>
@@ -33,12 +33,12 @@
 
     <code>
         <id>1006</id>
-        <description>Test ldap server connection failed.</description>
+        <description>Test LDAP/AD server connection failed.</description>
     </code>
 
     <code>
         <id>1007</id>
-        <description>Unable to find specified ldap server record in database.</description>
+        <description>Unable to find specified LDAP/AD server record in database.</description>
     </code>
 </error>
 

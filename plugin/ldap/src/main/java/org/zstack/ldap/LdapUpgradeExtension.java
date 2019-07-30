@@ -94,7 +94,7 @@ public class LdapUpgradeExtension implements Component {
 
     private boolean isLdapServerExist(){
         if(Q.New(LdapServerVO.class).isExists()){
-            logger.warn("update ldapUid to ldapDn fail, There is no ldap server in the system");
+            logger.warn("update ldapUid to ldapDn fail, There is no LDAP/AD server in the system");
             return true;
         }
 
