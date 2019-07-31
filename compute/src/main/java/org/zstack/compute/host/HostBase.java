@@ -1001,9 +1001,8 @@ public abstract class HostBase extends AbstractHost {
                                 changeConnectionState(HostStatusEvent.disconnected);
                                 if (!msg.isNewAdd()) {
                                     tracker.trackHost(self.getUuid());
+                                    new HostDisconnectedCanonicalEvent(self.getUuid(), errCode).fire();
                                 }
-
-                                new HostDisconnectedCanonicalEvent(self.getUuid(), errCode).fire();
 
                                 reply.setError(errCode);
                                 bus.reply(msg, reply);
