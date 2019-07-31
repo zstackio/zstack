@@ -505,15 +505,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         bus.send(gmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply re) {
-                GetVmStartingCandidateClustersHostsReply greply = (GetVmStartingCandidateClustersHostsReply) re;
                 if (!re.isSuccess()) {
                     reply.setSuccess(false);
                     reply.setError(re.getError());
-                    if (greply.getHostInventories() != null) {
-                        reply.setHostInventories(greply.getHostInventories());
-                        reply.setClusterInventories(greply.getClusterInventories());
-                    }
                 } else {
+                    GetVmStartingCandidateClustersHostsReply greply = (GetVmStartingCandidateClustersHostsReply) re;
                     reply.setHostInventories(greply.getHostInventories());
                     reply.setClusterInventories(greply.getClusterInventories());
                 }
