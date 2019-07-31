@@ -6,10 +6,7 @@ import org.springframework.ldap.control.PagedResultsDirContextProcessor;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.NameAwareAttribute;
-import org.springframework.ldap.core.support.AbstractContextMapper;
-import org.springframework.ldap.core.support.DefaultDirObjectFactory;
-import org.springframework.ldap.core.support.DefaultTlsDirContextAuthenticationStrategy;
-import org.springframework.ldap.core.support.LdapContextSource;
+import org.springframework.ldap.core.support.*;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
 import org.springframework.ldap.filter.Filter;
@@ -327,7 +324,7 @@ public class LdapUtil {
 
         LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
         LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
-
+        ldapTemplate.setContextSource(new SingleContextSource(ldapTemplateContextSource.getLdapContextSource().getReadOnlyContext()));
 
         SearchControls searchCtls = new SearchControls();
         searchCtls.setSearchScope(SearchControls.SUBTREE_SCOPE);
