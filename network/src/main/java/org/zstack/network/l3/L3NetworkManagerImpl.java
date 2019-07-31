@@ -406,11 +406,18 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         }
     }
 
-    private UsedIpInventory reserveIpv4(IpRangeInventory ipRange, String ip) {
+    private UsedIpInventory reserveIpv4(IpRangeInventory ipRange, String ip, boolean allowDuplicatedAddress) {
         try {
             UsedIpVO vo = new UsedIpVO(ipRange.getUuid(), ip);
             vo.setIpInLong(NetworkUtils.ipv4StringToLong(ip));
-            vo.setUuid(Platform.getUuid());
+            String uuid;
+            if (allowDuplicatedAddress) {
+                uuid = Platform.getUuid();
+            } else {
+                uuid = ipRange.getUuid() + ip;
+                uuid = UUID.nameUUIDFromBytes(uuid.getBytes()).toString().replaceAll("-", "");
+            }
+            vo.setUuid(uuid);
             vo.setL3NetworkUuid(ipRange.getL3NetworkUuid());
             vo.setNetmask(ipRange.getNetmask());
             vo.setGateway(ipRange.getGateway());
@@ -433,8 +440,13 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     @Override
     public UsedIpInventory reserveIp(IpRangeInventory ipRange, String ip) {
+        return reserveIp(ipRange, ip, false);
+    }
+
+    @Override
+    public UsedIpInventory reserveIp(IpRangeInventory ipRange, String ip, boolean allowDuplicatedAddress) {
         if (NetworkUtils.isIpv4Address(ip)) {
-            return reserveIpv4(ipRange, ip);
+            return reserveIpv4(ipRange, ip, allowDuplicatedAddress);
         } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
             return reserveIpv6(ipRange, ip);
         } else {

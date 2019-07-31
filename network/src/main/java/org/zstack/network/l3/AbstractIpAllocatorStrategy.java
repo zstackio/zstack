@@ -64,7 +64,7 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
             ));
         }
 
-        return l3NwMgr.reserveIp(IpRangeInventory.valueOf(ipr), msg.getRequiredIp());
+        return l3NwMgr.reserveIp(IpRangeInventory.valueOf(ipr), msg.getRequiredIp(), msg.isDuplicatedIpAllowed());
     }
 
     protected UsedIpInventory allocateRequiredIpv6(IpAllocateMessage msg) {
@@ -98,6 +98,6 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
             ));
         }
 
-        return l3NwMgr.reserveIp(IpRangeInventory.valueOf(ipr), msg.getRequiredIp());
+        return l3NwMgr.reserveIp(IpRangeInventory.valueOf(ipr), msg.getRequiredIp(), msg.isDuplicatedIpAllowed());
     }
 }

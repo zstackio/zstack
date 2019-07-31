@@ -10,4 +10,5 @@ public interface IpAllocateMessage {
     default String getExcludedIp() {
         return null;
     }
+    default boolean isDuplicatedIpAllowed() {return false;}
 }

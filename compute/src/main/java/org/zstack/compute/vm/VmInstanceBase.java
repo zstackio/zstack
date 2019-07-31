@@ -1711,6 +1711,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 class SetStaticIp {
                     private boolean isSet = false;
+                    private boolean allowDupicatedAddress = false;
                     Map<String, String> staticIpMap = null;
 
                     void set() {
@@ -1720,6 +1721,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         } else if (msg instanceof VmAttachNicMsg) {
                             VmAttachNicMsg nicMsg = (VmAttachNicMsg)msg;
                             staticIpMap = nicMsg.getStaticIpMap();
+                            allowDupicatedAddress = nicMsg.isAllowDuplicatedAddress();
                         }
 
                         if (staticIpMap == null || staticIpMap.isEmpty()) {
@@ -1789,6 +1791,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 setFlowMarshaller(flowChain);
                 flowChain.setName(String.format("attachNic-vm-%s-l3-%s", self.getUuid(), l3Uuids.get(0)));
                 flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
+                flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString(), setStaticIp.allowDupicatedAddress);
                 flowChain.then(new VmAllocateNicFlow());
                 flowChain.then(new VmAttachL3NetworkToNicFlow());
                 flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());

@@ -7,8 +7,9 @@ import java.util.List;
 
 public interface L3NetworkManager {
     IpAllocatorStrategy getIpAllocatorStrategy(IpAllocatorType type);
-    
+
     UsedIpInventory reserveIp(IpRangeInventory ipRange, String ip);
+    UsedIpInventory reserveIp(IpRangeInventory ipRange, String ip, boolean allowDuplicatedAddress);
 
     boolean isIpRangeFull(IpRangeVO vo);
     

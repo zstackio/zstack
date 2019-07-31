@@ -58,6 +58,8 @@ public class VmAllocateNicFlow implements Flow {
         taskProgress("create nics");
 
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        Boolean allowDuplicatedAddress = (Boolean)data.get(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString());
+
         // it's unlikely a vm having more than 512 nics
         final BitSet deviceIdBitmap = new BitSet(512);
         for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
@@ -101,6 +103,9 @@ public class VmAllocateNicFlow implements Flow {
                 msg.setRequiredIp(staticIp);
             } else {
                 l3nm.updateIpAllocationMsg(msg, customMac);
+            }
+            if (allowDuplicatedAddress != null) {
+                msg.setDuplicatedIpAllowed(allowDuplicatedAddress);
             }
             bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nw.getUuid());
             bus.send(msg, new CloudBusCallBack(wcomp) {

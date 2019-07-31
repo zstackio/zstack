@@ -32,6 +32,7 @@ public interface VmInstanceConstant {
         vmInventory,
         VmAllocateNicFlow_ips,
         VmAllocateNicFlow_nics,
+        VmAllocateNicFlow_allowDuplicatedAddress,
         ApplianceVmSyncHaConfig_applianceVm,
         ApplianceVmSyncHaConfig_haUuid,
     }
