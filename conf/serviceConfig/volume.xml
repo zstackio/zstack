@@ -26,6 +26,8 @@
 
     <message>
         <name>org.zstack.header.volume.APICreateVolumeSnapshotGroupMsg</name>
+        <interceptor>VolumeApiInterceptor</interceptor>
+        <interceptor>PrimaryStorageApiInterceptor</interceptor>
     </message>
 
     <message>
