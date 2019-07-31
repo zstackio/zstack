@@ -784,5 +784,13 @@ public class NetworkUtils {
             return isIpv6Address(ip);
         }
     }
+
+    public static String getCanonicalNetworkCidr(String gw, String netmask) {
+        Long gateway = ipv4StringToLong(gw);
+        Long mask = ipv4StringToLong(netmask);
+
+        String cidr = longToIP(gateway & mask);
+        return String.format("%s/%d", cidr, validNetmasks.get(netmask));
+    }
 }
 
