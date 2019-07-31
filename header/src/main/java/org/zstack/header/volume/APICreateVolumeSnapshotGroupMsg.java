@@ -79,4 +79,11 @@ public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements
     public void setVmInstance(VmInstanceInventory vmInstance) {
         this.vmInstance = vmInstance;
     }
+
+    public static APICreateVolumeSnapshotGroupMsg __example__() {
+        APICreateVolumeSnapshotGroupMsg result = new APICreateVolumeSnapshotGroupMsg();
+        result.name = "test";
+        result.rootVolumeUuid = uuid();
+        return result;
+    }
 }

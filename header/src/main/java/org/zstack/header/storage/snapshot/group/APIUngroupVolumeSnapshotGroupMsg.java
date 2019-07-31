@@ -32,4 +32,10 @@ public class APIUngroupVolumeSnapshotGroupMsg extends APIMessage implements Volu
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
+    public static APIUngroupVolumeSnapshotGroupMsg __example__() {
+        APIUngroupVolumeSnapshotGroupMsg result = new APIUngroupVolumeSnapshotGroupMsg();
+        result.uuid = uuid();
+        return result;
+    }
 }

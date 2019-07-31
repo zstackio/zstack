@@ -7,6 +7,7 @@ import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -28,5 +29,11 @@ public class APICheckVolumeSnapshotGroupAvailabilityMsg extends APISyncCallMessa
 
     public void setUuids(List<String> uuids) {
         this.uuids = uuids;
+    }
+
+    public static APICheckVolumeSnapshotGroupAvailabilityMsg __example__() {
+        APICheckVolumeSnapshotGroupAvailabilityMsg result = new APICheckVolumeSnapshotGroupAvailabilityMsg();
+        result.uuids = Collections.singletonList(uuid());
+        return result;
     }
 }

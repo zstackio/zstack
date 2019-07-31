@@ -1,5 +1,6 @@
 package org.zstack.header.storage.snapshot.group;
 
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
@@ -28,5 +29,13 @@ public class APIDeleteVolumeSnapshotGroupEvent extends APIEvent {
 
     public void setResults(List<DeleteSnapshotGroupResult> results) {
         this.results = results;
+    }
+
+    public static APIDeleteVolumeSnapshotGroupEvent __example__() {
+        APIDeleteVolumeSnapshotGroupEvent event = new APIDeleteVolumeSnapshotGroupEvent(uuid());
+        DeleteSnapshotGroupResult result = new DeleteSnapshotGroupResult();
+        result.setError(new ErrorCode("SYS.1001", "internal error"));
+        event.setResults(Collections.singletonList(result));
+        return event;
     }
 }

@@ -1,5 +1,6 @@
 package org.zstack.header.storage.snapshot.group;
 
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
@@ -28,5 +29,13 @@ public class APIRevertVmFromSnapshotGroupEvent extends APIEvent {
 
     public void setResults(List<RevertSnapshotGroupResult> results) {
         this.results = results;
+    }
+
+    public static APIRevertVmFromSnapshotGroupEvent _example__() {
+        APIRevertVmFromSnapshotGroupEvent event = new APIRevertVmFromSnapshotGroupEvent(uuid());
+        RevertSnapshotGroupResult result = new RevertSnapshotGroupResult();
+        result.setError(new ErrorCode("SYS.1001", "internal error"));
+        event.setResults(Collections.singletonList(result));
+        return event;
     }
 }
