@@ -20,7 +20,7 @@ public class LdapTemplateContextSource {
         return ldapTemplate;
     }
 
-    LdapContextSource getLdapContextSource() {
+    public LdapContextSource getLdapContextSource() {
         return ldapContextSource;
     }
 }
