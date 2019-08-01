@@ -175,20 +175,25 @@ public class PathUtil {
         }
     }
 
-    public static List<String> scanFolder(List<String> ret, String folderName) {
+    public static void scanFolder(List<String> ret, String folderName) {
         try {
             File folder = new File(folderName);
-            if (folder.isDirectory()) {
-                File[] fileArray = folder.listFiles();
-                for(File f: fileArray) {
-                    if (f.isDirectory()) {
-                        scanFolder(ret, f.getAbsolutePath());
-                    } else {
-                        ret.add(PathUtil.join(folder.getAbsolutePath(), f.getName()));
-                    }
+            if (!folder.isDirectory()) {
+                return;
+            }
+
+            File[] fileArray = folder.listFiles();
+            if (fileArray == null) {
+                return;
+            }
+
+            for(File f: fileArray) {
+                if (f.isDirectory()) {
+                    scanFolder(ret, f.getAbsolutePath());
+                } else {
+                    ret.add(PathUtil.join(folder.getAbsolutePath(), f.getName()));
                 }
             }
-            return ret;
         } catch (Exception e) {
             throw new RuntimeException(String.format("Unable to locate service portal configure files: %s", e.getMessage()), e);
         }
