@@ -366,12 +366,16 @@ public class KvmBackend extends HypervisorBackend {
         });
     }
 
-    public String makeTemporaryVolumeInstallUrl(VolumeInventory vol, String originVolumeUuid) {
-        return PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeTemporaryRootVolumeInstallPath(vol, originVolumeUuid));
+    public String makeTemporaryRootVolumeInstallUrl(VolumeInventory vol, String originVolumeUuid) {
+        return PathUtil.join(self.getMountPath(), PrimaryStoragePathMaker.makeTemporaryRootVolumeInstallPath(vol, originVolumeUuid));
     }
 
     public String makeRootVolumeInstallUrl(VolumeInventory vol) {
         return PathUtil.join(self.getMountPath(), PrimaryStoragePathMaker.makeRootVolumeInstallPath(vol));
+    }
+
+    public String makeTemporaryDataVolumeInstallUrl(String volUuid, String originVolumeUuid) {
+        return PathUtil.join(self.getMountPath(), PrimaryStoragePathMaker.makeTemporaryDataVolumeInstallPath(volUuid, originVolumeUuid));
     }
 
     public String makeDataVolumeInstallUrl(String volUuid) {
@@ -597,7 +601,12 @@ public class KvmBackend extends HypervisorBackend {
 
     private void createTemporaryEmptyVolume(InstantiateTemporaryVolumeOnPrimaryStorageMsg msg, final ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
         final VolumeInventory volume = msg.getVolume();
-        volume.setInstallPath(makeTemporaryVolumeInstallUrl(volume, msg.getOriginVolumeUuid()));
+        if (VolumeType.Root.toString().equals(volume.getType())) {
+            volume.setInstallPath(makeTemporaryRootVolumeInstallUrl(volume, msg.getOriginVolumeUuid()));
+        } else {
+            volume.setInstallPath(makeTemporaryDataVolumeInstallUrl(volume.getUuid(), msg.getOriginVolumeUuid()));
+        }
+        volume.setInstallPath(makeTemporaryRootVolumeInstallUrl(volume, msg.getOriginVolumeUuid()));
         createEmptyVolume(msg.getVolume(), msg.getDestHost().getUuid(), completion);
     }
 
@@ -634,7 +643,7 @@ public class KvmBackend extends HypervisorBackend {
 
     private void createTemporaryRootVolume(InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg msg, final ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
         final VolumeInventory volume = msg.getVolume();
-        volume.setInstallPath(makeTemporaryVolumeInstallUrl(volume, msg.getOriginVolumeUuid()));
+        volume.setInstallPath(makeTemporaryRootVolumeInstallUrl(volume, msg.getOriginVolumeUuid()));
         createRootVolume(msg, completion);
     }
 
@@ -806,7 +815,13 @@ public class KvmBackend extends HypervisorBackend {
 
     @Override
     void handle(final DownloadDataVolumeToPrimaryStorageMsg msg, final ReturnValueCompletion<DownloadDataVolumeToPrimaryStorageReply> completion) {
-        final String installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
+        String installPath;
+        if (msg instanceof DownloadTemporaryDataVolumeToPrimaryStorageMsg) {
+            String originVolumeUuid = ((DownloadTemporaryDataVolumeToPrimaryStorageMsg) msg).getOriginVolumeUuid();
+            installPath = makeTemporaryDataVolumeInstallUrl(msg.getVolumeUuid(), originVolumeUuid);
+        } else {
+            installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
+        }
         BackupStorageKvmDownloader downloader = getBackupStorageKvmDownloader(msg.getBackupStorageRef().getBackupStorageUuid());
         downloader.downloadBits(msg.getBackupStorageRef().getInstallPath(), installPath, true, new Completion(completion) {
             @Override
@@ -826,9 +841,13 @@ public class KvmBackend extends HypervisorBackend {
 
     @Override
     void handle(GetInstallPathForDataVolumeDownloadMsg msg, ReturnValueCompletion<GetInstallPathForDataVolumeDownloadReply> completion) {
-        final String installPath = makeDataVolumeInstallUrl(msg.getVolumeUuid());
         GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
-        reply.setInstallPath(installPath);
+        if (msg instanceof GetInstallPathForTemporaryDataVolumeDownloadMsg) {
+            String originVolumeUuid = ((GetInstallPathForTemporaryDataVolumeDownloadMsg) msg).getOriginVolumeUuid();
+            reply.setInstallPath(makeTemporaryDataVolumeInstallUrl(msg.getVolumeUuid(), originVolumeUuid));
+        } else {
+            reply.setInstallPath(makeDataVolumeInstallUrl(msg.getVolumeUuid()));
+        }
         completion.success(reply);
     }
 
