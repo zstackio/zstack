@@ -112,6 +112,8 @@ public class ApplianceVmSyncConfigToHaGroupFlow implements Flow {
             exp.applianceVmSyncConfigToHaRollback(ApplianceVmInventory.valueOf(applianceVmVO), haUuid);
         }
 
+        SQL.New(ApplianceVmVO.class).eq(ApplianceVmVO_.uuid, applianceVmVO.getUuid()).set(ApplianceVmVO_.haStatus, ApplianceVmHaStatus.NoHa).update();
+
         trigger.rollback();
     }
 }
