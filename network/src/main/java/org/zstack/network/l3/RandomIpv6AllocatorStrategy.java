@@ -28,6 +28,7 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
             return allocateRequiredIpv6(msg);
         }
 
+        String excludeIp = msg.getExcludedIp();
         SimpleQuery<IpRangeVO> query = dbf.createQuery(IpRangeVO.class);
         query.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         List<IpRangeVO> ranges = query.list();
@@ -39,7 +40,7 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
             IpRangeVO tr = null;
 
             for (IpRangeVO r : ranges) {
-                ip = allocateIp(r);
+                ip = allocateIp(r, excludeIp);
                 tr = r;
                 if (ip != null) {
                     break;
@@ -47,7 +48,6 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
             }
 
             if (ip == null) {
-
                 return null;
             }
 
@@ -59,9 +59,14 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
     }
 
 
-    private String allocateIp(IpRangeVO vo) {
+    private String allocateIp(IpRangeVO vo, String excludeIp) {
         BigInteger start = IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getStartIp());
         BigInteger end = IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getEndIp());
+
+        BigInteger exclude = null;
+        if (excludeIp != null) {
+            exclude = IPv6NetworkUtils.ipv6AddressToBigInteger(excludeIp);
+        }
 
         List<String> ips = Q.New(UsedIpVO.class).select(UsedIpVO_.ip).eq(UsedIpVO_.ipRangeUuid, vo.getUuid()).listValues();
         ips = ips.stream().distinct().collect(Collectors.toList());
@@ -74,6 +79,10 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
         for (String ip : ips) {
             BigInteger address = IPv6NetworkUtils.ipv6AddressToBigInteger(ip);
             usedIps.add(address);
+        }
+
+        if (exclude != null) {
+            usedIps.add(exclude);
         }
 
         Random rnd = new Random();

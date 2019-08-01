@@ -6,6 +6,7 @@ import org.zstack.header.network.l3.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -19,8 +20,9 @@ public class FirstAvailableIpv6AllocatorStrategy extends AbstractIpAllocatorStra
         return type;
     }
 
-    private String allocateIp(IpRangeVO vo) {
+    private String allocateIp(IpRangeVO vo, String excludeIp) {
         List<BigInteger> used = l3NwMgr.getUsedIpInRange(vo);
+        used.add(new BigInteger(String.valueOf(IPv6NetworkUtils.ipv6AddressToBigInteger(excludeIp))));
         BigInteger start = IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getStartIp());
         BigInteger end = IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getEndIp());
 
@@ -38,6 +40,7 @@ public class FirstAvailableIpv6AllocatorStrategy extends AbstractIpAllocatorStra
             return allocateRequiredIpv6(msg);
         }
 
+        String excludeIp = msg.getExcludedIp();
         SimpleQuery<IpRangeVO> query = dbf.createQuery(IpRangeVO.class);
         query.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         List<IpRangeVO> ranges = query.list();
@@ -51,7 +54,7 @@ public class FirstAvailableIpv6AllocatorStrategy extends AbstractIpAllocatorStra
                     continue;
                 }
 
-                ip = allocateIp(r);
+                ip = allocateIp(r, excludeIp);
                 tr = r;
                 if (ip != null) {
                     break;

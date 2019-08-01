@@ -38,7 +38,7 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
             IpRangeVO tr = null;
 
             for (IpRangeVO r : ranges) {
-                ip = allocateIp(r);
+                ip = allocateIp(r, msg.getExcludedIp());
                 tr = r;
                 if (ip != null) {
                     break;
@@ -57,7 +57,7 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
         } while (true);
     }
 
-    private String steppingAllocate(long s, long e, int total, String rangeUuid) {
+    private String steppingAllocate(long s, long e, Long ex, int total, String rangeUuid) {
         int step = 254;
         int failureCount = 0;
         int failureCheckPoint = 5;
@@ -97,6 +97,10 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
                 continue;
             }
 
+            if (ex != null) {
+                used.add(ex);
+            }
+
             Collections.sort(used);
 
             return NetworkUtils.randomAllocateIpv4Address(s, te, used);
@@ -105,18 +109,24 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
         return null;
     }
 
-    private String allocateIp(IpRangeVO vo) {
+    private String allocateIp(IpRangeVO vo, String excludeIp) {
         int total = vo.size();
         Random random = new Random();
         long s = random.nextInt(total) + NetworkUtils.ipv4StringToLong(vo.getStartIp());
         long e = NetworkUtils.ipv4StringToLong(vo.getEndIp());
-        String ret = steppingAllocate(s ,e, total, vo.getUuid());
+
+        Long ex = null;
+        if (excludeIp != null) {
+            ex = NetworkUtils.ipv4StringToLong(excludeIp);
+        }
+
+        String ret = steppingAllocate(s ,e, ex, total, vo.getUuid());
         if (ret != null) {
             return ret;
         }
 
         e = s;
         s = NetworkUtils.ipv4StringToLong(vo.getStartIp());
-        return steppingAllocate(s ,e, total, vo.getUuid());
+        return steppingAllocate(s ,e, ex, total, vo.getUuid());
     }
 }
