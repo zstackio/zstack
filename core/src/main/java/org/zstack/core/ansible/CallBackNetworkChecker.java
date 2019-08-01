@@ -58,6 +58,7 @@ public class CallBackNetworkChecker implements AnsibleChecker {
             ret.raiseExceptionIfFailed();
 
             if (StringUtils.isEmpty(ret.getStdout())) {
+                logger.debug(String.format("nmap return: %s", ret.toString()));
                 return operr("cannot nmap from agent: %s to callback address: %s:%s", targetIp, callbackIp, callBackPort);
             }
 
