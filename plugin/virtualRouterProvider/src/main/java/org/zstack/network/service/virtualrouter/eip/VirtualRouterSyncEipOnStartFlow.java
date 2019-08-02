@@ -33,6 +33,7 @@ import static org.zstack.core.Platform.operr;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -59,10 +60,10 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
 
     @Transactional(readOnly = true)
     private List<EipTO> findEipOnThisRouter(VirtualRouterVmInventory vr, List<String> eipUuids) {
-        String sql = "select vip.ip, nic.l3NetworkUuid, nic.ip, vip.l3NetworkUuid from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm where nic.vmInstanceUuid = vm.uuid and vm.state = :vmState and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and eip.uuid in (:euuids)";
+        String sql = "select vip.ip, nic.l3NetworkUuid, nic.ip, vip.l3NetworkUuid from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm where nic.vmInstanceUuid = vm.uuid and vm.state in (:vmState) and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and eip.uuid in (:euuids)";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("euuids", eipUuids);
-        q.setParameter("vmState", VmInstanceState.Running);
+        q.setParameter("vmState", Arrays.asList(VmInstanceState.Running, VmInstanceState.Unknown));
         List<Tuple> tuples =  q.getResultList();
         List<EipTO> ret = new ArrayList<EipTO>();
         for (Tuple t : tuples) {
