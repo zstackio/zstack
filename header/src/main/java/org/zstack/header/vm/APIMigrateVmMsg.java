@@ -66,6 +66,9 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, Mi
     @APIParam(required = false)
     private Boolean migrateFromDestination;
 
+    @APIParam(required = false, validValues = {"auto-converge"})
+    private String strategy;
+
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
     }
@@ -94,6 +97,15 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, Mi
 
     public void setMigrateFromDestination(Boolean migrateFromDestination) {
         this.migrateFromDestination = migrateFromDestination;
+    }
+
+
+    public String getStrategy() {
+        return strategy;
+    }
+
+    public void setStrategy(String strategy) {
+        this.strategy = strategy;
     }
 
     @Override

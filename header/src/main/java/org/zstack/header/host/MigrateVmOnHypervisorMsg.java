@@ -12,6 +12,7 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
     private VmInstanceInventory vmInventory;
     private HostInventory destHostInventory;
     private String srcHostUuid;
+    private String strategy;
     private StorageMigrationPolicy storageMigrationPolicy;
     private boolean migrateFromDestination;
 
@@ -50,6 +51,14 @@ public class MigrateVmOnHypervisorMsg extends NeedReplyMessage implements HostMe
 
     public void setSrcHostUuid(String srcHostUuid) {
         this.srcHostUuid = srcHostUuid;
+    }
+
+    public String getStrategy() {
+        return strategy;
+    }
+
+    public void setStrategy(String strategy) {
+        this.strategy = strategy;
     }
 
     public boolean isMigrateFromDestination() {

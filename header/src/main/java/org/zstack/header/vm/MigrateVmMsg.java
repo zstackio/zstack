@@ -9,6 +9,7 @@ import java.util.List;
 @SkipVmTracer(replyClass = MigrateVmReply.class)
 public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage, MigrateVmMessage {
     private String vmInstanceUuid;
+    private String strategy;
     private List<String> avoidHostUuids;
 
     public List<String> getAvoidHostUuids() {
@@ -35,5 +36,14 @@ public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage,
     @Override
     public boolean isMigrateFromDestination() {
         return false;
+    }
+
+    @Override
+    public String getStrategy() {
+        return strategy;
+    }
+
+    public void setStrategy(String strategy) {
+        this.strategy = strategy;
     }
 }

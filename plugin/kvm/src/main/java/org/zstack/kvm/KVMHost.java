@@ -1146,13 +1146,18 @@ public class KVMHost extends HostBase implements Host {
                     public void run(final FlowTrigger trigger, Map data) {
                         TaskProgressRange stage = markTaskStage(parentStage, MIGRATE_VM_STAGE);
 
+                        boolean autoConverage = KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.value(Boolean.class);
+                        if (!autoConverage) {
+                            autoConverage = s.strategy != null && s.strategy.equals("auto-converge");
+                        }
+
                         MigrateVmCmd cmd = new MigrateVmCmd();
                         cmd.setDestHostIp(dstHostMigrateIp);
                         cmd.setSrcHostIp(srcHostMigrateIp);
                         cmd.setMigrateFromDestination(migrateFromDestination);
                         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
                         cmd.setVmUuid(vmUuid);
-                        cmd.setAutoConverge(KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.value(Boolean.class));
+                        cmd.setAutoConverge(autoConverage);
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
                         cmd.setTimeout(timeoutManager.getTimeout());
 
@@ -1289,6 +1294,7 @@ public class KVMHost extends HostBase implements Host {
     class MigrateStruct {
         String vmUuid;
         String dstHostMigrateIp;
+        String strategy;
         String dstHostMnIp;
         String dstHostUuid;
         StorageMigrationPolicy storageMigrationPolicy;
@@ -1305,6 +1311,7 @@ public class KVMHost extends HostBase implements Host {
         s.dstHostUuid = msg.getDestHostInventory().getUuid();
         s.storageMigrationPolicy = msg.getStorageMigrationPolicy();
         s.migrateFromDestition = msg.isMigrateFromDestination();
+        s.strategy = msg.getStrategy();
 
         MigrateNetworkExtensionPoint.MigrateInfo migrateIpInfo = null;
         for (MigrateNetworkExtensionPoint ext: pluginRgty.getExtensionList(MigrateNetworkExtensionPoint.class)) {

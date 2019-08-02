@@ -28,8 +28,11 @@ public class VmMigrateOnHypervisorFlow implements Flow {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
         boolean migrateFromDest = false;
+        String strategy = null;
         if (spec.getMessage() instanceof MigrateVmMessage) {
-            migrateFromDest = ((MigrateVmMessage)spec.getMessage()).isMigrateFromDestination();
+            MigrateVmMessage vmMessage = (MigrateVmMessage) spec.getMessage();
+            migrateFromDest = vmMessage.isMigrateFromDestination();
+            strategy = vmMessage.getStrategy();
         }
 
         MigrateVmOnHypervisorMsg msg = new MigrateVmOnHypervisorMsg();
@@ -37,6 +40,7 @@ public class VmMigrateOnHypervisorFlow implements Flow {
         msg.setDestHostInventory(spec.getDestHost());
         msg.setSrcHostUuid(spec.getVmInventory().getHostUuid());
         msg.setMigrateFromDestination(migrateFromDest);
+        msg.setStrategy(strategy);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override
