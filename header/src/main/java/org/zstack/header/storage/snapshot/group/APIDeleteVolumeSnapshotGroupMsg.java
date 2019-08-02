@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class APIDeleteVolumeSnapshotGroupMsg extends APIDeleteMessage implements VolumeSnapshotGroupMessage {
-    @APIParam(resourceType = VolumeSnapshotGroupVO.class)
+    @APIParam(resourceType = VolumeSnapshotGroupVO.class, successIfResourceNotExisting = true)
     private String uuid;
 
     public String getUuid() {
@@ -35,5 +35,11 @@ public class APIDeleteVolumeSnapshotGroupMsg extends APIDeleteMessage implements
     @Override
     public String getGroupUuid() {
         return uuid;
+    }
+
+    public static APIDeleteVolumeSnapshotGroupMsg __example__() {
+        APIDeleteVolumeSnapshotGroupMsg result = new APIDeleteVolumeSnapshotGroupMsg();
+        result.uuid = uuid();
+        return result;
     }
 }

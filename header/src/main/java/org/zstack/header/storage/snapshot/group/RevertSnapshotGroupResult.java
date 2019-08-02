@@ -51,6 +51,7 @@ public class RevertSnapshotGroupResult {
     }
 
     public void setError(ErrorCode error) {
+        this.success = false;
         this.error = error;
     }
 }

@@ -39,4 +39,10 @@ public class APIRevertVmFromSnapshotGroupMsg extends APIMessage implements Volum
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
+    public static APIRevertVmFromSnapshotGroupMsg __example__() {
+        APIRevertVmFromSnapshotGroupMsg result = new APIRevertVmFromSnapshotGroupMsg();
+        result.uuid = uuid();
+        return result;
+    }
 }

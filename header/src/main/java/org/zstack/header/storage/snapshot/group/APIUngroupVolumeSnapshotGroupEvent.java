@@ -15,4 +15,8 @@ public class APIUngroupVolumeSnapshotGroupEvent extends APIEvent {
     public APIUngroupVolumeSnapshotGroupEvent() {
         super();
     }
+
+    public static APIUngroupVolumeSnapshotGroupEvent __example__() {
+        return new APIUngroupVolumeSnapshotGroupEvent(uuid());
+    }
 }
