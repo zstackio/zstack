@@ -9,6 +9,7 @@ import org.zstack.header.message.NeedReplyMessage;
 public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMessage, MigrateVmMessage {
     private String vmInstanceUuid;
     private String hostUuid;
+    private String strategy;
     private Boolean migrateFromDestination;
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
@@ -44,5 +45,14 @@ public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMes
 
     public void setMigrateFromDestination(Boolean migrateFromDestination) {
         this.migrateFromDestination = migrateFromDestination;
+    }
+
+    @Override
+    public String getStrategy() {
+        return strategy;
+    }
+
+    public void setStrategy(String strategy) {
+        this.strategy = strategy;
     }
 }

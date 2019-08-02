@@ -201,9 +201,30 @@ class MigrateVmFromDestitonHostCase extends SubCase {
             assert vo1.state == VmInstanceState.Running
         }
 
+        KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.updateValue(false)
+        cmd = null
+        migrateVm {
+            vmInstanceUuid = vm1.uuid
+            hostUuid = host1.uuid
+            strategy = "auto-converge"
+        }
+
+        assert cmd != null
+        assert !cmd.migrateFromDestination
+        assert cmd.autoConverge
+        assert cmd.destHostIp == host1.managementIp
+        assert cmd.srcHostIp == host.managementIp
+
+        retryInSecs {
+            vo1 = dbFindByUuid(vm1.getUuid(), VmInstanceVO.class)
+
+            assert vo1.lastHostUuid != vo1.hostUuid
+            assert vo1.state == VmInstanceState.Running
+        }
+
         // do migrate to the same host again
         MigrateVmAction action = new MigrateVmAction()
-        action.hostUuid = host.uuid
+        action.hostUuid = host1.uuid
         action.vmInstanceUuid = vm1.uuid
         action.migrateFromDestination = true
         action.sessionId = adminSession()
