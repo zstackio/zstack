@@ -9,7 +9,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -29,6 +28,7 @@ import org.zstack.utils.ssh.SshShell;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -366,9 +366,10 @@ public class AnsibleRunner {
                 return;
             }
 
-            putArgument("pip_url", String.format("http://%s:8080/zstack/static/pypi/simple", restf.getHostName()));
+            int port = new URI(restf.getBaseUrl()).getPort();
+            putArgument("pip_url", String.format("http://%s:%d/zstack/static/pypi/simple", restf.getHostName(), port));
             putArgument("trusted_host", restf.getHostName());
-            putArgument("yum_server", String.format("%s:8080", restf.getHostName()));
+            putArgument("yum_server", String.format("%s:%d", restf.getHostName(), port));
             putArgument("remote_user", username);
             if (password != null && !password.isEmpty()) {
                 putArgument("remote_pass", password);
