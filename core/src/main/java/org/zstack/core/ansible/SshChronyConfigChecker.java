@@ -29,7 +29,11 @@ public class SshChronyConfigChecker implements AnsibleChecker {
         try {
             ssh.command("awk '/^\\s*server/{print $2}' /etc/chrony.conf");
             SshResult ret = ssh.run();
+            int returnCode = ret.getReturnCode();
             ssh.reset();
+            if (returnCode != 0) {
+                return true;
+            }
 
             String[] ips = ret.getStdout().split("\n");
             logger.debug(String.format("read chrony server ip %s from configure file", ips));
