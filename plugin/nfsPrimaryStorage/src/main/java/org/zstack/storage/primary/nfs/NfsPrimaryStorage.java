@@ -43,10 +43,7 @@ import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeFormat;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
@@ -657,7 +654,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
     private void handle(final InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         final VolumeInventory volume = msg.getVolume();
-        volume.setInstallPath(NfsPrimaryStorageKvmHelper.makeTemporaryVolumeInstallUrl(
+        volume.setInstallPath(NfsPrimaryStorageKvmHelper.makeTemporaryRootVolumeInstallUrl(
                 getSelfInventory(), volume, msg.getOriginVolumeUuid()));
         handle((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
     }
@@ -756,8 +753,13 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
     private void createTemporaryEmptyVolume(final InstantiateTemporaryVolumeOnPrimaryStorageMsg msg) {
         VolumeInventory volume = msg.getVolume();
-        volume.setInstallPath(NfsPrimaryStorageKvmHelper.makeTemporaryVolumeInstallUrl(
-                getSelfInventory(), msg.getVolume(), msg.getOriginVolumeUuid()));
+        if (VolumeType.Root.toString().equals(volume.getType())) {
+            volume.setInstallPath(NfsPrimaryStorageKvmHelper
+                    .makeTemporaryRootVolumeInstallUrl(getSelfInventory(), volume, msg.getOriginVolumeUuid()));
+        } else {
+            volume.setInstallPath(NfsPrimaryStorageKvmHelper
+                    .makeTemporaryDataVolumeInstallUrl(getSelfInventory(), volume.getUuid(), msg.getOriginVolumeUuid()));
+        }
         createEmptyVolume(msg);
     }
 
@@ -937,7 +939,14 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(final DownloadDataVolumeToPrimaryStorageMsg msg) {
         final DownloadDataVolumeToPrimaryStorageReply reply = new DownloadDataVolumeToPrimaryStorageReply();
-        final String installPath = PathUtil.join(self.getMountPath(), PrimaryStoragePathMaker.makeDataVolumeInstallPath(msg.getVolumeUuid()));
+        String installPath;
+        if (msg instanceof DownloadTemporaryDataVolumeToPrimaryStorageMsg) {
+            String originVolumeUuid = ((DownloadTemporaryDataVolumeToPrimaryStorageMsg) msg).getOriginVolumeUuid();
+            installPath = NfsPrimaryStorageKvmHelper.makeTemporaryDataVolumeInstallUrl(getSelfInventory(), msg.getVolumeUuid(), originVolumeUuid);
+        } else {
+            installPath = NfsPrimaryStorageKvmHelper.makeDataVolumeInstallUrl(getSelfInventory(), msg.getVolumeUuid());
+        }
+
         BackupStorageVO bsvo = dbf.findByUuid(msg.getBackupStorageRef().getBackupStorageUuid(), BackupStorageVO.class);
         NfsPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(
                 BackupStorageType.valueOf(bsvo.getType()),
@@ -963,10 +972,13 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(GetInstallPathForDataVolumeDownloadMsg msg) {
         final GetInstallPathForDataVolumeDownloadReply reply = new GetInstallPathForDataVolumeDownloadReply();
-        final String installPath = PathUtil.join(self.getMountPath(), PrimaryStoragePathMaker.makeDataVolumeInstallPath(msg.getVolumeUuid()));
-        reply.setInstallPath(installPath);
+        if (msg instanceof GetInstallPathForTemporaryDataVolumeDownloadMsg) {
+            String originVolumeUuid = ((GetInstallPathForTemporaryDataVolumeDownloadMsg) msg).getOriginVolumeUuid();
+            reply.setInstallPath(NfsPrimaryStorageKvmHelper.makeTemporaryDataVolumeInstallUrl(getSelfInventory(), msg.getVolumeUuid(), originVolumeUuid));
+        } else {
+            reply.setInstallPath(NfsPrimaryStorageKvmHelper.makeDataVolumeInstallUrl(getSelfInventory(), msg.getVolumeUuid()));
+        }
         bus.reply(msg, reply);
-
     }
 
     @Override

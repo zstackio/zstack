@@ -130,6 +130,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     private void handle(CreateDataVolumeFromVolumeTemplateMsg msg) {
         CreateDataVolumeFromVolumeTemplateReply reply = new CreateDataVolumeFromVolumeTemplateReply();
 
+        final String originVolumeUuid = msg instanceof CreateTemporaryDataVolumeFromVolumeTemplateMsg ?
+                ((CreateTemporaryDataVolumeFromVolumeTemplateMsg) msg).getOriginVolumeUuid() : null;
         final ImageVO template = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
         final VolumeVO vol = new VolumeVO();
         vol.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
@@ -265,7 +267,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        GetInstallPathForDataVolumeDownloadMsg gmsg = new GetInstallPathForDataVolumeDownloadMsg();
+                        GetInstallPathForDataVolumeDownloadMsg gmsg = originVolumeUuid != null ?
+                                new GetInstallPathForTemporaryDataVolumeDownloadMsg(originVolumeUuid) :
+                                new GetInstallPathForDataVolumeDownloadMsg();
                         gmsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
                         gmsg.setVolumeUuid(vol.getUuid());
                         gmsg.setBackupStorageRef(ImageBackupStorageRefInventory.valueOf(targetBackupStorageRef));
@@ -292,7 +296,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        DownloadDataVolumeToPrimaryStorageMsg dmsg = new DownloadDataVolumeToPrimaryStorageMsg();
+                        DownloadDataVolumeToPrimaryStorageMsg dmsg = originVolumeUuid != null ?
+                                new DownloadTemporaryDataVolumeToPrimaryStorageMsg(originVolumeUuid) :
+                                new DownloadDataVolumeToPrimaryStorageMsg();
                         dmsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
                         dmsg.setVolumeUuid(vol.getUuid());
                         dmsg.setBackupStorageRef(ImageBackupStorageRefInventory.valueOf(targetBackupStorageRef));

@@ -21,11 +21,14 @@ public class PrimaryStoragePathMaker {
 
     public static String makeTemporaryRootVolumeInstallPath(VolumeInventory vol, String originVolumeUuid) {
         return PathUtil.join("rootVolumes", "acct-" + getAccountUuidOfResource(vol.getUuid()), "vol-" + originVolumeUuid, vol.getUuid() + ".qcow2");
-
     }
 
     public static String makeRootVolumeInstallPath(VolumeInventory vol) {
         return PathUtil.join("rootVolumes", "acct-" + getAccountUuidOfResource(vol.getUuid()), "vol-" + vol.getUuid(), vol.getUuid() + ".qcow2");
+    }
+
+    public static String makeTemporaryDataVolumeInstallPath(String volUuid, String originVolumeUuid) {
+        return PathUtil.join("dataVolumes", "acct-" + getAccountUuidOfResource(volUuid), "vol-" + originVolumeUuid, volUuid + ".qcow2");
     }
 
     public static String makeDataVolumeInstallPath(String volUuid) {
