@@ -28,7 +28,7 @@ public class CreatePolicyRouteTableAction extends AbstractAction {
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vRouterUuid;
 
-    @Param(required = true, maxLength = 3, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,254L}, noTrim = false)
+    @Param(required = true, maxLength = 3, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,179L}, noTrim = false)
     public java.lang.Integer number;
 
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

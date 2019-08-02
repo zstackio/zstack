@@ -31,7 +31,7 @@ public class CreatePolicyRouteRuleAction extends AbstractAction {
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String tableUuid;
 
-    @Param(required = true, maxLength = 4, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9999L}, noTrim = false)
+    @Param(required = true, maxLength = 4, nonempty = false, nullElements = false, emptyString = true, numberRange = {1001L,2999L}, noTrim = false)
     public int ruleNumber = 0;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
