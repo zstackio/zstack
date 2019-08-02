@@ -47,6 +47,7 @@ class AttachIpv6RangeToVmCase extends SubCase {
         L3NetworkInventory l3_stateless = env.inventoryByName("l3-Stateless-DHCP")
         L3NetworkInventory l3_slaac = env.inventoryByName("l3-SLAAC")
         L3NetworkInventory l3 = env.inventoryByName("l3")
+        L3NetworkInventory l3_1 = env.inventoryByName("l3-1")
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
 
@@ -65,6 +66,25 @@ class AttachIpv6RangeToVmCase extends SubCase {
         assert !l3s.contains(l3_statefull.uuid)
         assert l3s.contains(l3_statefull_1.uuid)
         assert !l3s.contains(l3.uuid)
+        assert l3s.contains(l3_1.uuid)
+
+        /* create eip for vm */
+        VipInventory vip = createVip {
+            name = "vip"
+            l3NetworkUuid = l3_1.uuid
+        }
+
+        VmNicInventory nic = vm.vmNics.stream().filter{nic -> nic.l3NetworkUuid == l3.uuid}.collect(Collectors.toList())[0]
+        createEip {
+            name = "eip"
+            vipUuid = vip.uuid
+            vmNicUuid = nic.uuid
+        }
+        l3Invs = getVmAttachableL3Network {
+            vmInstanceUuid = vm.uuid
+        }
+        l3s = l3Invs.stream().map{l3n -> l3n.getUuid()}.collect(Collectors.toList())
+        assert !l3s.contains(l3_1.uuid)
 
         expect(AssertionError.class) {
             attachL3NetworkToVm {
