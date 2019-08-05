@@ -14,11 +14,14 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.volume.APICreateVolumeSnapshotGroupMsg;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 
 import javax.persistence.TypedQuery;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -57,6 +60,8 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             validate((APIGetPrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof APIGetTrashOnPrimaryStorageMsg) {
             validate(((APIGetTrashOnPrimaryStorageMsg) msg));
+        } else if (msg instanceof APICreateVolumeSnapshotGroupMsg) {
+            validate((APICreateVolumeSnapshotGroupMsg) msg);
         }
 
         setServiceId(msg);
@@ -181,6 +186,24 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
     private void validate(final APIGetTrashOnPrimaryStorageMsg msg) {
         if ((msg.getResourceType() != null) ^ (msg.getResourceUuid() != null)) {
             throw new ApiMessageInterceptionException((argerr("'resourceUuid' and 'resourceType' must be set both or neither!")));
+        }
+    }
+
+    private void validate(final APICreateVolumeSnapshotGroupMsg msg) {
+        Set<String> psUuids = msg.getVmInstance().getAllVolumes().stream()
+                .map(VolumeInventory::getPrimaryStorageUuid)
+                .collect(Collectors.toSet());
+
+        List<String> allowedPsUuids = Q.New(PrimaryStorageVO.class).in(PrimaryStorageVO_.uuid, psUuids)
+                .eq(PrimaryStorageVO_.status, PrimaryStorageStatus.Connected)
+                .eq(PrimaryStorageVO_.state, PrimaryStorageState.Enabled)
+                .select(PrimaryStorageVO_.uuid)
+                .listValues();
+
+        psUuids.removeAll(allowedPsUuids);
+        if (!psUuids.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr("primary storage(s) [uuid: %s] where volume(s) locate" +
+                    " is not Enabled or Connected", psUuids));
         }
     }
 }
