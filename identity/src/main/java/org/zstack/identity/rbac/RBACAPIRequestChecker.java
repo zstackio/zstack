@@ -87,7 +87,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         }
 
         // no polices applied to the operation, deny by default
-        throw new OperationFailureException(operr("operation is denied by default"));
+        throw new OperationFailureException(operr("operation[API:%s] is denied by default, please contact admin to correct it", rbacEntity.getApiMessage().getClass().getName()));
     }
 
     private String jsonMessage() {
