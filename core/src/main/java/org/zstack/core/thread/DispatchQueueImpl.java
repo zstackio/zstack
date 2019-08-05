@@ -74,12 +74,12 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     public ChainInfo getChainTaskInfo(String signature) {
         long now = System.currentTimeMillis();
         synchronized (chainTasks) {
+            ChainInfo info = new ChainInfo();
             ChainTaskQueueWrapper w = chainTasks.get(signature);
             if (w == null) {
-                return null;
+                return info;
             }
 
-            ChainInfo info = new ChainInfo();
             int index = 0;
             for (Object obj : w.runningQueue) {
                 ChainFuture cf = (ChainFuture) obj;
