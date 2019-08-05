@@ -77,6 +77,14 @@ public class IAM2OrganizationInventory  {
         return this.parentUuid;
     }
 
+    public java.lang.String rootOrganizationUuid;
+    public void setRootOrganizationUuid(java.lang.String rootOrganizationUuid) {
+        this.rootOrganizationUuid = rootOrganizationUuid;
+    }
+    public java.lang.String getRootOrganizationUuid() {
+        return this.rootOrganizationUuid;
+    }
+
     public java.util.List attributes;
     public void setAttributes(java.util.List attributes) {
         this.attributes = attributes;

@@ -1,8 +1,8 @@
-package org.zstack.sdk;
+package org.zstack.sdk.iam2.entity;
 
+import org.zstack.sdk.PolicyStatement;
 
-
-public class PolicyRouteTableInventory  {
+public class IAM2RoleTemplate  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -12,20 +12,20 @@ public class PolicyRouteTableInventory  {
         return this.uuid;
     }
 
-    public int tableNumber;
-    public void setTableNumber(int tableNumber) {
-        this.tableNumber = tableNumber;
+    public java.lang.String name;
+    public void setName(java.lang.String name) {
+        this.name = name;
     }
-    public int getTableNumber() {
-        return this.tableNumber;
+    public java.lang.String getName() {
+        return this.name;
     }
 
-    public java.lang.String description;
-    public void setDescription(java.lang.String description) {
-        this.description = description;
+    public java.lang.String roleUuid;
+    public void setRoleUuid(java.lang.String roleUuid) {
+        this.roleUuid = roleUuid;
     }
-    public java.lang.String getDescription() {
-        return this.description;
+    public java.lang.String getRoleUuid() {
+        return this.roleUuid;
     }
 
     public java.sql.Timestamp createDate;
@@ -44,12 +44,12 @@ public class PolicyRouteTableInventory  {
         return this.lastOpDate;
     }
 
-    public java.util.List routes;
-    public void setRoutes(java.util.List routes) {
-        this.routes = routes;
+    public PolicyStatement statement;
+    public void setStatement(PolicyStatement statement) {
+        this.statement = statement;
     }
-    public java.util.List getRoutes() {
-        return this.routes;
+    public PolicyStatement getStatement() {
+        return this.statement;
     }
 
 }

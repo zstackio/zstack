@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetIAM2ProjectRetirePolicyAction extends AbstractAction {
+public class GetIAM2VirtualIDInOrganizationAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetIAM2ProjectRetirePolicyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.SetIAM2ProjectRetirePolicyResult value;
+        public org.zstack.sdk.iam2.api.GetIAM2VirtualIDInOrganizationResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,11 @@ public class SetIAM2ProjectRetirePolicyAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
+    public java.lang.Integer limit = 100;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String policy;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
+    public java.lang.Integer start = 0;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -49,12 +49,6 @@ public class SetIAM2ProjectRetirePolicyAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -63,8 +57,8 @@ public class SetIAM2ProjectRetirePolicyAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.SetIAM2ProjectRetirePolicyResult value = res.getResult(org.zstack.sdk.iam2.api.SetIAM2ProjectRetirePolicyResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.SetIAM2ProjectRetirePolicyResult() : value; 
+        org.zstack.sdk.iam2.api.GetIAM2VirtualIDInOrganizationResult value = res.getResult(org.zstack.sdk.iam2.api.GetIAM2VirtualIDInOrganizationResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.GetIAM2VirtualIDInOrganizationResult() : value; 
 
         return ret;
     }
@@ -93,11 +87,11 @@ public class SetIAM2ProjectRetirePolicyAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/iam2/projects/retire-policies/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/iam2/virtual-ids/in/organizations";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "setIAM2ProjectRetirePolicy";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
