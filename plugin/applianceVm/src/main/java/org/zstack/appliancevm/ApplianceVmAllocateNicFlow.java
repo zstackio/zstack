@@ -42,12 +42,13 @@ public class ApplianceVmAllocateNicFlow implements Flow {
     @Autowired
     private L3NetworkManager l3nm;
 
-    private UsedIpInventory acquireIp(String l3NetworkUuid, String mac, String staticIp, String stratgey) {
+    private UsedIpInventory acquireIp(String l3NetworkUuid, String mac, String staticIp, String stratgey, boolean allowDuplicatedAddress) {
         AllocateIpMsg msg = new AllocateIpMsg();
         msg.setL3NetworkUuid(l3NetworkUuid);
         if (staticIp != null) {
             msg.setRequiredIp(staticIp);
         }
+        msg.setDuplicatedIpAllowed(allowDuplicatedAddress);
         l3nm.updateIpAllocationMsg(msg, mac);
         bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3NetworkUuid);
         msg.setAllocateStrategy(stratgey);
@@ -73,7 +74,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
 
         if (nicSpec.getIp() == null) {
             String strategy = nicSpec.getAllocatorStrategy() == null ? L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY : nicSpec.getAllocatorStrategy();
-            UsedIpInventory ip = acquireIp(nicSpec.getL3NetworkUuid(), inv.getMac(), nicSpec.getStaticIp(), strategy);
+            UsedIpInventory ip = acquireIp(nicSpec.getL3NetworkUuid(), inv.getMac(), nicSpec.getStaticIp(), strategy, nicSpec.isAllowDuplicatedAddress());
             inv.setGateway(ip.getGateway());
             inv.setIp(ip.getIp());
             inv.setNetmask(ip.getNetmask());

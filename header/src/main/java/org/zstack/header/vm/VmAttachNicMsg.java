@@ -11,6 +11,15 @@ public class VmAttachNicMsg extends NeedReplyMessage implements VmInstanceMessag
     private String vmInstanceUuid;
     private String l3NetworkUuid;
     private Map<String, String> staticIpMap = new HashMap<>();
+    private boolean allowDuplicatedAddress = false;
+
+    public boolean isAllowDuplicatedAddress() {
+        return allowDuplicatedAddress;
+    }
+
+    public void setAllowDuplicatedAddress(boolean allowDuplicatedAddress) {
+        this.allowDuplicatedAddress = allowDuplicatedAddress;
+    }
 
     @Override
     public String getVmInstanceUuid() {

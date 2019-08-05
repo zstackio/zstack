@@ -18,6 +18,7 @@ public class ApplianceVmNicSpec implements Serializable {
     private String allocatorStrategy;
     private String metaData;
     private String staticIp;
+    private boolean allowDuplicatedAddress = false;
 
     public String getL3NetworkUuid() {
         return l3NetworkUuid;
@@ -89,5 +90,13 @@ public class ApplianceVmNicSpec implements Serializable {
 
     public void setStaticIp(String staticIp) {
         this.staticIp = staticIp;
+    }
+
+    public boolean isAllowDuplicatedAddress() {
+        return allowDuplicatedAddress;
+    }
+
+    public void setAllowDuplicatedAddress(boolean allowDuplicatedAddress) {
+        this.allowDuplicatedAddress = allowDuplicatedAddress;
     }
 }
