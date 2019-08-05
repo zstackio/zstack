@@ -47,7 +47,7 @@
     <bean id="UserdataExtension" class="org.zstack.network.service.userdata.UserdataExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
-            <zstack:extension interface="org.zstack.header.network.service.NetworkServiceExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.service.NetworkServiceExtensionPoint" order="800"/>
         </zstack:plugin>
     </bean>
 

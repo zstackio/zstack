@@ -15,7 +15,7 @@
 	<bean id="DhcpExtension" class="org.zstack.network.service.DhcpExtension">
 		<zstack:plugin>
 			<zstack:extension interface="org.zstack.header.Component" />
-			<zstack:extension interface="org.zstack.header.network.service.NetworkServiceExtensionPoint" />
+			<zstack:extension interface="org.zstack.header.network.service.NetworkServiceExtensionPoint" order="900"/>
 			<zstack:extension interface="org.zstack.header.vm.VmDefaultL3NetworkChangedExtensionPoint" />
 		</zstack:plugin>
     </bean>
