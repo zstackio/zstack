@@ -24,6 +24,8 @@ import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
@@ -38,10 +40,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagValidator;
-import org.zstack.header.vm.CreateVmInstanceMsg;
-import org.zstack.header.vm.VmInstanceCreateExtensionPoint;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceStartExtensionPoint;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
@@ -84,6 +83,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     private Map<String, PrimaryStorageFactory> primaryStorageFactories = Collections.synchronizedMap(new HashMap<>());
     private Map<String, PrimaryStorageAllocatorStrategyFactory> allocatorFactories = Collections.synchronizedMap(new HashMap<>());
+    private Map<String, PrimaryStorageLicenseInfoFactory> primaryStorageLicenseInfoFactories = Collections.synchronizedMap(new HashMap<>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
 
     static {
@@ -118,9 +118,41 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             handle((APIGetPrimaryStorageAllocatorStrategiesMsg) msg);
         } else if (msg instanceof APIGetPrimaryStorageCapacityMsg) {
             handle((APIGetPrimaryStorageCapacityMsg) msg);
+        } else if (msg instanceof APIGetPrimaryStorageLicenseInfoMsg) {
+            handle((APIGetPrimaryStorageLicenseInfoMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetPrimaryStorageLicenseInfoMsg msg) {
+        APIGetPrimaryStorageLicenseInfoReply reply = new APIGetPrimaryStorageLicenseInfoReply();
+        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(msg.getUuid(), PrimaryStorageVO.class);
+        if (primaryStorageVO == null) {
+            reply.setError(operr("primaryStorage[uuid=%s] does not exist", msg.getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        GetPrimaryStorageLicenseInfoMsg gmsg = new GetPrimaryStorageLicenseInfoMsg();
+        gmsg.setPrimaryStorageUuid(msg.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(gmsg, PrimaryStorageConstant.SERVICE_ID, gmsg.getPrimaryStorageUuid());
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (r.isSuccess()) {
+                    GetPrimaryStorageLicenseInfoReply reply1 = r.castReply();
+                    if (reply1.getPrimaryStorageLicenseInfo() != null) {
+                        reply.setUuid(reply1.getPrimaryStorageLicenseInfo().getUuid());
+                        reply.setExpireTime(reply1.getPrimaryStorageLicenseInfo().getExpireTime());
+                        reply.setName(primaryStorageVO.getName());
+                    }
+                } else {
+                    reply.setError(r.getError());
+                }
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final APIGetPrimaryStorageCapacityMsg msg) {
@@ -293,9 +325,37 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             handle((RecalculatePrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof PrimaryStorageMessage) {
             passThrough((PrimaryStorageMessage) msg);
+        } else if (msg instanceof GetPrimaryStorageLicenseInfoMsg) {
+            handle((GetPrimaryStorageLicenseInfoMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(GetPrimaryStorageLicenseInfoMsg msg) {
+        GetPrimaryStorageLicenseInfoReply reply = new GetPrimaryStorageLicenseInfoReply();
+
+        if (!PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR.hasTag(msg.getPrimaryStorageUuid())) {
+            bus.reply(msg, reply);
+            return;
+        }
+        String vendor = PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR.getTokenByResourceUuid(msg.getPrimaryStorageUuid(), PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR_TOKEN);
+        PrimaryStorageVendor primaryStorageVendor = PrimaryStorageVendor.valueOf(vendor);
+        final PrimaryStorageLicenseInfoFactory factory = getPrimaryStorageLicenseInfoFactory(primaryStorageVendor);
+        factory.getPrimaryStorageLicenseInfo(msg.getPrimaryStorageUuid(), new ReturnValueCompletion<PrimaryStorageLicenseInfo>(msg) {
+
+            @Override
+            public void success(PrimaryStorageLicenseInfo primaryStorageLicenseInfo) {
+                reply.setPrimaryStorageLicenseInfo(primaryStorageLicenseInfo);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final RecalculatePrimaryStorageCapacityMsg msg) {
@@ -343,13 +403,13 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     /**
      * Supported allocation strategy：
-     *      DefaultPrimaryStorageAllocationStrategy (only work for non-local primary storage)
-     *      LocalPrimaryStorageStrategy (only work for local primary storage)
+     * DefaultPrimaryStorageAllocationStrategy (only work for non-local primary storage)
+     * LocalPrimaryStorageStrategy (only work for local primary storage)
      *
      * Note：
-     *      If the allocation strategy is not specified
-     *          If the cluster is mounted with local storage, the default is LocalPrimaryStorageStrategy。
-     *          Otherwise, it is DefaultPrimaryStorageAllocationStrategy
+     * If the allocation strategy is not specified
+     * If the cluster is mounted with local storage, the default is LocalPrimaryStorageStrategy。
+     * Otherwise, it is DefaultPrimaryStorageAllocationStrategy
      */
     private void handle(AllocatePrimaryStorageMsg msg) {
         AllocatePrimaryStorageReply reply = new AllocatePrimaryStorageReply(null);
@@ -398,7 +458,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         spec.setAvoidPrimaryStorageUuids(msg.getExcludePrimaryStorageUuids());
         List<PrimaryStorageInventory> ret = strategy.allocateAllCandidates(spec);
 
-        if (msg.isDryRun()){
+        if (msg.isDryRun()) {
             // check capacity has been done before
             AllocatePrimaryStorageDryRunReply r = new AllocatePrimaryStorageDryRunReply();
             r.setPrimaryStorageInventories(ret);
@@ -486,7 +546,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             @Override
             public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
                 if (PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.isMatch(systemTag)) {
-                    String cidr=PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByTag(systemTag,PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN);
+                    String cidr = PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByTag(systemTag, PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN);
                     if (!NetworkUtils.isCidr(cidr)) {
                         throw new ApiMessageInterceptionException(argerr(
                                 "cidr[%s] Input Format Error", cidr));
@@ -506,7 +566,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                         if (++cidrCount > 1) {
                             throw new ApiMessageInterceptionException(argerr("only one primaryStorage cidr system tag is allowed, but %d got", cidrCount));
                         }
-                        String cidr=PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByTag(systemTag,PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN);
+                        String cidr = PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByTag(systemTag, PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN);
                         if (!NetworkUtils.isCidr(cidr)) {
                             throw new ApiMessageInterceptionException(argerr(
                                     "cidr[%s] Input Format Error", cidr));
@@ -558,6 +618,15 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             }
             primaryStorageFactories.put(f.getPrimaryStorageType().toString(), f);
         }
+
+        for (PrimaryStorageLicenseInfoFactory f : pluginRgty.getExtensionList(PrimaryStorageLicenseInfoFactory.class)) {
+            PrimaryStorageLicenseInfoFactory old = primaryStorageLicenseInfoFactories.get(f.getPrimaryStorageVendor().toString());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate PrimaryStorageLicenseInfoFactory[%s, %s] for type[%s]",
+                        f.getClass().getName(), old.getClass().getName(), old.getPrimaryStorageVendor()));
+            }
+            primaryStorageLicenseInfoFactories.put(f.getPrimaryStorageVendor().toString(), f);
+        }
     }
 
 
@@ -574,6 +643,14 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageFactory factory = primaryStorageFactories.get(type.toString());
         if (factory == null) {
             throw new CloudRuntimeException(String.format("No PrimaryStorageFactory for type: %s found", type));
+        }
+        return factory;
+    }
+
+    public PrimaryStorageLicenseInfoFactory getPrimaryStorageLicenseInfoFactory(PrimaryStorageVendor type) {
+        PrimaryStorageLicenseInfoFactory factory = primaryStorageLicenseInfoFactories.get(type.toString());
+        if (factory == null) {
+            throw new CloudRuntimeException(String.format("No PrimaryStorageLicenseInfoFactory for type: %s found", type));
         }
         return factory;
     }
@@ -699,7 +776,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                 String psUuid = config.getAllocate().getPrimaryStorage().getUuid();
                 if (msg.getPrimaryStorageUuidForRootVolume() != null && !msg.getPrimaryStorageUuidForRootVolume().equals(psUuid)) {
                     throw new OperationFailureException(operr("primaryStorageUuid conflict, the primary storage specified by the instance offering is %s, and the primary storage specified in the creation parameter is %s"
-                            ,psUuid, msg.getPrimaryStorageUuidForRootVolume()));
+                            , psUuid, msg.getPrimaryStorageUuidForRootVolume()));
                 }
                 msg.setPrimaryStorageUuidForRootVolume(psUuid);
             }
