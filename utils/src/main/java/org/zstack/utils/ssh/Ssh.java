@@ -209,6 +209,7 @@ public class Ssh {
                    Session session = null;
                    try {
                        session = ssh.startSession();
+                       session.allocateDefaultPTY();
                        if (logger.isTraceEnabled()) {
                            logger.trace(String.format("[start SSH] %s", cmd));
                        }
