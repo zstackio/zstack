@@ -147,9 +147,9 @@
     "category": "HOST",
     "code": "1006",
     "method": "regex",
-    "regex": ".*can not update host\\[uuid:.*]which is connecting or creating, please wait.*",
-    "message_cn": "无法更新正在连接或创建的物理机[uuid:%1$s]，请稍候",
-    "message_en": "can not update host[uuid:%1$s]which is connecting or creating, please wait"
+    "regex": "can not update host\\[uuid:.*]which is connecting or creating, please wait.*",
+    "message_cn": "无法更新正在连接或添加中的物理机[uuid:%1$s]信息，请稍候",
+    "message_en": "can not update host[uuid:%1$s]which is connecting or adding, please wait"
   },
   {
     "category": "L2Network",
