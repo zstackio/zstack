@@ -256,3 +256,101 @@ CREATE TABLE `NetworkRouterFlowMeterRefVO` (
     CONSTRAINT `fkNetworkRouterFlowMeterRefVOL3NetworkVO` FOREIGN KEY (`l3NetworkUuid`) REFERENCES `L3NetworkEO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkNetworkRouterFlowMeterRefVOFlowRouterVmVO` FOREIGN KEY (`vFlowRouterUuid`) REFERENCES `FlowRouterVO` (`uuid`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `PolicyRouteRuleSetVO` (
+  `uuid` varchar(32) NOT NULL,
+  `name` varchar(16) NOT NULL,
+  `vyosName` varchar(32) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`uuid`),
+  UNIQUE KEY `uuid` (`uuid`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `PolicyRouteTableVO` (
+  `uuid` varchar(255) NOT NULL,
+  `tableNumber` int(3) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`uuid`),
+  UNIQUE KEY `uuid` (`uuid`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `PolicyRouteRuleVO` (
+  `uuid` varchar(32) NOT NULL,
+  `ruleNumber` int(4) NOT NULL,
+  `ruleSetUuid` varchar(32) NOT NULL,
+  `protocol` varchar(32) DEFAULT NULL,
+  `tableUuid` varchar(32) DEFAULT NULL,
+  `destIp` varchar(255) DEFAULT NULL,
+  `sourceIp` varchar(255) DEFAULT NULL,
+  `destPort` varchar(255) DEFAULT NULL,
+  `sourcePort` varchar(255) DEFAULT NULL,
+  `state` varchar(32) NOT NULL,
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`uuid`),
+  UNIQUE KEY `uuid` (`uuid`) USING BTREE,
+  KEY `fkPolicyRouteRuleVOPolicyRouteRuleSetVO` (`ruleSetUuid`),
+  KEY `fkPolicyRouteRuleVOPolicyRouteTableVO` (`tableUuid`),
+  CONSTRAINT `fkPolicyRouteRuleVOPolicyRouteRuleSetVO` FOREIGN KEY (`ruleSetUuid`) REFERENCES `PolicyRouteRuleSetVO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `fkPolicyRouteRuleVOPolicyRouteTableVO` FOREIGN KEY (`tableUuid`) REFERENCES `PolicyRouteTableVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `PolicyRouteTableRouteEntryVO` (
+  `uuid` varchar(32) NOT NULL,
+  `tableUuid` varchar(32) NOT NULL,
+  `distance` int(10) DEFAULT NULL,
+  `destinationCidr` varchar(64) NOT NULL,
+  `nextHopIp` varchar(255) NOT NULL,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`uuid`),
+  UNIQUE KEY `uuid` (`uuid`) USING BTREE,
+  KEY `fkPolicyRouteTableRouteEntryVOPolicyRouteTableVO` (`tableUuid`),
+  CONSTRAINT `fkPolicyRouteTableRouteEntryVOPolicyRouteTableVO` FOREIGN KEY (`tableUuid`) REFERENCES `PolicyRouteTableVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `PolicyRouteTableVRouterRefVO` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `tableUuid` varchar(32) NOT NULL,
+  `vRouterUuid` varchar(32) NOT NULL,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`) USING BTREE,
+  KEY `fkPolicyRouteTableVRouterRefVcPolicyRouteTableVO` (`tableUuid`),
+  KEY `fkPolicyRouteTableVRouterRefVOVirtualRouterVMVO` (`vRouterUuid`),
+  CONSTRAINT `fkPolicyRouteTableVRouterRefVOVirtualRouterVMVO` FOREIGN KEY (`vRouterUuid`) REFERENCES `VirtualRouterVmVO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `fkPolicyRouteTableVRouterRefVcPolicyRouteTableVO` FOREIGN KEY (`tableUuid`) REFERENCES `PolicyRouteTableVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `PolicyRouteRuleSetVRouterRefVO` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `vRouterUuid` varchar(32) NOT NULL,
+  `ruleSetUuid` varchar(32) NOT NULL,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`) USING BTREE,
+  KEY `fkPolicyRouteRuleSetVRouterRefVOVirtualRouteVMVO` (`vRouterUuid`),
+  KEY `fkPolicyRouteRuleSetVRouterRefVOPolicyRouteRuleSetVO` (`ruleSetUuid`),
+  CONSTRAINT `fkPolicyRouteRuleSetVRouterRefVOVirtualRouteVMVO` FOREIGN KEY (`vRouterUuid`) REFERENCES `VirtualRouterVmVO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `fkPolicyRouteRuleSetVRouterRefVOPolicyRouteRuleSetVO` FOREIGN KEY (`ruleSetUuid`) REFERENCES `PolicyRouteRuleSetVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `PolicyRouteRuleSetL3RefVO` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `ruleSetUuid` varchar(32) NOT NULL,
+  `l3NetworkUuid` varchar(32) NOT NULL,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`) USING BTREE,
+  KEY `fkPolicyRouteRuleSetNicRefVOPolicyRouteRuleSetVO` (`ruleSetUuid`) USING BTREE,
+  KEY `fkPolicyRouteRuleSetNicRefVOVmNicVO` (`l3NetworkUuid`) USING BTREE,
+  CONSTRAINT `fkPolicyRouteRuleSetNicRefVOVmNicVO` FOREIGN KEY (`l3NetworkUuid`) REFERENCES `L3NetworkEO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `fkPolicyRouteRuleSetNicRefVOPolicyRouteRuleSetVO` FOREIGN KEY (`ruleSetUuid`) REFERENCES `PolicyRouteRuleSetVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
