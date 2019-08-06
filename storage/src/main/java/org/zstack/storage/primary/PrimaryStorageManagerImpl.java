@@ -1,5 +1,7 @@
 package org.zstack.storage.primary;
 
+import com.google.gson.JsonSyntaxException;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.configuration.DiskOfferingSystemTags;
@@ -799,7 +801,17 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     @Override
     public void validateInstanceOfferingUserConfig(String userConfig, String instanceOfferingUuid) {
-        InstanceOfferingUserConfig config = OfferingUserConfigUtils.toObject(userConfig, InstanceOfferingUserConfig.class);
+        if (StringUtils.isBlank(userConfig)) {
+            return;
+        }
+
+        InstanceOfferingUserConfig config;
+
+        try {
+            config = OfferingUserConfigUtils.toObject(userConfig, InstanceOfferingUserConfig.class);
+        } catch (JsonSyntaxException e) {
+            throw new IllegalArgumentException("Syntax error(s) in billing instance offering user configuration.");
+        }
 
         if (config.getAllocate() == null) {
             return;
@@ -831,7 +843,17 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     @Override
     public void validateDiskOfferingUserConfig(String userConfig, String diskOfferingUuid) {
-        DiskOfferingUserConfig config = OfferingUserConfigUtils.toObject(userConfig, DiskOfferingUserConfig.class);
+        if (StringUtils.isBlank(userConfig)) {
+            return;
+        }
+
+        DiskOfferingUserConfig config;
+
+        try {
+            config = OfferingUserConfigUtils.toObject(userConfig, DiskOfferingUserConfig.class);
+        } catch (JsonSyntaxException e) {
+            throw new IllegalArgumentException("Syntax error(s) in disk offering user configuration.");
+        }
 
         if (config.getAllocate() == null) {
             return;
