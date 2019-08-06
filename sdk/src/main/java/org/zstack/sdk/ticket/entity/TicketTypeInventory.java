@@ -2,7 +2,7 @@ package org.zstack.sdk.ticket.entity;
 
 
 
-public class TicketFlowCollectionInventory  {
+public class TicketTypeInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
@@ -28,20 +28,28 @@ public class TicketFlowCollectionInventory  {
         return this.description;
     }
 
-    public java.lang.String state;
-    public void setState(java.lang.String state) {
-        this.state = state;
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
     }
-    public java.lang.String getState() {
-        return this.state;
+    public java.lang.String getType() {
+        return this.type;
     }
 
-    public java.lang.String status;
-    public void setStatus(java.lang.String status) {
-        this.status = status;
+    public java.lang.String requests;
+    public void setRequests(java.lang.String requests) {
+        this.requests = requests;
     }
-    public java.lang.String getStatus() {
-        return this.status;
+    public java.lang.String getRequests() {
+        return this.requests;
+    }
+
+    public boolean adminOnly;
+    public void setAdminOnly(boolean adminOnly) {
+        this.adminOnly = adminOnly;
+    }
+    public boolean getAdminOnly() {
+        return this.adminOnly;
     }
 
     public java.sql.Timestamp createDate;
@@ -58,30 +66,6 @@ public class TicketFlowCollectionInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
-    }
-
-    public java.lang.Boolean isDefault;
-    public void setIsDefault(java.lang.Boolean isDefault) {
-        this.isDefault = isDefault;
-    }
-    public java.lang.Boolean getIsDefault() {
-        return this.isDefault;
-    }
-
-    public java.util.List flows;
-    public void setFlows(java.util.List flows) {
-        this.flows = flows;
-    }
-    public java.util.List getFlows() {
-        return this.flows;
-    }
-
-    public java.util.List ticketTypeUuids;
-    public void setTicketTypeUuids(java.util.List ticketTypeUuids) {
-        this.ticketTypeUuids = ticketTypeUuids;
-    }
-    public java.util.List getTicketTypeUuids() {
-        return this.ticketTypeUuids;
     }
 
 }
