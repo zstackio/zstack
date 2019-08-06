@@ -51,6 +51,7 @@
                                         <exclude>springConfigXml/sharedMountPointPrimaryStorage.xml</exclude>
                                         <exclude>springConfigXml/ceph.xml</exclude>
                                         <exclude>springConfigXml/fusionstor.xml</exclude>
+                                        <exclude>springConfigXml/AccountManager.xml</exclude>
                                         <exclude>serviceConfig/metadata.xml</exclude>
                                     </excludes>
                                 </resource>
