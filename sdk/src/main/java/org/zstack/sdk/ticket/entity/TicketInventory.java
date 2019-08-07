@@ -52,6 +52,14 @@ public class TicketInventory  {
         return this.accountSystemType;
     }
 
+    public java.lang.String ticketTypeUuid;
+    public void setTicketTypeUuid(java.lang.String ticketTypeUuid) {
+        this.ticketTypeUuid = ticketTypeUuid;
+    }
+    public java.lang.String getTicketTypeUuid() {
+        return this.ticketTypeUuid;
+    }
+
     public java.lang.Object accountSystemContext;
     public void setAccountSystemContext(java.lang.Object accountSystemContext) {
         this.accountSystemContext = accountSystemContext;

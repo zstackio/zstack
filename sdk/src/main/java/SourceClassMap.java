@@ -407,6 +407,7 @@ public class SourceClassMap {
 			put("org.zstack.ticket.entity.TicketStatus", "org.zstack.sdk.ticket.entity.TicketStatus");
 			put("org.zstack.ticket.entity.TicketStatusEvent", "org.zstack.sdk.ticket.entity.TicketStatusEvent");
 			put("org.zstack.ticket.entity.TicketStatusHistoryInventory", "org.zstack.sdk.ticket.entity.TicketStatusHistoryInventory");
+			put("org.zstack.ticket.entity.TicketTypeInventory", "org.zstack.sdk.ticket.entity.TicketTypeInventory");
 			put("org.zstack.ticket.iam2.entity.IAM2TicketFlowCollectionInventory", "org.zstack.sdk.ticket.iam2.entity.IAM2TicketFlowCollectionInventory");
 			put("org.zstack.ticket.iam2.entity.IAM2TicketFlowInventory", "org.zstack.sdk.ticket.iam2.entity.IAM2TicketFlowInventory");
 			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory", "org.zstack.sdk.TwoFactorAuthenticationInventory");
@@ -879,6 +880,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ticket.entity.TicketStatus", "org.zstack.ticket.entity.TicketStatus");
 			put("org.zstack.sdk.ticket.entity.TicketStatusEvent", "org.zstack.ticket.entity.TicketStatusEvent");
 			put("org.zstack.sdk.ticket.entity.TicketStatusHistoryInventory", "org.zstack.ticket.entity.TicketStatusHistoryInventory");
+			put("org.zstack.sdk.ticket.entity.TicketTypeInventory", "org.zstack.ticket.entity.TicketTypeInventory");
 			put("org.zstack.sdk.ticket.iam2.entity.IAM2TicketFlowCollectionInventory", "org.zstack.ticket.iam2.entity.IAM2TicketFlowCollectionInventory");
 			put("org.zstack.sdk.ticket.iam2.entity.IAM2TicketFlowInventory", "org.zstack.ticket.iam2.entity.IAM2TicketFlowInventory");
 			put("org.zstack.sdk.zwatch.alarm.ActionParam", "org.zstack.zwatch.alarm.APICreateAlarmMsg$ActionParam");
