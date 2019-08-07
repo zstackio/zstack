@@ -151,10 +151,6 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                         SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, nic.getUsedIpUuid()).set(UsedIpVO_.vmNicUuid, nvo.getUuid()).update();
                     }
                 });
-
-                ApplianceVmVO apvm = findByUuid(spec.getVmInventory().getUuid(), ApplianceVmVO.class);
-                apvm.setManagementNetworkUuid(mgmtNic.getL3NetworkUuid());
-                merge(apvm);
             }
         }.execute();
 
