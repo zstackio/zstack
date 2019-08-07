@@ -378,3 +378,13 @@ CREATE TABLE `TicketTypeTicketFlowCollectionRefVO` (
 
 ALTER TABLE `zstack`.`TicketVO` ADD COLUMN ticketTypeUuid VARCHAR(32) DEFAULT NULL;
 ALTER TABLE `zstack`.`TicketVO` ADD CONSTRAINT `fkTicketVOTicketTypeVO` FOREIGN KEY (`ticketTypeUuid`) REFERENCES `TicketTypeVO` (`uuid`) ON DELETE SET NULL;
+
+CREATE TABLE `IAM2OrganizationProjectRefVO` (
+`id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+`projectUuid` varchar(32) NOT NULL,
+`organizationUuid` varchar(32) NOT NULL,
+`lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+`createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+PRIMARY KEY (`id`),
+UNIQUE KEY `projectUuid` (`projectUuid`)
+) ENGINE=InnoDB AUTO_INCREMENT=3624 DEFAULT CHARSET=utf8;
