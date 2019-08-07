@@ -4,6 +4,9 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.workflow.PaginateCompletion;
+import org.zstack.header.core.workflow.WhileCompletion;
 import org.zstack.utils.DebugUtils;
 
 import javax.persistence.LockModeType;
@@ -11,6 +14,7 @@ import javax.persistence.Query;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
@@ -21,6 +25,8 @@ public class SQL {
     @Autowired
     private DatabaseFacade dbf;
 
+    private Do consumer;
+
     private String sql;
     private Query query;
 
@@ -29,6 +35,11 @@ public class SQL {
     private Integer first;
     private Integer max;
     private LockModeType lockMode;
+    private Boolean skipIncreaseOffset = false;
+
+    public interface Do<T> {
+        void accept(List<T> items, PaginateCompletion completion);
+    }
 
     private SQL(String sql) {
         this.sql = sql;
@@ -56,6 +67,11 @@ public class SQL {
     public SQL limit(int max) {
         query.setMaxResults(max);
         this.max = max;
+        return this;
+    }
+
+    public SQL skipIncreaseOffset(boolean skipIncreaseOffset) {
+        this.skipIncreaseOffset = skipIncreaseOffset;
         return this;
     }
 
@@ -122,6 +138,46 @@ public class SQL {
             consumer.accept(query.getResultList());
             first += max;
         }
+    }
+
+    public <T> void paginate(long total, Do<T> consumer, NoErrorCompletion completion) {
+        this.consumer = consumer;
+        DebugUtils.Assert(max != null, "call limit() before paginate");
+        if (first == null) {
+            first = 0;
+        }
+
+        int times = (int) (total / max) + (total % max != 0 ? 1 : 0);
+        doPaginateAction(new AtomicInteger(0), times, new NoErrorCompletion() {
+            @Override
+            public void done() {
+                completion.done();
+            }
+        });
+    }
+
+    private void doPaginateAction(final AtomicInteger currentTime, int totalTimes, NoErrorCompletion completion) {
+        if (currentTime.get() == totalTimes) {
+            completion.done();
+            return;
+        }
+
+        rebuildQueryInTransaction();
+        consumer.accept(query.getResultList(), new PaginateCompletion() {
+            @Override
+            public void done() {
+                if (!skipIncreaseOffset) {
+                    first += max;
+                }
+                currentTime.incrementAndGet();
+                doPaginateAction(currentTime, totalTimes, completion);
+            }
+
+            @Override
+            public void allDone() {
+                completion.done();
+            }
+        });
     }
 
     public int execute() {
