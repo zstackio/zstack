@@ -72,6 +72,11 @@ public class APILogInByLdapMsg extends APISessionMessage implements APILoginAudi
         this.clientInfo = clientInfo;
     }
 
+    @Override
+    public String getOperator() {
+        return uid;
+    }
+
     public static APILogInByLdapMsg __example__() {
         APILogInByLdapMsg msg = new APILogInByLdapMsg();
         msg.setUid("ou=Employee,uid=test");

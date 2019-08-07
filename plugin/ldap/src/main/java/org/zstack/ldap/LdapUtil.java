@@ -647,6 +647,10 @@ public class LdapUtil {
 
         List<String> dnGroups = getUserDnGroups(ldapDnList, ldapDn);
 
+        if(dnGroups == null){
+            return null;
+        }
+
         List<LdapAccountRefVO> vos = Q.New(LdapAccountRefVO.class)
                 .in(LdapAccountRefVO_.ldapUid, dnGroups)
                 .list();
