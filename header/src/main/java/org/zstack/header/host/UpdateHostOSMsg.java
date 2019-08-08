@@ -9,6 +9,7 @@ public class UpdateHostOSMsg extends NeedReplyMessage implements HostMessage {
     private String uuid;
     private String clusterUuid;
     private String excludePackages;
+    private boolean enableExperimentalRepo = false;
 
     public String getUuid() {
         return uuid;
@@ -32,6 +33,14 @@ public class UpdateHostOSMsg extends NeedReplyMessage implements HostMessage {
 
     public void setExcludePackages(String excludePackages) {
         this.excludePackages = excludePackages;
+    }
+
+    public boolean isEnableExperimentalRepo() {
+        return enableExperimentalRepo;
+    }
+
+    public void setEnableExperimentalRepo(boolean enableExperimentalRepo) {
+        this.enableExperimentalRepo = enableExperimentalRepo;
     }
 
     @Override

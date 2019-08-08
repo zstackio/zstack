@@ -56,10 +56,13 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.l3.NetworkGlobalProperty;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
@@ -2977,7 +2980,7 @@ public class KVMHost extends HostBase implements Host {
     }
 
     @Override
-    protected void updateOsHook(String exclude, Completion completion) {
+    protected void updateOsHook(UpdateHostOSMsg msg, Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("update-operating-system-for-host-%s", self.getUuid()));
         chain.then(new ShareFlow() {
@@ -3053,7 +3056,8 @@ public class KVMHost extends HostBase implements Host {
                     public void run(FlowTrigger trigger, Map data) {
                         UpdateHostOSCmd cmd = new UpdateHostOSCmd();
                         cmd.hostUuid = self.getUuid();
-                        cmd.excludePackages = exclude;
+                        cmd.excludePackages = msg.getExcludePackages();
+                        cmd.enableExpRepo = msg.isEnableExperimentalRepo();
 
                         new Http<>(updateHostOSPath, cmd, UpdateHostOSRsp.class)
                                 .call(new ReturnValueCompletion<UpdateHostOSRsp>(trigger) {

@@ -2,6 +2,7 @@ package org.zstack.test.integration.longjob
 
 import com.google.gson.Gson
 import org.springframework.http.HttpEntity
+import org.zstack.compute.cluster.ClusterGlobalConfig
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.thread.ChainTaskStatistic
 import org.zstack.core.thread.ThreadFacadeImpl
@@ -99,7 +100,7 @@ class UpdateClusterOSJobCase extends SubCase {
                     }
 
                     kvm {
-                        name = "kvm3"
+                        name = "kvm4"
                         managementIp = "127.0.0.4"
                         username = "root"
                         password = "password"
@@ -162,6 +163,7 @@ class UpdateClusterOSJobCase extends SubCase {
             dbf = bean(DatabaseFacade.class)
             thdf = bean(ThreadFacadeImpl.class)
 
+            testUpdateClusterWithExperimentalRepoEnabled()
             testUpdateClusterWithNfsRunningOnHost()
             testUpdateHostNotKvm()
             testUpdateClusterWithHostNotConnected()
@@ -170,6 +172,96 @@ class UpdateClusterOSJobCase extends SubCase {
             testUpdateClusterUsingAPI()
             testUpdateClusterExcludePackages()
             testUpdateClusterParallelismDegree()
+        }
+    }
+
+
+    void testUpdateClusterWithExperimentalRepoEnabled() {
+        ClusterInventory cls1 = env.inventoryByName("cluster1") as ClusterInventory
+        ClusterInventory cls2 = env.inventoryByName("cluster2") as ClusterInventory
+
+        List<KVMAgentCommands.UpdateHostOSCmd> cmdList = []
+        env.afterSimulator(KVMConstant.KVM_UPDATE_HOST_OS_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.UpdateHostOSCmd.class)
+            cmdList.add(cmd)
+            return rsp
+        }
+
+        def cfgName = ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_REPO.name
+        def cfgCategory = ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_REPO.category
+
+        def result = getResourceConfig {
+            resourceUuid = cls1.uuid
+            name = cfgName
+            category = cfgCategory
+        } as GetResourceConfigResult
+        assert result.value == 'false'
+
+        result = getResourceConfig {
+            resourceUuid = cls2.uuid
+            name = cfgName
+            category = cfgCategory
+        } as GetResourceConfigResult
+        assert result.value == 'false'
+
+        // update os of cluster1
+        updateClusterOS {
+            uuid = cls1.uuid
+        }
+
+        retryInSecs {
+            assert cmdList.size() == 2
+            cmdList.each {
+                assert !it.enableExpRepo
+            }
+        }
+
+        // enable global experimental repo
+        updateGlobalConfig {
+            name = cfgName
+            category = cfgCategory
+            value = true
+        }
+
+        result = getResourceConfig {
+            resourceUuid = cls1.uuid
+            name = cfgName
+            category = cfgCategory
+        } as GetResourceConfigResult
+        assert result.value == 'true'
+
+        result = getResourceConfig {
+            resourceUuid = cls2.uuid
+            name = cfgName
+            category = cfgCategory
+        } as GetResourceConfigResult
+        assert result.value == 'true'
+
+        updateResourceConfig {
+            resourceUuid = cls2.uuid
+            name = cfgName
+            category = cfgCategory
+            value = false
+        }
+
+        result = getResourceConfig {
+            resourceUuid = cls2.uuid
+            name = cfgName
+            category = cfgCategory
+        } as GetResourceConfigResult
+        assert result.value == 'false'
+
+        // update os of cluster1
+        cmdList = []
+        updateClusterOS {
+            uuid = cls1.uuid
+        }
+
+        retryInSecs {
+            assert cmdList.size() == 2
+            cmdList.each {
+                assert it.enableExpRepo
+            }
         }
     }
 
@@ -279,7 +371,6 @@ class UpdateClusterOSJobCase extends SubCase {
         // vm1 still running
         VmInstanceInventory vmInv = env.inventoryByName("vm1") as VmInstanceInventory
         VmInstanceVO vmVO = dbFindByUuid(vmInv.uuid, VmInstanceVO.class)
-        assert vmVO.hostUuid == hvo.uuid
         assert vmVO.state == VmInstanceState.Running
     }
 
@@ -300,9 +391,7 @@ class UpdateClusterOSJobCase extends SubCase {
         }
 
         // vm1 still running
-        HostVO hvo = dbFindByUuid(kvm1.uuid, HostVO.class)
         VmInstanceVO vmVO = dbFindByUuid(vmInv.uuid, VmInstanceVO.class)
-        assert vmVO.hostUuid == hvo.uuid
         assert vmVO.state == VmInstanceState.Running
     }
 
