@@ -1,10 +1,13 @@
 package org.zstack.test.integration.kvm.capacity
 
+import org.zstack.compute.allocator.HostAllocatorGlobalConfig
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.GetCpuMemoryCapacityResult
 import org.zstack.sdk.HostInventory
+import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
@@ -95,13 +98,6 @@ class CheckHostMemCapacityWhenCreateVmCase extends SubCase {
 
                 attachBackupStorage("sftp")
             }
-
-            vm {
-                name = "vm"
-                useInstanceOffering("instanceOffering")
-                useImage("image")
-                useL3Networks("l3")
-            }
         }
     }
 
@@ -114,10 +110,21 @@ class CheckHostMemCapacityWhenCreateVmCase extends SubCase {
     }
 
     void createVmWithHostSameMemTest() {
-        KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.updateValue("1G")
+        HostAllocatorGlobalConfig.HOST_ALLOCATOR_MAX_MEMORY.updateValue(false)
 
+        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
+        ImageInventory image = env.inventoryByName("image")
+        L3NetworkInventory l3 = env.inventoryByName("l3")
         HostInventory host = env.inventoryByName("kvm")
-        vm = env.inventoryByName("vm")
+
+        vm = createVmInstance {
+            name = "vm"
+            instanceOfferingUuid = offering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+        }
+
+        KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.updateValue("1G")
 
         GetCpuMemoryCapacityResult result = getCpuMemoryCapacity {
             hostUuids = [host.uuid]

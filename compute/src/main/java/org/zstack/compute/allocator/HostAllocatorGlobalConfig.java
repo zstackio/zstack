@@ -22,4 +22,6 @@ public class HostAllocatorGlobalConfig {
     public static GlobalConfig PAGINATION_LIMIT = new GlobalConfig(CATEGORY, "paginationLimit");
     @GlobalConfigValidation
     public static GlobalConfig HOST_ALLOCATOR_ALLOW_CONCURRENT = new GlobalConfig(CATEGORY, "hostAllocator.concurrent");
+    @GlobalConfigValidation
+    public static GlobalConfig HOST_ALLOCATOR_MAX_MEMORY = new GlobalConfig(CATEGORY, "hostAllocator.checkHostMem");
 }

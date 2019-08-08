@@ -4086,6 +4086,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
                 msg.setCpuCapacity(cpuNum - oldCpuNum);
                 msg.setMemoryCapacity(struct.alignedMemory - oldMemorySize);
+                msg.setOldMemoryCapacity(oldMemorySize);
                 msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
                 msg.setVmInstance(VmInstanceInventory.valueOf(self));
                 if (self.getImageUuid() != null && dbf.findByUuid(self.getImageUuid(), ImageVO.class) != null) {

@@ -29,11 +29,21 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
     @Autowired
     private HostCpuOverProvisioningManager cpuRatioMgr;
 
-    private List<HostVO> allocate(List<HostVO> vos, long cpu, long memory) {
+    private boolean memoryCheck(long vmMemSize, long oldMemory, HostVO hvo) {
+        if (HostAllocatorGlobalConfig.HOST_ALLOCATOR_MAX_MEMORY.value(Boolean.class)) {
+            if ((vmMemSize + oldMemory) >= hvo.getCapacity().getTotalPhysicalMemory()) {
+                return false;
+            }
+        }
+
+        return ratioMgr.calculateHostAvailableMemoryByRatio(hvo.getUuid(), hvo.getCapacity().getAvailableMemory()) >= vmMemSize;
+    }
+
+
+    private List<HostVO> allocate(List<HostVO> vos, long cpu, long memory, long oldMemory) {
         List<HostVO> ret = vos.stream()
                 .filter(hvo -> (cpu == 0 || hvo.getCapacity().getAvailableCpu() >= cpu)
-                        && (memory == 0 || ratioMgr.calculateHostAvailableMemoryByRatio(hvo.getUuid(), hvo.getCapacity().getAvailableMemory()) >= memory))
-                .collect(Collectors.toList());
+                        && (memory == 0 || memoryCheck(memory, oldMemory, hvo))).collect(Collectors.toList());
 
         return ret;
     }
@@ -52,7 +62,7 @@ public class HostCapacityAllocatorFlow extends AbstractHostAllocatorFlow {
         if (amITheFirstFlow()) {
             throw new CloudRuntimeException("HostCapacityAllocatorFlow cannot be the first allocator flow");
         } else {
-            ret = allocate(candidates, spec.getCpuCapacity(), spec.getMemoryCapacity());
+            ret = allocate(candidates, spec.getCpuCapacity(), spec.getMemoryCapacity(), spec.getOldMemoryCapacity());
         }
 
         ret = reserveMgr.filterOutHostsByReservedCapacity(ret, spec.getCpuCapacity(), spec.getMemoryCapacity());
