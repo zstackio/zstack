@@ -388,3 +388,5 @@ CREATE TABLE `IAM2OrganizationProjectRefVO` (
 PRIMARY KEY (`id`),
 UNIQUE KEY `projectUuid` (`projectUuid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3624 DEFAULT CHARSET=utf8;
+
+DELETE FROM IAM2OrganizationAttributeVO WHERE `name` = '__OrganizationSupervisor__' and `value` not in (SELECT `uuid` FROM IAM2VirtualIDVO);
