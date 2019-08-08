@@ -1,6 +1,7 @@
 package org.zstack.test.integration.kvm.vm
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.allocator.HostAllocatorGlobalConfig
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.compute.vm.VmQuotaConstant
 import org.zstack.compute.vm.VmSystemTags
@@ -18,8 +19,10 @@ import org.zstack.kvm.KVMConstant
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.HostInventory
+import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.KVMHostInventory
+import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.SystemTagInventory
 import org.zstack.sdk.UpdateVmInstanceAction
 import org.zstack.sdk.VmInstanceInventory
@@ -193,6 +196,7 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
             testDecreaseVmCpuAndMemoryReturnFail()
             testVmChangeCpuMemoryQuota()
             testVmChangeCpuMemoryWhenHostAvailableIsZero()
+            testCreateVmMeorySizeExceedHostMemorySize()
         }
     }
 
@@ -800,4 +804,65 @@ class ChangeVmCpuAndMemoryCase extends SubCase {
         vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
         assert vo.state == VmInstanceState.Running
     }
+
+    void testCreateVmMeorySizeExceedHostMemorySize() {
+        def image = env.inventoryByName("image1") as ImageInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
+        def instance = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        def instance2 = env.inventoryByName("instanceOffering2") as InstanceOfferingInventory
+        def host = env.inventoryByName("kvm") as HostInventory
+
+        HostCapacityVO capacity = Q.New(HostCapacityVO.class).eq(HostCapacityVO_.uuid, host.uuid).find()
+        SQL.New(HostCapacityVO.class).eq(HostCapacityVO_.uuid, host.uuid).set(HostCapacityVO_.totalPhysicalMemory, instance2.memorySize).update()
+
+        expect (AssertionError.class) {
+            createVmInstance {
+                name = "test-memory"
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                instanceOfferingUuid = instance2.uuid
+            }
+        }
+
+        HostAllocatorGlobalConfig.HOST_ALLOCATOR_MAX_MEMORY.updateValue(false)
+        VmInstanceInventory vm = createVmInstance {
+            name = "test-memory"
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            instanceOfferingUuid = instance2.uuid
+        }
+
+        destroyVmInstance{
+            uuid = vm.uuid
+        }
+
+        VmInstanceInventory vm2 = createVmInstance {
+            name = "update-memory"
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            instanceOfferingUuid = instance.uuid
+        }
+
+        HostAllocatorGlobalConfig.HOST_ALLOCATOR_MAX_MEMORY.updateValue(true)
+        expect (AssertionError.class) {
+            updateVmInstance {
+                uuid = vm2.uuid
+                memorySize = instance2.memorySize
+            }
+        }
+
+        HostAllocatorGlobalConfig.HOST_ALLOCATOR_MAX_MEMORY.updateValue(false)
+        updateVmInstance {
+            uuid = vm2.uuid
+            memorySize = instance2.memorySize
+        }
+
+        destroyVmInstance{
+            uuid = vm2.uuid
+        }
+
+        SQL.New(HostCapacityVO.class).eq(HostCapacityVO_.uuid, host.uuid)
+                .set(HostCapacityVO_.totalPhysicalMemory, capacity.totalPhysicalMemory).update()
+    }
+
 }
