@@ -389,4 +389,14 @@ PRIMARY KEY (`id`),
 UNIQUE KEY `projectUuid` (`projectUuid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3624 DEFAULT CHARSET=utf8;
 
+INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`, `concreteResourceType`) VALUES ('3b933e9aaf2d49b9a3dcf0c92867790f', 'CREATE_VM_INSTANCE_TICKET_TYPE', 'TicketTypeVO', 'org.zstack.ticket.entity.TicketTypeVO');
+
+INSERT INTO zstack.TicketTypeVO (`uuid`, `name`, `requests`, `type`, `adminOnly`, `createDate`, `lastOpDate`)
+VALUES ('3b933e9aaf2d49b9a3dcf0c92867790f', 'CREATE_VM_INSTANCE_TICKET_TYPE', '', 'CREATE_VM_INSTANCE_TICKET_TYPE', 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+
+UPDATE zstack.TicketVO SET ticketTypeUuid = '3b933e9aaf2d49b9a3dcf0c92867790f' WHERE ticketTypeUuid is NULL;
+
+INSERT INTO zstack.TicketTypeTicketFlowCollectionRefVO (`ticketTypeUuid`, `ticketFlowCollectionUuid`, `lastOpDate`, `createDate`)
+SELECT '3b933e9aaf2d49b9a3dcf0c92867790f', `uuid`, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP() from TicketFlowCollectionVO where uuid != '872c04e82fee40509447b9ec90fc5aa1';
+
 DELETE FROM IAM2OrganizationAttributeVO WHERE `name` = '__OrganizationSupervisor__' and `value` not in (SELECT `uuid` FROM IAM2VirtualIDVO);
