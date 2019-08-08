@@ -139,11 +139,6 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
-            <artifactId>fusionstor</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
             <artifactId>vxlan</artifactId>
             <version>${project.version}</version>
         </dependency>
