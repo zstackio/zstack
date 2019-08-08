@@ -35,6 +35,15 @@ class LogConfigurationCase extends SubCase {
     }
 
     void testUpdateLogConfig() {
+        long errorSize = Integer.MAX_VALUE + 1
+        expect(AssertionError.class){
+            updateGlobalConfig {
+                category = LogGlobalConfig.CATEGORY
+                name = LogGlobalConfig.LOG_DELETE_ACCUMULATED_FILE_SIZE.getName()
+                value = errorSize
+            }
+        }
+
         LogGlobalProperty.LOG_RETENTION_SIZE_GB = -2
         updateGlobalConfig {
             category = LogGlobalConfig.CATEGORY
