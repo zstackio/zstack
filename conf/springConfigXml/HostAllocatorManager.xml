@@ -35,7 +35,6 @@
         <value>SharedMountPoint</value>
         <value>LocalStorage</value>
         <value>Ceph</value>
-        <value>ZSES</value>
     </util:list>
 
     <util:list id="CephMetric">
