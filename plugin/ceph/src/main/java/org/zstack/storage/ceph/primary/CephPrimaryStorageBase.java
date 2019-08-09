@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -60,8 +61,7 @@ import org.zstack.storage.ceph.CephMonBase.PingResult;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
-import org.zstack.storage.primary.PrimaryStorageBase;
-import org.zstack.storage.primary.PrimaryStorageSystemTags;
+import org.zstack.storage.primary.*;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.*;
@@ -197,6 +197,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public void setXsky(boolean xsky) {
             this.xsky = xsky;
         }
+
     }
 
     public static class AddPoolCmd extends AgentCommand {
@@ -2889,6 +2890,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 cephCapacity.setPoolCapacities(ret.poolCapacities);
                                 cephCapacity.setXsky(ret.isXsky());
                                 updater.update(cephCapacity, true);
+                                createPrimaryStorageVendorTag(ret.isXsky());
                                 trigger.next();
                             }
                         });
@@ -2924,6 +2926,18 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 });
             }
         }).start();
+    }
+
+    private void createPrimaryStorageVendorTag(boolean isXsky) {
+        if(isXsky){
+            SystemTagCreator creator = PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR.newSystemTagCreator(self.getUuid());
+            creator.setTagByTokens(map(
+                    e(PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR_TOKEN, "xsky")
+            ));
+            creator.ignoreIfExisting = true;
+            creator.inherent = false;
+            creator.create();
+        }
     }
 
     @Override

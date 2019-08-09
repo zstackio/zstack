@@ -69,4 +69,8 @@
     <message>
         <name>org.zstack.header.storage.primary.APIGetTrashOnPrimaryStorageMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.storage.primary.APIGetPrimaryStorageLicenseInfoMsg</name>
+    </message>
 </service>

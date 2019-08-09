@@ -21,4 +21,7 @@ public class PrimaryStorageSystemTags {
 
     public static final String PRIMARY_STORAGE_GATEWAY_TOKEN = "storageGateway";
     public static PatternedSystemTag PRIMARY_STORAGE_GATEWAY = new PatternedSystemTag(String.format("primaryStorage::gateway::cidr::{%s}", PRIMARY_STORAGE_GATEWAY_TOKEN), PrimaryStorageVO.class);
+
+    public static final String PRIMARY_STORAGE_VENDOR_TOKEN = "vendor";
+    public static PatternedSystemTag PRIMARY_STORAGE_VENDOR =  new PatternedSystemTag(String.format("primaryStorage::vendor::{%s}", PRIMARY_STORAGE_VENDOR_TOKEN), PrimaryStorageVO.class);
 }

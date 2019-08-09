@@ -28,4 +28,6 @@ public class CephGlobalProperty {
     public static String PRIMARY_STORAGE_PLAYBOOK_NAME;
     @GlobalProperty(name="Ceph.primaryStorage.ansibleModulePath", defaultValue = "ansible/cephp")
     public static String PRIMARY_STORAGE_MODULE_PATH;
+    @GlobalProperty(name="Ceph.vendor.getXskyLicense.Port", defaultValue = "8051")
+    public static String GET_XSKY_LICENSE_PORT;
 }
