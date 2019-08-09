@@ -41,6 +41,6 @@ public class RequestData {
             apiClassName = apiMessage.getClass().getName();
         }
 
-        return JSONObjectUtil.toJsonString(this);
+        return RequestDataJSONObjectUtil.toJsonString(this);
     }
 }
