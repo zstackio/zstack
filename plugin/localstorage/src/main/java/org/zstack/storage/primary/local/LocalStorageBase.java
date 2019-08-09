@@ -1704,14 +1704,14 @@ public class LocalStorageBase extends PrimaryStorageBase {
             }
         }
 
-
         LocalStorageHostRefVO ref = refs.get(0);
 
-        physicalCapacityMgr.checkCapacityByRatio(
+        if (!ignoreError && !physicalCapacityMgr.checkCapacityByRatio(
                 self.getUuid(),
                 ref.getTotalPhysicalCapacity(),
-                ref.getAvailablePhysicalCapacity()
-        );
+                ref.getAvailablePhysicalCapacity())) {
+            throw new OperationFailureException(operr("cannot reserve enough space for primary storage[uuid: %s] on host[uuid: %s], not enough physical capacity", self.getUuid(), hostUuid));
+        }
 
         LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
         s.setLocalStorage(getSelfInventory());
