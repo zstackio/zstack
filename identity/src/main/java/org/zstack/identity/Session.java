@@ -6,6 +6,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.*;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
@@ -177,13 +179,21 @@ public class Session implements Component {
 
     @Override
     public boolean start() {
+        setupGlobalConfig();
         startCleanUpStaleSessionTask();
         setupCanonicalEvents();
         return true;
     }
 
+    private void setupGlobalConfig() {
+        IdentityGlobalConfig.SESSION_CLEANUP_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> startCleanUpStaleSessionTask());
+    }
+
     private void startCleanUpStaleSessionTask() {
-        final int interval = IdentityGlobalConfig.SESSION_CLEANUP_INTERVAL.value(Integer.class);
+        if (expiredSessionCollector != null) {
+            expiredSessionCollector.cancel(true);
+        }
+
         expiredSessionCollector = thdf.submitPeriodicTask(new PeriodicTask() {
             @Transactional
             private List<String> deleteExpiredSessions() {
@@ -207,13 +217,19 @@ public class Session implements Component {
 
             private void deleteExpiredCachedSessions() {
                 Timestamp curr = getCurrentSqlDate();
-                sessions.entrySet().removeIf(entry -> curr.after(entry.getValue().getExpiredDate()));
+                List<String> staleSessionUuidInCache = sessions.entrySet().stream().filter(entry -> curr.after(entry.getValue().getExpiredDate())).map(entry -> entry.getKey()).collect(Collectors.toList());
+
+                for (String uuid : staleSessionUuidInCache) {
+                    logger.debug(String.format("found session[uuid:%s] in cache expired, remove it", uuid));
+                    sessions.remove(uuid);
+                }
             }
 
             @Override
             public void run() {
                 List<String> uuids = deleteExpiredSessions();
                 for (String uuid : uuids) {
+                    logger.debug(String.format("found session[uuid:%s] expired in DB, also remove it from cache", uuid));
                     sessions.remove(uuid);
                 }
 
@@ -227,7 +243,7 @@ public class Session implements Component {
 
             @Override
             public long getInterval() {
-                return interval;
+                return IdentityGlobalConfig.SESSION_CLEANUP_INTERVAL.value(Long.class);
             }
 
             @Override
