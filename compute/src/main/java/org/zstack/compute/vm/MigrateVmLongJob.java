@@ -36,7 +36,7 @@ public class MigrateVmLongJob implements LongJob {
     @Override
     public void start(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
         MigrateVmInnerMsg msg = JSONObjectUtil.toObject(job.getJobData(), MigrateVmInnerMsg.class);
-        bus.makeLocalServiceId(msg, VmInstanceConstant.SERVICE_ID);
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, msg.getVmUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
