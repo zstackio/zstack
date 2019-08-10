@@ -13031,33 +13031,6 @@ trait ApiHelper {
     }
 
 
-    def getPrimaryStorageLicenseInfo(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetPrimaryStorageLicenseInfoAction.class) Closure c) {
-        def a = new org.zstack.sdk.GetPrimaryStorageLicenseInfoAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def getConnectionAccessPointFromRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetConnectionAccessPointFromRemoteAction.class) Closure c) {
         def a = new org.zstack.sdk.GetConnectionAccessPointFromRemoteAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -14597,6 +14570,33 @@ trait ApiHelper {
     }
 
 
+    def getPrimaryStorageLicenseInfo(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetPrimaryStorageLicenseInfoAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetPrimaryStorageLicenseInfoAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getPrimaryStorageTypes(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetPrimaryStorageTypesAction.class) Closure c) {
         def a = new org.zstack.sdk.GetPrimaryStorageTypesAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -15949,6 +15949,33 @@ trait ApiHelper {
 
     def kvmRunShell(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.KvmRunShellAction.class) Closure c) {
         def a = new org.zstack.sdk.KvmRunShellAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def listVMsFromKVMHost(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ListVMsFromKVMHostAction.class) Closure c) {
+        def a = new org.zstack.sdk.ListVMsFromKVMHostAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -23115,6 +23142,33 @@ trait ApiHelper {
     }
 
 
+    def resetTwoFactorAuthenticationSecret(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ResetTwoFactorAuthenticationSecretAction.class) Closure c) {
+        def a = new org.zstack.sdk.ResetTwoFactorAuthenticationSecretAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def resizeDataVolume(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ResizeDataVolumeAction.class) Closure c) {
         def a = new org.zstack.sdk.ResizeDataVolumeAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -28841,8 +28895,8 @@ trait ApiHelper {
     }
 
 
-    def batchCreateIAM2VirtualIDFromConfigFile(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.BatchCreateIAM2VirtualIDFromConfigFileAction.class) Closure c) {
-        def a = new org.zstack.sdk.iam2.api.BatchCreateIAM2VirtualIDFromConfigFileAction()
+    def attachIAM2ProjectToIAM2Organization(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.AttachIAM2ProjectToIAM2OrganizationAction.class) Closure c) {
+        def a = new org.zstack.sdk.iam2.api.AttachIAM2ProjectToIAM2OrganizationAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -28868,8 +28922,8 @@ trait ApiHelper {
     }
 
 
-    def attachIAM2ProjectToIAM2Organization(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.AttachIAM2ProjectToIAM2OrganizationAction.class) Closure c) {
-        def a = new org.zstack.sdk.iam2.api.AttachIAM2ProjectToIAM2OrganizationAction()
+    def batchCreateIAM2VirtualIDFromConfigFile(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.BatchCreateIAM2VirtualIDFromConfigFileAction.class) Closure c) {
+        def a = new org.zstack.sdk.iam2.api.BatchCreateIAM2VirtualIDFromConfigFileAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -30219,20 +30273,20 @@ trait ApiHelper {
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-
+        
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-
+    
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
+        
             return out
         } else {
             return errorOut(a.call())
