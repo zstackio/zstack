@@ -11,17 +11,13 @@ import org.zstack.core.db.UpdateQuery;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
-import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.vm.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -77,7 +73,7 @@ public class VmDetachNicFlow extends NoRollbackFlow {
                     comp.done();
                 }
             });
-        }).run(new NoErrorCompletion(){
+        }).run(new NoErrorCompletion(trigger){
             @Override
             public void done() {
                 new DualStackNicSecondaryNetworksOperator().deleteSecondaryNetworksByVmNic(nic);
