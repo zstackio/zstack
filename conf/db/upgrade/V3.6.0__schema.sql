@@ -400,3 +400,9 @@ INSERT INTO zstack.TicketTypeTicketFlowCollectionRefVO (`ticketTypeUuid`, `ticke
 SELECT '3b933e9aaf2d49b9a3dcf0c92867790f', `uuid`, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP() from TicketFlowCollectionVO where uuid != '872c04e82fee40509447b9ec90fc5aa1';
 
 DELETE FROM IAM2OrganizationAttributeVO WHERE `name` = '__OrganizationSupervisor__' and `value` not in (SELECT `uuid` FROM IAM2VirtualIDVO);
+
+-- Fixes ZSTAC-22582
+UPDATE `zstack`.`GlobalConfigVO` SET `description`='qcow2 allocation policy, can be none, metadata', `defaultValue`='metadata' WHERE `category`='sharedblock' AND `name`='qcow2.allocation';
+UPDATE `zstack`.`GlobalConfigVO` SET `value`='metadata' WHERE `category`='sharedblock' AND `name`='qcow2.allocation' AND (`value`='full' OR `value`='falloc');
+UPDATE `zstack`.`TemplateConfigVO` SET `defaultValue`='metadata' WHERE `category`='sharedblock' AND `name`='qcow2.allocation';
+UPDATE `zstack`.`TemplateConfigVO` SET `value`='metadata' WHERE `category`='sharedblock' AND `name`='qcow2.allocation' AND (`value`='full' OR `value`='falloc');
