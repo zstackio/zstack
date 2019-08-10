@@ -1219,6 +1219,20 @@ public class VolumeBase implements Volume {
             public void run(final SyncTaskChain chain) {
                 self = dbf.reload(self);
                 if (self == null || self.getStatus() == VolumeStatus.Deleted) {
+                    VolumeDeletionPolicy deletionPolicy;
+                    if (msg.getDeletionPolicy() == null) {
+                        deletionPolicy = deletionPolicyMgr.getDeletionPolicy(self.getUuid());
+                    } else {
+                        deletionPolicy = VolumeDeletionPolicy.valueOf(msg.getDeletionPolicy());
+                    }
+                    if (deletionPolicy == VolumeDeletionPolicy.DBOnly) {
+                        callVmJustBeforeDeleteFromDbExtensionPoint();
+                        VolumeInventory inventory = getSelfInventory();
+                        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
+                        dbf.remove(self);
+                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(self.getStatus(), inventory, accountUuid);
+                    }
+
                     // the volume has been deleted
                     // we run into this case because the cascading framework
                     // will send duplicate messages when deleting a vm as the cascading

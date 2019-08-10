@@ -216,17 +216,6 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
                     }
                 }
 
-                if (action.getParentIssuer().equals(PrimaryStorageVO.class.getSimpleName())) {
-                    // when deleting the primary storage, the foreign key of VolumeVO to PrimaryStorageVO
-                    // will cause VolumeVO to be deleted but left AccountResourceRefVO of the volume left
-
-                    List<String> volUuids = volumes.stream().map(s -> s.getInventory().getUuid()).collect(Collectors.toList());
-                    UpdateQuery q = UpdateQuery.New(AccountResourceRefVO.class);
-                    q.condAnd(AccountResourceRefVO_.resourceUuid, Op.IN, volUuids);
-                    q.condAnd(AccountResourceRefVO_.resourceType, Op.EQ, VolumeVO.class.getSimpleName());
-                    q.delete();
-                }
-
                 completion.success();
             }
         }); 
