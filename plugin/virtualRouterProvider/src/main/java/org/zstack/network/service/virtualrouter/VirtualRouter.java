@@ -435,11 +435,6 @@ public class VirtualRouter extends ApplianceVmBase {
                     info.setVni(ext.getL2NetworkVni(l2NetworkVO.getUuid()));
                 }
             }
-            List<String> secondaryIps = haBackend.getSecondaryIpsOfVirtualRouterHaGroup(
-                    nicInventory.getVmInstanceUuid(), nicInventory.getL3NetworkUuid());
-            if (!secondaryIps.isEmpty()) {
-                info.setSecondaryIps(secondaryIps);
-            }
             cmd.setNics(Arrays.asList(info));
 
             VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
@@ -622,13 +617,6 @@ public class VirtualRouter extends ApplianceVmBase {
             info.setGateway(nicInventory.getGateway());
             info.setMac(nicInventory.getMac());
             info.setNetmask(nicInventory.getNetmask());
-            cmd.setNics(Arrays.asList(info));
-
-            List<String> secondaryIps = haBackend.getSecondaryIpsOfVirtualRouterHaGroup(
-                    nicInventory.getVmInstanceUuid(), nicInventory.getL3NetworkUuid());
-            if (!secondaryIps.isEmpty()) {
-                info.setSecondaryIps(secondaryIps);
-            }
             cmd.setNics(Arrays.asList(info));
 
             VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();

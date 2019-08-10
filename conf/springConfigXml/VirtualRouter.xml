@@ -214,6 +214,8 @@
             <zstack:extension interface="org.zstack.network.service.lb.LoadBalancerBackend" />
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

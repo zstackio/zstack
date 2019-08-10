@@ -67,16 +67,6 @@ public class VirtualRouterHaBackend {
         exps.get(0).VirtualRouterVmHaDetachL3Network(vrUuid, l3NetworkUuid, isRollback, completion);
     }
 
-    public List<String> getSecondaryIpsOfVirtualRouterHaGroup(String vrUuid, String l3NetworkUuid) {
-        VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-        if (!vrVO.isHaEnabled()) {
-            return new ArrayList<>();
-        }
-
-        return Q.New(IpRangeVO.class).select(IpRangeVO_.gateway).eq(IpRangeVO_.l3NetworkUuid, l3NetworkUuid)
-                .limit(1).listValues();
-    }
-
     public void submitVirutalRouterHaTask(VirtualRouterHaCallbackInterface callback, Map<String, Object> data, Completion completion) {
         VirtualRouterVmInventory vrInv = (VirtualRouterVmInventory)data.get(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString());
         if (!vrInv.isHaEnabled()) {
