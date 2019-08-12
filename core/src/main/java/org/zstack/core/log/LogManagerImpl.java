@@ -35,8 +35,8 @@ public class LogManagerImpl implements Component, ManagementNodeReadyExtensionPo
                     throw new GlobalConfigException("the value is less than -l");
                 }
 
-                if (valueLong > 10000) {
-                    throw new GlobalConfigException("the value must be less than 10000");
+                if (valueLong > Integer.MAX_VALUE) {
+                    throw new GlobalConfigException(String.format("the value must be less than %s", Integer.MAX_VALUE));
                 }
             }
         });
@@ -53,8 +53,8 @@ public class LogManagerImpl implements Component, ManagementNodeReadyExtensionPo
                     throw new GlobalConfigException("the value is less than -l");
                 }
 
-                if (valueLong > 10000) {
-                    throw new GlobalConfigException("the value must be less than 10000");
+                if (valueLong > Integer.MAX_VALUE) {
+                    throw new GlobalConfigException(String.format("the value must be less than %s", Integer.MAX_VALUE));
                 }
             }
         });
