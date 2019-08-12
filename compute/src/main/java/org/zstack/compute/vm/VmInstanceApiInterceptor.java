@@ -471,7 +471,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 ipv4Count++;
             } else {
                 L3NetworkInventory inv = L3NetworkInventory.valueOf(l3Vo);
-                if (!inv.getIpRanges().get(0).getAddressMode().equals(IPv6Constants.SLAAC)) {
+                if ((!inv.getIpRanges().isEmpty()) && !inv.getIpRanges().get(0).getAddressMode().equals(IPv6Constants.SLAAC)) {
                     statefulIpv6++;
                 }
             }
