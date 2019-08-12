@@ -12,4 +12,12 @@ public class VpcRouterVmInventory extends org.zstack.sdk.VirtualRouterVmInventor
         return this.dns;
     }
 
+    public java.util.List haRef;
+    public void setHaRef(java.util.List haRef) {
+        this.haRef = haRef;
+    }
+    public java.util.List getHaRef() {
+        return this.haRef;
+    }
+
 }
