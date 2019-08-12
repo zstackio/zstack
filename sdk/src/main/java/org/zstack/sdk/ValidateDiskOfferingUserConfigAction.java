@@ -25,7 +25,7 @@ public class ValidateDiskOfferingUserConfigAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String config;
 
     @Param(required = false)
