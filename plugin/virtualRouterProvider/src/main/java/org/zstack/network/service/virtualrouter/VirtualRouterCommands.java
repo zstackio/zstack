@@ -64,7 +64,6 @@ public class VirtualRouterCommands {
 		private String l2type;
 		private Integer vni;
 		private String firewallDefaultAction;
-		private List<String> secondaryIps;
 		
 		public String getIp() {
 			return ip;
@@ -135,14 +134,6 @@ public class VirtualRouterCommands {
 
 		public void setFirewallDefaultAction(String firewallDefaultAction) {
 			this.firewallDefaultAction = firewallDefaultAction;
-		}
-
-		public List<String> getSecondaryIps() {
-			return secondaryIps;
-		}
-
-		public void setSecondaryIps(List<String> secondaryIps) {
-			this.secondaryIps = secondaryIps;
 		}
 	}
 	

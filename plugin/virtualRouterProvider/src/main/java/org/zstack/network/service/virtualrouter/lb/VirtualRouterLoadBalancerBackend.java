@@ -27,19 +27,20 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.service.NetworkServiceProviderType;
-import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
-import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
+import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.network.service.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.lb.*;
+import org.zstack.network.service.portforwarding.PortForwardingConstant;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentResponse;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
+import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -61,7 +62,8 @@ import static org.zstack.utils.CollectionDSL.list;
  * Created by frank on 8/9/2015.
  */
 public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBackend
-        implements LoadBalancerBackend, GlobalApiMessageInterceptor, ApiMessageInterceptor {
+        implements LoadBalancerBackend, GlobalApiMessageInterceptor, ApiMessageInterceptor,
+        VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint {
     private static CLogger logger = Utils.getLogger(VirtualRouterLoadBalancerBackend.class);
 
     @Autowired
@@ -1650,8 +1652,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         });
     }
 
-    /* to be Override in ha router */
-    protected boolean isVirtualRouterHaPair(List<String> vrUuids) {
+    private boolean isVirtualRouterHaPair(List<String> vrUuids) {
         for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
              return ext.isVirtualRouterInSameHaPair(vrUuids);
         }
@@ -1749,5 +1750,132 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 destroyLoadBalancerOnVirtualRouter(VirtualRouterVmInventory.valueOf(vrVO), s, compl);
             }
         }, data, completion);
+    }
+
+    private List<LoadBalancerStruct> getLoadBalancersByL3Networks(String l3Uuid, boolean detach) {
+        List<LoadBalancerStruct> ret = new ArrayList<>();
+        String sql = "select distinct l from LoadBalancerListenerVO l, LoadBalancerListenerVmNicRefVO ref, VmNicVO nic, UsedIpVO ip " +
+                "where l.uuid=ref.listenerUuid and ref.status in (:status) and ref.vmNicUuid=nic.uuid and nic.uuid=ip.vmNicUuid and ip.l3NetworkUuid=(:l3Uuid)";
+
+        List<LoadBalancerListenerVO> listenerVOS = SQL.New(sql, LoadBalancerListenerVO.class).param("l3Uuid", l3Uuid)
+                .param("status", asList(LoadBalancerVmNicStatus.Active, LoadBalancerVmNicStatus.Pending)).list();
+        if (listenerVOS == null || listenerVOS.isEmpty()){
+            return ret;
+        }
+
+        HashMap<String, List<LoadBalancerListenerVO>> listenerMap = new HashMap<>();
+        for (LoadBalancerListenerVO vo : listenerVOS) {
+            listenerMap.computeIfAbsent(vo.getLoadBalancerUuid(), k-> new ArrayList<>()).add(vo);
+        }
+
+        for (Map.Entry<String, List<LoadBalancerListenerVO>> e : listenerMap.entrySet()) {
+            List<String> listenerUuids = e.getValue().stream().map(LoadBalancerListenerVO::getUuid).collect(Collectors.toList());
+            HashMap<String, VmNicInventory> nicMap = new HashMap<>();
+            sql = "select nic from LoadBalancerListenerVmNicRefVO ref, VmNicVO nic " +
+                    "where nic.uuid=ref.vmNicUuid and ref.listenerUuid in (:listenerUuids) and ref.status in (:status)";
+
+            List<VmNicVO> nicVOS = SQL.New(sql, VmNicVO.class).param("listenerUuids", listenerUuids)
+                    .param("status", asList(LoadBalancerVmNicStatus.Active, LoadBalancerVmNicStatus.Pending)).list();
+            if (nicVOS != null && !nicVOS.isEmpty()){
+                for (VmNicVO nic : nicVOS) {
+                    if (!detach) {
+                        nicMap.put(nic.getUuid(), VmNicInventory.valueOf(nic));
+                    } else {
+                        /* when detach nic, vm nics of same l3 should not be included */
+                        List<String> nicL3Uuids = nic.getUsedIps().stream().map(UsedIpVO::getL3NetworkUuid).collect(Collectors.toList());
+                        if (!nicL3Uuids.contains(l3Uuid)) {
+                            nicMap.put(nic.getUuid(), VmNicInventory.valueOf(nic));
+                        }
+                    }
+                }
+            }
+
+            LoadBalancerStruct struct = new LoadBalancerStruct();
+            LoadBalancerVO lb = dbf.findByUuid(e.getKey(), LoadBalancerVO.class);
+            struct.setLb(LoadBalancerInventory.valueOf(lb));
+            struct.setListeners(LoadBalancerListenerInventory.valueOf(e.getValue()));
+            struct.setVmNics(nicMap);
+            ret.add(struct);
+        }
+
+        return ret;
+    }
+
+    @Override
+    public void afterAttachNic(VmNicInventory nic, Completion completion) {
+        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            completion.success();
+            return;
+        }
+
+        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(nic.getVmInstanceUuid())) {
+            completion.success();
+            return;
+        }
+
+        try {
+            nwServiceMgr.getTypeOfNetworkServiceProviderForService(nic.getL3NetworkUuid(), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
+        } catch (OperationFailureException e) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find();
+        DebugUtils.Assert(vrVO != null,
+                String.format("can not find virtual router[uuid: %s] for nic[uuid: %s, ip: %s, l3NetworkUuid: %s]",
+                        nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), nic.getL3NetworkUuid()));
+        VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
+
+        List<LoadBalancerStruct> lbs = getLoadBalancersByL3Networks(nic.getL3NetworkUuid(), false);
+        if (lbs == null || lbs.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        syncOnStart(vr, lbs, completion);
+    }
+
+    @Override
+    public void afterAttachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
+        completion.done();
+    }
+
+    @Override
+    public void beforeDetachNic(VmNicInventory nic, Completion completion) {
+        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            completion.success();
+            return;
+        }
+
+        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(nic.getVmInstanceUuid())) {
+            completion.success();
+            return;
+        }
+
+        try {
+            nwServiceMgr.getTypeOfNetworkServiceProviderForService(nic.getL3NetworkUuid(), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
+        } catch (OperationFailureException e) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find();
+        DebugUtils.Assert(vrVO != null,
+                String.format("can not find virtual router[uuid: %s] for nic[uuid: %s, ip: %s, l3NetworkUuid: %s]",
+                        nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), nic.getL3NetworkUuid()));
+        VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
+
+        List<LoadBalancerStruct> lbs = getLoadBalancersByL3Networks(nic.getL3NetworkUuid(), true);
+        if (lbs == null || lbs.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        syncOnStart(vr, lbs, completion);
+    }
+
+    @Override
+    public void beforeDetachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
+        completion.done();
     }
 }
