@@ -1,15 +1,20 @@
 package org.zstack.test.integration.networkservice.provider.flat.eip
 
+import org.zstack.core.cloudbus.CloudBus
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.userdata.UserdataConstant
+import org.zstack.network.service.vip.StopVipMsg
+import org.zstack.network.service.vip.StopVipReply
 import org.zstack.sdk.EipInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+
+import static org.zstack.core.Platform.operr
 
 /**
  * Created by weiwang on 04/12/2017
@@ -132,6 +137,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
         env.create {
             testStartVmWithEip()
             testRecoverVmWithEip()
+            testRecoverVmWithEipWithError()
         }
     }
 
@@ -164,6 +170,38 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
 
         stopVmInstance {
             uuid = vm.uuid
+        }
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+
+        EipInventory eip1 = queryEip { conditions=["name=eip-1"] }[0]
+        assert eip1.vmNicUuid == null
+        assert eip1.guestIp == null
+
+        recoverVmInstance {
+            uuid = vm.uuid
+        }
+
+        startVmInstance {
+            uuid = vm.uuid
+        }
+    }
+
+    void testRecoverVmWithEipWithError(){
+        def eip = env.inventoryByName("eip-1") as EipInventory
+        def vm = env.inventoryByName("vm-1") as VmInstanceInventory
+
+        attachEip {
+            eipUuid = eip.uuid
+            vmNicUuid = vm.vmNics[0].uuid
+        }
+
+        env.message(StopVipMsg.class) { StopVipMsg msg, CloudBus bus ->
+            def reply = new StopVipReply()
+            reply.setError(operr("on purpose"))
+            bus.reply(msg, reply)
         }
 
         destroyVmInstance {

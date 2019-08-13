@@ -13,7 +13,7 @@ public interface EipManager extends Service {
 
     void detachEip(EipStruct struct, String providerType, Completion completion);
 
-    void detachEipAndUpdateDb(EipStruct struct, String providerType, Completion completion);
+    void detachEipAndUpdateDb(EipStruct struct, String providerType, DetachEipOperation dbOperation, Completion completion);
 
     void attachEip(EipStruct struct, String providerType, Completion completion);
 

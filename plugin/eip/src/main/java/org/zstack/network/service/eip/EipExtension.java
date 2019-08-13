@@ -231,7 +231,7 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
         };
 
         if (detachInDb) {
-            eipMgr.detachEipAndUpdateDb(struct, providerType, cop);
+            eipMgr.detachEipAndUpdateDb(struct, providerType, DetachEipOperation.FORCE_DB_UPDATE, cop);
         } else {
             eipMgr.detachEip(struct, providerType, cop);
         }
