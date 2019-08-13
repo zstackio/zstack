@@ -49,6 +49,7 @@
         <module>externalservice</module>
         <module>longjob</module>
         <module>resourceconfig</module>
+        <module>authentication</module>
     </modules>
 
     <dependencyManagement>
@@ -552,6 +553,7 @@
                 <module>premium</module>
                 <module>rest</module>
                 <module>sdk</module>
+                <module>authentication</module>
             </modules>
         </profile>
 

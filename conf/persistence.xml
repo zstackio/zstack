@@ -178,5 +178,6 @@
         <class>org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO</class>
         <class>org.zstack.storage.ceph.primary.CephOsdGroupVO</class>
         <class>org.zstack.header.agent.versioncontrol.AgentVersionVO</class>
+        <class>org.zstack.authentication.checkfile.FileVerificationVO</class>
     </persistence-unit>
 </persistence>
