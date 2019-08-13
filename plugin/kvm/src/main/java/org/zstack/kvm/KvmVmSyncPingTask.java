@@ -12,7 +12,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -51,8 +50,6 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     private CloudBus bus;
     @Autowired
     private ThreadFacade thdf;
-    @Autowired
-    private ApiTimeoutManager timeoutMgr;
 
     // A map from apiId to VM instance uuid
     private ConcurrentHashMap<String, String> vmApis = new ConcurrentHashMap<>();
@@ -67,8 +64,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         });
     }
 
-
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unused")
     void init() {
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
@@ -92,7 +88,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
     @Override
     public List<Class> getReplyMessageClassForPreSendingExtensionPoint() {
-        return new ArrayList<>(skipVmTracerReplies);
+        return skipVmTracerReplies;
     }
 
     @Override

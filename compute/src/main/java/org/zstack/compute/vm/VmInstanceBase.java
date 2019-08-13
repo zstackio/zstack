@@ -40,13 +40,11 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
-import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.*;
+import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.MarkRootVolumeAsSnapshotMsg;
-import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
@@ -63,7 +61,9 @@ import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
@@ -5843,7 +5843,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
                     });
                 } else {
-                    self.setState(originState);
+                    self.setState(HostErrors.HOST_IS_DISCONNECTED.isEqual(errCode.getCode()) ? VmInstanceState.Unknown : originState);
                     self = dbf.updateAndRefresh(self);
                     completion.fail(errCode);
                 }
