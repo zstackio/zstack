@@ -47,4 +47,13 @@
         <defaultValue>false</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
+
+    <config>
+        <name>hostAllocator.checkHostMem</name>
+        <description>whether check vm memory size with host physical memory size</description>
+        <category>hostAllocator</category>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
 </globalConfig>

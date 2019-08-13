@@ -33,6 +33,7 @@ public class HostAllocatorSpec {
     private List<String> systemTags;
     private Map<String, Set<String>> host2PrimaryStorageBlacklist = new HashMap<>();
     private boolean fullAllocate;
+    private long oldMemoryCapacity = 0;
 
     public List<String> getSystemTags() {
         return systemTags;
@@ -202,6 +203,7 @@ public class HostAllocatorSpec {
         spec.setListAllHosts(msg.isListAllHosts());
         spec.setDryRun(msg.isDryRun());
         spec.setFullAllocate(msg.isFullAllocate());
+        spec.setOldMemoryCapacity(msg.getOldMemoryCapacity());
         String hvType = null;
         if (msg.getVmInstance() != null && msg.getVmInstance().getHypervisorType() != null) {
             hvType = msg.getVmInstance().getHypervisorType();
@@ -251,5 +253,13 @@ public class HostAllocatorSpec {
 
     public void setFullAllocate(boolean fullAllocate) {
         this.fullAllocate = fullAllocate;
+    }
+
+    public long getOldMemoryCapacity() {
+        return oldMemoryCapacity;
+    }
+
+    public void setOldMemoryCapacity(long oldMemoryCapacity) {
+        this.oldMemoryCapacity = oldMemoryCapacity;
     }
 }

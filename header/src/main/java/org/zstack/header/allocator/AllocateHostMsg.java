@@ -26,6 +26,7 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private String requiredBackupStorageUuid;
     private String requiredPrimaryStorageUuid;
     private boolean fullAllocate = true;
+    private long oldMemoryCapacity = 0;
 
     public String getRequiredPrimaryStorageUuid() {
         return requiredPrimaryStorageUuid;
@@ -167,5 +168,13 @@ public class AllocateHostMsg extends NeedReplyMessage {
 
     public void setFullAllocate(boolean fullAllocate) {
         this.fullAllocate = fullAllocate;
+    }
+
+    public long getOldMemoryCapacity() {
+        return oldMemoryCapacity;
+    }
+
+    public void setOldMemoryCapacity(long oldMemoryCapacity) {
+        this.oldMemoryCapacity = oldMemoryCapacity;
     }
 }
