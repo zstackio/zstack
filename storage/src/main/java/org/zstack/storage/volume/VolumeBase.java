@@ -146,6 +146,8 @@ public class VolumeBase implements Volume {
             handle((OverwriteVolumeMsg) msg);
         } else if (msg instanceof ReInitVolumeMsg) {
             handle((ReInitVolumeMsg) msg);
+        } else if (msg instanceof GetVolumeBackingInstallPathMsg) {
+            handle((GetVolumeBackingInstallPathMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -1256,7 +1258,92 @@ public class VolumeBase implements Volume {
                 return String.format("delete-volume-%s", self.getUuid());
             }
         });
+    }
 
+    private void handle(GetVolumeBackingInstallPathMsg msg) {
+        GetVolumeBackingInstallPathReply reply = new GetVolumeBackingInstallPathReply();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName("get volume backing install path");
+        chain.then(new ShareFlow() {
+            String currentRootPath;
+            List<String> previousRootPath;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "get-snapshot-root-node";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        GetVolumeSnapshotTreeRootNodeMsg smsg = new GetVolumeSnapshotTreeRootNodeMsg();
+                        smsg.setVolumeUuid(msg.getVolumeUuid());
+                        bus.makeLocalServiceId(smsg, VolumeSnapshotConstant.SERVICE_ID);
+                        bus.send(smsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply r) {
+                                if (!r.isSuccess()) {
+                                    trigger.fail(r.getError());
+                                    return;
+                                }
+
+                                GetVolumeSnapshotTreeRootNodeReply gr = r.castReply();
+                                currentRootPath = gr.getCurrentRootInstallPath() == null ? self.getInstallPath() :
+                                        gr.getCurrentRootInstallPath();
+                                previousRootPath = gr.getPreviousRootInstallPaths();
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "get-root-node-from-ps";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        GetVolumeBackingChainFromPrimaryStorageMsg pmsg = new GetVolumeBackingChainFromPrimaryStorageMsg();
+                        pmsg.setVolumeUuid(self.getUuid());
+                        pmsg.getRootInstallPaths().addAll(previousRootPath);
+                        pmsg.getRootInstallPaths().add(currentRootPath);
+                        pmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+                        bus.makeLocalServiceId(pmsg, PrimaryStorageConstant.SERVICE_ID);
+                        bus.send(pmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply r) {
+                                 if (!r.isSuccess()) {
+                                     trigger.fail(r.getError());
+                                     return;
+                                 }
+
+                                 GetVolumeBackingChainFromPrimaryStorageReply gr = r.castReply();
+                                 reply.setCurrentBackingChain(gr.getBackingChainInstallPath(currentRootPath));
+                                 reply.setCurrentBackingChainSize(gr.getBackingChainSize(currentRootPath));
+                                 previousRootPath.forEach(path -> {
+                                     reply.addPreviousBackingChain(gr.getBackingChainInstallPath(path));
+                                     reply.addPreviousBackingChainSize(gr.getBackingChainSize(path));
+                                 });
+                                 trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+        }).start();
     }
 
     private void handleApiMessage(APIMessage msg) {

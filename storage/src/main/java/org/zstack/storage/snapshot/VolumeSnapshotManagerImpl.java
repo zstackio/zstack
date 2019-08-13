@@ -144,6 +144,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             handle((AskVolumeSnapshotStructMsg) msg);
         } else if (msg instanceof BatchDeleteVolumeSnapshotMsg) {
             handle((BatchDeleteVolumeSnapshotMsg) msg);
+        } else if (msg instanceof GetVolumeSnapshotTreeRootNodeMsg) {
+            handle((GetVolumeSnapshotTreeRootNodeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -285,6 +287,24 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             r.addAll(getSnapshotAncestors(parentUuid));
             return r;
         }
+    }
+
+    private void handle(GetVolumeSnapshotTreeRootNodeMsg msg) {
+        List<Tuple> ts = SQL.New("select snapshot.primaryStorageInstallPath, tree.current from VolumeSnapshotTreeVO tree, VolumeSnapshotVO snapshot" +
+                " where tree.volumeUuid = :volUuid" +
+                " and snapshot.treeUuid = tree.uuid" +
+                " and snapshot.parentUuid is null", Tuple.class)
+                .param("volUuid", msg.getVolumeUuid())
+                .list();
+        GetVolumeSnapshotTreeRootNodeReply reply = new GetVolumeSnapshotTreeRootNodeReply();
+        for (Tuple t : ts) {
+            if (t.get(1, Boolean.class)) {
+                reply.setCurrentRootInstallPath(t.get(0, String.class));
+            } else {
+                reply.addPreviousRootInstallPath(t.get(0, String.class));
+            }
+        }
+        bus.reply(msg, reply);
     }
 
     private void handle(APIBatchDeleteVolumeSnapshotMsg msg) {
