@@ -92,6 +92,14 @@ public class ArchiveTicketInventory  {
         return this.flowCollectionUuid;
     }
 
+    public java.lang.String ticketTypeUuid;
+    public void setTicketTypeUuid(java.lang.String ticketTypeUuid) {
+        this.ticketTypeUuid = ticketTypeUuid;
+    }
+    public java.lang.String getTicketTypeUuid() {
+        return this.ticketTypeUuid;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
