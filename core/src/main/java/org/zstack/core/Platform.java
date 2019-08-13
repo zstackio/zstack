@@ -758,13 +758,14 @@ public class Platform {
         String details = null;
         if (fmt != null) {
             try {
-                details = String.format(fmt, args);
+                details = SysErrors.INTERNAL == errCode ? String.format(fmt, args) : toI18nString(fmt, args);
             } catch (Exception e) {
                 logger.warn("exception happened when format error message");
                 logger.warn(e.getMessage());
                 details = fmt;
             }
         }
+
         ErrorCode result = errf.instantiateErrorCode(errCode, details, cause);
         // start to generate elaboration...
         if (CoreGlobalProperty.ENABLE_ELABORATION) {
