@@ -54,14 +54,6 @@ public class VmAllocateHostFlow implements Flow {
         return size;
     }
 
-    @Transactional
-    protected List<String> getAvoidHost(VmInstanceSpec spec){
-        return Q.New(PrimaryStorageHostRefVO.class).select(PrimaryStorageHostRefVO_.hostUuid)
-                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, spec.getRequiredPrimaryStorageUuidForRootVolume())
-                .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
-                .listValues();
-    }
-
     protected AllocateHostMsg prepareMsg(VmInstanceSpec spec) {
         DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
 
@@ -77,7 +69,6 @@ public class VmAllocateHostFlow implements Flow {
         }
         diskSize += getTotalDataDiskSize(spec);
         diskOfferings.addAll(spec.getDataDiskOfferings());
-        msg.setAvoidHostUuids(getAvoidHost(spec));
         msg.setSoftAvoidHostUuids(spec.getSoftAvoidHostUuids());
         msg.setDiskOfferings(diskOfferings);
         msg.setDiskSize(diskSize);
@@ -107,7 +98,10 @@ public class VmAllocateHostFlow implements Flow {
             msg.setAllocatorStrategy(spec.getVmInventory().getAllocatorStrategy());
         }
         if (spec.getRequiredPrimaryStorageUuidForRootVolume() != null) {
-            msg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
+            msg.addRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
+        }
+        if (spec.getRequiredPrimaryStorageUuidForDataVolume() != null) {
+            msg.addRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForDataVolume());
         }
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         msg.setVmInstance(spec.getVmInventory());

@@ -302,7 +302,11 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         }
     }
 
-    public final void updateNfsHostStatus(String psUuid, String huuid, PrimaryStorageHostStatus newStatus){
+    public final void updateNfsHostStatus(String psUuid, String huuid, PrimaryStorageHostStatus newStatus) {
+        updateNfsHostStatus(psUuid, huuid, newStatus, null);
+    }
+
+    public final void updateNfsHostStatus(String psUuid, String huuid, PrimaryStorageHostStatus newStatus, Runnable runIfUpdated){
         PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData data =
                 new PrimaryStorageCanonicalEvent.PrimaryStorageHostStatusChangeData();
         new SQLBatch(){
@@ -345,6 +349,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
         }.execute();
         if (data.getHostUuid() != null){
             evtf.fire(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_HOST_STATUS_CHANGED_PATH, data);
+            Optional.ofNullable(runIfUpdated).ifPresent(Runnable::run);
         }
     }
 

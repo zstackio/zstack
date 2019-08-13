@@ -7,18 +7,23 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
+    private final static CLogger logger = Utils.getLogger(HostPrimaryStorageAllocatorFlow.class);
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -27,11 +32,16 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
     @Transactional(readOnly = true)
     private List<HostVO> allocateFromCandidates() {
         List<String> huuids = getHostUuidsFromCandidates();
-
+        Set<String> requiredPsUuids = spec.getRequiredPrimaryStorageUuids();
         if (!VmOperation.NewCreate.toString().equals(spec.getVmOperation())) {
             String sqlappend = "";
-            if (spec.getRequiredPrimaryStorageUuid() != null) {
-                sqlappend = String.format(" and pri.uuid = '%s'",spec.getRequiredPrimaryStorageUuid());
+            if (!requiredPsUuids.isEmpty()) {
+                sqlappend = requiredPsUuids.size() == 1 ?
+                        String.format(" and ps.uuid = '%s'", requiredPsUuids.iterator().next()) :
+                        String.format(" and ps.uuid in ('%s')" +
+                        " group by ref.clusterUuid" +
+                        " having count(distinct ref.primaryStorageUuid) = %d",
+                        String.join("','", requiredPsUuids), requiredPsUuids.size());
             }
 
             String sql = "select h" +
@@ -39,12 +49,11 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                     " where h.uuid in :uuids" +
                     " and h.clusterUuid in" +
                     " (" +
-                    " select pr.clusterUuid" +
-                    " from PrimaryStorageClusterRefVO pr, PrimaryStorageVO pri, PrimaryStorageCapacityVO cap" +
-                    " where pr.primaryStorageUuid = pri.uuid" +
-                    " and pri.uuid = cap.uuid" +
-                    " and (pri.state = :state or pri.state =:state1)" +
-                    " and pri.status = :status" +
+                    " select ref.clusterUuid" +
+                    " from PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps" +
+                    " where ref.primaryStorageUuid = ps.uuid" +
+                    " and (ps.state = :state or ps.state =:state1)" +
+                    " and ps.status = :status" +
                     sqlappend +
                     " )";
 
@@ -53,7 +62,23 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             query.setParameter("state", PrimaryStorageState.Enabled);
             query.setParameter("state1", PrimaryStorageState.Disabled);
             query.setParameter("status", PrimaryStorageStatus.Connected);
-            return query.getResultList();
+            List<HostVO> hosts = query.getResultList();
+            List<String> hostUuids = hosts.stream().map(HostVO::getUuid).collect(Collectors.toList());
+            List<String> disconnectHostUuids = requiredPsUuids.isEmpty() ? Collections.emptyList() :
+                    Q.New(PrimaryStorageHostRefVO.class).select(PrimaryStorageHostRefVO_.hostUuid)
+                            .in(PrimaryStorageHostRefVO_.primaryStorageUuid, requiredPsUuids)
+                            .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
+                            .in(PrimaryStorageHostRefVO_.hostUuid, hostUuids)
+                            .listValues();
+
+            if (!disconnectHostUuids.isEmpty()) {
+                logger.trace(String.format("There are some disconnection between primary storage[uuids:%s]" +
+                        " and host[uuids:%s], remove these hosts", requiredPsUuids, disconnectHostUuids));
+                Set<String> discHostSet = new HashSet<>(disconnectHostUuids);
+                hosts.removeIf(it -> discHostSet.contains(it.getUuid()));
+            }
+
+            return hosts;
         }
 
         // for new created vm
@@ -80,10 +105,21 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             psUuids.add(t.get(0, String.class));
         }
 
-        if (spec.getRequiredPrimaryStorageUuid() != null) {
-            if (psUuids.contains(spec.getRequiredPrimaryStorageUuid())) {
+        if (!requiredPsUuids.isEmpty()) {
+            if (psUuids.containsAll(requiredPsUuids)) {
                 psUuids.clear();
-                psUuids.add(0, spec.getRequiredPrimaryStorageUuid());
+                psUuids.addAll(requiredPsUuids);
+                huuids = SQL.New("select h.uuid from HostVO h" +
+                        " where h.uuid in :huuids" +
+                        " and h.uuid not in (" +
+                        " select ref.hostUuid from PrimaryStorageHostRefVO ref" +
+                        " where ref.primaryStorageUuid in :psUuids" +
+                        " and ref.status = :phStatus" +
+                        " )", String.class)
+                        .param("huuids", huuids)
+                        .param("psUuids", requiredPsUuids)
+                        .param("phStatus", PrimaryStorageHostStatus.Disconnected)
+                        .list();
             } else {
                 return new ArrayList<>();
             }

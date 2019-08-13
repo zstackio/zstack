@@ -17,10 +17,12 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.*;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateHostForMigrateVmFlow implements Flow {
@@ -61,7 +63,9 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         msg.setAllocatorStrategy(HostAllocatorConstant.MIGRATE_VM_ALLOCATOR_TYPE);
         msg.setVmOperation(spec.getCurrentVmOperation().toString());
-        msg.setRequiredPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
+        msg.setRequiredPrimaryStorageUuids(spec.getVmInventory().getAllVolumes().stream()
+                .map(VolumeInventory::getPrimaryStorageUuid)
+                .collect(Collectors.toSet()));
         msg.setL3NetworkUuids(CollectionUtils.transformToList(
                 VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()), new Function<String, L3NetworkInventory>() {
             @Override

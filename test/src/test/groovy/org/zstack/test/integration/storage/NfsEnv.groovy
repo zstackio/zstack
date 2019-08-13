@@ -8,7 +8,7 @@ import org.zstack.testlib.Test
 import org.zstack.utils.data.SizeUnit
 
 /**
- * Created by Administrator on 2017-05-10.
+ * Created by MaJin on 2017-05-10.
  */
 class NfsEnv {
     static EnvSpec TwoNfsTwoClusterThreeHost() {

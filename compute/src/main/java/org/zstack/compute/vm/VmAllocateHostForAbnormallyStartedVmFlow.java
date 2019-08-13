@@ -18,6 +18,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicHelper;
 import org.zstack.header.vm.VmNicSpec;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -46,7 +47,9 @@ public class VmAllocateHostForAbnormallyStartedVmFlow implements Flow {
         if (spec.getImageSpec() != null) {
             msg.setImage(spec.getImageSpec().getInventory());
         }
-        msg.setRequiredPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
+        msg.setRequiredPrimaryStorageUuids(spec.getVmInventory().getAllVolumes().stream()
+                .map(VolumeInventory::getPrimaryStorageUuid)
+                .collect(Collectors.toSet()));
         msg.setVmOperation(spec.getCurrentVmOperation().toString());
         msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
         msg.setL3NetworkUuids(CollectionUtils.transformToList(VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks()), new Function<String, L3NetworkInventory>() {

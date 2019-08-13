@@ -1019,7 +1019,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setClusterUuid(msg.getClusterUuid());
         cmsg.setHostUuid(msg.getHostUuid());
         cmsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
-        cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
+        if (msg.getDataDiskOfferingUuids() != null && !msg.getDataDiskOfferingUuids().isEmpty()) {
+            cmsg.setPrimaryStorageUuidForDataVolume(getPSUuidForDataVolume(msg.getSystemTags()));
+        }
         cmsg.setDescription(msg.getDescription());
         cmsg.setResourceUuid(msg.getResourceUuid());
         cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
@@ -1033,6 +1035,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         if(systemTags == null || systemTags.isEmpty()){
             return null;
         }
+
+
 
         return SystemTagUtils.findTagValue(systemTags, VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME, VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN);
     }
