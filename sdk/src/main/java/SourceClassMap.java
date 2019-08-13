@@ -375,6 +375,12 @@ public class SourceClassMap {
 			put("org.zstack.storage.device.iscsi.IscsiServerClusterRefInventory", "org.zstack.sdk.IscsiServerClusterRefInventory");
 			put("org.zstack.storage.device.iscsi.IscsiServerInventory", "org.zstack.sdk.IscsiServerInventory");
 			put("org.zstack.storage.device.iscsi.IscsiTargetInventory", "org.zstack.sdk.IscsiTargetInventory");
+			put("org.zstack.storage.device.localRaid.LocateStatus", "org.zstack.sdk.LocateStatus");
+			put("org.zstack.storage.device.localRaid.PhysicalDriveSmartSelfTestHistoryInventory", "org.zstack.sdk.PhysicalDriveSmartSelfTestHistoryInventory");
+			put("org.zstack.storage.device.localRaid.RaidControllerInventory", "org.zstack.sdk.RaidControllerInventory");
+			put("org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory", "org.zstack.sdk.RaidPhysicalDriveInventory");
+			put("org.zstack.storage.device.localRaid.RunningState", "org.zstack.sdk.RunningState");
+			put("org.zstack.storage.device.localRaid.SmartDataStruct", "org.zstack.sdk.SmartDataStruct");
 			put("org.zstack.storage.fusionstor.backup.FusionstorBackupStorageInventory", "org.zstack.sdk.FusionstorBackupStorageInventory");
 			put("org.zstack.storage.fusionstor.backup.FusionstorBackupStorageMonInventory", "org.zstack.sdk.FusionstorBackupStorageMonInventory");
 			put("org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageInventory", "org.zstack.sdk.FusionstorPrimaryStorageInventory");
@@ -622,6 +628,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LoadBalancerListenerInventory", "org.zstack.network.service.lb.LoadBalancerListenerInventory");
 			put("org.zstack.sdk.LoadBalancerListenerVmNicRefInventory", "org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory");
 			put("org.zstack.sdk.LocalStorageResourceRefInventory", "org.zstack.storage.primary.local.LocalStorageResourceRefInventory");
+			put("org.zstack.sdk.LocateStatus", "org.zstack.storage.device.localRaid.LocateStatus");
 			put("org.zstack.sdk.LongJobInventory", "org.zstack.header.longjob.LongJobInventory");
 			put("org.zstack.sdk.LongJobState", "org.zstack.header.longjob.LongJobState");
 			put("org.zstack.sdk.ManagementNodeInventory", "org.zstack.header.managementnode.ManagementNodeInventory");
@@ -670,6 +677,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PciDeviceStatus", "org.zstack.pciDevice.PciDeviceStatus");
 			put("org.zstack.sdk.PciDeviceType", "org.zstack.pciDevice.PciDeviceType");
 			put("org.zstack.sdk.PciDeviceVirtStatus", "org.zstack.pciDevice.virtual.PciDeviceVirtStatus");
+			put("org.zstack.sdk.PhysicalDriveSmartSelfTestHistoryInventory", "org.zstack.storage.device.localRaid.PhysicalDriveSmartSelfTestHistoryInventory");
 			put("org.zstack.sdk.PolicyInventory", "org.zstack.header.identity.PolicyInventory");
 			put("org.zstack.sdk.PolicyRouteRuleInventory", "org.zstack.policyRoute.PolicyRouteRuleInventory");
 			put("org.zstack.sdk.PolicyRouteRuleProtocol", "org.zstack.policyRoute.PolicyRouteRuleProtocol");
@@ -698,6 +706,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PubIpVmNicBandwidthSpending", "org.zstack.billing.spendingcalculator.vmnic.PubIpVmNicBandwidthSpending");
 			put("org.zstack.sdk.QuotaInventory", "org.zstack.header.identity.QuotaInventory");
 			put("org.zstack.sdk.QuotaUsage", "org.zstack.header.identity.Quota$QuotaUsage");
+			put("org.zstack.sdk.RaidControllerInventory", "org.zstack.storage.device.localRaid.RaidControllerInventory");
+			put("org.zstack.sdk.RaidPhysicalDriveInventory", "org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory");
 			put("org.zstack.sdk.RemovalInstanceRuleInventory", "org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory");
 			put("org.zstack.sdk.ReplicationDiskStatus", "org.zstack.storage.primary.ministorage.ReplicationDiskStatus");
 			put("org.zstack.sdk.ReplicationGroupState", "org.zstack.imagereplicator.ReplicationGroupState");
@@ -716,6 +726,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.RootVolumeSpending", "org.zstack.billing.spendingcalculator.volume.root.RootVolumeSpending");
 			put("org.zstack.sdk.RootVolumeSpendingInventory", "org.zstack.billing.spendingcalculator.volume.root.RootVolumeSpendingInventory");
 			put("org.zstack.sdk.RouterAreaInventory", "org.zstack.header.protocol.RouterAreaInventory");
+			put("org.zstack.sdk.RunningState", "org.zstack.storage.device.localRaid.RunningState");
 			put("org.zstack.sdk.SchedulerJobGroupInventory", "org.zstack.header.scheduler.SchedulerJobGroupInventory");
 			put("org.zstack.sdk.SchedulerJobGroupJobRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupJobRefInventory");
 			put("org.zstack.sdk.SchedulerJobGroupSchedulerTriggerRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupSchedulerTriggerRefInventory");
@@ -745,6 +756,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ShellResult", "org.zstack.kvm.APIKvmRunShellEvent$ShellResult");
 			put("org.zstack.sdk.SimulatorHostInventory", "org.zstack.header.simulator.SimulatorHostInventory");
 			put("org.zstack.sdk.SnapShotSpendingInventory", "org.zstack.billing.spendingcalculator.snapshot.SnapShotSpendingInventory");
+			put("org.zstack.sdk.SmartDataStruct", "org.zstack.storage.device.localRaid.SmartDataStruct");
+			put("org.zstack.sdk.SnapShotSpendingInventory", "org.zstack.billing.SnapShotSpendingInventory");
 			put("org.zstack.sdk.SnapshotLeafInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotTree$SnapshotLeafInventory");
 			put("org.zstack.sdk.SnapshotSpending", "org.zstack.billing.spendingcalculator.snapshot.SnapshotSpending");
 			put("org.zstack.sdk.Spending", "org.zstack.billing.Spending");

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSchedulerJobAction extends AbstractAction {
+public class LocateLocalRaidPhysicalDriveAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateSchedulerJobAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateSchedulerJobResult value;
+        public org.zstack.sdk.LocateLocalRaidPhysicalDriveResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,11 @@ public class CreateSchedulerJobAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String targetResourceUuid;
-
-    @Param(required = true, validValues = {"startVm","stopVm","rebootVm","volumeSnapshot","volumeBackup","rootVolumeBackup","vmBackup","databaseBackup","localRaidSelfTest"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
+    public java.lang.String uuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map parameters;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.Boolean locate = true;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -61,9 +46,6 @@ public class CreateSchedulerJobAction extends AbstractAction {
     @Param(required = false)
     public String accessKeySecret;
 
-    @Param(required = false)
-    public String requestIp;
-
     @NonAPIParam
     public long timeout = -1;
 
@@ -78,8 +60,8 @@ public class CreateSchedulerJobAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateSchedulerJobResult value = res.getResult(org.zstack.sdk.CreateSchedulerJobResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateSchedulerJobResult() : value; 
+        org.zstack.sdk.LocateLocalRaidPhysicalDriveResult value = res.getResult(org.zstack.sdk.LocateLocalRaidPhysicalDriveResult.class);
+        ret.value = value == null ? new org.zstack.sdk.LocateLocalRaidPhysicalDriveResult() : value; 
 
         return ret;
     }
@@ -108,11 +90,11 @@ public class CreateSchedulerJobAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/scheduler/jobs";
+        info.httpMethod = "PUT";
+        info.path = "/storage-devices/local-raid/physical-drives/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "locateLocalRaidPhysicalDrive";
         return info;
     }
 
