@@ -80,11 +80,13 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     }
 
     private class Tracker extends AsyncTimer {
+        private final CLogger logger = Utils.getLogger(HostTrackImpl.class);
+
         private String uuid;
         private String hypervisorType;
         private HostReconnectTask reconnectTask;
 
-        public Tracker(String uuid) {
+        Tracker(String uuid) {
             super(TimeUnit.SECONDS, HostGlobalConfig.PING_HOST_INTERVAL.value(Long.class));
             this.uuid = uuid;
             hypervisorType = Q.New(HostVO.class).select(HostVO_.hypervisorType)
