@@ -45,6 +45,7 @@
         <property name="sortFlowNames">
             <list>
                 <value>org.zstack.storage.primary.PrimaryStorageSortFlow</value>
+                <value>org.zstack.storage.primary.PrimaryStorageSortByAvailablePhysicalCapacityFlow</value>
             </list>
         </property>
 
