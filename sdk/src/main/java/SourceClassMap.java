@@ -258,7 +258,6 @@ public class SourceClassMap {
 			put("org.zstack.iam2.entity.IAM2ProjectAttributeInventory", "org.zstack.sdk.iam2.entity.IAM2ProjectAttributeInventory");
 			put("org.zstack.iam2.entity.IAM2ProjectInventory", "org.zstack.sdk.iam2.entity.IAM2ProjectInventory");
 			put("org.zstack.iam2.entity.IAM2ProjectTemplateInventory", "org.zstack.sdk.iam2.entity.IAM2ProjectTemplateInventory");
-			put("org.zstack.iam2.entity.IAM2RoleTemplate", "org.zstack.sdk.iam2.entity.IAM2RoleTemplate");
 			put("org.zstack.iam2.entity.IAM2VirtualIDAttributeInventory", "org.zstack.sdk.iam2.entity.IAM2VirtualIDAttributeInventory");
 			put("org.zstack.iam2.entity.IAM2VirtualIDGroupAttributeInventory", "org.zstack.sdk.iam2.entity.IAM2VirtualIDGroupAttributeInventory");
 			put("org.zstack.iam2.entity.IAM2VirtualIDGroupInventory", "org.zstack.sdk.iam2.entity.IAM2VirtualIDGroupInventory");
@@ -381,10 +380,6 @@ public class SourceClassMap {
 			put("org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory", "org.zstack.sdk.RaidPhysicalDriveInventory");
 			put("org.zstack.storage.device.localRaid.RunningState", "org.zstack.sdk.RunningState");
 			put("org.zstack.storage.device.localRaid.SmartDataStruct", "org.zstack.sdk.SmartDataStruct");
-			put("org.zstack.storage.fusionstor.backup.FusionstorBackupStorageInventory", "org.zstack.sdk.FusionstorBackupStorageInventory");
-			put("org.zstack.storage.fusionstor.backup.FusionstorBackupStorageMonInventory", "org.zstack.sdk.FusionstorBackupStorageMonInventory");
-			put("org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageInventory", "org.zstack.sdk.FusionstorPrimaryStorageInventory");
-			put("org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonInventory", "org.zstack.sdk.FusionstorPrimaryStorageMonInventory");
 			put("org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity", "org.zstack.sdk.HostDiskCapacity");
 			put("org.zstack.storage.primary.local.LocalStorageResourceRefInventory", "org.zstack.sdk.LocalStorageResourceRefInventory");
 			put("org.zstack.storage.primary.ministorage.MiniStorageHostRefInventory", "org.zstack.sdk.MiniStorageHostRefInventory");
@@ -571,10 +566,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FlowCounter", "org.zstack.header.flowMeter.FlowCounter");
 			put("org.zstack.sdk.FlowMeterInventory", "org.zstack.header.flowMeter.FlowMeterInventory");
 			put("org.zstack.sdk.FreeIpInventory", "org.zstack.header.network.l3.FreeIpInventory");
-			put("org.zstack.sdk.FusionstorBackupStorageInventory", "org.zstack.storage.fusionstor.backup.FusionstorBackupStorageInventory");
-			put("org.zstack.sdk.FusionstorBackupStorageMonInventory", "org.zstack.storage.fusionstor.backup.FusionstorBackupStorageMonInventory");
-			put("org.zstack.sdk.FusionstorPrimaryStorageInventory", "org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageInventory");
-			put("org.zstack.sdk.FusionstorPrimaryStorageMonInventory", "org.zstack.storage.fusionstor.primary.FusionstorPrimaryStorageMonInventory");
 			put("org.zstack.sdk.GarbageCollectorInventory", "org.zstack.core.gc.GarbageCollectorInventory");
 			put("org.zstack.sdk.GlobalConfigInventory", "org.zstack.core.config.GlobalConfigInventory");
 			put("org.zstack.sdk.GlobalConfigTemplateInventory", "org.zstack.templateConfig.GlobalConfigTemplateInventory");
@@ -755,9 +746,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SharedResourceInventory", "org.zstack.header.identity.SharedResourceInventory");
 			put("org.zstack.sdk.ShellResult", "org.zstack.kvm.APIKvmRunShellEvent$ShellResult");
 			put("org.zstack.sdk.SimulatorHostInventory", "org.zstack.header.simulator.SimulatorHostInventory");
-			put("org.zstack.sdk.SnapShotSpendingInventory", "org.zstack.billing.spendingcalculator.snapshot.SnapShotSpendingInventory");
 			put("org.zstack.sdk.SmartDataStruct", "org.zstack.storage.device.localRaid.SmartDataStruct");
-			put("org.zstack.sdk.SnapShotSpendingInventory", "org.zstack.billing.SnapShotSpendingInventory");
+			put("org.zstack.sdk.SnapShotSpendingInventory", "org.zstack.billing.spendingcalculator.snapshot.SnapShotSpendingInventory");
 			put("org.zstack.sdk.SnapshotLeafInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotTree$SnapshotLeafInventory");
 			put("org.zstack.sdk.SnapshotSpending", "org.zstack.billing.spendingcalculator.snapshot.SnapshotSpending");
 			put("org.zstack.sdk.Spending", "org.zstack.billing.Spending");
@@ -863,7 +853,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.iam2.entity.IAM2ProjectAttributeInventory", "org.zstack.iam2.entity.IAM2ProjectAttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2ProjectInventory", "org.zstack.iam2.entity.IAM2ProjectInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2ProjectTemplateInventory", "org.zstack.iam2.entity.IAM2ProjectTemplateInventory");
-			put("org.zstack.sdk.iam2.entity.IAM2RoleTemplate", "org.zstack.iam2.entity.IAM2RoleTemplate");
 			put("org.zstack.sdk.iam2.entity.IAM2VirtualIDAttributeInventory", "org.zstack.iam2.entity.IAM2VirtualIDAttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2VirtualIDGroupAttributeInventory", "org.zstack.iam2.entity.IAM2VirtualIDGroupAttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2VirtualIDGroupInventory", "org.zstack.iam2.entity.IAM2VirtualIDGroupInventory");

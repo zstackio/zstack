@@ -23553,8 +23553,8 @@ trait ApiHelper {
     }
 
 
-    def setFlowMeterRouterId(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetFlowMeterRouterIdAction.class) Closure c) {
-        def a = new org.zstack.sdk.SetFlowMeterRouterIdAction()
+    def selfTestLocalRaid(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SelfTestLocalRaidAction.class) Closure c) {
+        def a = new org.zstack.sdk.SelfTestLocalRaidAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -23565,7 +23565,7 @@ trait ApiHelper {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-     
+    
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
@@ -23580,8 +23580,8 @@ trait ApiHelper {
     }
 
 
-    def selfTestLocalRaid(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SelfTestLocalRaidAction.class) Closure c) {
-        def a = new org.zstack.sdk.SelfTestLocalRaidAction()
+    def setFlowMeterRouterId(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetFlowMeterRouterIdAction.class) Closure c) {
+        def a = new org.zstack.sdk.SetFlowMeterRouterIdAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -29306,6 +29306,33 @@ trait ApiHelper {
     }
 
 
+    def checkIAM2OrganizationAvailability(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.CheckIAM2OrganizationAvailabilityAction.class) Closure c) {
+        def a = new org.zstack.sdk.iam2.api.CheckIAM2OrganizationAvailabilityAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def checkIAM2VirtualIDConfigFile(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.CheckIAM2VirtualIDConfigFileAction.class) Closure c) {
         def a = new org.zstack.sdk.iam2.api.CheckIAM2VirtualIDConfigFileAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -29767,33 +29794,6 @@ trait ApiHelper {
 
     def getIAM2VirtualIDAPIPermission(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.GetIAM2VirtualIDAPIPermissionAction.class) Closure c) {
         def a = new org.zstack.sdk.iam2.api.GetIAM2VirtualIDAPIPermissionAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def getIAM2VirtualIDInOrganization(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.GetIAM2VirtualIDInOrganizationAction.class) Closure c) {
-        def a = new org.zstack.sdk.iam2.api.GetIAM2VirtualIDInOrganizationAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
