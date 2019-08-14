@@ -325,7 +325,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         UsedIpInventory guestIp = getEipGuestIp(eip.getUuid());
         EipStruct struct = generateEipStruct(nicInventory, vipInventory, eip, guestIp);
         struct.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
-        detachEipAndUpdateDb(struct, providerType.toString(), new Completion(msg) {
+        detachEipAndUpdateDb(struct, providerType.toString(), DetachEipOperation.DB_UPDATE, new Completion(msg) {
             @Override
             public void success() {
                 evt.setInventory(EipInventory.valueOf(dbf.reload(vo)));
@@ -815,7 +815,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     }
 
 
-    private void detachEip(final EipStruct struct, final String providerType, final boolean updateDb, final Completion completion) {
+    private void detachEip(final EipStruct struct, final String providerType, final DetachEipOperation operation, final Completion completion) {
         VmNicInventory nic = struct.getNic();
         final EipInventory eip = struct.getEip();
 
@@ -871,26 +871,13 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     }
                 });
 
-                if (updateDb) {
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "udpate-eip";
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            UpdateQuery q = UpdateQuery.New(EipVO.class);
-                            q.condAnd(EipVO_.uuid, Op.EQ, eip.getUuid());
-                            q.set(EipVO_.vmNicUuid, null);
-                            q.set(EipVO_.guestIp, null);
-                            q.update();
-
-                            trigger.next();
-                        }
-                    });
-                }
-
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
+                        if (operation != DetachEipOperation.NO_DB_UPDATE) {
+                            SQL.New(EipVO.class).eq(EipVO_.uuid, eip.getUuid()).set(EipVO_.vmNicUuid, null).set(EipVO_.guestIp, null).update();
+                        }
+
                         completion.success();
                     }
                 });
@@ -898,6 +885,9 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
+                        if (operation == DetachEipOperation.FORCE_DB_UPDATE) {
+                            SQL.New(EipVO.class).eq(EipVO_.uuid, eip.getUuid()).set(EipVO_.vmNicUuid, null).set(EipVO_.guestIp, null).update();
+                        }
                         completion.fail(errCode);
                     }
                 });
@@ -907,12 +897,12 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
     @Override
     public void detachEip(EipStruct struct, String providerType, final Completion completion) {
-        detachEip(struct, providerType, false, completion);
+        detachEip(struct, providerType, DetachEipOperation.NO_DB_UPDATE, completion);
     }
 
     @Override
-    public void detachEipAndUpdateDb(EipStruct struct, String providerType, Completion completion) {
-        detachEip(struct, providerType, true, completion);
+    public void detachEipAndUpdateDb(EipStruct struct, String providerType, DetachEipOperation dbOperation, Completion completion) {
+        detachEip(struct, providerType, dbOperation, completion);
     }
 
     @Override
