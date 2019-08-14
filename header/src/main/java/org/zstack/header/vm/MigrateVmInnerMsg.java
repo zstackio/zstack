@@ -11,6 +11,7 @@ public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMes
     private String hostUuid;
     private String strategy;
     private Boolean migrateFromDestination;
+    private boolean allowUnknown;
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
@@ -38,9 +39,18 @@ public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMes
         this.hostUuid = hostUuid;
     }
 
+    public void setAllowUnknown(boolean allowUnknown) {
+        this.allowUnknown = allowUnknown;
+    }
+
     @Override
     public boolean isMigrateFromDestination() {
         return migrateFromDestination == null ? false : migrateFromDestination;
+    }
+
+    @Override
+    public boolean isAllowUnknown() {
+        return false;
     }
 
     public void setMigrateFromDestination(Boolean migrateFromDestination) {

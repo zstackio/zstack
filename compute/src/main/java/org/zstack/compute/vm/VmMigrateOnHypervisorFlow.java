@@ -41,7 +41,7 @@ public class VmMigrateOnHypervisorFlow implements Flow {
         msg.setSrcHostUuid(spec.getVmInventory().getHostUuid());
         msg.setMigrateFromDestination(migrateFromDest);
         msg.setStrategy(strategy);
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override
             public void run(MessageReply reply) {

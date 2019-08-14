@@ -1,7 +1,11 @@
 package org.zstack.test.integration.kvm.vm.migrate
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.SQL
 import org.zstack.header.Constants
+import org.zstack.header.host.HostStatus
+import org.zstack.header.host.HostVO
+import org.zstack.header.host.HostVO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
@@ -15,11 +19,15 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
+
 /**
  * Created by shixin.ruan on 2018/02/10.
  */
 class MigrateVmFromDestitonHostCase extends SubCase {
     EnvSpec env
+    VmInstanceInventory vm1
+    def disconnectHostUuid = []
 
     @Override
     void clean() {
@@ -157,12 +165,44 @@ class MigrateVmFromDestitonHostCase extends SubCase {
     @Override
     void test() {
         env.create {
+            vm1 = env.inventoryByName("vm1") as VmInstanceInventory
+            prepareEnv()
             testMigrateVmFromDestinationHost()
         }
     }
 
+    void prepareEnv() {
+        env.simulator(KVMConstant.KVM_PING_PATH) { HttpEntity<String> e ->
+            KVMAgentCommands.PingResponse rsp = new KVMAgentCommands.PingResponse()
+            KVMAgentCommands.PingCmd pingCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.PingCmd.class)
+            if (disconnectHostUuid.contains(pingCmd.hostUuid)) {
+                rsp.success = false
+                rsp.setError("on purpose")
+            } else {
+                rsp.success = true
+            }
+            rsp.hostUuid = pingCmd.hostUuid
+            return rsp
+        }
+        env.afterSimulator(KVMConstant.KVM_CONNECT_PATH) { KVMAgentCommands.AgentResponse rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ConnectCmd.class)
+            if (disconnectHostUuid.contains(cmd.hostUuid)) {
+                rsp.success = false
+                rsp.setError("on purpose")
+            }
+            return rsp
+        }
+
+        disconnectHostUuid.add(vm1.hostUuid)
+        expectError {
+            reconnectHost {
+                uuid = vm1.hostUuid
+            }
+        }
+
+    }
+
     void testMigrateVmFromDestinationHost() {
-        VmInstanceInventory vm1 = env.inventoryByName("vm1")
         HostInventory host1 = env.inventoryByName("kvm1")
         HostInventory host = env.inventoryByName("kvm2")
 
@@ -184,6 +224,7 @@ class MigrateVmFromDestitonHostCase extends SubCase {
             vmInstanceUuid = vm1.uuid
             hostUuid = host.uuid
             migrateFromDestination = true
+            allowUnknown = true
         }
         assert cmd != null
         assert cmd.migrateFromDestination
@@ -199,6 +240,11 @@ class MigrateVmFromDestitonHostCase extends SubCase {
 
             assert vo1.lastHostUuid != vo1.hostUuid
             assert vo1.state == VmInstanceState.Running
+        }
+
+        disconnectHostUuid.clear()
+        reconnectHost {
+            uuid = vm1.hostUuid
         }
 
         KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.updateValue(false)

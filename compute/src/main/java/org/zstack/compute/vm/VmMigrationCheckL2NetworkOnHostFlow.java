@@ -12,10 +12,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.CheckL2NetworkOnHostMsg;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicHelper;
-import org.zstack.header.vm.VmNicSpec;
+import org.zstack.header.vm.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +29,8 @@ public class VmMigrationCheckL2NetworkOnHostFlow implements Flow {
     @Override
     public void run(final FlowTrigger trigger, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        boolean allowUnknown = spec.getMessage() instanceof MigrateVmMessage && ((MigrateVmMessage) spec.getMessage()).isAllowUnknown();
+
         List<CheckL2NetworkOnHostMsg> cmsgs = new ArrayList<CheckL2NetworkOnHostMsg>();
         for (L3NetworkInventory l3 : VmNicSpec.getL3NetworkInventoryOfSpec(spec.getL3Networks())) {
             CheckL2NetworkOnHostMsg msg = new CheckL2NetworkOnHostMsg();
@@ -50,7 +49,7 @@ public class VmMigrationCheckL2NetworkOnHostFlow implements Flow {
             @Override
             public void run(List<MessageReply> replies) {
                 for (MessageReply r : replies) {
-                    if (!r.isSuccess()) {
+                    if (!r.isSuccess() && !allowUnknown) {
                         trigger.fail(r.getError());
                         return;
                     }

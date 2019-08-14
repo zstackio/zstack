@@ -52,6 +52,26 @@ doc {
 					
 				}
 				column {
+					name "allowUnknown"
+					enclosedIn "migrateVm"
+					desc "允许未知状态的虚拟机"
+					location "body"
+					type "boolean"
+					optional true
+					since "3.6.0"
+
+				}
+				column {
+					name "strategy"
+					enclosedIn "migrateVm"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "3.6.0"
+					values ("auto-converge")
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc ""
