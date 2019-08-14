@@ -4928,7 +4928,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
-                extEmitter.failedToMigrateVm(VmInstanceInventory.valueOf(self), spec.getDestHost().getUuid(), errCode);
+                String destHostUuid = spec.getDestHost().getUuid().equals(lastHostUuid) ? null : spec.getDestHost().getUuid();
+                extEmitter.failedToMigrateVm(VmInstanceInventory.valueOf(self), destHostUuid, errCode);
                 if (HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
                     checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
                         @Override

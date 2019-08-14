@@ -1498,6 +1498,10 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     @Override
     public void failedToMigrateVm(final VmInstanceInventory inv, final String destHostUuid, ErrorCode reason) {
+        if (destHostUuid == null) {
+            return;
+        }
+
         RuleCalculator cal = new RuleCalculator();
         cal.vmNicUuids = CollectionUtils.transformToList(inv.getVmNics(), new Function<String, VmNicInventory>() {
             @Override

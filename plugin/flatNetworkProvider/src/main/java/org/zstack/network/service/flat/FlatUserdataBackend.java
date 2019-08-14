@@ -412,6 +412,10 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
     @Override
     public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
+        if (destHostUuid == null) {
+            return;
+        }
+
         UserdataStruct struct = makeUserdataStructForMigratingVm(inv, destHostUuid);
         if (struct == null) {
             return;
