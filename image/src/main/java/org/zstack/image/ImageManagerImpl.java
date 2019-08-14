@@ -1113,6 +1113,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
         ImageVO vo = new ImageVO();
         if (msgData.getResourceUuid() != null) {
+            dbf.eoCleanup(ImageVO.class, msgData.getResourceUuid());
             vo.setUuid(msgData.getResourceUuid());
         } else {
             vo.setUuid(Platform.getUuid());
