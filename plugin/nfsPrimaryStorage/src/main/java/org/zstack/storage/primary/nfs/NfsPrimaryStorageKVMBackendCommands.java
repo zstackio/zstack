@@ -42,6 +42,22 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
+    public static class DownloadBitsFromKVMHostCmd extends AgentCommand {
+        public String hostname;
+        public String username;
+        public String sshKey;
+        public int sshPort;
+        // it's file path on kvm host actually
+        public String backupStorageInstallPath;
+        public String primaryStorageInstallPath;
+        public Long bandWidth;
+        public String identificationCode;
+    }
+
+    public static class CancelDownloadBitsFromKVMHostCmd extends AgentCommand {
+        public String primaryStorageInstallPath;
+    }
+
     public static class MountCmd extends NfsPrimaryStorageAgentCommand {
         private String url;
         private String mountPath;
