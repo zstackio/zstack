@@ -184,6 +184,14 @@ zwatchzql() {
    cd - > /dev/null
 }
 
+ts() {
+    if [ -d premium/test-premium ]; then
+   	cd premium/test-premium
+    	$MVNTest -Dtest=TestGenerateTypescriptBindings -Djacoco.skip=true
+        cd -
+    fi
+}
+
 sdk() {
     set -u
     rm -rf ~/zstack-sdk/java
@@ -246,6 +254,8 @@ run_profile() {
         openapi
     elif test x$1 = x'errorcode'; then
         errorcode
+    elif test x$1 = x'ts'; then
+        ts
     else
         mvn -pl build -P $1 exec:exec -D$1
     fi
