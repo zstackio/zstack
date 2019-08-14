@@ -42,10 +42,11 @@ import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.identity.AccountManager;
-import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.kvm.*;
+import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -109,6 +110,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String UPDATE_MOUNT_POINT_PATH = "/nfsprimarystorage/updatemountpoint";
     public static final String NFS_TO_NFS_MIGRATE_BITS_PATH = "/nfsprimarystorage/migratebits";
     public static final String NFS_REBASE_VOLUME_BACKING_FILE_PATH = "/nfsprimarystorage/rebasevolumebackingfile";
+    public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/nfsprimarystorage/kvmhost/download";
+    public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/nfsprimarystorage/kvmhost/download/cancel";
+
 
     //////////////// For unit test //////////////////////////
     private boolean syncGetCapacity = false;
@@ -437,6 +441,84 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 reply.setActualSize(rsp.getActualSize());
                 reply.setSize(rsp.getSize());
                 completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void handle(PrimaryStorageInventory inv, DownloadBitsFromKVMHostToPrimaryStorageMsg msg, ReturnValueCompletion<DownloadBitsFromKVMHostToPrimaryStorageReply> completion) {
+        HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
+
+        GetKVMHostDownloadCredentialMsg gmsg = new GetKVMHostDownloadCredentialMsg();
+        gmsg.setHostUuid(msg.getSrcHostUuid());
+
+        if (PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.hasTag(inv.getUuid())) {
+            gmsg.setDataNetworkCidr(PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByResourceUuid(inv.getUuid(), PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN));
+        }
+
+        bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, msg.getSrcHostUuid());
+        bus.send(gmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply rly) {
+                if (!rly.isSuccess()) {
+                    completion.fail(rly.getError());
+                    return;
+                }
+
+                GetKVMHostDownloadCredentialReply grly = rly.castReply();
+                DownloadBitsFromKVMHostCmd cmd = new DownloadBitsFromKVMHostCmd();
+                cmd.hostname = grly.getHostname();
+                cmd.username = grly.getUsername();
+                cmd.sshKey = grly.getSshKey();
+                cmd.sshPort = grly.getSshPort();
+                cmd.backupStorageInstallPath = msg.getHostInstallPath();
+                cmd.primaryStorageInstallPath = msg.getPrimaryStorageInstallPath();
+                cmd.bandWidth = msg.getBandWidth();
+                cmd.identificationCode = msg.getLongJobUuid() + msg.getPrimaryStorageInstallPath();
+
+                new KvmCommandSender(host.getUuid()).send(cmd, DOWNLOAD_BITS_FROM_KVM_HOST_PATH, new KvmCommandFailureChecker() {
+                    @Override
+                    public ErrorCode getError(KvmResponseWrapper wrapper) {
+                        AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
+                        return rsp.isSuccess() ? null : operr("%s", rsp.getError());
+                    }
+                }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+                    @Override
+                    public void success(KvmResponseWrapper wrapper) {
+                        completion.success(new DownloadBitsFromKVMHostToPrimaryStorageReply());
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                    }
+                });
+            }
+        });
+    }
+
+    @Override
+    public void handle(PrimaryStorageInventory inv, CancelDownloadBitsFromKVMHostToPrimaryStorageMsg msg, ReturnValueCompletion<CancelDownloadBitsFromKVMHostToPrimaryStorageReply> completion) {
+        HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
+
+        CancelDownloadBitsFromKVMHostCmd cmd = new CancelDownloadBitsFromKVMHostCmd();
+        cmd.primaryStorageInstallPath = msg.getPrimaryStorageInstallPath();
+
+        new KvmCommandSender(host.getUuid()).send(cmd, CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH, new KvmCommandFailureChecker() {
+            @Override
+            public ErrorCode getError(KvmResponseWrapper wrapper) {
+                MergeSnapshotResponse rsp = wrapper.getResponse(MergeSnapshotResponse.class);
+                return rsp.isSuccess() ? null : operr("%s", rsp.getError());
+            }
+        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            @Override
+            public void success(KvmResponseWrapper wrapper) {
+                completion.success(new CancelDownloadBitsFromKVMHostToPrimaryStorageReply());
             }
 
             @Override
