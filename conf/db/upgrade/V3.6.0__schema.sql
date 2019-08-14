@@ -379,15 +379,8 @@ CREATE TABLE `TicketTypeTicketFlowCollectionRefVO` (
 ALTER TABLE `zstack`.`TicketVO` ADD COLUMN ticketTypeUuid VARCHAR(32) DEFAULT NULL;
 ALTER TABLE `zstack`.`TicketVO` ADD CONSTRAINT `fkTicketVOTicketTypeVO` FOREIGN KEY (`ticketTypeUuid`) REFERENCES `TicketTypeVO` (`uuid`) ON DELETE SET NULL;
 
-CREATE TABLE `IAM2OrganizationProjectRefVO` (
-`id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-`projectUuid` varchar(32) NOT NULL,
-`organizationUuid` varchar(32) NOT NULL,
-`lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-`createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-PRIMARY KEY (`id`),
-UNIQUE KEY `projectUuid` (`projectUuid`)
-) ENGINE=InnoDB AUTO_INCREMENT=3624 DEFAULT CHARSET=utf8;
+ALTER TABLE `zstack`.`ArchiveTicketVO` ADD COLUMN ticketTypeUuid VARCHAR(32) DEFAULT NULL;
+UPDATE `zstack`.`ArchiveTicketVO` SET ticketTypeUuid = '3b933e9aaf2d49b9a3dcf0c92867790f' WHERE ticketTypeUuid is NULL;
 
 INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`, `concreteResourceType`) VALUES ('3b933e9aaf2d49b9a3dcf0c92867790f', 'CREATE_VM_INSTANCE_TICKET_TYPE', 'TicketTypeVO', 'org.zstack.ticket.entity.TicketTypeVO');
 
@@ -398,6 +391,16 @@ UPDATE zstack.TicketVO SET ticketTypeUuid = '3b933e9aaf2d49b9a3dcf0c92867790f' W
 
 INSERT INTO zstack.TicketTypeTicketFlowCollectionRefVO (`ticketTypeUuid`, `ticketFlowCollectionUuid`, `lastOpDate`, `createDate`)
 SELECT '3b933e9aaf2d49b9a3dcf0c92867790f', `uuid`, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP() from TicketFlowCollectionVO where uuid != '872c04e82fee40509447b9ec90fc5aa1';
+
+CREATE TABLE `IAM2OrganizationProjectRefVO` (
+`id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+`projectUuid` varchar(32) NOT NULL,
+`organizationUuid` varchar(32) NOT NULL,
+`lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+`createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+PRIMARY KEY (`id`),
+UNIQUE KEY `projectUuid` (`projectUuid`)
+) ENGINE=InnoDB AUTO_INCREMENT=3624 DEFAULT CHARSET=utf8;
 
 DELETE FROM IAM2OrganizationAttributeVO WHERE `name` = '__OrganizationSupervisor__' and `value` not in (SELECT `uuid` FROM IAM2VirtualIDVO);
 
