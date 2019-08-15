@@ -389,12 +389,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                                             "disconnect this host-ps connection",
                                     psInv.getUuid(), huuid, reply.isSuccess() ? rsp.getError() : reply.getError());
                             errs.add(err);
-                            PrimaryStorageHostStatus old = Q.New(PrimaryStorageHostRefVO.class).eq(PrimaryStorageHostRefVO_.primaryStorageUuid, psInv.getUuid()).
-                                    eq(PrimaryStorageHostRefVO_.hostUuid, huuid).select(PrimaryStorageHostRefVO_.status).findValue();
-                            if (old == PrimaryStorageHostStatus.Connected) {
-                                nfsFactory.updateNfsHostStatus(psInv.getUuid(), huuid, PrimaryStorageHostStatus.Disconnected);
-                                sendWarnning(huuid, psInv);
-                            }
+                            nfsFactory.updateNfsHostStatus(psInv.getUuid(), huuid, PrimaryStorageHostStatus.Disconnected,
+                                    () -> sendWarnning(huuid, psInv));
                         }
                     } else {
                         errs.add(reply.getError());
@@ -1214,7 +1210,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         q.add(HostVO_.status, Op.EQ, HostStatus.Connected);
         final List<String> huuids = q.listValue();
         if (huuids.isEmpty()) {
-            completion.success();
+            completion.fail(operr("no hosts in the cluster[uuid:%s] are connected", clusterUuid));
             return;
         }
 

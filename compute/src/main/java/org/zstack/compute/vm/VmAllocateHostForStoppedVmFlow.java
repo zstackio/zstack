@@ -21,6 +21,7 @@ import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
 import org.zstack.header.vm.*;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
@@ -74,9 +75,10 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
             }
         }));
         msg.setClusterUuid(spec.getRequiredClusterUuid());
-        msg.setRequiredPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
+        msg.setRequiredPrimaryStorageUuids(spec.getVmInventory().getAllVolumes().stream()
+                .map(VolumeInventory::getPrimaryStorageUuid)
+                .collect(Collectors.toSet()));
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
-        msg.setAvoidHostUuids(getAvoidHost(spec));
         msg.setSoftAvoidHostUuids(spec.getSoftAvoidHostUuids());
         amsg = msg;
 
@@ -128,13 +130,5 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
             bus.send(msg);
         }
         chain.rollback();
-    }
-
-    @Transactional
-    private List<String> getAvoidHost(VmInstanceSpec spec){
-        return Q.New(PrimaryStorageHostRefVO.class).select(PrimaryStorageHostRefVO_.hostUuid)
-                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, spec.getRequiredPrimaryStorageUuidForRootVolume())
-                .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
-                .listValues();
     }
 }

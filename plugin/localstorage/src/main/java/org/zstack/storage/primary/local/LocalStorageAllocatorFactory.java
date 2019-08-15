@@ -197,12 +197,8 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
      * In the case of local + non-local and no ps specified (non-local is Disconnected/Disabled, or non-local capacity not enough), the allocated host may not have enough disks
      */
     private List<String> getNeedCheckHostLocalStorageList(List<HostVO> candidates, HostAllocatorSpec spec){
-        String requiredPrimaryStorageUuid = spec.getRequiredPrimaryStorageUuid();
-        boolean isRequireNonLocalStorage = false;
-        if(StringUtils.isNotEmpty(requiredPrimaryStorageUuid)){
-            isRequireNonLocalStorage = !LocalStorageUtils.isLocalStorage(requiredPrimaryStorageUuid);
-        }
-
+        boolean isRequireNonLocalStorage = spec.getRequiredPrimaryStorageUuids()
+                .stream().noneMatch(LocalStorageUtils::isLocalStorage);
         List<String> result = new ArrayList<>();
         for(HostVO hostVO : candidates){
             boolean isOnlyAttachedLocalStorage = LocalStorageUtils.isOnlyAttachedLocalStorage(hostVO.getClusterUuid());

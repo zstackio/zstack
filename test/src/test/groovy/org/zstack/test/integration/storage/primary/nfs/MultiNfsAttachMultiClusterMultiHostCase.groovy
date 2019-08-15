@@ -1,6 +1,7 @@
 package org.zstack.test.integration.storage.primary.nfs
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
@@ -11,9 +12,12 @@ import org.zstack.header.storage.primary.PrimaryStorageConstant
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus
+import org.zstack.header.tag.SystemTagVO
+import org.zstack.header.tag.SystemTagVO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
@@ -41,6 +45,8 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
     VmInstanceInventory vmInv1, vmInv2
     HostInventory host1, host2, host3
     PrimaryStorageInventory ps1, ps2
+    Set<List<String>> disConnectHostPsRef = []
+    boolean remountCalled = false
     CloudBus bus
 
     @Override
@@ -69,6 +75,7 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
             ps1 = env.inventoryByName("nfs1") as PrimaryStorageInventory // attach cluster 1, cluster 2
             ps2 = env.inventoryByName("nfs2") as PrimaryStorageInventory // attach cluster 1
             bus = bean(CloudBus)
+            simulatorEnv()
             testCreateAndStartVmNotOnHostDisconnectNfs()
             testReconnectHostNoNfsAccessed()
             testReconnectHostOneNfsNotAccessed()
@@ -80,27 +87,43 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
         }
     }
 
-    void testCreateAndStartVmNotOnHostDisconnectNfs(){
-        ImageInventory image = env.inventoryByName("image1") as ImageInventory
-        L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
-        InstanceOfferingInventory ins = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
-
+    void simulatorEnv() {
         env.simulator(NfsPrimaryStorageKVMBackend.PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
             def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.PingCmd.class)
             def huuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
             def rsp = new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
-            if ((huuid == host1.getUuid() || huuid == host2.uuid) && cmd.uuid == ps1.uuid){
+            if (isDisconnect(huuid, cmd.uuid)) {
                 rsp.setError("Connection error")
                 rsp.setSuccess(false)
             }
             return rsp
         }
 
-        SQL.New(PrimaryStorageHostRefVO.class)
-                .in(PrimaryStorageHostRefVO_.hostUuid, [host1.uuid, host2.uuid])
-                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps1.uuid)
-                .set(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
-                .update()
+        env.simulator(NfsPrimaryStorageKVMBackend.REMOUNT_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            remountCalled = true
+            def huuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+            def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.RemountCmd.class)
+            def rsp = new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
+            NfsPrimaryStorageSpec spec = espec.specByUuid(cmd.uuid) as NfsPrimaryStorageSpec
+            if (isDisconnect(huuid, cmd.uuid)) {
+                rsp.setError("Connection error")
+                rsp.setSuccess(false)
+            } else {
+                rsp.totalCapacity = spec.totalCapacity
+                rsp.availableCapacity = spec.availableCapacity
+            }
+            return rsp
+        }
+    }
+
+    void testCreateAndStartVmNotOnHostDisconnectNfs(){
+        ImageInventory image = env.inventoryByName("image1") as ImageInventory
+        L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
+        InstanceOfferingInventory ins = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
+
+        disconnectHostPS(host1.uuid, ps1.uuid)
+        disconnectHostPS(host2.uuid, ps2.uuid)
 
         VmInstanceInventory vm3 = createVmInstance {
             name = "vm3"
@@ -108,14 +131,17 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
             primaryStorageUuidForRootVolume = ps1.uuid
-            sessionId = currentEnvSpec.session.uuid
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): ps2.uuid])]
         } as VmInstanceInventory
 
         assert vm3.hostUuid == host3.uuid
+        assert vm3.allVolumes.size() == 2
+        assert vm3.allVolumes.primaryStorageUuid.containsAll([ps1.uuid, ps2.uuid])
+        // assert !Q.New(SystemTagVO.class).like(SystemTagVO_.tag, "%primaryStorageUuidForDataVolume%").isExists()
 
         stopVmInstance {
             uuid = vm3.uuid
-            sessionId = currentEnvSpec.session.uuid
         }
 
         assert retryInSecs(){
@@ -123,34 +149,14 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
                     .eq(VmInstanceVO_.uuid, vm3.uuid).findValue() == VmInstanceState.Stopped
         }
 
-        env.simulator(NfsPrimaryStorageKVMBackend.PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
-            def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.PingCmd.class)
-            def huuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
-            def rsp = new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
-            if ((huuid == host1.getUuid() || huuid == host3.uuid) && cmd.uuid == ps1.uuid){
-                rsp.setError("Connection error")
-                rsp.setSuccess(false)
-            }
-            return rsp
-        }
-
-        SQL.New(PrimaryStorageHostRefVO.class)
-                .eq(PrimaryStorageHostRefVO_.hostUuid, host3.uuid)
-                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps1.uuid)
-                .set(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
-                .update()
-        SQL.New(PrimaryStorageHostRefVO.class)
-                .eq(PrimaryStorageHostRefVO_.hostUuid, host2.uuid)
-                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps1.uuid)
-                .set(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Connected)
-                .update()
-
+        recoverConnectHostPS()
+        disconnectHostPS(host1.uuid, ps1.uuid)
+        disconnectHostPS(host3.uuid, ps1.uuid)
         startVmInstance {
             uuid = vm3.uuid
-            sessionId = currentEnvSpec.session.uuid
         }
 
-        retryInSecs(){
+        retryInSecs() {
             Tuple t = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state, VmInstanceVO_.hostUuid)
                     .eq(VmInstanceVO_.uuid, vm3.uuid).findTuple()
             return {
@@ -159,31 +165,11 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
             }
         }
 
-        SQL.New(PrimaryStorageHostRefVO.class)
-                .eq(PrimaryStorageHostRefVO_.hostUuid, host3.uuid)
-                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps1.uuid)
-                .set(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Connected)
-                .update()
-
+        recoverConnectHostPS()
     }
     void testReconnectHostNoNfsAccessed(){
-        env.simulator(NfsPrimaryStorageKVMBackend.REMOUNT_PATH) { HttpEntity<String> e, EnvSpec espec ->
-            def rsp = new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
-            rsp.setError("Connection error")
-            rsp.setSuccess(false)
-            return rsp
-        }
-        env.simulator(NfsPrimaryStorageKVMBackend.PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
-            def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.PingCmd.class)
-            def huuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
-            def rsp = new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
-            if (huuid == host1.getUuid()){
-                rsp.setError("Connection error")
-                rsp.setSuccess(false)
-            }
-            return rsp
-        }
-
+        disconnectHostPS(host1.uuid, ps1.uuid)
+        disconnectHostPS(host1.uuid, ps2.uuid)
         ReconnectHostAction a = new ReconnectHostAction();
         a.uuid = host1.uuid
         a.sessionId = currentEnvSpec.session.uuid
@@ -194,42 +180,18 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
                 .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
                 .count() == 2L
 
+        recoverConnectHostPS()
     }
 
     void testReconnectHostOneNfsNotAccessed(){
-        boolean call = false
-        env.simulator(NfsPrimaryStorageKVMBackend.REMOUNT_PATH) { HttpEntity<String> e, EnvSpec espec ->
-            call = true
-            def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.RemountCmd.class)
-            def rsp = new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
-            NfsPrimaryStorageSpec spec = espec.specByUuid(cmd.uuid) as NfsPrimaryStorageSpec
-            if(cmd.url == ps1.url){
-                rsp.setError("Connection error")
-                rsp.setSuccess(false)
-            }else {
-                rsp.totalCapacity = spec.totalCapacity
-                rsp.availableCapacity = spec.availableCapacity
-            }
-            return rsp
-        }
-
-        env.simulator(NfsPrimaryStorageKVMBackend.PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
-            def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.PingCmd.class)
-            def huuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
-            def rsp = new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
-            if (huuid == host1.getUuid() && cmd.uuid == ps1.uuid){
-                rsp.setError("Connection error")
-                rsp.setSuccess(false)
-            }
-            return rsp
-        }
-
+        remountCalled = false
+        disconnectHostPS(host1.uuid, ps1.uuid)
         reconnectHost {
             uuid = host1.uuid
             sessionId = currentEnvSpec.session.uuid
         }
 
-        assert call
+        assert remountCalled
         assert Q.New(PrimaryStorageHostRefVO.class).select(PrimaryStorageHostRefVO_.status)
                 .eq(PrimaryStorageHostRefVO_.hostUuid, host1.uuid)
                 .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps1.uuid)
@@ -238,34 +200,13 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
                 .eq(PrimaryStorageHostRefVO_.hostUuid, host1.uuid)
                 .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps2.uuid)
                 .findValue() == PrimaryStorageHostStatus.Connected
+
+        recoverConnectHostPS()
     }
 
-    void testReconnectNfsOneHostNotAccessed(){
-        env.simulator(NfsPrimaryStorageKVMBackend.REMOUNT_PATH) { HttpEntity<String> e, EnvSpec espec ->
-            def huuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
-            def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.RemountCmd.class)
-            def rsp = new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
-            NfsPrimaryStorageSpec spec = espec.specByUuid(cmd.uuid) as NfsPrimaryStorageSpec
-            if(huuid == host2.uuid){
-                rsp.setError("Connection error")
-                rsp.setSuccess(false)
-            }else {
-                rsp.totalCapacity = spec.totalCapacity
-                rsp.availableCapacity = spec.availableCapacity
-            }
-            return rsp
-        }
-        env.simulator(NfsPrimaryStorageKVMBackend.PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
-            def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.PingCmd.class)
-            def huuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
-            def rsp = new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
-            if (huuid == host2.getUuid() && cmd.uuid == ps1.uuid){
-                rsp.setError("Connection error")
-                rsp.setSuccess(false)
-            }
-            return rsp
-        }
-
+    void testReconnectNfsOneHostNotAccessed() {
+        recoverHost()
+        disconnectHostPS(host2.uuid, ps1.uuid)
         reconnectPrimaryStorage {
             uuid = ps1.uuid
             sessionId = currentEnvSpec.session.uuid
@@ -279,27 +220,16 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
                 .eq(PrimaryStorageHostRefVO_.hostUuid, host2.uuid)
                 .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps1.uuid)
                 .findValue() == PrimaryStorageHostStatus.Disconnected
+
+        recoverConnectHostPS()
     }
 
     void testReconnectNfsNoHostAccessed(){
-        boolean call = false
-        env.simulator(NfsPrimaryStorageKVMBackend.REMOUNT_PATH) { HttpEntity<String> e, EnvSpec espec ->
-            call = true
-            def rsp = new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
-            rsp.setError("Connection error")
-            rsp.setSuccess(false)
-            return rsp
-        }
-        env.simulator(NfsPrimaryStorageKVMBackend.PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
-            def cmd = JSONObjectUtil.toObject(e.getBody(), NfsPrimaryStorageKVMBackendCommands.PingCmd.class)
-            def rsp = new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
-            if (cmd.uuid == ps1.uuid){
-                rsp.setError("Connection error")
-                rsp.setSuccess(false)
-            }
-            return rsp
-        }
-
+        recoverHost()
+        remountCalled = false
+        disconnectHostPS(host1.uuid, ps1.uuid)
+        disconnectHostPS(host2.uuid, ps1.uuid)
+        disconnectHostPS(host3.uuid, ps1.uuid)
 
         ReconnectPrimaryStorageAction a = new ReconnectPrimaryStorageAction()
         a.uuid = ps1.uuid
@@ -307,6 +237,7 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
 
         def ret = a.call()
         assert ret.error != null
+        assert remountCalled
         assert Q.New(PrimaryStorageHostRefVO.class)
                 .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps1.uuid)
                 .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
@@ -335,5 +266,33 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
                 .eq(PrimaryStorageHostRefVO_.hostUuid, host3.uuid)
                 .isExists()
 
+    }
+
+    void recoverConnectHostPS() {
+        disConnectHostPsRef.clear()
+        SQL.New(PrimaryStorageHostRefVO.class)
+                .set(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Connected)
+                .update()
+    }
+
+    void disconnectHostPS(String hostUuid, String psUuid) {
+        disConnectHostPsRef.add([hostUuid, psUuid])
+        SQL.New(PrimaryStorageHostRefVO.class)
+                .eq(PrimaryStorageHostRefVO_.hostUuid, hostUuid)
+                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, psUuid)
+                .set(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
+                .update()
+    }
+
+    boolean isDisconnect(String hostUuid, String psUuid) {
+        disConnectHostPsRef.contains([hostUuid, psUuid])
+    }
+
+    void recoverHost() {
+        [host1.uuid, host2.uuid, host3.uuid].forEach{ huuid ->
+            reconnectHost {
+                uuid = huuid
+            }
+        }
     }
 }

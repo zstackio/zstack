@@ -27,7 +27,7 @@ public class HostAllocatorSpec {
     private boolean allowNoL3Networks;
     private boolean listAllHosts;
     private String requiredBackupStorageUuid;
-    private String requiredPrimaryStorageUuid;
+    private Set<String> requiredPrimaryStorageUuids = new HashSet<>();
     private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
     private boolean dryRun;
     private List<String> systemTags;
@@ -43,20 +43,20 @@ public class HostAllocatorSpec {
         this.systemTags = systemTags;
     }
 
-    public String getRequiredPrimaryStorageUuid() {
-        return requiredPrimaryStorageUuid;
-    }
-
-    public void setRequiredPrimaryStorageUuid(String requiredPrimaryStorageUuid) {
-        this.requiredPrimaryStorageUuid = requiredPrimaryStorageUuid;
-    }
-
     public boolean isDryRun() {
         return dryRun;
     }
 
     public void setDryRun(boolean dryRun) {
         this.dryRun = dryRun;
+    }
+
+    public void setRequiredPrimaryStorageUuids(Set<String> requiredPrimaryStorageUuids) {
+        this.requiredPrimaryStorageUuids = requiredPrimaryStorageUuids;
+    }
+
+    public Set<String> getRequiredPrimaryStorageUuids() {
+        return requiredPrimaryStorageUuids;
     }
 
     public String getRequiredBackupStorageUuid() {
@@ -223,7 +223,7 @@ public class HostAllocatorSpec {
         spec.setDiskOfferings(msg.getDiskOfferings());
         spec.setAllowNoL3Networks(msg.isAllowNoL3Networks());
         spec.setRequiredBackupStorageUuid(msg.getRequiredBackupStorageUuid());
-        spec.setRequiredPrimaryStorageUuid(msg.getRequiredPrimaryStorageUuid());
+        spec.setRequiredPrimaryStorageUuids(msg.getRequiredPrimaryStorageUuids());
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()){
             spec.setSystemTags(new ArrayList<String>(msg.getSystemTags()));
         }
