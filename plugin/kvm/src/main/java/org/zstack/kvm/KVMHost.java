@@ -147,6 +147,7 @@ public class KVMHost extends HostBase implements Host {
     private String deleteConsoleFirewall;
     private String updateHostOSPath;
     private String updateDependencyPath;
+    private String shutdownHost;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -267,6 +268,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_HOST_UPDATE_DEPENDENCY_PATH);
         updateDependencyPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.HOST_SHUTDOWN);
+        shutdownHost = ub.build().toString();
     }
 
     class Http<T> {
@@ -425,7 +430,9 @@ public class KVMHost extends HostBase implements Host {
             handle((ResumeVmOnHypervisorMsg) msg);
         } else if (msg instanceof GetKVMHostDownloadCredentialMsg) {
             handle((GetKVMHostDownloadCredentialMsg) msg);
-        } else {
+        } else if (msg instanceof ShutdownHostMsg) {
+            handle((ShutdownHostMsg) msg);
+        } else  {
             super.handleLocalMessage(msg);
         }
     }
@@ -2948,6 +2955,87 @@ public class KVMHost extends HostBase implements Host {
                 }
             }).start();
         }
+    }
+
+    private void handle(final ShutdownHostMsg msg) {
+        inQueue().name(String.format("shut-down-kvm-host-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> handleShutdownHost(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void handleShutdownHost(final ShutdownHostMsg msg, final NoErrorCompletion completion) {
+        ShutdownHostReply reply = new ShutdownHostReply();
+        KVMAgentCommands.ShutdownHostCmd cmd = new KVMAgentCommands.ShutdownHostCmd();
+        new Http<>(shutdownHost, cmd, ShutdownHostResponse.class).call(new ReturnValueCompletion<ShutdownHostResponse>(msg, completion) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void success(KVMAgentCommands.ShutdownHostResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                    bus.reply(msg, reply);
+                    completion.done();
+                } else {
+                    changeConnectionState(HostStatusEvent.disconnected);
+                    waitForHostShutdown(reply, completion);
+                }
+            }
+
+            private boolean testPort() {
+                if (CoreGlobalProperty.UNIT_TEST_ON) {
+                    return false;
+                }
+
+                long ctimeout = TimeUnit.SECONDS.toMillis(KVMGlobalConfig.TEST_SSH_PORT_ON_CONNECT_TIMEOUT.value(Integer.class).longValue());
+                if (!NetworkUtils.isRemotePortOpen(getSelf().getManagementIp(), getSelf().getPort(), (int) ctimeout)) {
+                    logger.debug(String.format("host[uuid:%s, name:%s, ip:%s]'s ssh port[%s] is no longer open, " +
+                            "seem to be shutdowned", getSelf().getUuid(), getSelf().getName(), getSelf().getManagementIp(), getSelf().getPort()));
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+
+            private void waitForHostShutdown(ShutdownHostReply reply, NoErrorCompletion noErrorCompletion) {
+                thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask(msg, noErrorCompletion) {
+                    @Override
+                    public boolean run() {
+                        if (testPort()) {
+                            return false;
+                        }
+
+                        bus.reply(msg, reply);
+                        noErrorCompletion.done();
+                        return true;
+                    }
+
+                    @Override
+                    public TimeUnit getTimeUnit() {
+                        return TimeUnit.SECONDS;
+                    }
+
+                    @Override
+                    public long getInterval() {
+                        return 2;
+                    }
+
+                    @Override
+                    public String getName() {
+                        return "test-ssh-port-open-for-kvm-host";
+                    }
+                });
+            }
+        });
     }
 
     private boolean checkCpuModelOfHost() {

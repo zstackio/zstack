@@ -116,10 +116,15 @@ public class SourceClassMap {
 			put("org.zstack.header.cloudformation.StackTemplateInventory", "org.zstack.sdk.StackTemplateInventory");
 			put("org.zstack.header.cloudformation.SupportedResourceStruct", "org.zstack.sdk.SupportedResourceStruct");
 			put("org.zstack.header.cluster.ClusterInventory", "org.zstack.sdk.ClusterInventory");
+			put("org.zstack.header.cluster.PowerOffHardwareResult", "org.zstack.sdk.PowerOffHardwareResult");
 			put("org.zstack.header.configuration.DiskOfferingInventory", "org.zstack.sdk.DiskOfferingInventory");
 			put("org.zstack.header.configuration.InstanceOfferingInventory", "org.zstack.sdk.InstanceOfferingInventory");
 			put("org.zstack.header.console.ConsoleInventory", "org.zstack.sdk.ConsoleInventory");
 			put("org.zstack.header.console.ConsoleProxyAgentInventory", "org.zstack.sdk.ConsoleProxyAgentInventory");
+			put("org.zstack.header.core.progress.ChainInfo", "org.zstack.sdk.ChainInfo");
+			put("org.zstack.header.core.progress.PendingTaskInfo", "org.zstack.sdk.PendingTaskInfo");
+			put("org.zstack.header.core.progress.RunningTaskInfo", "org.zstack.sdk.RunningTaskInfo");
+			put("org.zstack.header.core.progress.TaskInfo", "org.zstack.sdk.TaskInfo");
 			put("org.zstack.header.core.progress.TaskProgressInventory", "org.zstack.sdk.TaskProgressInventory");
 			put("org.zstack.header.core.trash.CleanTrashResult", "org.zstack.sdk.CleanTrashResult");
 			put("org.zstack.header.core.webhooks.WebhookInventory", "org.zstack.sdk.WebhookInventory");
@@ -519,6 +524,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CephPrimaryStorageMonInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageMonInventory");
 			put("org.zstack.sdk.CephPrimaryStoragePoolInventory", "org.zstack.storage.ceph.primary.CephPrimaryStoragePoolInventory");
 			put("org.zstack.sdk.CertificateInventory", "org.zstack.network.service.lb.CertificateInventory");
+			put("org.zstack.sdk.ChainInfo", "org.zstack.header.core.progress.ChainInfo");
 			put("org.zstack.sdk.CleanTrashResult", "org.zstack.header.core.trash.CleanTrashResult");
 			put("org.zstack.sdk.CloneVmInstanceInventory", "org.zstack.header.vm.CloneVmInstanceInventory");
 			put("org.zstack.sdk.CloneVmInstanceResults", "org.zstack.header.vm.CloneVmInstanceResults");
@@ -668,6 +674,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PciDeviceStatus", "org.zstack.pciDevice.PciDeviceStatus");
 			put("org.zstack.sdk.PciDeviceType", "org.zstack.pciDevice.PciDeviceType");
 			put("org.zstack.sdk.PciDeviceVirtStatus", "org.zstack.pciDevice.virtual.PciDeviceVirtStatus");
+			put("org.zstack.sdk.PendingTaskInfo", "org.zstack.header.core.progress.PendingTaskInfo");
 			put("org.zstack.sdk.PhysicalDriveSmartSelfTestHistoryInventory", "org.zstack.storage.device.localRaid.PhysicalDriveSmartSelfTestHistoryInventory");
 			put("org.zstack.sdk.PolicyInventory", "org.zstack.header.identity.PolicyInventory");
 			put("org.zstack.sdk.PolicyRouteRuleInventory", "org.zstack.policyRoute.PolicyRouteRuleInventory");
@@ -682,6 +689,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PolicyStatement", "org.zstack.header.identity.PolicyStatement");
 			put("org.zstack.sdk.PolicyStatementEffect", "org.zstack.header.identity.StatementEffect");
 			put("org.zstack.sdk.PortForwardingRuleInventory", "org.zstack.network.service.portforwarding.PortForwardingRuleInventory");
+			put("org.zstack.sdk.PowerOffHardwareResult", "org.zstack.header.cluster.PowerOffHardwareResult");
 			put("org.zstack.sdk.PreconfigurationTemplateInventory", "org.zstack.header.baremetal.preconfiguration.PreconfigurationTemplateInventory");
 			put("org.zstack.sdk.PreviewResourceStruct", "org.zstack.header.cloudformation.PreviewResourceStruct");
 			put("org.zstack.sdk.PriceInventory", "org.zstack.billing.PriceInventory");
@@ -718,6 +726,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.RootVolumeSpendingInventory", "org.zstack.billing.spendingcalculator.volume.root.RootVolumeSpendingInventory");
 			put("org.zstack.sdk.RouterAreaInventory", "org.zstack.header.protocol.RouterAreaInventory");
 			put("org.zstack.sdk.RunningState", "org.zstack.storage.device.localRaid.RunningState");
+			put("org.zstack.sdk.RunningTaskInfo", "org.zstack.header.core.progress.RunningTaskInfo");
 			put("org.zstack.sdk.SchedulerJobGroupInventory", "org.zstack.header.scheduler.SchedulerJobGroupInventory");
 			put("org.zstack.sdk.SchedulerJobGroupJobRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupJobRefInventory");
 			put("org.zstack.sdk.SchedulerJobGroupSchedulerTriggerRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupSchedulerTriggerRefInventory");
@@ -760,6 +769,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TagInventory", "org.zstack.header.tag.TagInventory");
 			put("org.zstack.sdk.TagPatternInventory", "org.zstack.header.tag.TagPatternInventory");
 			put("org.zstack.sdk.TagPatternType", "org.zstack.header.tag.TagPatternType");
+			put("org.zstack.sdk.TaskInfo", "org.zstack.header.core.progress.TaskInfo");
 			put("org.zstack.sdk.TaskProgressInventory", "org.zstack.header.core.progress.TaskProgressInventory");
 			put("org.zstack.sdk.TemplateConfigInventory", "org.zstack.templateConfig.TemplateConfigInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory");

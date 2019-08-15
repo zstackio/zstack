@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddFusionstorBackupStorageAction extends AbstractAction {
+public class PowerOffHostAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddFusionstorBackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddBackupStorageResult value;
+        public org.zstack.sdk.PowerOffHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,17 @@ public class AddFusionstorBackupStorageAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.util.List monUrls;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = true)
+    public java.lang.String adminPassword;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String poolName;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String url;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false)
-    public java.lang.String type;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List hostUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean importImages = false;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    public boolean waitTaskCompleted = false;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.Long maxWaitTime;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -84,8 +69,8 @@ public class AddFusionstorBackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddBackupStorageResult value = res.getResult(org.zstack.sdk.AddBackupStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddBackupStorageResult() : value; 
+        org.zstack.sdk.PowerOffHostResult value = res.getResult(org.zstack.sdk.PowerOffHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PowerOffHostResult() : value; 
 
         return ret;
     }
@@ -114,11 +99,11 @@ public class AddFusionstorBackupStorageAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/backup-storage/fusionstor";
+        info.httpMethod = "PUT";
+        info.path = "/hosts/power-off/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "powerOffHost";
         return info;
     }
 

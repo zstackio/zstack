@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryFusionstorPrimaryStorageAction extends QueryAction {
+public class GetHostTaskAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryFusionstorPrimaryStorageAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryPrimaryStorageResult value;
+        public org.zstack.sdk.GetHostTaskResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,6 +25,26 @@ public class QueryFusionstorPrimaryStorageAction extends QueryAction {
         }
     }
 
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List hostUuids;
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = false)
+    public String sessionId;
+
+    @Param(required = false)
+    public String accessKeyId;
+
+    @Param(required = false)
+    public String accessKeySecret;
+
+    @Param(required = false)
+    public String requestIp;
 
 
     private Result makeResult(ApiResult res) {
@@ -34,8 +54,8 @@ public class QueryFusionstorPrimaryStorageAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryPrimaryStorageResult value = res.getResult(org.zstack.sdk.QueryPrimaryStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryPrimaryStorageResult() : value; 
+        org.zstack.sdk.GetHostTaskResult value = res.getResult(org.zstack.sdk.GetHostTaskResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetHostTaskResult() : value; 
 
         return ret;
     }
@@ -65,7 +85,7 @@ public class QueryFusionstorPrimaryStorageAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/primary-storage/fusionstor";
+        info.path = "/hosts/task-details";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

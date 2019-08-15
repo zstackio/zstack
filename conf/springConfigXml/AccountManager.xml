@@ -83,5 +83,11 @@
             <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="AccountInterceptor" class="org.zstack.identity.AccountInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
+        </zstack:plugin>
+    </bean>
 </beans>
 
