@@ -33,8 +33,8 @@ public class VolumeSnapshotVO extends VolumeSnapshotAO implements OwnedByAccount
     private List<VolumeSnapshotBackupStorageRefVO> backupStorageRefs = new ArrayList<VolumeSnapshotBackupStorageRefVO>();
 
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "uuid", referencedColumnName = "volumeSnapshotUuid", insertable = false, updatable = false)
+    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE})
+    @JoinColumn(name = "uuid", referencedColumnName = "volumeSnapshotUuid", insertable = false)
     @NoView
     private VolumeSnapshotGroupRefVO groupRef;
 
@@ -65,5 +65,13 @@ public class VolumeSnapshotVO extends VolumeSnapshotAO implements OwnedByAccount
 
     public void setGroupRef(VolumeSnapshotGroupRefVO groupRef) {
         this.groupRef = groupRef;
+    }
+
+    @Override
+    public void setPrimaryStorageInstallPath(String primaryStorageInstallPath) {
+        super.setPrimaryStorageInstallPath(primaryStorageInstallPath);
+        if (groupRef != null) {
+            groupRef.setVolumeSnapshotInstallPath(primaryStorageInstallPath);
+        }
     }
 }
