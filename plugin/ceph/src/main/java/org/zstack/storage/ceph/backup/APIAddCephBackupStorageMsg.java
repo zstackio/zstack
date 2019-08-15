@@ -6,6 +6,7 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.APIAddBackupStorageEvent;
 import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
 import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.tag.TagResourceType;
 import org.zstack.storage.ceph.CephConstants;
 
 import java.util.Collections;
@@ -14,6 +15,7 @@ import java.util.List;
 /**
  * Created by frank on 7/27/2015.
  */
+@TagResourceType(BackupStorageVO.class)
 @OverriddenApiParams({
         @OverriddenApiParam(field = "url", param = @APIParam(maxLength = 2048, required = false))
 })
