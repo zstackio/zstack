@@ -298,6 +298,7 @@ public class KVMAgentCommands {
         private String qemuImgVersion;
         private String libvirtVersion;
         private String hvmCpuFlag;
+        private String eptFlag;
         private String cpuModelName;
         private String cpuGHz;
         private String hostCpuModelName;
@@ -335,6 +336,10 @@ public class KVMAgentCommands {
 
         public void setHvmCpuFlag(String hvmCpuFlag) {
             this.hvmCpuFlag = hvmCpuFlag;
+        }
+
+        public String getEptFlag() {
+            return eptFlag;
         }
 
         public String getLibvirtVersion() {

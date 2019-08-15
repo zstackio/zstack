@@ -22,6 +22,9 @@ public class KVMSystemTags {
     public static final String HVM_CPU_FLAG_TOKEN = "flag";
     public static PatternedSystemTag HVM_CPU_FLAG = new PatternedSystemTag(String.format("hvm::{%s}", HVM_CPU_FLAG_TOKEN), HostVO.class);
 
+    public static final String EPT_CPU_FLAG_TOKEN = "ept";
+    public static PatternedSystemTag EPT_CPU_FLAG = new PatternedSystemTag(String.format("ept::{%s}", EPT_CPU_FLAG_TOKEN), HostVO.class);
+
     public static final String CPU_MODEL_NAME_TOKEN = "name";
     public static PatternedSystemTag CPU_MODEL_NAME = new PatternedSystemTag(String.format("cpuModelName::{%s}", CPU_MODEL_NAME_TOKEN), HostVO.class);
 
