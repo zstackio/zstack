@@ -4884,9 +4884,9 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     }
 
-    protected void migrateVm(final Message msg, final Completion completion) {
+    protected void migrateVm(final MigrateVmMessage msg, final Completion completion) {
         refreshVO();
-        ErrorCode allowed = validateOperationByState(msg, self.getState(), VmErrors.MIGRATE_ERROR);
+        ErrorCode allowed = validateOperationByState((Message) msg, self.getState(), VmErrors.MIGRATE_ERROR);
         if (allowed != null) {
             completion.fail(allowed);
             return;
@@ -4902,7 +4902,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.migrating);
-        spec.setMessage(msg);
+        spec.setMessage((Message) msg);
         FlowChain chain = getMigrateVmWorkFlowChain(inv);
 
         setFlowMarshaller(chain);

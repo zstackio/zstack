@@ -39,6 +39,11 @@ public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage,
     }
 
     @Override
+    public boolean isAllowUnknown() {
+        return false;
+    }
+
+    @Override
     public String getStrategy() {
         return strategy;
     }

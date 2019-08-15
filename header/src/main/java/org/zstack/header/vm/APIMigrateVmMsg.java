@@ -66,6 +66,9 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, Mi
     @APIParam(required = false)
     private Boolean migrateFromDestination;
 
+    @APIParam(required = false)
+    private boolean allowUnknown;
+
     @APIParam(required = false, validValues = {"auto-converge"})
     private String strategy;
 
@@ -99,6 +102,13 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, Mi
         this.migrateFromDestination = migrateFromDestination;
     }
 
+    public boolean isAllowUnknown() {
+        return allowUnknown;
+    }
+
+    public void setAllowUnknown(boolean allowUnknown) {
+        this.allowUnknown = allowUnknown;
+    }
 
     public String getStrategy() {
         return strategy;
@@ -120,4 +130,5 @@ public class APIMigrateVmMsg extends APIMessage implements VmInstanceMessage, Mi
         msg.setMigrateFromDestination(false);
         return msg;
     }
+
 }
