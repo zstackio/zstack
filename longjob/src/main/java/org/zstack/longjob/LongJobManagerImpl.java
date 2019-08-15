@@ -575,6 +575,9 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             operation = getLoadOperation(vo);
         }
 
+        String originApiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
+        String originTaskName = ThreadContext.get(Constants.THREAD_CONTEXT_TASK_NAME);
+
         if (operation == LongJobOperation.Start) {
             // launch the waiting jobs
             ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
@@ -590,6 +593,9 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             job.resume(vo);
             dbf.update(vo);
         }
+
+        ThreadContext.put(Constants.THREAD_CONTEXT_API, originApiId);
+        ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, originTaskName);
     }
 
     private LongJobOperation getLoadOperation(LongJobVO vo) {
