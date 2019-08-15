@@ -639,6 +639,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Override
     public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
+        if (destHostUuid == null) {
+            return;
+        }
+
         List<DhcpInfo> info = getVmDhcpInfo(inv);
         if (info == null || info.isEmpty()) {
             return;
