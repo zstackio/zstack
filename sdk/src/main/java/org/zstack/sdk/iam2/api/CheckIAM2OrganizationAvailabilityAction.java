@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetIAM2VirtualIDInOrganizationAction extends AbstractAction {
+public class CheckIAM2OrganizationAvailabilityAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetIAM2VirtualIDInOrganizationAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.GetIAM2VirtualIDInOrganizationResult value;
+        public org.zstack.sdk.iam2.api.CheckIAM2OrganizationAvailabilityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,12 +24,6 @@ public class GetIAM2VirtualIDInOrganizationAction extends AbstractAction {
             return this;
         }
     }
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer limit = 100;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer start = 0;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +51,8 @@ public class GetIAM2VirtualIDInOrganizationAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.GetIAM2VirtualIDInOrganizationResult value = res.getResult(org.zstack.sdk.iam2.api.GetIAM2VirtualIDInOrganizationResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.GetIAM2VirtualIDInOrganizationResult() : value; 
+        org.zstack.sdk.iam2.api.CheckIAM2OrganizationAvailabilityResult value = res.getResult(org.zstack.sdk.iam2.api.CheckIAM2OrganizationAvailabilityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.CheckIAM2OrganizationAvailabilityResult() : value; 
 
         return ret;
     }
@@ -88,7 +82,7 @@ public class GetIAM2VirtualIDInOrganizationAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/iam2/virtual-ids/in/organizations";
+        info.path = "/iam2/organizations/availabilities";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

@@ -135,6 +135,7 @@
 
         <Logger name="org.zstack.login" level="TRACE" />
 
+        <Logger name="org.hibernate.stat" level="DEBUG"/>
         <!--
         <Logger name="com.datastax.driver.core" level="TRACE" />
         -->
