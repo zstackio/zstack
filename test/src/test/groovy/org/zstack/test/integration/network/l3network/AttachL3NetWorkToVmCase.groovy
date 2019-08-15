@@ -174,6 +174,5 @@ class AttachL3NetWorkToVmCase extends SubCase{
 
         AttachL3NetworkToVmAction.Result ret = action.call()
         assert ret.error != null
-        assert ret.error.details.contains("there is no available ipRange")
     }
 }

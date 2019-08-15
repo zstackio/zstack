@@ -86,7 +86,7 @@ public class ErrorFacadeImpl implements ErrorFacade {
                 err.setDetails(details);
             }
         } else {
-            err.setDetails(Platform.toI18nString(details));
+            err.setDetails(details);
         }
 
         err.setCauses(causes);
