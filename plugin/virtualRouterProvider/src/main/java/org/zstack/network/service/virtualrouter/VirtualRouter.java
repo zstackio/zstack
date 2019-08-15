@@ -29,6 +29,7 @@ import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
+import org.zstack.header.network.service.VirtualRouterAfterDetachNicExtensionPoint;
 import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
@@ -599,6 +600,10 @@ public class VirtualRouter extends ApplianceVmBase {
         if (isRollback) {
             completion.success();
             return;
+        }
+
+        for (VirtualRouterAfterDetachNicExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterAfterDetachNicExtensionPoint.class)) {
+            ext.afterDetachNic(nicInventory);
         }
 
         haBackend.detachL3NetworkFromVirtualRouterHaGroup(nicInventory.getVmInstanceUuid(),
