@@ -3526,8 +3526,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             try {
                 for (VmPreAttachL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(VmPreAttachL3NetworkExtensionPoint.class)) {
                     ext.vmPreAttachL3Network(VmInstanceInventory.valueOf(self), l3);
-                    ret.add(l3);
                 }
+                ret.add(l3);
             } catch (Exception e) {
                 /* vmPreAttachL3Network will filter out the l3s that can not be attached */
             }
