@@ -21,8 +21,6 @@ import org.zstack.core.ansible.*;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.header.core.progress.TaskProgressRange;
-import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -36,6 +34,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.core.*;
+import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -83,9 +82,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.core.progress.ProgressReportService.getTaskStage;
-import static org.zstack.core.progress.ProgressReportService.markTaskStage;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
+import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -2363,7 +2360,9 @@ public class KVMHost extends HostBase implements Host {
             cmd.setSendCommandUrl(restf.getSendCommandUrl());
             cmd.setIptablesRules(KVMGlobalProperty.IPTABLES_RULES);
             cmd.setIgnoreMsrs(KVMGlobalConfig.KVM_IGNORE_MSRS.value(Boolean.class));
-            cmd.setPageTableExtensionDisabled(HostSystemTags.PAGE_TABLE_EXTENSION_DISABLED.hasTag(self.getUuid(), HostVO.class));
+            if (HostSystemTags.PAGE_TABLE_EXTENSION_DISABLED.hasTag(self.getUuid(), HostVO.class) || !KVMSystemTags.EPT_CPU_FLAG.hasTag(self.getUuid())) {
+                cmd.setPageTableExtensionDisabled(true);
+            }
             ConnectResponse rsp = restf.syncJsonPost(connectPath, cmd, ConnectResponse.class);
             if (!rsp.isSuccess() || !rsp.isIptablesSucc()) {
                 errCode = operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
@@ -2501,6 +2500,9 @@ public class KVMHost extends HostBase implements Host {
                 }
                 if (null == KVMSystemTags.CPU_MODEL_NAME.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.CPU_MODEL_NAME_TOKEN)) {
                     createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, tester.get(ZTester.KVM_CpuModelName, "Broadwell", String.class), true);
+                }
+                if (null == KVMSystemTags.EPT_CPU_FLAG.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.EPT_CPU_FLAG_TOKEN)) {
+                    createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, "ept", false);
                 }
 
                 if (!checkQemuLibvirtVersionOfHost()) {
@@ -2855,6 +2857,7 @@ public class KVMHost extends HostBase implements Host {
                                     createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion(), false);
                                     createTagWithoutNonValue(KVMSystemTags.LIBVIRT_VERSION, KVMSystemTags.LIBVIRT_VERSION_TOKEN, ret.getLibvirtVersion(), false);
                                     createTagWithoutNonValue(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag(), false);
+                                    createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, ret.getEptFlag(), false);
                                     createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName(), false);
                                     createTagWithoutNonValue(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), true);
                                     createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
