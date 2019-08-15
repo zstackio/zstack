@@ -240,6 +240,22 @@
     "message_en": "no local primary storage is satisfing the bellow conditions: 1 status/state is Enabled/Connectd, 2 contains hosts which is Enabled/Connected and size \u003e %6$s bytes"
   },
   {
+    "category": "PS",
+    "code": "1007",
+    "method": "regex",
+    "regex": "cannot find any qualified primary storage, errors are.*physical capacity usage has exceeded the threshold.*",
+    "message_cn": "找不到符合条件的主存储主存储,主存储的己用物理容量超过了所设阈值",
+    "message_en": "cannot find any qualified primary storage, physical capacity usage has exceeded the threshold"
+  },
+  {
+    "category": "PS",
+    "code": "1008",
+    "method": "regex",
+    "regex": "cannot find any qualified primary storage, errors are.*it has no space.*",
+    "message_cn": "找不到符合条件的主存储主存储,主存储的己经没有空间分配所需的容量",
+    "message_en": "cannot find any qualified primary storage, it has no space"
+  },
+  {
     "category": "VM",
     "code": "1000",
     "method": "distance",
