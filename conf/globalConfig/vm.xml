@@ -48,6 +48,14 @@
 	</config>
 
 	<config>
+		<name>multivNic.support</name>
+		<description>A boolean value indicating whether support to create more than one nics with a L3 network in the a VM. If false, there only no more than one nic can be created for a VM with a L3 Netowrk</description>
+		<category>vm</category>
+		<defaultValue>false</defaultValue>
+		<type>java.lang.Boolean</type>
+	</config>
+
+	<config>
 		<name>spiceStreamingMode</name>
 		<description>config vm streaming mode when use spice</description>
 		<category>vm</category>

@@ -4,7 +4,6 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -31,6 +30,7 @@ import org.zstack.header.vm.cdrom.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -451,8 +451,18 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 .param("l3Uuids", newAddedL3Uuids)
                 .list();
         if (attachedL3Uuids != null && !attachedL3Uuids.isEmpty()) {
-            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
-                    attachedL3Uuids, msg.getVmInstanceUuid()));
+            if (!VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class)
+                    || !VmInstanceConstant.USER_VM_TYPE.equals(type)) {
+                throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                        attachedL3Uuids, msg.getVmInstanceUuid()));
+            }
+
+            List<String> attachedNonGuestL3Uuids = Q.New(L3NetworkVO.class).select(L3NetworkVO_.uuid).
+                    notEq(L3NetworkVO_.category, L3NetworkCategory.Private).in(L3NetworkVO_.uuid, attachedL3Uuids).listValues();
+            if (attachedNonGuestL3Uuids != null && !attachedNonGuestL3Uuids.isEmpty()) {
+                throw new ApiMessageInterceptionException(operr("unable to attach a non-guest L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                        attachedL3Uuids, msg.getVmInstanceUuid()));
+            }
         }
 
         long ipv4Count = 0;
@@ -571,12 +581,20 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 .eq(VmNicVO_.l3NetworkUuid, vmNicVO.getL3NetworkUuid())
                 .eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid())
                 .isExists();
+        L3NetworkVO l3NetworkVO = dbf.findByUuid(vmNicVO.getL3NetworkUuid(), L3NetworkVO.class);
         if (exist) {
-            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
-                    vmNicVO.getL3NetworkUuid(), msg.getVmInstanceUuid()));
+            if (!VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class)
+                    || !VmInstanceConstant.USER_VM_TYPE.equals(type)) {
+                throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                        vmNicVO.getL3NetworkUuid(), msg.getVmInstanceUuid()));
+            }
+
+            if (!L3NetworkCategory.Private.equals(l3NetworkVO.getCategory())) {
+                throw new ApiMessageInterceptionException(operr("unable to attach a non-guest L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                        vmNicVO.getL3NetworkUuid(), msg.getVmInstanceUuid()));
+            }
         }
 
-        L3NetworkVO l3NetworkVO = dbf.findByUuid(vmNicVO.getL3NetworkUuid(), L3NetworkVO.class);
         L3NetworkState l3state = l3NetworkVO.getState();
         boolean system = l3NetworkVO.isSystem();
 

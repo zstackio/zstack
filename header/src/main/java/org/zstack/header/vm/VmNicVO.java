@@ -1,10 +1,10 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.identity.OwnedByAccount;
-import org.zstack.header.vo.*;
 import org.zstack.header.network.l3.L3NetworkEO;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.vo.*;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
@@ -94,6 +94,18 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
     @PreUpdate
     private void preUpdate() {
         lastOpDate = null;
+    }
+
+    public static VmNicVO findTheEarliestOne(List<VmNicVO> nics) {
+        VmNicVO nic = null;
+        for (VmNicVO n : nics) {
+            if (nic == null || nic.getCreateDate().after(n.getCreateDate())) {
+                nic = n;
+            } else if (nic.getCreateDate().equals(n.getCreateDate()) && nic.getDeviceId() > n.getDeviceId()) {
+                nic = n;
+            }
+        }
+        return nic;
     }
 
     public String getVmInstanceUuid() {

@@ -117,10 +117,9 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
         }
     }
 
-
     private List<DhcpStruct> makeDhcpStruct(VmInstanceSpec spec, final L3NetworkInventory l3) {
         List<DhcpStruct> res = new ArrayList<>();
-        VmNicInventory nic = null;
+        List<VmNicVO> nics = new ArrayList<>();
 
         /* SLACC mode doesn't need DHCP service */
         if (l3.getIpRanges() != null && !l3.getIpRanges().isEmpty()) {
@@ -135,49 +134,56 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
             VmNicVO vmNicVO = dbf.findByUuid(inv.getUuid(), VmNicVO.class);
             for (UsedIpVO ip : vmNicVO.getUsedIps()) {
                 if (ip.getL3NetworkUuid().equals(l3.getUuid())) {
-                    nic = VmNicInventory.valueOf(vmNicVO);
-                    break;
+                    nics.add(vmNicVO);
                 }
             }
         }
 
-        if (nic == null) {
+        if (nics.isEmpty()) {
             return res;
         }
 
-        for (UsedIpInventory ip : nic.getUsedIps()) {
-            if (!ip.getL3NetworkUuid().equals(l3.getUuid())) {
-                continue;
-            }
+        List<VmNicVO> defaultNics = nics.stream().filter(nic -> nic.getL3NetworkUuid().equals(spec.getVmInventory().getDefaultL3NetworkUuid())).collect(Collectors.toList());
 
-            DhcpStruct struct = new DhcpStruct();
-            struct.setGateway(ip.getGateway());
-            String hostname = CollectionUtils.find(spec.getHostnames(), new Function<String, HostName>() {
-                @Override
-                public String call(HostName arg) {
-                    return arg.getL3NetworkUuid().equals(l3.getUuid()) ? arg.getHostname() : null;
+        for (VmNicVO nic : nics) {
+            for (UsedIpInventory ip : VmNicInventory.valueOf(nic).getUsedIps()) {
+                if (!ip.getL3NetworkUuid().equals(l3.getUuid())) {
+                    continue;
                 }
-            });
-            if (hostname != null && l3.getDnsDomain() != null) {
-                hostname = String.format("%s.%s", hostname, l3.getDnsDomain());
+
+                DhcpStruct struct = new DhcpStruct();
+                struct.setGateway(ip.getGateway());
+                String hostname = CollectionUtils.find(spec.getHostnames(), new Function<String, HostName>() {
+                    @Override
+                    public String call(HostName arg) {
+                        return arg.getL3NetworkUuid().equals(l3.getUuid()) ? arg.getHostname() : null;
+                    }
+                });
+                if (hostname != null && l3.getDnsDomain() != null) {
+                    hostname = String.format("%s.%s", hostname, l3.getDnsDomain());
+                }
+                struct.setIpVersion(ip.getIpVersion());
+                struct.setHostname(hostname);
+                struct.setIp(ip.getIp());
+                struct.setDnsDomain(l3.getDnsDomain());
+                struct.setL3Network(l3);
+                struct.setDefaultL3Network(spec.getVmInventory().getDefaultL3NetworkUuid() != null &&
+                        spec.getVmInventory().getDefaultL3NetworkUuid().equals(l3.getUuid()));
+                /*multi vnic case*/
+                if (struct.isDefaultL3Network() && (defaultNics != null) && (defaultNics.size() > 1)) {
+                    struct.setDefaultL3Network(nic.equals(VmNicVO.findTheEarliestOne(defaultNics)));
+                }
+                struct.setMac(nic.getMac());
+                struct.setNetmask(ip.getNetmask());
+                struct.setMtu(new MtuGetter().getMtu(l3.getUuid()));
+                if (l3.getIpRanges() != null && !l3.getIpRanges().isEmpty()) {
+                    struct.setRaMode(l3.getIpRanges().get(0).getAddressMode());
+                    struct.setFirstIp(NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(r -> r.getStartIp()).collect(Collectors.toList())));
+                    struct.setEndIP(NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(r -> r.getEndIp()).collect(Collectors.toList())));
+                    struct.setPrefixLength(l3.getIpRanges().get(0).getPrefixLen());
+                }
+                res.add(struct);
             }
-            struct.setIpVersion(ip.getIpVersion());
-            struct.setHostname(hostname);
-            struct.setIp(ip.getIp());
-            struct.setDnsDomain(l3.getDnsDomain());
-            struct.setL3Network(l3);
-            struct.setDefaultL3Network(spec.getVmInventory().getDefaultL3NetworkUuid() != null &&
-                    spec.getVmInventory().getDefaultL3NetworkUuid().equals(l3.getUuid()));
-            struct.setMac(nic.getMac());
-            struct.setNetmask(ip.getNetmask());
-            struct.setMtu(new MtuGetter().getMtu(l3.getUuid()));
-            if (l3.getIpRanges() != null && !l3.getIpRanges().isEmpty()) {
-                struct.setRaMode(l3.getIpRanges().get(0).getAddressMode());
-                struct.setFirstIp(NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(r -> r.getStartIp()).collect(Collectors.toList())));
-                struct.setEndIP(NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(r -> r.getEndIp()).collect(Collectors.toList())));
-                struct.setPrefixLength(l3.getIpRanges().get(0).getPrefixLen());
-            }
-            res.add(struct);
         }
 
         return res;

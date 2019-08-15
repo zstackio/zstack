@@ -44,6 +44,9 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig ADDITIONAL_QMP = new GlobalConfig(CATEGORY, "additionalQmp");
 
+    @GlobalConfigValidation(validValues = {"true","false"})
+    public static GlobalConfig MULTI_VNIC_SUPPORT = new GlobalConfig(CATEGORY, "multivNic.support");
+
     @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = VmInstanceConstant.MAXIMUM_CDROM_NUMBER)
     public static GlobalConfig VM_DEFAULT_CD_ROM_NUM = new GlobalConfig(CATEGORY, "vmDefaultCdRomNum");
 

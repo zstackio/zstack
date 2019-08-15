@@ -8,6 +8,7 @@ import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -26,6 +27,7 @@ import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AddDhcpEntryCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AddDhcpEntryRsp;
@@ -33,14 +35,11 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.DhcpInfo;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterSyncDHCPOnStartFlow implements Flow {
@@ -76,7 +75,7 @@ public class VirtualRouterSyncDHCPOnStartFlow implements Flow {
 
 	@Transactional(readOnly = true)
 	private List<DhcpInfo> getUserVmNicsOnNetwork(VirtualRouterVmInventory vr, String l3NetworkUuid) {
-		String sql = "select vm.uuid, vm.defaultL3NetworkUuid, nic.uuid, l3.dnsDomain from VmNicVO nic, VmInstanceVO vm, L3NetworkVO l3 where l3.uuid = vm.defaultL3NetworkUuid and vm.state = (:vmState) and nic.vmInstanceUuid = vm.uuid and vm.type = :vmType and nic.l3NetworkUuid = :l3uuid";
+		String sql = "select vm.uuid, vm.defaultL3NetworkUuid, nic.uuid, l3.dnsDomain, nic.l3NetworkUuid from VmNicVO nic, VmInstanceVO vm, L3NetworkVO l3 where l3.uuid = vm.defaultL3NetworkUuid and vm.state = (:vmState) and nic.vmInstanceUuid = vm.uuid and vm.type = :vmType and nic.l3NetworkUuid = :l3uuid";
 		TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
 		q.setParameter("l3uuid", l3NetworkUuid);
         q.setParameter("vmType", VmInstanceConstant.USER_VM_TYPE);
@@ -90,6 +89,30 @@ public class VirtualRouterSyncDHCPOnStartFlow implements Flow {
 		if (vr.getGuestNicByL3NetworkUuid(l3NetworkUuid) == null) {
 		    return infos;
         }
+
+        Map<String, List<VmNicVO>> defaultNicMap = new HashMap<>();
+		List<String> defaultNicUuids = new ArrayList<>();
+        for (Tuple t : ts) {
+            String defaultL3Uuid = t.get(1, String.class);
+            String nicUuid = t.get(2, String.class);
+            String nicL3Uuid = t.get(4, String.class);
+            if (nicL3Uuid.equals(defaultL3Uuid)) {
+                defaultNicUuids.add(nicUuid);
+            }
+        }
+
+        if (!defaultNicUuids.isEmpty()) {
+            List<VmNicVO> nics = Q.New(VmNicVO.class).in(VmNicVO_.uuid, defaultNicUuids).list();
+            for (VmNicVO nic : nics) {
+                List<VmNicVO> value = defaultNicMap.get(nic.getVmInstanceUuid());
+                if (value == null) {
+                    value = new ArrayList<>();
+                }
+                value.add(nic);
+                defaultNicMap.put(nic.getVmInstanceUuid(), value);
+            }
+        }
+
 		for (Tuple t : ts) {
 			String vmUuid = t.get(0, String.class);
             String defaultL3Uuid = t.get(1, String.class);
@@ -104,7 +127,15 @@ public class VirtualRouterSyncDHCPOnStartFlow implements Flow {
             info.setVrNicMac(vr.getGuestNicByL3NetworkUuid(l3NetworkUuid).getMac());
 			info.setNetmask(nic.getNetmask());
             if (l3NetworkUuid.equals(defaultL3Uuid)) {
-                info.setDefaultL3Network(true);
+                if (defaultNicMap.get(nic.getVmInstanceUuid()) != null && defaultNicMap.get(nic.getVmInstanceUuid()).size() > 1) {
+                    info.setDefaultL3Network(nic.equals(VmNicVO.findTheEarliestOne(defaultNicMap.get(nic.getVmInstanceUuid()))));
+                }
+                else {
+                    info.setDefaultL3Network(true);
+                }
+            }
+
+            if (info.isDefaultL3Network()) {
                 info.setDnsDomain(defaultL3DnsDomain);
                 String hostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(vmUuid, VmSystemTags.HOSTNAME_TOKEN);
                 if (hostname != null) {

@@ -162,6 +162,19 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             l3Map.put(l3.getUuid(), l3);
         }
 
+        Map<String, List<VmNicVO>> defaultNicMap = new HashMap<>();
+        for (VmNicVO nic : nics) {
+            if (!nic.getL3NetworkUuid().equals(vmDefaultL3.get(nic.getVmInstanceUuid()))) {
+                continue;
+            }
+            List<VmNicVO> value = defaultNicMap.get(nic.getVmInstanceUuid());
+            if (value == null) {
+                value = new ArrayList<>();
+            }
+            value.add(nic);
+            defaultNicMap.put(nic.getVmInstanceUuid(), value);
+        }
+
         List<DhcpInfo> dhcpInfoList = new ArrayList<DhcpInfo>();
         for (VmNicVO nic : nics) {
             for (UsedIpVO ip : nic.getUsedIps()) {
@@ -177,6 +190,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.mac = nic.getMac();
                 info.netmask = ip.getNetmask();
                 info.isDefaultL3Network = ip.getL3NetworkUuid().equals(vmDefaultL3.get(nic.getVmInstanceUuid()));
+                /*multi vnic case*/
+                if (info.isDefaultL3Network && defaultNicMap.get(nic.getVmInstanceUuid()) != null && defaultNicMap.get(nic.getVmInstanceUuid()).size() > 1) {
+                    info.isDefaultL3Network = nic.equals(VmNicVO.findTheEarliestOne(defaultNicMap.get(nic.getVmInstanceUuid())));
+                }
+
                 info.ip = ip.getIp();
                 info.gateway = ip.getGateway();
                 info.ipVersion = ip.getIpVersion();
@@ -554,6 +572,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         List<DhcpInfo> dhcpInfoList = new ArrayList<DhcpInfo>();
+        List<VmNicVO> defaultNics = nics.stream().filter(nic -> nic.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid())).collect(Collectors.toList());
         for (VmNicVO nic : nics) {
             for (UsedIpVO ip : nic.getUsedIps()) {
                 DhcpInfo info = new DhcpInfo();
@@ -566,6 +585,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.mac = nic.getMac();
                 info.netmask = ip.getNetmask();
                 info.isDefaultL3Network = ip.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid());
+                /*multi vnic case*/
+                if (info.isDefaultL3Network && (defaultNics != null) && (defaultNics.size() > 1)) {
+                    info.isDefaultL3Network = nic.equals(VmNicVO.findTheEarliestOne(defaultNics));
+                }
                 info.ip = ip.getIp();
                 info.ipVersion = ip.getIpVersion();
                 info.gateway = ip.getGateway();
