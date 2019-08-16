@@ -69,6 +69,11 @@ public class APILogInByUserMsg extends APISessionMessage implements APILoginAudi
         this.clientInfo = clientInfo;
     }
 
+    @Override
+    public String getOperator() {
+        return userName;
+    }
+
     public static APILogInByUserMsg __example__() {
         APILogInByUserMsg msg = new APILogInByUserMsg();
 

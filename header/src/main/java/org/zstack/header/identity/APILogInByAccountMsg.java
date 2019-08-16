@@ -80,6 +80,11 @@ public class APILogInByAccountMsg extends APISessionMessage implements APILoginA
         this.clientInfo = clientInfo;
     }
 
+    @Override
+    public String getOperator() {
+        return accountName;
+    }
+
     public static APILogInByAccountMsg __example__() {
         APILogInByAccountMsg msg = new APILogInByAccountMsg();
         msg.setAccountName("test");
