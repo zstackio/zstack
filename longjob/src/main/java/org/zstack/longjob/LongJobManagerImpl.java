@@ -289,6 +289,9 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         LongJobVO vo = null;
         if (msg.getResourceUuid() != null) {
             vo = dbf.findByUuid(msg.getResourceUuid(), LongJobVO.class);
+        }
+
+        if (vo != null) {
             vo.setApiId(ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API));
             vo.setState(LongJobState.Waiting);
             vo.setExecuteTime(null);
@@ -299,8 +302,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             vo.setLastOpDate(now);
             vo = dbf.updateAndRefresh(vo);
             logger.info(String.format("longjob [uuid:%s, name:%s] has been re-submitted", vo.getUuid(), vo.getName()));
-        }
-        if (vo == null) {
+        } else {
             vo = new LongJobVO();
             if (msg.getResourceUuid() != null) {
                 vo.setUuid(msg.getResourceUuid());
