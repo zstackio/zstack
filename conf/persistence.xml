@@ -151,5 +151,6 @@
         <class>org.zstack.header.core.captcha.CaptchaVO</class>
         <class>org.zstack.header.errorcode.ElaborationVO</class>
         <class>org.zstack.header.vm.cdrom.VmCdRomVO</class>
+        <class>org.zstack.authentication.checkfile.FileVerificationVO</class>
     </persistence-unit>
 </persistence>
