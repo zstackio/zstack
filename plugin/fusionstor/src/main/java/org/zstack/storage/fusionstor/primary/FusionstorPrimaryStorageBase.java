@@ -2754,4 +2754,9 @@ public class FusionstorPrimaryStorageBase extends PrimaryStorageBase {
     protected void handle(GetPrimaryStorageResourceLocationMsg msg) {
         bus.reply(msg, new GetPrimaryStorageResourceLocationReply());
     }
+
+    @Override
+    protected void handle(CheckVolumeSnapshotOperationOnPrimaryStorageMsg msg) {
+        bus.reply(msg, new CheckVolumeSnapshotOperationOnPrimaryStorageReply());
+    }
 }

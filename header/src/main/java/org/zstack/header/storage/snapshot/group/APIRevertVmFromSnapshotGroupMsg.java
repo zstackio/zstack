@@ -10,6 +10,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 
 import java.util.concurrent.TimeUnit;
@@ -30,6 +31,11 @@ public class APIRevertVmFromSnapshotGroupMsg extends APIMessage implements Volum
     @Override
     public String getGroupUuid() {
         return uuid;
+    }
+
+    @Override
+    public SnapshotBackendOperation getBackendOperation() {
+        return SnapshotBackendOperation.FILE_CREATION;
     }
 
     public String getUuid() {

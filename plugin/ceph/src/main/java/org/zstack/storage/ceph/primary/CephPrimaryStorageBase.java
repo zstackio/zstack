@@ -4264,4 +4264,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             }
         });
     }
+
+    @Override
+    protected void handle(CheckVolumeSnapshotOperationOnPrimaryStorageMsg msg) {
+        bus.reply(msg, new CheckVolumeSnapshotOperationOnPrimaryStorageReply());
+    }
 }

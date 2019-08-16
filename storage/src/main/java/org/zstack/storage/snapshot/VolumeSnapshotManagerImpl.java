@@ -125,7 +125,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         if (msg instanceof VolumeSnapshotMessage) {
             passThrough((VolumeSnapshotMessage) msg);
         } else if (msg instanceof VolumeSnapshotGroupMessage) {
-            passThrough((VolumeSnapshotGroupMessage) msg);
+            handleSnapshotGroup((VolumeSnapshotGroupMessage) msg);
         } else if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
         } else {
@@ -149,6 +149,56 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handleSnapshotGroup(VolumeSnapshotGroupMessage msg) {
+        if (msg.getBackendOperation() == SnapshotBackendOperation.NONE || !(msg instanceof APIMessage)) {
+            passThrough(msg);
+            return;
+        }
+
+        List<Tuple> ts = SQL.New("select snap.uuid, snap.primaryStorageUuid" +
+                " from VolumeSnapshotVO snap, VolumeSnapshotGroupRefVO ref" +
+                " where ref.volumeSnapshotGroupUuid = :groupUuid" +
+                " and snap.uuid = ref.volumeSnapshotUuid", Tuple.class)
+                .param("groupUuid", msg.getGroupUuid())
+                .list();
+
+        Map<String, List<String>> psSnapshotRef = ts.stream().collect(Collectors.groupingBy(t -> ((Tuple)t).get(1, String.class),
+                        Collectors.mapping(t -> ((Tuple)t).get(0, String.class), Collectors.toList())));
+
+        final ErrorCode[] err = new ErrorCode[1];
+        new While<>(psSnapshotRef.entrySet()).each((e, completion) -> {
+            CheckVolumeSnapshotOperationOnPrimaryStorageMsg cmsg = new CheckVolumeSnapshotOperationOnPrimaryStorageMsg();
+            cmsg.setPrimaryStorageUuid(e.getKey());
+            cmsg.setVolumeSnapshotUuids(e.getValue());
+            cmsg.setOperation(msg.getBackendOperation());
+            bus.makeLocalServiceId(cmsg, PrimaryStorageConstant.SERVICE_ID);
+            bus.send(cmsg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        err[0] = reply.getError();
+                        completion.allDone();
+                        return;
+                    }
+
+                    completion.done();
+                }
+            });
+        }).run(new NoErrorCompletion((Message) msg) {
+            @Override
+            public void done() {
+                if (err[0] == null) {
+                    passThrough(msg);
+                    return;
+                }
+
+                APIEvent event = new APIEvent(((APIMessage) msg).getId());
+                event.setError(err[0]);
+                bus.publish(event);
+            }
+        });
     }
 
     @Transactional(readOnly = true)
