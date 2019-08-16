@@ -6,8 +6,12 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.host.CheckVmStateOnHypervisorMsg;
+import org.zstack.header.host.CheckVmStateOnHypervisorReply;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
 import org.zstack.header.message.MessageReply;
@@ -18,6 +22,7 @@ import org.zstack.header.vm.VmInstanceState;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Collections;
 import java.util.Map;
 
 
@@ -29,6 +34,34 @@ public class VmDestroyOnHypervisorFlow extends NoRollbackFlow {
     protected DatabaseFacade dbf;
     @Autowired
     protected CloudBus bus;
+
+    private void getVmStateOnHypervisor(final String hostUuid, String vmUuid, final ReturnValueCompletion<VmInstanceState> completion) {
+        CheckVmStateOnHypervisorMsg msg = new CheckVmStateOnHypervisorMsg();
+        msg.setVmInstanceUuids(Collections.singletonList(vmUuid));
+        msg.setHostUuid(hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("unable to check state of the vm[uuid:%s] on the host[uuid:%s], %s",
+                            vmUuid, hostUuid, reply.getError()));
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                CheckVmStateOnHypervisorReply r = reply.castReply();
+                String state = r.getStates().get(vmUuid);
+                if (state == null) {
+                    completion.fail(ErrorCode.fromString(
+                            String.format("null state of the vm[uuid:%s] on the host[uuid:%s]", vmUuid, hostUuid)));
+                    return;
+                }
+
+                completion.success(VmInstanceState.valueOf(state));
+            }
+        });
+    }
 
     @Override
     public void run(final FlowTrigger chain, Map data) {
@@ -60,7 +93,21 @@ public class VmDestroyOnHypervisorFlow extends NoRollbackFlow {
                 }
 
                 if (!reply.getError().isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
-                    chain.fail(reply.getError());
+                    /*continue to run the chain if the vm has been shutoff in hypervisor*/
+                    getVmStateOnHypervisor(hostUuid, spec.getVmInventory().getUuid(), new ReturnValueCompletion<VmInstanceState>(chain) {
+                        @Override
+                        public void success(VmInstanceState state) {
+                            if (VmInstanceState.Stopped.equals(state)) {
+                                chain.next();
+                            } else {
+                                chain.fail(reply.getError());
+                            }
+                        }
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            chain.fail(errorCode.causedBy(reply.getError()));
+                        }
+                    });
                     return;
                 }
 
