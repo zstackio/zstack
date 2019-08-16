@@ -311,4 +311,8 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
             }
         }
     }
+
+    public String getOperator() {
+        return null;
+    }
 }
