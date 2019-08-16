@@ -1,29 +1,12 @@
 package org.zstack.test.integration.kvm.vm
 
-import org.apache.logging.log4j.ThreadContext
 import org.springframework.http.HttpEntity
-import org.zstack.compute.host.HostGlobalConfig
-import org.zstack.compute.host.HostTrackImpl
-import org.zstack.compute.host.HostTracker
-import org.zstack.compute.vm.VmTracer
-import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
-import org.zstack.core.db.SQL
 import org.zstack.core.errorcode.ErrorFacade
-import org.zstack.core.rest.RESTFacadeImpl
-import org.zstack.core.timeout.ApiTimeoutManager
-import org.zstack.header.core.NoErrorCompletion
 import org.zstack.header.host.CheckVmStateOnHypervisorMsg
 import org.zstack.header.host.CheckVmStateOnHypervisorReply
-import org.zstack.header.host.HostErrors
-import org.zstack.header.host.HostVO
 import org.zstack.header.network.service.NetworkServiceType
-import org.zstack.header.rest.BeforeAsyncJsonPostInterceptor
-import org.zstack.header.rest.RESTFacade
-import org.zstack.header.vm.DestroyVmOnHypervisorMsg
-import org.zstack.header.vm.DestroyVmOnHypervisorReply
-import org.zstack.header.vm.VmInstance
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
@@ -32,24 +15,15 @@ import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
-import org.zstack.kvm.KVMGlobalConfig
-import org.zstack.kvm.KVMHostInventory
-import org.zstack.kvm.KvmVmSyncPingTask
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.DestroyVmInstanceAction
-import org.zstack.sdk.HostInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.testlib.util.TProxy
-import org.zstack.testlib.util.TimeUnitUtil
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
-
-import java.util.concurrent.TimeUnit
-
 /**
  * Created by AlanJager on 2017/4/24.
  */
@@ -216,6 +190,11 @@ class VmDestroyingCase extends SubCase {
 
     void testDestroyingVmWillBeSetToDestroyedIfDestroyingFailButVmSyncMsgReturnStopped() {
         String sessionId = adminSession()
+        boolean resourceReleased = false
+        env.afterSimulator(VirtualRouterConstant.VR_REMOVE_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            resourceReleased = true
+            return rsp
+        }
 
         new Thread(new Runnable() {
             @Override
@@ -234,6 +213,7 @@ class VmDestroyingCase extends SubCase {
 
             assert vo.state == VmInstanceState.Destroyed
             assert cmd != null
+            assert resourceReleased
         }
     }
 
