@@ -14,6 +14,8 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Created by xing5 on 2016/4/8.
  */
@@ -61,29 +63,40 @@ public class ConsoleProxyAgentTracker extends PingTracker {
     @Override
     public void handleReply(final String resourceUuid, MessageReply reply) {
         if (!reply.isSuccess()) {
-            //TODO
             logger.warn(String.format("unable to ping the console proxy agent[uuid:%s], %s", resourceUuid, reply.getError()));
+            if (timeToReconnect()) {
+                logger.debug("It's time to reconnect console proxy agent.");
+                doReconnect(resourceUuid);
+            }
             return;
         }
 
         PingConsoleProxyAgentReply pr = reply.castReply();
         if (pr.isDoReconnect()) {
-            ReconnectConsoleProxyMsg rmsg = new ReconnectConsoleProxyMsg();
-            rmsg.setAgentUuid(resourceUuid);
-
-            ConsoleBackend bkd = cmgr.getConsoleBackend();
-            rmsg.setServiceId(bkd.returnServiceIdForConsoleAgentMsg(rmsg, resourceUuid));
-            bus.send(rmsg, new CloudBusCallBack(null) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        logger.warn(String.format("failed to reconnect console proxy agent[uuid:%s], %s", resourceUuid,
-                                reply.getError()));
-                    } else {
-                        logger.info(String.format("successfully reconnected the console proxy agent[uuid:%s]", resourceUuid));
-                    }
-                }
-            });
+            doReconnect(resourceUuid);
         }
+    }
+
+    private void doReconnect(String resourceUuid) {
+        ReconnectConsoleProxyMsg rmsg = new ReconnectConsoleProxyMsg();
+        rmsg.setAgentUuid(resourceUuid);
+
+        ConsoleBackend bkd = cmgr.getConsoleBackend();
+        rmsg.setServiceId(bkd.returnServiceIdForConsoleAgentMsg(rmsg, resourceUuid));
+        bus.send(rmsg, new CloudBusCallBack(null) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to reconnect console proxy agent[uuid:%s], %s", resourceUuid,
+                            reply.getError()));
+                } else {
+                    logger.info(String.format("successfully reconnected the console proxy agent[uuid:%s]", resourceUuid));
+                }
+            }
+        });
+    }
+
+    private boolean timeToReconnect() {
+        return System.currentTimeMillis() % TimeUnit.MINUTES.toMillis(30) < TimeUnit.SECONDS.toMillis(getPingInterval());
     }
 }
