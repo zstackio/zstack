@@ -2806,4 +2806,21 @@ public class LocalStorageBase extends PrimaryStorageBase {
         reply.setHostUuid(hostUuid);
         bus.reply(msg, reply);
     }
+
+    @Override
+    protected void handle(CheckVolumeSnapshotOperationOnPrimaryStorageMsg msg) {
+        CheckVolumeSnapshotOperationOnPrimaryStorageReply r = new CheckVolumeSnapshotOperationOnPrimaryStorageReply();
+        List<String> disconnectHostUuids = SQL.New("select h.uuid from HostVO h, LocalStorageResourceRefVO ref" +
+                " where ref.resourceUuid in :snapUuids" +
+                " and ref.hostUuid = h.uuid" +
+                " and h.status != :hstatus", String.class)
+                .param("hstatus", HostStatus.Connected)
+                .param("snapUuids", msg.getVolumeSnapshotUuids())
+                .list();
+        if (!disconnectHostUuids.isEmpty()) {
+            r.setError(err(HostErrors.HOST_IS_DISCONNECTED, "host(s)[uuids: %s] snapshot locate is not Connected.", disconnectHostUuids));
+        }
+
+        bus.reply(msg, r);
+    }
 }

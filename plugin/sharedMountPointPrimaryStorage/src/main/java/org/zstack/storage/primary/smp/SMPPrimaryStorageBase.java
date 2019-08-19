@@ -836,4 +836,9 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
 
         throw new OperationFailureException(operr("cannot find proper hypervisorType for primary storage[uuid:%s] to handle image format or volume format[%s]", psUuid, imageFormat));
     }
+
+    @Override
+    protected void handle(CheckVolumeSnapshotOperationOnPrimaryStorageMsg msg) {
+        bus.reply(msg, new CheckVolumeSnapshotOperationOnPrimaryStorageReply());
+    }
 }
