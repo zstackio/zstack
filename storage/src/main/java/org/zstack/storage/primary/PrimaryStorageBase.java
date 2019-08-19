@@ -145,6 +145,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(GetPrimaryStorageResourceLocationMsg msg);
 
+    protected abstract void handle(CheckVolumeSnapshotOperationOnPrimaryStorageMsg msg);
+
     protected abstract void connectHook(ConnectParam param, Completion completion);
 
     protected abstract void pingHook(Completion completion);
@@ -283,6 +285,12 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
             new PrimaryStorageValidater().disable().maintenance()
                     .validate();
+        } else if (msg instanceof CheckVolumeSnapshotOperationOnPrimaryStorageMsg) {
+            SnapshotBackendOperation operation = ((CheckVolumeSnapshotOperationOnPrimaryStorageMsg) msg).getOperation();
+            if (operation == SnapshotBackendOperation.FILE_CREATION) {
+                new PrimaryStorageValidater().disable().maintenance()
+                        .validate();
+            }
         }
     }
 
@@ -354,7 +362,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((CleanUpTrashOnPrimaryStorageMsg) msg);
         } else if ((msg instanceof GetPrimaryStorageResourceLocationMsg)) {
             handle((GetPrimaryStorageResourceLocationMsg) msg);
-        } else  {
+        } else if (msg instanceof CheckVolumeSnapshotOperationOnPrimaryStorageMsg) {
+            handleBase((CheckVolumeSnapshotOperationOnPrimaryStorageMsg) msg);
+        } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
@@ -611,6 +621,17 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private void handleBase(CheckVolumeSnapshotOperationOnPrimaryStorageMsg msg) {
+        if (self.getStatus() != PrimaryStorageStatus.Connected) {
+            CheckVolumeSnapshotOperationOnPrimaryStorageReply reply = new CheckVolumeSnapshotOperationOnPrimaryStorageReply();
+            reply.setError(err(PrimaryStorageErrors.DISCONNECTED, "primary storage[uuid:%s] is not Connected", self.getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        handle(msg);
     }
 
     private void handleBase(DownloadDataVolumeToPrimaryStorageMsg msg) {
