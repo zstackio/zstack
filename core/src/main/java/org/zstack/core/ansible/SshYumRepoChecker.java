@@ -32,8 +32,8 @@ public class SshYumRepoChecker implements AnsibleChecker {
                 .setHostname(targetIp);
         try {
             ssh.command(String.format(
-                    "sed -i '/baseurl/s/\\([0-9]\\{1,3\\}\\.\\)\\{3\\}[0-9]\\{1,3\\}/%s/g' /etc/yum.repos.d/{zstack,qemu-kvm-ev}-mn.repo",
-                    restf.getHostName()
+                    "sed -i '/baseurl/s/\\([0-9]\\{1,3\\}\\.\\)\\{3\\}[0-9]\\{1,3\\}:\\([0-9]\\+\\)/%s/g' /etc/yum.repos.d/{zstack,qemu-kvm-ev}-mn.repo",
+                    restf.getBaseUrl()
             ));
             SshResult ret = ssh.run();
             if (ret.getReturnCode() != 0) {
