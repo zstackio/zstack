@@ -14,13 +14,9 @@
                 <SizeBasedTriggeringPolicy size="200 MB" />
             </Policies>
             <DefaultRolloverStrategy max="1">
-                <Delete basePath="${sys:catalina.home}/logs/" maxDepth="2">
+                <Delete basePath="${sys:catalina.home}/logs/" maxDepth="1">
                     <IfFileName glob="management-server-*.log.gz">
                         <IfAny>
-                            <IfAny>
-                                <IfAccumulatedFileSize exceeds="-1 MB" />
-                                <IfLastModified age="-1d" />
-                            </IfAny>
                         </IfAny>
                     </IfFileName>
                 </Delete>
@@ -58,11 +54,9 @@
                 <SizeBasedTriggeringPolicy size="150 MB" />
             </Policies>
             <DefaultRolloverStrategy max="20">
-                <Delete basePath="${sys:catalina.home}/logs/" maxDepth="2">
+                <Delete basePath="${sys:catalina.home}/logs/" maxDepth="1">
                     <IfFileName glob="zstack-api-*.log.gz">
                         <IfAny>
-                            <IfAccumulatedFileSize exceeds="-1 MB" />
-                            <IfLastModified age="-1d" />
                         </IfAny>
                     </IfFileName>
                 </Delete>
