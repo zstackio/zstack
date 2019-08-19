@@ -1,10 +1,13 @@
 package org.zstack.storage.backup;
 
+import org.apache.http.impl.client.HttpClients;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
@@ -32,6 +35,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
@@ -141,19 +145,30 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             return;
         }
 
-        String len;
+        HttpHeaders header;
+        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+        factory.setReadTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT);
+        factory.setConnectTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT);
+        factory.setHttpClient(HttpClients.createDefault());
+        RestTemplate template = new RestTemplate(factory);
         try {
-            HttpHeaders header = restf.getRESTTemplate().headForHeaders(URI.create(url));
-            len = header.getFirst("Content-Length");
+            header = template.headForHeaders(URI.create(url));
+            logger.debug(String.format("get header from %s: %s", url, header));
         } catch (Exception e) {
-            throw new OperationFailureException(operr("cannot get image. The image url is %s. Exception is %s", url, e.toString()));
-        }
-        if (len == null) {
-            return;
+            throw new OperationFailureException(operr("failed to get header of image url %s: %s", url, e.toString()));
         }
 
-        long size = Long.valueOf(len);
-        if (size > self.getAvailableCapacity()) {
+        if (header == null) {
+            throw new OperationFailureException(operr("failed to get header of image url %s", url));
+        }
+
+        long size = header.getContentLength();
+        if (size == -1) {
+            throw new OperationFailureException(operr("failed to get image size from url %s", url));
+        } else if (size < ImageConstant.MINI_IMAGE_SIZE_IN_BYTE) {
+            throw new OperationFailureException(operr("the image size get from url %s is %d bytes, " +
+                    "it's too small for an image, please check the url again.", url, size));
+        } else if (size > self.getAvailableCapacity()) {
             throw new OperationFailureException(operr("the backup storage[uuid:%s, name:%s] has not enough capacity to download the image[%s]." +
                             "Required size:%s, available size:%s", self.getUuid(), self.getName(), url, size, self.getAvailableCapacity()));
         }
