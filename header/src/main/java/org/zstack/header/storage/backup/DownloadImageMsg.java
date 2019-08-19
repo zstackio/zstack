@@ -1,8 +1,12 @@
 package org.zstack.header.storage.backup;
 
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.message.NeedReplyMessage;
 
+import java.util.concurrent.TimeUnit;
+
+@DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
 public class DownloadImageMsg extends NeedReplyMessage implements BackupStorageMessage {
     private ImageInventory imageInventory;
     private String backupStorageUuid;
