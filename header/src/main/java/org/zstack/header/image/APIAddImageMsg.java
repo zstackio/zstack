@@ -34,7 +34,7 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor {
     @APIParam(maxLength = 255, required = false)
     private String guestOsType;
     private boolean system;
-    @APIParam
+    @APIParam(required = false)
     private String format;
     @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
     private String platform;
