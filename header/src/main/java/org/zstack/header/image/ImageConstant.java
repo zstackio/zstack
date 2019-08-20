@@ -19,4 +19,7 @@ public interface ImageConstant {
     String ISO_FORMAT_STRING = "iso";
     String QCOW2_FORMAT_STRING = "qcow2";
     String RAW_FORMAT_STRING = "raw";
+
+    // image less than 1MB is useless
+    long MINI_IMAGE_SIZE_IN_BYTE = 1048576L;
 }
