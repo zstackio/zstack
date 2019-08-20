@@ -1,8 +1,9 @@
 package org.zstack.sdk.zwatch.alarm;
 
+import org.zstack.sdk.*;
+
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class UpdateAlarmAction extends AbstractAction {
 
@@ -43,7 +44,7 @@ public class UpdateAlarmAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
     public java.lang.Double threshold;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
     public java.lang.Integer repeatInterval;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {-1L,2147483647L}, noTrim = false)
