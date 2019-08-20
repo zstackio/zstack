@@ -1,9 +1,9 @@
 package org.zstack.utils.gson;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.*;
 import org.json.JSONArray;
 
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 
@@ -15,7 +15,17 @@ public class JSONObjectUtil {
     private static final Gson prettyGson;
     
     static {
-        gson = new GsonBuilder().disableHtmlEscaping().create();
+        gson = new GsonBuilder().registerTypeAdapter(Integer.class, new JsonDeserializer<Integer>() {
+            @Override
+            public Integer deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+                Long l = jsonElement.getAsLong();
+                if (l > Integer.MAX_VALUE) {
+                    throw new NumberFormatException(String.format("%d is Integer overflow, Integer.MAX_VALUE is %d", l, Integer.MAX_VALUE));
+                } else {
+                    return l.intValue();
+                }
+            }
+        }).disableHtmlEscaping().create();
         prettyGson = new GsonBuilder().setPrettyPrinting().create();
     }
     
