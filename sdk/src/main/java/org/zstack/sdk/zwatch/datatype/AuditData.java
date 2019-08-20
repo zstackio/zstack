@@ -180,6 +180,14 @@ public class AuditData  {
         return this.responseDump;
     }
 
+    public java.lang.String operator;
+    public void setOperator(java.lang.String operator) {
+        this.operator = operator;
+    }
+    public java.lang.String getOperator() {
+        return this.operator;
+    }
+
     public long time;
     public void setTime(long time) {
         this.time = time;
