@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddImageAction extends AbstractAction {
+public class AddXDragonHostAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddImageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddImageResult value;
+        public org.zstack.sdk.AddHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,34 +26,34 @@ public class AddImageAction extends AbstractAction {
     }
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String username;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer cpuNum;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer cpuSockets;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Long totalPhysicalMemory;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public int sshPort = 22;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String url;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String managementIp;
 
-    @Param(required = false, validValues = {"RootVolumeTemplate","ISO","DataVolumeTemplate"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String mediaType;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String guestOsType;
-
-    @Param(required = false)
-    public boolean system = false;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String format;
-
-    @Param(required = false, validValues = {"Linux","Windows","Other","Paravirtualization","WindowsVirtio"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String platform;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List backupStorageUuids;
-
-    @Param(required = false)
-    public java.lang.String type;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String clusterUuid;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -93,8 +93,8 @@ public class AddImageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddImageResult value = res.getResult(org.zstack.sdk.AddImageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddImageResult() : value; 
+        org.zstack.sdk.AddHostResult value = res.getResult(org.zstack.sdk.AddHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddHostResult() : value; 
 
         return ret;
     }
@@ -124,7 +124,7 @@ public class AddImageAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/images";
+        info.path = "/hosts/xdragon";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
