@@ -147,8 +147,16 @@ public class Session implements Component {
                 Timestamp curr = getCurrentSqlDate();
                 if (curr.after(s.getExpiredDate())) {
                     if (logger.isTraceEnabled()) {
-                        logger.debug(String.format("session expired[%s < %s] for account[uuid:%s]", curr,
+                        logger.debug(String.format("session expired[%s < %s] for account[uuid:%s] in cache", curr,
                                 s.getExpiredDate(), s.getAccountUuid()));
+                    }
+
+                    SessionVO vo = findByUuid(uuid, SessionVO.class);
+                    if (vo != null && curr.before(s.getExpiredDate())) {
+                        logger.debug(String.format("session not expired[%s < %s] for account[uuid:%s] in DB, just remove it from session cache", curr,
+                                s.getExpiredDate(), s.getAccountUuid()));
+                        sessions.remove(uuid);
+                        return;
                     }
 
                     logout(s.getUuid());
