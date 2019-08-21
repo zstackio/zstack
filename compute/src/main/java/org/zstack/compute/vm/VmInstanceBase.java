@@ -2081,6 +2081,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmJustBeforeDeleteFromDbExtensionPoint.class), p -> p.vmJustBeforeDeleteFromDb(inv));
     }
 
+    private void callVmJustAfterDeleteFromDbExtensionPoint(VmInstanceInventory inv, String accountUuid) {
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmJustAfterDeleteFromDbExtensionPoint.class), p -> p.vmJustAfterDeleteFromDbExtensionPoint(inv, accountUuid));
+    }
+
     protected void doDestroy(final VmInstanceDeletionPolicy deletionPolicy, Message msg, final Completion completion) {
         final VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         extEmitter.beforeDestroyVm(inv);
@@ -2096,6 +2100,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     dbf.removeCollection(self.getVmCdRoms(), VmCdRomVO.class);
                     dbf.remove(getSelf());
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.DBOnly || deletionPolicy == VmInstanceDeletionPolicy.KeepVolume) {
+                    String accountUuid = acntMgr.getOwnerAccountUuidOfResource(inv.getUuid());
                     new SQLBatch() {
                         @Override
                         protected void scripts() {
@@ -2109,6 +2114,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                             sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid()).hardDelete();
                         }
                     }.execute();
+                    callVmJustAfterDeleteFromDbExtensionPoint(inv, accountUuid);
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.Delay) {
                     changeVmStateInDb(VmInstanceStateEvent.destroyed, ()-> self.setHostUuid(null));
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.Never) {
