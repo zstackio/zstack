@@ -71,15 +71,6 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("there has been a host having managementIp[%s]", msg.getManagementIp()));
             }
         }
-
-        HostStatus hostStatus = Q.New(HostVO.class)
-                .select(HostVO_.status)
-                .eq(HostVO_.uuid,msg.getHostUuid())
-                .findValue();
-        if (hostStatus == HostStatus.Connecting){
-            throw new ApiMessageInterceptionException(
-                    operr("can not update host[uuid:%s]which is connecting or creating, please wait.", msg.getHostUuid()));
-        }
     }
 
     private void validate(APIAddHostMsg msg) {
