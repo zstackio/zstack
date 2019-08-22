@@ -10,6 +10,7 @@
 
     <message>
         <name>org.zstack.kvm.APIUpdateKVMHostMsg</name>
+        <interceptor>HostApiInterceptor</interceptor>
     </message>
 
     <message>
