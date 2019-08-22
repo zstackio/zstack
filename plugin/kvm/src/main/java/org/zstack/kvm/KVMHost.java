@@ -1177,13 +1177,13 @@ public class KVMHost extends HostBase implements Host {
                                 if (!ret.isSuccess()) {
                                     ErrorCode err = err(HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR,
                                             "failed to migrate vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s], %s",
-                                            vmUuid, self.getUuid(), self.getManagementIp(), dstHostMigrateIp, ret.getError()
+                                            vmUuid, srcHostUuid, srcHostMigrateIp, dstHostMigrateIp, ret.getError()
                                     );
 
                                     trigger.fail(err);
                                 } else {
                                     String info = String.format("successfully migrated vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s]",
-                                            vmUuid, self.getUuid(), self.getManagementIp(), dstHostMigrateIp);
+                                            vmUuid, srcHostUuid, srcHostMigrateIp, dstHostMigrateIp);
                                     logger.debug(info);
 
                                     reportProgress(stage.getEnd().toString());
@@ -1244,12 +1244,17 @@ public class KVMHost extends HostBase implements Host {
                         cmd.vmInternalId = vmInternalId;
                         cmd.vmUuid = vmUuid;
                         cmd.hostManagementIp = srcHostMnIp;
-                        new Http<>(deleteConsoleFirewall, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(trigger) {
+
+                        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+                        ub.host(srcHostMnIp);
+                        ub.path(KVMConstant.KVM_DELETE_CONSOLE_FIREWALL_PATH);
+                        String url = ub.build().toString();
+                        new Http<>(url, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse ret) {
                                 if (!ret.isSuccess()) {
                                     logger.warn(String.format("failed to delete console firewall rule for the vm[uuid:%s] on" +
-                                            " the source host[uuid:%s, ip:%s], %s", vmUuid, self.getUuid(), self.getManagementIp(), ret.getError()));
+                                            " the source host[uuid:%s, ip:%s], %s", vmUuid, srcHostUuid, srcHostMigrateIp, ret.getError()));
                                 }
 
                                 trigger.next();
@@ -1259,7 +1264,7 @@ public class KVMHost extends HostBase implements Host {
                             public void fail(ErrorCode errorCode) {
                                 //TODO
                                 logger.warn(String.format("failed to delete console firewall rule for the vm[uuid:%s] on" +
-                                        " the source host[uuid:%s, ip:%s], %s", vmUuid, self.getUuid(), self.getManagementIp(), errorCode));
+                                        " the source host[uuid:%s, ip:%s], %s", vmUuid, srcHostUuid, srcHostMigrateIp, errorCode));
                                 trigger.next();
                             }
                         });
@@ -1270,7 +1275,7 @@ public class KVMHost extends HostBase implements Host {
                     @Override
                     public void handle(Map data) {
                         String info = String.format("successfully migrated vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s]",
-                                vmUuid, self.getUuid(), self.getManagementIp(), dstHostMigrateIp);
+                                vmUuid, srcHostUuid, srcHostMigrateIp, dstHostMigrateIp);
                         logger.debug(info);
                         reportProgress(parentStage.getEnd().toString());
                         completion.success();

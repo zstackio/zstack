@@ -1,11 +1,17 @@
 package org.zstack.test.integration.kvm.vm.migrate
 
+import com.google.gson.Gson
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.Constants
 import org.zstack.header.host.HostStatus
 import org.zstack.header.host.HostVO
 import org.zstack.header.host.HostVO_
+import org.zstack.header.longjob.LongJobState
+import org.zstack.header.longjob.LongJobVO
+import org.zstack.header.longjob.LongJobVO_
+import org.zstack.header.vm.APIMigrateVmMsg
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
@@ -13,6 +19,7 @@ import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.sdk.HostInventory
+import org.zstack.sdk.LongJobInventory
 import org.zstack.sdk.MigrateVmAction
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.KvmTest
@@ -31,6 +38,7 @@ class MigrateVmFromDestitonHostCase extends SubCase {
 
     @Override
     void clean() {
+        SQL.New(LongJobVO.class).delete()
         env.delete()
     }
 
@@ -39,6 +47,7 @@ class MigrateVmFromDestitonHostCase extends SubCase {
         useSpring(KvmTest.springSpec)
         spring {
             ceph()
+            include("LongJobManager.xml")
         }
     }
 
@@ -220,12 +229,8 @@ class MigrateVmFromDestitonHostCase extends SubCase {
         }
 
         // do migrate
-        migrateVm {
-            vmInstanceUuid = vm1.uuid
-            hostUuid = host.uuid
-            migrateFromDestination = true
-            allowUnknown = true
-        }
+        migrateUnknownVm(host.uuid)
+
         assert cmd != null
         assert cmd.migrateFromDestination
         assert cmd.autoConverge
@@ -277,5 +282,32 @@ class MigrateVmFromDestitonHostCase extends SubCase {
         MigrateVmAction.Result ret = action.call()
 
         assert ret.error != null
+    }
+
+    private void migrateUnknownVm(String destHostUuid) {
+        if (new Random().nextBoolean()) {
+            migrateVm {
+                vmInstanceUuid = vm1.uuid
+                hostUuid = destHostUuid
+                migrateFromDestination = true
+                allowUnknown = true
+            }
+            return
+        }
+
+        APIMigrateVmMsg msg = new APIMigrateVmMsg()
+        msg.hostUuid = destHostUuid
+        msg.vmInstanceUuid = vm1.uuid
+        msg.allowUnknown = true
+        msg.migrateFromDestination = true
+
+        LongJobInventory jobInv = submitLongJob {
+            jobName = msg.getClass().getSimpleName()
+            jobData = new Gson().toJson(msg)
+        } as LongJobInventory
+
+        assert retryInSecs() {
+            return Q.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid).select(LongJobVO_.state).findValue() == LongJobState.Succeeded
+        }
     }
 }
