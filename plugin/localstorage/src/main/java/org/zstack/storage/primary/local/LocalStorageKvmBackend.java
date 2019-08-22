@@ -54,6 +54,7 @@ import org.zstack.header.volume.VolumeVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
+import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow.CopyBitsFromRemoteCmd;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.utils.CollectionUtils;
@@ -676,6 +677,22 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public String preallocation = buildQcow2Options();
     }
 
+    public static class DownloadBitsFromKVMHostCmd extends AgentCommand {
+        public String hostname;
+        public String username;
+        public String sshKey;
+        public int sshPort;
+        // it's file path on kvm host actually
+        public String backupStorageInstallPath;
+        public String primaryStorageInstallPath;
+        public Long bandWidth;
+        public String identificationCode;
+    }
+
+    public static class CancelDownloadBitsFromKVMHostCmd extends AgentCommand {
+        public String primaryStorageInstallPath;
+    }
+
     public static final String INIT_PATH = "/localstorage/init";
     public static final String GET_PHYSICAL_CAPACITY_PATH = "/localstorage/getphysicalcapacity";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/localstorage/volume/createempty";
@@ -697,6 +714,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String GET_QCOW2_REFERENCE = "/localstorage/getqcow2reference";
     public static final String CHECK_INITIALIZED_FILE = "/localstorage/check/initializedfile";
     public static final String CREATE_INITIALIZED_FILE = "/localstorage/create/initializedfile";
+    public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/localstorage/kvmhost/download";
+    public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/localstorage/kvmhost/download/cancel";
 
     public LocalStorageKvmBackend() {
     }
@@ -2956,6 +2975,69 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         AskInstallPathForNewSnapshotReply reply = new AskInstallPathForNewSnapshotReply();
         reply.setSnapshotInstallPath(makeSnapshotInstallPath(msg.getVolumeInventory(), msg.getSnapshotUuid()));
         completion.success(reply);
+    }
+
+    @Override
+    void handle(DownloadBitsFromKVMHostToPrimaryStorageMsg msg, ReturnValueCompletion<DownloadBitsFromKVMHostToPrimaryStorageReply> completion) {
+        DownloadBitsFromKVMHostToPrimaryStorageReply reply = new DownloadBitsFromKVMHostToPrimaryStorageReply();
+
+        GetKVMHostDownloadCredentialMsg gmsg = new GetKVMHostDownloadCredentialMsg();
+        gmsg.setHostUuid(msg.getSrcHostUuid());
+
+        if (PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.hasTag(self.getUuid())) {
+            gmsg.setDataNetworkCidr(PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByResourceUuid(self.getUuid(), PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN));
+        }
+
+        bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, msg.getSrcHostUuid());
+        bus.send(gmsg, new CloudBusCallBack(reply) {
+            @Override
+            public void run(MessageReply rly) {
+                if (!rly.isSuccess()) {
+                    completion.fail(rly.getError());
+                    return;
+                }
+
+                GetKVMHostDownloadCredentialReply grly = rly.castReply();
+                DownloadBitsFromKVMHostCmd cmd = new DownloadBitsFromKVMHostCmd();
+                cmd.hostname = grly.getHostname();
+                cmd.username = grly.getUsername();
+                cmd.sshKey = grly.getSshKey();
+                cmd.sshPort = grly.getSshPort();
+                cmd.backupStorageInstallPath = msg.getHostInstallPath();
+                cmd.primaryStorageInstallPath = msg.getPrimaryStorageInstallPath();
+                cmd.bandWidth = msg.getBandWidth();
+                cmd.identificationCode = msg.getLongJobUuid() + msg.getPrimaryStorageInstallPath();
+                httpCall(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, msg.getDestHostUuid(), cmd, true, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(completion) {
+                    @Override
+                    public void success(AgentResponse rsp) {
+                        completion.success(new DownloadBitsFromKVMHostToPrimaryStorageReply());
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                    }
+                });
+            }
+        });
+
+    }
+
+    @Override
+    void handle(CancelDownloadBitsFromKVMHostToPrimaryStorageMsg msg, ReturnValueCompletion<CancelDownloadBitsFromKVMHostToPrimaryStorageReply> completion) {
+        CancelDownloadBitsFromKVMHostCmd cmd = new CancelDownloadBitsFromKVMHostCmd();
+        cmd.primaryStorageInstallPath = msg.getPrimaryStorageInstallPath();
+        httpCall(CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH, msg.getDestHostUuid(), cmd, true, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(completion) {
+            @Override
+            public void success(AgentResponse rsp) {
+                completion.success(new CancelDownloadBitsFromKVMHostToPrimaryStorageReply());
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override

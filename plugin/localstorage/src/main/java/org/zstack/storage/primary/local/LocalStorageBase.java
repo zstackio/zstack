@@ -3,6 +3,7 @@ package org.zstack.storage.primary.local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.VolumeMigrationTargetHostFilter;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
@@ -38,9 +39,12 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
+import org.zstack.kvm.GetKVMHostDownloadCredentialMsg;
+import org.zstack.kvm.GetKVMHostDownloadCredentialReply;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
+import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.tag.SystemTagCreator;
@@ -849,9 +853,47 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((LocalStorageDeleteImageCacheOnPrimaryStorageMsg) msg);
         } else if (msg instanceof MigrateVolumeOnLocalStorageMsg) {
             handle((MigrateVolumeOnLocalStorageMsg) msg);
+        } else if (msg instanceof DownloadBitsFromKVMHostToPrimaryStorageMsg) {
+            handle((DownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
+        } else if (msg instanceof CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) {
+            handle((CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(DownloadBitsFromKVMHostToPrimaryStorageMsg msg) {
+        LocalStorageHypervisorBackend bkd = getHypervisorBackendFactoryByHostUuid(msg.getSrcHostUuid()).getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<DownloadBitsFromKVMHostToPrimaryStorageReply>(msg) {
+            @Override
+            public void success(DownloadBitsFromKVMHostToPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                DownloadBitsFromKVMHostToPrimaryStorageReply reply = new DownloadBitsFromKVMHostToPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(CancelDownloadBitsFromKVMHostToPrimaryStorageMsg msg) {
+        LocalStorageHypervisorBackend bkd = getHypervisorBackendFactoryByHostUuid(msg.getDestHostUuid()).getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<CancelDownloadBitsFromKVMHostToPrimaryStorageReply>(msg) {
+            @Override
+            public void success(CancelDownloadBitsFromKVMHostToPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                CancelDownloadBitsFromKVMHostToPrimaryStorageReply reply = new CancelDownloadBitsFromKVMHostToPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @Override
