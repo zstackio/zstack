@@ -2,6 +2,7 @@ package org.zstack.storage.primary;
 
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
+import com.google.common.collect.Maps;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.configuration.DiskOfferingSystemTags;
@@ -26,7 +27,6 @@ import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator;
-import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -59,7 +59,7 @@ import static org.zstack.core.Platform.*;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmInstanceStartExtensionPoint,
-        VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint, InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator {
+        VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint, PrimaryStorageDeleteExtensionPoint, InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator {
     private static final CLogger logger = Utils.getLogger(PrimaryStorageManager.class);
 
     @Autowired
@@ -87,6 +87,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private Map<String, PrimaryStorageAllocatorStrategyFactory> allocatorFactories = Collections.synchronizedMap(new HashMap<>());
     private Map<String, PrimaryStorageLicenseInfoFactory> primaryStorageLicenseInfoFactories = Collections.synchronizedMap(new HashMap<>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
+    private Map<String, PrimaryStorageLicenseInfo> primaryStorageLicenseInfoMap = Maps.newConcurrentMap();
 
     static {
         allowedMessageAfterSoftDeletion.add(PrimaryStorageDeletionMsg.class);
@@ -132,6 +133,15 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageVO primaryStorageVO = dbf.findByUuid(msg.getUuid(), PrimaryStorageVO.class);
         if (primaryStorageVO == null) {
             reply.setError(operr("primaryStorage[uuid=%s] does not exist", msg.getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        if (primaryStorageLicenseInfoMap.containsKey(msg.getUuid())) {
+            PrimaryStorageLicenseInfo primaryStorageLicenseInfo = primaryStorageLicenseInfoMap.get(msg.getUuid());
+            reply.setUuid(primaryStorageLicenseInfo.getUuid());
+            reply.setExpireTime(primaryStorageLicenseInfo.getExpireTime());
+            reply.setName(primaryStorageVO.getName());
             bus.reply(msg, reply);
             return;
         }
@@ -348,6 +358,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
             @Override
             public void success(PrimaryStorageLicenseInfo primaryStorageLicenseInfo) {
+                primaryStorageLicenseInfoMap.put(msg.getPrimaryStorageUuid(), primaryStorageLicenseInfo);
                 reply.setPrimaryStorageLicenseInfo(primaryStorageLicenseInfo);
                 bus.reply(msg, reply);
             }
@@ -958,5 +969,20 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         if (!primaryStorageVO.getType().equalsIgnoreCase(primaryStorageAllocateConfig.getType())) {
             throw new IllegalArgumentException(String.format("primaryStorage[uuid=%s] type is %s", psUuid, primaryStorageVO.getType()));
         }
+    }
+
+    @Override
+    public void preDeletePrimaryStorage(PrimaryStorageInventory inv) throws PrimaryStorageException {
+
+    }
+
+    @Override
+    public void beforeDeletePrimaryStorage(PrimaryStorageInventory inv) {
+
+    }
+
+    @Override
+    public void afterDeletePrimaryStorage(PrimaryStorageInventory inv) {
+        primaryStorageLicenseInfoMap.remove(inv.getUuid());
     }
 }
