@@ -1045,7 +1045,7 @@ public class VolumeBase implements Volume {
 
     private void handle(OverwriteVolumeMsg msg) {
         OverwriteVolumeReply reply = new OverwriteVolumeReply();
-        VolumeInventory volume = msg.getVolume(),
+        VolumeInventory volume = msg.getOriginVolume(),
                 transientVolume = msg.getTransientVolume();
 
         if (transientVolume.isAttached() && !transientVolume.getAttachedVmUuids().equals(volume.getAttachedVmUuids())) {
@@ -1069,7 +1069,7 @@ public class VolumeBase implements Volume {
                 new While<>(volume.getAttachedVmUuids()).each((vmUuid, compl) -> {
                     AttachDataVolumeToVmMsg amsg = new AttachDataVolumeToVmMsg();
                     amsg.setVolume(msg.getTransientVolume());
-                    amsg.setVmInstanceUuid(msg.getVolume().getVmInstanceUuid());
+                    amsg.setVmInstanceUuid(msg.getOriginVolume().getVmInstanceUuid());
                     bus.makeLocalServiceId(amsg, VmInstanceConstant.SERVICE_ID);
                     bus.send(amsg, new CloudBusCallBack(trigger) {
                         @Override
