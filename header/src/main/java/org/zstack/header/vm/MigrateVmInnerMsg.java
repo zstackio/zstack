@@ -50,7 +50,7 @@ public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMes
 
     @Override
     public boolean isAllowUnknown() {
-        return false;
+        return allowUnknown;
     }
 
     public void setMigrateFromDestination(Boolean migrateFromDestination) {
