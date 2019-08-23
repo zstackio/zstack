@@ -51,7 +51,7 @@ class LocalStorageCreateVolumeByPreallocationCase extends SubCase {
                 return rsp
         }
 
-        assert Q.New(GlobalConfigVO.class).eq(GlobalConfigVO_.name, "qcow2.allocation").eq(GlobalConfigVO_.category, "localStoragePrimaryStorage").select(GlobalConfigVO_.value).findValue() == "none"
+        assert Q.New(GlobalConfigVO.class).eq(GlobalConfigVO_.name, "qcow2.allocation").eq(GlobalConfigVO_.category, "localStoragePrimaryStorage").select(GlobalConfigVO_.value).findValue() == "falloc"
         createDataVolume {
             name = "v1"
             diskOfferingUuid = diskOfferingInventory.uuid
@@ -59,7 +59,7 @@ class LocalStorageCreateVolumeByPreallocationCase extends SubCase {
             systemTags = ["localStorage::hostUuid::${host.uuid}".toString()]
         }
         retryInSecs {
-            assert cmd.preallocation == ""
+            assert cmd.preallocation == " -o preallocation=falloc "
         }
 
         updateGlobalConfig {
