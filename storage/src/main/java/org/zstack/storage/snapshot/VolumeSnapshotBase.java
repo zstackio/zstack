@@ -3,12 +3,14 @@ package org.zstack.storage.snapshot;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -228,15 +230,24 @@ public class VolumeSnapshotBase implements VolumeSnapshot {
                             c.done();
                         }
                     });
-                }).run(new NoErrorCompletion() {
+                }).run(new NoErrorCompletion(msg) {
                     @Override
                     public void done() {
                         VolumeSnapshotPrimaryStorageDeletionReply dreply = new VolumeSnapshotPrimaryStorageDeletionReply();
+                        try {
+                            updateDb();
+                        } catch (DataIntegrityViolationException e) {
+                            // volume snapshot group may has been removed, try again.
+                            updateDb();
+                        }
+                        bus.reply(msg, dreply);
+                    }
+
+                    private void updateDb() {
                         self = dbf.reload(self);
                         self.setPrimaryStorageInstallPath(null);
                         self.setPrimaryStorageUuid(null);
                         dbf.update(self);
-                        bus.reply(msg, dreply);
                     }
                 });
             }

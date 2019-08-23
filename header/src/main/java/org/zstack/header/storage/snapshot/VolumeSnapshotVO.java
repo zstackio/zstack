@@ -70,7 +70,7 @@ public class VolumeSnapshotVO extends VolumeSnapshotAO implements OwnedByAccount
     @Override
     public void setPrimaryStorageInstallPath(String primaryStorageInstallPath) {
         super.setPrimaryStorageInstallPath(primaryStorageInstallPath);
-        if (groupRef != null) {
+        if (groupRef != null && primaryStorageInstallPath != null) {
             groupRef.setVolumeSnapshotInstallPath(primaryStorageInstallPath);
         }
     }
