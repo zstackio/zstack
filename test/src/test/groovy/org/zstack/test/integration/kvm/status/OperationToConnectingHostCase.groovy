@@ -84,7 +84,7 @@ class OperationToConnectingHostCase extends SubCase {
         a1.uuid = hostUuid
         a1.sessionId = currentEnvSpec.session.uuid
 
-        assert a1.call().error != null
+        assert a1.call().error == null
 
         hvo = dbf.findByUuid(hostUuid, HostVO.class)
         hvo.status = HostStatus.Connected
@@ -92,14 +92,10 @@ class OperationToConnectingHostCase extends SubCase {
         dbf.updateAndRefresh(hvo)
 
         UpdateKVMHostAction a2 = new UpdateKVMHostAction()
-        a2.username = ""
+        a2.username = "hehehe"
         a2.uuid = hostUuid
         a2.sessionId = currentEnvSpec.session.uuid
 
-        try {
-            a2.call()
-        }catch (ApiException e){
-            assert -1 < e.message.indexOf("username")
-        }
+        assert a2.call().error == null
     }
 }
