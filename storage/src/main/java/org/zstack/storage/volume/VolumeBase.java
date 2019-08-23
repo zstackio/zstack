@@ -1119,6 +1119,7 @@ public class VolumeBase implements Volume {
                                 .set(VolumeVO_.primaryStorageUuid, transientVolume.getPrimaryStorageUuid())
                                 .set(VolumeVO_.actualSize, transientVolume.getActualSize())
                                 .update();
+                        flush();
                     }
                 }.execute();
                 trigger.next();
