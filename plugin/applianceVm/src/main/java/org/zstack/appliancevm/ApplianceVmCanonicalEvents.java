@@ -6,6 +6,8 @@ import org.zstack.header.message.NeedJsonSchema;
 public class ApplianceVmCanonicalEvents {
     public static final String DISCONNECTED_PATH = "/appliance-vm/disconnected";
     public static final String APPLIANCEVM_STATUS_CHANGED_PATH = "/appliance-vm/status/change";
+    public static final String SERVICE_UNHEALTHY_PATH = "/appliance-vm/sevice/unhealthy";
+    public static final String SERVICE_HEALTHY_PATH = "/appliance-vm/sevice/healthy";
 
     @NeedJsonSchema
     public static class ApplianceVmStatusChangedData {
@@ -74,6 +76,45 @@ public class ApplianceVmCanonicalEvents {
 
         public void setReason(ErrorCode reason) {
             this.reason = reason;
+        }
+    }
+
+    public static class ServiceHealthData {
+        private String applianceVmUuid;
+        private String applianceVmType;
+        private Boolean healthy;
+        private ErrorCode reason;
+
+        public String getApplianceVmUuid() {
+            return applianceVmUuid;
+        }
+
+        public void setApplianceVmUuid(String applianceVmUuid) {
+            this.applianceVmUuid = applianceVmUuid;
+        }
+
+        public String getApplianceVmType() {
+            return applianceVmType;
+        }
+
+        public void setApplianceVmType(String applianceVmType) {
+            this.applianceVmType = applianceVmType;
+        }
+
+        public ErrorCode getReason() {
+            return reason;
+        }
+
+        public void setReason(ErrorCode reason) {
+            this.reason = reason;
+        }
+
+        public Boolean getHealthy() {
+            return healthy;
+        }
+
+        public void setHealthy(Boolean healthy) {
+            this.healthy = healthy;
         }
     }
 }

@@ -721,6 +721,8 @@ public class VirtualRouterCommands {
 		private String uuid;
 		private String version;
 		private String haStatus;
+		private Boolean healthy;
+		private String healthDetail;
 
 		public String getUuid() {
 			return uuid;
@@ -744,6 +746,22 @@ public class VirtualRouterCommands {
 
 		public void setHaStatus(String haStatus) {
 			this.haStatus = haStatus;
+		}
+
+		public Boolean getHealthy() {
+			return healthy;
+		}
+
+		public void setHealthy(Boolean healthy) {
+			this.healthy = healthy;
+		}
+
+		public String getHealthDetail() {
+			return healthDetail;
+		}
+
+		public void setHealthDetail(String healthDetail) {
+			this.healthDetail = healthDetail;
 		}
 	}
 }

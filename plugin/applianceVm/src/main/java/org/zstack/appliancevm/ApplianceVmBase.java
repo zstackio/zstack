@@ -440,6 +440,25 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         return chain;
     }
 
+    protected void fireServiceUnhealthyCanonicalEvent(ErrorCode err) {
+        ApplianceVmCanonicalEvents.ServiceHealthData data = new ApplianceVmCanonicalEvents.ServiceHealthData();
+        data.setApplianceVmType(getSelf().getApplianceVmType());
+        data.setApplianceVmUuid(self.getUuid());
+        data.setHealthy(false);
+        data.setReason(err);
+
+        evtf.fire(ApplianceVmCanonicalEvents.SERVICE_UNHEALTHY_PATH, data);
+    }
+
+    protected void fireServicehealthyCanonicalEvent() {
+        ApplianceVmCanonicalEvents.ServiceHealthData data = new ApplianceVmCanonicalEvents.ServiceHealthData();
+        data.setApplianceVmType(getSelf().getApplianceVmType());
+        data.setApplianceVmUuid(self.getUuid());
+        data.setHealthy(true);
+
+        evtf.fire(ApplianceVmCanonicalEvents.SERVICE_HEALTHY_PATH, data);
+    }
+
     protected void fireDisconnectedCanonicalEvent(ErrorCode err) {
         ApplianceVmCanonicalEvents.DisconnectedData data = new ApplianceVmCanonicalEvents.DisconnectedData();
         data.setApplianceVmType(getSelf().getApplianceVmType());
