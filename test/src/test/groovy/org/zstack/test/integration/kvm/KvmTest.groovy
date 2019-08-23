@@ -22,6 +22,7 @@ class KvmTest extends Test {
         eip()
         lb()
         portForwarding()
+        include("LongJobManager.xml")
     }
 
     @Override
