@@ -1,7 +1,6 @@
 package org.zstack.network.service.virtualrouter;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.compute.vm.VmNicExtensionPoint;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -16,7 +15,6 @@ import org.zstack.header.managementnode.ManagementNodeInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -68,8 +66,8 @@ public class VirtualRouterPingTracker extends PingTracker implements ManagementN
         }
 
         PingVirtualRouterVmReply pr = reply.castReply();
-        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-            ext.afterReceiveTracerReply(resourceUuid, pr);
+        for (VirtualRouterTrackerExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterTrackerExtensionPoint.class)) {
+            ext.handleTracerReply(resourceUuid, pr);
         }
 
         if (!pr.isDoReconnect() || pr.isConnected()) {

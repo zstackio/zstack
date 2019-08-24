@@ -42,6 +42,7 @@ import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import java.util.*;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.inerr;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.ADDITIONAL_PUBLIC_NIC_MASK;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.GUEST_NIC_MASK;
 
@@ -182,6 +183,11 @@ public class VirtualRouter extends ApplianceVmBase {
                             }
                             reply.setConnected(connected);
                             reply.setHaStatus(ret.getHaStatus());
+                            if ((!ret.getHealthy()) && (ret.getHealthDetail() != null)) {
+                                fireServiceUnhealthyCanonicalEvent(inerr("virtual router %s unhealthy, detail %s", getSelf().getUuid(), ret.getHealthDetail()));
+                            } else {
+                                fireServicehealthyCanonicalEvent();
+                            }
                         }
                         bus.reply(msg, reply);
                         chain.next();
