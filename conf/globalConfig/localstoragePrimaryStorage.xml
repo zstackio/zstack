@@ -10,7 +10,7 @@
 	<config>
 		<name>qcow2.allocation</name>
 		<description>qcow2 allocation policy, can be none, metadata, falloc, full</description>
-		<defaultValue>falloc</defaultValue>
+		<defaultValue>none</defaultValue>
 		<category>localStoragePrimaryStorage</category>
 		<type>java.lang.String</type>
 	</config>
