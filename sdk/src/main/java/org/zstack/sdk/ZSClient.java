@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -420,7 +421,7 @@ public class ZSClient {
 
                     if (v instanceof Collection) {
                         for (Object o : (Collection) v) {
-                            builder.addQueryParameter(k, o.toString());
+                            builder.addEncodedQueryParameter(k, URLEncoder.encode(o.toString(), "UTF-8"));
                         }
                     } else if (v instanceof Map) {
                         for (Object o : ((Map) v).entrySet()) {
