@@ -75,6 +75,11 @@
                                         <include>context.xml</include>
                                     </includes>
                                 </resource>
+                                <resource>
+                                    <directory>../premium/plugin-premium/externalapiadapter/ext-libs</directory>
+                                    <targetPath>WEB-INF/lib</targetPath>
+                                    <includes>*.jar</includes>
+                                </resource>
                             </webResources>
                         </configuration>
                     </plugin>
