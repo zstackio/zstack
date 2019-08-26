@@ -57,9 +57,10 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new KvmBackend.AgentRsp()
             }
 
-            simulator(KvmBackend.REVERT_VOLUME_FROM_SNAPSHOT_PATH) {
+            simulator(KvmBackend.REVERT_VOLUME_FROM_SNAPSHOT_PATH) { HttpEntity<String> e ->
+                def cmd = JSONObjectUtil.toObject(e.body, KvmBackend.RevertVolumeFromSnapshotCmd.class)
                 def rsp = new KvmBackend.RevertVolumeFromSnapshotRsp()
-                rsp.newVolumeInstallPath = "/new/path"
+                rsp.newVolumeInstallPath = cmd.snapshotInstallPath + "/newpath"
                 return rsp
             }
 
