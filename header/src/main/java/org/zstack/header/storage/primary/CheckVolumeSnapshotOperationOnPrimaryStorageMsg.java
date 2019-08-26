@@ -10,6 +10,7 @@ import java.util.List;
  */
 public class CheckVolumeSnapshotOperationOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private List<String> volumeSnapshotUuids;
+    private String vmInstanceUuid;
     private String primaryStorageUuid;
     private SnapshotBackendOperation operation;
 
@@ -36,5 +37,13 @@ public class CheckVolumeSnapshotOperationOnPrimaryStorageMsg extends NeedReplyMe
 
     public void setOperation(SnapshotBackendOperation operation) {
         this.operation = operation;
+    }
+
+    public String getVmInstanceUuid() {
+        return vmInstanceUuid;
+    }
+
+    public void setVmInstanceUuid(String vmInstanceUuid) {
+        this.vmInstanceUuid = vmInstanceUuid;
     }
 }
