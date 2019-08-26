@@ -120,6 +120,9 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                         .param("psUuids", requiredPsUuids)
                         .param("phStatus", PrimaryStorageHostStatus.Disconnected)
                         .list();
+                if (huuids.isEmpty()) {
+                    return new ArrayList<>();
+                }
             } else {
                 return new ArrayList<>();
             }
