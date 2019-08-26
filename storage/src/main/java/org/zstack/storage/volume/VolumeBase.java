@@ -1654,18 +1654,21 @@ public class VolumeBase implements Volume {
     private List<VmInstanceVO> getVmInstancesWithoutClusterInfo(List<String> accessibleVmUuids) {
         SQL sql = null;
         if (self.getStatus() == VolumeStatus.Ready) {
+            String primaryStorageUuid = self.getPrimaryStorageUuid();
+
             List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
             sql = SQL.New("select vm" +
                     " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, VolumeVO vol" +
-                    " where vol.uuid = :volUuid" +
-                    " and ref.primaryStorageUuid = vol.primaryStorageUuid" +
+                    " where vol.uuid = vm.rootVolumeUuid" +
+                    " and ref.primaryStorageUuid = :primaryStorageUuid" +
+                    " and vol.primaryStorageUuid = :primaryStorageUuid" +
                     (accessibleVmUuids == null ? "" : " and vm.uuid in (:vmUuids)") +
                     " and vm.clusterUuid is NULL" +
                     " and vm.type = :vmType" +
                     " and vm.state in (:vmStates)" +
                     " and vm.hypervisorType in (:hvTypes)" +
                     " group by vm.uuid")
-                    .param("volUuid", self.getUuid())
+                    .param("primaryStorageUuid", primaryStorageUuid)
                     .param("vmType", VmInstanceConstant.USER_VM_TYPE)
                     .param("hvTypes", hvTypes);
         } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
