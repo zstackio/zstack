@@ -1,9 +1,6 @@
 package org.zstack.core.log;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.path.PathUtil;
 import javax.xml.parsers.DocumentBuilder;
@@ -20,6 +17,9 @@ import java.io.File;
 public class Log4jXMLModifier {
     private String log4jXMLPath;
     private Document doc;
+
+    private static final String TAG_NAME_IFACCUMULATEDFILESIZE = "IfAccumulatedFileSize";
+    private static final String TAG_NAME_IFLASTMODIFIED = "IfLastModified";
 
     public Log4jXMLModifier() throws Exception{
         log4jXMLPath = PathUtil.findFileOnClassPath("log4j2.xml", true).getAbsolutePath();
@@ -110,8 +110,11 @@ public class Log4jXMLModifier {
     public String getLogRetentionSize(String rollingFileName) {
         Node rollingFileNode = getRollingFileNode(rollingFileName);
         assert rollingFileNode != null : "log4j xml file has error";
-        Node ifAccumulatedFileSizeNode = findAnyChildNode(rollingFileNode, "IfAccumulatedFileSize");
-        assert ifAccumulatedFileSizeNode != null : "log4j xml file has error";
+        Node ifAccumulatedFileSizeNode = findAnyChildNode(rollingFileNode, TAG_NAME_IFACCUMULATEDFILESIZE);
+        if (ifAccumulatedFileSizeNode == null) {
+            return "-1 MB";
+        }
+
         NamedNodeMap attrs = ifAccumulatedFileSizeNode.getAttributes();
         Node exceedsAttr = attrs.getNamedItem("exceeds");
         assert exceedsAttr != null : "log4j xml file has error";
@@ -121,8 +124,11 @@ public class Log4jXMLModifier {
     public String getLogRetentionDays(String rollingFileName) {
         Node rollingFileNode = getRollingFileNode(rollingFileName);
         assert rollingFileNode != null : "log4j xml file has error";
-        Node ifLastModifiedNode = findAnyChildNode(rollingFileNode, "IfLastModified");
-        assert ifLastModifiedNode != null : "log4j xml file has error";
+        Node ifLastModifiedNode = findAnyChildNode(rollingFileNode, TAG_NAME_IFLASTMODIFIED);
+        if (ifLastModifiedNode == null) {
+            return "-1d";
+        }
+
         NamedNodeMap attrs = ifLastModifiedNode.getAttributes();
         Node ageAttr = attrs.getNamedItem("age");
         assert ageAttr != null : "log4j xml file has error";
@@ -141,9 +147,28 @@ public class Log4jXMLModifier {
     private void setAccumulatedFileSize(String rollingFileName, long sizeMB) {
         Node rollingFileNode = getRollingFileNode(rollingFileName);
         assert rollingFileNode != null;
+        Node deleteNode = findAnyChildNode(rollingFileNode, "Delete");
+        assert deleteNode != null;
+        Node ifAnyNode = findAnyChildNode(deleteNode, "IfAny");
+        assert ifAnyNode != null;
+        Node ifAccumulatedFileSizeNode = findAnyChildNode(ifAnyNode, TAG_NAME_IFACCUMULATEDFILESIZE);
 
-        Node ifAccumulatedFileSizeNode = findAnyChildNode(rollingFileNode, "IfAccumulatedFileSize");
-        assert ifAccumulatedFileSizeNode != null;
+        // delete IfAccumulatedFileSize
+        if (sizeMB < 0) {
+            if (ifAccumulatedFileSizeNode == null) {
+                return;
+            }
+
+            ifAnyNode.removeChild(ifAccumulatedFileSizeNode);
+            return;
+        }
+
+        if (ifAccumulatedFileSizeNode == null) {
+            Element node = doc.createElement(TAG_NAME_IFACCUMULATEDFILESIZE);
+            node.setAttribute("exceeds", String.format("%s MB", sizeMB));
+            ifAnyNode.appendChild(node);
+            return;
+        }
 
         NamedNodeMap attrs = ifAccumulatedFileSizeNode.getAttributes();
         Node exceedsAttr = attrs.getNamedItem("exceeds");
@@ -154,9 +179,28 @@ public class Log4jXMLModifier {
     private void setLastModifiedAge(String rollingFileName, long day) {
         Node rollingFileNode = getRollingFileNode(rollingFileName);
         assert rollingFileNode != null;
+        Node deleteNode = findAnyChildNode(rollingFileNode, "Delete");
+        assert deleteNode != null;
+        Node ifAnyNode = findAnyChildNode(deleteNode, "IfAny");
+        assert ifAnyNode != null;
+        Node ifLastModifiedNode = findAnyChildNode(ifAnyNode, TAG_NAME_IFLASTMODIFIED);
 
-        Node ifLastModifiedNode = findAnyChildNode(rollingFileNode, "IfLastModified");
-        assert ifLastModifiedNode != null;
+        // delete IfLastModified
+        if (day < 0) {
+            if (ifLastModifiedNode == null) {
+                return;
+            }
+
+            ifAnyNode.removeChild(ifLastModifiedNode);
+            return;
+        }
+
+        if (ifLastModifiedNode == null) {
+            Element node = doc.createElement(TAG_NAME_IFLASTMODIFIED);
+            node.setAttribute("age", String.format("%sd", day));
+            ifAnyNode.appendChild(node);
+            return;
+        }
 
         NamedNodeMap attrs = ifLastModifiedNode.getAttributes();
         Node ageAttr = attrs.getNamedItem("age");
