@@ -16,5 +16,9 @@ public interface DebugManager {
         hs.add(handler);
     }
 
+    default List<String> getDebugSignals() {
+        return new ArrayList<>(sigHandlers.keySet());
+    }
+
     void handleSig(String sig);
 }

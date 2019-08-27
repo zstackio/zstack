@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.header.AbstractService;
 import org.zstack.header.message.Message;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,7 +31,15 @@ public class DebugManagerImpl extends AbstractService implements DebugManager {
     public void handleMessage(Message msg) {
         if (msg instanceof APIDebugSignalMsg) {
             handle((APIDebugSignalMsg)msg);
+        } else if (msg instanceof APIGetDebugSignalMsg) {
+            handle((APIGetDebugSignalMsg) msg);
         }
+    }
+
+    private void handle(APIGetDebugSignalMsg msg) {
+        APIGetDebugSignalReply reply = new APIGetDebugSignalReply();
+        reply.setSignals(getDebugSignals());
+        bus.reply(msg, reply);
     }
 
     private void handle(APIDebugSignalMsg msg) {
