@@ -19,7 +19,6 @@ import org.zstack.core.debug.DebugManager;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.thread.AsyncThread;
-import org.zstack.core.thread.DispatchQueue;
 import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -331,8 +330,10 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         sigUsr2 = true;
     }
 
-    private void dumpTaskQueue() {
-        debugManager.handleSig(DispatchQueue.DUMP_TASK_DEBUG_SINGAL);
+    private void dumpDebugMessages() {
+        for (String signal : debugManager.getDebugSignals()) {
+            debugManager.handleSig(signal);
+        }
     }
 
     @Override
@@ -570,7 +571,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             while (isRunning) {
                 try {
                     if (this.sigUsr2) {
-                        dumpTaskQueue();
+                        dumpDebugMessages();
                         this.sigUsr2 = false;
                     }
                     this.wait(TimeUnit.SECONDS.toMillis(1));

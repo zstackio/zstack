@@ -5,4 +5,8 @@
     <message>
         <name>org.zstack.core.debug.APIDebugSignalMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.core.debug.APIGetDebugSignalMsg</name>
+    </message>
 </service>
