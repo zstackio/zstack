@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.Constants
+import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.primary.PingPrimaryStorageMsg
 import org.zstack.header.storage.primary.PrimaryStorageConstant
@@ -17,6 +18,7 @@ import org.zstack.header.tag.SystemTagVO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.sdk.CreateVmInstanceAction
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
@@ -45,6 +47,11 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
     VmInstanceInventory vmInv1, vmInv2
     HostInventory host1, host2, host3
     PrimaryStorageInventory ps1, ps2
+    ImageInventory image
+    L3NetworkInventory l3
+    InstanceOfferingInventory ins
+    DiskOfferingInventory diskOffering
+
     Set<List<String>> disConnectHostPsRef = []
     boolean remountCalled = false
     CloudBus bus
@@ -74,6 +81,11 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
             host3 = env.inventoryByName("kvm3") as HostInventory // in cluster 2
             ps1 = env.inventoryByName("nfs1") as PrimaryStorageInventory // attach cluster 1, cluster 2
             ps2 = env.inventoryByName("nfs2") as PrimaryStorageInventory // attach cluster 1
+            image = env.inventoryByName("image1") as ImageInventory
+            l3 = env.inventoryByName("l3") as L3NetworkInventory
+            ins = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+            diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
+
             bus = bean(CloudBus)
             simulatorEnv()
             testCreateAndStartVmNotOnHostDisconnectNfs()
@@ -116,12 +128,33 @@ class MultiNfsAttachMultiClusterMultiHostCase extends SubCase{
         }
     }
 
-    void testCreateAndStartVmNotOnHostDisconnectNfs(){
-        ImageInventory image = env.inventoryByName("image1") as ImageInventory
-        L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
-        InstanceOfferingInventory ins = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
-        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
+    void testCreateVmSpecifyHost() {
+        disconnectHostPS(host1.uuid, ps1.uuid)
+        disconnectHostPS(host1.uuid, ps2.uuid)
 
+        def a = new CreateVmInstanceAction()
+        a.name == "vm3"
+        a.instanceOfferingUuid = ins.uuid
+        a.imageUuid = image.uuid
+        a.l3NetworkUuids = [l3.uuid]
+        a.sessionId = env.session.uuid
+        a.hostUuid = host1.uuid
+
+        assert a.call().error.code == SysErrors.OPERATION_ERROR
+
+        recoverConnectHostPS()
+
+        disconnectHostPS(host1.uuid, ps2.uuid)
+
+        // try again
+        def vm3 = a.call().value.inventory
+
+        assert vm3.hostUuid == host1.uuid
+        assert vm3.allVolumes.size() == 1
+        assert vm3.allVolumes[0].primaryStorageUuid == ps1.uuid
+    }
+
+    void testCreateAndStartVmNotOnHostDisconnectNfs(){
         disconnectHostPS(host1.uuid, ps1.uuid)
         disconnectHostPS(host2.uuid, ps2.uuid)
 
