@@ -10,6 +10,7 @@ import org.zstack.core.cloudbus.AutoOffEventCallback;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -839,6 +840,18 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(CheckVolumeSnapshotOperationOnPrimaryStorageMsg msg) {
-        bus.reply(msg, new CheckVolumeSnapshotOperationOnPrimaryStorageReply());
+        CheckVolumeSnapshotOperationOnPrimaryStorageReply reply = new CheckVolumeSnapshotOperationOnPrimaryStorageReply();
+        if (msg.getVmInstanceUuid() != null) {
+            HostStatus hostStatus = SQL.New("select host.status from VmInstanceVO vm, HostVO host" +
+                    " where vm.uuid = :vmUuid" +
+                    " and vm.hostUuid = host.uuid", HostStatus.class)
+                    .param("vmUuid", msg.getVmInstanceUuid())
+                    .find();
+            if (hostStatus != HostStatus.Connected && hostStatus != null) {
+                reply.setError(err(HostErrors.HOST_IS_DISCONNECTED, "host where vm[uuid:%s] locate is not Connected.", msg.getVmInstanceUuid()));
+            }
+        }
+
+        bus.reply(msg, reply);
     }
 }

@@ -1400,6 +1400,18 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(CheckVolumeSnapshotOperationOnPrimaryStorageMsg msg) {
-        bus.reply(msg, new CheckVolumeSnapshotOperationOnPrimaryStorageReply());
+        CheckVolumeSnapshotOperationOnPrimaryStorageReply reply = new CheckVolumeSnapshotOperationOnPrimaryStorageReply();
+        if (msg.getVmInstanceUuid() != null) {
+            HostStatus hostStatus = SQL.New("select host.status from VmInstanceVO vm, HostVO host" +
+                    " where vm.uuid = :vmUuid" +
+                    " and vm.hostUuid = host.uuid", HostStatus.class)
+                    .param("vmUuid", msg.getVmInstanceUuid())
+                    .find();
+            if (hostStatus != HostStatus.Connected && hostStatus != null) {
+                reply.setError(err(HostErrors.HOST_IS_DISCONNECTED, "host where vm[uuid:%s] locate is not Connected.", msg.getVmInstanceUuid()));
+            }
+        }
+
+        bus.reply(msg, reply);
     }
 }

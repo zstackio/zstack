@@ -1,7 +1,10 @@
 package org.zstack.simulator.storage.primary;
 
+import org.zstack.core.db.SQL;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.host.HostErrors;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.simulator.SimulatorConstant;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
@@ -10,6 +13,8 @@ import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtils;
+
+import static org.zstack.core.Platform.err;
 
 
 public class SimulatorPrimaryStorage extends PrimaryStorageBase {
@@ -204,6 +209,18 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(CheckVolumeSnapshotOperationOnPrimaryStorageMsg msg) {
-        bus.reply(msg, new CheckVolumeSnapshotOperationOnPrimaryStorageReply());
+        CheckVolumeSnapshotOperationOnPrimaryStorageReply reply = new CheckVolumeSnapshotOperationOnPrimaryStorageReply();
+        if (msg.getVmInstanceUuid() != null) {
+            HostStatus hostStatus = SQL.New("select host.status from VmInstanceVO vm, HostVO host" +
+                    " where vm.uuid = :vmUuid" +
+                    " and vm.hostUuid = host.uuid", HostStatus.class)
+                    .param("vmUuid", msg.getVmInstanceUuid())
+                    .find();
+            if (hostStatus != HostStatus.Connected && hostStatus != null) {
+                reply.setError(err(HostErrors.HOST_IS_DISCONNECTED, "host where vm[uuid:%s] locate is not Connected.", msg.getVmInstanceUuid()));
+            }
+        }
+
+        bus.reply(msg, reply);
     }
 }
