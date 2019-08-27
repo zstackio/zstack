@@ -4,13 +4,14 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.PolicyVO;
+import org.zstack.header.identity.StatementEffect;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 @RestRequest(path = "/identities/roles", method = HttpMethod.POST, responseClass = APICreateRoleEvent.class, parameterName = "params")
 public class APICreateRoleMsg extends APICreateMessage {
@@ -58,7 +59,12 @@ public class APICreateRoleMsg extends APICreateMessage {
         APICreateRoleMsg msg = new APICreateRoleMsg();
         msg.setName("role-1");
         msg.setPolicyUuids(asList(uuid()));
-        msg.setStatements(asList("statement for test"));
+
+        PolicyStatement statement = new PolicyStatement();
+        statement.setEffect(StatementEffect.Allow);
+        statement.setActions(asList("org.zstack.header.vm.APICreateVmInstanceMsg"));
+        statement.setName("statement for test");
+        msg.setStatements(asList(statement));
         msg.setDescription("role for test");
 
         return msg;

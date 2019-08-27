@@ -6,7 +6,7 @@ import org.zstack.header.rest.RestRequest;
 
 import java.util.List;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 @RestRequest(path = "/identities/roles/{uuid}/policy-statements", method = HttpMethod.DELETE, responseClass = APIRemovePolicyStatementsFromRoleEvent.class)
 public class APIRemovePolicyStatementsFromRoleMsg extends APIMessage implements RoleMessage {

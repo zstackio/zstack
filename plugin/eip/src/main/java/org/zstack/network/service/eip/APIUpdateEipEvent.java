@@ -6,7 +6,7 @@ import org.zstack.header.vm.VmNicInventory;
 
 import java.sql.Timestamp;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 /**
  * Created by frank on 6/15/2015.

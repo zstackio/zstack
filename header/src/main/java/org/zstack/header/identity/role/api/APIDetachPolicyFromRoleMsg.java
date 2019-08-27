@@ -7,7 +7,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 @RestRequest(path = "/identities/policies/{policyUuid}/roles/{roleUuid}", method = HttpMethod.DELETE, responseClass = APIDetachPolicyFromRoleEvent.class)
 public class APIDetachPolicyFromRoleMsg extends APIMessage implements RoleMessage {

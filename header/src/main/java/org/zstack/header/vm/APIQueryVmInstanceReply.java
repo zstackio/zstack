@@ -12,7 +12,7 @@ import org.zstack.utils.data.SizeUnit;
 import java.sql.Timestamp;
 import java.util.List;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 @RestResponse(allTo = "inventories")
 public class APIQueryVmInstanceReply extends APIQueryReply {

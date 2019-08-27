@@ -12,7 +12,7 @@ import org.zstack.utils.data.SizeUnit;
 import java.sql.Timestamp;
 import java.util.List;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 /**
  * Created by xing5 on 2016/9/20.

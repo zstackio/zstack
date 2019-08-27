@@ -9,7 +9,7 @@ import org.zstack.network.service.virtualrouter.ha.VirtualRouterConfigProxy;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 public class VipConfigProxy extends VirtualRouterConfigProxy implements ApplianceVmSyncConfigToHaGroupExtensionPoint {
     @Override

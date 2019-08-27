@@ -11,7 +11,7 @@ import org.zstack.utils.data.SizeUnit;
 
 import java.sql.Timestamp;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 @RestResponse(allTo = "inventory")
 public class APIAttachVmNicToVmEvent extends APIEvent {
