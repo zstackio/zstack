@@ -73,13 +73,19 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
                     " and host.clusterUuid = ref.clusterUuid" +
                     " and ref.primaryStorageUuid = pri.uuid" +
                     " and pri.status = :status" +
-                    " and pri.state = :priState";
+                    " and pri.state = :priState" +
+                    " and pri.uuid not in (" +
+                    " select phref.primaryStorageUuid from PrimaryStorageHostRefVO phref" +
+                    " where phref.hostUuid = :huuid" +
+                    " and phref.status != :phStatus" +
+                    " )";
             query = dbf.getEntityManager().createQuery(sql, PrimaryStorageVO.class);
             query.setParameter("huuid", spec.getRequiredHostUuid());
             query.setParameter("priState", PrimaryStorageState.Enabled);
             query.setParameter("status", PrimaryStorageStatus.Connected);
+            query.setParameter("phStatus", PrimaryStorageHostStatus.Connected);
             errorInfo = String.format("cannot find primary storage satisfying conditions" +
-                            "[attached to cluster having host:%s, state:%s, status: %s, available capacity > %s",
+                            "[connected to host:%s, state:%s, status: %s, available capacity > %s",
                     spec.getRequiredHostUuid(), PrimaryStorageState.Enabled, PrimaryStorageStatus.Connected, spec.getSize());
         } else if (spec.getRequiredClusterUuids() != null && !spec.getRequiredClusterUuids().isEmpty()) {
             sql = "select pri" +
