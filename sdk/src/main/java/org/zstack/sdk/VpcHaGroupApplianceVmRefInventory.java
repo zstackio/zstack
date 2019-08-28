@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class VpcHaGroupApplianceVmInventory  {
+public class VpcHaGroupApplianceVmRefInventory  {
 
     public java.lang.String uuid;
     public void setUuid(java.lang.String uuid) {
