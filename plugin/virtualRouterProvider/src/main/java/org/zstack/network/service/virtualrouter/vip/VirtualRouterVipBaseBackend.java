@@ -35,7 +35,7 @@ import static org.zstack.core.Platform.operr;
 
 import java.util.*;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 /**
  * Created by xing5 on 2016/11/20.

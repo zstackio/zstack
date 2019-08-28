@@ -8,7 +8,7 @@ import org.zstack.header.storage.backup.BackupStorageMessage;
 
 import java.util.List;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 /**
  * Created by frank on 8/1/2015.

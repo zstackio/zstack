@@ -6,7 +6,7 @@ import org.zstack.header.identity.role.RoleType;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 @RestResponse
 public class APIDetachRoleFromAccountEvent extends APIEvent {

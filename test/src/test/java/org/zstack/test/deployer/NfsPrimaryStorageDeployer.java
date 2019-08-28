@@ -16,7 +16,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.List;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class NfsPrimaryStorageDeployer implements PrimaryStorageDeployer<NfsPrimaryStorageConfig> {

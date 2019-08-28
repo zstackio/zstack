@@ -9,7 +9,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
 
 import java.util.List;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 /**
  * Created by frank on 8/6/2015.

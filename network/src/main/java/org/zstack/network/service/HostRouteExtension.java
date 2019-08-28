@@ -19,7 +19,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 

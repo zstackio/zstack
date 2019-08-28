@@ -5,7 +5,7 @@ import org.zstack.header.rest.RestResponse;
 
 import java.util.Arrays;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 /**
  */

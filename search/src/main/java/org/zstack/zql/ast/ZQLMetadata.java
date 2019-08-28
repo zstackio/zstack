@@ -16,7 +16,7 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 public class ZQLMetadata {
     private static final CLogger logger = Utils.getLogger(ZQLMetadata.class);

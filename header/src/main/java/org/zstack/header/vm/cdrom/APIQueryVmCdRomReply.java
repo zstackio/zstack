@@ -4,7 +4,7 @@ import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
 import java.sql.Timestamp;
 import java.util.List;
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Arrays.asList;
 
 @RestResponse(allTo = "inventories")
 public class APIQueryVmCdRomReply extends APIQueryReply {
