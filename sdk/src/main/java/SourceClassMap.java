@@ -242,7 +242,7 @@ public class SourceClassMap {
 			put("org.zstack.header.volume.VolumeInventory", "org.zstack.sdk.VolumeInventory");
 			put("org.zstack.header.vpc.VpcRouterDnsInventory", "org.zstack.sdk.VpcRouterDnsInventory");
 			put("org.zstack.header.vpc.VpcRouterVmInventory", "org.zstack.sdk.VpcRouterVmInventory");
-			put("org.zstack.header.vpc.ha.VpcHaGroupApplianceVmInventory", "org.zstack.sdk.VpcHaGroupApplianceVmInventory");
+			put("org.zstack.header.vpc.ha.VpcHaGroupApplianceVmRefInventory", "org.zstack.sdk.VpcHaGroupApplianceVmRefInventory");
 			put("org.zstack.header.vpc.ha.VpcHaGroupInventory", "org.zstack.sdk.VpcHaGroupInventory");
 			put("org.zstack.header.vpc.ha.VpcHaGroupMonitorIpInventory", "org.zstack.sdk.VpcHaGroupMonitorIpInventory");
 			put("org.zstack.header.vpc.ha.VpcHaGroupNetworkServiceRefInventory", "org.zstack.sdk.VpcHaGroupNetworkServiceRefInventory");
@@ -845,7 +845,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VpcFirewallRuleSetInventory", "org.zstack.vpcfirewall.entity.VpcFirewallRuleSetInventory");
 			put("org.zstack.sdk.VpcFirewallRuleSetL3RefInventory", "org.zstack.vpcfirewall.entity.VpcFirewallRuleSetL3RefInventory");
 			put("org.zstack.sdk.VpcFirewallVRouterRefInventory", "org.zstack.vpcfirewall.entity.VpcFirewallVRouterRefInventory");
-			put("org.zstack.sdk.VpcHaGroupApplianceVmInventory", "org.zstack.header.vpc.ha.VpcHaGroupApplianceVmInventory");
+			put("org.zstack.sdk.VpcHaGroupApplianceVmRefInventory", "org.zstack.header.vpc.ha.VpcHaGroupApplianceVmRefInventory");
 			put("org.zstack.sdk.VpcHaGroupInventory", "org.zstack.header.vpc.ha.VpcHaGroupInventory");
 			put("org.zstack.sdk.VpcHaGroupMonitorIpInventory", "org.zstack.header.vpc.ha.VpcHaGroupMonitorIpInventory");
 			put("org.zstack.sdk.VpcHaGroupNetworkServiceRefInventory", "org.zstack.header.vpc.ha.VpcHaGroupNetworkServiceRefInventory");
