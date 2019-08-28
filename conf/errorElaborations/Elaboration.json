@@ -760,6 +760,14 @@
     "message_en": "No clustered compute resource found"
   },
   {
+    "category": "VCenter",
+    "code": "1002",
+    "method": "regex",
+    "regex": "VNC not enabled for vmUuid .* in ESX host .*",
+    "message_cn": "第一次接管过来的ESX物理机上的vm,由于没有配置vnc,无法打开控制台,需要重启或迁移vm后才能使用",
+    "message_en": "VNC not enabled for vm in ESX host, you need reboot or migrate vm at least once"
+  },
+  {
     "category": "VM",
     "code": "1000",
     "method": "distance",
@@ -891,7 +899,7 @@
     "category": "VM",
     "code": "1016",
     "method": "regex",
-    "regex": ".*[Errno 5] Input/output error Input\\/output error",
+    "regex": ".*[Errno 5] Input\\/output error.*",
     "message_cn": "操作失败，IO错误",
     "message_en": "Input/output error"
   },
@@ -1022,5 +1030,13 @@
     "regex": ".*current vm instance state\\[.*] doesn't allow to proceed message\\[org.zstack.header.vm.DetachDataVolumeFromVmMsg], allowed states are \\.*",
     "message_cn": "当前vm状态[%1$s]不能卸载云盘。允许此状态是[%3$s]",
     "message_en": "current vm instance state\\[%1$s] doesn't allow to detach DataVolume, allowed states are [%3$s]"
+  },
+  {
+    "category": "Volume",
+    "code": "1002",
+    "method": "regex",
+    "regex": "non admin account cannot set bandwidth more than.*",
+    "message_cn": "非admin帐号设置磁盘带宽超出限制 [%1$s]",
+    "message_en": "non admin account cannot set bandwidth more than [%1$s]"
   }
 ]
