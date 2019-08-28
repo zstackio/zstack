@@ -63,6 +63,12 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             query.setParameter("state1", PrimaryStorageState.Disabled);
             query.setParameter("status", PrimaryStorageStatus.Connected);
             List<HostVO> hosts = query.getResultList();
+
+            // in case no host is connected
+            if (hosts.isEmpty()) {
+                return new ArrayList<>();
+            }
+
             List<String> hostUuids = hosts.stream().map(HostVO::getUuid).collect(Collectors.toList());
             List<String> disconnectHostUuids = requiredPsUuids.isEmpty() ? Collections.emptyList() :
                     Q.New(PrimaryStorageHostRefVO.class).select(PrimaryStorageHostRefVO_.hostUuid)
