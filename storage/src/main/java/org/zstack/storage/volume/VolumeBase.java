@@ -34,11 +34,8 @@ import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.message.*;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.Message;
-import org.zstack.header.message.MessageReply;
-import org.zstack.header.message.OverlayMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
@@ -2044,6 +2041,46 @@ public class VolumeBase implements Volume {
 
 
     private void handle(APICreateVolumeSnapshotGroupMsg msg) {
+        Map<String, List<String>> psVolumeRef = msg.getVmInstance().getAllVolumes().stream()
+                .collect(Collectors.groupingBy(VolumeInventory::getPrimaryStorageUuid,
+                Collectors.mapping(VolumeInventory::getUuid, Collectors.toList())));
+
+        final ErrorCode[] err = new ErrorCode[1];
+        new While<>(psVolumeRef.entrySet()).each((e, completion) -> {
+            CheckVolumeSnapshotOperationOnPrimaryStorageMsg cmsg = new CheckVolumeSnapshotOperationOnPrimaryStorageMsg();
+            cmsg.setPrimaryStorageUuid(e.getKey());
+            cmsg.setVolumeUuids(e.getValue());
+            cmsg.setVmInstanceUuid(msg.getVmInstance().getUuid());
+            cmsg.setOperation(msg.getBackendOperation());
+            bus.makeLocalServiceId(cmsg, PrimaryStorageConstant.SERVICE_ID);
+            bus.send(cmsg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        err[0] = reply.getError();
+                        completion.allDone();
+                        return;
+                    }
+
+                    completion.done();
+                }
+            });
+        }).run(new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                if (err[0] == null) {
+                    createSnapshotGroup(msg);
+                    return;
+                }
+
+                APIEvent event = new APIEvent(msg.getId());
+                event.setError(err[0]);
+                bus.publish(event);
+            }
+        });
+    }
+
+    private void createSnapshotGroup(APICreateVolumeSnapshotGroupMsg msg) {
         APICreateVolumeSnapshotGroupEvent evt = new APICreateVolumeSnapshotGroupEvent(msg.getId());
 
         VolumeSnapshotGroupCreationValidator.validate(msg.getVmInstance().getUuid());

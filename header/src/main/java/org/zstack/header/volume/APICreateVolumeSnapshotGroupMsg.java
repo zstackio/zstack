@@ -7,6 +7,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.storage.snapshot.SnapshotBackendOperation;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.vm.VmInstanceInventory;
 
@@ -65,6 +66,10 @@ public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public SnapshotBackendOperation getBackendOperation() {
+        return SnapshotBackendOperation.FILE_CREATION;
     }
 
     @Override
