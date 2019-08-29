@@ -157,24 +157,24 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             return;
         }
 
-        List<Tuple> ts = SQL.New("select snap.uuid, snap.primaryStorageUuid, snap.volumeUuid" +
+        List<Tuple> ts = SQL.New("select snap.volumeUuid, snap.primaryStorageUuid" +
                 " from VolumeSnapshotVO snap, VolumeSnapshotGroupRefVO ref" +
                 " where ref.volumeSnapshotGroupUuid = :groupUuid" +
                 " and snap.uuid = ref.volumeSnapshotUuid", Tuple.class)
                 .param("groupUuid", msg.getGroupUuid())
                 .list();
-        List<String> volumeUuids = ts.stream().map(it -> it.get(2, String.class)).filter(Objects::nonNull).collect(Collectors.toList());
+        List<String> volumeUuids = ts.stream().map(it -> it.get(0, String.class)).filter(Objects::nonNull).collect(Collectors.toList());
         String vmInstanceUuid = volumeUuids.isEmpty() ? null : Q.New(VolumeVO.class).select(VolumeVO_.vmInstanceUuid)
                 .in(VolumeVO_.uuid, volumeUuids).eq(VolumeVO_.type, VolumeType.Root).findValue();
 
-        Map<String, List<String>> psSnapshotRef = ts.stream().collect(Collectors.groupingBy(t -> ((Tuple)t).get(1, String.class),
+        Map<String, List<String>> psVolumeRef = ts.stream().collect(Collectors.groupingBy(t -> ((Tuple)t).get(1, String.class),
                         Collectors.mapping(t -> ((Tuple)t).get(0, String.class), Collectors.toList())));
 
         final ErrorCode[] err = new ErrorCode[1];
-        new While<>(psSnapshotRef.entrySet()).each((e, completion) -> {
+        new While<>(psVolumeRef.entrySet()).each((e, completion) -> {
             CheckVolumeSnapshotOperationOnPrimaryStorageMsg cmsg = new CheckVolumeSnapshotOperationOnPrimaryStorageMsg();
             cmsg.setPrimaryStorageUuid(e.getKey());
-            cmsg.setVolumeSnapshotUuids(e.getValue());
+            cmsg.setVolumeUuids(e.getValue());
             cmsg.setVmInstanceUuid(vmInstanceUuid);
             cmsg.setOperation(msg.getBackendOperation());
             bus.makeLocalServiceId(cmsg, PrimaryStorageConstant.SERVICE_ID);

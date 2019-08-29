@@ -1407,7 +1407,10 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     " and vm.hostUuid = host.uuid", HostStatus.class)
                     .param("vmUuid", msg.getVmInstanceUuid())
                     .find();
-            if (hostStatus != HostStatus.Connected && hostStatus != null) {
+            if (hostStatus == null && getAvailableHostUuidForOperation() == null) {
+                reply.setError(err(HostErrors.HOST_IS_DISCONNECTED, "cannot find available host for operation on" +
+                        " primary storage[uuid:%s].", self.getUuid()));
+            } else if (hostStatus != HostStatus.Connected && hostStatus != null) {
                 reply.setError(err(HostErrors.HOST_IS_DISCONNECTED, "host where vm[uuid:%s] locate is not Connected.", msg.getVmInstanceUuid()));
             }
         }
