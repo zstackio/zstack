@@ -20,4 +20,7 @@ public class LdapGlobalConfig {
     @GlobalConfigDef(defaultValue = LdapConstant.QUERY_LDAP_ENTRY_RETURN_ATTRIBUTE_SEPARATOR, type = String.class)
     public static GlobalConfig QUERY_LDAP_ENTRY_RETURN_ATTRIBUTE_SEPARATOR = new GlobalConfig(CATEGORY, "queryLdapEntryReturnAttributeSeparator");
 
+    @GlobalConfigValidation
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class)
+    public static GlobalConfig SKIP_ALL_SSL_CERTS_CHECK = new GlobalConfig(CATEGORY, "skip.all.ssl.certs.check");
 }
