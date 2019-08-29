@@ -9,7 +9,7 @@ import java.util.List;
  * Created by MaJin on 2019/8/16.
  */
 public class CheckVolumeSnapshotOperationOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
-    private List<String> volumeSnapshotUuids;
+    private List<String> volumeUuids;
     private String vmInstanceUuid;
     private String primaryStorageUuid;
     private SnapshotBackendOperation operation;
@@ -19,12 +19,12 @@ public class CheckVolumeSnapshotOperationOnPrimaryStorageMsg extends NeedReplyMe
         return primaryStorageUuid;
     }
 
-    public List<String> getVolumeSnapshotUuids() {
-        return volumeSnapshotUuids;
+    public List<String> getVolumeUuids() {
+        return volumeUuids;
     }
 
-    public void setVolumeSnapshotUuids(List<String> volumeSnapshotUuids) {
-        this.volumeSnapshotUuids = volumeSnapshotUuids;
+    public void setVolumeUuids(List<String> volumeUuids) {
+        this.volumeUuids = volumeUuids;
     }
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
