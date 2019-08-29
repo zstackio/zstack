@@ -1,3 +1,6 @@
+ALTER TABLE `zstack`.`VmInstancePciDeviceSpecRefVO` ADD UNIQUE INDEX(`vmInstanceUuid`,`pciSpecUuid`);
+ALTER TABLE `zstack`.`VmInstancePciSpecDeviceRefVO` ADD UNIQUE INDEX(`vmInstanceUuid`,`pciSpecUuid`, `pciDeviceUuid`);
+
 DELIMITER $$
 CREATE PROCEDURE handleLegacyPciSpecUuidTags()
     BEGIN
@@ -21,7 +24,7 @@ CREATE PROCEDURE handleLegacyPciSpecUuidTags()
             -- create records in VmInstancePciDeviceSpecRefVO
             SET pciSpecUuid = substring(pciSpecUuidTag, LENGTH('pciSpecUuid::') + 1);
             IF pciSpecUuid IS NOT NULL THEN
-                INSERT INTO `zstack`.`VmInstancePciDeviceSpecRefVO` (`vmInstanceUuid`, `pciSpecUuid`, `pciDeviceNumber`, `lastOpDate`, `createDate`)
+                INSERT IGNORE INTO `zstack`.`VmInstancePciDeviceSpecRefVO` (`vmInstanceUuid`, `pciSpecUuid`, `pciDeviceNumber`, `lastOpDate`, `createDate`)
                 VALUES (vmInstanceUuid, pciSpecUuid, 1, NOW(), NOW());
             END IF;
 
@@ -34,7 +37,7 @@ CREATE PROCEDURE handleLegacyPciSpecUuidTags()
 
             -- create records in VmInstancePciSpecDeviceRefVO
             IF pciDeviceUuid IS NOT NULL THEN
-                INSERT INTO `zstack`.`VmInstancePciSpecDeviceRefVO` (`vmInstanceUuid`, `pciSpecUuid`, `pciDeviceUuid`, `lastOpDate`, `createDate`)
+                INSERT IGNORE INTO `zstack`.`VmInstancePciSpecDeviceRefVO` (`vmInstanceUuid`, `pciSpecUuid`, `pciDeviceUuid`, `lastOpDate`, `createDate`)
                 VALUES (vmInstanceUuid, pciSpecUuid, pciDeviceUuid, NOW(), NOW());
             END IF;
 
