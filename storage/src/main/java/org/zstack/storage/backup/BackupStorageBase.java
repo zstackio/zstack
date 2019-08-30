@@ -164,7 +164,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
         long size = header.getContentLength();
         if (size == -1) {
-            throw new OperationFailureException(operr("failed to get image size from url %s", url));
+            logger.error(String.format("failed to get image size from url %s, but ignore this error and proceed", url));
         } else if (size < ImageConstant.MINI_IMAGE_SIZE_IN_BYTE) {
             throw new OperationFailureException(operr("the image size get from url %s is %d bytes, " +
                     "it's too small for an image, please check the url again.", url, size));
