@@ -91,9 +91,32 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
             handle((APIDeleteVolumeSnapshotGroupMsg) msg);
         } else if (msg instanceof APIRevertVmFromSnapshotGroupMsg) {
             handle((APIRevertVmFromSnapshotGroupMsg) msg);
+        } else if (msg instanceof APIUpdateVolumeSnapshotGroupMsg) {
+            handle((APIUpdateVolumeSnapshotGroupMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIUpdateVolumeSnapshotGroupMsg msg) {
+        boolean update = false;
+        if (msg.getName() != null) {
+            self.setName(msg.getName());
+            update = true;
+        }
+
+        if (msg.getDescription() != null) {
+            self.setName(msg.getDescription());
+            update = true;
+        }
+
+        if (update) {
+            dbf.updateAndRefresh(self);
+        }
+
+        APIUpdateVolumeSnapshotGroupEvent event = new APIUpdateVolumeSnapshotGroupEvent(msg.getId());
+        event.setInventory(getSelfInventory());
+        bus.publish(event);
     }
 
     private void handle(APIUngroupVolumeSnapshotGroupMsg msg) {
