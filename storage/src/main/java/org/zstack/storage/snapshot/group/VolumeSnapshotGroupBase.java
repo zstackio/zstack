@@ -106,7 +106,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
         }
 
         if (msg.getDescription() != null) {
-            self.setName(msg.getDescription());
+            self.setDescription(msg.getDescription());
             update = true;
         }
 
