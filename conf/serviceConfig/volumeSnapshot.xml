@@ -61,4 +61,8 @@
     <message>
         <name>org.zstack.header.storage.snapshot.group.APIDeleteVolumeSnapshotGroupMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.header.storage.snapshot.group.APIUpdateVolumeSnapshotGroupMsg</name>
+    </message>
 </service>

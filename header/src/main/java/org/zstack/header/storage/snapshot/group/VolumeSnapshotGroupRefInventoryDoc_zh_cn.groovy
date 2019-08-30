@@ -5,72 +5,72 @@ import java.sql.Timestamp
 
 doc {
 
-	title "快照组和快照连接关系"
+	title "快照组和快照所属关系"
 
 	field {
 		name "volumeSnapshotUuid"
 		desc "云盘快照UUID"
 		type "String"
-		since ""
+		since "3.6.0"
 	}
 	field {
 		name "volumeSnapshotGroupUuid"
 		desc "快照组UUID"
 		type "String"
-		since ""
+		since "3.6.0"
 	}
 	field {
 		name "deviceId"
 		desc "打快照时云盘的加载序号"
 		type "int"
-		since ""
+		since "3.6.0"
 	}
 	field {
 		name "snapshotDeleted"
 		desc "快照是否已经被删除"
 		type "boolean"
-		since ""
+		since "3.6.0"
 	}
 	field {
 		name "volumeUuid"
 		desc "云盘UUID"
 		type "String"
-		since ""
+		since "3.6.0"
 	}
 	field {
 		name "volumeName"
 		desc "云盘的名字"
 		type "String"
-		since ""
+		since "3.6.0"
 	}
 	field {
 		name "volumeType"
 		desc "云盘的类型"
 		type "String"
-		since ""
+		since "3.6.0"
 	}
 	field {
 		name "volumeSnapshotInstallPath"
 		desc "快照的安装路径"
 		type "String"
-		since ""
+		since "3.6.0"
 	}
 	field {
 		name "volumeSnapshotName"
 		desc "快照的名字"
 		type "String"
-		since ""
+		since "3.6.0"
 	}
 	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"
-		since ""
+		since "3.6.0"
 	}
 	field {
 		name "lastOpDate"
 		desc "最后一次修改时间"
 		type "Timestamp"
-		since ""
+		since "3.6.0"
 	}
 }
