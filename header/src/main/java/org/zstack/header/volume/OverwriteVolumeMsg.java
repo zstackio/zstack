@@ -6,12 +6,12 @@ import org.zstack.header.message.NeedReplyMessage;
  * Created by MaJin on 2019/4/2.
  */
 public class OverwriteVolumeMsg extends NeedReplyMessage implements VolumeMessage {
-    private VolumeInventory volume;
+    private VolumeInventory originVolume;
     private VolumeInventory transientVolume;
 
     @Override
     public String getVolumeUuid() {
-        return volume.getUuid();
+        return transientVolume.getUuid();
     }
     public VolumeInventory getTransientVolume() {
         return transientVolume;
@@ -21,11 +21,11 @@ public class OverwriteVolumeMsg extends NeedReplyMessage implements VolumeMessag
         this.transientVolume = transientVolume;
     }
 
-    public void setVolume(VolumeInventory volume) {
-        this.volume = volume;
+    public void setOriginVolume(VolumeInventory originVolume) {
+        this.originVolume = originVolume;
     }
 
-    public VolumeInventory getVolume() {
-        return volume;
+    public VolumeInventory getOriginVolume() {
+        return originVolume;
     }
 }
