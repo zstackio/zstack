@@ -547,3 +547,5 @@ CREATE TABLE `VpcFirewallVRouterRefVO` (
   CONSTRAINT `VpcFirewallVRouterRefVOVpcFirewallVO` FOREIGN KEY (`vpcFirewallUuid`) REFERENCES `VpcFirewallVO` (`uuid`) ON DELETE CASCADE,
   CONSTRAINT `VpcFirewallVRouterRefVOVirtualRouteVmVO` FOREIGN KEY (`vRouterUuid`) REFERENCES `VirtualRouterVmVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+UPDATE `RolePolicyStatementVO` SET statement = replace(statement, '"org.zstack.header.vpc.**"', '"org.zstack.header.vpc.ha.**","org.zstack.vpc.**"') WHERE `statement` LIKE '%"org.zstack.header.vpc.**"%';
