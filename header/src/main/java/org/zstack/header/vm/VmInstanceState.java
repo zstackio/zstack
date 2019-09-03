@@ -72,6 +72,7 @@ public enum VmInstanceState {
                 new Transaction(VmInstanceStateEvent.starting, VmInstanceState.Starting),
                 new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
                 new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
+                new Transaction(VmInstanceStateEvent.paused, VmInstanceState.Paused),
                 new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying),
                 new Transaction(VmInstanceStateEvent.volumeMigrating, VmInstanceState.VolumeMigrating),
                 new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown)
