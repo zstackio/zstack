@@ -144,6 +144,19 @@ public class IPv6NetworkUtils {
         }
     }
 
+    public static boolean isIpv6MulticastAddress(String ip) {
+        try {
+            IPv6Address address = IPv6Address.fromString(ip);
+            if (address.isMulticast()) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Exception e){
+            return false;
+        }
+    }
+
     public static boolean isValidUnicastIpv6Range(String startIp, String endIp, String gatewayIp, int prefixLen) {
         try {
             IPv6Address start = IPv6Address.fromString(startIp);
