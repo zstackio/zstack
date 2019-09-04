@@ -8,6 +8,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -20,6 +21,7 @@ import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +40,22 @@ public class ApplianceVmSyncConfigAfterAddToHaGroupFlow extends NoRollbackFlow {
     @Autowired
     protected CloudBus bus;
 
+    private void syncApplianceVmConfigAfterAddToHaGroup(Iterator<ApplianceVmSyncConfigToHaGroupExtensionPoint> it,
+                                                        ApplianceVmInventory applianceVm, String haUuid, NoErrorCompletion completion) {
+        if (!it.hasNext()) {
+            completion.done();
+            return;
+        }
+
+        ApplianceVmSyncConfigToHaGroupExtensionPoint ext = it.next();
+        ext.applianceVmSyncConfigAfterAddToHaGroup(applianceVm, haUuid,  new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                syncApplianceVmConfigAfterAddToHaGroup(it, applianceVm, haUuid, completion);
+            }
+        });
+    }
+
     @Override
     public void run(final FlowTrigger chain, Map data) {
         /* action in this flow depends on ApplianceVmSyncConfigToHaGroupFlow
@@ -50,9 +68,13 @@ public class ApplianceVmSyncConfigAfterAddToHaGroupFlow extends NoRollbackFlow {
             return;
         }
 
-        for (ApplianceVmSyncConfigToHaGroupExtensionPoint exp : pluginRgty.getExtensionList(ApplianceVmSyncConfigToHaGroupExtensionPoint.class)) {
-            exp.applianceVmSyncConfigAfterAddToHaGroup(ApplianceVmInventory.valueOf(applianceVmVO), haUuid);
-        }
+        Iterator<ApplianceVmSyncConfigToHaGroupExtensionPoint> iterator = pluginRgty.getExtensionList(ApplianceVmSyncConfigToHaGroupExtensionPoint.class).iterator();
+        syncApplianceVmConfigAfterAddToHaGroup(iterator, ApplianceVmInventory.valueOf(applianceVmVO), haUuid, new NoErrorCompletion(chain) {
+            @Override
+            public void done() {
+                chain.next();
+            }
+        });
 
         chain.next();
     }
