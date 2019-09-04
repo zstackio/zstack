@@ -1033,6 +1033,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             return VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged;
         }
 
+        if (originalState == VmInstanceState.Stopped && currentState == VmInstanceState.Paused &&
+                currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmPausedFromStoppedStateHostNotChanged;
+        }
+
         if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Running &&
                 currentHostUuid.equals(originalHostUuid)) {
             return VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged;
@@ -1157,7 +1162,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             bus.reply(msg, reply);
             completion.done();
             return;
-        } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged) {
+        } else if (operation == VmAbnormalLifeCycleOperation.VmPausedFromUnknownStateHostNotChanged
+                || operation == VmAbnormalLifeCycleOperation.VmPausedFromStoppedStateHostNotChanged ) {
             //some reason led vm to unknown state and the paused vm are detected on the host again
             changeVmStateInDb(VmInstanceStateEvent.paused, ()-> self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
