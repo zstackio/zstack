@@ -6,9 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.debug.DebugManager;
 import org.zstack.core.debug.DebugSignalHandler;
+import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.progress.ChainInfo;
 import org.zstack.header.core.progress.PendingTaskInfo;
-import org.zstack.header.core.progress.RunningTaskInfo;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -19,7 +19,6 @@ import org.zstack.utils.logging.CLoggerImpl;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -355,6 +354,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                     }
 
                     synchronized (runningQueue) {
+                        processTimeoutTask(cf);
                         cf.startExecutionTimeInMills = System.currentTimeMillis();
                         // add to running queue
                         logger.debug(String.format("Start executing runningQueue: %s, task name: %s", syncSignature, cf.getTask().getName()));
@@ -380,6 +380,26 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
         }
     }
 
+    @ExceptionSafe
+    private void processTimeoutTask(ChainFuture cf) {
+        long now = System.currentTimeMillis();
+        PendingTaskInfo taskInfo = TaskInfoBuilder.buildPendingTaskInfo(cf, now, 0);
+        Double timeout = 0.0;
+        if (taskInfo.getContext().isEmpty()) {
+            return;
+        }
+
+        for (String c : taskInfo.getContextList()) {
+            Map context = JSONObjectUtil.toObject(c, LinkedHashMap.class);
+            timeout = (context.get("timeout") == null) ? 0 : (Double) context.get("timeout");
+        }
+
+        if (timeout > 0 && taskInfo.getPendingTime() * 1000 > timeout.longValue()){
+            logger.warn(String.format("this task has been pending for %s ms longer than timeout %s ms, cancel it. task info: %s",
+                    taskInfo.getPendingTime()*1000, timeout, taskInfo.toString()));
+            cf.cancel(true);
+        }
+    }
 
     private <T> Future<T> doChainSyncSubmit(final ChainTask task) {
         assert task.getSyncSignature() != null : "How can you submit a chain task without sync signature ???";

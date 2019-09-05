@@ -10,7 +10,6 @@ import org.zstack.header.message.Message;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -44,13 +43,13 @@ public class TaskInfoBuilder {
             info.setApiId(tc.get(Constants.THREAD_CONTEXT_API));
         }
 
-        List<String> context = new ArrayList<>();
+        info.setContextList(new ArrayList<>());
         for (AsyncBackup backup : cf.getTask().getBackups()) {
             if (backup instanceof Message) {
-                context.add(JSONObjectUtil.toJsonString(backup));
+                info.getContextList().add(JSONObjectUtil.toJsonString(backup));
             }
         }
 
-        info.setContext(context.isEmpty() ? "" : String.format("CONTEXT: %s", StringUtils.join(context, "\n")));
+        info.setContext(info.getContextList().isEmpty() ? "" : String.format("CONTEXT: %s", StringUtils.join(info.getContextList(), "\n")));
     }
 }

@@ -1,5 +1,7 @@
 package org.zstack.header.core.progress;
 
+import java.util.List;
+
 /**
  * Created by MaJin on 2019/7/3.
  */
@@ -12,7 +14,15 @@ public class TaskInfo {
     protected String context;
     protected String apiId;
     protected String apiName;
+    protected List<String> contextList;
 
+    public List<String> getContextList() {
+        return contextList;
+    }
+
+    public void setContextList(List<String> contextList) {
+        this.contextList = contextList;
+    }
 
     public String getName() {
         return name;
