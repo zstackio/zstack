@@ -80,6 +80,7 @@ public enum VmInstanceState {
         Migrating.transactions(
                 new Transaction(VmInstanceStateEvent.migrated, VmInstanceState.Running),
                 new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
+                new Transaction(VmInstanceStateEvent.paused, VmInstanceState.Paused),
                 new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
                 new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown),
                 new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying)
