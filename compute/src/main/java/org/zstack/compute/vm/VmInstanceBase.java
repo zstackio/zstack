@@ -1038,6 +1038,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             return VmAbnormalLifeCycleOperation.VmPausedFromStoppedStateHostNotChanged;
         }
 
+        if (originalState == VmInstanceState.Migrating && currentState == VmInstanceState.Paused &&
+                currentHostUuid.equals(originalHostUuid)) {
+            return VmAbnormalLifeCycleOperation.VmPausedFromMigratingStateHostNotChanged;
+        }
+
         if (originalState == VmInstanceState.Unknown && currentState == VmInstanceState.Running &&
                 currentHostUuid.equals(originalHostUuid)) {
             return VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostNotChanged;
