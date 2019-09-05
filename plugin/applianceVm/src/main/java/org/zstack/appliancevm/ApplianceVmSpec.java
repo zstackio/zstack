@@ -34,6 +34,7 @@ public class ApplianceVmSpec implements Serializable {
     private String sshUsername = "root";
     private int sshPort = 22;
     private int agentPort = 7759;
+    private String staticVip;
     private ApplianceVmHaSpec haSpec;
 
     public int getAgentPort() {
@@ -192,5 +193,13 @@ public class ApplianceVmSpec implements Serializable {
 
     public void setHaSpec(ApplianceVmHaSpec haSpec) {
         this.haSpec = haSpec;
+    }
+
+    public String getStaticVip() {
+        return staticVip;
+    }
+
+    public void setStaticVip(String staticVip) {
+        this.staticVip = staticVip;
     }
 }
