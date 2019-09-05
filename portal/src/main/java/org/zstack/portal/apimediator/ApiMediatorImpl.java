@@ -1,5 +1,6 @@
 package org.zstack.portal.apimediator;
 
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -7,7 +8,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
@@ -22,16 +22,12 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.inerr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
+
 
 public class ApiMediatorImpl extends AbstractService implements ApiMediator, GlobalApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(ApiMediator.class);
@@ -40,8 +36,6 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
     private CloudBus bus;
     @Autowired
     private ThreadFacade thdf;
-    @Autowired
-    private ErrorFacade errf;
     @Autowired
     private DatabaseFacade dbf;
 
@@ -118,7 +112,7 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
             }
 
             @MessageSafe
-            public void handleMessage(Message msg) {
+            void handleMessage(Message msg) {
                 if (msg instanceof APIIsReadyToGoMsg) {
                     handle((APIIsReadyToGoMsg) msg);
                 } else if (msg instanceof APIGetVersionMsg) {
@@ -133,7 +127,7 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
             }
 
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 handleMessage(msg);
                 return null;
             }
@@ -141,19 +135,28 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
     }
 
     @Transactional(readOnly = true)
-    private void handle(APIGetVersionMsg msg) {
+    private String getMnVersion() {
         String sql = "select v.version from schema_version v order by installed_rank desc";
         Query q = dbf.getEntityManager().createNativeQuery(sql);
-        q.setMaxResults(1);
-        String version = (String) q.getSingleResult();
+        q.setMaxResults(5);
 
+        @SuppressWarnings("unchecked")
+        List<String> versions = q.getResultList();
+        Optional<String> ver = versions.stream()
+                .map(DefaultArtifactVersion::new)
+                .max(DefaultArtifactVersion::compareTo)
+                .map(DefaultArtifactVersion::toString);
+        return ver.orElse("unknown");
+    }
+
+    private void handle(APIGetVersionMsg msg) {
         APIGetVersionReply reply = new APIGetVersionReply();
-        reply.setVersion(version);
+        reply.setVersion(getMnVersion());
         bus.reply(msg, reply);
     }
 
     private void handle(APIGetCurrentTimeMsg msg) {
-        Map<String, Long> ret = new HashMap<String, Long>();
+        Map<String, Long> ret = new HashMap<>();
         long currentTimeMillis = System.currentTimeMillis();
         long currentTimeSeconds = System.currentTimeMillis()/1000;
         ret.put("MillionSeconds", currentTimeMillis);
@@ -201,7 +204,7 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
 
     @Override
     public boolean start() {
-        Map<String, Object> config = new HashMap<String, Object>();
+        Map<String, Object> config = new HashMap<>();
         config.put("serviceConfigFolders", serviceConfigFolders);
         processor = new ApiMessageProcessorImpl(config);
         bus.registerService(this);
@@ -224,7 +227,7 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
 
     @Override
     public List<Class> getMessageClassToIntercept() {
-        List<Class> lst = new ArrayList<Class>();
+        List<Class> lst = new ArrayList<>();
         lst.add(APICreateMessage.class);
         return lst;
     }
