@@ -226,11 +226,12 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                 }
 
                 flow(new NoRollbackFlow() {
-                    String __name__ = "deploy-more-agent";
+                    String __name__ = "deploy-more-agent-to-primaryStorage";
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         List<CephMonExtensionPoint> exts = pluginRgty.getExtensionList(CephMonExtensionPoint.class);
                         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+                        chain.allowEmptyFlow();
                         for(CephMonExtensionPoint ext: exts) {
                             chain.then(new NoRollbackFlow() {
                                 @Override
@@ -259,12 +260,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                             public void handle(ErrorCode errCode, Map data) {
                                 trigger.fail(errCode);
                             }
-                        });
-                        if (chain.getFlows().size() > 0) {
-                            chain.start();
-                        } else {
-                            trigger.next();
-                        }
+                        }).start();
                     }
                 });
 

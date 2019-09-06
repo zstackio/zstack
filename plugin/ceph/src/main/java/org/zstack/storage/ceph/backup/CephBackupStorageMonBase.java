@@ -5,6 +5,7 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.*;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -26,6 +27,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
@@ -43,6 +45,8 @@ public class CephBackupStorageMonBase extends CephMonBase {
     private ThreadFacade thdf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private String syncId;
 
@@ -213,6 +217,45 @@ public class CephBackupStorageMonBase extends CephMonBase {
                                     trigger.fail(errorCode);
                                 }
                             });
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "deploy-more-agent-to-backupStorage";
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            List<CephMonExtensionPoint> exts = pluginRgty.getExtensionList(CephMonExtensionPoint.class);
+                            FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+                            chain.allowEmptyFlow();
+                            for(CephMonExtensionPoint ext: exts) {
+                                chain.then(new NoRollbackFlow() {
+                                    @Override
+                                    public void run(FlowTrigger trigger1, Map data) {
+                                        ext.addMoreAgentInBackupStorage(CephBackupStorageMonInventory.valueOf(getSelf()), new Completion(trigger1) {
+                                            @Override
+                                            public void success() {
+                                                trigger1.next();
+                                            }
+
+                                            @Override
+                                            public void fail(ErrorCode errorCode) {
+                                                trigger1.fail(errorCode);
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                            chain.done(new FlowDoneHandler(trigger) {
+                                @Override
+                                public void handle(Map data) {
+                                    trigger.next();
+                                }
+                            }).error(new FlowErrorHandler(trigger) {
+                                @Override
+                                public void handle(ErrorCode errCode, Map data) {
+                                    trigger.fail(errCode);
+                                }
+                            }).start();
                         }
                     });
 
