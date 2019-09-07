@@ -896,6 +896,15 @@ public class KVMAgentCommands {
         private String machineType;
         private Integer pciePortNums;
         private boolean useHugePage;
+        private String chassisAssetTag;
+
+        public String getChassisAssetTag() {
+            return chassisAssetTag;
+        }
+
+        public void setChassisAssetTag(String chassisAssetTag) {
+            this.chassisAssetTag = chassisAssetTag;
+        }
 
         public boolean isUseHugePage() {
             return useHugePage;

@@ -189,4 +189,12 @@
 		<category>vm</category>
 		<type>java.lang.Long</type>
 	</config>
+
+	<config>
+		<name>chassisAssetTag</name>
+		<description>specify the cloudInit DataSource for ZStack vm instance</description>
+		<defaultValue>Default</defaultValue>
+		<category>vm</category>
+		<type>java.lang.String</type>
+	</config>
 </globalConfig>
