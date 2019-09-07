@@ -1,6 +1,5 @@
 package org.zstack.portal.apimediator;
 
-import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -18,6 +17,7 @@ import org.zstack.header.managementnode.*;
 import org.zstack.header.message.*;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
+import org.zstack.utils.VersionComparator;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
@@ -143,9 +143,9 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
         @SuppressWarnings("unchecked")
         List<String> versions = q.getResultList();
         Optional<String> ver = versions.stream()
-                .map(DefaultArtifactVersion::new)
-                .max(DefaultArtifactVersion::compareTo)
-                .map(DefaultArtifactVersion::toString);
+                .map(VersionComparator::new)
+                .max(VersionComparator::compare)
+                .map(VersionComparator::toString);
         return ver.orElse("unknown");
     }
 
