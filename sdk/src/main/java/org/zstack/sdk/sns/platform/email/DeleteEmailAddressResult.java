@@ -1,7 +1,0 @@
-package org.zstack.sdk.sns.platform.email;
-
-
-
-public class DeleteEmailAddressResult {
-
-}

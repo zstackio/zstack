@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SNSEmailAddressVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `emailAddress` varchar(1024) NOT NULL,
     `endpointUuid` varchar(32) NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -51,8 +53,8 @@ CREATE PROCEDURE upgradeEmailAddressFromEndpoint()
                 INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`, `concreteResourceType`)
                 VALUES (email_address_uuid, NULL, 'SNSEmailAddressVO', 'org.zstack.sns.platform.email.SNSEmailAddressVO');
 
-                INSERT INTO `SNSEmailAddressVO` (`uuid`, `emailAddress`, `endpointUuid`)
-                SELECT email_address_uuid, email_address, `uuid` FROM `SNSEmailEndpointVO` WHERE `email` IS NULL;
+                INSERT INTO `SNSEmailAddressVO` (`uuid`, `emailAddress`, `endpointUuid`, `createDate`, `lastOpDate`)
+                SELECT email_address_uuid, email_address, `uuid`, NOW(), NOW() FROM `SNSEmailEndpointVO` WHERE `email` IS NULL;
             END IF;
         END LOOP;
         CLOSE cur;
