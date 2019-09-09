@@ -42,7 +42,7 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
-import org.zstack.header.storage.primary.CancelCreateTemplateFromVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.CancelJobOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
@@ -2092,10 +2092,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 .map(ImageBackupStorageRefVO::getBackupStorageUuid)
                 .collect(Collectors.toList());
 
-        CancelCreateTemplateFromVolumeOnPrimaryStorageMsg cmsg = new CancelCreateTemplateFromVolumeOnPrimaryStorageMsg();
+        CancelJobOnPrimaryStorageMsg cmsg = new CancelJobOnPrimaryStorageMsg();
         cmsg.setCancellationApiId(msg.getCancellationApiId());
-        cmsg.setBackupStorageUuids(bsUuids);
-        cmsg.setVolumeInventory(VolumeInventory.valueOf(volVO));
+        cmsg.setPrimaryStorageUuid(volVO.getPrimaryStorageUuid());
         bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, cmsg.getPrimaryStorageUuid());
         bus.send(cmsg, new CloudBusCallBack(completion) {
             @Override

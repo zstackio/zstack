@@ -11,6 +11,7 @@ import org.zstack.core.progress.ProgressReportService;
 import org.zstack.header.Constants;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.longjob.LongJobErrors;
 import org.zstack.header.longjob.LongJobState;
 import org.zstack.header.longjob.LongJobVO;
@@ -46,6 +47,14 @@ public class LongJobUtils {
 
     public static ErrorCode noncancelableErr(String error) {
         return err(LongJobErrors.NONCANCELABLE, error);
+    }
+
+    public static ErrorCode noncancelableErr(String error, List<ErrorCode> causes) {
+        ErrorCode err = noncancelableErr(error);
+        if (err instanceof ErrorCodeList) {
+            ((ErrorCodeList) err).setCauses(causes);
+        }
+        return err;
     }
 
     public static ErrorCode buildErrIfCanceled() {

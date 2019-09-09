@@ -310,8 +310,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((DeleteBitsOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateTemplateFromVolumeOnPrimaryStorageMsg) {
             handleBase((CreateTemplateFromVolumeOnPrimaryStorageMsg) msg);
-        } else if (msg instanceof CancelCreateTemplateFromVolumeOnPrimaryStorageMsg) {
-            handle((CancelCreateTemplateFromVolumeOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CancelJobOnPrimaryStorageMsg) {
+            handle((CancelJobOnPrimaryStorageMsg) msg);
         } else if (msg instanceof PrimaryStorageDeletionMsg) {
             handle((PrimaryStorageDeletionMsg) msg);
         } else if (msg instanceof DetachPrimaryStorageFromClusterMsg) {
@@ -666,8 +666,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle(msg);
     }
 
-    protected void handle(CancelCreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
-        CancelCreateTemplateFromVolumeOnPrimaryStorageReply reply = new CancelCreateTemplateFromVolumeOnPrimaryStorageReply();
+    protected void handle(CancelJobOnPrimaryStorageMsg msg) {
+        CancelJobOnPrimaryStorageReply reply = new CancelJobOnPrimaryStorageReply();
         CancelHostTasksMsg cmsg = new CancelHostTasksMsg();
         cmsg.setCancellationApiId(msg.getCancellationApiId());
         bus.makeLocalServiceId(cmsg, HostConstant.SERVICE_ID);
