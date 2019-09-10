@@ -157,6 +157,19 @@ class IpRangeCase extends SubCase {
         res = check.call()
         assert res.value.available == false
         assert res.value.reason == IpNotAvailabilityReason.USED.toi18nString()
+
+        L3NetworkInventory l3_4 = createL3Network {
+            name = "l3-4"
+            l2NetworkUuid = l3_1.l2NetworkUuid
+            category = L3NetworkCategory.Private
+        }
+
+        addIpRangeByNetworkCidr {
+            name = "cidr-4"
+            l3NetworkUuid = l3_4.getUuid()
+            networkCidr = "192.168.211.0/24"
+            gateway = "192.168.211.254"
+        }
     }
 }
 

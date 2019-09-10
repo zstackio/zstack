@@ -26,6 +26,8 @@ public class APIAddIpRangeByNetworkCidrMsg extends APICreateMessage implements L
     private String l3NetworkUuid;
     @APIParam
     private String networkCidr;
+    @APIParam(required = false, maxLength = 64)
+    private String gateway;
 
     @Override
     public String getL3NetworkUuid() {
@@ -59,7 +61,15 @@ public class APIAddIpRangeByNetworkCidrMsg extends APICreateMessage implements L
     public void setDescription(String description) {
         this.description = description;
     }
- 
+
+    public String getGateway() {
+        return gateway;
+    }
+
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
+    }
+
     public static APIAddIpRangeByNetworkCidrMsg __example__() {
         APIAddIpRangeByNetworkCidrMsg msg = new APIAddIpRangeByNetworkCidrMsg();
 

@@ -127,6 +127,7 @@ class OneVmDhcpCase extends SubCase {
         assert nic.gateway == info.gateway
         assert info.isDefaultL3Network
         assert info.l3NetworkUuid == nic.l3NetworkUuid
+        assert info.vmMultiGateway == true
     }
 
     private testReleseDhcpWhenVmOperations(Closure vmOperation) {
@@ -289,6 +290,7 @@ class OneVmDhcpCase extends SubCase {
                 imageUuid = image.inventory.uuid
                 l3NetworkUuids = [l3.uuid]
                 instanceOfferingUuid = instanceOffering.inventory.uuid
+                systemTags = ["vmMultipleGateway::true"]
             }
         }
     }

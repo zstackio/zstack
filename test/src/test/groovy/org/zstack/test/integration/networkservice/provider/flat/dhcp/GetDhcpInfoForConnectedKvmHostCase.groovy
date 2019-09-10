@@ -11,11 +11,15 @@ import org.zstack.sdk.GetVmHostnameResult
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.tag.SystemTagCreator
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
+
+import static org.zstack.utils.CollectionDSL.e
+import static org.zstack.utils.CollectionDSL.map
 
 class GetDhcpInfoForConnectedKvmHostCase extends SubCase {
 
@@ -125,6 +129,13 @@ class GetDhcpInfoForConnectedKvmHostCase extends SubCase {
             hostname = vm.vmNics[0].ip.replaceAll("\\.", "--")
         }
 
+        SystemTagCreator creator = VmSystemTags.MULTIPLE_GATEWAY.newSystemTagCreator(vm.uuid)
+        creator.setTagByTokens(map(
+                e(VmSystemTags.MULTIPLE_GATEWAY_TOKEN, true)
+        ))
+        creator.recreate = true
+        creator.create()
+
         FlatDhcpBackend.ApplyDhcpCmd cmd = null
         env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
@@ -137,6 +148,7 @@ class GetDhcpInfoForConnectedKvmHostCase extends SubCase {
         assert null != cmd
         assert 1 == cmd.dhcp.size()
         assert cmd.dhcp.get(0).hostname == VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.uuid, VmSystemTags.HOSTNAME_TOKEN)
+        assert cmd.dhcp.get(0).vmMultiGateway == true
 
         GetVmHostnameResult result = getVmHostname {
             uuid = vm.uuid

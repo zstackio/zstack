@@ -62,6 +62,16 @@ doc {
 					
 				}
 				column {
+					name "gateway"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "3.7"
+					
+				}
+				column {
 					name "resourceUuid"
 					enclosedIn "params"
 					desc "资源UUID。若指定，三层网络会使用该字段值作为UUID"
