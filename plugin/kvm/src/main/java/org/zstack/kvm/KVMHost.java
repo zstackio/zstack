@@ -147,6 +147,7 @@ public class KVMHost extends HostBase implements Host {
     private String updateDependencyPath;
     private String shutdownHost;
     private String updateVmPriorityPath;
+    private String updateSpiceChannelConfigPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -275,6 +276,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_VM_UPDATE_PRIORITY_PATH);
         updateVmPriorityPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH);
+        updateSpiceChannelConfigPath = ub.build().toString();
     }
 
     class Http<T> {
@@ -385,6 +390,8 @@ public class KVMHost extends HostBase implements Host {
             handle((StartVmOnHypervisorMsg) msg);
         } else if (msg instanceof CreateVmOnHypervisorMsg) {
             handle((CreateVmOnHypervisorMsg) msg);
+        } else if (msg instanceof UpdateSpiceChannelConfigMsg) {
+            handle((UpdateSpiceChannelConfigMsg) msg);
         } else if (msg instanceof StopVmOnHypervisorMsg) {
             handle((StopVmOnHypervisorMsg) msg);
         } else if (msg instanceof RebootVmOnHypervisorMsg) {
@@ -661,6 +668,18 @@ public class KVMHost extends HostBase implements Host {
                     reply.setHostIp(self.getManagementIp());
                     reply.setProtocol(ret.getProtocol());
                     reply.setPort(ret.getPort());
+
+                    VdiPortInfo vdiPortInfo = new VdiPortInfo();
+                    if (ret.getVncPort() != null) {
+                        vdiPortInfo.setVncPort(ret.getVncPort());
+                    }
+                    if (ret.getSpicePort() != null) {
+                        vdiPortInfo.setSpicePort(ret.getSpicePort());
+                    }
+                    if (ret.getSpiceTlsPort() != null) {
+                        vdiPortInfo.setSpiceTlsPort(ret.getSpiceTlsPort());
+                    }
+                    reply.setVdiPortInfo(vdiPortInfo);
                 }
                 bus.reply(msg, reply);
             }
@@ -1865,6 +1884,27 @@ public class KVMHost extends HostBase implements Host {
                 });
     }
 
+    private void handle(final UpdateSpiceChannelConfigMsg msg) {
+        UpdateSpiceChannelConfigReply reply = new UpdateSpiceChannelConfigReply();
+        UpdateSpiceChannelConfigCmd cmd = new UpdateSpiceChannelConfigCmd();
+        new Http<>(updateSpiceChannelConfigPath, cmd, UpdateSpiceChannelConfigResponse.class).call(new ReturnValueCompletion<UpdateSpiceChannelConfigResponse>(msg) {
+            @Override
+            public void success(UpdateSpiceChannelConfigResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("Host[%s] update spice channel config faild, because %s", msg.getHostUuid(), ret.getError()));
+                    logger.warn(reply.getError().getDetails());
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     @Transactional
     private L2NetworkInventory getL2NetworkTypeFromL3NetworkUuid(String l3NetworkUuid) {
         String sql = "select l2 from L2NetworkVO l2 where l2.uuid = (select l3.l2NetworkUuid from L3NetworkVO l3 where l3.uuid = :l3NetworkUuid)";
@@ -1963,6 +2003,13 @@ public class KVMHost extends HostBase implements Host {
         cmd.setMaxMemory(self.getCapacity().getTotalPhysicalMemory());
         cmd.setClock(ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio) ? "localtime" : "utc");
         cmd.setVideoType(VmGlobalConfig.VM_VIDEO_TYPE.value(String.class));
+        if (VmSystemTags.QXL_MEMORY.hasTag(spec.getVmInventory().getUuid())) {
+            Map<String,String> qxlMemory = VmSystemTags.QXL_MEMORY.getTokensByResourceUuid(spec.getVmInventory().getUuid());
+            cmd.setQxlMemory(qxlMemory);
+        }
+        if (VmSystemTags.SOUND_TYPE.hasTag(spec.getVmInventory().getUuid())) {
+            cmd.setSoundType(VmSystemTags.SOUND_TYPE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class, VmSystemTags.SOUND_TYPE_TOKEN));
+        }
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
         cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getVmInventory().getClusterUuid(), Boolean.class));
         cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
@@ -2730,6 +2777,8 @@ public class KVMHost extends HostBase implements Host {
                             checker.setTargetIp(getSelf().getManagementIp());
                             checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/kvm/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
                             checker.addSrcDestPair(srcPath, destPath);
+                            checker.addSrcDestPair((PathUtil.join(PathUtil.getZStackHomeFolder(), "ansible", "files", "kvm") + "/spice-certs/ca-cert.pem"),
+                                    KVMGlobalProperty.REGISTRY_CERTS);
 
                             SshChronyConfigChecker chronyChecker = new SshChronyConfigChecker();
                             chronyChecker.setTargetIp(getSelf().getManagementIp());

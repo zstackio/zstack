@@ -1,6 +1,7 @@
 package org.zstack.compute.vm;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -67,10 +68,7 @@ import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.TagUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
@@ -222,6 +220,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
             handle((APIGetCandidateVmForAttachingIsoMsg) msg);
         } else if (msg instanceof APIUpdatePriorityConfigMsg) {
             handle((APIUpdatePriorityConfigMsg) msg);
+        } else if (msg instanceof APIGetSpiceCertificatesMsg) {
+            handle((APIGetSpiceCertificatesMsg) msg);
         } else if (msg instanceof VmInstanceMessage) {
             passThrough((VmInstanceMessage) msg);
         } else {
@@ -240,6 +240,17 @@ public class VmInstanceManagerImpl extends AbstractService implements
         bus.publish(evt);
     }
 
+
+    private void handle(APIGetSpiceCertificatesMsg msg) {
+        APIGetSpiceCertificatesReply reply = new APIGetSpiceCertificatesReply();
+        String certificateStr = new JsonLabel().get("spiceCA", String.class);
+        if (StringUtils.isNotEmpty(certificateStr)) {
+            reply.setCertificateStr(certificateStr);
+        } else {
+            reply.setError(operr("Spice certificate does not exist, Please check if spice tls is enabled"));
+        }
+        bus.reply(msg, reply);
+    }
 
     @Transactional(readOnly = true)
     private void handle(APIGetCandidateVmForAttachingIsoMsg msg) {
