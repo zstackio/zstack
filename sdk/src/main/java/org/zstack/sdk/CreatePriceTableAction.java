@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteResourcePriceAction extends AbstractAction {
+public class CreatePriceTableAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteResourcePriceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteResourcePriceResult value;
+        public org.zstack.sdk.CreatePriceTableResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,20 @@ public class DeleteResourcePriceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean cutoffPrice = false;
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List prices;
 
     @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    public java.lang.String resourceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +72,8 @@ public class DeleteResourcePriceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteResourcePriceResult value = res.getResult(org.zstack.sdk.DeleteResourcePriceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteResourcePriceResult() : value; 
+        org.zstack.sdk.CreatePriceTableResult value = res.getResult(org.zstack.sdk.CreatePriceTableResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreatePriceTableResult() : value; 
 
         return ret;
     }
@@ -96,11 +102,11 @@ public class DeleteResourcePriceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/billings/prices/{uuid}";
+        info.httpMethod = "POST";
+        info.path = "/billings/price-tables";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 

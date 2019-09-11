@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteResourcePriceAction extends AbstractAction {
+public class UpdatePriceTableAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteResourcePriceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteResourcePriceResult value;
+        public org.zstack.sdk.UpdatePriceTableResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,11 +28,11 @@ public class DeleteResourcePriceAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean cutoffPrice = false;
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
 
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +66,8 @@ public class DeleteResourcePriceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteResourcePriceResult value = res.getResult(org.zstack.sdk.DeleteResourcePriceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteResourcePriceResult() : value; 
+        org.zstack.sdk.UpdatePriceTableResult value = res.getResult(org.zstack.sdk.UpdatePriceTableResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdatePriceTableResult() : value; 
 
         return ret;
     }
@@ -96,11 +96,11 @@ public class DeleteResourcePriceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/billings/prices/{uuid}";
+        info.httpMethod = "PUT";
+        info.path = "/billings/price-tables/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "updatePriceTable";
         return info;
     }
 
