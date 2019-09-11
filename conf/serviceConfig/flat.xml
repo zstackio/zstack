@@ -6,4 +6,9 @@
         <name>org.zstack.network.service.flat.APIGetL3NetworkDhcpIpAddressMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.network.service.flat.APIGetL3NetworkIpStatisticMsg</name>
+        <interceptor>FlatApiInterceptor</interceptor>
+    </message>
+
 </service>
