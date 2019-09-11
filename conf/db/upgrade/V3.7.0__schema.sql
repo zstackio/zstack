@@ -54,7 +54,7 @@ CREATE PROCEDURE upgradeEmailAddressFromEndpoint()
                 VALUES (email_address_uuid, NULL, 'SNSEmailAddressVO', 'org.zstack.sns.platform.email.SNSEmailAddressVO');
 
                 INSERT INTO `SNSEmailAddressVO` (`uuid`, `emailAddress`, `endpointUuid`, `createDate`, `lastOpDate`)
-                SELECT email_address_uuid, email_address, `uuid`, NOW(), NOW() FROM `SNSEmailEndpointVO` WHERE `email` IS NULL;
+                VALUES (email_address_uuid, email_address, endpoint_uuid, NOW(), NOW());
             END IF;
         END LOOP;
         CLOSE cur;
