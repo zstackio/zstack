@@ -1,6 +1,7 @@
 package org.zstack.compute.vm;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -17,6 +18,7 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.jsonlabel.JsonLabel;
+import org.zstack.core.jsonlabel.JsonLabelInventory;
 import org.zstack.core.thread.*;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
@@ -68,18 +70,17 @@ import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.ObjectUtils;
-import org.zstack.utils.TagUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
+import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.io.File;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Future;
@@ -220,11 +221,20 @@ public class VmInstanceManagerImpl extends AbstractService implements
             handle((APIGetInterdependentL3NetworksImagesMsg) msg);
         } else if (msg instanceof APIGetCandidateVmForAttachingIsoMsg) {
             handle((APIGetCandidateVmForAttachingIsoMsg) msg);
+        } else if (msg instanceof APIGetSpiceCertificatesMsg) {
+            handle((APIGetSpiceCertificatesMsg) msg);
         } else if (msg instanceof VmInstanceMessage) {
             passThrough((VmInstanceMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetSpiceCertificatesMsg msg) {
+        APIGetSpiceCertificatesReply reply = new APIGetSpiceCertificatesReply();
+        String certificateStr = new JsonLabel().get("spiceCA", String.class);
+        reply.setCertificateStr(certificateStr);
+        bus.reply(msg, reply);
     }
 
     @Transactional(readOnly = true)
@@ -1361,6 +1371,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             populateExtensions();
             installSystemTagValidator();
             installGlobalConfigUpdater();
+            configSpiceCertificates();
 
             bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
                 @Override
@@ -1386,6 +1397,44 @@ public class VmInstanceManagerImpl extends AbstractService implements
             return true;
         } catch (Exception e) {
             throw new CloudConfigureFailException(VmInstanceManagerImpl.class, e.getMessage(), e);
+        }
+    }
+
+    private void configSpiceCertificates() {
+        //create spice Certificates
+        String kvmAnsibleDir = PathUtil.join(PathUtil.getZStackHomeFolder(), "ansible","files","kvm");
+
+        try {
+            File dst = new File(kvmAnsibleDir);
+            if (!dst.exists()) {
+                dst.mkdirs();
+            }
+
+            File caFile = new File(kvmAnsibleDir + "/certs/ca-cert.pem");
+            if ( ! caFile.exists()) {
+                File scriptPath = PathUtil.findFileOnClassPath("scripts/spice-tls.sh");
+                ShellUtils.run("bash " + scriptPath.getAbsolutePath(), kvmAnsibleDir, false);
+                caFile = new File(kvmAnsibleDir + "/certs/ca-cert.pem");
+            }
+
+            String ca = FileUtils.readFileToString(caFile);
+            ca = ca.trim();
+            ca = StringDSL.stripEnd(ca, "\n");
+            File privateKeyFile = new File(kvmAnsibleDir + "/certs/ca-key.pem");
+            String privateKey = FileUtils.readFileToString(privateKeyFile);
+            privateKey = privateKey.trim();
+            privateKey = StringDSL.stripEnd(privateKey, "\n");
+
+            JsonLabelInventory caInventory = new JsonLabel().createIfAbsent("spiceCA", ca);
+            JsonLabelInventory privateKeyInventory = new JsonLabel().createIfAbsent("spicePrivateKey", privateKey);
+
+            //old version didn't generate key in database, we will write back key for HA environment
+            FileUtils.writeStringToFile(caFile,caInventory.getLabelValue());
+            ShellUtils.run(String.format("chmod 600 %s", privateKeyFile.getAbsolutePath()));
+            FileUtils.writeStringToFile(privateKeyFile, privateKeyInventory.getLabelValue());
+            ShellUtils.run(String.format("chmod 400 %s", privateKeyFile.getAbsolutePath()));
+        } catch (Exception e) {
+            logger.warn("failed to create directory: " + kvmAnsibleDir, e);
         }
     }
 

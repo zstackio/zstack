@@ -11,6 +11,7 @@ public class APIGetVmConsoleAddressReply extends APIReply {
     private String hostIp;
     private int port;
     private String protocol;
+    private VdiPortInfo vdiPortInfo;
 
     public String getHostIp() {
         return hostIp;
@@ -35,7 +36,15 @@ public class APIGetVmConsoleAddressReply extends APIReply {
     public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
- 
+
+    public VdiPortInfo getVdiPortInfo() {
+        return vdiPortInfo;
+    }
+
+    public void setVdiPortInfo(VdiPortInfo vdiPortInfo) {
+        this.vdiPortInfo = vdiPortInfo;
+    }
+
     public static APIGetVmConsoleAddressReply __example__() {
         APIGetVmConsoleAddressReply reply = new APIGetVmConsoleAddressReply();
         reply.hostIp = "192.168.10.100";

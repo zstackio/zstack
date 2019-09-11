@@ -2664,6 +2664,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmBootOrderMsg) msg);
         } else if (msg instanceof APISetVmConsolePasswordMsg) {
             handle((APISetVmConsolePasswordMsg) msg);
+        } else if (msg instanceof APISetVmSoundTypeMsg) {
+            handle((APISetVmSoundTypeMsg) msg);
+        } else if (msg instanceof APISetVmQxlMemoryMsg) {
+            handle((APISetVmQxlMemoryMsg) msg);
+        } else if (msg instanceof APIEnableSpiceChannelSupportTLSMsg) {
+            handle((APIEnableSpiceChannelSupportTLSMsg) msg);
         } else if (msg instanceof APIGetVmBootOrderMsg) {
             handle((APIGetVmBootOrderMsg) msg);
         } else if (msg instanceof APIDeleteVmConsolePasswordMsg) {
@@ -2948,6 +2954,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     creply.setHostIp(hr.getHostIp());
                     creply.setPort(hr.getPort());
                     creply.setProtocol(hr.getProtocol());
+                    creply.setVdiPortInfo(hr.getVdiPortInfo());
                 }
 
                 bus.reply(msg, creply);
@@ -3010,6 +3017,41 @@ public class VmInstanceBase extends AbstractVmInstance {
         creator.recreate = true;
         creator.create();
         evt.setInventory(getSelfInventory());
+        bus.publish(evt);
+    }
+
+    private void handle(APISetVmSoundTypeMsg msg) {
+        APISetVmSoundTypeEvent evt = new APISetVmSoundTypeEvent(msg.getId());
+        SystemTagCreator creator = VmSystemTags.SOUND_TYPE.newSystemTagCreator(self.getUuid());
+        creator.setTagByTokens(map(e(VmSystemTags.SOUND_TYPE_TOKEN, msg.getSoundType())));
+        creator.recreate = true;
+        creator.create();
+        bus.publish(evt);
+    }
+
+    private void handle(APISetVmQxlMemoryMsg msg) {
+        APISetVmQxlMemoryEvent evt = new APISetVmQxlMemoryEvent(msg.getId());
+        SystemTagCreator creator = VmSystemTags.QXL_MEMORY.newSystemTagCreator(self.getUuid());
+        creator.setTagByTokens(map(
+                e(VmSystemTags.QXL_RAM_TOKEN, msg.getRam()),
+                e(VmSystemTags.QXL_VRAM_TOKEN, msg.getVram()),
+                e(VmSystemTags.QXL_VGAMEM_TOKEN, msg.getVgamem())
+        ));
+        creator.recreate = true;
+        creator.create();
+        bus.publish(evt);
+    }
+
+    private void handle(APIEnableSpiceChannelSupportTLSMsg msg) {
+        APIEnableSpiceChannelSupportTLSEvent evt = new APIEnableSpiceChannelSupportTLSEvent(msg.getId());
+        if (msg.getOpen()) {
+            SystemTagCreator creator = VmSystemTags.SPICE_CHANNEL.newSystemTagCreator(self.getUuid());
+            creator.setTagByTokens(map(e(VmSystemTags.SPICE_CHANNEL_TOKEN, StringUtils.join(msg.getChannels(), ","))));
+            creator.recreate = true;
+            creator.create();
+        } else {
+            VmSystemTags.SPICE_CHANNEL.delete(self.getUuid());
+        }
         bus.publish(evt);
     }
 

@@ -653,6 +653,23 @@ public class KVMHost extends HostBase implements Host {
                     reply.setHostIp(self.getManagementIp());
                     reply.setProtocol(ret.getProtocol());
                     reply.setPort(ret.getPort());
+
+                    VdiPortInfo vdiPortInfo = new VdiPortInfo();
+                    if (ret.getVncPort() != null) {
+                        vdiPortInfo.setVncPort(ret.getVncPort());
+                    }
+                    if (ret.getSpicePort() != null) {
+                        vdiPortInfo.setSpicePort(ret.getSpicePort());
+                    }
+                    if (ret.getSpiceTlsPort() != null) {
+                        vdiPortInfo.setSpiceTlsPort(ret.getSpiceTlsPort());
+                    }
+                    if (VmSystemTags.SPICE_CHANNEL.hasTag(msg.getVmInstanceUuid())) {
+                        vdiPortInfo.setSpiceTls(true);
+                    } else {
+                        vdiPortInfo.setSpiceTls(false);
+                    }
+                    reply.setVdiPortInfo(vdiPortInfo);
                 }
                 bus.reply(msg, reply);
             }
@@ -1915,6 +1932,21 @@ public class KVMHost extends HostBase implements Host {
         cmd.setMaxMemory(self.getCapacity().getTotalPhysicalMemory());
         cmd.setClock(ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio) ? "localtime" : "utc");
         cmd.setVideoType(VmGlobalConfig.VM_VIDEO_TYPE.value(String.class));
+        if (VmSystemTags.QXL_MEMORY.hasTag(spec.getVmInventory().getUuid())) {
+            Map<String,String> qxlMemory = VmSystemTags.QXL_MEMORY.getTokensByResourceUuid(spec.getVmInventory().getUuid());
+            cmd.setQxlMemory(qxlMemory);
+        }
+        if (VmSystemTags.SOUND_TYPE.hasTag(spec.getVmInventory().getUuid())) {
+            cmd.setSoundType(VmSystemTags.SOUND_TYPE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class, VmSystemTags.SOUND_TYPE_TOKEN));
+        }
+        if(VmSystemTags.SPICE_CHANNEL.hasTag(spec.getVmInventory().getUuid())){
+            String tagStr = VmSystemTags.SPICE_CHANNEL.getTokenByResourceUuid(spec.getVmInventory().getUuid(),VmInstanceVO.class,VmSystemTags.SPICE_CHANNEL_TOKEN);
+            List<String> spiceChannels = new ArrayList<>();
+            Optional.ofNullable(tagStr).ifPresent(it -> spiceChannels.addAll(Arrays.asList(it.split(","))));
+            if(!spiceChannels.isEmpty()){
+                cmd.setSpiceChannels(spiceChannels);
+            }
+        }
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
         cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getVmInventory().getClusterUuid(), Boolean.class));
         cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));

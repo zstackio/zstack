@@ -28,9 +28,17 @@ doc {
     }
     field {
         name "protocol"
-        desc "云主机控制台协议，vnc或spice"
+        desc "云主机控制台协议，vnc或spiceh或vncAndSpice"
         type "String"
         since "0.6"
+    }
+    ref {
+        name "vdiPortInfo"
+        path "org.zstack.header.vm.APIGetVmConsoleAddressReply.vdiPortInfo"
+        desc "vdi端口号信息"
+        type "VdiPortInfo"
+        since "0.6"
+        clz VdiPortInfo.class
     }
     field {
         name "success"

@@ -122,4 +122,15 @@ public class VmSystemTags {
             String.format("vmMachineType::{%s}", MACHINE_TYPE_TOKEN),
             VmInstanceVO.class
     );
+
+    public static String SOUND_TYPE_TOKEN = "soundType";
+    public static PatternedSystemTag SOUND_TYPE = new PatternedSystemTag(String.format("soundType::{%s}", SOUND_TYPE_TOKEN), VmInstanceVO.class);
+
+    public static String QXL_RAM_TOKEN = "ram";
+    public static String QXL_VRAM_TOKEN = "vram";
+    public static String QXL_VGAMEM_TOKEN = "vgamem";
+    public static PatternedSystemTag QXL_MEMORY = new PatternedSystemTag(String.format("qxlMemory::{%s}::{%s}::{%s}", QXL_RAM_TOKEN, QXL_VRAM_TOKEN, QXL_VGAMEM_TOKEN), VmInstanceVO.class);
+
+    public static String SPICE_CHANNEL_TOKEN = "spiceChannel";
+    public static PatternedSystemTag SPICE_CHANNEL = new PatternedSystemTag(String.format("spiceChannel::{%s}", SPICE_CHANNEL_TOKEN), VmInstanceVO.class);
 }

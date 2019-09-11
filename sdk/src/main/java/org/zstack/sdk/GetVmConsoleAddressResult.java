@@ -27,4 +27,11 @@ public class GetVmConsoleAddressResult {
         return this.protocol;
     }
 
+    public VdiPortInfo vdiPortInfo;
+    public VdiPortInfo getVdiPortInfo() {
+        return vdiPortInfo;
+    }
+    public void setVdiPortInfo(VdiPortInfo vdiPortInfo) {
+        this.vdiPortInfo = vdiPortInfo;
+    }
 }
