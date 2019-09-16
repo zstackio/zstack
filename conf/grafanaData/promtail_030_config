@@ -33,6 +33,14 @@ scrape_configs:
       management: api
       instance: ${LOCAL_IP}
       __path__: ${ZSTACK_HOME}/apache-tomcat/logs/zstack-api.log
+- job_name: mn-4
+  static_configs:
+  - targets:
+    - localhost
+    labels:
+      management: deploy
+      instance: ${LOCAL_IP}
+      __path__: /var/log/zstack/deploy.log*
 
 - job_name: host-1
   static_configs:
@@ -47,18 +55,10 @@ scrape_configs:
   - targets:
     - localhost
     labels:
-      host: deploy
-      instance: ${LOCAL_IP}
-      __path__: /var/log/zstack/deploy.log
-- job_name: host-3
-  static_configs:
-  - targets:
-    - localhost
-    labels:
       host: zstack-cli
       instance: ${LOCAL_IP}
       __path__: /var/log/zstack/zstack-cli
-- job_name: host-4
+- job_name: host-3
   static_configs:
   - targets:
     - localhost
@@ -66,7 +66,7 @@ scrape_configs:
       host: zstack-ctl
       instance: ${LOCAL_IP}
       __path__: /var/log/zstack/zstack-ctl.log
-- job_name: host-5
+- job_name: host-4
   static_configs:
   - targets:
     - localhost
@@ -74,7 +74,7 @@ scrape_configs:
       host: zstack.log
       instance: ${LOCAL_IP}
       __path__: /var/log/zstack/zstack.log
-- job_name: host-6
+- job_name: host-5
   static_configs:
   - targets:
     - localhost
@@ -82,7 +82,7 @@ scrape_configs:
       host: zstack-tui
       instance: ${LOCAL_IP}
       __path__: /var/log/zstack/zstack_tui.log
-- job_name: host-7
+- job_name: host-6
   static_configs:
   - targets:
     - localhost
@@ -90,7 +90,7 @@ scrape_configs:
       host: zsn-agent
       instance: ${LOCAL_IP}
       __path__: /var/log/zstack/zsn-agent/zsn-agent.log
-- job_name: host-8
+- job_name: host-7
   static_configs:
   - targets:
     - localhost
@@ -98,7 +98,7 @@ scrape_configs:
       host: zstack-console-proxy
       instance: ${LOCAL_IP}
       __path__: /var/log/zstack/zstack-console-proxy.log
-- job_name: host-9
+- job_name: host-8
   static_configs:
   - targets:
     - localhost
