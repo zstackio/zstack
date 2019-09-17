@@ -1,5 +1,6 @@
 package org.zstack.header.cluster;
 
+import org.zstack.header.message.APIParam;
 import org.zstack.header.message.NeedReplyMessage;
 
 /**
@@ -8,6 +9,8 @@ import org.zstack.header.message.NeedReplyMessage;
 public class UpdateClusterOSMsg extends NeedReplyMessage implements ClusterMessage {
     private String uuid;
     private String excludePackages;
+    private String updatePackages;
+    private String releaseVersion;
 
     public String getUuid() {
         return uuid;
@@ -23,6 +26,22 @@ public class UpdateClusterOSMsg extends NeedReplyMessage implements ClusterMessa
 
     public void setExcludePackages(String excludePackages) {
         this.excludePackages = excludePackages;
+    }
+
+    public String getUpdatePackages() {
+        return updatePackages;
+    }
+
+    public void setUpdatePackages(String updatePackages) {
+        this.updatePackages = updatePackages;
+    }
+
+    public String getReleaseVersion() {
+        return releaseVersion;
+    }
+
+    public void setReleaseVersion(String releaseVersion) {
+        this.releaseVersion = releaseVersion;
     }
 
     @Override

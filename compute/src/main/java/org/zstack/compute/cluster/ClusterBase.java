@@ -113,12 +113,14 @@ public class ClusterBase extends AbstractCluster {
 
         // assemble jobData
         String jobData;
-        if (msg.getExcludePackages() == null) {
-            jobData = String.format("{'uuid':'%s', 'excludePackages':''}", msg.getUuid());
-        } else {
-            jobData = String.format("{'uuid':'%s', 'excludePackages':'%s'}",
-                    msg.getUuid(), String.join(",", msg.getExcludePackages()));
-        }
+        String excludePackages;
+        String updatePackages;
+        String releaseVersion;
+        excludePackages = msg.getExcludePackages() == null ? "" :String.join(",", msg.getExcludePackages());
+        updatePackages = msg.getUpdatePackages() == null ? "" :String.join(",", msg.getUpdatePackages());
+        releaseVersion = msg.getReleaseVersion() == null ? "" :msg.getReleaseVersion();
+        jobData = String.format("{'uuid':'%s', 'excludePackages':'%s', 'updatePackages':'%s', 'releaseVersion':'%s'}",
+                    msg.getUuid(), excludePackages, updatePackages, releaseVersion);
 
         SubmitLongJobMsg smsg = new SubmitLongJobMsg();
         smsg.setJobName(APIUpdateClusterOSMsg.class.getSimpleName());
@@ -329,6 +331,8 @@ public class ClusterBase extends AbstractCluster {
                     umsg.setClusterUuid(msg.getUuid());
                     umsg.setExcludePackages(msg.getExcludePackages());
                     umsg.setEnableExperimentalRepo(enableExpRepo);
+                    umsg.setUpdatePackages(msg.getUpdatePackages());
+                    umsg.setReleaseVersion(msg.getReleaseVersion());
                     bus.makeTargetServiceIdByResourceUuid(umsg, HostConstant.SERVICE_ID, hostUuid);
                     bus.send(umsg, new CloudBusCallBack(completion) {
                         @Override
