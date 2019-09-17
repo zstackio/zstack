@@ -16,6 +16,7 @@ import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DatabaseGlobalProperty;
 import org.zstack.core.db.Q;
+import org.zstack.core.encrypt.EncryptRSA;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.statemachine.StateMachine;
 import org.zstack.core.statemachine.StateMachineImpl;
@@ -63,6 +64,8 @@ public class Platform {
     private static String msId;
     private static String managementServerIp;
     private static MessageSource messageSource;
+    private static String encryptionKey = EncryptRSA.generateKeyString("ZStack open source");
+    private static EncryptRSA rsa = new EncryptRSA();
 
     public static final String COMPONENT_CLASSPATH_HOME = "componentsHome";
     public static final String FAKE_UUID = "THIS_IS_A_FAKE_UUID";
@@ -118,16 +121,25 @@ public class Platform {
             Object valueToSet = null;
             String name = at.name();
             if (Map.class.isAssignableFrom(f.getType())) {
-                Map ret = linkGlobalPropertyMap(name);
+                Map<String, String> ret = linkGlobalPropertyMap(name);
                 if (ret.isEmpty() && at.required()) {
                     throw new IllegalArgumentException(String.format("A required global property[%s] missing in zstack.properties", name));
+                }
+
+                if (at.encrypted()) {
+                    ret.forEach((k, v) -> ret.put(k, rsa.decrypt(v, encryptionKey)));
                 }
                 valueToSet = ret;
             }  else if (List.class.isAssignableFrom(f.getType())) {
-                List ret = linkGlobalPropertyList(name);
+                List<String> ret = linkGlobalPropertyList(name);
                 if (ret.isEmpty() && at.required()) {
                     throw new IllegalArgumentException(String.format("A required global property[%s] missing in zstack.properties", name));
                 }
+
+                if (at.encrypted()) {
+                    ret = ret.stream().map(it -> rsa.decrypt(it, encryptionKey)).collect(Collectors.toList());
+                }
+
                 valueToSet = ret;
             } else {
                 String value = propertiesMap.get(name);
@@ -144,6 +156,9 @@ public class Platform {
                 }
 
                 if (value != null) {
+                    if (at.encrypted()) {
+                        value = rsa.decrypt(value, encryptionKey);
+                    }
                     value = StringTemplate.substitute(value, propertiesMap);
                 }
 
@@ -182,7 +197,7 @@ public class Platform {
         return globalProperties;
     }
 
-    private static List linkGlobalPropertyList(String name) {
+    private static List<String> linkGlobalPropertyList(String name) {
         Map<String, String> map = getGlobalPropertiesStartWith(name);
         List<String> ret = new ArrayList<String>(map.size());
         if (map.isEmpty()) {
