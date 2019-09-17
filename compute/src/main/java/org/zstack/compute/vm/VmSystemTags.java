@@ -130,7 +130,4 @@ public class VmSystemTags {
     public static String QXL_VRAM_TOKEN = "vram";
     public static String QXL_VGAMEM_TOKEN = "vgamem";
     public static PatternedSystemTag QXL_MEMORY = new PatternedSystemTag(String.format("qxlMemory::{%s}::{%s}::{%s}", QXL_RAM_TOKEN, QXL_VRAM_TOKEN, QXL_VGAMEM_TOKEN), VmInstanceVO.class);
-
-    public static String SPICE_CHANNEL_TOKEN = "spiceChannel";
-    public static PatternedSystemTag SPICE_CHANNEL = new PatternedSystemTag(String.format("spiceChannel::{%s}", SPICE_CHANNEL_TOKEN), VmInstanceVO.class);
 }

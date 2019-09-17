@@ -8,7 +8,6 @@ public class VdiPortInfo {
     private Integer vncPort;
     private Integer spicePort;
     private Integer spiceTlsPort;
-    private boolean spiceTls;
 
     public Integer getVncPort() {
         return vncPort;
@@ -34,11 +33,4 @@ public class VdiPortInfo {
         this.spiceTlsPort = spiceTlsPort;
     }
 
-    public boolean getSpiceTls() {
-        return this.spiceTls;
-    }
-
-    public void setSpiceTls(boolean spiceTls) {
-        this.spiceTls = spiceTls;
-    }
 }

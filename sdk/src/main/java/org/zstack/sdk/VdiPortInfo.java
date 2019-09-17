@@ -30,12 +30,4 @@ public class VdiPortInfo  {
         return this.spiceTlsPort;
     }
 
-    public boolean spiceTls;
-    public void setSpiceTls(boolean spiceTls) {
-        this.spiceTls = spiceTls;
-    }
-    public boolean getSpiceTls() {
-        return this.spiceTls;
-    }
-
 }

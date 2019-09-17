@@ -39,7 +39,7 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					values ("ac97","hda","ich6")
+					values ("ac97","ich6")
 				}
 				column {
 					name "systemTags"

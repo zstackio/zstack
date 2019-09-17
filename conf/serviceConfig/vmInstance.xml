@@ -175,9 +175,6 @@
         <name>org.zstack.header.vm.APISetVmQxlMemoryMsg</name>
     </message>
     <message>
-        <name>org.zstack.header.vm.APIEnableSpiceChannelSupportTLSMsg</name>
-    </message>
-    <message>
         <name>org.zstack.header.vm.APIGetSpiceCertificatesMsg</name>
     </message>
 </service>

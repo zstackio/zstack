@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OUTDIR=certs
+OUTDIR=spice-certs
 mkdir -p $OUTDIR
 CA_KEY=ca-key.pem
 SERVER_KEY=server-key.pem

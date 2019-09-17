@@ -2668,8 +2668,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmSoundTypeMsg) msg);
         } else if (msg instanceof APISetVmQxlMemoryMsg) {
             handle((APISetVmQxlMemoryMsg) msg);
-        } else if (msg instanceof APIEnableSpiceChannelSupportTLSMsg) {
-            handle((APIEnableSpiceChannelSupportTLSMsg) msg);
         } else if (msg instanceof APIGetVmBootOrderMsg) {
             handle((APIGetVmBootOrderMsg) msg);
         } else if (msg instanceof APIDeleteVmConsolePasswordMsg) {
@@ -3039,19 +3037,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         ));
         creator.recreate = true;
         creator.create();
-        bus.publish(evt);
-    }
-
-    private void handle(APIEnableSpiceChannelSupportTLSMsg msg) {
-        APIEnableSpiceChannelSupportTLSEvent evt = new APIEnableSpiceChannelSupportTLSEvent(msg.getId());
-        if (msg.getOpen()) {
-            SystemTagCreator creator = VmSystemTags.SPICE_CHANNEL.newSystemTagCreator(self.getUuid());
-            creator.setTagByTokens(map(e(VmSystemTags.SPICE_CHANNEL_TOKEN, StringUtils.join(msg.getChannels(), ","))));
-            creator.recreate = true;
-            creator.create();
-        } else {
-            VmSystemTags.SPICE_CHANNEL.delete(self.getUuid());
-        }
         bus.publish(evt);
     }
 

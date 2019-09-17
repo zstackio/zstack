@@ -119,27 +119,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APISetVmInstanceDefaultCdRomMsg) msg);
         } else if (msg instanceof APICreateVmCdRomMsg) {
             validate((APICreateVmCdRomMsg) msg);
-        } else if (msg instanceof APIEnableSpiceChannelSupportTLSMsg) {
-            validate((APIEnableSpiceChannelSupportTLSMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
-    }
-
-    private void validate(APIEnableSpiceChannelSupportTLSMsg msg) {
-        if (msg.getOpen() == true) {
-            if (msg.getChannels().isEmpty() || msg.getChannels() == null) {
-                throw new ApiMessageInterceptionException(argerr(
-                        "channels can not be null"));
-            }
-            msg.getChannels().stream().forEach(channel -> {
-                if (!SpiceChannelEnum.contains(channel)) {
-                    throw new ApiMessageInterceptionException(argerr(
-                            "spice channel[%s] is not exit", channel));
-                }
-            });
-        }
     }
 
     private void validate(final APICreateVmCdRomMsg msg) {

@@ -17,7 +17,6 @@ import org.zstack.core.asyncbatch.While
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.DatabaseFacadeImpl
 import org.zstack.core.db.SQL
-
 import org.zstack.header.core.NoErrorCompletion
 import org.zstack.header.core.progress.TaskProgressVO
 import org.zstack.header.core.workflow.WhileCompletion

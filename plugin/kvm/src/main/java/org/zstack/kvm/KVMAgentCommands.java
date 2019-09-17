@@ -2068,4 +2068,10 @@ public class KVMAgentCommands {
 
     public static class ShutdownHostResponse extends AgentResponse {
     }
+
+    public static class UpdateSpiceChannelConfigCmd extends AgentCommand {
+    }
+
+    public static class UpdateSpiceChannelConfigResponse extends AgentResponse {
+    }
 }

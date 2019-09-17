@@ -28,7 +28,7 @@ doc {
     }
     field {
         name "protocol"
-        desc "云主机控制台协议，vnc或spiceh或vncAndSpice"
+        desc "云主机控制台协议，vnc或spice或vncAndSpice"
         type "String"
         since "0.6"
     }
