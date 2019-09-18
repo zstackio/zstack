@@ -31,10 +31,10 @@ public class CalculateResourceSpendingAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String resourceUuid;
 
-    @Param(required = false, validRegexValues = "[0-9]{4}[0-9]{2}[0-9]{2}", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validRegexValues = "(\\d{4})([0-1]\\d)([0-3]\\d)\\s([0-5]\\d):([0-5]\\d):([0-5]\\d)", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String dateStart;
 
-    @Param(required = false, validRegexValues = "[0-9]{4}[0-9]{2}[0-9]{2}", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validRegexValues = "(\\d{4})([0-1]\\d)([0-3]\\d)\\s([0-5]\\d):([0-5]\\d):([0-5]\\d)", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String dateEnd;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
