@@ -13,7 +13,7 @@ public class DatabaseGlobalProperty {
     public static String DbUrl;
     @GlobalProperty(name="DB.user")
     public static String DbUser;
-    @GlobalProperty(name="DB.password")
+    @GlobalProperty(name="DB.password", encrypted = true)
     public static String DbPassword;
     @GlobalProperty(name="DB.idleConnectionTestPeriod")
     public static String DbIdleConnectionTestPeriod;

@@ -5,8 +5,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -131,6 +131,11 @@ public class EncryptRSA {
 		return string.getBytes(UTF8_CHARSET);
 	}
 
+	public static String generateKeyString(String randomFactor) {
+		byte[] md5Data = encodeUTF8(StringDSL.getMd5Sum(randomFactor));
+		byte[] base64Data = Base64.encodeBase64(md5Data);
+		return decodeUTF8(base64Data);
+	}
 
 	public String encrypt1(String password) throws Exception{
 		initKey();
@@ -178,7 +183,7 @@ public class EncryptRSA {
 
 	}
 
-	public Object decrypt(String password,String keyString) throws Exception{
+	public String decrypt(String password,String keyString) {
 		try {
 			byte[] keySrcBytes = encodeUTF8(keyString);
 			byte[] newKey1 = Base64.decodeBase64(keySrcBytes);
@@ -195,7 +200,6 @@ public class EncryptRSA {
 			logger.debug(e.getMessage());
 			return password;
 		}
-
 	}
 
 	public static Key getKey2() {

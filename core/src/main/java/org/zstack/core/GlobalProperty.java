@@ -14,4 +14,5 @@ public @interface GlobalProperty {
     String name();
     String defaultValue() default DEFAULT_NULL_STRING;
     boolean required() default false;
+    boolean encrypted() default false;
 }
