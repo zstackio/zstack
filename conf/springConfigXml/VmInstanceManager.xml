@@ -168,4 +168,10 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="VmPriorityOperator" class="org.zstack.compute.vm.VmPriorityOperator">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>
