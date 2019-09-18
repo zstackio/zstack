@@ -13,4 +13,7 @@ public class AnsibleGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig CHECK_MANAGEMENT_CALLBACK = new GlobalConfig(CATEGORY, "check.management.callback");
+
+    @GlobalConfigValidation
+    public static GlobalConfig ENABLE_ANSIBLE_CACHE_SYSTEM_INFO = new GlobalConfig(CATEGORY, "enable.ansible.cache.system.info");
 }

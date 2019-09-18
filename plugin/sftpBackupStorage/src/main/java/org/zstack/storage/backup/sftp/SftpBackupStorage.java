@@ -365,6 +365,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         runner.setPassword(getSelf().getPassword());
         runner.setUsername(getSelf().getUsername());
         runner.setTargetIp(getSelf().getHostname());
+        runner.setTargetUuid(getSelf().getUuid());
         runner.setSshPort(getSelf().getSshPort());
         runner.setAgentPort(SftpBackupStorageGlobalProperty.AGENT_PORT);
         runner.setPlayBookName(SftpBackupStorageConstant.ANSIBLE_PLAYBOOK_NAME);
