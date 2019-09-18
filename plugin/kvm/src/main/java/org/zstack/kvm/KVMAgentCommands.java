@@ -3,7 +3,9 @@ package org.zstack.kvm;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.validation.Validation;
+import org.zstack.header.vm.PriorityConfigStruct;
 import org.zstack.header.vm.VmBootDevice;
+import org.zstack.header.vm.VmPriorityConfigVO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 
@@ -63,6 +65,13 @@ public class KVMAgentCommands {
 
     public static class CheckVmStateRsp extends AgentResponse {
         public Map<String, String> states;
+    }
+
+    public static class UpdateVmPriorityCmd extends AgentCommand {
+        public List<PriorityConfigStruct> priorityConfigStructs;
+    }
+
+    public static class UpdateVmPriorityRsp extends AgentResponse {
     }
 
     public static class DetachNicCommand extends AgentCommand {
@@ -853,6 +862,42 @@ public class KVMAgentCommands {
         String getVmInstanceUuid();
     }
 
+    public static class PriorityConfig {
+        private String vmUuid;
+        private int cpuShares;
+        private int oomScoreAdj;
+
+        PriorityConfig(VmPriorityConfigVO vo, String vmUuid) {
+            this.vmUuid = vmUuid;
+            this.cpuShares = vo.getCpuShares();
+            this.oomScoreAdj = vo.getOomScoreAdj();
+        }
+
+        public int getCpuShares() {
+            return cpuShares;
+        }
+
+        public void setCpuShares(int cpuShares) {
+            this.cpuShares = cpuShares;
+        }
+
+        public int getOomScoreAdj() {
+            return oomScoreAdj;
+        }
+
+        public void setOomScoreAdj(int oomScoreAdj) {
+            this.oomScoreAdj = oomScoreAdj;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+    }
+
     public static class StartVmCmd extends AgentCommand implements VmAddOnsCmd {
         private String vmInstanceUuid;
         private long vmInternalId;
@@ -898,6 +943,7 @@ public class KVMAgentCommands {
         private Integer pciePortNums;
         private boolean useHugePage;
         private String chassisAssetTag;
+        private PriorityConfigStruct priorityConfigStruct;
 
         public String getChassisAssetTag() {
             return chassisAssetTag;
@@ -905,6 +951,14 @@ public class KVMAgentCommands {
 
         public void setChassisAssetTag(String chassisAssetTag) {
             this.chassisAssetTag = chassisAssetTag;
+        }
+
+        public PriorityConfigStruct getPriorityConfigStruct() {
+            return priorityConfigStruct;
+        }
+
+        public void setPriorityConfigStruct(PriorityConfigStruct priorityConfigStruct) {
+            this.priorityConfigStruct = priorityConfigStruct;
         }
 
         public boolean isUseHugePage() {

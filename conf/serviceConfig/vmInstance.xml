@@ -30,6 +30,10 @@
         <serviceId>query</serviceId>
     </message>
     <message>
+        <name>org.zstack.header.vm.APIQueryVmPriorityConfigMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APIAttachL3NetworkToVmMsg</name>
     </message>
     <message>
@@ -167,5 +171,11 @@
     </message>
     <message>
         <name>org.zstack.header.vm.cdrom.APISetVmInstanceDefaultCdRomMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIUpdateVmPriorityMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIUpdatePriorityConfigMsg</name>
     </message>
 </service>

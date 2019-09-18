@@ -13,6 +13,7 @@ import org.zstack.compute.host.HostSystemTags;
 import org.zstack.compute.host.MigrateNetworkExtensionPoint;
 import org.zstack.compute.vm.IsoOperator;
 import org.zstack.compute.vm.VmGlobalConfig;
+import org.zstack.compute.vm.VmPriorityOperator;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
@@ -145,6 +146,7 @@ public class KVMHost extends HostBase implements Host {
     private String updateHostOSPath;
     private String updateDependencyPath;
     private String shutdownHost;
+    private String updateVmPriorityPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -269,6 +271,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.HOST_SHUTDOWN);
         shutdownHost = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VM_UPDATE_PRIORITY_PATH);
+        updateVmPriorityPath = ub.build().toString();
     }
 
     class Http<T> {
@@ -411,6 +417,8 @@ public class KVMHost extends HostBase implements Host {
             handle((DetachIsoOnHypervisorMsg) msg);
         } else if (msg instanceof CheckVmStateOnHypervisorMsg) {
             handle((CheckVmStateOnHypervisorMsg) msg);
+        } else if (msg instanceof UpdateVmPriorityMsg) {
+            handle((UpdateVmPriorityMsg) msg);
         } else if (msg instanceof GetVmConsoleAddressFromHostMsg) {
             handle((GetVmConsoleAddressFromHostMsg) msg);
         } else if (msg instanceof KvmRunShellMsg) {
@@ -654,6 +662,41 @@ public class KVMHost extends HostBase implements Host {
                     reply.setProtocol(ret.getProtocol());
                     reply.setPort(ret.getPort());
                 }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final UpdateVmPriorityMsg msg) {
+        final UpdateVmPriorityReply reply = new UpdateVmPriorityReply();
+        if (self.getStatus() != HostStatus.Connected) {
+            reply.setError(operr("the host[uuid:%s, status:%s] is not Connected", self.getUuid(), self.getStatus()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        Map<VmPriorityLevel, VmPriorityConfigVO> vos = dbf.listAll(VmPriorityConfigVO.class)
+                .stream().collect(Collectors.toMap(VmPriorityConfigVO::getLevel, v -> v));
+
+        UpdateVmPriorityCmd cmd = new UpdateVmPriorityCmd();
+        List<PriorityConfigStruct> priorityConfigStructs = new ArrayList<>();
+        msg.getVmlevelMap().forEach((key, value) -> {
+            priorityConfigStructs.add(new PriorityConfigStruct(vos.get(value), key));
+        });
+        cmd.priorityConfigStructs = priorityConfigStructs;
+        new Http<>(updateVmPriorityPath, cmd, UpdateVmPriorityRsp.class).call(new ReturnValueCompletion<UpdateVmPriorityRsp>(msg) {
+            @Override
+            public void success(UpdateVmPriorityRsp ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                }
+
                 bus.reply(msg, reply);
             }
 
@@ -1937,6 +1980,9 @@ public class KVMHost extends HostBase implements Host {
         if (VmMachineType.q35.toString().equals(machineType)) {
             cmd.setPciePortNums(VmGlobalConfig.PCIE_PORT_NUMS.value(Integer.class));
         }
+        VmPriorityLevel level = new VmPriorityOperator().getVmPriority(spec.getVmInventory().getUuid());
+        VmPriorityConfigVO priorityVO = Q.New(VmPriorityConfigVO.class).eq(VmPriorityConfigVO_.level, level).find();
+        cmd.setPriorityConfigStruct(new PriorityConfigStruct(priorityVO, spec.getVmInventory().getUuid()));
 
         VolumeTO rootVolume = new VolumeTO();
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());

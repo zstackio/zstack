@@ -14,6 +14,16 @@ CREATE TABLE IF NOT EXISTS `InstallPathRecycleVO` (
     UNIQUE KEY `trashId` (`trashId`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `zstack`.`VmPriorityConfigVO` (
+    `uuid` VARCHAR(32) NOT NULL UNIQUE,
+    `level` VARCHAR(255) NOT NULL UNIQUE,
+    `cpuShares` int NOT NULL,
+    `oomScoreAdj` int NOT NULL,
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp,
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 ALTER TABLE `SNSEmailEndpointVO` modify column email varchar(1024) DEFAULT NULL;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`SNSEmailAddressVO` (

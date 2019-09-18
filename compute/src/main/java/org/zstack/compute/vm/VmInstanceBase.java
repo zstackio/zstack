@@ -107,6 +107,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected VmInstanceDeletionPolicyManager deletionPolicyMgr;
     @Autowired
     private HostAllocatorManager hostAllocatorMgr;
+    @Autowired
+    private VmPriorityOperator priorityOperator;
 
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
@@ -2728,6 +2730,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APICreateVmCdRomMsg) msg);
         } else if (msg instanceof APIUpdateVmCdRomMsg) {
             handle((APIUpdateVmCdRomMsg) msg);
+        } else if (msg instanceof APIUpdateVmPriorityMsg) {
+            handle((APIUpdateVmPriorityMsg) msg);
         } else if (msg instanceof  APISetVmInstanceDefaultCdRomMsg) {
             handle((APISetVmInstanceDefaultCdRomMsg) msg);
         } else {
@@ -6212,6 +6216,77 @@ public class VmInstanceBase extends AbstractVmInstance {
                 CreateVmCdRomReply r1 = reply.castReply();
                 event.setInventory(r1.getInventory());
                 bus.publish(event);
+            }
+        });
+    }
+
+    private void updateVmPriority(APIUpdateVmPriorityMsg msg, Completion completion) {
+        VmPriorityLevel oldLevel = priorityOperator.getVmPriority(self.getUuid());
+        VmPriorityLevel newLevel = VmPriorityLevel.valueOf(msg.getPriority());
+        if (oldLevel.equals(newLevel)) {
+            completion.success();
+            return;
+        }
+
+        if (!priorityOperator.needEffectImmediately(self.getState())) {
+            priorityOperator.setVmPriority(self.getUuid(), newLevel);
+            completion.success();
+            return;
+        }
+
+        UpdateVmPriorityMsg smsg = new UpdateVmPriorityMsg();
+        Map<String, VmPriorityLevel> vmLevelMap = new HashMap();
+        vmLevelMap.put(self.getUuid(), newLevel);
+        smsg.setHostUuid(self.getHostUuid());
+        smsg.setVmlevelMap(vmLevelMap);
+        bus.makeTargetServiceIdByResourceUuid(smsg, HostConstant.SERVICE_ID, self.getHostUuid());
+        bus.send(smsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                UpdateVmPriorityReply r = new UpdateVmPriorityReply();
+                if (!reply.isSuccess()) {
+                    ErrorCode err = operr("update vm[%s] priority to [%s] failed,because %s",
+                            self.getUuid(), msg.getPriority(), reply.getError());
+                    completion.fail(err);
+                    return;
+                }
+
+                priorityOperator.setVmPriority(self.getUuid(), newLevel);
+                completion.success();
+            }
+        });
+
+    }
+
+    private void handle(APIUpdateVmPriorityMsg msg) {
+        final APIUpdateVmPriorityEvent evt = new APIUpdateVmPriorityEvent(msg.getId());
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                updateVmPriority(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("change-vm-%s-priority", self.getUuid());
             }
         });
     }
