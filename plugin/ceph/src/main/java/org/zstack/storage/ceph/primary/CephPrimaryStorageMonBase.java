@@ -199,6 +199,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                             runner.setUsername(getSelf().getSshUsername());
                             runner.setSshPort(getSelf().getSshPort());
                             runner.setTargetIp(getSelf().getHostname());
+                            runner.setTargetUuid(getSelf().getUuid());
                             runner.setAgentPort(CephGlobalProperty.PRIMARY_STORAGE_AGENT_PORT);
                             runner.setPlayBookName(CephGlobalProperty.PRIMARY_STORAGE_PLAYBOOK_NAME);
                             runner.putArgument("pkg_cephpagent", CephGlobalProperty.PRIMARY_STORAGE_PACKAGE_NAME);
