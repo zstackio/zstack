@@ -150,6 +150,7 @@ public class KVMHost extends HostBase implements Host {
     private String updateVmPriorityPath;
     private String updateSpiceChannelConfigPath;
     private String cancelJob;
+    private String getVmFirstBootDevicePath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -286,6 +287,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(AgentConstant.CANCEL_JOB);
         cancelJob = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_GET_VM_FIRST_BOOT_DEVICE_PATH);
+        getVmFirstBootDevicePath = ub.build().toString();
     }
 
     class Http<T> {
@@ -310,7 +315,7 @@ public class KVMHost extends HostBase implements Host {
             call(null, completion);
         }
 
-        void call(String resourceUuid, ReturnValueCompletion<T> completion)  {
+        void call(String resourceUuid, ReturnValueCompletion<T> completion) {
             Map<String, String> header = new HashMap<>();
             header.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, resourceUuid == null ? self.getUuid() : resourceUuid);
             runBeforeAsyncJsonPostExts(header);
@@ -452,9 +457,54 @@ public class KVMHost extends HostBase implements Host {
             handle((ShutdownHostMsg) msg);
         } else if (msg instanceof CancelHostTaskMsg) {
             handle((CancelHostTaskMsg) msg);
+        } else if (msg instanceof GetVmFirstBootDeviceOnHypervisorMsg) {
+            handle((GetVmFirstBootDeviceOnHypervisorMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(GetVmFirstBootDeviceOnHypervisorMsg msg) {
+        inQueue().name(String.format("get-first-boot-device-of-vm-%s-on-kvm-%s", msg.getVmInstanceUuid(), self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> getVmFirstBootDevice(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void getVmFirstBootDevice(final GetVmFirstBootDeviceOnHypervisorMsg msg, final NoErrorCompletion completion) {
+        checkStatus();
+
+        GetVmFirstBootDeviceCmd cmd = new GetVmFirstBootDeviceCmd();
+        cmd.setUuid(msg.getVmInstanceUuid());
+        new Http<>(getVmFirstBootDevicePath, cmd, GetVmFirstBootDeviceResponse.class).call(new ReturnValueCompletion<GetVmFirstBootDeviceResponse>(msg, completion) {
+            @Override
+            public void success(GetVmFirstBootDeviceResponse ret) {
+                final GetVmFirstBootDeviceOnHypervisorReply reply = new GetVmFirstBootDeviceOnHypervisorReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("unable to get first boot dev of vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+                            msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
+                } else {
+                    reply.setFirstBootDevice(ret.getFirstBootDevice());
+                    logger.debug(String.format("first boot dev of vm[uuid:%s] on kvm host[uuid:%s] is %s",
+                            msg.getVmInstanceUuid(), self.getUuid(), ret.getFirstBootDevice()));
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                final GetVmFirstBootDeviceOnHypervisorReply reply = new GetVmFirstBootDeviceOnHypervisorReply();
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
     }
 
     private void handle(GetKVMHostDownloadCredentialMsg msg) {
@@ -2613,6 +2663,9 @@ public class KVMHost extends HostBase implements Host {
                 if (null == KVMSystemTags.EPT_CPU_FLAG.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.EPT_CPU_FLAG_TOKEN)) {
                     createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, "ept", false);
                 }
+                if (null == HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(self.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN)) {
+                    createTagWithoutNonValue(HostSystemTags.CPU_ARCHITECTURE, HostSystemTags.CPU_ARCHITECTURE_TOKEN, "x86_64", false);
+                }
 
                 if (!checkQemuLibvirtVersionOfHost()) {
                     complete.fail(operr("host [uuid:%s] cannot be added to cluster [uuid:%s] because qemu/libvirt version does not match",
@@ -2976,6 +3029,7 @@ public class KVMHost extends HostBase implements Host {
                                     createTagWithoutNonValue(KVMSystemTags.HVM_CPU_FLAG, KVMSystemTags.HVM_CPU_FLAG_TOKEN, ret.getHvmCpuFlag(), false);
                                     createTagWithoutNonValue(KVMSystemTags.EPT_CPU_FLAG, KVMSystemTags.EPT_CPU_FLAG_TOKEN, ret.getEptFlag(), false);
                                     createTagWithoutNonValue(KVMSystemTags.CPU_MODEL_NAME, KVMSystemTags.CPU_MODEL_NAME_TOKEN, ret.getCpuModelName(), false);
+                                    createTagWithoutNonValue(HostSystemTags.CPU_ARCHITECTURE, HostSystemTags.CPU_ARCHITECTURE_TOKEN, ret.getCpuArchitecture(), true);
                                     createTagWithoutNonValue(HostSystemTags.HOST_CPU_MODEL_NAME, HostSystemTags.HOST_CPU_MODEL_NAME_TOKEN, ret.getHostCpuModelName(), true);
                                     createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);

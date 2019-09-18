@@ -29,6 +29,7 @@
         </property>
         <property name="stopVmWorkFlowElements">
             <list>
+                <value>org.zstack.compute.vm.BeforeVmStopOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmStopOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmReturnHostFlow</value>
                 <value>org.zstack.compute.vm.VmReleaseResourceFlow</value>
@@ -36,6 +37,7 @@
         </property>
         <property name="rebootVmWorkFlowElements">
             <list>
+                <value>org.zstack.compute.vm.BeforeVmStopOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmStopOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmReleaseResourceFlow</value>
                 <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>

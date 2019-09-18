@@ -29,10 +29,15 @@ import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.tag.FormTagExtensionPoint;
+import org.zstack.header.vm.RebootVmInstanceMsg;
+import org.zstack.header.vm.StartVmInstanceMsg;
+import org.zstack.header.vm.StopVmInstanceMsg;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.MaxDataVolumeNumberExtensionPoint;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.kvm.KVMAgentCommands.ReconnectMeCmd;
+import org.zstack.kvm.KVMAgentCommands.TransmitVmOperationToMnCmd;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.IpRangeSet;
 import org.zstack.utils.SizeUtils;
@@ -268,6 +273,35 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                 msg.setHostUuid(cmd.hostUuid);
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, cmd.hostUuid);
                 bus.send(msg);
+                return null;
+            }
+        });
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_TRANSMIT_VM_OPERATION_TO_MN, TransmitVmOperationToMnCmd.class, new SyncHttpCallHandler<TransmitVmOperationToMnCmd>() {
+            @Override
+            public String handleSyncHttpCall(TransmitVmOperationToMnCmd cmd) {
+                logger.debug(String.format("handle vm operation [uuid:%s, operation:%s] transmitted by kvmagent", cmd.uuid, cmd.operation));
+                switch (cmd.operation) {
+                    case "start":
+                        StartVmInstanceMsg smsg = new StartVmInstanceMsg();
+                        smsg.setVmInstanceUuid(cmd.uuid);
+                        bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, cmd.uuid);
+                        bus.send(smsg);
+                        break;
+                    case "stop":
+                        StopVmInstanceMsg xmsg = new StopVmInstanceMsg();
+                        xmsg.setVmInstanceUuid(cmd.uuid);
+                        bus.makeTargetServiceIdByResourceUuid(xmsg, VmInstanceConstant.SERVICE_ID, cmd.uuid);
+                        bus.send(xmsg);
+                        break;
+                    case "reboot":
+                        RebootVmInstanceMsg rmsg = new RebootVmInstanceMsg();
+                        rmsg.setVmInstanceUuid(cmd.uuid);
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, VmInstanceConstant.SERVICE_ID, cmd.uuid);
+                        bus.send(rmsg);
+                        break;
+                    default:
+                        logger.warn(String.format("vm operation %s transmitted by kvmagent is not supported", cmd.operation));
+                }
                 return null;
             }
         });

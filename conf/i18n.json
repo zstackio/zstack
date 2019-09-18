@@ -5902,6 +5902,149 @@
     "fileName": "src/zstack/./plugin/nfsPrimaryStorage/src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryToSftpBackupKVMBackend.java"
   },
   {
+    "raw": "cannot get latest guest-tools for vm[uuid:%s] because it\u0027s hypervisor type is not supported",
+    "en_US": "cannot get latest guest-tools for vm[uuid:{0}] because it\u0027s hypervisor type is not supported",
+    "zh_CN": "无法为云主机[uuid:{0}获取最新可用的增强工具镜像，因为其虚拟化层目前不支持增强工具",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 40,
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
+  },
+  {
+    "raw": "cannot get latest guest-tools for vm[uuid:%s] because it\u0027s not running",
+    "en_US": "cannot get latest guest-tools for vm[uuid:{0}] because it\u0027s not running",
+    "zh_CN": "无法为云主机[uuid:{0}]获取最新可用的增强工具镜像，因为它目前并未处于运行状态",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 47,
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
+  },
+  {
+    "raw": "cannot get latest guest-tools for vm[uuid:%s] because it\u0027s not user vm",
+    "en_US": "cannot get latest guest-tools for vm[uuid:{0}] because it\u0027s not user vm",
+    "zh_CN": "无法为云主机[uuid:{0}]获取最新可用的增强工具镜像，因为它不是用户云主机",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 54,
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
+  },
+  {
+    "raw": "cannot attach guest-tools iso to vm[uuid:%s] because it\u0027s hypervisor type is not supported",
+    "en_US": "cannot attach guest-tools iso to vm[uuid:{0}] because it\u0027s hypervisor type is not supported",
+    "zh_CN": "无法为云主机[uuid:{0}]挂载增强工具镜像，因为其虚拟化层目前不支持增强工具",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 64,
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
+  },
+  {
+    "raw": "cannot attach guest-tools iso to vm[uuid:%s] because it\u0027s not running",
+    "en_US": "cannot attach guest-tools iso to vm[uuid:{0}] because it\u0027s not running",
+    "zh_CN": "无法为云主机[uuid:{0}]挂载增强工具镜像，因为它目前并未处于运行状态",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 71,
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
+  },
+  {
+    "raw": "cannot attach guest-tools iso to vm[uuid:%s] because it\u0027s not user vm",
+    "en_US": "cannot attach guest-tools iso to vm[uuid:{0}] because it\u0027s not user vm",
+    "zh_CN": "无法为云主机[uuid:{0}]挂载增强工具镜像，因为它不是用户云主机",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 78,
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
+  },
+  {
+    "raw": "cannot attach guest-tools iso to vm[uuid:%s] because it has no cdrom",
+    "en_US": "cannot attach guest-tools iso to vm[uuid:{0}] because it has no cdrom",
+    "zh_CN": "无法为云主机[uuid:{0}挂载增强工具镜像，因为它没有配备光驱",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 85,
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
+  },
+  {
+    "raw": "cannot get guest-tools info from vm[uuid:%s] because it\u0027s hypervisor type is not supported",
+    "en_US": "cannot get guest-tools info from vm[uuid:{0}] because it\u0027s hypervisor type is not supported",
+    "zh_CN": "无法从云主机[uuid:{0}]内部获取增强工具信息，因为其虚拟化层目前不支持增强工具",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 95,
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
+  },
+  {
+    "raw": "cannot get guest-tools info from vm[uuid:%s] because it\u0027s not running",
+    "en_US": "cannot get guest-tools info from vm[uuid:{0}] because it\u0027s not running",
+    "zh_CN": "无法从云主机[uuid:{0}]内部获取增强工具信息，因为它目前并未处于运行状态",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 102,
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
+  },
+  {
+    "raw": "cannot get guest-tools info from vm[uuid:%s] because it\u0027s not user vm",
+    "en_US": "cannot get guest-tools info from vm[uuid:{0}] because it\u0027s not user vm",
+    "zh_CN": "无法从云主机[uuid:{0}]内部获取增强工具信息，因为它不是用户云主机",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 109,
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
+  },
+  {
+    "raw": "no proper guest tools iso found in management node[uuid:%s] for host[uuid:%s]",
+    "en_US": "no proper guest tools iso found in management node[uuid:{0}] for host[uuid:{1}]",
+    "zh_CN": "无法在管理节点[uuid:{0}]上为物理机[uuid:{1}]寻找到合适的增强工具镜像",
+    "arguments": [
+      "Platform.getManagementServerId()",
+      "msg.getHostUuid()"
+    ],
+    "line": 236,
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsManagerImpl.java"
+  },
+  {
+    "raw": "failed to download guest tools iso because no kvm host[uuid:%s] found",
+    "en_US": "failed to download guest tools iso because no kvm host[uuid:{0}] found",
+    "zh_CN": "KVM物理机[uuid:{0}]不存在，无法为其下载增强工具镜像",
+    "arguments": [
+      "host.getUuid()"
+    ],
+    "line": 59,
+    "fileName": "src/main/java/org/zstack/guesttools/kvm/GuestToolsKvmBackend.java"
+  },
+  {
+    "raw": "failed to attach guest tools iso to vm[uuid:%s], because:%s",
+    "en_US": "failed to attach guest tools iso to vm[uuid:{0}], because:{1}",
+    "zh_CN": "无法为云主机[uuid:{0}]挂载增强工具镜像，因为:{1}",
+    "arguments": [
+      "vm.getUuid()",
+      "rsp.getError()"
+    ],
+    "line": 127,
+    "fileName": "src/main/java/org/zstack/guesttools/kvm/GuestToolsKvmBackend.java"
+  },
+  {
+    "raw": "failed to get guest tools info from vm[uuid:%s], because:%s",
+    "en_US": "failed to get guest tools info from vm[uuid:{0}], because:{1}",
+    "zh_CN": "无法从云主机[uuid:{0}]内部获取增强工具信息，因为:{1}",
+    "arguments": [
+      "vm.getUuid()",
+      "rsp.getError()"
+    ],
+    "line": 160,
+    "fileName": "src/main/java/org/zstack/guesttools/kvm/GuestToolsKvmBackend.java"
+  },
+  {
     "raw": "guest l3Network of vm nic[uuid:%s] and vip l3Network of vip[uuid: %s] are the same network",
     "en_US": "guest l3Network of vm nic[uuid:{0}] and vip l3Network of vip[uuid: {1}] are the same network",
     "zh_CN": "虚拟机网卡[uuid:{0}]的客户L3网络和虚拟IP[uuid:{1}]的虚拟IP L3网络是同一个网络",
