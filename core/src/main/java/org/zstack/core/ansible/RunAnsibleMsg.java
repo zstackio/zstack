@@ -9,6 +9,7 @@ import java.util.Map;
  */
 public class RunAnsibleMsg extends NeedReplyMessage {
     private String targetIp;
+    private String targetUuid;
     private String privateKeyFile;
     private String playBookPath;
     private String ansibleExecutable;
@@ -52,5 +53,13 @@ public class RunAnsibleMsg extends NeedReplyMessage {
 
     public void setArguments(Map<String, Object> arguments) {
         this.arguments = arguments;
+    }
+
+    public String getTargetUuid() {
+        return targetUuid;
+    }
+
+    public void setTargetUuid(String targetUuid) {
+        this.targetUuid = targetUuid;
     }
 }
