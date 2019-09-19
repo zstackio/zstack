@@ -2,13 +2,13 @@ package org.zstack.sdk;
 
 
 
-public class StorageTrashSpec  {
+public class InstallPathRecycleInventory  {
 
-    public java.lang.Long trashId;
-    public void setTrashId(java.lang.Long trashId) {
+    public long trashId;
+    public void setTrashId(long trashId) {
         this.trashId = trashId;
     }
-    public java.lang.Long getTrashId() {
+    public long getTrashId() {
         return this.trashId;
     }
 
@@ -18,14 +18,6 @@ public class StorageTrashSpec  {
     }
     public java.lang.String getResourceUuid() {
         return this.resourceUuid;
-    }
-
-    public java.lang.String resourceType;
-    public void setResourceType(java.lang.String resourceType) {
-        this.resourceType = resourceType;
-    }
-    public java.lang.String getResourceType() {
-        return this.resourceType;
     }
 
     public java.lang.String storageUuid;
@@ -44,6 +36,14 @@ public class StorageTrashSpec  {
         return this.storageType;
     }
 
+    public java.lang.String resourceType;
+    public void setResourceType(java.lang.String resourceType) {
+        this.resourceType = resourceType;
+    }
+    public java.lang.String getResourceType() {
+        return this.resourceType;
+    }
+
     public java.lang.String installPath;
     public void setInstallPath(java.lang.String installPath) {
         this.installPath = installPath;
@@ -52,11 +52,11 @@ public class StorageTrashSpec  {
         return this.installPath;
     }
 
-    public boolean isFolder;
-    public void setIsFolder(boolean isFolder) {
+    public java.lang.Boolean isFolder;
+    public void setIsFolder(java.lang.Boolean isFolder) {
         this.isFolder = isFolder;
     }
-    public boolean getIsFolder() {
+    public java.lang.Boolean getIsFolder() {
         return this.isFolder;
     }
 

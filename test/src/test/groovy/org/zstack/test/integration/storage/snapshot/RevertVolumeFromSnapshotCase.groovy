@@ -3,7 +3,7 @@ package org.zstack.test.integration.storage.snapshot
 import org.zstack.core.db.Q
 import org.zstack.core.trash.StorageTrash
 import org.zstack.core.trash.TrashType
-import org.zstack.header.storage.backup.StorageTrashSpec
+import org.zstack.header.core.trash.InstallPathRecycleInventory
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
@@ -91,16 +91,16 @@ STEP:
         assert Q.New(VolumeSnapshotTreeVO.class).count() == 1
 
         def trash = bean(StorageTrash.class)
-        def specs = trash.getTrashList(root.primaryStorageUuid) as Map<String, StorageTrashSpec>
+        def trashs = trash.getTrashList(root.primaryStorageUuid) as List<InstallPathRecycleInventory>
 
-        assert specs.size() > 0
+        assert trashs.size() > 0
 
         def trashed = false
-        specs.each { k,v ->
-            if (v.resourceUuid == vm.rootVolumeUuid) {
-                assert v.installPath == installPath
-                assert v.size == size
-                assert k.startsWith(TrashType.RevertVolume.toString())
+        trashs.each { t ->
+            if (t.resourceUuid == vm.rootVolumeUuid) {
+                assert t.installPath == installPath
+                assert t.size == size
+                assert t.trashType == TrashType.RevertVolume.toString()
                 trashed = true
             }
         }
@@ -109,15 +109,15 @@ STEP:
 
     void testCleanUpTrash() {
         def trash = bean(StorageTrash.class)
-        def specs = trash.getTrashList(root.primaryStorageUuid) as Map<String, StorageTrashSpec>
-        assert specs.size() > 0
+        def trashs = trash.getTrashList(root.primaryStorageUuid) as List<InstallPathRecycleInventory>
+        assert trashs.size() > 0
 
         cleanUpTrashOnPrimaryStorage {
             uuid = root.primaryStorageUuid
         }
 
-        specs = trash.getTrashList(root.primaryStorageUuid) as Map<String, StorageTrashSpec>
-        assert specs.size() == 0
+        trashs = trash.getTrashList(root.primaryStorageUuid) as List<InstallPathRecycleInventory>
+        assert trashs.size() == 0
     }
 
     private VolumeSnapshotInventory createSnapshot(String uuid){

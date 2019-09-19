@@ -68,6 +68,14 @@ public class LicenseInventory  {
         return this.cpuNum;
     }
 
+    public java.lang.Integer vmNum;
+    public void setVmNum(java.lang.Integer vmNum) {
+        this.vmNum = vmNum;
+    }
+    public java.lang.Integer getVmNum() {
+        return this.vmNum;
+    }
+
     public java.lang.Integer availableHostNum;
     public void setAvailableHostNum(java.lang.Integer availableHostNum) {
         this.availableHostNum = availableHostNum;

@@ -3,7 +3,7 @@ package org.zstack.test.integration.storage.primary.ceph
 import org.zstack.core.db.Q
 import org.zstack.core.trash.StorageTrash
 import org.zstack.core.trash.TrashType
-import org.zstack.header.storage.backup.StorageTrashSpec
+import org.zstack.header.core.trash.InstallPathRecycleInventory
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.PrimaryStorageInventory
@@ -108,13 +108,13 @@ class ReverCephVolumeWithoutSnapshotCase extends SubCase {
         assert data.installPath == installPath   // installPath not changed
         assert data.size == size
 
-        def specs = trash.getTrashList(ps.uuid) as Map<String, StorageTrashSpec>
+        def trashs = trash.getTrashList(ps.uuid) as List<InstallPathRecycleInventory>
         def trashed = false
-        specs.each { k,v ->
-            if (v.resourceUuid == data.uuid) {
-                assert v.installPath == installPath
-                assert v.size == size
-                assert k.startsWith(TrashType.RevertVolume.toString())
+        trashs.each { t ->
+            if (t.resourceUuid == data.uuid) {
+                assert t.installPath == installPath
+                assert t.size == size
+                assert t.trashType == TrashType.RevertVolume.toString()
                 trashed = true
             }
         }
@@ -150,13 +150,13 @@ class ReverCephVolumeWithoutSnapshotCase extends SubCase {
         assert root.installPath == snapshotInstallPath.split("@")[0]   // installPath changed
         assert root.size == size
 
-        def specs = trash.getTrashList(ps.uuid) as Map<String, StorageTrashSpec>
+        def trashs = trash.getTrashList(ps.uuid) as List<InstallPathRecycleInventory>
         def trashed = false
-        specs.each { k,v ->
-            if (v.resourceUuid == root.uuid && v.trashType != TrashType.ReimageVolume.toString()) {
-                assert v.installPath == installPath
-                assert v.size == size
-                assert k.startsWith(TrashType.RevertVolume.toString())
+        trashs.each { t ->
+            if (t.resourceUuid == root.uuid && t.trashType != TrashType.ReimageVolume.toString()) {
+                assert t.installPath == installPath
+                assert t.size == size
+                assert t.trashType == TrashType.RevertVolume.toString()
                 trashed = true
             }
         }

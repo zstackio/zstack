@@ -1,42 +1,46 @@
-package org.zstack.header.storage.backup;
+package org.zstack.header.core.trash;
 
-import org.zstack.header.configuration.PythonClassInventory;
-import org.zstack.header.rest.SDK;
-
+import javax.persistence.*;
+import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
- * Created by mingjian.deng on 2018/12/10.
+ * Created by mingjian.deng on 2019/9/19.
  */
-@SDK
-@PythonClassInventory
-public class StorageTrashSpec {
-    private Long trashId; // for delete one record
+@Entity
+@Table
+public class InstallPathRecycleVO implements Serializable {
+    @Id
+    @Column
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long trashId;
+    @Column
     private String resourceUuid;
+    @Column
     private String resourceType;
+    @Column
     private String storageUuid;
+    @Column
     private String storageType;
+    @Column
     private String installPath;
-    private boolean isFolder = false;
+    @Column
+    private Boolean isFolder;
+    @Column
     private String hypervisorType;
+    @Column
     private Long size;
+    @Column
     private String trashType;
+    @Column
     private Timestamp createDate;
 
-    public StorageTrashSpec(String resourceUuid, String storageUuid, String installPath, Long size) {
-        this.resourceUuid = resourceUuid;
-        this.storageUuid = storageUuid;
-        this.installPath = installPath;
-        this.size = size;
+    public long getTrashId() {
+        return trashId;
     }
 
-    public StorageTrashSpec(String resourceUuid, String resourceType, String storageUuid, String storageType, String installPath, Long size) {
-        this.resourceUuid = resourceUuid;
-        this.resourceType = resourceType;
-        this.storageUuid = storageUuid;
-        this.storageType = storageType;
-        this.installPath = installPath;
-        this.size = size;
+    public void setTrashId(long trashId) {
+        this.trashId = trashId;
     }
 
     public String getResourceUuid() {
@@ -55,6 +59,14 @@ public class StorageTrashSpec {
         this.resourceType = resourceType;
     }
 
+    public String getStorageUuid() {
+        return storageUuid;
+    }
+
+    public void setStorageUuid(String storageUuid) {
+        this.storageUuid = storageUuid;
+    }
+
     public String getStorageType() {
         return storageType;
     }
@@ -71,20 +83,12 @@ public class StorageTrashSpec {
         this.installPath = installPath;
     }
 
-    public Long getSize() {
-        return size;
+    public Boolean getFolder() {
+        return isFolder;
     }
 
-    public void setSize(Long size) {
-        this.size = size;
-    }
-
-    public String getStorageUuid() {
-        return storageUuid;
-    }
-
-    public void setStorageUuid(String storageUuid) {
-        this.storageUuid = storageUuid;
+    public void setFolder(Boolean folder) {
+        isFolder = folder;
     }
 
     public String getHypervisorType() {
@@ -95,20 +99,12 @@ public class StorageTrashSpec {
         this.hypervisorType = hypervisorType;
     }
 
-    public boolean isFolder() {
-        return isFolder;
+    public Long getSize() {
+        return size;
     }
 
-    public void setFolder(boolean folder) {
-        isFolder = folder;
-    }
-
-    public Long getTrashId() {
-        return trashId;
-    }
-
-    public void setTrashId(Long trashId) {
-        this.trashId = trashId;
+    public void setSize(Long size) {
+        this.size = size;
     }
 
     public String getTrashType() {

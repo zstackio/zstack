@@ -1,5 +1,6 @@
 package org.zstack.header.storage.backup;
 
+import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
@@ -12,26 +13,33 @@ import static java.util.Arrays.asList;
 /**
  * Created by mingjian.deng on 2018/12/10.
  */
-@RestResponse(allTo = "storageTrashSpecs")
+@RestResponse(allTo = "inventories")
 public class APIGetTrashOnBackupStorageReply extends APIReply {
-    private List<StorageTrashSpec> storageTrashSpecs = new ArrayList<>();
+    private List<InstallPathRecycleInventory> inventories = new ArrayList<>();
 
-    public List<StorageTrashSpec> getStorageTrashSpecs() {
-        return storageTrashSpecs;
+    public List<InstallPathRecycleInventory> getInventories() {
+        return inventories;
     }
 
-    public void setStorageTrashSpecs(List<StorageTrashSpec> storageTrashSpecs) {
-        this.storageTrashSpecs = storageTrashSpecs;
+    public void setInventories(List<InstallPathRecycleInventory> inventories) {
+        this.inventories = inventories;
     }
 
     public static APIGetTrashOnBackupStorageReply __example__() {
         APIGetTrashOnBackupStorageReply reply = new APIGetTrashOnBackupStorageReply();
 
-        StorageTrashSpec spec = new StorageTrashSpec(uuid(), "ImageVO", uuid(), "BackupStorageVO", "/zstack_bs/installpath", 1024000L);
-        spec.setTrashId(1L);
-        spec.setTrashType("MigrateImage");
-        spec.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
-        reply.setStorageTrashSpecs(asList(spec));
+        InstallPathRecycleInventory inventory = new InstallPathRecycleInventory();
+        inventory.setTrashId(1L);
+        inventory.setTrashType("MigrateImage");
+        inventory.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
+        inventory.setResourceUuid(uuid());
+        inventory.setResourceType("ImageVO");
+        inventory.setStorageUuid(uuid());
+        inventory.setStorageType("BackupStorageVO");
+        inventory.setInstallPath("/zstack_bs/installpath");
+        inventory.setSize(1024000L);
+
+        reply.setInventories(asList(inventory));
 
         return reply;
     }
