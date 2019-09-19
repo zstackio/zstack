@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddIpRangeByNetworkCidrAction extends AbstractAction {
+public class CreateL2HardwareVxlanNetworkPoolAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddIpRangeByNetworkCidrAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddIpRangeByNetworkCidrResult value;
+        public org.zstack.sdk.CreateL2HardwareVxlanNetworkPoolResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,6 +25,9 @@ public class AddIpRangeByNetworkCidrAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sdnControllerUuid;
+
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
@@ -32,13 +35,13 @@ public class AddIpRangeByNetworkCidrAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l3NetworkUuid;
+    public java.lang.String zoneUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String networkCidr;
+    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String physicalInterface;
 
-    @Param(required = false, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String gateway;
+    @Param(required = false)
+    public java.lang.String type;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -78,8 +81,8 @@ public class AddIpRangeByNetworkCidrAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddIpRangeByNetworkCidrResult value = res.getResult(org.zstack.sdk.AddIpRangeByNetworkCidrResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddIpRangeByNetworkCidrResult() : value; 
+        org.zstack.sdk.CreateL2HardwareVxlanNetworkPoolResult value = res.getResult(org.zstack.sdk.CreateL2HardwareVxlanNetworkPoolResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateL2HardwareVxlanNetworkPoolResult() : value; 
 
         return ret;
     }
@@ -109,7 +112,7 @@ public class AddIpRangeByNetworkCidrAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/l3-networks/{l3NetworkUuid}/ip-ranges/by-cidr";
+        info.path = "/l2-networks/hardware-vxlan-pool";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

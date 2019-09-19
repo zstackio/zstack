@@ -6,6 +6,8 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.*;
@@ -35,7 +37,7 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
     }
 
     @Override
-    public L2NetworkInventory createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg) {
+    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion completion) {
         APICreateL2VlanNetworkMsg amsg = (APICreateL2VlanNetworkMsg) msg;
         L2VlanNetworkVO vo = new L2VlanNetworkVO(ovo);
         vo.setVlan(amsg.getVlan());
@@ -43,7 +45,7 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
         L2VlanNetworkInventory inv = L2VlanNetworkInventory.valueOf(vo);
         String info = String.format("successfully create L2VlanNetwork, %s", JSONObjectUtil.toJsonString(inv));
         logger.debug(info);
-        return inv;
+        completion.success(inv);
     }
 
     @Override
@@ -96,7 +98,7 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
     }
 
     @Override
-    public Integer getL2NetworkVni(String l2NetworkUuid) {
+    public Integer getL2NetworkVni(String l2NetworkUuid, String hostUuid) {
         L2VlanNetworkVO l2VlanNetworkVO = Q.New(L2VlanNetworkVO.class).eq(L2VlanNetworkVO_.uuid, l2NetworkUuid).find();
         return l2VlanNetworkVO.getVlan();
     }

@@ -14,6 +14,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -72,7 +73,8 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
     }
 
     @Override
-    public void deleteHook() {
+    public void deleteHook(NoErrorCompletion completion) {
+        completion.done();
     }
 
     @Override
@@ -154,7 +156,7 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
                     CheckL2NetworkOnHostMsg cmsg = new CheckL2NetworkOnHostMsg();
                     cmsg.setHostUuid(h.getUuid());
                     cmsg.setL2NetworkUuid(self.getUuid());
-                    bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, h.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, self.getUuid());
                     cmsgs.add(cmsg);
                 }
 
@@ -230,12 +232,17 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
     private void handle(L2NetworkDeletionMsg msg) {
         L2NetworkInventory inv = L2NetworkInventory.valueOf(self);
         extpEmitter.beforeDelete(inv);
-        deleteHook();
-        dbf.removeByPrimaryKey(msg.getL2NetworkUuid(), L2NetworkVO.class);
-        extpEmitter.afterDelete(inv);
+        deleteHook(new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                dbf.removeByPrimaryKey(msg.getL2NetworkUuid(), L2NetworkVO.class);
+                extpEmitter.afterDelete(inv);
 
-        L2NetworkDeletionReply reply = new L2NetworkDeletionReply();
-        bus.reply(msg, reply);
+                L2NetworkDeletionReply reply = new L2NetworkDeletionReply();
+                bus.reply(msg, reply);
+            }
+        });
+
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -250,11 +257,11 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
         }
     }
 
-    private void handle(final APIDetachL2NetworkFromClusterMsg msg) {
+    protected void handle(final APIDetachL2NetworkFromClusterMsg msg) {
         throw new CloudRuntimeException("VxlanNetwork can not detach from cluster which VxlanNetworkPool should be used");
     }
 
-    private void handle(final APIAttachL2NetworkToClusterMsg msg) {
+    protected void handle(final APIAttachL2NetworkToClusterMsg msg) {
         throw new CloudRuntimeException("VxlanNetwork can not attach to cluster which VxlanNetworkPool should be used");
     }
 
@@ -289,8 +296,9 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
 
             @Transactional(readOnly = true)
             private long getUsedVxlan(String accountUuid) {
-                long cnt = SQL.New("select count(vxlan) from L2NetworkVO vxlan, AccountResourceRefVO ref where vxlan.uuid = ref.resourceUuid and " +
-                        "ref.accountUuid = :auuid and vxlan.type = :rtype", Long.class).param("auuid", accountUuid).param("rtype", VxlanNetworkConstant.VXLAN_NETWORK_TYPE).find();
+                long cnt = SQL.New("select count(vxlan) from VxlanNetworkVO vxlan, AccountResourceRefVO ref " +
+                        "where vxlan.uuid = ref.resourceUuid and ref.accountUuid = :auuid", Long.class)
+                        .param("auuid", accountUuid).find();
                 return cnt;
             }
 

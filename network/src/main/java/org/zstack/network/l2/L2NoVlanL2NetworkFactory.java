@@ -5,6 +5,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.Component;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.network.l2.*;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
@@ -27,11 +29,11 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
     }
 
     @Override
-    public L2NetworkInventory createL2Network(L2NetworkVO vo, APICreateL2NetworkMsg msg) {
+    public void createL2Network(L2NetworkVO vo, APICreateL2NetworkMsg msg, ReturnValueCompletion completion) {
         vo = dbf.persistAndRefresh(vo);
         L2NetworkInventory inv = L2NetworkInventory.valueOf(vo);
         logger.debug("Successfully created NoVlanL2Network: " + printer.print(inv));
-        return L2NetworkInventory.valueOf(vo);
+        completion.success(inv);
     }
 
     @Override
@@ -61,7 +63,7 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
     }
 
     @Override
-    public Integer getL2NetworkVni(String l2NetworkUuid) {
+    public Integer getL2NetworkVni(String l2NetworkUuid, String hostUuid) {
         return 0;
     }
 

@@ -32,8 +32,8 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
     }
 
     private void validate(APIAttachL2NetworkToClusterMsg msg) {
-        String type = Q.New(L2NetworkVO.class).select(L2NetworkVO_.type).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).findValue();
-        if (!type.equals(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE)) {
+        L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).find();
+        if (!l2NetworkVO.getType().equals(VxlanNetworkPoolConstant.VXLAN_NETWORK_POOL_TYPE)) {
             return;
         }
 
@@ -65,7 +65,7 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
             }
         }
 
-        String overlapedPool = getOverlapVniRangePool(msg.getL2NetworkUuid(), msg.getClusterUuid());
+        String overlapedPool = getOverlapVniRangePool(L2NetworkInventory.valueOf(l2NetworkVO), msg.getClusterUuid());
 
         if (overlapedPool != null) {
             throw new ApiMessageInterceptionException(Platform.err(SysErrors.INVALID_ARGUMENT_ERROR,
@@ -75,11 +75,16 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
 
     }
 
-    private String getOverlapVniRangePool(String l2NetworkUuid, String clusterUuid) {
-        List<VniRangeVO> checkRanges = Q.New(VniRangeVO.class).eq(VniRangeVO_.l2NetworkUuid, l2NetworkUuid).list();
+    public String getOverlapVniRangePool(L2NetworkInventory inv, String clusterUuid) {
+        List<VniRangeVO> checkRanges = Q.New(VniRangeVO.class).eq(VniRangeVO_.l2NetworkUuid, inv.getUuid()).list();
         List<String> l2Uuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.l2NetworkUuid).eq(L2NetworkClusterRefVO_.clusterUuid, clusterUuid).listValues();
 
         for (String l2Uuid : l2Uuids) {
+            L2NetworkVO l2 = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l2Uuid).find();
+            if (!l2.getType().equals(inv.getType())){
+                continue;
+            }
+
             List<VniRangeVO> ranges = Q.New(VniRangeVO.class).eq(VniRangeVO_.l2NetworkUuid, l2Uuid).list();
             for (VniRangeVO range : ranges) {
                 Boolean result = checkRanges.stream()

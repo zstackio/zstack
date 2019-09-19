@@ -9,6 +9,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -52,7 +54,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
     static {
         allowedMessageAfterSoftDeletion.add(L2NetworkDeletionMsg.class);
     }
-    
+
     @Override
     @MessageSafe
     public void handleMessage(Message msg) {
@@ -137,21 +139,32 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         vo.setType(type.toString());
         vo.setZoneUuid(msg.getZoneUuid());
         vo.setAccountUuid(msg.getSession().getAccountUuid());
-        L2NetworkInventory inv = factory.createL2Network(vo, msg);
+        factory.createL2Network(vo, msg, new ReturnValueCompletion<L2NetworkInventory>(msg) {
+            @Override
+            public void success(L2NetworkInventory returnValue) {
+                tagMgr.createTagsFromAPICreateMessage(msg, returnValue.getUuid(), L2NetworkVO.class.getSimpleName());
 
-        tagMgr.createTagsFromAPICreateMessage(msg, inv.getUuid(), L2NetworkVO.class.getSimpleName());
+                for (L2NetworkCreateExtensionPoint extp : createExtensions) {
+                    try {
+                        extp.afterCreateL2Network(returnValue);
+                    } catch (Exception e) {
+                        logger.warn(String.format("unhandled exception happened when calling %s", extp.getClass().getName()), e);
+                    }
+                }
 
-    	for (L2NetworkCreateExtensionPoint extp : createExtensions) {
-    		try {
-    			extp.afterCreateL2Network(inv);
-    		} catch (Exception e) {
-    			logger.warn(String.format("unhandled exception happened when calling %s", extp.getClass().getName()), e);
-    		}
-    	}
+                APICreateL2NetworkEvent evt = new APICreateL2NetworkEvent(msg.getId());
+                evt.setInventory(returnValue);
+                bus.publish(evt);
+            }
 
-        APICreateL2NetworkEvent evt = new APICreateL2NetworkEvent(msg.getId());
-        evt.setInventory(inv);
-        bus.publish(evt);
+            @Override
+            public void fail(ErrorCode errorCode) {
+                APICreateL2NetworkEvent evt = new APICreateL2NetworkEvent(msg.getId());
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+
     }
 
     @Override

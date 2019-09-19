@@ -256,11 +256,15 @@ public class L2NoVlanNetwork implements L2Network {
     private void handle(L2NetworkDeletionMsg msg) {
         L2NetworkInventory inv = L2NetworkInventory.valueOf(self);
         extpEmitter.beforeDelete(inv);
-        deleteHook();
-        extpEmitter.afterDelete(inv);
+        deleteHook(new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                extpEmitter.afterDelete(inv);
 
-        L2NetworkDeletionReply reply = new L2NetworkDeletionReply();
-        bus.reply(msg, reply);
+                L2NetworkDeletionReply reply = new L2NetworkDeletionReply();
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -590,6 +594,7 @@ public class L2NoVlanNetwork implements L2Network {
     }
 
     @Override
-    public void deleteHook() {
+    public void deleteHook(NoErrorCompletion completion) {
+        completion.done();
     }
 }

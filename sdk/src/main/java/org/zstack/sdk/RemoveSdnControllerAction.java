@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddIpRangeByNetworkCidrAction extends AbstractAction {
+public class RemoveSdnControllerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddIpRangeByNetworkCidrAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddIpRangeByNetworkCidrResult value;
+        public org.zstack.sdk.RemoveSdnControllerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,11 @@ public class AddIpRangeByNetworkCidrAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l3NetworkUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String networkCidr;
-
-    @Param(required = false, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String gateway;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -78,8 +63,8 @@ public class AddIpRangeByNetworkCidrAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddIpRangeByNetworkCidrResult value = res.getResult(org.zstack.sdk.AddIpRangeByNetworkCidrResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddIpRangeByNetworkCidrResult() : value; 
+        org.zstack.sdk.RemoveSdnControllerResult value = res.getResult(org.zstack.sdk.RemoveSdnControllerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RemoveSdnControllerResult() : value; 
 
         return ret;
     }
@@ -108,11 +93,11 @@ public class AddIpRangeByNetworkCidrAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/l3-networks/{l3NetworkUuid}/ip-ranges/by-cidr";
+        info.httpMethod = "DELETE";
+        info.path = "/sdn-controllers/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
