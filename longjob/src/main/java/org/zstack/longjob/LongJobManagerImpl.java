@@ -10,6 +10,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.*;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.core.progress.ProgressReportService;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -34,6 +36,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.BeanUtils;
+import org.zstack.utils.ThreadContextUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -417,7 +420,15 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
     @Override
     public void submitLongJob(SubmitLongJobMsg msg, CloudBusCallBack submitCallBack, Function<APIEvent, Void> jobCallBack) {
-        String apiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
+        String apiId;
+        if (msg.getId() == null) {
+            apiId = Platform.getUuid();
+        } else {
+            apiId = msg.getId();
+        }
+
+        String originApiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
+        ThreadContext.put(Constants.THREAD_CONTEXT_API, apiId);
         longJobCallBacks.put(apiId, jobCallBack);
         bus.makeLocalServiceId(msg, LongJobConstants.SERVICE_ID);
         bus.send(msg, new CloudBusCallBack(submitCallBack) {
@@ -429,6 +440,12 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
                 if (submitCallBack != null) {
                     submitCallBack.run(reply);
+                }
+
+                if (originApiId == null) {
+                    ThreadContext.remove(Constants.THREAD_CONTEXT_API);
+                } else {
+                    ThreadContext.put(Constants.THREAD_CONTEXT_API, originApiId);
                 }
             }
         });
@@ -572,32 +589,31 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         doLoadLongJob(vo, null);
     }
 
+    @Deferred
     private void doLoadLongJob(LongJobVO vo, LongJobOperation operation) {
         if (operation == null) {
             operation = getLoadOperation(vo);
         }
 
-        String originApiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
-        String originTaskName = ThreadContext.get(Constants.THREAD_CONTEXT_TASK_NAME);
+        if (operation == LongJobOperation.Cancel || operation == LongJobOperation.Rerun) {
+            return;
+        }
+
+        Runnable cleanup = ThreadContextUtils.saveThreadContext();
+        Defer.defer(cleanup);
+        // launch the waiting jobs
+        ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
+        LongJob job = longJobFactory.getLongJob(vo.getJobName());
+        ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
 
         if (operation == LongJobOperation.Start) {
-            // launch the waiting jobs
-            ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
-            LongJob job = longJobFactory.getLongJob(vo.getJobName());
-            ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
             doStartJob(job, vo, null);
             SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, vo.getUuid()).set(LongJobVO_.state, LongJobState.Running).update();
         } else if (operation == LongJobOperation.Resume) {
-            ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
-            LongJob job = longJobFactory.getLongJob(vo.getJobName());
-            ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
             logger.info(String.format("start to resume longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
             job.resume(vo);
             dbf.update(vo);
         }
-
-        ThreadContext.put(Constants.THREAD_CONTEXT_API, originApiId);
-        ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, originTaskName);
     }
 
     private LongJobOperation getLoadOperation(LongJobVO vo) {
