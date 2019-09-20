@@ -4,6 +4,7 @@ import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.vm.VmBootDevice;
+import org.zstack.header.vm.VmPriorityConfigVO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 
@@ -63,6 +64,14 @@ public class KVMAgentCommands {
 
     public static class CheckVmStateRsp extends AgentResponse {
         public Map<String, String> states;
+    }
+
+    public static class UpdateVmPriorityCmd extends AgentCommand {
+        public String vmUuid;
+        public PriorityConfig priorityConfig;
+    }
+
+    public static class UpdateVmPriorityRsp extends AgentResponse {
     }
 
     public static class DetachNicCommand extends AgentCommand {
@@ -853,6 +862,32 @@ public class KVMAgentCommands {
         String getVmInstanceUuid();
     }
 
+    public static class PriorityConfig {
+        private int cpuShares;
+        private int oomScoreAdj;
+
+        PriorityConfig(VmPriorityConfigVO vo) {
+            this.cpuShares = vo.getCpuShares();
+            this.oomScoreAdj = vo.getOomScoreAdj();
+        }
+
+        public int getCpuShares() {
+            return cpuShares;
+        }
+
+        public void setCpuShares(int cpuShares) {
+            this.cpuShares = cpuShares;
+        }
+
+        public int getOomScoreAdj() {
+            return oomScoreAdj;
+        }
+
+        public void setOomScoreAdj(int oomScoreAdj) {
+            this.oomScoreAdj = oomScoreAdj;
+        }
+    }
+
     public static class StartVmCmd extends AgentCommand implements VmAddOnsCmd {
         private String vmInstanceUuid;
         private long vmInternalId;
@@ -896,6 +931,15 @@ public class KVMAgentCommands {
         private String machineType;
         private Integer pciePortNums;
         private boolean useHugePage;
+        private PriorityConfig priorityConfig;
+
+        public PriorityConfig getPriorityConfig() {
+            return priorityConfig;
+        }
+
+        public void setPriorityConfig(PriorityConfig priorityConfig) {
+            this.priorityConfig = priorityConfig;
+        }
 
         public boolean isUseHugePage() {
             return useHugePage;

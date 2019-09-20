@@ -40,6 +40,7 @@ public interface KVMConstant {
     String KVM_DETACH_NIC_PATH = "/vm/detachnic";
     String KVM_UPDATE_NIC_PATH = "/vm/updatenic";
     String KVM_VM_CHECK_STATE = "/vm/checkstate";
+    String KVM_VM_UPDATE_PRIORITY_PATH = "/vm/priority";
     String KVM_TAKE_VOLUME_SNAPSHOT_PATH = "/vm/volume/takesnapshot";
     String KVM_MERGE_SNAPSHOT_PATH = "/vm/volume/mergesnapshot";
     String KVM_LOGOUT_ISCSI_PATH = "/iscsi/target/logout";

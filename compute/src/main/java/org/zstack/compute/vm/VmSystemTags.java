@@ -122,4 +122,8 @@ public class VmSystemTags {
             String.format("vmMachineType::{%s}", MACHINE_TYPE_TOKEN),
             VmInstanceVO.class
     );
+
+    public static final String VM_PRIORITY_TOKEN = "vmPriority";
+    public static PatternedSystemTag VM_PRIORITY = new PatternedSystemTag(String.format("vmPriority::{%s}", VM_PRIORITY_TOKEN), VmInstanceVO.class
+    );
 }

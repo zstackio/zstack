@@ -220,12 +220,26 @@ public class VmInstanceManagerImpl extends AbstractService implements
             handle((APIGetInterdependentL3NetworksImagesMsg) msg);
         } else if (msg instanceof APIGetCandidateVmForAttachingIsoMsg) {
             handle((APIGetCandidateVmForAttachingIsoMsg) msg);
+        } else if (msg instanceof APIUpdatePriorityConfigMsg) {
+            handle((APIUpdatePriorityConfigMsg) msg);
         } else if (msg instanceof VmInstanceMessage) {
             passThrough((VmInstanceMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
     }
+
+    private void handle(final APIUpdatePriorityConfigMsg msg) {
+        final APIUpdatePriorityConfigEvent evt = new APIUpdatePriorityConfigEvent(msg.getId());
+
+        VmPriorityOperator.PriorityStruct struct = new VmPriorityOperator.PriorityStruct();
+        struct.setCpuShares(msg.getCpuShares());
+        struct.setOomScoreAdj(msg.getOomScoreAdj());
+        new VmPriorityOperator().updatePriorityConfig(msg.getUuid(), struct);
+
+        bus.publish(evt);
+    }
+
 
     @Transactional(readOnly = true)
     private void handle(APIGetCandidateVmForAttachingIsoMsg msg) {
