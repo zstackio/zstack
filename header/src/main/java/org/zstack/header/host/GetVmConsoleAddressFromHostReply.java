@@ -1,6 +1,7 @@
 package org.zstack.header.host;
 
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.vm.VdiPortInfo;
 
 /**
  * Created by frank on 1/25/2016.
@@ -9,6 +10,7 @@ public class GetVmConsoleAddressFromHostReply extends MessageReply {
     private String hostIp;
     private String protocol;
     private int port;
+    private VdiPortInfo vdiPortInfo;
 
     public String getHostIp() {
         return hostIp;
@@ -32,5 +34,13 @@ public class GetVmConsoleAddressFromHostReply extends MessageReply {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public VdiPortInfo getVdiPortInfo() {
+        return vdiPortInfo;
+    }
+
+    public void setVdiPortInfo(VdiPortInfo vdiPortInfo) {
+        this.vdiPortInfo = vdiPortInfo;
     }
 }
