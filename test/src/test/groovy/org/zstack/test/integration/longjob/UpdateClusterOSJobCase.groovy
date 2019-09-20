@@ -180,7 +180,7 @@ class UpdateClusterOSJobCase extends SubCase {
         ClusterInventory cls1 = env.inventoryByName("cluster1") as ClusterInventory
         ClusterInventory cls2 = env.inventoryByName("cluster2") as ClusterInventory
 
-        List<KVMAgentCommands.UpdateHostOSCmd> cmdList = []
+        def cmdList = Collections.synchronizedList(new ArrayList())
         env.afterSimulator(KVMConstant.KVM_UPDATE_HOST_OS_PATH) { rsp, HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.UpdateHostOSCmd.class)
             cmdList.add(cmd)
@@ -414,7 +414,7 @@ class UpdateClusterOSJobCase extends SubCase {
     void testUpdateClusterParallelismDegree() {
         ClusterInventory cls = env.inventoryByName("cluster1") as ClusterInventory
 
-        def cmdList = []
+        def cmdList = Collections.synchronizedList(new ArrayList())
         def syncSignal = "update-host-os-of-cluster-" + cls.uuid
 
         def checkChain = false
