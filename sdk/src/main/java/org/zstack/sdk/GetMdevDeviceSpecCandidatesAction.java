@@ -35,6 +35,9 @@ public class GetMdevDeviceSpecCandidatesAction extends AbstractAction {
     public java.lang.String vmInstanceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List vmInstanceUuids;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List types;
 
     @Param(required = false)
