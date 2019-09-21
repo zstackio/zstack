@@ -3,12 +3,12 @@ package org.zstack.sdk;
 
 
 public class GetTrashOnBackupStorageResult {
-    public java.util.List storageTrashSpecs;
-    public void setStorageTrashSpecs(java.util.List storageTrashSpecs) {
-        this.storageTrashSpecs = storageTrashSpecs;
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
+        this.inventories = inventories;
     }
-    public java.util.List getStorageTrashSpecs() {
-        return this.storageTrashSpecs;
+    public java.util.List getInventories() {
+        return this.inventories;
     }
 
 }

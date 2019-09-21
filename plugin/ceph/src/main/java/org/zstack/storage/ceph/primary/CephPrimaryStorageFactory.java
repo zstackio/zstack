@@ -27,7 +27,6 @@ import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -54,6 +53,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -66,7 +66,6 @@ import java.util.concurrent.Future;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.markTaskStage;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -1151,11 +1150,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
     @Override
     public void afterReimageVmInstance(VolumeInventory vol) {
-        StorageTrashSpec spec = new StorageTrashSpec(vol.getUuid(), VolumeVO.class.getSimpleName(),
-                vol.getPrimaryStorageUuid(), PrimaryStorageVO.class.getSimpleName(),
-                vol.getInstallPath(), vol.getSize());
-        spec.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(vol.getFormat()).toString());
-        String labelKey = trash.createTrash(TrashType.ReimageVolume, spec).getLabelKey();
-        logger.debug(String.format("move old volume install path to trash[key:%s]", labelKey));
+        Long trashId = trash.createTrash(TrashType.ReimageVolume, false, vol).getTrashId();
+        logger.debug(String.format("move old volume install path to trash[key:%s]", trashId));
     }
 }

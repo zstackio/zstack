@@ -1,7 +1,6 @@
 package org.zstack.storage.ceph.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -17,6 +16,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -61,7 +61,8 @@ import org.zstack.storage.ceph.CephMonBase.PingResult;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO;
 import org.zstack.storage.ceph.backup.CephBackupStorageVO_;
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase.PingOperationFailure;
-import org.zstack.storage.primary.*;
+import org.zstack.storage.primary.PrimaryStorageBase;
+import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.*;
@@ -77,9 +78,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created by frank on 7/28/2015.
@@ -1505,33 +1504,33 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     private void cleanTrash(Long trashId, final ReturnValueCompletion<CleanTrashResult> completion) {
         CleanTrashResult result = new CleanTrashResult();
-        StorageTrashSpec spec = trash.getTrash(self.getUuid(), trashId);
-        if (spec == null) {
+        InstallPathRecycleInventory inv = trash.getTrash(trashId);
+        if (inv == null) {
             completion.success(result);
             return;
         }
 
-        if (!trash.makeSureInstallPathNotUsed(spec)) {
-            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+        if (!trash.makeSureInstallPathNotUsed(inv)) {
+            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
             return;
         }
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("clean-trash-on-volume-%s", spec.getInstallPath()));
+        chain.setName(String.format("clean-trash-on-volume-%s", inv.getInstallPath()));
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 PurgeSnapshotOnPrimaryStorageMsg msg = new PurgeSnapshotOnPrimaryStorageMsg();
                 msg.setPrimaryStorageUuid(self.getUuid());
-                msg.setVolumePath(spec.getInstallPath());
+                msg.setVolumePath(inv.getInstallPath());
                 bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                 bus.send(msg, new CloudBusCallBack(trigger) {
                     @Override
                     public void run(MessageReply reply) {
                         if (reply.isSuccess()) {
-                            logger.info(String.format("Purged all snapshots of volume %s.", spec.getInstallPath()));
+                            logger.info(String.format("Purged all snapshots of volume %s.", inv.getInstallPath()));
                         } else {
-                            logger.warn(String.format("Failed to purge snapshots of volume %s.", spec.getInstallPath()));
+                            logger.warn(String.format("Failed to purge snapshots of volume %s.", inv.getInstallPath()));
                         }
                         trigger.next();
                     }
@@ -1542,15 +1541,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             public void run(FlowTrigger trigger, Map data) {
                 DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
                 msg.setPrimaryStorageUuid(self.getUuid());
-                msg.setInstallPath(spec.getInstallPath());
+                msg.setInstallPath(inv.getInstallPath());
                 bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                 bus.send(msg, new CloudBusCallBack(trigger) {
                     @Override
                     public void run(MessageReply reply) {
                         if (reply.isSuccess()) {
-                            logger.info(String.format("Deleted volume %s in Trash.", spec.getInstallPath()));
+                            logger.info(String.format("Deleted volume %s in Trash.", inv.getInstallPath()));
                         } else {
-                            logger.warn(String.format("Failed to delete volume %s in Trash.", spec.getInstallPath()));
+                            logger.warn(String.format("Failed to delete volume %s in Trash.", inv.getInstallPath()));
                         }
                         trigger.next();
                     }
@@ -1563,14 +1562,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             public void handle(Map data) {
                 IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
                 imsg.setPrimaryStorageUuid(self.getUuid());
-                imsg.setDiskSize(spec.getSize());
+                imsg.setDiskSize(inv.getSize());
                 bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                 bus.send(imsg);
-                logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", spec.getSize(), self.getUuid()));
+                logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", inv.getSize(), self.getUuid()));
                 trash.removeFromDb(trashId);
 
-                result.setSize(spec.getSize());
-                result.setResourceUuids(CollectionDSL.list(spec.getResourceUuid()));
+                result.setSize(inv.getSize());
+                result.setResourceUuids(CollectionDSL.list(inv.getResourceUuid()));
                 completion.success(result);
             }
         }).error(new FlowErrorHandler(completion) {
@@ -1588,38 +1587,36 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         CleanTrashResult result = new CleanTrashResult();
-        Map<String, StorageTrashSpec> trashs = trash.getTrashList(self.getUuid(), trashLists);
+        List<InstallPathRecycleInventory> trashs = trash.getTrashList(self.getUuid(), trashLists);
         if (trashs.isEmpty()) {
             completion.success(result);
             return;
         }
 
         ErrorCodeList errorCodeList = new ErrorCodeList();
-        new While<>(trashs.entrySet()).all((t, coml) -> {
-            StorageTrashSpec spec = t.getValue();
-
-            if (!trash.makeSureInstallPathNotUsed(spec)) {
-                errorCodeList.getCauses().add(operr("%s is still in using by %s, cannot remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+        new While<>(trashs).all((inv, coml) -> {
+            if (!trash.makeSureInstallPathNotUsed(inv)) {
+                errorCodeList.getCauses().add(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
                 coml.done();
                 return;
             }
 
             FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-            chain.setName(String.format("clean-trash-on-volume-%s", spec.getInstallPath()));
+            chain.setName(String.format("clean-trash-on-volume-%s", inv.getInstallPath()));
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
                     PurgeSnapshotOnPrimaryStorageMsg msg = new PurgeSnapshotOnPrimaryStorageMsg();
                     msg.setPrimaryStorageUuid(self.getUuid());
-                    msg.setVolumePath(spec.getInstallPath());
+                    msg.setVolumePath(inv.getInstallPath());
                     bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                     bus.send(msg, new CloudBusCallBack(trigger) {
                         @Override
                         public void run(MessageReply reply) {
                             if (reply.isSuccess()) {
-                                logger.info(String.format("Purged all snapshots of volume %s.", spec.getInstallPath()));
+                                logger.info(String.format("Purged all snapshots of volume %s.", inv.getInstallPath()));
                             } else {
-                                logger.warn(String.format("Failed to purge snapshots of volume %s.", spec.getInstallPath()));
+                                logger.warn(String.format("Failed to purge snapshots of volume %s.", inv.getInstallPath()));
                             }
                             trigger.next();
                         }
@@ -1630,15 +1627,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 public void run(FlowTrigger trigger, Map data) {
                     DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
                     msg.setPrimaryStorageUuid(self.getUuid());
-                    msg.setInstallPath(spec.getInstallPath());
+                    msg.setInstallPath(inv.getInstallPath());
                     bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                     bus.send(msg, new CloudBusCallBack(trigger) {
                         @Override
                         public void run(MessageReply reply) {
                             if (reply.isSuccess()) {
-                                logger.info(String.format("Deleted volume %s in Trash.", spec.getInstallPath()));
+                                logger.info(String.format("Deleted volume %s in Trash.", inv.getInstallPath()));
                             } else {
-                                logger.warn(String.format("Failed to delete volume %s in Trash.", spec.getInstallPath()));
+                                logger.warn(String.format("Failed to delete volume %s in Trash.", inv.getInstallPath()));
                             }
                             trigger.next();
                         }
@@ -1651,14 +1648,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 public void handle(Map data) {
                     IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
                     imsg.setPrimaryStorageUuid(self.getUuid());
-                    imsg.setDiskSize(spec.getSize());
+                    imsg.setDiskSize(inv.getSize());
                     bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                     bus.send(imsg);
-                    logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", spec.getSize(), self.getUuid()));
+                    logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", inv.getSize(), self.getUuid()));
 
-                    result.getResourceUuids().add(spec.getResourceUuid());
-                    updateTrashSize(result, spec.getSize());
-                    trash.removeFromDb(t.getKey(), self.getUuid());
+                    result.getResourceUuids().add(inv.getResourceUuid());
+                    updateTrashSize(result, inv.getSize());
+                    trash.removeFromDb(inv.getTrashId());
                     coml.done();
                 }
             }).error(new FlowErrorHandler(coml) {

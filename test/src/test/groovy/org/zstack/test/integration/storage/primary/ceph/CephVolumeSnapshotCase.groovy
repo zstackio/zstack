@@ -173,7 +173,7 @@ class CephVolumeSnapshotCase extends SubCase {
 
         assert root1.uuid == root.uuid
         assert root1.installPath.contains("/reset-image-${root.uuid}")
-        assert trash.getTrashList(ps.uuid).values().iterator().next().installPath == originVol.installPath
+        assert trash.getTrashList(ps.uuid).get(0).installPath == originVol.installPath
 
         def snapshot = queryVolumeSnapshot {
             conditions = ["name~=reimage-vm-point-${vm1.uuid}-%"]

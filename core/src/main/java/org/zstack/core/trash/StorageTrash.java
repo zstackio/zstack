@@ -1,24 +1,21 @@
 package org.zstack.core.trash;
 
-import org.zstack.core.jsonlabel.JsonLabelInventory;
-import org.zstack.header.storage.backup.StorageTrashSpec;
+import org.zstack.header.core.trash.InstallPathRecycleInventory;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by mingjian.deng on 2018/12/13.
  */
 public interface StorageTrash {
-    JsonLabelInventory createTrash(TrashType type, StorageTrashSpec spec);
+    InstallPathRecycleInventory createTrash(TrashType type, boolean isFolder, Object o);
 
-    Map<String, StorageTrashSpec> getTrashList(String storageUuid);
-    Map<String, StorageTrashSpec> getTrashList(String storageUuid, List<TrashType> types);
-    StorageTrashSpec getTrash(String storageUuid, Long trashId);
+    List<InstallPathRecycleInventory> getTrashList(String storageUuid);
+    List<InstallPathRecycleInventory> getTrashList(String storageUuid, List<TrashType> types);
+    InstallPathRecycleInventory getTrash(Long trashId);
 
-    boolean makeSureInstallPathNotUsed(StorageTrashSpec spec);
+    boolean makeSureInstallPathNotUsed(InstallPathRecycleInventory inventory);
     Long getTrashId(String storageUuid, String installPath);
 
-    void removeFromDb(String trashKey, String storageUuid);  // only remove db, not storage data
     void removeFromDb(Long trashId);
 }

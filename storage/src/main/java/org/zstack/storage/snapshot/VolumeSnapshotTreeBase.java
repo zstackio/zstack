@@ -43,7 +43,6 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.AllocateBackupStorageMsg;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.ReturnBackupStorageMsg;
-import org.zstack.header.storage.backup.StorageTrashSpec;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint.ParamIn;
@@ -55,7 +54,10 @@ import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.*;
+import org.zstack.header.volume.VolumeFormat;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.utils.CollectionUtils;
@@ -1437,7 +1439,7 @@ public class VolumeSnapshotTreeBase {
         chain.setName(String.format("revert-volume-%s-from-snapshot-%s", currentRoot.getVolumeUuid(), currentRoot.getUuid()));
         chain.then(new ShareFlow() {
             String newVolumeInstallPath;
-            String labelKey;
+            Long trashId;
             long newSize;
             VolumeVO volume = dbf.findByUuid(currentRoot.getVolumeUuid(), VolumeVO.class);
             VolumeInventory volumeInventory = VolumeInventory.valueOf(volume);
@@ -1571,19 +1573,18 @@ public class VolumeSnapshotTreeBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         if (!VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {
-                            StorageTrashSpec spec = new StorageTrashSpec(volume.getUuid(), VolumeVO.class.getSimpleName(),
-                                    getSelfInventory().getPrimaryStorageUuid(), PrimaryStorageVO.class.getSimpleName(),
-                                    oldVolumeInstallPath, volume.getSize());
-                            spec.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(volume.getFormat()).toString());
-                            labelKey = trash.createTrash(TrashType.RevertVolume, spec).getLabelKey();
+                            VolumeInventory vol = VolumeInventory.valueOf(volume);
+                            vol.setInstallPath(oldVolumeInstallPath);
+                            vol.setPrimaryStorageUuid(getSelfInventory().getPrimaryStorageUuid());
+                            trashId = trash.createTrash(TrashType.RevertVolume, false, vol).getTrashId();
                         }
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (labelKey != null) {
-                            trash.removeFromDb(labelKey, getSelfInventory().getPrimaryStorageUuid());
+                        if (trashId != null) {
+                            trash.removeFromDb(trashId);
                         }
                         trigger.rollback();
                     }

@@ -23,6 +23,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -247,8 +248,8 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         Long trashId = trash.getTrashId(self.getUuid(), msg.getInstallPath());
 
         if (trashId != null) {
-            StorageTrashSpec spec = trash.getTrash(self.getUuid(), trashId);
-            reply.setResourceUuid(spec.getResourceUuid());
+            InstallPathRecycleInventory inv = trash.getTrash(trashId);
+            reply.setResourceUuid(inv.getResourceUuid());
             reply.setTrashId(trashId);
         }
         bus.reply(msg, reply);
@@ -476,13 +477,13 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         APIGetTrashOnBackupStorageReply reply = new APIGetTrashOnBackupStorageReply();
 
         List<TrashType> lists = msg.getTrashType() != null ? CollectionDSL.list(TrashType.valueOf(msg.getTrashType())) : trashLists;
-        Map<String, StorageTrashSpec> trashs = trash.getTrashList(self.getUuid(), lists);
+        List<InstallPathRecycleInventory> trashs = trash.getTrashList(self.getUuid(), lists);
         if (msg.getResourceUuid() == null) {
-            reply.getStorageTrashSpecs().addAll(trash.getTrashList(self.getUuid(), trashLists).values());
+            reply.setInventories(trashs);
         } else {
-            trashs.values().forEach(t -> {
+            trashs.forEach(t -> {
                 if (msg.getResourceUuid().equals(t.getResourceUuid()) && msg.getResourceType().equals(t.getResourceType())) {
-                    reply.getStorageTrashSpecs().add(t);
+                    reply.getInventories().add(t);
                 }
             });
         }
@@ -492,18 +493,18 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     private void cleanTrash(Long trashId, final ReturnValueCompletion<CleanTrashResult> completion) {
         CleanTrashResult result = new CleanTrashResult();
-        StorageTrashSpec spec = trash.getTrash(self.getUuid(), trashId);
-        if (spec == null) {
+        InstallPathRecycleInventory inv = trash.getTrash(trashId);
+        if (inv == null) {
             completion.success(result);
             return;
         }
 
-        if (!trash.makeSureInstallPathNotUsed(spec)) {
-            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+        if (!trash.makeSureInstallPathNotUsed(inv)) {
+            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
             return;
         }
         DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
-        msg.setInstallPath(spec.getInstallPath());
+        msg.setInstallPath(inv.getInstallPath());
         msg.setBackupStorageUuid(self.getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, self.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -511,17 +512,17 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
                     BackupStorageVO srcBS = dbf.findByUuid(self.getUuid(), BackupStorageVO.class);
-                    srcBS.setAvailableCapacity(srcBS.getAvailableCapacity() + spec.getSize());
+                    srcBS.setAvailableCapacity(srcBS.getAvailableCapacity() + inv.getSize());
                     dbf.update(srcBS);
                     logger.info(String.format("Deleted image %s and returned space[size:%s] to BS[uuid:%s] after image migration",
-                            spec.getInstallPath(), spec.getSize(), self.getUuid()));
+                            inv.getInstallPath(), inv.getSize(), self.getUuid()));
 
-                    trash.removeFromDb(spec.getTrashId());
-                    result.setSize(spec.getSize());
-                    result.setResourceUuids(CollectionDSL.list(spec.getResourceUuid()));
+                    trash.removeFromDb(inv.getTrashId());
+                    result.setSize(inv.getSize());
+                    result.setResourceUuids(CollectionDSL.list(inv.getResourceUuid()));
                     completion.success(result);
                 } else {
-                    logger.warn(String.format("Failed to delete image %s in image migration.", spec.getInstallPath()));
+                    logger.warn(String.format("Failed to delete image %s in image migration.", inv.getInstallPath()));
                     completion.fail(reply.getError());
                 }
             }
@@ -539,23 +540,22 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         }
 
         CleanTrashResult result = new CleanTrashResult();
-        Map<String, StorageTrashSpec> trashs = trash.getTrashList(self.getUuid(), trashLists);
+        List<InstallPathRecycleInventory> trashs = trash.getTrashList(self.getUuid(), trashLists);
         if (trashs.isEmpty()) {
             completion.success(result);
             return;
         }
 
         List<ErrorCode> errs = new ArrayList<>();
-        new While<>(trashs.entrySet()).all((t, coml) -> {
-            StorageTrashSpec spec = t.getValue();
-            if (!trash.makeSureInstallPathNotUsed(spec)) {
-                errs.add(operr("%s is still in using by %s, cannot remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+        new While<>(trashs).all((inv, coml) -> {
+            if (!trash.makeSureInstallPathNotUsed(inv)) {
+                errs.add(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
                 coml.done();
                 return;
             }
 
             DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
-            msg.setInstallPath(spec.getInstallPath());
+            msg.setInstallPath(inv.getInstallPath());
             msg.setBackupStorageUuid(self.getUuid());
             bus.makeTargetServiceIdByResourceUuid(msg, BackupStorageConstant.SERVICE_ID, self.getUuid());
             bus.send(msg, new CloudBusCallBack(coml) {
@@ -563,15 +563,15 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
                 public void run(MessageReply reply) {
                     if (reply.isSuccess()) {
                         BackupStorageVO srcBS = dbf.findByUuid(self.getUuid(), BackupStorageVO.class);
-                        srcBS.setAvailableCapacity(srcBS.getAvailableCapacity() + spec.getSize());
+                        srcBS.setAvailableCapacity(srcBS.getAvailableCapacity() + inv.getSize());
                         dbf.update(srcBS);
                         logger.info(String.format("Deleted image %s and returned space[size:%s] to BS[uuid:%s] after image migration",
-                                spec.getInstallPath(), spec.getSize(), self.getUuid()));
-                        result.getResourceUuids().add(spec.getResourceUuid());
-                        updateTrashSize(result, spec.getSize());
-                        trash.removeFromDb(t.getKey(), self.getUuid());
+                                inv.getInstallPath(), inv.getSize(), self.getUuid()));
+                        result.getResourceUuids().add(inv.getResourceUuid());
+                        updateTrashSize(result, inv.getSize());
+                        trash.removeFromDb(inv.getTrashId());
                     } else {
-                        logger.warn(String.format("Failed to delete image %s in image migration.", spec.getInstallPath()));
+                        logger.warn(String.format("Failed to delete image %s in image migration.", inv.getInstallPath()));
                         errs.add(reply.getError());
                     }
                     coml.done();

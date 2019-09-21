@@ -1,7 +1,6 @@
 package org.zstack.header.storage.backup
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.header.storage.backup.StorageTrashSpec
 
 doc {
 

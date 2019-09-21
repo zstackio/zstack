@@ -27,6 +27,7 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.trash.CleanTrashResult;
+import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -36,7 +37,6 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.StorageTrashSpec;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
@@ -409,9 +409,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         Long trashId = trash.getTrashId(self.getUuid(), msg.getInstallPath());
 
         if (trashId != null) {
-            StorageTrashSpec spec = trash.getTrash(self.getUuid(), trashId);
+            InstallPathRecycleInventory inv = trash.getTrash(trashId);
             reply.setTrashId(trashId);
-            reply.setResourceUuid(spec.getResourceUuid());
+            reply.setResourceUuid(inv.getResourceUuid());
         }
         bus.reply(msg, reply);
     }
@@ -763,13 +763,13 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     private void handle(final APIGetTrashOnPrimaryStorageMsg msg) {
         APIGetTrashOnPrimaryStorageReply reply = new APIGetTrashOnPrimaryStorageReply();
         List<TrashType> lists = msg.getTrashType() != null ? CollectionDSL.list(TrashType.valueOf(msg.getTrashType())) : trashLists;
-        Map<String, StorageTrashSpec> trashs = trash.getTrashList(self.getUuid(), lists);
+        List<InstallPathRecycleInventory> trashs = trash.getTrashList(self.getUuid(), lists);
         if (msg.getResourceUuid() == null) {
-            reply.getStorageTrashSpecs().addAll(trash.getTrashList(self.getUuid(), trashLists).values());
+            reply.setInventories(trashs);
         } else {
-            trashs.values().forEach(t -> {
+            trashs.forEach(t -> {
                 if (msg.getResourceUuid().equals(t.getResourceUuid()) && msg.getResourceType().equals(t.getResourceType())) {
-                    reply.getStorageTrashSpecs().add(t);
+                    reply.getInventories().add(t);
                 }
             });
         }
@@ -783,42 +783,42 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     private void cleanTrash(Long trashId, final ReturnValueCompletion<CleanTrashResult> completion) {
         CleanTrashResult result = new CleanTrashResult();
-        StorageTrashSpec spec = trash.getTrash(self.getUuid(), trashId);
-        if (spec == null) {
+        InstallPathRecycleInventory inv = trash.getTrash(trashId);
+        if (inv == null) {
             completion.success(result);
             return;
         }
 
-        if (!trash.makeSureInstallPathNotUsed(spec)) {
-            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", spec.getInstallPath(), spec.getResourceType()));
+        if (!trash.makeSureInstallPathNotUsed(inv)) {
+            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
             return;
         }
         DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
         msg.setPrimaryStorageUuid(self.getUuid());
-        msg.setInstallPath(spec.getInstallPath());
-        msg.setHypervisorType(spec.getHypervisorType());
-        msg.setFolder(spec.isFolder());
-        msg.setBitsUuid(spec.getResourceUuid());
-        msg.setBitsType(spec.getResourceType());
+        msg.setInstallPath(inv.getInstallPath());
+        msg.setHypervisorType(inv.getHypervisorType());
+        msg.setFolder(inv.getFolder());
+        msg.setBitsUuid(inv.getResourceUuid());
+        msg.setBitsType(inv.getResourceType());
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
         bus.send(msg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    logger.info(String.format("Deleted volume %s in Trash.", spec.getInstallPath()));
+                    logger.info(String.format("Deleted volume %s in Trash.", inv.getInstallPath()));
                     IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
                     imsg.setPrimaryStorageUuid(self.getUuid());
-                    imsg.setDiskSize(spec.getSize());
+                    imsg.setDiskSize(inv.getSize());
                     bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
                     bus.send(imsg);
                     trash.removeFromDb(trashId);
-                    logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", spec.getSize(), self.getUuid()));
+                    logger.info(String.format("Returned space[size:%s] to PS %s after volume migration", inv.getSize(), self.getUuid()));
 
-                    result.setSize(spec.getSize());
-                    result.setResourceUuids(CollectionDSL.list(spec.getResourceUuid()));
+                    result.setSize(inv.getSize());
+                    result.setResourceUuids(CollectionDSL.list(inv.getResourceUuid()));
                     completion.success(result);
                 } else {
-                    logger.warn(String.format("Failed to delete volume %s in Trash, because: %s", spec.getInstallPath(), reply.getError().getDetails()));
+                    logger.warn(String.format("Failed to delete volume %s in Trash, because: %s", inv.getInstallPath(), reply.getError().getDetails()));
                     completion.fail(reply.getError());
                 }
             }
@@ -867,15 +867,15 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
 
         CleanTrashResult result = new CleanTrashResult();
-        Map<String, StorageTrashSpec> trashs = trash.getTrashList(self.getUuid(), trashLists);
+        List<InstallPathRecycleInventory> trashs = trash.getTrashList(self.getUuid(), trashLists);
         if (trashs.isEmpty()) {
             completion.success(result);
             return;
         }
 
         List<ErrorCode> errs = new ArrayList<>();
-        new While<>(trashs.entrySet()).all((trash, coml) -> {
-            cleanTrash(trash.getValue().getTrashId(), new ReturnValueCompletion<CleanTrashResult>(coml) {
+        new While<>(trashs).all((trash, coml) -> {
+            cleanTrash(trash.getTrashId(), new ReturnValueCompletion<CleanTrashResult>(coml) {
                 @Override
                 public void success(CleanTrashResult res) {
                     result.getResourceUuids().add(res.getResourceUuids().get(0));
