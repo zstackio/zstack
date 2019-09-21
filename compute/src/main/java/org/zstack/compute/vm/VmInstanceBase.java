@@ -6228,16 +6228,17 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        if (!self.getState().equals(VmInstanceState.Running)) {
+        if (!priorityOperator.needEffectImmediately(self.getState())) {
             priorityOperator.setVmPriority(self.getUuid(), newLevel);
             completion.success();
             return;
         }
 
         UpdateVmPriorityMsg smsg = new UpdateVmPriorityMsg();
-        smsg.setVmInstanceUuid(self.getUuid());
+        Map<String, VmPriorityLevel> vmLevelMap = new HashMap();
+        vmLevelMap.put(self.getUuid(), newLevel);
         smsg.setHostUuid(self.getHostUuid());
-        smsg.setLevel(newLevel);
+        smsg.setVmlevelMap(vmLevelMap);
         bus.makeTargetServiceIdByResourceUuid(smsg, HostConstant.SERVICE_ID, self.getHostUuid());
         bus.send(smsg, new CloudBusCallBack(msg) {
             @Override

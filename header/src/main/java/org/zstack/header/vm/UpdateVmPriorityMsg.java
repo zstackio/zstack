@@ -3,31 +3,25 @@ package org.zstack.header.vm;
 import org.zstack.header.host.HostMessage;
 import org.zstack.header.message.NeedReplyMessage;
 
+import java.util.Map;
+
 /**
  * @ Author : yh.w
  * @ Date   : Created in 20:13 2019/9/18
  */
 public class UpdateVmPriorityMsg extends NeedReplyMessage implements HostMessage {
-    private String vmInstanceUuid;
+
+    // vmUuid, VmPriorityLevel
+    private Map<String, VmPriorityLevel> vmlevelMap;
 
     private String hostUuid;
 
-    private VmPriorityLevel level;
-
-    public VmPriorityLevel getLevel() {
-        return level;
+    public Map<String, VmPriorityLevel> getVmlevelMap() {
+        return vmlevelMap;
     }
 
-    public void setLevel(VmPriorityLevel level) {
-        this.level = level;
-    }
-
-    public String getVmInstanceUuid() {
-        return vmInstanceUuid;
-    }
-
-    public void setVmInstanceUuid(String vmInstanceUuid) {
-        this.vmInstanceUuid = vmInstanceUuid;
+    public void setVmlevelMap(Map<String, VmPriorityLevel> vmlevelMap) {
+        this.vmlevelMap = vmlevelMap;
     }
 
     @Override

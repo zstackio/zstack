@@ -37,10 +37,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.AfterChangeHostStatusExtensionPoint;
-import org.zstack.header.host.HostAfterConnectedExtensionPoint;
-import org.zstack.header.host.HostInventory;
-import org.zstack.header.host.HostStatus;
+import org.zstack.header.host.*;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
@@ -54,6 +51,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
@@ -66,6 +64,7 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
+import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -98,7 +97,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         ResourceOwnerAfterChangeExtensionPoint,
         GlobalApiMessageInterceptor,
         HostAfterConnectedExtensionPoint,
-        AfterChangeHostStatusExtensionPoint {
+        AfterChangeHostStatusExtensionPoint,
+        VmInstanceMigrateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
     private Map<String, VmInstanceFactory> vmInstanceFactories = Collections.synchronizedMap(new HashMap<>());
     private List<String> createVmWorkFlowElements;
@@ -2282,6 +2282,46 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 });
             }, 200).run(new NopeNoErrorCompletion());
         }
+
+    }
+
+    @Override
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+
+    }
+
+    @Override
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+
+    }
+
+    @Override
+    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
+        if (!inv.getHypervisorType().equals(VmInstanceConstant.KVM_HYPERVISOR_TYPE)) {
+            return;
+        }
+
+        VmPriorityLevel level = new VmPriorityOperator().getVmPriority(inv.getUuid());
+        UpdateVmPriorityMsg msg = new UpdateVmPriorityMsg();
+        Map<String, VmPriorityLevel> map = new HashMap<>();
+        map.put(inv.getUuid(), level);
+        msg.setVmlevelMap(map);
+        msg.setHostUuid(inv.getHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, inv.getHostUuid());
+        bus.send(msg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                UpdateVmPriorityReply r = new UpdateVmPriorityReply();
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("update vm[%s] priority to [%s] failed,because %s",
+                            inv.getUuid(), level.toString(), reply.getError()));
+                }
+            }
+        });
+    }
+
+    @Override
+    public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
 
     }
 }

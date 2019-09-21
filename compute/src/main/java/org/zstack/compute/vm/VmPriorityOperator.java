@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,10 +10,10 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
-import org.zstack.header.vm.VmPriorityConfigVO;
-import org.zstack.header.vm.VmPriorityLevel;
-import org.zstack.header.vm.VmPriorityConfigVO_;
+import org.zstack.header.vm.*;
 import org.zstack.tag.SystemTagCreator;
+
+import java.util.List;
 
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -25,6 +26,15 @@ import static org.zstack.utils.CollectionDSL.map;
 public class VmPriorityOperator implements PrepareDbInitialValueExtensionPoint {
     @Autowired
     private DatabaseFacade dbf;
+
+    public static List<VmInstanceState> allowEffectImmediatelyStates = Lists.newArrayList();
+
+    static {
+        allowEffectImmediatelyStates.add(VmInstanceState.Running);
+        allowEffectImmediatelyStates.add(VmInstanceState.Paused);
+        allowEffectImmediatelyStates.add(VmInstanceState.Pausing);
+        allowEffectImmediatelyStates.add(VmInstanceState.Resuming);
+    }
 
     @Override
     public void prepareDbInitialValue() {
@@ -66,6 +76,7 @@ public class VmPriorityOperator implements PrepareDbInitialValueExtensionPoint {
     public VmPriorityLevel getVmPriority(String vmUuid) {
         String priority = VmSystemTags.VM_PRIORITY.getTokenByResourceUuid(vmUuid, VmSystemTags.VM_PRIORITY_TOKEN);
         if (StringUtils.isEmpty(priority)) {
+            setVmPriority(vmUuid, VmPriorityLevel.Normal);
             return VmPriorityLevel.Normal;
         }
 
@@ -80,6 +91,12 @@ public class VmPriorityOperator implements PrepareDbInitialValueExtensionPoint {
         creator.inherent = false;
         creator.recreate = true;
         creator.create();
+    }
+
+    public void batchSetVmPriority(List<String> vmUuids, VmPriorityLevel level) {
+        for (String vmUuid : vmUuids) {
+            setVmPriority(vmUuid, level);
+        }
     }
 
     public void updatePriorityConfig(String uuid, PriorityStruct struct) {
@@ -98,5 +115,9 @@ public class VmPriorityOperator implements PrepareDbInitialValueExtensionPoint {
         if (update) {
             dbf.update(vo);
         }
+    }
+
+    public boolean needEffectImmediately(VmInstanceState state) {
+        return allowEffectImmediatelyStates.contains(state);
     }
 }

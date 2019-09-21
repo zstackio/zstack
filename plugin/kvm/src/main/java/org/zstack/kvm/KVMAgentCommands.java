@@ -3,6 +3,7 @@ package org.zstack.kvm;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.validation.Validation;
+import org.zstack.header.vm.PriorityConfigStruct;
 import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.vm.VmPriorityConfigVO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
@@ -67,8 +68,7 @@ public class KVMAgentCommands {
     }
 
     public static class UpdateVmPriorityCmd extends AgentCommand {
-        public String vmUuid;
-        public PriorityConfig priorityConfig;
+        public List<PriorityConfigStruct> priorityConfigStructs;
     }
 
     public static class UpdateVmPriorityRsp extends AgentResponse {
@@ -863,10 +863,12 @@ public class KVMAgentCommands {
     }
 
     public static class PriorityConfig {
+        private String vmUuid;
         private int cpuShares;
         private int oomScoreAdj;
 
-        PriorityConfig(VmPriorityConfigVO vo) {
+        PriorityConfig(VmPriorityConfigVO vo, String vmUuid) {
+            this.vmUuid = vmUuid;
             this.cpuShares = vo.getCpuShares();
             this.oomScoreAdj = vo.getOomScoreAdj();
         }
@@ -885,6 +887,14 @@ public class KVMAgentCommands {
 
         public void setOomScoreAdj(int oomScoreAdj) {
             this.oomScoreAdj = oomScoreAdj;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
         }
     }
 
@@ -931,14 +941,14 @@ public class KVMAgentCommands {
         private String machineType;
         private Integer pciePortNums;
         private boolean useHugePage;
-        private PriorityConfig priorityConfig;
+        private PriorityConfigStruct priorityConfigStruct;
 
-        public PriorityConfig getPriorityConfig() {
-            return priorityConfig;
+        public PriorityConfigStruct getPriorityConfigStruct() {
+            return priorityConfigStruct;
         }
 
-        public void setPriorityConfig(PriorityConfig priorityConfig) {
-            this.priorityConfig = priorityConfig;
+        public void setPriorityConfigStruct(PriorityConfigStruct priorityConfigStruct) {
+            this.priorityConfigStruct = priorityConfigStruct;
         }
 
         public boolean isUseHugePage() {
