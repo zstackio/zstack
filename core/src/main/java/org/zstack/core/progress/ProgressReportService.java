@@ -26,6 +26,7 @@ import org.zstack.header.message.*;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.ThreadContextUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -59,11 +60,6 @@ public class ProgressReportService extends AbstractService implements Management
     private ThreadFacade thdf;
     @Autowired
     private CloudBus bus;
-
-    private class ThreadContextMapSaved {
-        public Map<String, String> contextMap = new HashMap<>();
-        public ThreadContext.ContextStack contextStack;
-    }
 
     private int DELETE_DELAY = 300;
 
@@ -117,18 +113,6 @@ public class ProgressReportService extends AbstractService implements Management
         return DELETE_DELAY;
     }
 
-    private Runnable saveThreadContext() {
-        ThreadContextMapSaved savedThread = new ThreadContextMapSaved();
-        savedThread.contextMap = ThreadContext.getContext();
-        savedThread.contextStack = ThreadContext.cloneStack();
-
-        return () -> {
-            ThreadContext.clearAll();
-            ThreadContext.putAll(savedThread.contextMap);
-            ThreadContext.setStack(savedThread.contextStack.asList());
-        };
-    }
-
     private void setThreadContext(ProgressReportCmd cmd) {
         ThreadContext.clearAll();
         if (cmd.getThreadContextMap() != null) {
@@ -145,7 +129,7 @@ public class ProgressReportService extends AbstractService implements Management
             @Override
             @Deferred
             public String handleSyncHttpCall(ProgressReportCmd cmd) {
-                Runnable cleanup = saveThreadContext();
+                Runnable cleanup = ThreadContextUtils.saveThreadContext();
                 Defer.defer(cleanup);
                 setThreadContext(cmd);
                 logger.debug(String.format("report progress is : %s", cmd.getProgress()));
@@ -411,6 +395,13 @@ public class ProgressReportService extends AbstractService implements Management
             return;
         }
 
+        String apiId = ThreadContext.get(THREAD_CONTEXT_API);
+
+        if (apiId == null) {
+            logger.warn("apiId not found");
+            return;
+        }
+
         ThreadContext.put(Constants.THREAD_CONTEXT_PROGRESS_ENABLED, "true");
 
         String taskUuid = getTaskUuid();
@@ -419,7 +410,7 @@ public class ProgressReportService extends AbstractService implements Management
         }
 
         TaskProgressVO vo = new TaskProgressVO();
-        vo.setApiId(ThreadContext.get(Constants.THREAD_CONTEXT_API));
+        vo.setApiId(apiId);
         vo.setTaskUuid(taskUuid);
         vo.setParentUuid(getParentUuid());
         vo.setContent(fmt);
@@ -479,7 +470,7 @@ public class ProgressReportService extends AbstractService implements Management
 
                 int currentPercent = res == null ? 0 : new Double(res.get(0, String.class)).intValue();
 
-                Runnable cleanup = saveThreadContext();
+                Runnable cleanup = ThreadContextUtils.saveThreadContext();
                 Defer.defer(cleanup);
                 ThreadContext.put(THREAD_CONTEXT_API, apiId);
                 ThreadContext.put(THREAD_CONTEXT_TASK_NAME, taskName);
