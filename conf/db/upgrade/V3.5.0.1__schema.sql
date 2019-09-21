@@ -178,7 +178,7 @@ DELETE FROM `zstack`.`SystemTagVO` WHERE `resourceType` = 'InstanceOfferingVO' A
 
 CREATE TABLE IF NOT EXISTS `BillingResourceLabelVO` (
   `resourceUuid` varchar(32) NOT NULL,
-  `labelKey` varchar(255) DEFAULT NULL,
+  `labelKey` varchar(255) NOT NULL,
   `labelValue` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`resourceUuid`, `labelKey`),
   KEY `resourceUuid` (`resourceUuid`)
