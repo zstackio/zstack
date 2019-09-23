@@ -177,3 +177,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`GuestToolsVO` (
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `BillingResourceLabelVO` modify labelKey varchar(255) NOT NULL;
