@@ -2029,4 +2029,8 @@ public class KVMAgentCommands {
 
     public static class ShutdownHostResponse extends AgentResponse {
     }
+
+    public static class PrimaryStorageCommand extends AgentCommand{
+        public String primaryStorageUuid;
+    }
 }

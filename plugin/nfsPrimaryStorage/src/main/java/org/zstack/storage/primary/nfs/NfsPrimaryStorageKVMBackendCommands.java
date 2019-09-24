@@ -2,6 +2,7 @@ package org.zstack.storage.primary.nfs;
 
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.validation.Validation;
+import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.AgentCommand;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 
@@ -30,7 +31,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
-    public static class NfsPrimaryStorageAgentCommand extends AgentCommand {
+    public static class NfsPrimaryStorageAgentCommand extends KVMAgentCommands.PrimaryStorageCommand {
         private String uuid;
 
         public String getUuid() {
@@ -39,6 +40,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
         public void setUuid(String uuid) {
             this.uuid = uuid;
+            this.primaryStorageUuid = uuid;
         }
     }
 
