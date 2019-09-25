@@ -1,10 +1,7 @@
 package org.zstack.compute.vm;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.EventCallback;
-import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.host.*;
@@ -33,6 +30,9 @@ public class VmPriorityUpgradeExtension implements Component {
     @Autowired
     private CloudBus bus;
 
+    @Autowired
+    private ResourceDestinationMaker destinationMaker;
+
     @Override
     public boolean start() {
         initRunningVmPriority();
@@ -60,12 +60,11 @@ public class VmPriorityUpgradeExtension implements Component {
                 .listValues();
 
         vmUuids.removeAll(updatedVms);
+        vmUuids.removeIf( v -> !destinationMaker.isManagedByUs(v));
 
         if (vmUuids.isEmpty()) {
             return;
         }
-
-        new VmPriorityOperator().batchSetVmPriority(vmUuids, VmPriorityLevel.Normal);
 
         Map<String, VmPriorityLevel> vmLevelMap = new HashMap<>();
         vmUuids.forEach(v-> {
@@ -82,7 +81,10 @@ public class VmPriorityUpgradeExtension implements Component {
                 if (!reply.isSuccess()) {
                     logger.warn(String.format("update vms priority failed on host[%s],because %s",
                             inv.getUuid(), reply.getError()));
+                    return;
                 }
+
+                new VmPriorityOperator().batchSetVmPriority(vmUuids, VmPriorityLevel.Normal);
             }
         });
     }
