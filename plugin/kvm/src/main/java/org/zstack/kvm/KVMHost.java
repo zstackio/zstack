@@ -681,11 +681,15 @@ public class KVMHost extends HostBase implements Host {
             return;
         }
 
-        VmPriorityConfigVO vo = Q.New(VmPriorityConfigVO.class).eq(VmPriorityConfigVO_.level, msg.getLevel()).find();
+        Map<VmPriorityLevel, VmPriorityConfigVO> vos = dbf.listAll(VmPriorityConfigVO.class)
+                .stream().collect(Collectors.toMap(VmPriorityConfigVO::getLevel, v -> v));
 
         UpdateVmPriorityCmd cmd = new UpdateVmPriorityCmd();
-        cmd.vmUuid = msg.getVmInstanceUuid();
-        cmd.priorityConfig = new PriorityConfig(vo);
+        List<PriorityConfigStruct> priorityConfigStructs = new ArrayList<>();
+        msg.getVmlevelMap().forEach((key, value) -> {
+            priorityConfigStructs.add(new PriorityConfigStruct(vos.get(value), key));
+        });
+        cmd.priorityConfigStructs = priorityConfigStructs;
         new Http<>(updateVmPriorityPath, cmd, UpdateVmPriorityRsp.class).call(new ReturnValueCompletion<UpdateVmPriorityRsp>(msg) {
             @Override
             public void success(UpdateVmPriorityRsp ret) {
@@ -1975,7 +1979,7 @@ public class KVMHost extends HostBase implements Host {
         }
         VmPriorityLevel level = new VmPriorityOperator().getVmPriority(spec.getVmInventory().getUuid());
         VmPriorityConfigVO priorityVO = Q.New(VmPriorityConfigVO.class).eq(VmPriorityConfigVO_.level, level).find();
-        cmd.setPriorityConfig(new PriorityConfig(priorityVO));
+        cmd.setPriorityConfigStruct(new PriorityConfigStruct(priorityVO, spec.getVmInventory().getUuid()));
 
         VolumeTO rootVolume = new VolumeTO();
         rootVolume.setInstallPath(spec.getDestRootVolume().getInstallPath());

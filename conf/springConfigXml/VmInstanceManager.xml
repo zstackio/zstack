@@ -120,6 +120,7 @@
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.AfterChangeHostStatusExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
@@ -174,4 +175,9 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="VmPriorityUpgradeExtension" class="org.zstack.compute.vm.VmPriorityUpgradeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
 </beans>
