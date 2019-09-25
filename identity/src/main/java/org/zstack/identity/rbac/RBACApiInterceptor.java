@@ -94,7 +94,7 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
 
         RoleVO vo = Q.New(RoleVO.class).eq(RoleVO_.uuid, msg.getRoleUuid()).find();
 
-        if (vo.getIdentity() == null || vo.getStatements() == null) {
+        if (vo.getIdentity() == null || msg.getStatements() == null) {
             return;
         }
 
