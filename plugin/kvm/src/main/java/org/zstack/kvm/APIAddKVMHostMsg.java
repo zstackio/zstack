@@ -4,11 +4,11 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.host.APIAddHostEvent;
 import org.zstack.header.host.APIAddHostMsg;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.message.SkipLogger;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
-import sun.security.util.Password;
 
 /**
  * @api
@@ -65,7 +65,7 @@ import sun.security.util.Password;
         parameterName = "params",
         responseClass = APIAddHostEvent.class
 )
-public class APIAddKVMHostMsg extends APIAddHostMsg implements AddKVMHostMessage {
+public class APIAddKVMHostMsg extends APIAddHostMsg implements AddKVMHostMessage, HasSensitiveInfo {
     /**
      * @desc user name used for ssh login.
      * Max length of 255 characters
@@ -77,7 +77,7 @@ public class APIAddKVMHostMsg extends APIAddHostMsg implements AddKVMHostMessage
      * Max length of 255 characters
      */
     @APIParam(maxLength = 255, password = true)
-    @SkipLogger()
+    @NoLogging
     private String password;
 
 

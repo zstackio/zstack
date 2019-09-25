@@ -16,7 +16,7 @@ public class GsonUtil {
         _gsonBuilder.registerTypeAdapter(clazz, coder);
         return this;
     }
-    
+
     public GsonUtil setExclusionStrategies(ExclusionStrategy[] excludeStrateges) {
          _gsonBuilder.setExclusionStrategies(excludeStrateges);
          return this; 
@@ -27,7 +27,7 @@ public class GsonUtil {
         return this;
     }
     
-    public GsonUtil setInstanceCreator(Class<?> clazz, InstanceCreator<?> creator) {
+    public GsonUtil setInstanceCreator(Class<?> clazz, Object creator) {
         _gsonBuilder.registerTypeAdapter(clazz, creator);
         return this;
     }

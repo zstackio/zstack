@@ -2,10 +2,12 @@ package org.zstack.utils;
 
 import com.googlecode.gentyref.GenericTypeReflector;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.function.Function;
 
 public class FieldUtils {
     public static <T> T getFieldValue(String name, Object obj) {
@@ -51,6 +53,20 @@ public class FieldUtils {
         } while (clazz != Object.class);
         return fields;
             
+    }
+
+    public static List<Field> getDeclaringClassFields(Class<?> fieldDeclaringClass, Class<?> clazz) {
+        List<Field> fields = new ArrayList<Field>();
+        do {
+            Field[] fs = clazz.getDeclaredFields();
+            for (Field f : fs) {
+                if (fieldDeclaringClass.isAssignableFrom(f.getType())) {
+                    fields.add(f);
+                }
+            }
+            clazz = clazz.getSuperclass();
+        } while (clazz != Object.class);
+        return fields;
     }
 
     public static Field getAnnotatedField(Class annotation, Class clazz) {
@@ -132,6 +148,21 @@ public class FieldUtils {
             Field[] fs = clazz.getDeclaredFields();
             for (Field f : fs) {
                 if (f.isAnnotationPresent(annotation)) {
+                    ret.add(f);
+                }
+            }
+            clazz = clazz.getSuperclass();
+        } while (clazz != Object.class);
+
+        return ret;
+    }
+
+    public static <T extends Annotation> List<Field> getAnnotatedFieldsWithFilter(Class<T> annotation, Class clazz, Function<T, Boolean> filter) {
+        List<Field> ret = new ArrayList<Field>();
+        do {
+            Field[] fs = clazz.getDeclaredFields();
+            for (Field f : fs) {
+                if (f.isAnnotationPresent(annotation) && filter.apply(f.getAnnotation(annotation))) {
                     ret.add(f);
                 }
             }

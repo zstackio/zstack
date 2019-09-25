@@ -1,6 +1,8 @@
 package org.zstack.storage.ceph.backup;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -18,7 +20,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
         isAction = true,
         responseClass = APIUpdateCephBackupStorageMonEvent.class
 )
-public class APIUpdateCephBackupStorageMonMsg extends APIMessage implements BackupStorageMessage {
+public class APIUpdateCephBackupStorageMonMsg extends APIMessage implements BackupStorageMessage, HasSensitiveInfo {
     @APINoSee
     private String backupStorageUuid;
 
@@ -32,6 +34,7 @@ public class APIUpdateCephBackupStorageMonMsg extends APIMessage implements Back
     private String sshUsername;
 
     @APIParam(maxLength = 255, required = false)
+    @NoLogging
     private String sshPassword;
 
     @APIParam(numberRange = {1, 65535}, required = false)

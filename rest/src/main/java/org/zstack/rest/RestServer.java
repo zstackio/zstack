@@ -23,6 +23,7 @@ import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.header.Component;
@@ -458,6 +459,7 @@ public class RestServer implements Component, CloudBusEventListener {
     private AntPathMatcher matcher = new AntPathMatcher();
 
     private Map<String, Object> apis = new HashMap<>();
+    private Set<String> sensitiveRestPaths = new HashSet<>();
     private Map<Class, RestResponseWrapper> responseAnnotationByClass = new HashMap<>();
 
     private HttpEntity<String> toHttpEntity(HttpServletRequest req) {
@@ -505,6 +507,29 @@ public class RestServer implements Component, CloudBusEventListener {
         }
     }
 
+    private String getFormatBody(String path, String body) {
+        path = getMatchPath(path);
+        if (sensitiveRestPaths.contains(path)) {
+            return "*****";
+        } else {
+            return body;
+        }
+    }
+
+    private String getMatchPath(String path) {
+        if (apis.keySet().contains(path)) {
+            return path;
+        }
+
+        for (String p : apis.keySet()) {
+            if (matcher.match(p, path)) {
+                return p;
+            }
+        }
+
+        return null;
+    }
+
     void handle(HttpServletRequest req, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         RequestInfo info = new RequestInfo(req);
         requestInfo.set(info);
@@ -520,7 +545,7 @@ public class RestServer implements Component, CloudBusEventListener {
             if (req.getQueryString() != null && !req.getQueryString().isEmpty()) {
                 sb.append(String.format(" Query: %s,", UriUtils.decode(req.getQueryString(), "UTF-8")));
             }
-            sb.append(String.format(" Body: %s", entity.getBody().isEmpty() ? null : entity.getBody()));
+            sb.append(String.format(" Body: %s", entity.getBody().isEmpty() ? null : getFormatBody(path, entity.getBody())));
 
             requestLogger.trace(sb.toString());
         }
@@ -539,16 +564,7 @@ public class RestServer implements Component, CloudBusEventListener {
             return;
         }
 
-        Object api = apis.get(path);
-        if (api == null) {
-            for (String p : apis.keySet()) {
-                if (matcher.match(p, path)) {
-                    api = apis.get(p);
-                    break;
-                }
-            }
-        }
-
+        Object api = apis.get(getMatchPath(path));
         if (api == null) {
             sendResponse(HttpStatus.NOT_FOUND.value(), String.format("no api mapping to %s", path), rsp);
             return;
@@ -1223,6 +1239,10 @@ public class RestServer implements Component, CloudBusEventListener {
 
                 api = new Api(clz, at);
                 api.path = path;
+
+                if (LogSafeGson.needMaskLog(api.apiClass)) {
+                    sensitiveRestPaths.add(normalizedPath);
+                }
 
                 if (!apis.containsKey(normalizedPath)) {
                     apis.put(normalizedPath, api);

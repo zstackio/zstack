@@ -1,6 +1,8 @@
 package org.zstack.ldap;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 
@@ -11,7 +13,7 @@ import java.util.List;
 
 @Inventory(mappingVOClass = LdapServerVO.class)
 @PythonClassInventory
-public class LdapServerInventory {
+public class LdapServerInventory implements HasSensitiveInfo {
     private String uuid;
     private String name;
     private String description;
@@ -21,6 +23,7 @@ public class LdapServerInventory {
     private String scope;
 
     @APINoSee
+    @NoLogging
     private String password;
     private String encryption;
     private Timestamp createDate;

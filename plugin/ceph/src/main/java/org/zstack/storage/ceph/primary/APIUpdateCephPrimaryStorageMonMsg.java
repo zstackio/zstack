@@ -1,6 +1,8 @@
 package org.zstack.storage.ceph.primary;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -18,7 +20,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
         method = HttpMethod.PUT,
         responseClass = APIUpdateCephPrimaryStorageMonEvent.class
 )
-public class APIUpdateCephPrimaryStorageMonMsg extends APIMessage implements PrimaryStorageMessage {
+public class APIUpdateCephPrimaryStorageMonMsg extends APIMessage implements PrimaryStorageMessage, HasSensitiveInfo {
     @APINoSee
     private String primaryStorageUuid;
 
@@ -32,6 +34,7 @@ public class APIUpdateCephPrimaryStorageMonMsg extends APIMessage implements Pri
     private String sshUsername;
 
     @APIParam(maxLength = 255, required = false)
+    @NoLogging
     private String sshPassword;
 
     @APIParam(numberRange = {1, 65535}, required = false)

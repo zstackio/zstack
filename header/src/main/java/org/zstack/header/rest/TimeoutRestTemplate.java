@@ -13,7 +13,7 @@ import org.zstack.utils.logging.CLogger;
  * Created by lining on 2017/6/12.
  */
 public class TimeoutRestTemplate extends RestTemplate {
-    private static final CLogger logger = Utils.getLogger(TimeoutRestTemplate.class);
+    private static final CLogger logger = Utils.getSafeLogger(TimeoutRestTemplate.class);
 
     public TimeoutRestTemplate(ClientHttpRequestFactory requestFactory) {
         super();

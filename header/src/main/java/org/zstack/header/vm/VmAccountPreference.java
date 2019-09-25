@@ -1,15 +1,16 @@
 package org.zstack.header.vm;
 
-import org.zstack.header.message.SkipLogger;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 
 import java.io.Serializable;
 
 /**
  * Created by mingjian.deng on 16/10/19.
  */
-public class VmAccountPreference implements Serializable, Cloneable {
+public class VmAccountPreference implements Serializable, Cloneable, HasSensitiveInfo {
     private String userAccount;
-    @SkipLogger
+    @NoLogging
     private String accountPassword;
     private String vmUuid;
 

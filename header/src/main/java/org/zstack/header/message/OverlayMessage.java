@@ -1,12 +1,15 @@
 package org.zstack.header.message;
 
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 /**
  * Created by xing5 on 2016/7/21.
  */
-public class OverlayMessage extends NeedReplyMessage {
+public class OverlayMessage extends NeedReplyMessage implements HasSensitiveInfo {
+    @NoLogging(type = NoLogging.Type.Auto)
     protected Object message;
     protected String messageClassName;
 

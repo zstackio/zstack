@@ -43,6 +43,8 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -761,13 +763,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     }
 
-    public static class CephToCephMigrateVolumeSegmentCmd extends AgentCommand implements HasThreadContext {
+    public static class CephToCephMigrateVolumeSegmentCmd extends AgentCommand implements HasThreadContext, HasSensitiveInfo {
         String parentUuid;
         String resourceUuid;
         String srcInstallPath;
         String dstInstallPath;
         String dstMonHostname;
         String dstMonSshUsername;
+        @NoLogging
         String dstMonSshPassword;
         int dstMonSshPort;
 

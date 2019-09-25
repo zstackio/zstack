@@ -38,5 +38,9 @@ public @interface APIParam {
 
     boolean successIfResourceNotExisting() default false;
 
+    /**
+        use @NoLogging instead
+     */
+    @Deprecated
     boolean password() default false;
 }

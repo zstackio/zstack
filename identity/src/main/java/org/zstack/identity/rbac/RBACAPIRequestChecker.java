@@ -11,8 +11,7 @@ import org.zstack.header.identity.IdentityByPassCheck;
 import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.rbac.*;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.SkipLogger;
+import org.zstack.header.log.NoLogging;
 import org.zstack.identity.APIRequestChecker;
 import org.zstack.identity.rbac.datatype.Entity;
 import org.zstack.utils.Utils;
@@ -36,7 +35,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
             addSerializationExclusionStrategy(new ExclusionStrategy() {
         @Override
         public boolean shouldSkipField(FieldAttributes fieldAttributes) {
-            return fieldAttributes.getAnnotation(SkipLogger.class) != null;
+            return fieldAttributes.getAnnotation(NoLogging.class) != null;
         }
 
         @Override

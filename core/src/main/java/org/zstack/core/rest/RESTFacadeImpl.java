@@ -9,6 +9,7 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.AsyncThread;
@@ -22,6 +23,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.rest.*;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.IptablesUtils;
@@ -32,10 +34,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -43,7 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.zstack.core.Platform.*;
 
 public class RESTFacadeImpl implements RESTFacade {
-    private static final CLogger logger = Utils.getLogger(RESTFacadeImpl.class);
+    private static final CLogger logger = Utils.getSafeLogger(RESTFacadeImpl.class);
     
     @Autowired
     private ThreadFacade thdf;
@@ -196,7 +195,15 @@ public class RESTFacadeImpl implements RESTFacade {
         // for unit test finding invocation chain
         MessageCommandRecorder.record(body.getClass());
         String bodyStr = JSONObjectUtil.toJsonString(body);
-        asyncJsonPost(url, bodyStr, headers, callback, unit, timeout);
+        Set<String> maskValues;
+        if (!(body instanceof HasSensitiveInfo) || (maskValues = LogSafeGson.getValuesToMask((HasSensitiveInfo) body)).isEmpty()) {
+            asyncJsonPost(url, bodyStr, headers, callback, unit, timeout);
+            return;
+        }
+
+        try (Utils.MaskWords h = new Utils.MaskWords(maskValues)) {
+            asyncJsonPost(url, bodyStr, headers, callback, unit, timeout);
+        }
     }
 
     @Override
@@ -223,7 +230,7 @@ public class RESTFacadeImpl implements RESTFacade {
         asyncJson(url, body, headers, HttpMethod.GET, callback, unit, timeout);
     }
 
-    public void asyncJson(final String url, final String body, Map<String, String> headers, HttpMethod method, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
+    private void asyncJson(final String url, final String body, Map<String, String> headers, HttpMethod method, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
         synchronized (interceptors) {
             for (BeforeAsyncJsonPostInterceptor ic : interceptors) {
                 ic.beforeAsyncJsonPost(url, body, unit, timeout);

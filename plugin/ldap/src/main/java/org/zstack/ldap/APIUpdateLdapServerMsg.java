@@ -1,6 +1,8 @@
 package org.zstack.ldap;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -11,7 +13,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIUpdateLdapServerEvent.class,
         isAction = true
 )
-public class APIUpdateLdapServerMsg extends APIMessage {
+public class APIUpdateLdapServerMsg extends APIMessage implements HasSensitiveInfo {
     @APIParam(maxLength = 32, resourceType = LdapServerVO.class)
     private String ldapServerUuid;
 
@@ -31,6 +33,7 @@ public class APIUpdateLdapServerMsg extends APIMessage {
     private String username;
 
     @APIParam(maxLength = 1024, required = false, password = true)
+    @NoLogging
     private String password;
 
     @APIParam(maxLength = 1024, validValues = {"None", "TLS"}, required = false)

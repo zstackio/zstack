@@ -1,6 +1,8 @@
 package org.zstack.header.identity;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
@@ -15,10 +17,11 @@ import org.zstack.header.rest.RestRequest;
         parameterName = "params",
         responseClass = APICreateUserEvent.class
 )
-public class APICreateUserMsg extends APICreateMessage implements AccountMessage, APIAuditor {
+public class APICreateUserMsg extends APICreateMessage implements AccountMessage, APIAuditor, HasSensitiveInfo {
     @APIParam(maxLength = 255)
     private String name;
     @APIParam(maxLength = 255, password = true)
+    @NoLogging
     private String password;
     @APIParam(maxLength = 2048, required = false)
     private String description;

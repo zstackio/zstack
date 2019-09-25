@@ -11,6 +11,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.AsyncThread;
@@ -30,6 +31,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.TimeoutRestTemplate;
@@ -524,8 +526,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
             HttpHeaders headers = new HttpHeaders();
             HttpEntity<String> req = new HttpEntity<>(CloudBusGson.toJson(msg), headers);
-
-            try {
+            Set<String> hideValues = msg instanceof HasSensitiveInfo ? LogSafeGson.getValuesToMask((HasSensitiveInfo) msg) : Collections.emptySet();
+            try (Utils.MaskWords h = new Utils.MaskWords(hideValues)) {
                 ResponseEntity<String> rsp = new Retry<ResponseEntity<String>>() {
                     {
                         interval = 2;
