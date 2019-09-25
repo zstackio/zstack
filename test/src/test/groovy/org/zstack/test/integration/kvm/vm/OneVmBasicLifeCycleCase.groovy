@@ -12,6 +12,7 @@ import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.network.l3.NetworkGlobalProperty
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
@@ -111,6 +112,7 @@ test a VM's start/stop/reboot/destroy/recover operations
 
         assert startCmd != null
         assert startCmd.vmInstanceUuid == spec.inventory.uuid
+        assert startCmd.chassisAssetTag == "www.zstack.io"
         assert stopCmd != null
         assert stopCmd.uuid == spec.inventory.uuid
         assert inv.state == VmInstanceState.Running.toString()
@@ -133,6 +135,7 @@ test a VM's start/stop/reboot/destroy/recover operations
         assert cmd != null
         assert cmd.vmInstanceUuid == spec.inventory.uuid
         assert inv.state == VmInstanceState.Running.toString()
+        assert cmd.chassisAssetTag == "www.zstack.io"
 
         VmInstanceVO vmvo = dbFindByUuid(cmd.vmInstanceUuid, VmInstanceVO.class)
         assert vmvo.state == VmInstanceState.Running
