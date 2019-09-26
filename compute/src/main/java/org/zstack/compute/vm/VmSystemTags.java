@@ -122,4 +122,6 @@ public class VmSystemTags {
             String.format("vmMachineType::{%s}", MACHINE_TYPE_TOKEN),
             VmInstanceVO.class
     );
+
+    public static PatternedSystemTag PACKER_BUILD = new PatternedSystemTag("packer", VmInstanceVO.class);
 }
