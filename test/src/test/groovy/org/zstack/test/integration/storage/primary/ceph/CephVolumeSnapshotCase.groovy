@@ -61,12 +61,9 @@ class CephVolumeSnapshotCase extends SubCase {
             }
 
             testRollbackVolumeFromSnapshot()
-            assert trash.getTrashList(ps.uuid).isEmpty()
             testReImage()
-            assert trash.getTrashList(ps.uuid).size() == 1
             testRollbackVolumeFromRootSnapshotAfterReImage()
 
-            assert trash.getTrashList(ps.uuid).size() == 0
 
             startVmInstance {
                 uuid = vm.uuid
@@ -173,7 +170,7 @@ class CephVolumeSnapshotCase extends SubCase {
 
         assert root1.uuid == root.uuid
         assert root1.installPath.contains("/reset-image-${root.uuid}")
-        assert trash.getTrashList(ps.uuid).get(0).installPath == originVol.installPath
+        assert trash.getTrashList(ps.uuid).size() == 0
 
         def snapshot = queryVolumeSnapshot {
             conditions = ["name~=reimage-vm-point-${vm1.uuid}-%"]

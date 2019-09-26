@@ -19,7 +19,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.trash.StorageTrash;
-import org.zstack.core.trash.TrashType;
 import org.zstack.header.Component;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator;
@@ -37,7 +36,10 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.CreateVmInstanceMsg;
+import org.zstack.header.vm.VmInstanceCreateExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.*;
@@ -76,8 +78,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint,
         KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component, PostMarkRootVolumeAsSnapshotExtension,
         BeforeTakeLiveSnapshotsOnVolumes, VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint,
-        InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator, MarkRootVolumeAsSnapshotExtension,
-        AfterReimageVmInstanceExtensionPoint {
+        InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator, MarkRootVolumeAsSnapshotExtension {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -1146,11 +1147,5 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     @Override
     public String getExtensionPrimaryStorageType() {
         return CephConstants.CEPH_PRIMARY_STORAGE_TYPE;
-    }
-
-    @Override
-    public void afterReimageVmInstance(VolumeInventory vol) {
-        Long trashId = trash.createTrash(TrashType.ReimageVolume, false, vol).getTrashId();
-        logger.debug(String.format("move old volume install path to trash[key:%s]", trashId));
     }
 }
