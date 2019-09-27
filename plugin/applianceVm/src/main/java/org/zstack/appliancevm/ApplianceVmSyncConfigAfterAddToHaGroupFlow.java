@@ -75,7 +75,5 @@ public class ApplianceVmSyncConfigAfterAddToHaGroupFlow extends NoRollbackFlow {
                 chain.next();
             }
         });
-
-        chain.next();
     }
 }

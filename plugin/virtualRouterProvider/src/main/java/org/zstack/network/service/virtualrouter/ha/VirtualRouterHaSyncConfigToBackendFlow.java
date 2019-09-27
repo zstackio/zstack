@@ -46,8 +46,8 @@ public class VirtualRouterHaSyncConfigToBackendFlow implements Flow {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    compl.allDone();
                     errs.add(errorCode);
+                    compl.done();
                 }
             });
         }).run(new NoErrorCompletion(chain) {
