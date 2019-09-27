@@ -68,7 +68,15 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         APIResetGlobalConfigEvent evt = new APIResetGlobalConfigEvent(msg.getId());
 
         for(GlobalConfig globalConfig: allConfig.values()) {
-                globalConfig.updateValue(globalConfig.getDefaultValue());
+            try {
+                for (GlobalConfigBeforeResetExtensionPoint ext : globalConfig.getBeforeResetExtensions()) {
+                    ext.beforeResetExtensionPoint(msg.getSession());
+                }
+            } catch (SkipResetGlobalConfigException ignored) {
+                continue;
+            }
+
+            globalConfig.resetValue();
         }
 
         logger.info("Reset all the system global configurations.");

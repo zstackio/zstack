@@ -12,6 +12,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TypeUtils;
@@ -46,6 +47,7 @@ public class GlobalConfig {
     private boolean linked;
     private transient List<GlobalConfigUpdateExtensionPoint> updateExtensions = new ArrayList<>();
     private transient List<GlobalConfigBeforeUpdateExtensionPoint> beforeUpdateExtensions = new ArrayList<>();
+    private transient List<GlobalConfigBeforeResetExtensionPoint> beforeResetExtensions = new ArrayList<>();
     private transient List<GlobalConfigValidatorExtensionPoint> validators = new ArrayList<>();
     private transient List<GlobalConfigUpdateExtensionPoint> localUpdateExtensions = new ArrayList<>();
     private transient List<GlobalConfigBeforeUpdateExtensionPoint> localBeforeUpdateExtensions = new ArrayList<>();
@@ -129,6 +131,7 @@ public class GlobalConfig {
         updateExtensions.addAll(g.getUpdateExtensions());
         beforeUpdateExtensions.addAll(g.getBeforeUpdateExtensions());
         localUpdateExtensions.addAll(g.getLocalUpdateExtensions());
+        beforeResetExtensions.addAll(g.getBeforeResetExtensions());
         validators.addAll(g.getValidators());
         configDef = g.getConfigDef();
         return this;
@@ -155,6 +158,10 @@ public class GlobalConfig {
 
     public void installUpdateExtension(GlobalConfigUpdateExtensionPoint ext) {
         updateExtensions.add(ext);
+    }
+
+    public void installBeforeResetExtension(GlobalConfigBeforeResetExtensionPoint ext) {
+        beforeResetExtensions.add(ext);
     }
 
     public void installBeforeUpdateExtension(GlobalConfigBeforeUpdateExtensionPoint ext) {
@@ -383,6 +390,10 @@ public class GlobalConfig {
         logger.debug(String.format("updated global config[category:%s, name:%s]: %s to %s", category, name, origin.value(), value));
     }
 
+    public void resetValue() {
+        updateValue(defaultValue);
+    }
+
     public void updateValue(Object val) {
         if (TypeUtils.nullSafeEquals(value, val)) {
             return;
@@ -446,5 +457,13 @@ public class GlobalConfig {
 
     public List<GlobalConfigBeforeUpdateExtensionPoint> getLocalBeforeUpdateExtensions() {
         return localBeforeUpdateExtensions;
+    }
+
+    public List<GlobalConfigBeforeResetExtensionPoint> getBeforeResetExtensions() {
+        return beforeResetExtensions;
+    }
+
+    public void setBeforeResetExtensions(List<GlobalConfigBeforeResetExtensionPoint> beforeResetExtensions) {
+        this.beforeResetExtensions = beforeResetExtensions;
     }
 }
