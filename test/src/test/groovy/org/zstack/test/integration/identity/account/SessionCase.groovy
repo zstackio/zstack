@@ -4,6 +4,7 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.DatabaseFacadeImpl
 import org.zstack.header.identity.AccountConstant
 import org.zstack.identity.AccountManagerImpl
+import org.zstack.identity.Session
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.SessionInventory
 import org.zstack.test.integration.ZStackTest
@@ -49,6 +50,29 @@ class SessionCase extends SubCase {
             testRenewSession()
             testRenewSessionFail()
             testInvalidSession()
+            testValidateSessionApi()
+        }
+    }
+
+    void testValidateSessionApi() {
+        def account = createAccount {
+            name = "validate"
+            password = "password"
+        } as AccountInventory
+
+        SessionInventory session = logInByAccount {
+            accountName = "validate"
+            password = "password"
+        } as SessionInventory
+
+        Session.sessions.get(session.uuid).expiredDate = new Timestamp(new Date().getTime() - 1000)
+
+        assert validateSession {
+            sessionUuid = session.uuid
+        }.valid == true
+
+        deleteAccount {
+            uuid = account.uuid
         }
     }
 
