@@ -6,17 +6,15 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfig;
-import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.*;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -28,6 +26,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.operr;
 
 public class Session implements Component {
     private static final CLogger logger = Utils.getLogger(Session.class);
@@ -128,8 +129,16 @@ public class Session implements Component {
         }.execute();
     }
 
-    public static void errorOnTimeout(String uuid) {
-        new SQLBatch() {
+    /**
+     * Check if session which matches specific uuid is expired.
+     * Validate the session store in cache first. if it is expired,
+     * remove it from cache. And then check the expired date in db,
+     * if it is expired, logout the session (delete db record)
+     * @param uuid uuid of a session
+     * @return if session is expired, return an error code, else return null
+     */
+    public static ErrorCode checkSessionExpired(String uuid) {
+        return new SQLBatchWithReturn<ErrorCode>() {
             @Transactional(readOnly = true)
             private Timestamp getCurrentSqlDate() {
                 Query query = databaseFacade.getEntityManager().createNativeQuery("select current_timestamp()");
@@ -137,11 +146,10 @@ public class Session implements Component {
             }
 
             @Override
-            protected void scripts() {
+            protected ErrorCode scripts() {
                 SessionInventory s = getSession(uuid);
                 if (s == null) {
-                    throw new OperationFailureException(err(IdentityErrors.INVALID_SESSION,
-                            "Session expired"));
+                    return err(IdentityErrors.INVALID_SESSION, "Session expired");
                 }
 
                 Timestamp curr = getCurrentSqlDate();
@@ -152,18 +160,30 @@ public class Session implements Component {
                     }
 
                     SessionVO vo = findByUuid(uuid, SessionVO.class);
-                    if (vo != null && curr.before(s.getExpiredDate())) {
+                    if (vo != null && curr.before(vo.getExpiredDate())) {
                         logger.debug(String.format("session not expired[%s < %s] for account[uuid:%s] in DB, just remove it from session cache", curr,
                                 s.getExpiredDate(), s.getAccountUuid()));
                         sessions.remove(uuid);
-                        return;
+                        return null;
                     }
 
                     logout(s.getUuid());
-                    throw new OperationFailureException(err(IdentityErrors.INVALID_SESSION, "Session expired"));
+                    return err(IdentityErrors.INVALID_SESSION, "Session expired");
                 }
+
+                return null;
             }
         }.execute();
+    }
+
+    public static void errorOnTimeout(String uuid) {
+        ErrorCode errorCode = checkSessionExpired(uuid);
+
+        if (errorCode == null) {
+            return;
+        }
+
+        throw new OperationFailureException(errorCode);
     }
 
     public static Map<String, SessionInventory> getSessionsCopy() {
