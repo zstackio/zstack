@@ -13715,7 +13715,7 @@
   {
     "raw": "invalid email address[%s]",
     "en_US": "invalid email address[{0}]",
-    "zh_CN": "无效的email地址[{}]",
+    "zh_CN": "无效的email地址[{0}]",
     "arguments": [
       "msg.getEmail()"
     ],
