@@ -14,4 +14,8 @@ public class ApplianceVmSystemTags {
                     "haUuid::{%s}", APPLIANCEVM_HA_UUID_TOKEN),
                     ApplianceVmVO.class);
 
+    public static String APPLIANCEVM_STATIC_VIP_TOKEN = "staticVip";
+    public static String APPLIANCEVM_STATIC_VIP_L3_TOKEN = "l3Uuid";
+    public static PatternedSystemTag APPLIANCEVM_STATIC_VIP = new PatternedSystemTag(String.format(
+            "staticVip::{%s}::{%s}", APPLIANCEVM_STATIC_VIP_L3_TOKEN, APPLIANCEVM_STATIC_VIP_TOKEN), ApplianceVmVO.class);
 }
