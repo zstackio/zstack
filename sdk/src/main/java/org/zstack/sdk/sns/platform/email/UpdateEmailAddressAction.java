@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSNSEmailEndpointAction extends AbstractAction {
+public class UpdateEmailAddressAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateSNSEmailEndpointAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.CreateSNSApplicationEndpointResult value;
+        public org.zstack.sdk.sns.platform.email.UpdateEmailAddressResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,14 @@ public class CreateSNSEmailEndpointAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String emailAddressUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String endpointUuid;
+
     @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String email;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List emails;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String platformUuid;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String emailAddress;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -78,8 +66,8 @@ public class CreateSNSEmailEndpointAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.CreateSNSApplicationEndpointResult value = res.getResult(org.zstack.sdk.sns.CreateSNSApplicationEndpointResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.CreateSNSApplicationEndpointResult() : value; 
+        org.zstack.sdk.sns.platform.email.UpdateEmailAddressResult value = res.getResult(org.zstack.sdk.sns.platform.email.UpdateEmailAddressResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.email.UpdateEmailAddressResult() : value; 
 
         return ret;
     }
@@ -108,11 +96,11 @@ public class CreateSNSEmailEndpointAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/sns/application-endpoints/emails";
+        info.httpMethod = "PUT";
+        info.path = "/sns/application-endpoints/emails/email-addresses";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "updateEmailAddress";
         return info;
     }
 

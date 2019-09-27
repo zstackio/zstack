@@ -12,4 +12,12 @@ public class SNSEmailEndpointInventory extends org.zstack.sdk.sns.SNSApplication
         return this.email;
     }
 
+    public java.util.List emailAddresses;
+    public void setEmailAddresses(java.util.List emailAddresses) {
+        this.emailAddresses = emailAddresses;
+    }
+    public java.util.List getEmailAddresses() {
+        return this.emailAddresses;
+    }
+
 }

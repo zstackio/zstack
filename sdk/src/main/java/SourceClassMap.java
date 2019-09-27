@@ -360,6 +360,7 @@ public class SourceClassMap {
 			put("org.zstack.sns.SNSTopicInventory", "org.zstack.sdk.sns.SNSTopicInventory");
 			put("org.zstack.sns.platform.dingtalk.SNSDingTalkAtPersonInventory", "org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkAtPersonInventory");
 			put("org.zstack.sns.platform.dingtalk.SNSDingTalkEndpointInventory", "org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkEndpointInventory");
+			put("org.zstack.sns.platform.email.SNSEmailAddressInventory", "org.zstack.sdk.sns.platform.email.SNSEmailAddressInventory");
 			put("org.zstack.sns.platform.email.SNSEmailEndpointInventory", "org.zstack.sdk.sns.platform.email.SNSEmailEndpointInventory");
 			put("org.zstack.sns.platform.email.SNSEmailPlatformInventory", "org.zstack.sdk.sns.platform.email.SNSEmailPlatformInventory");
 			put("org.zstack.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sdk.sns.platform.http.SNSHttpEndpointInventory");
@@ -902,6 +903,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.sns.SNSTopicInventory", "org.zstack.sns.SNSTopicInventory");
 			put("org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkAtPersonInventory", "org.zstack.sns.platform.dingtalk.SNSDingTalkAtPersonInventory");
 			put("org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkEndpointInventory", "org.zstack.sns.platform.dingtalk.SNSDingTalkEndpointInventory");
+			put("org.zstack.sdk.sns.platform.email.SNSEmailAddressInventory", "org.zstack.sns.platform.email.SNSEmailAddressInventory");
 			put("org.zstack.sdk.sns.platform.email.SNSEmailEndpointInventory", "org.zstack.sns.platform.email.SNSEmailEndpointInventory");
 			put("org.zstack.sdk.sns.platform.email.SNSEmailPlatformInventory", "org.zstack.sns.platform.email.SNSEmailPlatformInventory");
 			put("org.zstack.sdk.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sns.platform.http.SNSHttpEndpointInventory");
