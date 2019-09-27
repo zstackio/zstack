@@ -235,6 +235,8 @@ public class SourceClassMap {
 			put("org.zstack.header.vm.CloneVmInstanceResults", "org.zstack.sdk.CloneVmInstanceResults");
 			put("org.zstack.header.vm.VmInstanceInventory", "org.zstack.sdk.VmInstanceInventory");
 			put("org.zstack.header.vm.VmNicInventory", "org.zstack.sdk.VmNicInventory");
+			put("org.zstack.header.vm.VmPriorityConfigInventory", "org.zstack.sdk.VmPriorityConfigInventory");
+			put("org.zstack.header.vm.VmPriorityLevel", "org.zstack.sdk.VmPriorityLevel");
 			put("org.zstack.header.vm.cdrom.VmCdRomInventory", "org.zstack.sdk.VmCdRomInventory");
 			put("org.zstack.header.vo.ResourceInventory", "org.zstack.sdk.ResourceInventory");
 			put("org.zstack.header.volume.APIGetVolumeFormatReply$VolumeFormatReplyStruct", "org.zstack.sdk.VolumeFormatReplyStruct");
@@ -826,6 +828,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmNicBandwidthSpendingDetails", "org.zstack.billing.spendingcalculator.vmnic.VmNicBandwidthSpendingDetails");
 			put("org.zstack.sdk.VmNicInventory", "org.zstack.header.vm.VmNicInventory");
 			put("org.zstack.sdk.VmNicSecurityGroupRefInventory", "org.zstack.network.securitygroup.VmNicSecurityGroupRefInventory");
+			put("org.zstack.sdk.VmPriorityConfigInventory", "org.zstack.header.vm.VmPriorityConfigInventory");
+			put("org.zstack.sdk.VmPriorityLevel", "org.zstack.header.vm.VmPriorityLevel");
 			put("org.zstack.sdk.VmSpending", "org.zstack.billing.spendingcalculator.vm.VmSpending");
 			put("org.zstack.sdk.VmSpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmSpendingDetails");
 			put("org.zstack.sdk.VniRangeInventory", "org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeInventory");

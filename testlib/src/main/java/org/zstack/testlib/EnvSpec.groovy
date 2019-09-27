@@ -28,6 +28,7 @@ import org.zstack.header.image.ImageDeletionPolicyManager
 import org.zstack.header.message.Message
 import org.zstack.header.rest.RESTConstant
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager
+import org.zstack.header.vm.VmPriorityConfigVO
 import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.image.ImageGlobalConfig

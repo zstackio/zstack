@@ -124,4 +124,8 @@ public class VmSystemTags {
     );
 
     public static PatternedSystemTag PACKER_BUILD = new PatternedSystemTag("packer", VmInstanceVO.class);
+
+    public static final String VM_PRIORITY_TOKEN = "vmPriority";
+    public static PatternedSystemTag VM_PRIORITY = new PatternedSystemTag(String.format("vmPriority::{%s}", VM_PRIORITY_TOKEN), VmInstanceVO.class
+    );
 }
