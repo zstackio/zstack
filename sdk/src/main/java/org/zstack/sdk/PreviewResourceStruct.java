@@ -12,4 +12,11 @@ public class PreviewResourceStruct  {
         return this.actions;
     }
 
+    public java.util.Map conditions;
+    public void setConditions(java.util.Map conditions) {
+        this.conditions = conditions;
+    }
+    public java.util.Map getConditions() {
+        return this.conditions;
+    }
 }
