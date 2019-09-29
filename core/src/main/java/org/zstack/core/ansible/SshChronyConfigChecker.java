@@ -7,6 +7,8 @@ import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SshChronyConfigChecker implements AnsibleChecker {
     private static final CLogger logger = Utils.getLogger(SshChronyConfigChecker.class);
@@ -36,13 +38,14 @@ public class SshChronyConfigChecker implements AnsibleChecker {
             }
 
             String[] ips = ret.getStdout().split("\n");
-            logger.debug(String.format("read chrony server ip %s from configure file", ips));
+            logger.debug(String.format("read chrony server ip %s from configure file", Arrays.toString(ips)));
 
-            Set<String> hostChronyIps = new HashSet<>(Arrays.asList(ips));
-            Set<String> configIps = new HashSet<>(CoreGlobalProperty.CHRONY_SERVERS);
+            Set<String> hostChronyIps = trim(Stream.of(ips));
+            Set<String> configIps = trim(CoreGlobalProperty.CHRONY_SERVERS.stream());
 
             // do not config chrony server on server host
             if (!hostChronyIps.equals(configIps) && !configIps.contains(targetIp)) {
+                logger.debug("chrony config has been changed, re-deploy it");
                 return true;
             }
         } finally {
@@ -50,6 +53,10 @@ public class SshChronyConfigChecker implements AnsibleChecker {
         }
 
         return false;
+    }
+
+    private static Set<String> trim(Stream<String> stringStream) {
+        return stringStream.map(String::trim).collect(Collectors.toSet());
     }
 
     @Override
