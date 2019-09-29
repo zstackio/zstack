@@ -473,6 +473,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.datatype.Label$Operator", "org.zstack.sdk.zwatch.datatype.Operator");
 			put("org.zstack.zwatch.datatype.MetricDatum", "org.zstack.sdk.zwatch.datatype.MetricDatum");
 			put("org.zstack.zwatch.ruleengine.ComparisonOperator", "org.zstack.sdk.zwatch.ruleengine.ComparisonOperator");
+			put("org.zstack.header.vm.VdiPortInfo", "org.zstack.sdk.VdiPortInfo");
         }
     };
 
@@ -946,6 +947,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.datatype.MetricDatum", "org.zstack.zwatch.datatype.MetricDatum");
 			put("org.zstack.sdk.zwatch.datatype.Operator", "org.zstack.zwatch.datatype.Label$Operator");
 			put("org.zstack.sdk.zwatch.ruleengine.ComparisonOperator", "org.zstack.zwatch.ruleengine.ComparisonOperator");
+			put("org.zstack.sdk.VdiPortInfo", "org.zstack.header.vm.VdiPortInfo");
         }
     };
 }

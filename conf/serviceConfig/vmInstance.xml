@@ -178,4 +178,13 @@
     <message>
         <name>org.zstack.header.vm.APIUpdatePriorityConfigMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APISetVmSoundTypeMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APISetVmQxlMemoryMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.vm.APIGetSpiceCertificatesMsg</name>
+    </message>
 </service>

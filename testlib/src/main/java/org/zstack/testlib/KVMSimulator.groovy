@@ -264,5 +264,9 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.KVM_HOST_UPDATE_DEPENDENCY_PATH) {
             return new KVMAgentCommands.UpdateDependencyRsp()
         }
+
+        spec.simulator(KVMConstant.HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH) {
+            return new KVMAgentCommands.UpdateSpiceChannelConfigResponse()
+        }
     }
 }
