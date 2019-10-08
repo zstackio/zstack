@@ -31631,6 +31631,33 @@ trait ApiHelper {
     }
 
 
+    def addSNSSmsReceiver(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.AddSNSSmsReceiverAction.class) Closure c) {
+        def a = new org.zstack.sdk.sns.AddSNSSmsReceiverAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def changeSNSApplicationEndpointState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.ChangeSNSApplicationEndpointStateAction.class) Closure c) {
         def a = new org.zstack.sdk.sns.ChangeSNSApplicationEndpointStateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -31878,6 +31905,35 @@ trait ApiHelper {
     }
 
 
+    def querySNSSmsEndpoint(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.QuerySNSSmsEndpointAction.class) Closure c) {
+        def a = new org.zstack.sdk.sns.QuerySNSSmsEndpointAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def querySNSTopic(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.QuerySNSTopicAction.class) Closure c) {
         def a = new org.zstack.sdk.sns.QuerySNSTopicAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -31915,6 +31971,33 @@ trait ApiHelper {
         c()
         
         a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def removeSNSSmsReceiver(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.RemoveSNSSmsReceiverAction.class) Closure c) {
+        def a = new org.zstack.sdk.sns.RemoveSNSSmsReceiverAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
 
 
         if (System.getProperty("apipath") != null) {
@@ -32050,7 +32133,61 @@ trait ApiHelper {
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-        
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def createSNSAliyunSmsEndpoint(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.aliyunsms.CreateSNSAliyunSmsEndpointAction.class) Closure c) {
+        def a = new org.zstack.sdk.sns.platform.aliyunsms.CreateSNSAliyunSmsEndpointAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def validateSNSAliyunSmsEndpoint(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.aliyunsms.ValidateSNSAliyunSmsEndpointAction.class) Closure c) {
+        def a = new org.zstack.sdk.sns.platform.aliyunsms.ValidateSNSAliyunSmsEndpointAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
@@ -33592,7 +33729,90 @@ trait ApiHelper {
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-        
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def createAliyunSmsSNSTextTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.CreateAliyunSmsSNSTextTemplateAction.class) Closure c) {
+        def a = new org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.CreateAliyunSmsSNSTextTemplateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryAliyunSmsSNSTextTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.QueryAliyunSmsSNSTextTemplateAction.class) Closure c) {
+        def a = new org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.QueryAliyunSmsSNSTextTemplateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateAliyunSmsSNSTextTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.UpdateAliyunSmsSNSTextTemplateAction.class) Closure c) {
+        def a = new org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.UpdateAliyunSmsSNSTextTemplateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
