@@ -1,5 +1,6 @@
 package org.zstack.header.storage.backup
 
+import org.zstack.header.core.trash.InstallPathRecycleInventory
 import org.zstack.header.errorcode.ErrorCode
 
 doc {
@@ -15,11 +16,11 @@ doc {
 		clz ErrorCode.class
 	}
 	ref {
-		name "storageTrashSpecs"
-		path "org.zstack.header.storage.backup.APIGetTrashOnBackupStorageReply.storageTrashSpecs"
+		name "inventories"
+		path "org.zstack.header.storage.backup.APIGetTrashOnBackupStorageReply.inventories"
 		desc "回收数据清单"
 		type "List"
-		since "3.2.0"
-		clz StorageTrashSpec.class
+		since "3.7.0"
+		clz InstallPathRecycleInventory.class
 	}
 }
