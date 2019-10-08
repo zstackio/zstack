@@ -27,7 +27,7 @@ public class Utils {
 
     private static ThreadLocal<Set<String>> maskWords = ThreadLocal.withInitial(Collections::emptySet);
 
-    private static final Function<String, String> defaultRewriter = raw -> {
+    static final Function<String, String> defaultRewriter = raw -> {
         for (String s : maskWords.get()) {
             raw = raw.replace(String.format(": \"%s\"", s), ": \"*****\"").
                     replace(String.format(":\"%s\"", s), ":\"*****\"");
@@ -37,6 +37,10 @@ public class Utils {
 
     public static Set<String> getLogMaskWords() {
         return maskWords.get();
+    }
+
+    public static void registerSafeLogger(Class clazz) {
+        MaskSensitiveInfoRewritePolicy.loggerNames.add(clazz.getName());
     }
 
     public static class MaskWords implements AutoCloseable {

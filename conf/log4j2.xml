@@ -63,6 +63,10 @@
         <Async name="Async" ignoreExceptions="false" bufferSize="512">
             <AppenderRef ref="RollingFile"/>
         </Async>
+        <Rewrite name="Rewrite">
+            <MaskSensitiveInfoRewritePolicy />
+            <AppenderRef ref="Async" />
+        </Rewrite>
     </Appenders>
 
     <Loggers>
@@ -101,7 +105,7 @@
         <Logger name="org.zstack.storage.primary" level="TRACE" />
 
         <Root level="warn" additivity="false">
-            <AppenderRef ref="Async"/>
+            <AppenderRef ref="Rewrite"/>
         </Root>
     </Loggers>
 </Configuration>
