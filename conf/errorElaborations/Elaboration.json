@@ -636,8 +636,8 @@
     "code": "1012",
     "method": "regex",
     "regex": ".*after subtracting reserved capacity\\[.*], there is no primary storage having required size\\[.* bytes].*",
-    "message_cn": "减去保留容量[%1$s]后，没有主存储有所需的容量大小[%2$s], 主存储超分率[%3$s]",
-    "message_en": "After subtracting reserved capacity\\[%1$s], there is no primary storage having required size\\[%2$s bytes], with primary storage physical capacity ratio[%3$s]"
+    "message_cn": "减去保留容量[%1$s]后，没有主存储有所需的容量大小[%2$s], 主存储使用阈值[%3$s]",
+    "message_en": "After subtracting reserved capacity\\[%1$s], there is no primary storage having required size\\[%2$s bytes], with the threshold of primary storage physical capacity[%3$s]"
   },
   {
     "category": "PS",
