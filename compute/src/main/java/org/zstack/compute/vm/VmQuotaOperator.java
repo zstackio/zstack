@@ -171,7 +171,7 @@ public class VmQuotaOperator implements Quota.QuotaOperator {
                                       Map<String, Quota.QuotaPair> pairs) {
         long vmNumQuota = pairs.get(VmQuotaConstant.VM_RUNNING_NUM).getValue();
 
-        VmQuotaUtil.VmQuota vmQuotaUsed = new VmQuotaUtil().getUsedVmCpuMemory(resourceTargetOwnerAccountUuid);
+        VmQuotaUtil.VmQuota vmQuotaUsed = new VmQuotaUtil().getUsedVmCpuMemory(resourceTargetOwnerAccountUuid, null);
         //
         {
             QuotaUtil.QuotaCompareInfo quotaCompareInfo;
