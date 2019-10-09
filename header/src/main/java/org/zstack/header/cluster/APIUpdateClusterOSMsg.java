@@ -25,7 +25,10 @@ public class APIUpdateClusterOSMsg extends APICreateMessage implements ClusterMe
     private String uuid;
     @APIParam(required = false, nonempty = true)
     private List<String> excludePackages;
-
+    @APIParam(required = false, nonempty = true)
+    private List<String> updatePackages;
+    @APIParam(required = false, nonempty = true)
+    private String releaseVersion;
     public String getUuid() {
         return uuid;
     }
@@ -42,6 +45,22 @@ public class APIUpdateClusterOSMsg extends APICreateMessage implements ClusterMe
         this.excludePackages = excludePackages;
     }
 
+    public List<String> getUpdatePackages() {
+        return updatePackages;
+    }
+
+    public void setUpdatePackages(List<String> updatePackages) {
+        this.updatePackages = updatePackages;
+    }
+
+    public String getReleaseVersion() {
+        return releaseVersion;
+    }
+
+    public void setReleaseVersion(String releaseVersion) {
+        this.releaseVersion = releaseVersion;
+    }
+
     @Override
     public String getClusterUuid() {
         return uuid;
@@ -51,6 +70,8 @@ public class APIUpdateClusterOSMsg extends APICreateMessage implements ClusterMe
         APIUpdateClusterOSMsg msg = new APIUpdateClusterOSMsg();
         msg.setUuid(uuid());
         msg.setExcludePackages(Arrays.asList("kernel", "systemd*"));
+        msg.setUpdatePackages(Arrays.asList("zstack-release"));
+        msg.setReleaseVersion("c74");
         return msg;
     }
 }

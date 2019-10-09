@@ -1,5 +1,6 @@
 package org.zstack.header.host;
 
+import org.zstack.header.message.APIParam;
 import org.zstack.header.message.NeedReplyMessage;
 
 /**
@@ -9,6 +10,8 @@ public class UpdateHostOSMsg extends NeedReplyMessage implements HostMessage {
     private String uuid;
     private String clusterUuid;
     private String excludePackages;
+    private String updatePackages;
+    private String releaseVersion;
     private boolean enableExperimentalRepo = false;
 
     public String getUuid() {
@@ -29,6 +32,22 @@ public class UpdateHostOSMsg extends NeedReplyMessage implements HostMessage {
 
     public String getExcludePackages() {
         return excludePackages;
+    }
+
+    public String getUpdatePackages() {
+        return updatePackages;
+    }
+
+    public void setUpdatePackages(String updatePackages) {
+        this.updatePackages = updatePackages;
+    }
+
+    public String getReleaseVersion() {
+        return releaseVersion;
+    }
+
+    public void setReleaseVersion(String releaseVersion) {
+        this.releaseVersion = releaseVersion;
     }
 
     public void setExcludePackages(String excludePackages) {

@@ -31,6 +31,12 @@ public class UpdateClusterOSAction extends AbstractAction {
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List excludePackages;
 
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List updatePackages;
+
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String releaseVersion;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

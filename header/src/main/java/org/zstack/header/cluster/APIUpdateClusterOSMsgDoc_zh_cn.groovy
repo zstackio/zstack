@@ -32,6 +32,56 @@ doc {
 					
 				}
 				column {
+					name "excludePackages"
+					enclosedIn "updateClusterOS"
+					desc "不升级的包列表"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "updatePackages"
+					enclosedIn "updateClusterOS"
+					desc "要升级的包列表"
+					location "body"
+					type "List"
+					optional true
+					since "3.7"
+					
+				}
+				column {
+					name "releaseVersion"
+					enclosedIn "updateClusterOS"
+					desc "升级所用源的版本"
+					location "body"
+					type "String"
+					optional true
+					since "3.7"
+					
+				}
+				column {
+					name "resourceUuid"
+					enclosedIn "updateClusterOS"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "tagUuids"
+					enclosedIn "updateClusterOS"
+					desc "标签UUID列表"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
@@ -49,26 +99,6 @@ doc {
 					type "List"
 					optional true
 					since "2.3"
-					
-				}
-				column {
-					name "excludePackages"
-					enclosedIn "updateClusterOS"
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "0.6"
-					
-				}
-				column {
-					name "resourceUuid"
-					enclosedIn "updateClusterOS"
-					desc ""
-					location "body"
-					type "String"
-					optional true
-					since "0.6"
 					
 				}
 			}
