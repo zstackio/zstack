@@ -181,6 +181,10 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     arguments.putAll(msg.getArguments());
                 }
                 arguments.put("host", msg.getTargetIp());
+                if (AnsibleGlobalConfig.ENABLE_ANSIBLE_CACHE_SYSTEM_INFO.value(Boolean.class)) {
+                    arguments.put("host_uuid", msg.getTargetUuid());
+                }
+
                 arguments.put("zstack_root", AnsibleGlobalProperty.ZSTACK_ROOT);
                 arguments.put("pkg_zstacklib", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME);
                 arguments.putAll(getVariables());

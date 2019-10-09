@@ -8,4 +8,12 @@
         <type>java.lang.Boolean</type>
     </config>
 
+    <config>
+        <name>enable.ansible.cache.system.info</name>
+        <description>use ansible cache to speedup ansible operate</description>
+        <defaultValue>true</defaultValue>
+        <category>ansible</category>
+        <type>java.lang.Boolean</type>
+    </config>
+
 </globalConfig>
