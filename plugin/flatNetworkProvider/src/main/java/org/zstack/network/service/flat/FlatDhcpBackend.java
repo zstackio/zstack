@@ -1,5 +1,6 @@
 package org.zstack.network.service.flat;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.StaticIpOperator;
@@ -33,11 +34,14 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
+import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceProviderLookup;
+import org.zstack.network.service.flat.IpStatisticConstants.VmType;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -49,14 +53,19 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
+import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.*;
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.operr;
+import static org.zstack.network.service.flat.IpStatisticConstants.ResourceType;
+import static org.zstack.network.service.flat.IpStatisticConstants.SortBy;
 import static org.zstack.utils.CollectionDSL.*;
 
 /**
@@ -75,6 +84,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private ThreadFacade thdf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private AccountManager acntMgr;
 
     public static final String APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/apply";
     public static final String PREPARE_DHCP_PATH = "/flatnetworkprovider/dhcp/prepare";
@@ -245,8 +256,434 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIGetL3NetworkDhcpIpAddressMsg) {
             handle((APIGetL3NetworkDhcpIpAddressMsg) msg);
+        } else if (msg instanceof APIGetL3NetworkIpStatisticMsg) {
+            handle((APIGetL3NetworkIpStatisticMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(APIGetL3NetworkIpStatisticMsg msg) {
+        APIGetL3NetworkIpStatisticReply reply = new APIGetL3NetworkIpStatisticReply();
+        List<IpStatisticData> ipStatistics = doStatistic(msg);
+        reply.setIpStatistics(ipStatistics);
+        if (msg.isReplyWithCount()) {
+            reply.setTotal(countResource(msg));
+        }
+        bus.reply(msg, reply);
+    }
+
+    private List<IpStatisticData> doStatistic(APIGetL3NetworkIpStatisticMsg msg) {
+        String orderExpr;
+        if (SortBy.IP.equals(msg.getSortBy())) {
+            Integer ipVersion = Q.New(L3NetworkVO.class).select(L3NetworkVO_.ipVersion)
+                    .eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).findValue();
+            //when upgrade mysql to 5.6, both ipv4 and ipv6 can use INET6_ATON(ip) as order expression
+            if (ipVersion == 4) {
+                if (ResourceType.ALL.equals(msg.getResourceType())) {
+                    orderExpr = "ipInLong";
+                } else {
+                    orderExpr = "INET_ATON(ip)";
+                }
+            } else {
+                orderExpr = "ip";
+            }
+        } else {
+            orderExpr = "createDate";
+        }
+
+        List<IpStatisticData> res = null;
+
+        switch (msg.getResourceType()) {
+            case ResourceType.ALL:
+                res = ipStatisticAll(msg, orderExpr);
+                break;
+            case ResourceType.VIP:
+                res = ipStatisticVip(msg, orderExpr);
+                break;
+            case ResourceType.VM:
+                res = ipStatisticVm(msg, orderExpr);
+                break;
+        }
+
+        return res != null ? res : new ArrayList<>();
+    }
+
+    private Long countResource(APIGetL3NetworkIpStatisticMsg msg) {
+        Long res = null;
+        switch (msg.getResourceType()) {
+            case ResourceType.ALL:
+                res = countUsedIp(msg);
+                break;
+            case ResourceType.VIP:
+                res = countVip(msg);
+                break;
+            case ResourceType.VM:
+                res = countVMNicIp(msg);
+                break;
+        }
+        return res;
+    }
+
+    private List<IpStatisticData> ipStatisticAll(APIGetL3NetworkIpStatisticMsg msg, String sortBy) {
+        /*
+        select uip.ip, vip.uuid as vipUuid, vip.name as vipName, it.uuid as vmInstanceUuid, it.name as vmInstanceName, it.type, uip.createDate
+        from (select uuid, ip, IpInLong, createDate, vmNicUuid
+            from UsedIpVO
+            where l3NetworkUuid = '{uuid}' [and ip like '{ip}']
+            order by {sortBy} {direction}
+            limit {limit} offset {start}) uip
+                left join (select uuid, name, usedIpUuid from VipVO
+                    where l3NetworkUuid = '{l3Uuid}') vip on uip.uuid = vip.usedIpUuid
+                left join (select uuid, vmInstanceUuid from VmNicVO) nic on uip.vmNicUuid = nic.uuid
+                left join (select uuid, name, type from VmInstanceVO) it on nic.vmInstanceUuid = it.uuid
+        order by {sortBy} {direction};
+         */
+
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("select uip.ip, vip.uuid as vipUuid, vip.name as vipName, it.uuid as vmUuid, it.name as vmName, it.type, uip.createDate ")
+                .append("from (select uuid, ip, ipInLong, createDate, vmNicUuid from UsedIpVO where l3NetworkUuid = '")
+                .append(msg.getL3NetworkUuid()).append('\'');
+
+        if (StringUtils.isNotEmpty(msg.getIp())) {
+            sqlBuilder.append(" and ip like '").append(msg.getIp()).append('\'');
+        }
+
+        sqlBuilder.append(" order by ").append(sortBy).append(' ').append(msg.getSortDirection()).append(" limit ")
+                .append(msg.getLimit()).append(" offset ").append(msg.getStart()).append(") uip ")
+                .append("left join ")
+                .append("(select uuid, name, usedIpUuid from VipVO ")
+                .append("where l3NetworkUuid = '").append(msg.getL3NetworkUuid())
+                .append("') vip on uip.uuid = vip.usedIpUuid ")
+                .append("left join ")
+                .append("(select uuid, vmInstanceUuid from VmNicVO) nic on uip.vmNicUuid = nic.uuid ")
+                .append("left join ")
+                .append("(select uuid, name, type from VmInstanceVO) it on it.uuid = nic.vmInstanceUuid ")
+                .append("order by ").append(sortBy).append(' ').append(msg.getSortDirection());
+
+        Query q = dbf.getEntityManager().createNativeQuery(sqlBuilder.toString());
+        List<Object[]> results = q.getResultList();
+        List<IpStatisticData> ipStatistics = new ArrayList<>();
+        List<String> vmUuids = new ArrayList<>();
+
+        boolean isAdmin = acntMgr.isAdmin(msg.getSession());
+
+        Set<String> ownedVms = new HashSet<>();
+        Set<String> ownedVips = new HashSet<>();
+        if (!isAdmin) {
+            ownedVms.addAll(acntMgr.getResourceUuidsCanAccessByAccount(msg.getSession().getAccountUuid(), VmInstanceVO.class));
+            ownedVips.addAll(acntMgr.getResourceUuidsCanAccessByAccount(msg.getSession().getAccountUuid(), VipVO.class));
+        }
+
+        for (Object[] result : results) {
+            IpStatisticData element = new IpStatisticData();
+            ipStatistics.add(element);
+            element.setIp((String) result[0]);
+            List<String> resourceTypes = new ArrayList<>();
+            element.setResourceTypes(resourceTypes);
+            if (isAdmin) {
+                element.setVipUuid((String) result[1]);
+                element.setVipName((String) result[2]);
+                element.setVmInstanceUuid((String) result[3]);
+                element.setVmInstanceName((String) result[4]);
+                element.setVmInstanceType((String) result[5]);
+                if (result[3] != null) {
+                    vmUuids.add((String) result[3]);
+                } else if (result[1] != null) {
+                    resourceTypes.add(ResourceType.VIP);
+                } else {
+                    resourceTypes.add(ResourceType.DHCP);
+                }
+            } else {
+                boolean isOther = true;
+                if (result[1] != null)
+                    isOther = false;
+                    if (ownedVips.contains(result[1])) {
+                        element.setVipUuid((String) result[1]);
+                        element.setVipName((String) result[2]);
+                        resourceTypes.add(ResourceType.VIP);
+                    }
+                if (result[3] != null)
+                    isOther = false;
+                    if (ownedVms.contains(result[3])) {
+                        element.setVmInstanceUuid((String) result[3]);
+                        element.setVmInstanceName((String) result[4]);
+                        element.setVmInstanceType((String) result[5]);
+                        vmUuids.add((String) result[3]);
+                    }
+                if (isOther) {
+                    resourceTypes.add(ResourceType.DHCP);
+                }
+            }
+        }
+
+        Map<String, Tuple> vrInfos = getApplianceVmInfo(vmUuids);
+
+        for (IpStatisticData element : ipStatistics) {
+            if (element.getVmInstanceUuid() != null) {
+                Tuple vrInfo = vrInfos.get(element.getVmInstanceUuid());
+                if (vrInfo != null) {
+                    element.setVmInstanceType(vrInfo.get(1, String.class));
+                }
+            }
+
+            List<String> resourceTypes = element.getResourceTypes();
+            if (element.getVmInstanceUuid() != null) {
+                if (VmType.USER_VM.equals(element.getVmInstanceType())) {
+                    resourceTypes.add(ResourceType.VM);
+                } else {
+                    resourceTypes.add(ResourceType.VROUTER);
+                }
+            }
+        }
+
+        return ipStatistics;
+    }
+
+    private Long countUsedIp(APIGetL3NetworkIpStatisticMsg msg) {
+        String sql = "select count(*) from UsedIpVO where l3NetworkUuid = :l3Uuid";
+        if (StringUtils.isNotEmpty(msg.getIp())) {
+            sql += " and ip like '" + msg.getIp() + '\'';
+        }
+        return SQL.New(sql, Long.class)
+                .param("l3Uuid", msg.getL3NetworkUuid())
+                .find();
+    }
+
+    private List<IpStatisticData> ipStatisticVip(APIGetL3NetworkIpStatisticMsg msg, String sortBy) {
+        /*
+        select ip, vip.uuid, vip.name as vipName, state, useFor, vip.createDate, ac.name as ownerName
+        from (select ip, uuid, name, state, useFor, v.createDate, accountUuid
+            from VipVO v,
+                AccountResourceRefVO a
+            where v.l3NetworkUuid = '{l3Uuid}'
+                and a.resourceType = 'VipVO'
+                and v.uuid = a.resourceUuid
+                [and a.accountUuid = '{accUuid}']
+                [and ip like '{ip}']
+            order by {sortBy} {direction}
+            limit {limit} offset {start}) vip
+                left join (select uuid, name from AccountVO) ac on ac.uuid = vip.accountUuid
+            order by {sortBy} {direction};
+         */
+        String accUuid = msg.getSession().getAccountUuid();
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("select ip, vip.uuid, vip.name as vipName, state, useFor, vip.createDate, ac.name as ownerName ")
+                .append("from (select ip, uuid, name, state, useFor, v.createDate, accountUuid ")
+                .append("from VipVO v, AccountResourceRefVO a where l3NetworkUuid = '")
+                .append(msg.getL3NetworkUuid()).append('\'').append(" and a.resourceType = 'VipVO' ")
+                .append("and v.uuid = a.resourceUuid");
+        if (StringUtils.isNotEmpty(msg.getIp())) {
+            sqlBuilder.append(" and ip like '").append(msg.getIp()).append('\'');
+        }
+        if (!acntMgr.isAdmin(msg.getSession())) {
+            sqlBuilder.append(" and a.accountUuid = '").append(accUuid).append('\'');
+        }
+        sqlBuilder.append(" order by ").append(sortBy).append(' ').append(msg.getSortDirection())
+                .append(" limit ").append(msg.getLimit()).append(" offset ").append(msg.getStart())
+                .append(") vip ")
+                .append("left join (select uuid, name from AccountVO) ac on ac.uuid = vip.accountUuid")
+                .append(" order by ").append(sortBy).append(' ').append(msg.getSortDirection());
+
+        Query q = dbf.getEntityManager().createNativeQuery(sqlBuilder.toString());
+        List<Object[]> results = q.getResultList();
+        List<IpStatisticData> ipStatistics = new ArrayList<>();
+
+        for (Object[] result : results) {
+            IpStatisticData element = new IpStatisticData();
+            ipStatistics.add(element);
+            element.setIp((String) result[0]);
+            element.setVipUuid((String) result[1]);
+            element.setVipName((String) result[2]);
+            element.setState((String) result[3]);
+            element.setUseFor((String) result[4]);
+            element.setCreateDate((Timestamp) result[5]);
+            element.setOwnerName((String) result[6]);
+            element.setResourceTypes(Collections.singletonList(ResourceType.VIP));
+        }
+
+        return ipStatistics;
+    }
+
+    private Long countVip(APIGetL3NetworkIpStatisticMsg msg) {
+        if (acntMgr.isAdmin(msg.getSession())) {
+            String sql = "select count(*) from VipVO v where l3NetworkUuid = :l3Uuid";
+            if (StringUtils.isNotEmpty(msg.getIp())) {
+                sql += " and ip like '" + msg.getIp() + '\'';
+            }
+            return SQL.New(sql, Long.class)
+                    .param("l3Uuid", msg.getL3NetworkUuid())
+                    .find();
+        } else {
+            String sql = "select count(*) from VipVO v, AccountResourceRefVO a where a.accountUuid = :accUuid " +
+                    "and v.l3NetworkUuid = :l3Uuid and v.uuid = a.resourceUuid";
+            if (StringUtils.isNotEmpty(msg.getIp())) {
+                sql += " and ip like '" + msg.getIp() + '\'';
+            }
+            return SQL.New(sql, Long.class)
+                    .param("accUuid", msg.getSession().getAccountUuid())
+                    .param("l3Uuid", msg.getL3NetworkUuid())
+                    .find();
+        }
+    }
+
+    private List<IpStatisticData> ipStatisticVm(APIGetL3NetworkIpStatisticMsg msg, String sortBy) {
+        /*
+        select ip, vm.uuid, vm.name, vm.type, vm.state, vm.type, vm.createDate, ac.name as ownerName
+        from (select n.vmInstanceUuid, u.ip, accountUuid
+            from UsedIpVO u,
+                 VmNicVO n,
+                 AccountResourceRefVO a
+            where u.l3NetworkUuid = '{l3Uuid}'
+                and resourceType = 'VmNicVO'
+                and n.ip is not null
+                and n.metadata is null
+                and u.vmNicUuid = n.uuid
+                and n.uuid = a.resourceUuid
+                [and a.accountUuid = '{accUuid}']
+                [and u.ip like '{ip}']
+            order by {sortBy} {direction}
+            [limit {limit} offset {start}]
+            ) nic
+                left join (select uuid, name from AccountVO) ac on ac.uuid = nic.accountUuid
+                left join (select uuid, name, state, type, createDate from VmInstanceVO) vm on nic.vmInstanceUuid = vm.uuid
+            order by {sortBy} {direction}
+            [limit {limit} offset {start}];
+         */
+
+        boolean byIp = SortBy.IP.equals(msg.getSortBy());
+        String accUuid = msg.getSession().getAccountUuid();
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("select ip, vm.uuid, vm.name, vm.type, vm.state, vm.createDate, ac.name as ownerName ")
+                .append("from (select n.vmInstanceUuid, u.ip, accountUuid from UsedIpVO u, VmNicVO n, AccountResourceRefVO a ")
+                .append("where u.l3NetworkUuid = '").append(msg.getL3NetworkUuid())
+                .append('\'');
+        if (StringUtils.isNotEmpty(msg.getIp())) {
+            sqlBuilder.append(" and u.ip like '").append(msg.getIp()).append('\'');
+        }
+        if (!acntMgr.isAdmin(msg.getSession())) {
+            sqlBuilder.append(" and a.accountUuid = '").append(accUuid).append('\'');
+        }
+        sqlBuilder.append(" and resourceType = 'VmNicVO' and n.metadata is null and n.ip is not null and u.vmNicUuid = n.uuid and n.uuid = a.resourceUuid");
+        if (byIp) {
+            String sortByExpression;
+            if ("INET_ATON(ip)".equals(sortBy)) {
+                sortByExpression = "INET_ATON(u.ip)";
+            } else {
+                sortByExpression = sortBy;
+            }
+            sqlBuilder.append(" order by ").append(sortByExpression).append(' ').append(msg.getSortDirection())
+                    .append(" limit ").append(msg.getLimit()).append(" offset ").append(msg.getStart());
+        }
+
+        sqlBuilder.append(") nic ")
+                .append("left join (select uuid, name from AccountVO) ac on ac.uuid = nic.accountUuid ")
+                .append("left join (select uuid, name, createDate, state, type from VmInstanceVO) vm ")
+                .append("on vm.uuid = nic.vmInstanceUuid")
+                .append(" order by ").append(sortBy).append(' ').append(msg.getSortDirection());
+        if (!byIp) {
+            sqlBuilder.append(" limit ").append(msg.getLimit()).append(" offset ").append(msg.getStart());
+        }
+
+        Query q = dbf.getEntityManager().createNativeQuery(sqlBuilder.toString());
+        List<Object[]> results = q.getResultList();
+        List<IpStatisticData> ipStatistics = new ArrayList<>();
+        List<String> vmUuids = new ArrayList<>();
+
+        for (Object[] result : results) {
+            IpStatisticData element = new IpStatisticData();
+            ipStatistics.add(element);
+            element.setIp((String) result[0]);
+
+            String uuid = (String) result[1];
+            element.setVmInstanceUuid(uuid);
+            if (StringUtils.isNotEmpty(uuid)) {
+                vmUuids.add(element.getVmInstanceUuid());
+            }
+
+            element.setVmInstanceName((String) result[2]);
+
+            String type = (String) result[3];
+            element.setVmInstanceType(type);
+            element.setResourceTypes(Collections.singletonList(ResourceType.VM));
+
+            element.setState((String) result[4]);
+            element.setCreateDate((Timestamp) result[5]);
+            element.setOwnerName((String) result[6]);
+        }
+
+        if (vmUuids.size() == 0) {
+            return ipStatistics;
+        }
+
+        List<VmInstanceVO> vms = Q.New(VmInstanceVO.class).in(VmInstanceVO_.uuid, vmUuids).list();
+
+        Map<String, VmInstanceVO> vmvos = vms.stream()
+                .collect(Collectors.toMap(VmInstanceVO::getUuid, inv -> inv));
+
+        for (IpStatisticData element : ipStatistics) {
+            VmInstanceVO vmvo = vmvos.get(element.getVmInstanceUuid());
+            if (vmvo == null) {
+                continue;
+            }
+
+            List<VmNicVO> nics;
+            nics = vmvo.getVmNics().stream()
+                        .filter(vmNic -> vmNic.getL3NetworkUuid().equals(vmvo.getDefaultL3NetworkUuid()))
+                        .collect(Collectors.toList());
+
+            VmNicVO nic;
+
+            if (nics.size() == 1) {
+                nic = nics.get(0);
+            } else if (nics.size() > 1) {
+                nic = VmNicVO.findTheEarliestOne(nics);
+            } else {
+                continue;
+            }
+
+            element.setVmDefaultIp(nic.getIp());
+        }
+
+        return ipStatistics;
+    }
+
+    private Map<String, Tuple> getApplianceVmInfo(List<String> vmUuids) {
+        Map<String, Tuple> vrInfos = new HashMap<>();
+        if (vmUuids.size() == 0) {
+            return vrInfos;
+        }
+        List<Tuple> vrs = SQL.New("select uuid, applianceVmType, defaultRouteL3NetworkUuid from ApplianceVmVO where uuid in (:vrUuids)",
+                Tuple.class)
+                .param("vrUuids", vmUuids)
+                .list();
+        for (Tuple t : vrs) {
+            vrInfos.put(t.get(0, String.class), t);
+        }
+        return vrInfos;
+    }
+
+    private Long countVMNicIp(APIGetL3NetworkIpStatisticMsg msg) {
+        if (acntMgr.isAdmin(msg.getSession())) {
+            String sql = "select count(*) from UsedIpVO u, VmNicVO n " +
+                    "where u.l3NetworkUuid = :l3Uuid and u.vmNicUuid = n.uuid";
+            if (StringUtils.isNotEmpty(msg.getIp())) {
+                sql += " and u.ip like '" + msg.getIp() + '\'';
+            }
+            return SQL.New(sql, Long.class)
+                    .param("l3Uuid", msg.getL3NetworkUuid())
+                    .find();
+        } else {
+            String sql = "select count(*) from UsedIpVO u, VmNicVO n, AccountResourceRefVO a " +
+                    "where a.accountUuid = :accUuid and u.l3NetworkUuid = :l3Uuid " +
+                    "and u.vmNicUuid = n.uuid and n.uuid = a.resourceUuid";
+            if (StringUtils.isNotEmpty(msg.getIp())) {
+                sql += " and ip like '" + msg.getIp() + '\'';
+            }
+            return SQL.New(sql, Long.class)
+                    .param("accUuid", msg.getSession().getAccountUuid())
+                    .param("l3Uuid", msg.getL3NetworkUuid())
+                    .find();
         }
     }
 

@@ -28,22 +28,22 @@ doc {
     }
     field {
         name "protocol"
-        desc "云主机控制台协议，vnc或spice"
+        desc "云主机控制台协议，vnc或spice或vncAndSpice"
         type "String"
         since "0.6"
+    }
+    ref {
+        name "vdiPortInfo"
+        path "org.zstack.header.vm.APIGetVmConsoleAddressReply.vdiPortInfo"
+        desc "vdi端口号信息"
+        type "VdiPortInfo"
+        since "3.7"
+        clz VdiPortInfo.class
     }
     field {
         name "success"
         desc "操作是否成功"
         type "boolean"
         since "0.6"
-    }
-    ref {
-        name "error"
-        path "org.zstack.header.vm.APIGetVmConsoleAddressReply.error"
-        desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null"
-        type "ErrorCode"
-        since "0.6"
-        clz ErrorCode.class
     }
 }

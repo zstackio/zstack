@@ -60,6 +60,10 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.AgentResponse()
         }
 
+        spec.simulator(KVMConstant.KVM_VM_UPDATE_PRIORITY_PATH) {
+            return new KVMAgentCommands.UpdateVmPriorityRsp()
+        }
+
         spec.simulator(KVMConstant.KVM_VM_CHECK_STATE) { HttpEntity<String> e ->
             KVMAgentCommands.CheckVmStateCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.CheckVmStateCmd.class)
             List<VmInstanceVO> vms = Q.New(VmInstanceVO.class).in(VmInstanceVO_.uuid, cmd.vmUuids).list()
@@ -259,6 +263,10 @@ class KVMSimulator implements Simulator {
 
         spec.simulator(KVMConstant.KVM_HOST_UPDATE_DEPENDENCY_PATH) {
             return new KVMAgentCommands.UpdateDependencyRsp()
+        }
+
+        spec.simulator(KVMConstant.HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH) {
+            return new KVMAgentCommands.UpdateSpiceChannelConfigResponse()
         }
     }
 }

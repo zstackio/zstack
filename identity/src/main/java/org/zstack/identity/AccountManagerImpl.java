@@ -21,6 +21,7 @@ import org.zstack.header.APIIsOpensourceVersionReply;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -341,26 +342,12 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private void handle(APIValidateSessionMsg msg) {
         APIValidateSessionReply reply = new APIValidateSessionReply();
 
-        SessionInventory s = Session.getSession(msg.getSessionUuid());
-        Timestamp current = dbf.getCurrentSqlTime();
-        boolean valid = true;
+        ErrorCode errorCode = Session.checkSessionExpired(msg.getSessionUuid());
 
-        if (s != null) {
-            if (current.after(s.getExpiredDate())) {
-                valid = false;
-                logOutSession(s.getUuid());
-            }
-        } else {
-            SessionVO session = dbf.findByUuid(msg.getSessionUuid(), SessionVO.class);
-            if (session != null && current.after(session.getExpiredDate())) {
-                valid = false;
-                logOutSession(session.getUuid());
-            } else if (session == null) {
-                valid = false;
-            }
-        }
+        boolean valid = errorCode == null;
 
         reply.setValidSession(valid);
+
         bus.reply(msg, reply);
     }
 

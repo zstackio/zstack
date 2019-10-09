@@ -17,7 +17,6 @@ import org.zstack.core.asyncbatch.While
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.DatabaseFacadeImpl
 import org.zstack.core.db.SQL
-
 import org.zstack.header.core.NoErrorCompletion
 import org.zstack.header.core.progress.TaskProgressVO
 import org.zstack.header.core.workflow.WhileCompletion
@@ -28,6 +27,7 @@ import org.zstack.header.image.ImageDeletionPolicyManager
 import org.zstack.header.message.Message
 import org.zstack.header.rest.RESTConstant
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager
+import org.zstack.header.vm.VmPriorityConfigVO
 import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.image.ImageGlobalConfig
@@ -38,6 +38,7 @@ import org.zstack.sdk.sns.CreateSNSTopicAction
 import org.zstack.sdk.sns.DeleteSNSApplicationEndpointAction
 import org.zstack.sdk.sns.DeleteSNSApplicationPlatformAction
 import org.zstack.sdk.sns.DeleteSNSTopicAction
+import org.zstack.sdk.sns.platform.aliyunsms.CreateSNSAliyunSmsEndpointAction
 import org.zstack.sdk.sns.platform.dingtalk.CreateSNSDingTalkEndpointAction
 import org.zstack.sdk.sns.platform.email.CreateSNSEmailEndpointAction
 import org.zstack.sdk.sns.platform.email.CreateSNSEmailPlatformAction
@@ -48,6 +49,7 @@ import org.zstack.sdk.zwatch.alarm.SubscribeEventAction
 import org.zstack.sdk.zwatch.alarm.UnsubscribeEventAction
 import org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateAction
 import org.zstack.sdk.zwatch.alarm.sns.DeleteSNSTextTemplateAction
+import org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.CreateAliyunSmsSNSTextTemplateAction
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.testlib.identity.AccountSpec
 import org.zstack.testlib.identity.IdentitySpec
@@ -144,7 +146,9 @@ class EnvSpec implements Node, ApiHelper {
             [SubscribeEventAction.metaClass, SubscribeEventAction.Result.metaClass, UnsubscribeEventAction.class],
             [CreateSNSHttpEndpointAction.metaClass, CreateSNSHttpEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
             [CreateSNSDingTalkEndpointAction.metaClass, CreateSNSDingTalkEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
+            [CreateSNSAliyunSmsEndpointAction.metaClass, CreateSNSAliyunSmsEndpointAction.Result.metaClass, DeleteSNSApplicationEndpointAction.class],
             [CreateSNSTextTemplateAction.metaClass, CreateSNSTextTemplateAction.Result.metaClass, DeleteSNSTextTemplateAction.class],
+            [CreateAliyunSmsSNSTextTemplateAction.metaClass, CreateAliyunSmsSNSTextTemplateAction.Result.metaClass, DeleteSNSTextTemplateAction.class],
             [CreateEmailMonitorTriggerActionAction.metaClass, CreateEmailMonitorTriggerActionAction.Result.metaClass, DeleteMonitorTriggerActionAction.class],
             [CreateEmailMediaAction.metaClass, CreateEmailMediaAction.Result.metaClass, DeleteMediaAction.class],
             [SubmitLongJobAction.metaClass, SubmitLongJobAction.Result.metaClass, DeleteLongJobAction.class],

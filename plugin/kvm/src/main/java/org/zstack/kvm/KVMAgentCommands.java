@@ -3,7 +3,9 @@ package org.zstack.kvm;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.validation.Validation;
+import org.zstack.header.vm.PriorityConfigStruct;
 import org.zstack.header.vm.VmBootDevice;
+import org.zstack.header.vm.VmPriorityConfigVO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 
@@ -63,6 +65,13 @@ public class KVMAgentCommands {
 
     public static class CheckVmStateRsp extends AgentResponse {
         public Map<String, String> states;
+    }
+
+    public static class UpdateVmPriorityCmd extends AgentCommand {
+        public List<PriorityConfigStruct> priorityConfigStructs;
+    }
+
+    public static class UpdateVmPriorityRsp extends AgentResponse {
     }
 
     public static class DetachNicCommand extends AgentCommand {
@@ -853,7 +862,118 @@ public class KVMAgentCommands {
         String getVmInstanceUuid();
     }
 
-    public static class StartVmCmd extends AgentCommand implements VmAddOnsCmd {
+    public static class PriorityConfig {
+        private String vmUuid;
+        private int cpuShares;
+        private int oomScoreAdj;
+
+        PriorityConfig(VmPriorityConfigVO vo, String vmUuid) {
+            this.vmUuid = vmUuid;
+            this.cpuShares = vo.getCpuShares();
+            this.oomScoreAdj = vo.getOomScoreAdj();
+        }
+
+        public int getCpuShares() {
+            return cpuShares;
+        }
+
+        public void setCpuShares(int cpuShares) {
+            this.cpuShares = cpuShares;
+        }
+
+        public int getOomScoreAdj() {
+            return oomScoreAdj;
+        }
+
+        public void setOomScoreAdj(int oomScoreAdj) {
+            this.oomScoreAdj = oomScoreAdj;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+    }
+
+    public static class vdiCmd extends AgentCommand {
+        private String consoleMode;
+        private String videoType;
+        private String soundType;
+        private String spiceStreamingMode;
+        private Integer VDIMonitorNumber;
+        private String consolePassword;
+        private Map<String, String> qxlMemory;
+        private List<String> spiceChannels;
+
+        public String getConsoleMode() {
+            return consoleMode;
+        }
+
+        public void setConsoleMode(String consoleMode) {
+            this.consoleMode = consoleMode;
+        }
+
+        public String getVideoType() {
+            return videoType;
+        }
+
+        public void setVideoType(String videoType) {
+            this.videoType = videoType;
+        }
+
+        public String getSoundType() {
+            return soundType;
+        }
+
+        public void setSoundType(String soundType) {
+            this.soundType = soundType;
+        }
+
+        public String getSpiceStreamingMode() {
+            return spiceStreamingMode;
+        }
+
+        public void setSpiceStreamingMode(String spiceStreamingMode) {
+            this.spiceStreamingMode = spiceStreamingMode;
+        }
+
+        public Integer getVDIMonitorNumber() {
+            return VDIMonitorNumber;
+        }
+
+        public void setVDIMonitorNumber(Integer VDIMonitorNumber) {
+            this.VDIMonitorNumber = VDIMonitorNumber;
+        }
+
+        public String getConsolePassword() {
+            return consolePassword;
+        }
+
+        public void setConsolePassword(String consolePassword) {
+            this.consolePassword = consolePassword;
+        }
+
+        public Map<String, String> getQxlMemory() {
+            return qxlMemory;
+        }
+
+        public void setQxlMemory(Map<String, String> qxlMemory) {
+            this.qxlMemory = qxlMemory;
+        }
+
+        public List<String> getSpiceChannels() {
+            return spiceChannels;
+        }
+
+        public void setSpiceChannels(List<String> spiceChannels) {
+            this.spiceChannels = spiceChannels;
+        }
+    }
+
+    public static class StartVmCmd extends vdiCmd implements VmAddOnsCmd {
         private String vmInstanceUuid;
         private long vmInternalId;
         private String vmName;
@@ -864,7 +984,6 @@ public class KVMAgentCommands {
         private long cpuSpeed;
         private int socketNum;
         private int cpuOnSocket;
-        private String consolePassword;
         private List<String> bootDev;
         private VolumeTO rootVolume;
         private List<IsoTO> bootIso = new ArrayList<>();
@@ -873,16 +992,12 @@ public class KVMAgentCommands {
         private List<NicTO> nics;
         private long timeout;
         private Map<String, Object> addons;
-        private String consoleMode;
         private boolean instanceOfferingOnlineChange;
         private String nestedVirtualization;
         private String hostManagementIp;
         private String clock;
-        private String videoType;
-        private String spiceStreamingMode;
         private boolean useNuma;
         private String usbRedirect;
-        private Integer VDIMonitorNumber;
         private boolean useBootMenu;
         private boolean createPaused;
         private boolean kvmHiddenState;
@@ -898,6 +1013,7 @@ public class KVMAgentCommands {
         private Integer pciePortNums;
         private boolean useHugePage;
         private String chassisAssetTag;
+        private PriorityConfigStruct priorityConfigStruct;
 
         public String getChassisAssetTag() {
             return chassisAssetTag;
@@ -905,6 +1021,14 @@ public class KVMAgentCommands {
 
         public void setChassisAssetTag(String chassisAssetTag) {
             this.chassisAssetTag = chassisAssetTag;
+        }
+
+        public PriorityConfigStruct getPriorityConfigStruct() {
+            return priorityConfigStruct;
+        }
+
+        public void setPriorityConfigStruct(PriorityConfigStruct priorityConfigStruct) {
+            this.priorityConfigStruct = priorityConfigStruct;
         }
 
         public boolean isUseHugePage() {
@@ -987,22 +1111,6 @@ public class KVMAgentCommands {
             this.vmCpuModel = vmCpuModel;
         }
 
-        public String getSpiceStreamingMode() {
-            return spiceStreamingMode;
-        }
-
-        public void setSpiceStreamingMode(String spiceStreamingMode) {
-            this.spiceStreamingMode = spiceStreamingMode;
-        }
-
-        public Integer getVDIMonitorNumber() {
-            return VDIMonitorNumber;
-        }
-
-        public void setVDIMonitorNumber(Integer VDIMonitorNumber) {
-            this.VDIMonitorNumber = VDIMonitorNumber;
-        }
-
         public boolean isKvmHiddenState() {
             return kvmHiddenState;
         }
@@ -1057,14 +1165,6 @@ public class KVMAgentCommands {
 
         public void setMaxMemory(long maxMemory) {
             this.maxMemory = maxMemory;
-        }
-
-        public String getVideoType() {
-            return videoType;
-        }
-
-        public void setVideoType(String videoType) {
-            this.videoType = videoType;
         }
 
         public String getClock() {
@@ -1139,14 +1239,6 @@ public class KVMAgentCommands {
             this.bootDev = bootDev;
         }
 
-        public String getConsolePassword() {
-            return consolePassword;
-        }
-
-        public void setConsolePassword(String consolePassword) {
-            this.consolePassword = consolePassword;
-        }
-
         public boolean getInstanceOfferingOnlineChange() {
             return instanceOfferingOnlineChange;
         }
@@ -1171,14 +1263,6 @@ public class KVMAgentCommands {
 
         public void setCdRoms(List<CdRomTO> cdRoms) {
             this.cdRoms = cdRoms;
-        }
-
-        public String getConsoleMode() {
-            return consoleMode;
-        }
-
-        public void setConsoleMode(String consoleMode) {
-            this.consoleMode = consoleMode;
         }
 
         public String getNestedVirtualization() {
@@ -1394,6 +1478,9 @@ public class KVMAgentCommands {
     public static class GetVncPortResponse extends AgentResponse {
         private int port;
         private String protocol;
+        private Integer vncPort;
+        private Integer spicePort;
+        private Integer spiceTlsPort;
 
         public int getPort() {
             return port;
@@ -1409,6 +1496,30 @@ public class KVMAgentCommands {
 
         public void setProtocol(String protocol) {
             this.protocol = protocol;
+        }
+
+        public Integer getVncPort() {
+            return vncPort;
+        }
+
+        public void setVncPort(Integer vncPort) {
+            this.vncPort = vncPort;
+        }
+
+        public Integer getSpicePort() {
+            return spicePort;
+        }
+
+        public void setSpicePort(Integer spicePort) {
+            this.spicePort = spicePort;
+        }
+
+        public Integer getSpiceTlsPort() {
+            return spiceTlsPort;
+        }
+
+        public void setSpiceTlsPort(Integer spiceTlsPort) {
+            this.spiceTlsPort = spiceTlsPort;
         }
     }
 
@@ -2030,7 +2141,13 @@ public class KVMAgentCommands {
     public static class ShutdownHostResponse extends AgentResponse {
     }
 
-    public static class PrimaryStorageCommand extends AgentCommand{
+    public static class UpdateSpiceChannelConfigCmd extends AgentCommand {
+    }
+
+    public static class UpdateSpiceChannelConfigResponse extends AgentResponse {
+    }
+
+    public static class PrimaryStorageCommand extends AgentCommand {
         public String primaryStorageUuid;
     }
 }

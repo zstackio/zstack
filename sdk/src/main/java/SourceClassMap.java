@@ -235,6 +235,8 @@ public class SourceClassMap {
 			put("org.zstack.header.vm.CloneVmInstanceResults", "org.zstack.sdk.CloneVmInstanceResults");
 			put("org.zstack.header.vm.VmInstanceInventory", "org.zstack.sdk.VmInstanceInventory");
 			put("org.zstack.header.vm.VmNicInventory", "org.zstack.sdk.VmNicInventory");
+			put("org.zstack.header.vm.VmPriorityConfigInventory", "org.zstack.sdk.VmPriorityConfigInventory");
+			put("org.zstack.header.vm.VmPriorityLevel", "org.zstack.sdk.VmPriorityLevel");
 			put("org.zstack.header.vm.cdrom.VmCdRomInventory", "org.zstack.sdk.VmCdRomInventory");
 			put("org.zstack.header.vo.ResourceInventory", "org.zstack.sdk.ResourceInventory");
 			put("org.zstack.header.volume.APIGetVolumeFormatReply$VolumeFormatReplyStruct", "org.zstack.sdk.VolumeFormatReplyStruct");
@@ -307,6 +309,7 @@ public class SourceClassMap {
 			put("org.zstack.network.securitygroup.SecurityGroupRuleInventory", "org.zstack.sdk.SecurityGroupRuleInventory");
 			put("org.zstack.network.securitygroup.VmNicSecurityGroupRefInventory", "org.zstack.sdk.VmNicSecurityGroupRefInventory");
 			put("org.zstack.network.service.eip.EipInventory", "org.zstack.sdk.EipInventory");
+			put("org.zstack.network.service.flat.IpStatisticData", "org.zstack.sdk.IpStatisticData");
 			put("org.zstack.network.service.lb.CertificateInventory", "org.zstack.sdk.CertificateInventory");
 			put("org.zstack.network.service.lb.LoadBalancerInventory", "org.zstack.sdk.LoadBalancerInventory");
 			put("org.zstack.network.service.lb.LoadBalancerListenerCertificateRefInventory", "org.zstack.sdk.LoadBalancerListenerCertificateRefInventory");
@@ -356,8 +359,11 @@ public class SourceClassMap {
 			put("org.zstack.resourceconfig.ResourceConfigInventory", "org.zstack.sdk.ResourceConfigInventory");
 			put("org.zstack.sns.SNSApplicationEndpointInventory", "org.zstack.sdk.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sns.SNSApplicationPlatformInventory", "org.zstack.sdk.sns.SNSApplicationPlatformInventory");
+			put("org.zstack.sns.SNSSmsEndpointInventory", "org.zstack.sdk.sns.SNSSmsEndpointInventory");
+			put("org.zstack.sns.SNSSmsReceiverInventory", "org.zstack.sdk.sns.SNSSmsReceiverInventory");
 			put("org.zstack.sns.SNSSubscriberInventory", "org.zstack.sdk.sns.SNSSubscriberInventory");
 			put("org.zstack.sns.SNSTopicInventory", "org.zstack.sdk.sns.SNSTopicInventory");
+			put("org.zstack.sns.SmsReceiverType", "org.zstack.sdk.sns.SmsReceiverType");
 			put("org.zstack.sns.platform.dingtalk.SNSDingTalkAtPersonInventory", "org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkAtPersonInventory");
 			put("org.zstack.sns.platform.dingtalk.SNSDingTalkEndpointInventory", "org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkEndpointInventory");
 			put("org.zstack.sns.platform.email.SNSEmailAddressInventory", "org.zstack.sdk.sns.platform.email.SNSEmailAddressInventory");
@@ -459,6 +465,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.alarm.EventSubscriptionLabelInventory", "org.zstack.sdk.zwatch.alarm.EventSubscriptionLabelInventory");
 			put("org.zstack.zwatch.alarm.EventSubscriptionState", "org.zstack.sdk.zwatch.alarm.EventSubscriptionState");
 			put("org.zstack.zwatch.alarm.sns.SNSTextTemplateInventory", "org.zstack.sdk.zwatch.alarm.sns.SNSTextTemplateInventory");
+			put("org.zstack.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory", "org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory");
 			put("org.zstack.zwatch.api.APIGetAllEventMetadataReply$EventStruct", "org.zstack.sdk.zwatch.api.EventStruct");
 			put("org.zstack.zwatch.api.APIGetAllMetricMetadataReply$MetricStruct", "org.zstack.sdk.zwatch.api.MetricStruct");
 			put("org.zstack.zwatch.datatype.AlarmData", "org.zstack.sdk.zwatch.datatype.AlarmData");
@@ -471,6 +478,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.datatype.Label$Operator", "org.zstack.sdk.zwatch.datatype.Operator");
 			put("org.zstack.zwatch.datatype.MetricDatum", "org.zstack.sdk.zwatch.datatype.MetricDatum");
 			put("org.zstack.zwatch.ruleengine.ComparisonOperator", "org.zstack.sdk.zwatch.ruleengine.ComparisonOperator");
+			put("org.zstack.header.vm.VdiPortInfo", "org.zstack.sdk.VdiPortInfo");
         }
     };
 
@@ -613,6 +621,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ImageStoreImageStruct", "org.zstack.storage.backup.imagestore.ImageStoreImageStruct");
 			put("org.zstack.sdk.InstanceOfferingInventory", "org.zstack.header.configuration.InstanceOfferingInventory");
 			put("org.zstack.sdk.IpRangeInventory", "org.zstack.header.network.l3.IpRangeInventory");
+			put("org.zstack.sdk.IpStatisticData", "org.zstack.network.service.flat.IpStatisticData");
 			put("org.zstack.sdk.IscsiLunInventory", "org.zstack.storage.device.iscsi.IscsiLunInventory");
 			put("org.zstack.sdk.IscsiServerClusterRefInventory", "org.zstack.storage.device.iscsi.IscsiServerClusterRefInventory");
 			put("org.zstack.sdk.IscsiServerInventory", "org.zstack.storage.device.iscsi.IscsiServerInventory");
@@ -826,6 +835,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmNicBandwidthSpendingDetails", "org.zstack.billing.spendingcalculator.vmnic.VmNicBandwidthSpendingDetails");
 			put("org.zstack.sdk.VmNicInventory", "org.zstack.header.vm.VmNicInventory");
 			put("org.zstack.sdk.VmNicSecurityGroupRefInventory", "org.zstack.network.securitygroup.VmNicSecurityGroupRefInventory");
+			put("org.zstack.sdk.VmPriorityConfigInventory", "org.zstack.header.vm.VmPriorityConfigInventory");
+			put("org.zstack.sdk.VmPriorityLevel", "org.zstack.header.vm.VmPriorityLevel");
 			put("org.zstack.sdk.VmSpending", "org.zstack.billing.spendingcalculator.vm.VmSpending");
 			put("org.zstack.sdk.VmSpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmSpendingDetails");
 			put("org.zstack.sdk.VniRangeInventory", "org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeInventory");
@@ -899,8 +910,11 @@ public class SourceClassMap {
 			put("org.zstack.sdk.identity.role.RoleType", "org.zstack.header.identity.role.RoleType");
 			put("org.zstack.sdk.sns.SNSApplicationEndpointInventory", "org.zstack.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");
+			put("org.zstack.sdk.sns.SNSSmsEndpointInventory", "org.zstack.sns.SNSSmsEndpointInventory");
+			put("org.zstack.sdk.sns.SNSSmsReceiverInventory", "org.zstack.sns.SNSSmsReceiverInventory");
 			put("org.zstack.sdk.sns.SNSSubscriberInventory", "org.zstack.sns.SNSSubscriberInventory");
 			put("org.zstack.sdk.sns.SNSTopicInventory", "org.zstack.sns.SNSTopicInventory");
+			put("org.zstack.sdk.sns.SmsReceiverType", "org.zstack.sns.SmsReceiverType");
 			put("org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkAtPersonInventory", "org.zstack.sns.platform.dingtalk.SNSDingTalkAtPersonInventory");
 			put("org.zstack.sdk.sns.platform.dingtalk.SNSDingTalkEndpointInventory", "org.zstack.sns.platform.dingtalk.SNSDingTalkEndpointInventory");
 			put("org.zstack.sdk.sns.platform.email.SNSEmailAddressInventory", "org.zstack.sns.platform.email.SNSEmailAddressInventory");
@@ -930,6 +944,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionLabelInventory", "org.zstack.zwatch.alarm.EventSubscriptionLabelInventory");
 			put("org.zstack.sdk.zwatch.alarm.EventSubscriptionState", "org.zstack.zwatch.alarm.EventSubscriptionState");
 			put("org.zstack.sdk.zwatch.alarm.sns.SNSTextTemplateInventory", "org.zstack.zwatch.alarm.sns.SNSTextTemplateInventory");
+			put("org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory", "org.zstack.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory");
 			put("org.zstack.sdk.zwatch.api.EventStruct", "org.zstack.zwatch.api.APIGetAllEventMetadataReply$EventStruct");
 			put("org.zstack.sdk.zwatch.api.MetricStruct", "org.zstack.zwatch.api.APIGetAllMetricMetadataReply$MetricStruct");
 			put("org.zstack.sdk.zwatch.datatype.AlarmData", "org.zstack.zwatch.datatype.AlarmData");
@@ -942,6 +957,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.datatype.MetricDatum", "org.zstack.zwatch.datatype.MetricDatum");
 			put("org.zstack.sdk.zwatch.datatype.Operator", "org.zstack.zwatch.datatype.Label$Operator");
 			put("org.zstack.sdk.zwatch.ruleengine.ComparisonOperator", "org.zstack.zwatch.ruleengine.ComparisonOperator");
+			put("org.zstack.sdk.VdiPortInfo", "org.zstack.header.vm.VdiPortInfo");
         }
     };
 }

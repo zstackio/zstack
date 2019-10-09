@@ -40,6 +40,7 @@ public interface KVMConstant {
     String KVM_DETACH_NIC_PATH = "/vm/detachnic";
     String KVM_UPDATE_NIC_PATH = "/vm/updatenic";
     String KVM_VM_CHECK_STATE = "/vm/checkstate";
+    String KVM_VM_UPDATE_PRIORITY_PATH = "/vm/priority";
     String KVM_TAKE_VOLUME_SNAPSHOT_PATH = "/vm/volume/takesnapshot";
     String KVM_MERGE_SNAPSHOT_PATH = "/vm/volume/mergesnapshot";
     String KVM_LOGOUT_ISCSI_PATH = "/iscsi/target/logout";
@@ -49,6 +50,7 @@ public interface KVMConstant {
     String KVM_UPDATE_HOST_OS_PATH = "/host/updateos";
     String KVM_HOST_UPDATE_DEPENDENCY_PATH = "/host/updatedependency";
     String HOST_SHUTDOWN = "/host/shutdown";
+    String HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH = "/host/updateSpiceChannelConfig";
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";

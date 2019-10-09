@@ -6,4 +6,5 @@ public enum HybridType {
 	daho,
 	AliyunNAS,
 	AliyunEBS,
+	AliyunSms,
 }

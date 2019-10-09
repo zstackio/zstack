@@ -91,4 +91,10 @@
             <zstack:extension interface="org.zstack.header.network.service.NetworkServiceDnsBackend" />
         </zstack:plugin>
     </bean>
+
+    <bean id="FlatApiInterceptor" class="org.zstack.network.service.flat.FlatApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
 </beans>

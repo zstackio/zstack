@@ -107,6 +107,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected VmInstanceDeletionPolicyManager deletionPolicyMgr;
     @Autowired
     private HostAllocatorManager hostAllocatorMgr;
+    @Autowired
+    private VmPriorityOperator priorityOperator;
 
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
@@ -2682,6 +2684,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmBootOrderMsg) msg);
         } else if (msg instanceof APISetVmConsolePasswordMsg) {
             handle((APISetVmConsolePasswordMsg) msg);
+        } else if (msg instanceof APISetVmSoundTypeMsg) {
+            handle((APISetVmSoundTypeMsg) msg);
+        } else if (msg instanceof APISetVmQxlMemoryMsg) {
+            handle((APISetVmQxlMemoryMsg) msg);
         } else if (msg instanceof APIGetVmBootOrderMsg) {
             handle((APIGetVmBootOrderMsg) msg);
         } else if (msg instanceof APIDeleteVmConsolePasswordMsg) {
@@ -2728,6 +2734,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APICreateVmCdRomMsg) msg);
         } else if (msg instanceof APIUpdateVmCdRomMsg) {
             handle((APIUpdateVmCdRomMsg) msg);
+        } else if (msg instanceof APIUpdateVmPriorityMsg) {
+            handle((APIUpdateVmPriorityMsg) msg);
         } else if (msg instanceof  APISetVmInstanceDefaultCdRomMsg) {
             handle((APISetVmInstanceDefaultCdRomMsg) msg);
         } else {
@@ -2966,6 +2974,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     creply.setHostIp(hr.getHostIp());
                     creply.setPort(hr.getPort());
                     creply.setProtocol(hr.getProtocol());
+                    creply.setVdiPortInfo(hr.getVdiPortInfo());
                 }
 
                 bus.reply(msg, creply);
@@ -3028,6 +3037,28 @@ public class VmInstanceBase extends AbstractVmInstance {
         creator.recreate = true;
         creator.create();
         evt.setInventory(getSelfInventory());
+        bus.publish(evt);
+    }
+
+    private void handle(APISetVmSoundTypeMsg msg) {
+        APISetVmSoundTypeEvent evt = new APISetVmSoundTypeEvent(msg.getId());
+        SystemTagCreator creator = VmSystemTags.SOUND_TYPE.newSystemTagCreator(self.getUuid());
+        creator.setTagByTokens(map(e(VmSystemTags.SOUND_TYPE_TOKEN, msg.getSoundType())));
+        creator.recreate = true;
+        creator.create();
+        bus.publish(evt);
+    }
+
+    private void handle(APISetVmQxlMemoryMsg msg) {
+        APISetVmQxlMemoryEvent evt = new APISetVmQxlMemoryEvent(msg.getId());
+        SystemTagCreator creator = VmSystemTags.QXL_MEMORY.newSystemTagCreator(self.getUuid());
+        creator.setTagByTokens(map(
+                e(VmSystemTags.QXL_RAM_TOKEN, msg.getRam()),
+                e(VmSystemTags.QXL_VRAM_TOKEN, msg.getVram()),
+                e(VmSystemTags.QXL_VGAMEM_TOKEN, msg.getVgamem())
+        ));
+        creator.recreate = true;
+        creator.create();
         bus.publish(evt);
     }
 
@@ -6212,6 +6243,77 @@ public class VmInstanceBase extends AbstractVmInstance {
                 CreateVmCdRomReply r1 = reply.castReply();
                 event.setInventory(r1.getInventory());
                 bus.publish(event);
+            }
+        });
+    }
+
+    private void updateVmPriority(APIUpdateVmPriorityMsg msg, Completion completion) {
+        VmPriorityLevel oldLevel = priorityOperator.getVmPriority(self.getUuid());
+        VmPriorityLevel newLevel = VmPriorityLevel.valueOf(msg.getPriority());
+        if (oldLevel.equals(newLevel)) {
+            completion.success();
+            return;
+        }
+
+        if (!priorityOperator.needEffectImmediately(self.getState())) {
+            priorityOperator.setVmPriority(self.getUuid(), newLevel);
+            completion.success();
+            return;
+        }
+
+        UpdateVmPriorityMsg smsg = new UpdateVmPriorityMsg();
+        Map<String, VmPriorityLevel> vmLevelMap = new HashMap();
+        vmLevelMap.put(self.getUuid(), newLevel);
+        smsg.setHostUuid(self.getHostUuid());
+        smsg.setVmlevelMap(vmLevelMap);
+        bus.makeTargetServiceIdByResourceUuid(smsg, HostConstant.SERVICE_ID, self.getHostUuid());
+        bus.send(smsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                UpdateVmPriorityReply r = new UpdateVmPriorityReply();
+                if (!reply.isSuccess()) {
+                    ErrorCode err = operr("update vm[%s] priority to [%s] failed,because %s",
+                            self.getUuid(), msg.getPriority(), reply.getError());
+                    completion.fail(err);
+                    return;
+                }
+
+                priorityOperator.setVmPriority(self.getUuid(), newLevel);
+                completion.success();
+            }
+        });
+
+    }
+
+    private void handle(APIUpdateVmPriorityMsg msg) {
+        final APIUpdateVmPriorityEvent evt = new APIUpdateVmPriorityEvent(msg.getId());
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                updateVmPriority(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("change-vm-%s-priority", self.getUuid());
             }
         });
     }
