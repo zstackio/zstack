@@ -65,6 +65,11 @@ public class AnsibleRunner {
     }
 
     private String targetIp;
+    /** targetUuid is an unique resource for cache (see /usr/local/zstack/ansible/.ansible.cache/$targetUuid/),
+     *  it should be a phsical resource,
+     *  it it option.
+    */
+    private String targetUuid;
     private String username;
     private String password;
     private String privateKey;
@@ -129,6 +134,14 @@ public class AnsibleRunner {
 
     public void setTargetIp(String targetIp) {
         this.targetIp = targetIp;
+    }
+
+    public String getTargetUuid() {
+        return targetUuid;
+    }
+
+    public void setTargetUuid(String targetUuid) {
+        this.targetUuid = targetUuid;
     }
 
     public String getUsername() {
@@ -261,6 +274,7 @@ public class AnsibleRunner {
     private void callAnsible(final ReturnValueCompletion<Boolean> completion) {
         RunAnsibleMsg msg = new RunAnsibleMsg();
         msg.setTargetIp(targetIp);
+        msg.setTargetUuid(targetUuid);
         msg.setPrivateKeyFile(privKeyFile);
         msg.setArguments(arguments);
         msg.setAnsibleExecutable(ansibleExecutable);

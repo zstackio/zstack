@@ -2709,6 +2709,7 @@ public class KVMHost extends HostBase implements Host {
                             runner.installChecker(callbackChecker);
                             runner.setAgentPort(KVMGlobalProperty.AGENT_PORT);
                             runner.setTargetIp(getSelf().getManagementIp());
+                            runner.setTargetUuid(getSelf().getUuid());
                             runner.setPlayBookName(KVMConstant.ANSIBLE_PLAYBOOK_NAME);
                             runner.setUsername(getSelf().getUsername());
                             runner.setPassword(getSelf().getPassword());
@@ -2776,6 +2777,7 @@ public class KVMHost extends HostBase implements Host {
                                         AnsibleRunner runner = new AnsibleRunner();
                                         runner.setAgentPort(KVMGlobalProperty.AGENT_PORT);
                                         runner.setTargetIp(getSelf().getManagementIp());
+                                        runner.setTargetUuid(getSelf().getUuid());
                                         runner.setUsername(getSelf().getUsername());
                                         runner.setPassword(getSelf().getPassword());
                                         runner.setSshPort(getSelf().getPort());
