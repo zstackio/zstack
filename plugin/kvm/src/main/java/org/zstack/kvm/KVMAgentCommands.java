@@ -2148,4 +2148,8 @@ public class KVMAgentCommands {
 
     public static class UpdateSpiceChannelConfigResponse extends AgentResponse {
     }
+
+    public static class PrimaryStorageCommand extends AgentCommand {
+        public String primaryStorageUuid;
+    }
 }

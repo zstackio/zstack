@@ -901,6 +901,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 eq(PrimaryStorageVO_.uuid, psUuid).
                 select(PrimaryStorageVO_.url).
                 findValue();
+        cmd.primaryStorageUuid = psUuid;
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
         msg.setPath(path);

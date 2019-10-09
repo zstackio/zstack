@@ -87,7 +87,7 @@ public class KvmBackend extends HypervisorBackend {
     public KvmBackend() {
     }
 
-    public static class AgentCmd extends KVMAgentCommands.AgentCommand {
+    public static class AgentCmd extends KVMAgentCommands.PrimaryStorageCommand {
         public String mountPoint;
     }
 
@@ -250,6 +250,7 @@ public class KvmBackend extends HypervisorBackend {
 
     private <T extends AgentRsp> void httpCall(String path, final String hostUuid, AgentCmd cmd, boolean noCheckStatus, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
         cmd.mountPoint = self.getMountPath();
+        cmd.primaryStorageUuid = self.getUuid();
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);

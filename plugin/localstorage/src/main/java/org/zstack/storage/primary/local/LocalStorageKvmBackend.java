@@ -92,7 +92,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     private PluginRegistry pluginRgty;
 
 
-    public static class AgentCommand extends KVMAgentCommands.AgentCommand {
+    public static class AgentCommand extends KVMAgentCommands.PrimaryStorageCommand {
         public String uuid;
         public String storagePath;
     }
@@ -168,7 +168,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
-    public static class CreateEmptyVolumeCmd extends Qcow2Cmd {
+    public static class CreateEmptyVolumeCmd extends AgentCommand {
         private String installUrl;
         private long size;
         private String accountUuid;
@@ -882,6 +882,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     protected <T extends AgentResponse> void httpCall(String path, final String hostUuid, AgentCommand cmd, boolean noCheckStatus, final Class<T> rspType, final ReturnValueCompletion<T> completion) {
         cmd.uuid = self.getUuid();
         cmd.storagePath = self.getUrl();
+        cmd.primaryStorageUuid = cmd.uuid;
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
