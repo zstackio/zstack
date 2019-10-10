@@ -58,6 +58,7 @@ public enum VmInstanceState {
                 new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
                 new Transaction(VmInstanceStateEvent.rebooting, VmInstanceState.Rebooting),
                 new Transaction(VmInstanceStateEvent.migrating, VmInstanceState.Migrating),
+                new Transaction(VmInstanceStateEvent.volumeMigrating, VmInstanceState.Migrating),
                 new Transaction(VmInstanceStateEvent.pausing, VmInstanceState.Pausing),
                 new Transaction(VmInstanceStateEvent.paused, VmInstanceState.Paused),
                 new Transaction(VmInstanceStateEvent.unknown, VmInstanceState.Unknown)
@@ -79,6 +80,7 @@ public enum VmInstanceState {
         );
         Migrating.transactions(
                 new Transaction(VmInstanceStateEvent.migrated, VmInstanceState.Running),
+                new Transaction(VmInstanceStateEvent.volumeMigrated, VmInstanceState.Running),
                 new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
                 new Transaction(VmInstanceStateEvent.paused, VmInstanceState.Paused),
                 new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
