@@ -1,5 +1,7 @@
 package org.zstack.storage.backup.sftp;
 
+import org.zstack.header.agent.CancelCommand;
+
 public class SftpBackupStorageCommands {
     public static class AgentCommand {
         public String uuid;
@@ -373,6 +375,15 @@ public class SftpBackupStorageCommands {
 
         public void setOut(String out) {
             this.out = out;
+        }
+    }
+
+    public static class CancelCommand extends AgentCommand implements org.zstack.header.agent.CancelCommand {
+        private String cancellationApiId;
+
+        @Override
+        public void setCancellationApiId(String cancellationApiId) {
+            this.cancellationApiId = cancellationApiId;
         }
     }
 }

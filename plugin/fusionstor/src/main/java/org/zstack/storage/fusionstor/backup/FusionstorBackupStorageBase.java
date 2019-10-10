@@ -16,6 +16,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.image.CancelDownloadImageMsg;
+import org.zstack.header.image.CancelDownloadImageReply;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.APIMessage;
@@ -377,6 +379,13 @@ public class FusionstorBackupStorageBase extends BackupStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    @Override
+    protected void handle(CancelDownloadImageMsg msg) {
+        CancelDownloadImageReply reply = new CancelDownloadImageReply();
+        reply.setError(operr("fusionstor backup storage do not support to cancel download image"));
+        bus.reply(msg, reply);
     }
 
     @Override

@@ -2,6 +2,7 @@ package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
+import org.zstack.core.agent.AgentConstant
 import org.zstack.core.db.Q
 import org.zstack.storage.ceph.CephPoolCapacity
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
@@ -97,6 +98,11 @@ class CephBackupStorageSpec extends BackupStorageSpec {
             simulator(CephBackupStorageBase.DELETE_IMAGE_PATH) {
                 return new CephBackupStorageBase.DeleteRsp()
             }
+
+            simulator(AgentConstant.CANCEL_JOB) {
+                return new CephBackupStorageBase.AgentResponse()
+            }
+
 
             simulator(CephBackupStorageBase.CHECK_IMAGE_METADATA_FILE_EXIST) {
                 def rsp = new CephBackupStorageBase.CheckImageMetaDataFileExistRsp()

@@ -18,6 +18,7 @@ import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
+import org.zstack.core.agent.AgentConstant;
 import org.zstack.core.ansible.*;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
@@ -148,6 +149,7 @@ public class KVMHost extends HostBase implements Host {
     private String shutdownHost;
     private String updateVmPriorityPath;
     private String updateSpiceChannelConfigPath;
+    private String cancelJob;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -280,6 +282,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH);
         updateSpiceChannelConfigPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(AgentConstant.CANCEL_JOB);
+        cancelJob = ub.build().toString();
     }
 
     class Http<T> {
@@ -444,7 +450,9 @@ public class KVMHost extends HostBase implements Host {
             handle((GetKVMHostDownloadCredentialMsg) msg);
         } else if (msg instanceof ShutdownHostMsg) {
             handle((ShutdownHostMsg) msg);
-        } else  {
+        } else if (msg instanceof CancelHostTaskMsg) {
+            handle((CancelHostTaskMsg) msg);
+        } else {
             super.handleLocalMessage(msg);
         }
     }
@@ -3146,6 +3154,42 @@ public class KVMHost extends HostBase implements Host {
                         return "test-ssh-port-open-for-kvm-host";
                     }
                 });
+            }
+        });
+    }
+
+    private void handle(final CancelHostTaskMsg msg) {
+        CancelHostTaskReply reply = new CancelHostTaskReply();
+        cancelJob(msg.getCancellationApiId(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void cancelJob(String apiId, Completion completion) {
+        CancelCmd cmd = new CancelCmd();
+        cmd.setCancellationApiId(apiId);
+        new Http<>(cancelJob, cmd, CancelRsp.class).call(new ReturnValueCompletion<CancelRsp>(completion) {
+            @Override
+            public void success(CancelRsp ret) {
+                if (ret.isSuccess()) {
+                    completion.success();
+                } else {
+                    completion.fail(Platform.operr("%s", ret.getError()));
+                }
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
             }
         });
     }

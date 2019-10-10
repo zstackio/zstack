@@ -5,4 +5,9 @@
         <id>1000</id>
         <description>long job has been canceled</description>
     </code>
+
+    <code>
+        <id>1001</id>
+        <description>no cancelable running task, please wait for job to cancel itself off or try again later.</description>
+    </code>
 </error>

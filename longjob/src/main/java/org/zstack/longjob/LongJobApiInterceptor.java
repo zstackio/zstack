@@ -126,9 +126,6 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
         if (state == LongJobState.Succeeded) {
             throw new ApiMessageInterceptionException(argerr("cannot cancel longjob that is succeeded"));
         }
-        if (state == LongJobState.Canceled) {
-            throw new ApiMessageInterceptionException(argerr("cannot cancel longjob that is already canceled"));
-        }
         if (state == LongJobState.Failed) {
             throw new ApiMessageInterceptionException(argerr("cannot cancel longjob that is failed"));
         }

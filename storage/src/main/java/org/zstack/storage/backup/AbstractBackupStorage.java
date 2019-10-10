@@ -2,6 +2,7 @@ package org.zstack.storage.backup;
 
 import org.zstack.core.Platform;
 import org.zstack.core.statemachine.StateMachine;
+import org.zstack.header.image.CancelDownloadImageMsg;
 import org.zstack.header.storage.backup.*;
 import org.zstack.utils.message.OperationChecker;
 
@@ -20,6 +21,7 @@ public abstract class AbstractBackupStorage implements BackupStorage {
         statusChecker.addState(BackupStorageStatus.Connected.toString(),
                 DeleteBitsOnBackupStorageMsg.class.getName(),
                 DownloadImageMsg.class.getName(),
+				CancelDownloadImageMsg.class.getName(),
                 DownloadVolumeMsg.class.getName()
         );
 

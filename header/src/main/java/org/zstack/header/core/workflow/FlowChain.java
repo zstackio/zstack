@@ -1,7 +1,10 @@
 package org.zstack.header.core.workflow;
 
+import org.zstack.header.errorcode.ErrorCode;
+
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  */
@@ -27,6 +30,8 @@ public interface FlowChain {
     FlowChain putData(Map.Entry... es);
 
     FlowChain setName(String name);
+
+    FlowChain preCheck(Function<Map, ErrorCode> checker);
 
     void setProcessors(List<FlowChainProcessor> processors);
 

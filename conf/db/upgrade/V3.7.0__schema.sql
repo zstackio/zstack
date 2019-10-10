@@ -156,3 +156,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MulticastRouterVpcVRouterRefVO` (
     CONSTRAINT fkMulticastRouterVpcVRouterRefVOVpcRouterVmVO FOREIGN KEY (vpcRouterUuid) REFERENCES VpcRouterVmVO (uuid) ON DELETE CASCADE,
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE INDEX idxLongJobVOapiId ON LongJobVO (apiId);

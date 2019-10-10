@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
+import org.zstack.core.agent.AgentConstant;
 import org.zstack.core.ansible.*;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -15,8 +16,7 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.image.ImageBackupStorageRefInventory;
-import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -208,6 +208,35 @@ public class SftpBackupStorage extends BackupStorageBase {
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
+    protected void handle(final CancelDownloadImageMsg msg) {
+        CancelDownloadImageReply reply = new CancelDownloadImageReply();
+
+        CancelCommand cmd = new CancelCommand();
+        cmd.setCancellationApiId(msg.getCancellationApiId());
+
+        restf.asyncJsonPost(buildUrl(AgentConstant.CANCEL_JOB), cmd, new JsonAsyncRESTCallback<AgentResponse>(msg) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(AgentResponse rsp) {
+                if (!rsp.isSuccess()) {
+                    reply.setError(operr("fail to cancel download image, because %s", rsp.getError()));
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<AgentResponse> getReturnClass() {
+                return AgentResponse.class;
             }
         });
     }

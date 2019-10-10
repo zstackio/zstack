@@ -19,4 +19,6 @@ public class AgentConstant {
 
     public static final String CONFIG_COMMAND_URL = "commandUrl";
 
+    public static final String CANCEL_JOB = "/job/cancel";
+
 }

@@ -32,7 +32,9 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.host.CancelHostTasksMsg;
 import org.zstack.header.host.DetachIsoOnPrimaryStorageMsg;
+import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -308,6 +310,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((DeleteBitsOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateTemplateFromVolumeOnPrimaryStorageMsg) {
             handleBase((CreateTemplateFromVolumeOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CancelJobOnPrimaryStorageMsg) {
+            handle((CancelJobOnPrimaryStorageMsg) msg);
         } else if (msg instanceof PrimaryStorageDeletionMsg) {
             handle((PrimaryStorageDeletionMsg) msg);
         } else if (msg instanceof DetachPrimaryStorageFromClusterMsg) {
@@ -660,6 +664,23 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         new PrimaryStorageValidater().disable().maintenance()
                 .validate();
             handle(msg);
+    }
+
+    protected void handle(CancelJobOnPrimaryStorageMsg msg) {
+        CancelJobOnPrimaryStorageReply reply = new CancelJobOnPrimaryStorageReply();
+        CancelHostTasksMsg cmsg = new CancelHostTasksMsg();
+        cmsg.setCancellationApiId(msg.getCancellationApiId());
+        bus.makeLocalServiceId(cmsg, HostConstant.SERVICE_ID);
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                }
+
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final DetachPrimaryStorageFromClusterMsg msg) {
