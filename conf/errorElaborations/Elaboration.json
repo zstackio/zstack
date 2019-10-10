@@ -1016,6 +1016,14 @@
     "message_en": "the management network is not reachable"
   },
   {
+    "category": "Vm",
+    "code": "1000",
+    "method": "regex",
+    "regex": "Destination PrimaryStorageType is .* but the selected BackupStorageType for source Volume is .* which cannot be matched",
+    "message_cn": "克隆指定的主存储类型是 %1$s，但源主存储对应的备份存储类型是 %2$s,这两者不能匹配使用,请重新检查参数",
+    "message_en": "Destination PrimaryStorageType is %1$s but the selected BackupStorageType for source Volume is %2$s, which cannot be matched"
+  },
+  {
     "category": "Volume",
     "code": "1000",
     "method": "regex",

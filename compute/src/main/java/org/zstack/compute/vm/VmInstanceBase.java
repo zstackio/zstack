@@ -106,7 +106,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     @Autowired
     protected VmInstanceDeletionPolicyManager deletionPolicyMgr;
     @Autowired
-    private HostAllocatorManager hostAllocatorMgr;
+    protected HostAllocatorManager hostAllocatorMgr;
     @Autowired
     private VmPriorityOperator priorityOperator;
 
