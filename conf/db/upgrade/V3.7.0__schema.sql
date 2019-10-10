@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SNSSmsReceiverVO`
     `phoneNumber`  varchar(24) NOT NULL,
     `endpointUuid` varchar(32) NOT NULL,
     `type`         varchar(24) NOT NULL,
+    `lastOpDate`   timestamp ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`   timestamp,
     PRIMARY KEY (`uuid`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8;
