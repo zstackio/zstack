@@ -152,6 +152,7 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
                 }
 
                 DhcpStruct struct = new DhcpStruct();
+                struct.setVmUuid(nic.getVmInstanceUuid());
                 struct.setGateway(ip.getGateway());
                 String hostname = CollectionUtils.find(spec.getHostnames(), new Function<String, HostName>() {
                     @Override

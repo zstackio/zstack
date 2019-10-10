@@ -23,6 +23,7 @@ public class DhcpStruct {
     private String  firstIp;
     private String  endIP;
     private Integer prefixLength;
+    private String  vmUuid;
 
     @Override
     public String toString() {
@@ -155,5 +156,13 @@ public class DhcpStruct {
 
     public void setPrefixLength(Integer prefixLength) {
         this.prefixLength = prefixLength;
+    }
+
+    public String getVmUuid() {
+        return vmUuid;
+    }
+
+    public void setVmUuid(String vmUuid) {
+        this.vmUuid = vmUuid;
     }
 }

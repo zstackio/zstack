@@ -262,12 +262,17 @@ public class IpRangeInventory implements Serializable {
         ipr.setName(msg.getName());
         ipr.setDescription(msg.getDescription());
 
-        String gateway = subnet.getLowAddress();
-        String startIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()) + 1);
-        String endIp = subnet.getHighAddress();
-        ipr.setGateway(gateway);
-        ipr.setStartIp(startIp);
-        ipr.setEndIp(endIp);
+        String lowAddress = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()));
+        String highAddress = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()));
+        if (msg.getGateway() == null || msg.getGateway().equals(lowAddress)) {
+            ipr.setGateway(lowAddress);
+            ipr.setStartIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()) + 1));
+            ipr.setEndIp(subnet.getHighAddress());
+        } else if (msg.getGateway().equals(highAddress)){
+            ipr.setGateway(highAddress);
+            ipr.setStartIp(lowAddress);
+            ipr.setEndIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()) - 1));
+        }
         ipr.setNetmask(subnet.getNetmask());
         ipr.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(subnet.getNetmask()));
         ipr.setL3NetworkUuid(msg.getL3NetworkUuid());

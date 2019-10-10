@@ -37,6 +37,9 @@ public class AddIpRangeByNetworkCidrAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String networkCidr;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String gateway;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
