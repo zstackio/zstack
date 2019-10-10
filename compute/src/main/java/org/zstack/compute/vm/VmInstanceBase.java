@@ -663,9 +663,17 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                         logger.debug(String.format("HaStartVmJudger[%s] says the VM[uuid:%s, name:%s] is qualified for HA start, now we are starting it",
                                 judger.getClass(), self.getUuid(), self.getName()));
-                        SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid())
+                        UpdateQuery sql = SQL.New(VmInstanceVO.class)
+                                .eq(VmInstanceVO_.uuid, self.getUuid())
                                 .set(VmInstanceVO_.state, VmInstanceState.Stopped)
-                                .update();
+                                .set(VmInstanceVO_.hostUuid, null);
+
+                        if (self.getHostUuid() != null) {
+                            sql.set(VmInstanceVO_.lastHostUuid, self.getHostUuid());
+                        }
+
+                        sql.update();
+
                         startVm(msg, new Completion(msg, chain) {
                             @Override
                             public void success() {

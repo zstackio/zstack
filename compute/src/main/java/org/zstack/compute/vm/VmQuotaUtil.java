@@ -67,9 +67,8 @@ public class VmQuotaUtil {
         return vsize;
     }
 
-
     @Transactional(readOnly = true)
-    public VmQuota getUsedVmCpuMemory(String accountUUid) {
+    public VmQuota getUsedVmCpuMemory(String accountUUid, String excludeVmUuid) {
         VmQuota quota = new VmQuota();
         // get running info
         String sql = "select count(vm), sum(vm.cpuNum), sum(vm.memorySize)" +
@@ -79,12 +78,22 @@ public class VmQuotaUtil {
                 " and ref.resourceType = :rtype" +
                 " and not (vm.state = :starting and vm.hostUuid is null)" +
                 " and vm.state not in (:states)";
+
+        if (excludeVmUuid != null) {
+            sql += " and vm.uuid != (:excludeVmUuid)";
+        }
+
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("auuid", accountUUid);
         q.setParameter("rtype", VmInstanceVO.class.getSimpleName());
         q.setParameter("starting", VmInstanceState.Starting);
         q.setParameter("states", list(VmInstanceState.Stopped, VmInstanceState.Destroying,
                 VmInstanceState.Destroyed, VmInstanceState.Created));
+
+        if (excludeVmUuid != null) {
+            q.setParameter("excludeVmUuid", excludeVmUuid);
+        }
+
         Tuple t = q.getSingleResult();
         Long vnum = t.get(0, Long.class);
         quota.runningVmNum = vnum == null ? 0 : vnum;
@@ -108,6 +117,11 @@ public class VmQuotaUtil {
         quota.totalVmNum = totalVmNum == null ? 0 : totalVmNum;
 
         return quota;
+    }
+
+    @Transactional(readOnly = true)
+    public VmQuota getUsedVmCpuMemory(String accountUUid) {
+        return getUsedVmCpuMemory(accountUUid, null);
     }
 
     @Transactional(readOnly = true)
