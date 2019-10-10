@@ -7,7 +7,8 @@ public enum IdentityErrors {
     INVALID_SESSION(1001),
     PERMISSION_DENIED(1002),
     QUOTA_EXCEEDING(1003),
-    QUOTA_INVALID_OP(1004);
+    QUOTA_INVALID_OP(1004),
+    NEED_CHANGE_PASSWORD(1005);
 
     private String code;
 

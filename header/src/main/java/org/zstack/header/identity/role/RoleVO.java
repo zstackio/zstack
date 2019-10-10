@@ -26,6 +26,8 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String description;
     @Column
+    private String identity;
+    @Column
     private Timestamp createDate;
     @Column
     private Timestamp lastOpDate;
@@ -53,6 +55,7 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
         vo.state = RoleState.Enabled;
         vo.description = description;
         vo.type = type;
+        vo.identity = identity;
         return vo;
     }
 
@@ -133,5 +136,13 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public String getIdentity() {
+        return identity;
+    }
+
+    public void setIdentity(String identity) {
+        this.identity = identity;
     }
 }

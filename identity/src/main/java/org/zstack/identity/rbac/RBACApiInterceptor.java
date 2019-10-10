@@ -9,10 +9,12 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.identity.PolicyStatement;
+import org.zstack.header.identity.role.RoleIdentity;
 import org.zstack.header.identity.role.RoleType;
 import org.zstack.header.identity.role.RoleVO;
 import org.zstack.header.identity.role.RoleVO_;
 import org.zstack.header.identity.role.api.APIAddPolicyStatementsToRoleMsg;
+import org.zstack.header.identity.role.api.APICreateRoleMsg;
 import org.zstack.header.identity.role.api.APIDeleteRoleMsg;
 import org.zstack.header.identity.role.api.APIUpdateRoleMsg;
 import org.zstack.header.message.APIMessage;
@@ -35,9 +37,25 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
             validate((APIUpdateRoleMsg) msg);
         } else if (msg instanceof APIAddPolicyStatementsToRoleMsg) {
             validate((APIAddPolicyStatementsToRoleMsg) msg);
-        }
+        } else if (msg instanceof APICreateRoleMsg) {
+            validate((APICreateRoleMsg) msg);
+        } 
 
         return msg;
+    }
+
+    private void validate(APICreateRoleMsg msg) {
+        if (msg.getIdentity() == null){
+            return;
+        }
+
+        RoleIdentity roleIdentity = RoleIdentity.valueOf(msg.getIdentity());
+
+        if (msg.getStatements() == null) {
+            return;
+        }
+
+        roleIdentity.getRoleIdentityValidators().forEach(validator -> validator.validateRolePolicy(roleIdentity, msg.getStatements()));
     }
 
     private void validate(APIAddPolicyStatementsToRoleMsg msg) {
@@ -73,6 +91,15 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
         if (Q.New(RoleVO.class).in(RoleVO_.type, list(RoleType.Predefined, RoleType.System)).eq(RoleVO_.uuid, msg.getUuid()).isExists()) {
             throw new ApiMessageInterceptionException(argerr("cannot update a system or predefined role"));
         }
+
+        RoleVO vo = Q.New(RoleVO.class).eq(RoleVO_.uuid, msg.getRoleUuid()).find();
+
+        if (vo.getIdentity() == null) {
+            return;
+        }
+
+        RoleIdentity roleIdentity = RoleIdentity.valueOf(vo.getIdentity());
+        roleIdentity.getRoleIdentityValidators().forEach(validator -> validator.validateRolePolicy(roleIdentity, msg.getStatements()));
     }
 
 

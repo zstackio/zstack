@@ -17,9 +17,10 @@ import org.zstack.header.identity.role.*;
 import org.zstack.header.identity.role.api.APICreateRoleEvent;
 import org.zstack.header.identity.role.api.APICreateRoleMsg;
 import org.zstack.header.identity.role.api.RoleMessage;
-import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.identity.IdentityGlobalConfig;
+import org.zstack.identity.IdentityResourceGenerateExtensionPoint;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -30,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class RBACManagerImpl extends AbstractService implements RBACManager, Component, PrepareDbInitialValueExtensionPoint {
+public class RBACManagerImpl extends AbstractService implements RBACManager, Component, IdentityResourceGenerateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(RBACManagerImpl.class);
 
     private static PolicyMatcher matcher = new PolicyMatcher();
@@ -136,6 +137,7 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                 vo.setName(msg.getName());
                 vo.setDescription(msg.getDescription());
                 vo.setType(RoleType.Customized);
+                vo.setIdentity(msg.getIdentity());
                 vo.setAccountUuid(msg.getSession().getAccountUuid());
                 persist(vo);
 
@@ -174,7 +176,12 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
     }
 
     @Override
-    public void prepareDbInitialValue() {
+    public String getIdentityType() {
+        return AccountConstant.identityType.toString();
+    }
+
+    @Override
+    public void prepareResources() {
         new SQLBatch() {
             @Override
             protected void scripts() {

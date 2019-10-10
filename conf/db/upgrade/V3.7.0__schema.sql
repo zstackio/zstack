@@ -160,3 +160,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MulticastRouterVpcVRouterRefVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE INDEX idxLongJobVOapiId ON LongJobVO (apiId);
+
+ALTER TABLE `zstack`.`RoleVO` ADD COLUMN identity VARCHAR(64) DEFAULT NULL;

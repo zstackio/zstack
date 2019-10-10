@@ -10,6 +10,7 @@ import java.sql.Timestamp;
 public class RoleVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<RoleVO, String> name;
     public static volatile SingularAttribute<RoleVO, String> description;
+    public static volatile SingularAttribute<RoleVO, String> identity;
     public static volatile SingularAttribute<RoleVO, RoleType> type;
     public static volatile SingularAttribute<RoleVO, RoleState> state;
     public static volatile SingularAttribute<RoleVO, Timestamp> createDate;
