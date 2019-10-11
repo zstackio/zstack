@@ -18,6 +18,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.step.StepRun;
 import org.zstack.core.step.StepRunCondition;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.core.trash.StorageTrash;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -87,6 +88,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     private NfsPrimaryStorageManager nfsMgr;
     @Autowired
     private EventFacade eventf;
+    @Autowired
+    private StorageTrash trash;
     @Autowired
     protected ApiTimeoutManager timeoutManager;
 
@@ -670,6 +673,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         NfsToNfsMigrateBitsCmd cmd = new NfsToNfsMigrateBitsCmd();
         cmd.srcFolderPath = msg.getSrcFolderPath();
         cmd.dstFolderPath = msg.getDstFolderPath();
+        cmd.filtPaths = trash.findTrashInstallPath(msg.getSrcFolderPath(), msg.getSrcPrimaryStorageUuid());
         cmd.isMounted = mounted;
 
         if (!mounted) {
