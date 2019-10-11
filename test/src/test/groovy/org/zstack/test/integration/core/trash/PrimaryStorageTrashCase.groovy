@@ -196,7 +196,7 @@ class PrimaryStorageTrashCase extends SubCase {
 
         def result = action.call()
 
-        assert result.error != null
+        assert result.error == null
 
         trashs = getTrashOnPrimaryStorage {
             uuid = ps.uuid

@@ -149,23 +149,84 @@ public class StorageRecycleImpl implements StorageTrash, VolumeDeletionExtension
         return InstallPathRecycleInventory.valueOf(vo);
     }
 
-    private boolean makeSureInstallPathNotUsedByVolume(String installPath) {
-        return !Q.New(VolumeVO.class).eq(VolumeVO_.installPath, installPath).isExists() &&
-                !Q.New(ImageCacheVO.class).eq(ImageCacheVO_.installUrl, installPath).isExists() &&
-                !Q.New(VolumeSnapshotVO.class).like(VolumeSnapshotVO_.primaryStorageInstallPath, installPath + "@%").isExists();
+    private String checkVolume(String installPath) {
+        List<String> uuids = Q.New(VolumeVO.class).eq(VolumeVO_.installPath, installPath).select(VolumeVO_.uuid).listValues();
+        if (uuids.size() > 0) {
+            return String.format("%s is still in using by volume %s, cannot remove it from trash before delete them", installPath, uuids);
+        }
+        return null;
     }
 
-    private boolean makeSureInstallPathNotUsedByImage(String installPath) {
-        return !Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.installPath, installPath).isExists();
+    private String checkImageCache(String installPath) {
+        List<String> ids = Q.New(ImageCacheVO.class).eq(ImageCacheVO_.installUrl, installPath).select(ImageCacheVO_.id).listValues();
+        if (ids.size() > 0) {
+            return String.format("%s is still in using by imagecache %s, cannot remove it from trash before delete them", installPath, ids);
+        }
+        return null;
     }
 
-    private boolean makeSureInstallPathNotUsedBySnapshot(String installPath) {
-        return !Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.primaryStorageInstallPath, installPath).isExists() &&
-                !Q.New(ImageCacheVO.class).eq(ImageCacheVO_.installUrl, installPath).isExists();
+    private String checkCephVolumeSnapshot(String installPath) {
+        List<String> uuids = Q.New(VolumeSnapshotVO.class).like(VolumeSnapshotVO_.primaryStorageInstallPath, installPath + "@%").select(VolumeSnapshotVO_.uuid).listValues();
+        if (uuids.size() > 0) {
+            return String.format("%s is still in using by volumesnapshot %s, cannot remove it from trash before delete them", installPath, uuids);
+        }
+        return null;
+    }
+
+    private String checkVolumeSnapshot(String installPath) {
+        List<String> uuids = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.primaryStorageInstallPath, installPath).select(VolumeSnapshotVO_.uuid).listValues();
+        if (uuids.size() > 0) {
+            return String.format("%s is still in using by volumesnapshot %s, cannot remove it from trash before delete them", installPath, uuids);
+        }
+        return checkCephVolumeSnapshot(installPath);
+    }
+
+    private String checkImage(String installPath) {
+        List<String> uuids = Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.installPath, installPath).select(ImageBackupStorageRefVO_.imageUuid).listValues();
+        if (uuids.size() > 0) {
+            return String.format("%s is still in using by image %s, cannot remove it from trash before delete them", installPath, uuids);
+        }
+        return null;
+    }
+
+    private String makeSureInstallPathNotUsedByVolume(String installPath) {
+        String details = checkVolume(installPath);
+        if (details != null) {
+            return details;
+        }
+        details = checkImageCache(installPath);
+        if (details != null) {
+            return details;
+        }
+        details = checkCephVolumeSnapshot(installPath);
+        if (details != null) {
+            return details;
+        }
+        return null;
+    }
+
+    private String makeSureInstallPathNotUsedByImage(String installPath) {
+        String details = checkImage(installPath);
+        if (details != null) {
+            return details;
+        }
+        return null;
+    }
+
+    private String makeSureInstallPathNotUsedBySnapshot(String installPath) {
+        String details = checkVolumeSnapshot(installPath);
+        if (details != null) {
+            return details;
+        }
+        details = checkImageCache(installPath);
+        if (details != null) {
+            return details;
+        }
+        return null;
     }
 
     @Override
-    public boolean makeSureInstallPathNotUsed(InstallPathRecycleInventory inv) {
+    public String makeSureInstallPathNotUsed(InstallPathRecycleInventory inv) {
         if (inv.getResourceType().equals(VolumeVO.class.getSimpleName())) {
             return makeSureInstallPathNotUsedByVolume(inv.getInstallPath());
         } else if (inv.getResourceType().equals(ImageVO.class.getSimpleName())) {
@@ -173,7 +234,7 @@ public class StorageRecycleImpl implements StorageTrash, VolumeDeletionExtension
         } else if (inv.getResourceType().equals(VolumeSnapshotVO.class.getSimpleName())) {
             return makeSureInstallPathNotUsedBySnapshot(inv.getInstallPath());
         }
-        return true;
+        return null;
     }
 
     @Override

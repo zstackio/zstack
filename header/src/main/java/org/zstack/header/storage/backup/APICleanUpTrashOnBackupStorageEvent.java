@@ -32,7 +32,8 @@ public class APICleanUpTrashOnBackupStorageEvent extends APIEvent {
     public static APICleanUpTrashOnBackupStorageEvent __example__() {
         APICleanUpTrashOnBackupStorageEvent event = new APICleanUpTrashOnBackupStorageEvent();
         CleanTrashResult cleaned = new CleanTrashResult();
-        cleaned.setResourceUuids(Collections.singletonList(uuid()));
+        String uuid = uuid();
+        cleaned.setResourceUuids(Collections.singletonList(uuid));
         cleaned.setSize(1024000L);
 
         event.setResult(cleaned);

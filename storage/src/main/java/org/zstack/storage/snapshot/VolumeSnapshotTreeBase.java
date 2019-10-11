@@ -1481,7 +1481,7 @@ public class VolumeSnapshotTreeBase {
                     public void run(FlowTrigger trigger, Map data) {
                         reportProgress("10");
                         if (!VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {
-                            logger.debug(String.format("skip create snapshot because of global config"));
+                            logger.debug("skip create snapshot because of global config");
                             trigger.next();
                             return;
                         }
