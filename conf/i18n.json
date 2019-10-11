@@ -21854,15 +21854,14 @@
     "fileName": "src/zstack/./storage/src/main/java/org/zstack/storage/primary/PrimaryStorageManagerImpl.java"
   },
   {
-    "raw": "after subtracting reserved capacity[%s], there is no primary storage having required size[%s bytes] with the threshold of primary storage physical capacity[%f]",
-    "en_US": "after subtracting reserved capacity[{0}], there is no primary storage having required size[{1} bytes] with the threshold of primary storage physical capacity[{2}]",
+    "raw": "after subtracting reserved capacity[%s], there is no primary storage having required size[%s bytes], may be the threshold of primary storage physical capacity setting is lower",
+    "en_US": "after subtracting reserved capacity[{0}], there is no primary storage having required size[{1} bytes], may be the threshold of primary storage physical capacity setting is lower",
     "zh_CN": "",
     "arguments": [
       "PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value()",
-      "spec.getSize()",
-      "physicalCapacityMgr.getGlobalRatio()"
+      "spec.getSize()"
     ],
-    "line": 56,
+    "line": 55,
     "fileName": "src/zstack/./storage/src/main/java/org/zstack/storage/primary/PrimaryStorageReservedCapacityAllocatorFlow.java"
   },
   {

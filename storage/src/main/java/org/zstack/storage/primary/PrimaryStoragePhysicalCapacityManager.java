@@ -8,6 +8,8 @@ import java.util.Map;
  * Created by frank on 11/9/2015.
  */
 public interface PrimaryStoragePhysicalCapacityManager {
+    void setGlobalConfig(String category, String name);
+
     void setGlobalRatio(double ratio);
 
     double getGlobalRatio();
