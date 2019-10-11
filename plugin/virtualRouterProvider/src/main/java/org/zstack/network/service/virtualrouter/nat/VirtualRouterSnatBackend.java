@@ -429,7 +429,14 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
     }
 
     private Vip getVipWithSnatService(VirtualRouterVmInventory vr, VmNicInventory nic){
-        String vipUuid = Q.New(VipVO.class).eq(VipVO_.usedIpUuid, vr.getPublicNic().getUsedIpUuid()).select(VipVO_.uuid).findValue();
+        String vipUuid = null;
+        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            vipUuid = ext.getPublicIpUuid(vr.getUuid(), vr.getPublicNic().getL3NetworkUuid());
+        }
+
+        if (vipUuid == null) {
+            vipUuid = Q.New(VipVO.class).eq(VipVO_.usedIpUuid, vr.getPublicNic().getUsedIpUuid()).select(VipVO_.uuid).findValue();
+        }
         if (vipUuid == null){
             return null;
         }
