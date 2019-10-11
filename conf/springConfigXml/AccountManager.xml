@@ -36,7 +36,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.header.Service"/>
-            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" order="9998"/>
+            <zstack:extension interface="org.zstack.identity.IdentityResourceGenerateExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
@@ -44,11 +44,23 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" order="9001"/>
             <zstack:extension interface="org.zstack.header.Service"/>
-            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" order="9999"/>
             <zstack:extension interface="org.zstack.core.db.SoftDeleteEntityExtensionPoint"/>
             <zstack:extension interface="org.zstack.core.db.HardDeleteEntityExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
             <zstack:extension interface="org.zstack.header.rest.RestAuthenticationBackend"/>
+            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" order="9999"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="IAMIdentityResourceGenerator" class="org.zstack.identity.IAMIdentityResourceGenerator">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.identity.IdentityResourceGenerateExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="SystemIdentityResourceGenerator" class="org.zstack.identity.SystemIdentityResourceGenerator">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" order="9998"/>
         </zstack:plugin>
     </bean>
 

@@ -29,6 +29,14 @@ public class RoleInventory  {
         return this.description;
     }
 
+    public java.lang.String identity;
+    public void setIdentity(java.lang.String identity) {
+        this.identity = identity;
+    }
+    public java.lang.String getIdentity() {
+        return this.identity;
+    }
+
     public RoleType type;
     public void setType(RoleType type) {
         this.type = type;

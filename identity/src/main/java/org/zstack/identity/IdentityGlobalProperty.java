@@ -7,4 +7,6 @@ import org.zstack.core.GlobalPropertyDefinition;
 public class IdentityGlobalProperty {
     @GlobalProperty(name = "identity.authorizationBackend.session.cache.size", defaultValue = "500")
     public static int AUTHORIZATION_SESSION_CACHE_SIZE;
+    @GlobalProperty(name = "identity.init.type", defaultValue = "IAM,IAM2")
+    public static String IDENTITY_INIT_TYPE;
 }

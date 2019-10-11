@@ -12,6 +12,7 @@ public class RoleInventory {
     private String uuid;
     private String name;
     private String description;
+    private String identity;
     private RoleType type;
     private RoleState state;
     private Timestamp createDate;
@@ -26,6 +27,7 @@ public class RoleInventory {
         inv.type = vo.getType();
         inv.state = vo.getState();
         inv.description = vo.getDescription();
+        inv.identity = vo.getIdentity();
         inv.createDate = vo.getCreateDate();
         inv.lastOpDate = vo.getLastOpDate();
         inv.statements = RolePolicyStatementInventory.valueOf(vo.getStatements());
@@ -107,5 +109,13 @@ public class RoleInventory {
 
     public void setPolicies(List<RolePolicyRefInventory> policies) {
         this.policies = policies;
+    }
+
+    public String getIdentity() {
+        return identity;
+    }
+
+    public void setIdentity(String identity) {
+        this.identity = identity;
     }
 }

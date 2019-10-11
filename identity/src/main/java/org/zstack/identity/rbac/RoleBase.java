@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
@@ -23,6 +24,8 @@ public class RoleBase implements Role {
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     protected RoleVO self;
 
@@ -195,6 +198,10 @@ public class RoleBase implements Role {
     }
 
     private void handle(APIDeleteRoleMsg msg) {
+        for(DeleteRoleExtensionPoint ext : pluginRgty.getExtensionList(DeleteRoleExtensionPoint.class)) {
+            ext.beforeDeleteRole(msg.getRoleUuid());
+        }
+
         SQL.New(RoleVO.class).eq(RoleVO_.uuid, msg.getUuid()).hardDelete();
         bus.publish(new APIDeleteRoleEvent(msg.getId()));
     }

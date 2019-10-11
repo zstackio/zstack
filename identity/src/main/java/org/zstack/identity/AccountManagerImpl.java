@@ -1,11 +1,9 @@
 package org.zstack.identity;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -13,7 +11,6 @@ import org.zstack.core.config.*;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.APIIsOpensourceVersionMsg;
@@ -26,18 +23,16 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
-import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
-import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
 import org.zstack.header.identity.Quota.QuotaPair;
-import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APIParam;
+import org.zstack.header.message.Message;
 import org.zstack.header.rest.RestAuthenticationBackend;
 import org.zstack.header.rest.RestAuthenticationParams;
 import org.zstack.header.rest.RestAuthenticationType;
 import org.zstack.header.rest.RestException;
 import org.zstack.header.vo.*;
-import org.zstack.identity.rbac.PolicyCreationExtensionPoint;
 import org.zstack.identity.rbac.PolicyUtils;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
@@ -50,20 +45,16 @@ import javax.persistence.TypedQuery;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.header.identity.AccountConstant.ACCOUNT_REST_AUTHENTICATION_TYPE;
-import static org.zstack.utils.CollectionDSL.list;
 
-public class AccountManagerImpl extends AbstractService implements AccountManager, PrepareDbInitialValueExtensionPoint,
-        SoftDeleteEntityExtensionPoint, HardDeleteEntityExtensionPoint,
-        ApiMessageInterceptor, RestAuthenticationBackend {
+public class AccountManagerImpl extends AbstractService implements AccountManager, SoftDeleteEntityExtensionPoint,
+        HardDeleteEntityExtensionPoint, ApiMessageInterceptor, RestAuthenticationBackend, PrepareDbInitialValueExtensionPoint {
     private static final CLogger logger = Utils.getLogger(AccountManagerImpl.class);
 
     @Autowired
@@ -83,8 +74,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     @Autowired
     private GlobalConfigFacade gcf;
 
-    private String readAPIsForNormalAccountJSONStatement;
-
     private List<String> resourceTypeForAccountRef = new ArrayList<>();
     private Map<String, Class> resourceTypeClassMap = new HashMap<>();
     private Map<String, Class> childrenResourceTypeClassMap = new HashMap<>();
@@ -95,6 +84,27 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     private HashSet<Class> accountApiControlInternal = new HashSet<>();
     private List<Quota> definedQuotas = new ArrayList<>();
 
+    @Override
+    public void prepareDbInitialValue() {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                if (!q(AccountVO.class)
+                        .eq(AccountVO_.name, AccountConstant.INITIAL_SYSTEM_ADMIN_NAME)
+                        .eq(AccountVO_.type, AccountType.SystemAdmin).isExists()) {
+                    AccountVO vo = new AccountVO();
+                    vo.setUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
+                    vo.setName(AccountConstant.INITIAL_SYSTEM_ADMIN_NAME);
+                    vo.setPassword(AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD);
+                    vo.setType(AccountType.SystemAdmin);
+                    persist(vo);
+                    flush();
+
+                    logger.debug(String.format("Created initial system admin account[name:%s]", AccountConstant.INITIAL_SYSTEM_ADMIN_NAME));
+                }
+            }
+        }.execute();
+    }
     class AccountCheckField {
         Field field;
         APIParam param;
@@ -216,9 +226,17 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             handle((APIIsOpensourceVersionMsg) msg);
         } else if (msg instanceof APIRenewSessionMsg) {
             handle((APIRenewSessionMsg) msg);
+        } else if (msg instanceof APIGetSupportedIdentityModelsMsg) {
+            handle((APIGetSupportedIdentityModelsMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetSupportedIdentityModelsMsg msg) {
+        APIGetSupportedIdentityModelsReply reply = new APIGetSupportedIdentityModelsReply();
+        reply.setConfigs(Arrays.asList(IdentityGlobalProperty.IDENTITY_INIT_TYPE.split(",")));
+        bus.reply(msg, reply);
     }
 
     private void handle(APIIsOpensourceVersionMsg msg) {
@@ -483,7 +501,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
                 p.setUuid(Platform.getUuid());
                 p.setAccountUuid(vo.getUuid());
                 p.setName("DEFAULT-READ");
-                p.setData(readAPIsForNormalAccountJSONStatement);
+                p.setData(IAMIdentityResourceGenerator.readAPIsForNormalAccountJSONStatement);
                 persist(p);
                 reload(p);
 
@@ -522,25 +540,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     @Override
     public String getId() {
         return bus.makeLocalServiceId(AccountConstant.SERVICE_ID);
-    }
-
-    private void makeReadAPIsForNormalAccountJSONStatement() {
-        List<String> readAPIs = new ArrayList<>();
-        APIMessage.apiMessageClasses.forEach(clz -> {
-            if (APISyncCallMessage.class.isAssignableFrom(clz) && !RBAC.isAdminOnlyAPI(clz.getName())) {
-                readAPIs.add(clz.getName());
-            }
-        });
-
-
-        readAPIs.add(APIUpdateUserMsg.class.getName());
-
-        PolicyStatement s = PolicyStatement.builder().name("read-apis-for-normal-account")
-                .effect(StatementEffect.Allow)
-                .actions(readAPIs)
-                .build();
-
-        readAPIsForNormalAccountJSONStatement = JSONObjectUtil.toJsonString(list(s)).replace("\\", "");
     }
 
     private void buildResourceTypes() throws ClassNotFoundException {
@@ -901,36 +900,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             expiredSessionCollector.cancel(true);
         }
         return true;
-    }
-
-    @Override
-    public void prepareDbInitialValue() {
-        try {
-            makeReadAPIsForNormalAccountJSONStatement();
-
-            new SQLBatch() {
-                @Override
-                protected void scripts() {
-                    if (!q(AccountVO.class)
-                            .eq(AccountVO_.name, AccountConstant.INITIAL_SYSTEM_ADMIN_NAME)
-                            .eq(AccountVO_.type, AccountType.SystemAdmin).isExists()) {
-                        AccountVO vo = new AccountVO();
-                        vo.setUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID);
-                        vo.setName(AccountConstant.INITIAL_SYSTEM_ADMIN_NAME);
-                        vo.setPassword(AccountConstant.INITIAL_SYSTEM_ADMIN_PASSWORD);
-                        vo.setType(AccountType.SystemAdmin);
-                        persist(vo);
-                        flush();
-
-                        logger.debug(String.format("Created initial system admin account[name:%s]", AccountConstant.INITIAL_SYSTEM_ADMIN_NAME));
-                    }
-
-                    sql(PolicyVO.class).eq(PolicyVO_.name, "DEFAULT-READ").set(PolicyVO_.data, readAPIsForNormalAccountJSONStatement).update();
-                }
-            }.execute();
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to create default system admin account", e);
-        }
     }
 
     @Override

@@ -1,15 +1,12 @@
 package org.zstack.tag;
 
 import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.Platform;
 import org.zstack.core.db.EntityMetadata;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.UserTagVO;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.RestrictByExprExtensionPoint;
 import org.zstack.header.zql.ZQLExtensionContext;
-import org.zstack.identity.AccountManager;
 import org.zstack.zql.ast.ZQLMetadata;
 
 import java.util.HashMap;
@@ -18,9 +15,6 @@ import java.util.Map;
 public class TagZQLExtension implements RestrictByExprExtensionPoint {
     public static final String USER_TAG_NAME = "__userTag__";
     public static final String SYS_TAG_NAME = "__systemTag__";
-
-    @Autowired
-    private AccountManager acntMgr;
 
     private static Map<String, String> FALSE_OP = new HashMap();
 

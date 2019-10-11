@@ -22,6 +22,8 @@ public class APICreateRoleMsg extends APICreateMessage {
     private List<PolicyStatement> statements;
     @APIParam(resourceType = PolicyVO.class, required = false)
     private List<String> policyUuids;
+    @APIParam(required = false, maxLength = 255, emptyString = false)
+    private String identity;
 
     public List<String> getPolicyUuids() {
         return policyUuids;
@@ -53,6 +55,14 @@ public class APICreateRoleMsg extends APICreateMessage {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getIdentity() {
+        return identity;
+    }
+
+    public void setIdentity(String identity) {
+        this.identity = identity;
     }
 
     public static APICreateRoleMsg __example__() {

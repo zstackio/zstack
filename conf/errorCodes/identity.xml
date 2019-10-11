@@ -22,9 +22,13 @@
     </code>
 
     <code>
-        <id>1004</id>id>
-        <description>Invalid quota operation</description>>
+        <id>1004</id>
+        <description>Invalid quota operation</description>
     </code>
-    >
+
+    <code>
+        <id>1005</id>
+        <description>The user has to change initial password</description>
+    </code>
 </error>
 
