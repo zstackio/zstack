@@ -109,6 +109,7 @@ public class NfsCopyImageCacheJob implements Job {
                         msg.setHostUuid(host.getUuid());
                         msg.setSrcFolderPath(srcCacheFolderPath);
                         msg.setDstFolderPath(dstCacheFolderPath);
+                        msg.setSrcPrimaryStorageUuid(srcPrimaryStorage.getUuid());
                         msg.setPrimaryStorageUuid(dstPrimaryStorage.getUuid());
                         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, dstPrimaryStorage.getUuid());
                         bus.send(msg, new CloudBusCallBack(trigger) {

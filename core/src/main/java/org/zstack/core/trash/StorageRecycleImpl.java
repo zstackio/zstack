@@ -377,6 +377,18 @@ public class StorageRecycleImpl implements StorageTrash, VolumeDeletionExtension
     }
 
     @Override
+    public List<String> findTrashInstallPath(String installPath, String storageUuid) {
+        List<String> trashInstallPath = new ArrayList<>();
+        List<InstallPathRecycleVO> vos = Q.New(InstallPathRecycleVO.class).eq(InstallPathRecycleVO_.storageUuid, storageUuid).list();
+        for (InstallPathRecycleVO vo: vos) {
+            if (vo.getInstallPath().startsWith(installPath)) {
+                trashInstallPath.add(vo.getInstallPath().substring(installPath.length()));
+            }
+        }
+        return trashInstallPath;
+    }
+
+    @Override
     public boolean stop() {
         return true;
     }
