@@ -43,7 +43,7 @@ import java.util.stream.Collectors
  * Created by xing5 on 2016/12/21.
  */
 class RestDocumentationGenerator implements DocumentGenerator {
-    static CLogger logger = Utils.getLogger(RestDocumentationGenerator.class)
+    static CLogger logger = Utils.getLogger(DocumentGenerator.class)
 
     String rootPath
 
@@ -155,7 +155,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
         Set<Class> apiClasses = Platform.getReflections().getTypesAnnotatedWith(RestRequest.class).findAll { it.isAnnotationPresent(RestRequest.class) }
         Set<String> noDocClasses = Platform.getReflections().getTypesAnnotatedWith(NoDoc.class)
                 .stream().map{ c -> c.getSimpleName() }.collect(Collectors.toSet())
-        System.out.println("no doc classes: ${noDocClasses}".toString())
+        logger.info("no doc classes: ${noDocClasses}".toString())
 
         String specifiedClasses = System.getProperty("classes")
 
@@ -175,7 +175,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
         def errInfo = []
         apiClasses.each {
             def docPath = getDocTemplatePathFromClass(it)
-            System.out.println("processing ${docPath}")
+            logger.info("processing ${docPath}")
             try {
                 def md = APIQueryMessage.class.isAssignableFrom(it) ? new QueryMarkDown(docPath) : new MarkDown(docPath)
                 File f = new File(PathUtil.join(resultDir, md.doc._category, "${it.canonicalName.replaceAll("\\.", "_")}.md"))
@@ -184,10 +184,10 @@ class RestDocumentationGenerator implements DocumentGenerator {
                 }
 
                 f.write(md.generate())
-                System.out.println("written ${f.absolutePath}")
+                logger.info("written ${f.absolutePath}")
             } catch (Exception e) {
                 if (ignoreError()) {
-                    System.out.println("failed to process ${docPath}, ${e.message}")
+                    logger.info("failed to process ${docPath}, ${e.message}")
                     logger.warn(e.message, e)
                 } else if (e instanceof FileNotFoundException) {
                     errInfo.add(e.message)
@@ -1508,10 +1508,10 @@ ${txt}
 
 
                 if (v instanceof Enum) {
-                    System.out.println("generating enum ${responseClass.name}.${k} ${v.class.getSimpleName()}")
+                    logger.info("generating enum ${responseClass.name}.${k} ${v.class.getSimpleName()}")
                     fieldStrings.add(createField(k, "", v.class.getSimpleName()))
                 } else if (v instanceof Field) {
-                    System.out.println("generating field ${responseClass.name}.${k} ${v.type.name}")
+                    logger.info("generating field ${responseClass.name}.${k} ${v.type.name}")
                     if (PRIMITIVE_TYPES.contains(v.type)) {
                         fieldStrings.add(createField(k, "", v.type.simpleName))
                     } else if (v.type.name.startsWith("java.")) {
@@ -1794,7 +1794,7 @@ ${paramString}
 
         void repair(String docFilePath) {
             if (!new File(docFilePath).exists()) {
-                System.out.println("cannot find ${docFilePath}, not way to repair, you need to generate it first")
+                logger.info("cannot find ${docFilePath}, not way to repair, you need to generate it first")
                 return
             }
 
@@ -1803,7 +1803,7 @@ ${paramString}
             oldDoc.merge(newDoc)
 
             new File(docFilePath).write generate(oldDoc)
-            System.out.println("re-written a request doc template ${docFilePath}")
+            logger.info("re-written a request doc template ${docFilePath}")
         }
 
         void generateDocFile(DocMode mode) {
@@ -1811,15 +1811,15 @@ ${paramString}
 
             if (mode == DocMode.RECREATE_ALL) {
                 new File(docFilePath).write generate()
-                System.out.println("written a request doc template ${docFilePath}")
+                logger.info("written a request doc template ${docFilePath}")
             } else if (mode == DocMode.REPAIR) {
                 repair(docFilePath)
             } else if (mode == DocMode.CREATE_MISSING) {
                 if (!new File(docFilePath).exists()) {
                     new File(docFilePath).write generate()
-                    System.out.println("written a request doc template ${docFilePath}")
+                    logger.info("written a request doc template ${docFilePath}")
                 } else {
-                    System.out.println("${docFilePath} exists, skip it")
+                    logger.info("${docFilePath} exists, skip it")
                 }
             } else {
                 throw new CloudRuntimeException("unknown doc mode ${mode}")
@@ -1849,10 +1849,10 @@ ${paramString}
         Set<Class> resolved = []
 
         aClasses.each {
-            System.out.println("generating response doc template for class[${it.name}]")
+            logger.info("generating response doc template for class[${it.name}]")
             String path = getDocTemplatePathFromClass(it)
             if (new File(path).exists() && mode != DocMode.RECREATE_ALL) {
-                System.out.println("${path} exists, skip it")
+                logger.info("${path} exists, skip it")
                 return
             }
 
@@ -1888,7 +1888,7 @@ ${paramString}
             docFiles.each { k, v ->
                 def f = new File(k)
                 f.write(v)
-                System.out.println("written doc template ${k}")
+                logger.info("written doc template ${k}")
             }
         }
     }
