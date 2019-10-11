@@ -748,12 +748,12 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             }
         }
 
-        if (hostsToLoad.isEmpty()) {
-            return;
-        }
-
         if (skipConnected) {
             hostsToLoad.removeAll(connected);
+        }
+
+        if (hostsToLoad.isEmpty()) {
+            return;
         }
 
         String serviceId = bus.makeLocalServiceId(HostConstant.SERVICE_ID);
