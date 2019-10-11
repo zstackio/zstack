@@ -11,6 +11,7 @@ import java.util.List;
 @SDK
 public class CleanTrashResult {
     private List<String> resourceUuids = new ArrayList<>();
+    private List<String> details = new ArrayList<>();
     private Long size = 0L;
 
     public List<String> getResourceUuids() {
@@ -27,5 +28,13 @@ public class CleanTrashResult {
 
     public void setSize(Long size) {
         this.size = size;
+    }
+
+    public List<String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(List<String> details) {
+        this.details = details;
     }
 }

@@ -11,6 +11,12 @@ doc {
 		since "3.3.0"
 	}
 	field {
+		name "details"
+		desc "清理掉数据详情"
+		type "List"
+		since "3.7.0"
+	}
+	field {
 		name "size"
 		desc "清理数据总大小"
 		type "Long"

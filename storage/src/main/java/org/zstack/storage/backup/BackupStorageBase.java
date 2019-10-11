@@ -509,8 +509,11 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             return;
         }
 
-        if (!trash.makeSureInstallPathNotUsed(inv)) {
-            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
+        String details = trash.makeSureInstallPathNotUsed(inv);
+        if (details != null) {
+            result.getDetails().add(details);
+//            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
+            completion.success(result);
             return;
         }
         DeleteBitsOnBackupStorageMsg msg = new DeleteBitsOnBackupStorageMsg();
@@ -558,8 +561,10 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
         List<ErrorCode> errs = new ArrayList<>();
         new While<>(trashs).all((inv, coml) -> {
-            if (!trash.makeSureInstallPathNotUsed(inv)) {
-                errs.add(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
+            String details = trash.makeSureInstallPathNotUsed(inv);
+            if (details != null) {
+                result.getDetails().add(details);
+//                errs.add(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
                 coml.done();
                 return;
             }

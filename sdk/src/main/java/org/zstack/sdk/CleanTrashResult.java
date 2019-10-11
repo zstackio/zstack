@@ -1,6 +1,7 @@
 package org.zstack.sdk;
 
 
+import java.util.List;
 
 public class CleanTrashResult  {
 
@@ -10,6 +11,14 @@ public class CleanTrashResult  {
     }
     public java.util.List getResourceUuids() {
         return this.resourceUuids;
+    }
+
+    public java.util.List details;
+    public List getDetails() {
+        return details;
+    }
+    public void setDetails(List details) {
+        this.details = details;
     }
 
     public java.lang.Long size;

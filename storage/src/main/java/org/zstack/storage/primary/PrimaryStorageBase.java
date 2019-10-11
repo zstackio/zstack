@@ -810,8 +810,11 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             return;
         }
 
-        if (!trash.makeSureInstallPathNotUsed(inv)) {
-            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
+        String details = trash.makeSureInstallPathNotUsed(inv);
+        if (details != null) {
+            result.getDetails().add(details);
+//            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
+            completion.success(result);
             return;
         }
         DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();

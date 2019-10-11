@@ -167,7 +167,8 @@ class BackupStorageTrashCase extends SubCase {
         action.sessionId = adminSession()
 
         def result = action.call()
-        assert result.error != null
+        assert result.error == null
+        assert result.value.result.details != null
 
         trashs = getTrashOnBackupStorage {
             uuid = bs.uuid
