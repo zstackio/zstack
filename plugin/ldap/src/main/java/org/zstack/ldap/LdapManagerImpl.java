@@ -529,6 +529,9 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         this.saveLdapCleanBindingFilterTag(msg.getSystemTags(), ldapServerVO.getUuid());
         this.saveLdapServerTypeTag(msg.getSystemTags(), ldapServerVO.getUuid());
         this.saveLdapUseAsLoginNameTag(msg.getSystemTags(), ldapServerVO.getUuid());
+        for (UpdateLdapServerExtensionPoint ext : pluginRgty.getExtensionList(UpdateLdapServerExtensionPoint.class)) {
+            ext.afterUpdateLdapServer(msg);
+        }
 
         bus.publish(evt);
     }
