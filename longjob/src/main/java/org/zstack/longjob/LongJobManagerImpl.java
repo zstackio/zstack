@@ -620,10 +620,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             operation = getLoadOperation(vo);
         }
 
-        if (operation == LongJobOperation.Cancel || operation == LongJobOperation.Rerun) {
-            return;
-        }
-
         Runnable cleanup = ThreadContextUtils.saveThreadContext();
         Defer.defer(cleanup);
         // launch the waiting jobs
@@ -638,6 +634,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             logger.info(String.format("start to resume longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
             job.resume(vo);
             dbf.update(vo);
+        } else if (operation == LongJobOperation.Cancel) {
+            LongJobUtils.updateByUuid(vo.getUuid(), it -> it.setState(LongJobState.Canceled));
         }
     }
 
@@ -646,6 +644,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             return LongJobOperation.Start;
         } else if (vo.getState() == LongJobState.Running || vo.getState() == LongJobState.Suspended) {
             return LongJobOperation.Resume;
+        } else if (vo.getState() == LongJobState.Canceling) {
+            return LongJobOperation.Cancel;
         }
         return null;
     }
