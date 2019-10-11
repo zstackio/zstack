@@ -4,7 +4,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "从角色移除权限描述的结果"
 
 	ref {
 		name "error"
