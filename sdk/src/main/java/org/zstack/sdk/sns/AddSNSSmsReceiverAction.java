@@ -34,6 +34,9 @@ public class AddSNSSmsReceiverAction extends AbstractAction {
     @Param(required = true, validValues = {"AliyunSms"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
