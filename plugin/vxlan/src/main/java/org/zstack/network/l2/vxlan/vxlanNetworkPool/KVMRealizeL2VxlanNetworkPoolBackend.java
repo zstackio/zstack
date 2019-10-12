@@ -220,14 +220,12 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                     return;
                 }
 
-                List<Integer> vnis = vxlanNetworkVOS.stream()
-                        .map(v -> v.getVni())
-                        .collect(Collectors.toList());
+                Map<String, Integer> l2networks = vxlanNetworkVOS.stream()
+                        .collect(Collectors.toMap(VxlanNetworkVO::getUuid, VxlanNetworkVO::getVni));
 
                 final VxlanKvmAgentCommands.CreateVxlanBridgesCmd cmd = new VxlanKvmAgentCommands.CreateVxlanBridgesCmd();
                 cmd.setVtepIp((String) data.get(VTEP_IP));
-                cmd.setVnis(vnis);
-                cmd.setL2NetworkUuid(l2Network.getUuid());
+                cmd.setL2Networks(l2networks);
                 cmd.setPeers(vteps.stream()
                         .map(v -> v.getVtepIp())
                         .filter(v -> !v.equals(cmd.getVtepIp()))
@@ -251,14 +249,14 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                         VxlanKvmAgentCommands.CreateVxlanBridgeResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.CreateVxlanBridgeResponse.class);
                         if (!rsp.isSuccess()) {
                             ErrorCode err = operr("failed to realize vxlan network pool[uuid:%s, type:%s, vnis:%s] on kvm host[uuid:%s], because %s",
-                                    l2Network.getUuid(), l2Network.getType(), vnis, hostUuid, rsp.getError());
+                                    l2Network.getUuid(), l2Network.getType(), l2networks, hostUuid, rsp.getError());
                             trigger.fail(err);
                             return;
                         }
 
                         String info = String.format(
                                 "successfully realize vxlan network pool[uuid:%s, type:%s, vnis:%s] on kvm host[uuid:%s]",
-                                l2Network.getUuid(), l2Network.getType(), vnis, hostUuid);
+                                l2Network.getUuid(), l2Network.getType(), l2networks, hostUuid);
                         logger.debug(info);
 
                         for (VxlanNetworkVO vo : vxlanNetworkVOS) {

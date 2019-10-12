@@ -249,10 +249,10 @@ class VxlanVtepIpChangedCase extends SubCase {
             return new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd()
         }
 
-        def realizeRecords = [] as SynchronizedList<VxlanKvmAgentCommands.CreateVxlanBridgesCmd>
+        def realizeRecords = [] as SynchronizedList<Integer>
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORKS_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(entity.body, VxlanKvmAgentCommands.CreateVxlanBridgesCmd.class)
-            realizeRecords.add(cmd.vnis)
+            realizeRecords.addAll(cmd.l2Networks.values())
             return new VxlanKvmAgentCommands.CreateVxlanBridgesCmd()
         }
 
@@ -268,7 +268,7 @@ class VxlanVtepIpChangedCase extends SubCase {
         }
 
         assert realizeRecords.size() == 1
-        assert realizeRecords.get(0) == [vxlan.vni]
+        assert realizeRecords.get(0) == vxlan.vni
 
         rebootVmInstance { uuid = vm1.uuid }
     }
