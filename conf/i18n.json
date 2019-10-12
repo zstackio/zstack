@@ -11725,7 +11725,7 @@
   {
     "raw": "Licensed VM number overrun",
     "en_US": "Licensed VM number overrun",
-    "zh_CN": "",
+    "zh_CN": "VM数量超过云主机授权上限",
     "arguments": [],
     "line": 846,
     "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/license/LicenseManagerImpl.java"
