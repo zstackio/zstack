@@ -4,13 +4,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Created by mingjian.deng on 2018/5/22.
- * only hide or skip dump msg logger, usually uses for password
+ * Created by MaJin on 2019/9/22.
+ * mask sensitive info in log, usually uses for password.
  */
 @Target({java.lang.annotation.ElementType.FIELD})
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 public @interface NoLogging {
-    enum Type {
+    enum Behavior {
         Auto,
         Mask;
 
@@ -23,5 +23,20 @@ public @interface NoLogging {
         }
     }
 
-    Type type() default Type.Mask;
+    enum Type {
+        Simple,
+        Uri;
+
+        public boolean simple() {
+            return this == Simple;
+        }
+
+        public boolean uri() {
+            return this == Uri;
+        }
+    }
+
+    Behavior behavior() default Behavior.Mask;
+
+    Type type() default Type.Simple;
 }

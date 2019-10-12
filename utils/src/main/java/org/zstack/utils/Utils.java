@@ -15,27 +15,30 @@ import org.zstack.utils.stopwatch.StopWatchImpl;
 import org.zstack.utils.tester.ZTester;
 import org.zstack.utils.tester.ZTesterImpl;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 public class Utils {
 	private static ArraySpliter arraySpliter = null;
 	private static FieldPrinter fieldPrinter = null;
 	private static PathUtils pathUtil = null;
 
-    private static ThreadLocal<Set<String>> maskWords = ThreadLocal.withInitial(Collections::emptySet);
+    private static ThreadLocal<Map<String, String>> maskWords = ThreadLocal.withInitial(Collections::emptyMap);
 
+    private static Pattern simpleWordsPattern = Pattern.compile("^[a-zA-Z0-9]*$");
     static final Function<String, String> defaultRewriter = raw -> {
-        for (String s : maskWords.get()) {
-            raw = raw.replace(String.format(": \"%s\"", s), ": \"*****\"").
-                    replace(String.format(":\"%s\"", s), ":\"*****\"");
+        for (Map.Entry<String, String> s : maskWords.get().entrySet()) {
+            if (simpleWordsPattern.matcher(s.getKey()).matches()) {
+                raw = raw.replaceAll('"' + s.getKey() + "\"(?=[^:])", '"' + s.getValue() + '"');
+            } else {
+                raw = raw.replace('"' + s.getKey() + '"', '"' + s.getValue() + '"');
+            }
         }
         return raw;
     };
 
-    public static Set<String> getLogMaskWords() {
+    public static Map<String, String> getLogMaskWords() {
         return maskWords.get();
     }
 
@@ -44,8 +47,8 @@ public class Utils {
     }
 
     public static class MaskWords implements AutoCloseable {
-        public MaskWords(Set<String> words) {
-            maskWords.set(new HashSet<>(words));
+        public MaskWords(Map<String, String> words) {
+            maskWords.set(new HashMap<>(words));
         }
 
         @Override

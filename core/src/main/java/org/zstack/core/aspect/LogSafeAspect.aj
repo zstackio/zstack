@@ -2,11 +2,10 @@ package org.zstack.core.aspect;
 
 import org.zstack.core.log.LogSafeGson;
 import org.zstack.header.log.HasSensitiveInfo;
-import org.zstack.header.message.Message;
 import org.zstack.utils.Utils;
 
 import java.util.Collections;
-import java.util.Set;
+import java.util.Map;
 
 /**
  * Created by MaJin on 2019/9/23.
@@ -45,7 +44,7 @@ public aspect LogSafeAspect {
     }
 
     void around(org.zstack.header.log.HasSensitiveInfo obj) : args(obj) && execution(void *.handle(HasSensitiveInfo+)) {
-        Set<String> maskWords = getValuesToMask(obj);
+        Map<String, String> maskWords = getValuesToMask(obj);
         if (maskWords.isEmpty()) {
             proceed(obj);
             return;
@@ -56,11 +55,11 @@ public aspect LogSafeAspect {
         }
     }
 
-    private Set<String> getValuesToMask(HasSensitiveInfo msg) {
+    private Map<String, String> getValuesToMask(HasSensitiveInfo msg) {
         try {
             return LogSafeGson.getValuesToMask(msg);
         } catch (Throwable t) {
-            return Collections.emptySet();
+            return Collections.emptyMap();
         }
     }
 }

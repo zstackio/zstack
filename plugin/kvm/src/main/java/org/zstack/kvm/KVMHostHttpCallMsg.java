@@ -10,7 +10,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 
 public abstract class KVMHostHttpCallMsg extends NeedReplyMessage implements HostMessage, CarrierMessage, HasSensitiveInfo {
     private String path;
-    @NoLogging(type = NoLogging.Type.Auto)
+    @NoLogging(behavior = NoLogging.Behavior.Auto)
     @NoJsonSchema
     private Object command;
     private String hostUuid;

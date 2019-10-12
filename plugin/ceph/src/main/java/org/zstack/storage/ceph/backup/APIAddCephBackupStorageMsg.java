@@ -29,7 +29,7 @@ import java.util.List;
 )
 public class APIAddCephBackupStorageMsg extends APIAddBackupStorageMsg implements HasSensitiveInfo {
     @APIParam(nonempty = false, emptyString = false)
-    @NoLogging
+    @NoLogging(type = NoLogging.Type.Uri)
     private List<String> monUrls;
     @APIParam(required = false, maxLength = 255)
     private String poolName;

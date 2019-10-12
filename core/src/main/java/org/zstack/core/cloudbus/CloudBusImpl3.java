@@ -526,7 +526,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
             HttpHeaders headers = new HttpHeaders();
             HttpEntity<String> req = new HttpEntity<>(CloudBusGson.toJson(msg), headers);
-            Set<String> hideValues = msg instanceof HasSensitiveInfo ? LogSafeGson.getValuesToMask((HasSensitiveInfo) msg) : Collections.emptySet();
+            Map<String, String> hideValues = msg instanceof HasSensitiveInfo ? LogSafeGson.getValuesToMask((HasSensitiveInfo) msg) : Collections.emptyMap();
             try (Utils.MaskWords h = new Utils.MaskWords(hideValues)) {
                 ResponseEntity<String> rsp = new Retry<ResponseEntity<String>>() {
                     {

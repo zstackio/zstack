@@ -2,6 +2,8 @@ package org.zstack.header.image;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.*;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
@@ -22,12 +24,13 @@ import java.util.concurrent.TimeUnit;
         responseClass = APIAddImageEvent.class
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
-public class APIAddImageMsg extends APICreateMessage implements APIAuditor {
+public class APIAddImageMsg extends APICreateMessage implements APIAuditor, HasSensitiveInfo {
     @APIParam(maxLength = 255)
     private String name;
     @APIParam(required = false, maxLength = 2048)
     private String description;
     @APIParam(maxLength = 1024)
+    @NoLogging(type = NoLogging.Type.Uri)
     private String url;
     @APIParam(required = false, validValues = {"RootVolumeTemplate", "ISO", "DataVolumeTemplate"})
     private String mediaType;

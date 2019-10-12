@@ -9,7 +9,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
  * Created by xing5 on 2016/7/21.
  */
 public class OverlayMessage extends NeedReplyMessage implements HasSensitiveInfo {
-    @NoLogging(type = NoLogging.Type.Auto)
+    @NoLogging(behavior = NoLogging.Behavior.Auto)
     protected Object message;
     protected String messageClassName;
 
