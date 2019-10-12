@@ -52,9 +52,8 @@ public class PrimaryStorageReservedCapacityAllocatorFlow extends NoRollbackFlow 
         }
 
         if (ret.isEmpty()) {
-            //NOTE(weiw): all primary storage physical capacity ratio are equal to global now, it may need change to physicalCapacityMgr.getAllRatio() when not
-            throw new OperationFailureException(operr("after subtracting reserved capacity[%s], there is no primary storage having required size[%s bytes] with the threshold of primary storage physical capacity[%f]",
-                            PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value(), spec.getSize(), physicalCapacityMgr.getGlobalRatio()));
+            throw new OperationFailureException(operr("after subtracting reserved capacity[%s], there is no primary storage having required size[%s bytes], may be the threshold of primary storage physical capacity setting is lower",
+                            PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value(), spec.getSize()));
         }
 
         data.put(AllocatorParams.CANDIDATES, ret);

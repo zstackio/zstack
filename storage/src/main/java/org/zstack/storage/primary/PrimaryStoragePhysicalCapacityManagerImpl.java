@@ -1,6 +1,10 @@
 package org.zstack.storage.primary;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,6 +15,19 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PrimaryStoragePhysicalCapacityManagerImpl implements PrimaryStoragePhysicalCapacityManager {
     private double globalRatio = 1;
     private ConcurrentHashMap<String, Double> primaryStorageRatio = new ConcurrentHashMap<String, Double>();
+    private GlobalConfig globalConfig;
+
+    @Autowired
+    GlobalConfigFacade gcf;
+
+    @Autowired
+    ResourceConfigFacade rcf;
+
+    @Override
+    public void setGlobalConfig(String category, String name) {
+        globalConfig = gcf.getAllConfig().get(GlobalConfig.produceIdentity(category, name));
+        globalRatio = globalConfig.value(Double.class);
+    }
 
     @Override
     public void setGlobalRatio(double ratio) {
@@ -35,7 +52,15 @@ public class PrimaryStoragePhysicalCapacityManagerImpl implements PrimaryStorage
     @Override
     public double getRatio(String psUuid) {
         Double ratio = primaryStorageRatio.get(psUuid);
-        return  ratio == null ? globalRatio : ratio;
+        if (ratio != null) {
+            return ratio;
+        }
+
+        if (globalConfig != null) {
+            return rcf.getResourceConfigValue(globalConfig, psUuid, Double.class);
+        } else {
+            return globalRatio;
+        }
     }
 
     @Override
