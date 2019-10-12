@@ -1,5 +1,6 @@
 package org.zstack.appliancevm;
 
+import edu.emory.mathcs.backport.java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -22,9 +23,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -90,6 +89,7 @@ public class ApplianceVmSyncConfigToHaGroupFlow implements Flow {
         SQL.New(ApplianceVmVO.class).eq(ApplianceVmVO_.uuid, inv.getUuid()).set(ApplianceVmVO_.haStatus, ApplianceVmHaStatus.Backup).update();
 
         for (ApplianceVmSyncConfigToHaGroupExtensionPoint exp : exps) {
+            logger.debug("sync config to ha group for " + exp.getClass().getSimpleName());
             exp.applianceVmSyncConfigToHa(ApplianceVmInventory.valueOf(applianceVmVO), haUuid);
         }
 
@@ -108,7 +108,11 @@ public class ApplianceVmSyncConfigToHaGroupFlow implements Flow {
             return;
         }
 
-        for (ApplianceVmSyncConfigToHaGroupExtensionPoint exp : pluginRgty.getExtensionList(ApplianceVmSyncConfigToHaGroupExtensionPoint.class)) {
+        List<ApplianceVmSyncConfigToHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(ApplianceVmSyncConfigToHaGroupExtensionPoint.class);
+        List<ApplianceVmSyncConfigToHaGroupExtensionPoint> tmp = new ArrayList<>(exps.size());
+        tmp.addAll(exps);
+        Collections.reverse(tmp);
+        for (ApplianceVmSyncConfigToHaGroupExtensionPoint exp : tmp) {
             exp.applianceVmSyncConfigToHaRollback(ApplianceVmInventory.valueOf(applianceVmVO), haUuid);
         }
 

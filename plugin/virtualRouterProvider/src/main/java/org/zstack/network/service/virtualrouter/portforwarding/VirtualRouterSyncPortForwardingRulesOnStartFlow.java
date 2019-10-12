@@ -206,8 +206,9 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
     public void rollback(FlowRollback chain, Map data) {
         VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
         List<String> ruleUuids = (List<String>) data.get(VirtualRouterSyncPortForwardingRulesOnStartFlow.class.getName());
-
-        proxy.detachNetworkService(vr.getUuid(), PortForwardingRuleVO.class.getSimpleName(), ruleUuids);
+        if (ruleUuids != null) {
+            proxy.detachNetworkService(vr.getUuid(), PortForwardingRuleVO.class.getSimpleName(), ruleUuids);
+        }
 
         chain.rollback();
     }

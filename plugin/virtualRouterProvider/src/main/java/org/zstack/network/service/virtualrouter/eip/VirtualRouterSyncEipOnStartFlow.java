@@ -211,7 +211,9 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
     public void rollback(FlowRollback trigger, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
         List<String> eipUuids = (List<String>) data.get(VirtualRouterSyncEipOnStartFlow.class.getName());
-        proxy.detachNetworkService(vr.getUuid(), EipVO.class.getSimpleName(), eipUuids);
+        if (eipUuids != null) {
+            proxy.detachNetworkService(vr.getUuid(), EipVO.class.getSimpleName(), eipUuids);
+        }
 
         trigger.rollback();
     }
