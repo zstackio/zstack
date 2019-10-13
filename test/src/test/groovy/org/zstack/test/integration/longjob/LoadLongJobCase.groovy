@@ -45,6 +45,7 @@ class LoadLongJobCase extends SubCase {
             gson = new Gson()
             longJobManager = bean(LongJobManager.class)
             testSubmitLongJobCase()
+            testLoadCancelingJob()
             testLoadWaitingJob()
         }
     }
@@ -94,6 +95,23 @@ class LoadLongJobCase extends SubCase {
 
         for (LongJobVO vo : vos) {
             assert vo.getState() == LongJobState.Failed
+        }
+    }
+
+    void testLoadCancelingJob() {
+        SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid)
+                .set(LongJobVO_.managementNodeUuid, null)
+                .set(LongJobVO_.state, LongJobState.Canceling)
+                .update()
+
+        longJobManager.loadLongJob()
+
+        List<LongJobVO> vos = Q.New(LongJobVO.class).notNull(LongJobVO_.managementNodeUuid).list()
+
+        assert vos.size() == 1
+
+        for (LongJobVO vo : vos) {
+            assert vo.getState() == LongJobState.Canceled
         }
     }
 

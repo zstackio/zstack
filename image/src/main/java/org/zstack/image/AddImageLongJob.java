@@ -16,12 +16,9 @@ import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.*;
-import org.zstack.header.longjob.LongJobFor;
-import org.zstack.header.longjob.LongJobState;
-import org.zstack.header.longjob.LongJobVO;
+import org.zstack.header.longjob.*;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.longjob.LongJob;
 import org.zstack.longjob.LongJobUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -62,19 +59,23 @@ public class AddImageLongJob implements LongJob {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    AddImageReply r = reply.castReply();
-                    APIAddImageEvent evt = new APIAddImageEvent(ThreadContext.get(Constants.THREAD_CONTEXT_API));
-
-                    auditResourceUuid = r.getInventory().getUuid();
-                    evt.setInventory(r.getInventory());
-                    if (jobCanceled(job.getUuid())) {
-                        deleteAfterCancel(msg, job, completion);
-                    } else {
-                        completion.success(evt);
-                    }
+                    handleSuccess(reply);
                 } else {
                     auditResourceUuid = msg.getResourceUuid();
                     completion.fail(reply.getError());
+                }
+            }
+
+            private void handleSuccess(MessageReply reply) {
+                AddImageReply r = reply.castReply();
+                APIAddImageEvent evt = new APIAddImageEvent(job.getApiId());
+
+                auditResourceUuid = r.getInventory().getUuid();
+                evt.setInventory(r.getInventory());
+                if (jobCanceled(job.getUuid())) {
+                    cleanImage(msg, completion, cancelErr(job.getUuid()));
+                } else {
+                    completion.success(evt);
                 }
             }
         });
@@ -83,11 +84,7 @@ public class AddImageLongJob implements LongJob {
     @Override
     public void resume(LongJobVO job) {
         AddImageMsg msg = JSONObjectUtil.toObject(job.getJobData(), AddImageMsg.class);
-        ImageDeletionMsg dmsg = new ImageDeletionMsg();
-        dmsg.setImageUuid(msg.getResourceUuid());
-        dmsg.setForceDelete(true);
-        dmsg.setBackupStorageUuids(msg.getBackupStorageUuids());
-        bus.makeTargetServiceIdByResourceUuid(dmsg, ImageConstant.SERVICE_ID, dmsg.getImageUuid());
+        ImageDeletionMsg dmsg = buildDeletionMsg(msg);
         bus.send(dmsg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
@@ -95,34 +92,18 @@ public class AddImageLongJob implements LongJob {
                     logger.warn(String.format("delete image [%s] failed after management node restarted", msg.getResourceUuid()));
                 }
 
-                LongJobUtils.updateByUuid(job.getUuid(), vo -> {
-                    vo.setJobResult("Failed because management node restarted.");
-                    vo.setState(LongJobState.Failed);
-                });
+                LongJobUtils.changeState(job.getUuid(), LongJobStateEvent.fail,
+                        vo -> vo.setJobResult("Failed because management node restarted."));
             }
         });
     }
 
-    private void deleteAfterCancel(AddImageMsg msg, LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
-        new While<>(msg.getBackupStorageUuids()).all((bsUuid, compl) -> {
-            ExpungeImageMsg emsg = new ExpungeImageMsg();
-            emsg.setBackupStorageUuid(bsUuid);
-            emsg.setImageUuid(msg.getResourceUuid());
-            bus.makeTargetServiceIdByResourceUuid(emsg, ImageConstant.SERVICE_ID, msg.getResourceUuid());
-            bus.send(emsg, new CloudBusCallBack(compl) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        logger.warn(reply.getError().toString());
-                    }
-
-                    compl.done();
-                }
-            });
-        }).run(new NoErrorCompletion(completion) {
+    private void cleanImage(AddImageMsg msg, ReturnValueCompletion<APIEvent> completion, ErrorCode err) {
+        ImageDeletionMsg dmsg = buildDeletionMsg(msg);
+        bus.send(dmsg, new CloudBusCallBack(completion) {
             @Override
-            public void done() {
-                completion.fail(cancelErr(job.getUuid()));
+            public void run(MessageReply reply) {
+                completion.fail(err);
             }
         });
     }
@@ -155,5 +136,15 @@ public class AddImageLongJob implements LongJob {
     @Override
     public String getAuditResourceUuid() {
         return auditResourceUuid;
+    }
+
+    private ImageDeletionMsg buildDeletionMsg(AddImageMsg msg) {
+        ImageDeletionMsg dmsg = new ImageDeletionMsg();
+        dmsg.setImageUuid(msg.getResourceUuid());
+        dmsg.setForceDelete(true);
+        dmsg.setBackupStorageUuids(msg.getBackupStorageUuids());
+        dmsg.setDeletionPolicy(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString());
+        bus.makeTargetServiceIdByResourceUuid(dmsg, ImageConstant.SERVICE_ID, dmsg.getImageUuid());
+        return dmsg;
     }
 }

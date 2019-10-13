@@ -1,8 +1,8 @@
 package org.zstack.longjob;
 
 import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.method.P;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -257,7 +257,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             return;
         }
 
-        LongJobVO vo = updateByUuid(uuid, it -> it.setState(LongJobState.Canceling));
+        LongJobVO vo = changeState(uuid, LongJobStateEvent.canceling);
         LongJob job = longJobFactory.getLongJob(vo.getJobName());
         logger.info(String.format("longjob [uuid:%s, name:%s] has been marked canceling", vo.getUuid(), vo.getName()));
 
@@ -265,7 +265,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             @Override
             public void success(Boolean cancelled) {
                 if (cancelled) {
-                    updateByUuid(uuid, it -> it.setState(LongJobState.Canceled));
+                    changeState(uuid, LongJobStateEvent.canceled);
                     logger.info(String.format("longjob [uuid:%s, name:%s] has been canceled", vo.getUuid(), vo.getName()));
                 } else {
                     logger.debug(String.format("wait for canceling longjob [uuid:%s, name:%s] rollback", vo.getUuid(), vo.getName()));
@@ -353,7 +353,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             @Override
             public void run(SyncTaskChain chain) {
                 SubmitLongJobReply reply = new SubmitLongJobReply();
-                LongJobVO vo = updateByUuid(msg.getJobUuid(), it -> it.setState(LongJobState.Running));
+                LongJobVO vo = changeState(msg.getJobUuid(), LongJobStateEvent.start);
                 // launch the long job right now
                 ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
                 LongJob job = longJobFactory.getLongJob(vo.getJobName());
@@ -383,9 +383,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             @Override
             public void success(APIEvent evt) {
                 reportProgress("100");
-                updateByUuid(longJobUuid, it -> {
-                    setStateWhenSuccess(it);
-                    if (it.getJobResult() == null || it.getJobResult().isEmpty()) {
+                changeState(longJobUuid, LongJobStateEvent.succeed, it -> {
+                    if (Strings.isEmpty(it.getJobResult())) {
                         it.setJobResult("Succeeded");
                     }
                 });
@@ -400,9 +399,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
             @Override
             public void fail(ErrorCode errorCode) {
-                LongJobVO vo = updateByUuid(longJobUuid, it -> {
-                    setStateWhenFail(it, errorCode);
-                    if (it.getJobResult() == null || it.getJobResult().isEmpty()) {
+                LongJobVO vo = changeState(longJobUuid, getEventOnError(errorCode), it -> {
+                    if (Strings.isEmpty(it.getJobResult())) {
                         it.setJobResult("Failed : " + wrapErrorCode(it, errorCode).toString());
                     }
                 });
@@ -421,23 +419,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                     return cancelErr(job.getUuid(), err);
                 } else {
                     return err;
-                }
-            }
-
-            private void setStateWhenSuccess(LongJobVO vo) {
-                if (Arrays.asList(LongJobState.Canceling, LongJobState.Canceled).contains(vo.getState())) {
-                    vo.setState(LongJobState.Canceled);
-                } else {
-                    vo.setState(LongJobState.Succeeded);
-                }
-            }
-
-            private void setStateWhenFail(LongJobVO vo, ErrorCode errorCode) {
-                if (Arrays.asList(LongJobState.Canceling, LongJobState.Canceled).contains(vo.getState()) ||
-                        errorCode.isError(LongJobErrors.CANCELED)){
-                    vo.setState(LongJobState.Canceled);
-                } else if (vo.getState() != LongJobState.Suspended) {
-                    vo.setState(LongJobState.Failed);
                 }
             }
         });
@@ -583,20 +564,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         List<LongJobVO> managedByUsJobs = new SQLBatchWithReturn< List<LongJobVO>>() {
             @Override
             protected List<LongJobVO> scripts() {
-                // check long jobs using same uuid with current node
-                List<LongJobVO> vos = Q.New(LongJobVO.class)
-                        .eq(LongJobVO_.managementNodeUuid, Platform.getManagementServerId())
-                        .eq(LongJobVO_.state, LongJobState.Running)
-                        .list();
-                vos.forEach(vo -> {
-                    if (destinationMaker.isManagedByUs(vo.getUuid())) {
-                        vo.setJobResult("Failed because management node restarted.");
-                        vo.setState(LongJobState.Failed);
-                        merge(vo);
-                    }
-                });
-
-                vos = Q.New(LongJobVO.class).isNull(LongJobVO_.managementNodeUuid).list();
+                List<LongJobVO> vos = Q.New(LongJobVO.class).isNull(LongJobVO_.managementNodeUuid).list();
                 vos.removeIf(it -> !destinationMaker.isManagedByUs(it.getUuid()));
                 vos.forEach(it -> {
                     it.setManagementNodeUuid(Platform.getManagementServerId());
@@ -620,10 +588,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             operation = getLoadOperation(vo);
         }
 
-        if (operation == LongJobOperation.Cancel || operation == LongJobOperation.Rerun) {
-            return;
-        }
-
         Runnable cleanup = ThreadContextUtils.saveThreadContext();
         Defer.defer(cleanup);
         // launch the waiting jobs
@@ -632,12 +596,14 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
 
         if (operation == LongJobOperation.Start) {
+            LongJobUtils.changeState(vo.getUuid(), LongJobStateEvent.start);
             doStartJob(job, vo, null);
-            SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, vo.getUuid()).set(LongJobVO_.state, LongJobState.Running).update();
         } else if (operation == LongJobOperation.Resume) {
             logger.info(String.format("start to resume longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
             job.resume(vo);
             dbf.update(vo);
+        } else if (operation == LongJobOperation.Cancel) {
+            LongJobUtils.changeState(vo.getUuid(), LongJobStateEvent.canceled);
         }
     }
 
@@ -646,6 +612,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             return LongJobOperation.Start;
         } else if (vo.getState() == LongJobState.Running || vo.getState() == LongJobState.Suspended) {
             return LongJobOperation.Resume;
+        } else if (vo.getState() == LongJobState.Canceling) {
+            return LongJobOperation.Cancel;
         }
         return null;
     }

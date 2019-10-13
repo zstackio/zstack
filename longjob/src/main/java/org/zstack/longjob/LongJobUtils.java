@@ -12,17 +12,15 @@ import org.zstack.header.Constants;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.longjob.LongJobErrors;
-import org.zstack.header.longjob.LongJobState;
-import org.zstack.header.longjob.LongJobVO;
-import org.zstack.header.longjob.LongJobVO_;
+import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.longjob.*;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.zstack.core.Platform.err;
 
@@ -81,24 +79,50 @@ public class LongJobUtils {
         return completedStates.contains(vo.getState());
     }
 
-    public static LongJobVO updateByUuid(String uuid, ForEachFunction<LongJobVO> consumer) {
+    public static LongJobVO updateByUuid(String uuid, Consumer<LongJobVO> consumer) {
         return new SQLBatchWithReturn<LongJobVO>(){
 
             @Override
             protected LongJobVO scripts() {
                 LongJobVO job = findByUuid(uuid, LongJobVO.class);
-                consumer.run(job);
+                LongJobState originState = job.getState();
+                consumer.accept(job);
+                LongJobState newState = job.getState();
 
                 if (jobCompleted(job)) {
                     setExecuteTimeIfNeed(job);
                     cleanProgress(job);
                 }
 
+                if (originState != newState) {
+                    logger.debug(String.format("change longjob [uuid:%s] state from %s to %s", uuid, originState, newState));
+                }
 
                 merge(job);
                 return job;
             }
         }.execute();
+    }
+
+    public static LongJobVO changeState(String uuid, LongJobStateEvent stateEvent) {
+        return updateByUuid(uuid, it -> it.setState(it.getState().nextState(stateEvent)));
+    }
+
+    public static LongJobVO changeState(String uuid, LongJobStateEvent stateEvent, Consumer<LongJobVO> consumer) {
+        return updateByUuid(uuid, it -> {
+            it.setState(it.getState().nextState(stateEvent));
+            consumer.accept(it);
+        });
+    }
+
+    public static LongJobStateEvent getEventOnError(ErrorCode errorCode) {
+        if (errorCode.isError(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR)) {
+            return LongJobStateEvent.suspend;
+        } else if (errorCode.isError(LongJobErrors.CANCELED)) {
+            return LongJobStateEvent.canceled;
+        } else {
+            return LongJobStateEvent.fail;
+        }
     }
 
     private static void setExecuteTimeIfNeed(LongJobVO job) {

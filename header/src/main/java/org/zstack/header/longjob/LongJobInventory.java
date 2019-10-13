@@ -1,6 +1,7 @@
 package org.zstack.header.longjob;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.search.Inventory;
 
 import java.io.Serializable;
@@ -22,6 +23,7 @@ public class LongJobInventory implements Serializable {
     private String jobName;
     private String jobData;
     private String jobResult;
+    @NoJsonSchema
     private LongJobState state;
     private String targetResourceUuid;
     private String managementNodeUuid;
