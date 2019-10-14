@@ -3,6 +3,7 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 import org.zstack.core.validation.ConditionalValidation;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by weiwang on 10/05/2017.
@@ -95,16 +96,15 @@ public class VxlanKvmAgentCommands {
     public static class CreateVxlanBridgesCmd extends AgentCommand {
         private String bridgeName;
         private String vtepIp;
-        private List<Integer> vnis;
-        private String l2NetworkUuid;
+        private Map<String, Integer> l2Networks;
         private List<String> peers;
 
-        public String getL2NetworkUuid() {
-            return l2NetworkUuid;
+        public Map<String, Integer> getL2Networks() {
+            return l2Networks;
         }
 
-        public void setL2NetworkUuid(String l2NetworkUuid) {
-            this.l2NetworkUuid = l2NetworkUuid;
+        public void setL2Networks(Map<String, Integer> l2Networks) {
+            this.l2Networks = l2Networks;
         }
 
         public String getBridgeName() {
@@ -121,14 +121,6 @@ public class VxlanKvmAgentCommands {
 
         public void setVtepIp(String vtepIp) {
             this.vtepIp = vtepIp;
-        }
-
-        public List<Integer> getVnis() {
-            return vnis;
-        }
-
-        public void setVnis(List<Integer> vnis) {
-            this.vnis = vnis;
         }
 
         public List<String> getPeers() {
