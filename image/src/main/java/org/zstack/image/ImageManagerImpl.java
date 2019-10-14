@@ -1366,6 +1366,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 }
             }
         }
+
+        final TaskProgressRange parentStage = getTaskStage();
+        reportProgress(parentStage.getStart().toString());
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-template-from-root-volume-%s", msgData.getRootVolumeUuid()));
         chain.preCheck(data -> buildErrIfCanceled());
@@ -1698,6 +1702,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         innerEvent.inv = iinv;
                         logger.warn(String.format("successfully create template[uuid:%s] from root volume[uuid:%s]", iinv.getUuid(), msgData.getRootVolumeUuid()));
                         innerEvent.reply(evt);
+
+                        reportProgress(parentStage.getEnd().toString());
                     }
                 });
 
@@ -1744,6 +1750,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         }
 
         final TaskProgressRange parentStage = getTaskStage();
+        reportProgress(parentStage.getStart().toString());
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-data-volume-template-from-volume-%s", msgData.getVolumeUuid()));
