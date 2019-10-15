@@ -16,6 +16,10 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 public class DefaultAuthorizationBackend implements AuthorizationBackend {
     private static final CLogger logger = Utils.getLogger(DefaultAuthorizationBackend.class);
@@ -51,5 +55,15 @@ public class DefaultAuthorizationBackend implements AuthorizationBackend {
         }
 
         return msg;
+    }
+
+    @Override
+    public void validatePermission(List<Class> classes, SessionInventory session) {
+        Map<String, Boolean> permissionResult = new RBACAPIRequestChecker().evalAPIPermission(classes, session);
+
+        List<String> deniedApis = permissionResult.entrySet().stream().filter(entry -> !entry.getValue()).map(Map.Entry::getKey).collect(Collectors.toList());
+        if (!deniedApis.isEmpty()) {
+            throw new OperationFailureException(operr("the operations[%s] is denied", deniedApis));
+        }
     }
 }
