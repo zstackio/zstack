@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +17,8 @@ import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SystemIdentityResourceGenerator implements PrepareDbInitialValueExtensionPoint {
+    private static final CLogger logger = Utils.getLogger(SystemIdentityResourceGenerator.class);
+
     @Autowired
     private PluginRegistry pluginRgty;
 
@@ -42,7 +46,7 @@ public class SystemIdentityResourceGenerator implements PrepareDbInitialValueExt
                     ext.prepareResources();
                 }
             } else {
-                throw new CloudRuntimeException(String.format("Unknown recognized identity init type %s", identityInitType));
+                logger.debug(String.format("Unknown recognized identity init type %s", identityInitType));
             }
         }
     }
