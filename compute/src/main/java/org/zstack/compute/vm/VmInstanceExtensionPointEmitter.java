@@ -31,6 +31,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
 
     private List<VmInstanceBeforeStartExtensionPoint> VmInstanceBeforeStartExtensions;
     private List<VmInstanceStartNewCreatedVmExtensionPoint> startNewCreatedVmExtensions;
+    private List<BeforeVmInstanceStopExtensionPoint> beforeVmStopExtensions;
     private List<VmInstanceStopExtensionPoint> stopVmExtensions;
     private List<VmInstanceRebootExtensionPoint> rebootVmExtensions;
     private List<VmInstanceDestroyExtensionPoint> destroyVmExtensions;
@@ -89,6 +90,40 @@ public class VmInstanceExtensionPointEmitter implements Component {
                 arg.failedToStartNewCreatedVm(inv, reason);
             }
         });
+    }
+
+    public void beforeVmStop(VmInstanceInventory inv, Completion completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.allowEmptyFlow();
+        for(BeforeVmInstanceStopExtensionPoint ext: beforeVmStopExtensions) {
+            chain.then(new NoRollbackFlow() {
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    ext.beforeVmInstanceStop(inv, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            });
+        }
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     public ErrorCode preStopVm(VmInstanceInventory inv) {
@@ -388,6 +423,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
     private void populateExtensions() {
         VmInstanceBeforeStartExtensions = pluginRgty.getExtensionList(VmInstanceBeforeStartExtensionPoint.class);
         startNewCreatedVmExtensions = pluginRgty.getExtensionList(VmInstanceStartNewCreatedVmExtensionPoint.class);
+        beforeVmStopExtensions = pluginRgty.getExtensionList(BeforeVmInstanceStopExtensionPoint.class);
         stopVmExtensions = pluginRgty.getExtensionList(VmInstanceStopExtensionPoint.class);
         rebootVmExtensions = pluginRgty.getExtensionList(VmInstanceRebootExtensionPoint.class);
         destroyVmExtensions = pluginRgty.getExtensionList(VmInstanceDestroyExtensionPoint.class);

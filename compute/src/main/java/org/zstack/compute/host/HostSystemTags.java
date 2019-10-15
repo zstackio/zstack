@@ -38,9 +38,16 @@ public class HostSystemTags {
     public static final String SYSTEM_SERIAL_NUMBER_TOKEN = "systemSerialNumber";
     public static PatternedSystemTag SYSTEM_SERIAL_NUMBER = new PatternedSystemTag(String.format("systemSerialNumber::{%s}", SYSTEM_SERIAL_NUMBER_TOKEN), HostVO.class);
 
+    public static final String CPU_ARCHITECTURE_TOKEN = "cpuArchitecture";
+    public static PatternedSystemTag CPU_ARCHITECTURE = new PatternedSystemTag(String.format("cpuArchitecture::{%s}", CPU_ARCHITECTURE_TOKEN), HostVO.class);
+
     public static final String CPU_GHZ_TOKEN = "cpuGHz";
     public static PatternedSystemTag CPU_GHZ = new PatternedSystemTag(String.format("cpuGHz::{%s}", CPU_GHZ_TOKEN), HostVO.class);
 
     public static final String PAGE_TABLE_EXTENSION_DISABLED_TOKEN = "pageTableExtensionDisabled";
     public static PatternedSystemTag PAGE_TABLE_EXTENSION_DISABLED = new PatternedSystemTag(PAGE_TABLE_EXTENSION_DISABLED_TOKEN, HostVO.class);
+
+    public static String HOST_GUEST_TOOLS_VERSION_TOKEN = "guestToolsVersion";
+    public static PatternedSystemTag HOST_GUEST_TOOLS =
+            new PatternedSystemTag(String.format("GuestTools::{%s}", HOST_GUEST_TOOLS_VERSION_TOKEN), HostVO.class);
 }

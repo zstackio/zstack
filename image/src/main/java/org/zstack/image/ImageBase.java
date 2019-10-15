@@ -11,7 +11,10 @@ import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
@@ -49,9 +52,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -571,6 +572,13 @@ public class ImageBase implements Image {
                 String bootMode = VmSystemTags.BOOT_MODE.getTokenByTag(tag, VmSystemTags.BOOT_MODE_TOKEN);
                 SystemTagCreator creator = ImageSystemTags.BOOT_MODE.newSystemTagCreator(self.getUuid());
                 creator.setTagByTokens(Collections.singletonMap(VmSystemTags.BOOT_MODE_TOKEN, bootMode));
+                creator.inherent = false;
+                creator.recreate = true;
+                creator.create();
+            } else if (VmSystemTags.VM_GUEST_TOOLS.isMatch(tag)) {
+                String guestTools = VmSystemTags.VM_GUEST_TOOLS.getTokenByTag(tag, VmSystemTags.VM_GUEST_TOOLS_VERSION_TOKEN);
+                SystemTagCreator creator = ImageSystemTags.IMAGE_GUEST_TOOLS.newSystemTagCreator(self.getUuid());
+                creator.setTagByTokens(Collections.singletonMap(ImageSystemTags.IMAGE_GUEST_TOOLS_VERSION_TOKEN, guestTools));
                 creator.inherent = false;
                 creator.recreate = true;
                 creator.create();

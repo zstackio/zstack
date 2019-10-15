@@ -51,6 +51,7 @@ public interface KVMConstant {
     String KVM_HOST_UPDATE_DEPENDENCY_PATH = "/host/updatedependency";
     String HOST_SHUTDOWN = "/host/shutdown";
     String HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH = "/host/updateSpiceChannelConfig";
+    String KVM_GET_VM_FIRST_BOOT_DEVICE_PATH = "/vm/getfirstbootdevice";
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";
@@ -67,6 +68,8 @@ public interface KVMConstant {
     String KVM_REPORT_SELF_FENCER = "/kvm/reportselffencer";
     String KVM_ANSIBLE_LOG_PATH_FROMAT = "/kvm/ansiblelog/{uuid}";
     String KVM_REPORT_VM_SHUTDOWN_EVENT = "/kvm/reportvmshutdown";
+
+    String KVM_TRANSMIT_VM_OPERATION_TO_MN = "/host/transmitvmoperation";
 
     String KVM_AGENT_OWNER = "kvm";
 
