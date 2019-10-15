@@ -7,7 +7,7 @@ doc {
 
     category "rbac"
 
-    desc """在这里填写API描述"""
+    desc """从角色移除权限描述"""
 
     rest {
         request {
@@ -27,7 +27,7 @@ doc {
 					desc "资源的UUID，唯一标示该资源"
 					location "url"
 					type "String"
-					optional true
+					optional false
 					since "0.6"
 					
 				}
@@ -37,7 +37,7 @@ doc {
 					desc ""
 					location "body"
 					type "List"
-					optional true
+					optional false
 					since "0.6"
 					
 				}
