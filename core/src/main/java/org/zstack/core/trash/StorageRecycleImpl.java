@@ -47,7 +47,7 @@ import static org.zstack.core.Platform.inerr;
 /**
  * Created by mingjian.deng on 2019/9/19.
  */
-public class StorageRecycleImpl implements StorageTrash, VolumeDeletionExtensionPoint, VolumeSnapshotAfterDeleteExtensionPoint, Component {
+public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDeleteExtensionPoint, VolumeBeforeExpungeExtensionPoint, Component {
     private final static CLogger logger = Utils.getLogger(StorageRecycleImpl.class);
 
     @Autowired
@@ -302,26 +302,6 @@ public class StorageRecycleImpl implements StorageTrash, VolumeDeletionExtension
 
     }
 
-    @Override
-    public void preDeleteVolume(VolumeInventory volume) {
-
-    }
-
-    @Override
-    public void beforeDeleteVolume(VolumeInventory volume) {
-
-    }
-
-    @Override
-    public void afterDeleteVolume(VolumeInventory volume, Completion completion) {
-        deleteTrashForVolume(volume.getUuid(), volume.getPrimaryStorageUuid(), completion);
-    }
-
-    @Override
-    public void failedToDeleteVolume(VolumeInventory volume, ErrorCode errorCode) {
-
-    }
-
     private void transfer(List<JsonLabelVO> trashs, String type) {
         List<String> recycles = new ArrayList<>();
         for (JsonLabelVO trash: trashs) {
@@ -391,5 +371,10 @@ public class StorageRecycleImpl implements StorageTrash, VolumeDeletionExtension
     @Override
     public boolean stop() {
         return true;
+    }
+
+    @Override
+    public void volumeBeforeExpunge(VolumeInventory volume, Completion completion) {
+        deleteTrashForVolume(volume.getUuid(), volume.getPrimaryStorageUuid(), completion);
     }
 }

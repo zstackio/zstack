@@ -20,6 +20,7 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.core.workflow.ShareFlowChain;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
@@ -63,6 +64,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.getUuid;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -678,67 +680,101 @@ public class VolumeBase implements Volume {
 
     private void expunge(final Completion completion) {
         if (self.getStatus() != VolumeStatus.Deleted) {
-            throw new OperationFailureException(operr("the volume[uuid:%s, name:%s] is not deleted yet, can't expunge it",
+            completion.fail(operr("the volume[uuid:%s, name:%s] is not deleted yet, can't expunge it",
                             self.getUuid(), self.getName()));
+            return;
         }
 
         final VolumeInventory inv = getSelfInventory();
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeBeforeExpungeExtensionPoint.class),
-                new ForEachFunction<VolumeBeforeExpungeExtensionPoint>() {
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName("expunge-volume");
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "call-before-expunge-volume-extensions";
+
                     @Override
-                    public void run(VolumeBeforeExpungeExtensionPoint arg) {
-                        arg.volumeBeforeExpunge(inv);
+                    public void run(FlowTrigger trigger, Map data) {
+                        new While<>(pluginRgty.getExtensionList(VolumeBeforeExpungeExtensionPoint.class)).each((ext, c) -> {
+                            ext.volumeBeforeExpunge(inv, new Completion(c) {
+                                @Override
+                                public void success() {
+                                    c.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.debug(String.format("failed to execute extension, because %s", errorCode.getDetails()));
+                                    c.done();
+                                }
+                            });
+                        }).run(new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                trigger.next();
+                            }
+                        });
                     }
                 });
 
-        if (self.getPrimaryStorageUuid() != null) {
-            DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
-            dmsg.setVolume(getSelfInventory());
-            dmsg.setUuid(self.getPrimaryStorageUuid());
-            bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
-            bus.send(dmsg, new CloudBusCallBack(completion) {
-                @Override
-                public void run(MessageReply r) {
-                    if (!r.isSuccess()) {
-                        completion.fail(r.getError());
-                    } else {
-                        IncreasePrimaryStorageCapacityMsg msg = new IncreasePrimaryStorageCapacityMsg();
-                        msg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
-                        msg.setDiskSize(self.getSize());
-                        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
-                        bus.send(msg);
+                if (self.getPrimaryStorageUuid() != null) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = String.format("delete-volume-%s-on-primary-storage", inv.getUuid());
 
-
-                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeAfterExpungeExtensionPoint.class),
-                                new ForEachFunction<VolumeAfterExpungeExtensionPoint>() {
-                                    @Override
-                                    public void run(VolumeAfterExpungeExtensionPoint arg) {
-                                        arg.volumeAfterExpunge(inv);
-                                    }
-                                });
-                        VolumeInventory volumeInventory = getSelfInventory();
-                        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
-                        dbf.remove(self);
-                        completion.success();
-                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Deleted, volumeInventory, accountUuid);
-                    }
-                }
-            });
-        } else {
-            CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeAfterExpungeExtensionPoint.class),
-                    new ForEachFunction<VolumeAfterExpungeExtensionPoint>() {
                         @Override
-                        public void run(VolumeAfterExpungeExtensionPoint arg) {
-                            arg.volumeAfterExpunge(inv);
+                        public void run(FlowTrigger trigger, Map data) {
+                            DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
+                            dmsg.setVolume(getSelfInventory());
+                            dmsg.setUuid(self.getPrimaryStorageUuid());
+                            bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+                            bus.send(dmsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply r) {
+                                    if (!r.isSuccess()) {
+                                        trigger.fail(r.getError());
+                                        return;
+                                    }
+
+                                    trigger.next();
+                                }
+                            });
                         }
                     });
 
-            VolumeInventory volumeInventory = getSelfInventory();
-            String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
-            dbf.remove(self);
-            completion.success();
-            new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Deleted, volumeInventory, accountUuid);
-        }
+                    flow(new NoRollbackFlow() {
+                        String __name__ = String.format("return-volume-%s-size-to-primary-storage", inv.getUuid());
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            IncreasePrimaryStorageCapacityMsg msg = new IncreasePrimaryStorageCapacityMsg();
+                            msg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+                            msg.setDiskSize(self.getSize());
+                            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+                            bus.send(msg);
+                            trigger.next();
+                        }
+                    });
+                }
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeAfterExpungeExtensionPoint.class), arg -> arg.volumeAfterExpunge(inv));
+
+                VolumeInventory volumeInventory = getSelfInventory();
+                String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
+                dbf.remove(self);
+                completion.success();
+                new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Deleted, volumeInventory, accountUuid);
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     private void handle(final ExpungeVolumeMsg msg) {
@@ -957,60 +993,77 @@ public class VolumeBase implements Volume {
                     });
                 }
 
+                flow(new Flow() {
+                    String __name__ = "after-delete-volume-extension";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ErrorCodeList errList = new ErrorCodeList();
+                        new While<>(pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class)).all((ext, c) -> {
+                            ext.afterDeleteVolume(getSelfInventory(), new Completion(c) {
+                                @Override
+                                public void success() {
+                                    c.done();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    errList.getCauses().add(errorCode);
+                                    c.done();
+                                }
+                            });
+                        }).run(new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                if (errList.getCauses().size() > 0) {
+                                    trigger.fail(errList.getCauses().get(0));
+                                    return;
+                                }
+
+                                trigger.next();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+
+                    }
+                });
+
 
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        ErrorCodeList errList = new ErrorCodeList();
-                        new While<>(pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class)).
-                                all((ext, c) -> ext.afterDeleteVolume(getSelfInventory(), new Completion(c) {
-                                    @Override
-                                    public void success() {
-                                        c.done();
-                                    }
+                        VolumeStatus oldStatus = self.getStatus();
 
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        errList.getCauses().add(errorCode);
-                                        c.done();
-                                    }
-                                })).run(new NoErrorCompletion(completion) {
-                            @Override
-                            public void done() {
-                                if (errList.getCauses().size() > 0) {
-                                    reply.setError(errList.getCauses().get(0));
-                                } else {
-                                    VolumeStatus oldStatus = self.getStatus();
+                        if (deletionPolicy == VolumeDeletionPolicy.Direct) {
+                            self.setStatus(VolumeStatus.Deleted);
+                            self = dbf.updateAndRefresh(self);
+                            String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
+                            VolumeInventory volumeInventory = getSelfInventory();
+                            dbf.remove(self);
+                            new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, volumeInventory, accountUuid);
+                        } else if (deletionPolicy == VolumeDeletionPolicy.Delay) {
+                            self.setStatus(VolumeStatus.Deleted);
+                            self = dbf.updateAndRefresh(self);
+                            new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
+                        } else if (deletionPolicy == VolumeDeletionPolicy.Never) {
+                            self.setStatus(VolumeStatus.Deleted);
+                            self = dbf.updateAndRefresh(self);
+                            new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
+                        } else if (deletionPolicy == VolumeDeletionPolicy.DBOnly) {
+                            callVmJustBeforeDeleteFromDbExtensionPoint();
+                            VolumeInventory inventory = getSelfInventory();
+                            inventory.setStatus(VolumeStatus.Deleted.toString());
+                            String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
+                            dbf.remove(self);
+                            new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, inventory, accountUuid);
+                        } else {
+                            throw new CloudRuntimeException(String.format("Invalid deletionPolicy:%s", deletionPolicy));
+                        }
 
-                                    if (deletionPolicy == VolumeDeletionPolicy.Direct) {
-                                        self.setStatus(VolumeStatus.Deleted);
-                                        self = dbf.updateAndRefresh(self);
-                                        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
-                                        VolumeInventory volumeInventory = getSelfInventory();
-                                        dbf.remove(self);
-                                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, volumeInventory, accountUuid);
-                                    } else if (deletionPolicy == VolumeDeletionPolicy.Delay) {
-                                        self.setStatus(VolumeStatus.Deleted);
-                                        self = dbf.updateAndRefresh(self);
-                                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
-                                    } else if (deletionPolicy == VolumeDeletionPolicy.Never) {
-                                        self.setStatus(VolumeStatus.Deleted);
-                                        self = dbf.updateAndRefresh(self);
-                                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
-                                    } else if (deletionPolicy == VolumeDeletionPolicy.DBOnly) {
-                                        callVmJustBeforeDeleteFromDbExtensionPoint();
-                                        VolumeInventory inventory = getSelfInventory();
-                                        inventory.setStatus(VolumeStatus.Deleted.toString());
-                                        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
-                                        dbf.remove(self);
-                                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, inventory, accountUuid);
-                                    } else {
-                                        throw new CloudRuntimeException(String.format("Invalid deletionPolicy:%s", deletionPolicy));
-                                    }
-                                }
-                                bus.reply(msg, reply);
-                            }
-                        });
+                        bus.reply(msg, reply);
                     }
                 });
 

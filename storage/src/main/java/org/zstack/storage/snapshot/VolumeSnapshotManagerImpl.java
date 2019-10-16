@@ -17,9 +17,11 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.identity.*;
@@ -1000,7 +1002,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     }
 
     @Override
-    public void volumeBeforeExpunge(VolumeInventory volume) {
+    public void volumeBeforeExpunge(VolumeInventory volume, Completion completion) {
         List<VolumeSnapshotDeletionMsg> msgs = new ArrayList<>();
         SimpleQuery<VolumeSnapshotTreeVO> cq = dbf.createQuery(VolumeSnapshotTreeVO.class);
         cq.select(VolumeSnapshotTreeVO_.uuid);
@@ -1038,9 +1040,29 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             msgs.add(msg);
         }
 
-        if (!msgs.isEmpty()) {
-            bus.call(msgs);
-        }
+        ErrorCodeList errorCodeList = new ErrorCodeList();
+        new While<>(msgs).all((msg, c) -> {
+            bus.send(msg, new CloudBusCallBack(c) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        errorCodeList.getCauses().add(reply.getError());
+                    }
+
+                    c.done();
+                }
+            });
+        }).run(new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
+
+                completion.success();
+            }
+        });
     }
 
     @Override
