@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -14,12 +15,10 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.*;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMSystemTags;
@@ -28,19 +27,18 @@ import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.network.service.virtualrouter.vyos.VyosOfferingSelector;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.operr;
+import java.util.stream.Collectors;
 
 /**
  * Created by AlanJager on 2017/7/8.
  */
-public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBackend implements NetworkServiceCentralizedDnsBackend {
+public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBackend implements NetworkServiceCentralizedDnsBackend,
+        VmInstanceMigrateExtensionPoint, FlatDhcpGetDnsAddressExtensionPoint {
     private final CLogger logger = Utils.getLogger(VirtualRouterCentralizedDnsBackend.class);
 
     @Autowired
@@ -49,6 +47,8 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
     private ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
+    @Autowired
+    private DatabaseFacade dbf;
 
     public static final String SET_DNS_FORWARD_PATH = "/dns/forward/set";
     public static final String REMOVE_DNS_FORWARD_PATH = "/dns/forward/remove";
@@ -211,7 +211,121 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
     }
 
     @Override
-    public void vmDefaultL3NetworkChanged(VmInstanceInventory vm, String previousL3, String nowL3, Completion completion) {
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+        if (inv.getDefaultL3NetworkUuid() == null) {
+            return;
+        }
 
+        L3NetworkVO defaultL3 = dbf.findByUuid(inv.getDefaultL3NetworkUuid(), L3NetworkVO.class);
+        if (defaultL3.getNetworkServices().stream().map(NetworkServiceL3NetworkRefVO::getNetworkServiceType)
+                .collect(Collectors.toList()).contains(NetworkServiceType.Centralized_DNS)) {
+            return;
+        }
+
+        L3NetworkInventory defaultL3Inv = L3NetworkInventory.valueOf(defaultL3);
+        /* install dns forward address for default network */
+        VirtualRouterCommands.SetForwardDnsCmd cmd = new VirtualRouterCommands.SetForwardDnsCmd();
+        for (VmNicInventory nic : inv.getVmNics()) {
+            if (nic.getL3NetworkUuid().equals(inv.getDefaultL3NetworkUuid())) {
+                cmd.setMac(nic.getMac());
+            }
+        }
+        String bridgeName = SQL.New("select t.tag from SystemTagVO t, L3NetworkVO l3 where t.resourceType = :ttype and t.tag like :tag" +
+                " and t.resourceUuid = l3.l2NetworkUuid and l3.uuid = :l3Uuid", String.class)
+                .param("tag", TagUtils.tagPatternToSqlPattern(KVMSystemTags.L2_BRIDGE_NAME.getTagFormat()))
+                .param("l3Uuid", inv.getDefaultL3NetworkUuid())
+                .param("ttype", L2NetworkVO.class.getSimpleName())
+                .find();
+        cmd.setBridgeName(KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeName, KVMSystemTags.L2_BRIDGE_NAME_TOKEN));
+        cmd.setNameSpace(makeNamespaceName(
+                cmd.getBridgeName(),
+                inv.getDefaultL3NetworkUuid()
+        ));
+
+        cmd.setDns(defaultL3Inv.getIpRanges().get(0).getGateway());
+        cmd.setWrongDns(defaultL3Inv.getDns());
+
+        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+        kmsg.setCommand(cmd);
+        kmsg.setPath(SET_DNS_FORWARD_PATH);
+        kmsg.setHostUuid(destHostUuid);
+        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, destHostUuid);
+        bus.send(kmsg);
+    }
+
+    @Override
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+
+    }
+
+    @Override
+    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
+
+    }
+
+    @Override
+    public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
+        if (inv.getDefaultL3NetworkUuid() == null) {
+            return;
+        }
+        
+        L3NetworkVO defaultL3 = dbf.findByUuid(inv.getDefaultL3NetworkUuid(), L3NetworkVO.class);
+        if (defaultL3.getNetworkServices().stream().map(NetworkServiceL3NetworkRefVO::getNetworkServiceType)
+                .collect(Collectors.toList()).contains(NetworkServiceType.Centralized_DNS)) {
+            return;
+        }
+
+        /* uninstall dns forward address for default network */
+        VirtualRouterCommands.RemoveForwardDnsCmd cmd = new VirtualRouterCommands.RemoveForwardDnsCmd();
+        for (VmNicInventory nic : inv.getVmNics()) {
+            if (nic.getL3NetworkUuid().equals(inv.getDefaultL3NetworkUuid())) {
+                cmd.setMac(nic.getMac());
+            }
+        }
+        String bridgeName = SQL.New("select t.tag from SystemTagVO t, L3NetworkVO l3 where t.resourceType = :ttype and t.tag like :tag" +
+                " and t.resourceUuid = l3.l2NetworkUuid and l3.uuid = :l3Uuid", String.class)
+                .param("tag", TagUtils.tagPatternToSqlPattern(KVMSystemTags.L2_BRIDGE_NAME.getTagFormat()))
+                .param("l3Uuid", inv.getDefaultL3NetworkUuid())
+                .param("ttype", L2NetworkVO.class.getSimpleName())
+                .find();
+        cmd.setBridgeName(KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeName, KVMSystemTags.L2_BRIDGE_NAME_TOKEN));
+        cmd.setNameSpace(makeNamespaceName(
+                cmd.getBridgeName(),
+                inv.getDefaultL3NetworkUuid()
+        ));
+
+        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+        kmsg.setCommand(cmd);
+        kmsg.setPath(REMOVE_DNS_FORWARD_PATH);
+        kmsg.setHostUuid(destHostUuid);
+        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, destHostUuid);
+        bus.send(kmsg);
+    }
+
+    @Override
+    public List<String> getDnsAddress(L3NetworkInventory inv) {
+        List<String> dns = new ArrayList<>();
+
+        if (!inv.getType().equals(L3NetworkConstant.L3_BASIC_NETWORK_TYPE)) {
+            return dns;
+        }
+
+        if (!inv.getNetworkServiceTypes().contains(NetworkServiceType.Centralized_DNS.toString())) {
+            return dns;
+        }
+
+        /* only virtual router network will add gateway as dns address */
+        for (NetworkServiceL3NetworkRefInventory ref : inv.getNetworkServices()) {
+            if (!ref.getNetworkServiceType().equals(NetworkServiceType.SNAT.toString())) {
+                continue;
+            }
+
+            NetworkServiceProviderVO vo = Q.New(NetworkServiceProviderVO.class).eq(NetworkServiceProviderVO_.uuid, ref.getNetworkServiceProviderUuid()).find();
+            if (vo.getType().equals(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE) || vo.getType().equals(VyosConstants.VYOS_ROUTER_PROVIDER_TYPE)) {
+                dns.add(inv.getIpRanges().get(0).getGateway());
+            }
+        }
+
+        return dns;
     }
 }
