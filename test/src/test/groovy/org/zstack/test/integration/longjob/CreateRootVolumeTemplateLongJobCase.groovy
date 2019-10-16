@@ -8,9 +8,12 @@ import org.zstack.header.image.ImagePlatform
 import org.zstack.header.image.ImageVO
 import org.zstack.header.longjob.LongJobVO
 import org.zstack.header.longjob.LongJobVO_
+import org.zstack.sdk.AccountInventory
+import org.zstack.sdk.AccountResourceRefInventory
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.LongJobInventory
 import org.zstack.header.longjob.LongJobState
+import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
@@ -50,6 +53,7 @@ class CreateRootVolumeTemplateLongJobCase extends SubCase {
             testApiMessageValidator()
             testCreateRootVolumeTemplate()
             testCreateRootVolumeTemplateAppointResourceUuid()
+            testCreateRootVolumeOnNormalAccountResource()
         }
     }
 
@@ -156,5 +160,45 @@ class CreateRootVolumeTemplateLongJobCase extends SubCase {
         }
 
         assert null != dbFindByUuid(uuid, ImageVO.class)
+    }
+
+    void testCreateRootVolumeOnNormalAccountResource() {
+        myDescription = "account-test"
+
+        AccountInventory normalAccount = createAccount {
+            name = "test"
+            password = "password"
+        } as AccountInventory
+
+        changeResourceOwner{
+            accountUuid = normalAccount.uuid
+            resourceUuid = vm.uuid
+        }
+
+        String uuid = Platform.uuid
+
+        APICreateRootVolumeTemplateFromRootVolumeMsg msg = new APICreateRootVolumeTemplateFromRootVolumeMsg()
+        msg.name = "test"
+        msg.rootVolumeUuid = vm.rootVolumeUuid
+        msg.platform = ImagePlatform.Linux.toString()
+        msg.backupStorageUuids = Collections.singletonList(bs.uuid)
+        msg.resourceUuid = uuid
+
+        LongJobInventory jobInv = submitLongJob {
+            jobName = msg.getClass().getSimpleName()
+            jobData = gson.toJson(msg)
+            description = myDescription
+        } as LongJobInventory
+
+        retryInSecs() {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state == LongJobState.Succeeded
+        }
+        
+        AccountResourceRefInventory ref = queryAccountResourceRef {
+            conditions = ["resourceUuid=${uuid}"]
+        }[0]
+
+        assert currentEnvSpec.session.accountUuid == ref.accountUuid
     }
 }
