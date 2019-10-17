@@ -21,6 +21,8 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -97,10 +99,11 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         public List<SnapshotTO> snapshots;
     }
 
-    public static class CopyBitsFromRemoteCmd extends LocalStorageKvmBackend.AgentCommand implements HasThreadContext {
+    public static class CopyBitsFromRemoteCmd extends LocalStorageKvmBackend.AgentCommand implements HasThreadContext, HasSensitiveInfo {
         public String sendCommandUrl;
         public List<String> paths;
         public String dstIp;
+        @NoLogging
         public String dstPassword;
         public String dstUsername;
         public Integer dstPort = 22;

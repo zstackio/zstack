@@ -1,5 +1,7 @@
 package org.zstack.core.ansible;
 
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.NeedReplyMessage;
 
 import java.util.HashMap;
@@ -7,12 +9,14 @@ import java.util.Map;
 
 /**
  */
-public class RunAnsibleMsg extends NeedReplyMessage {
+public class RunAnsibleMsg extends NeedReplyMessage implements HasSensitiveInfo {
     private String targetIp;
     private String targetUuid;
     private String privateKeyFile;
     private String playBookPath;
     private String ansibleExecutable;
+    @NoLogging
+    private String remotePass;
     private Map<String, Object> arguments = new HashMap<String, Object>();
 
     public String getAnsibleExecutable() {
@@ -61,5 +65,13 @@ public class RunAnsibleMsg extends NeedReplyMessage {
 
     public void setTargetUuid(String targetUuid) {
         this.targetUuid = targetUuid;
+    }
+
+    public String getRemotePass() {
+        return remotePass;
+    }
+
+    public void setRemotePass(String remotePass) {
+        this.remotePass = remotePass;
     }
 }

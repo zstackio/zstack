@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 public class ShellUtils {
-    private static final CLogger logger = Utils.getLogger(ShellUtils.class);
+    private static final CLogger logger = Utils.getSafeLogger(ShellUtils.class);
 
     public static class ShellException extends RuntimeException {
         public ShellException(String msg, Throwable t) {

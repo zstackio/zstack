@@ -15,6 +15,10 @@ import org.zstack.utils.logging.CLogger;
 public class TimeoutRestTemplate extends RestTemplate {
     private static final CLogger logger = Utils.getLogger(TimeoutRestTemplate.class);
 
+    static {
+        Utils.registerSafeLogger(TimeoutRestTemplate.class);
+    }
+
     public TimeoutRestTemplate(ClientHttpRequestFactory requestFactory) {
         super();
         this.setRequestFactory(requestFactory);

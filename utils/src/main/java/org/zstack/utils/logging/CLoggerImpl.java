@@ -2,6 +2,10 @@ package org.zstack.utils.logging;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.MessageFactory;
+import org.apache.logging.log4j.spi.AbstractLogger;
+
+import java.util.function.Function;
 
 public class CLoggerImpl implements CLogger {
     private final Logger logger;
@@ -13,6 +17,40 @@ public class CLoggerImpl implements CLogger {
 
     private CLoggerImpl(Class<?> clazz) {
         logger = LogManager.getLogger(clazz);
+    }
+
+    private CLoggerImpl(String name, Function<String, String> rewriter) {
+        logger = LogManager.getLogger(name, buildMessageFactory(rewriter));
+    }
+
+    private CLoggerImpl(Class<?> clazz, Function<String, String> rewriter) {
+        logger = LogManager.getLogger(clazz, buildMessageFactory(rewriter));
+    }
+
+    private MessageFactory buildMessageFactory(Function<String, String> rewriter) {
+        try {
+            return new MessageFactory() {
+                MessageFactory defaultFactory = AbstractLogger.DEFAULT_MESSAGE_FACTORY_CLASS.newInstance();
+
+                @Override
+                public org.apache.logging.log4j.message.Message newMessage(Object message) {
+                    return defaultFactory.newMessage(message);
+                }
+
+                @Override
+                public org.apache.logging.log4j.message.Message newMessage(String message) {
+                    return defaultFactory.newMessage(rewriter.apply(message));
+                }
+
+                @Override
+                public org.apache.logging.log4j.message.Message newMessage(String message, Object... params) {
+                    return defaultFactory.newMessage(rewriter.apply(message));
+                }
+            };
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /*
@@ -28,6 +66,14 @@ public class CLoggerImpl implements CLogger {
         }
     }
     */
+
+    public static CLogger getLogger(String name, Function<String, String> rewriter) {
+        return new CLoggerImpl(name, rewriter);
+    }
+
+    public static CLogger getLogger(Class<?> clazz, Function<String, String> rewriter) {
+        return new CLoggerImpl(clazz, rewriter);
+    }
 
     public static CLogger getLogger(String name) {
         //initialize();

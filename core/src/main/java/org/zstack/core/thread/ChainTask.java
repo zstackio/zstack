@@ -1,9 +1,10 @@
 package org.zstack.core.thread;
 
+import org.zstack.header.PassMaskWords;
 import org.zstack.header.core.AbstractCompletion;
 import org.zstack.header.core.AsyncBackup;
 
-public abstract class ChainTask extends AbstractCompletion {
+public abstract class ChainTask extends AbstractCompletion implements PassMaskWords {
     public ChainTask(AsyncBackup one, AsyncBackup...others) {
         super(one, others);
     }

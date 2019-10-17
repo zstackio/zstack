@@ -1,5 +1,7 @@
 package org.zstack.core.agent;
 
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.NeedReplyMessage;
 
 import java.util.Map;
@@ -7,10 +9,11 @@ import java.util.Map;
 /**
  * Created by frank on 12/5/2015.
  */
-public class DeployAgentMsg extends NeedReplyMessage {
+public class DeployAgentMsg extends NeedReplyMessage implements HasSensitiveInfo {
     private String owner;
     private String ip;
     private String username;
+    @NoLogging
     private String password;
     private Integer sshPort;
     private Integer agentPort;

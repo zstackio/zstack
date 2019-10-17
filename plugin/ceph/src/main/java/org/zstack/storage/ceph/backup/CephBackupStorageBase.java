@@ -27,6 +27,8 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.*;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.rest.RESTFacade;
@@ -573,13 +575,14 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
     }
 
-    public static class CephToCephMigrateImageCmd extends AgentCommand {
+    public static class CephToCephMigrateImageCmd extends AgentCommand implements HasSensitiveInfo {
         String imageUuid;
         long imageSize;
         String srcInstallPath;
         String dstInstallPath;
         String dstMonHostname;
         String dstMonSshUsername;
+        @NoLogging
         String dstMonSshPassword;
         int dstMonSshPort;
 

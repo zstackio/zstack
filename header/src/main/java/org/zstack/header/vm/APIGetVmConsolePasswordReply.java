@@ -1,5 +1,7 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 
@@ -9,7 +11,8 @@ import org.zstack.header.rest.RestResponse;
  */
 
 @RestResponse(fieldsTo = {"password=consolePassword"})
-public class APIGetVmConsolePasswordReply extends APIReply {
+public class APIGetVmConsolePasswordReply extends APIReply implements HasSensitiveInfo {
+    @NoLogging
     private String consolePassword;
 
     public String getConsolePassword() {

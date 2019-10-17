@@ -1,18 +1,21 @@
 package org.zstack.storage.ceph.backup;
 
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.backup.BackupStorageMessage;
 
 /**
  * Created by GuoYi on 10/19/17.
  */
-public class CephToCephMigrateImageMsg extends NeedReplyMessage implements BackupStorageMessage {
+public class CephToCephMigrateImageMsg extends NeedReplyMessage implements BackupStorageMessage, HasSensitiveInfo {
     private String imageUuid;
     private long imageSize;
     private String srcInstallPath;
     private String dstInstallPath;
     private String dstMonHostname;
     private String dstMonSshUsername;
+    @NoLogging
     private String dstMonSshPassword;
     private int dstMonSshPort;
     private String backupStorageUuid;

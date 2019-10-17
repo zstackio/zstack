@@ -1,10 +1,13 @@
 package org.zstack.core.puppet;
 
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.NeedReplyMessage;
 
-public class PuppetPokeAgentMsg extends NeedReplyMessage {
+public class PuppetPokeAgentMsg extends NeedReplyMessage implements HasSensitiveInfo {
     private String hostname;
     private String username;
+    @NoLogging
     private String password;
     private Integer sshPort;
     private String nodeName;

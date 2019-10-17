@@ -4,6 +4,8 @@ import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.network.l3.L3NetworkInventory;
@@ -19,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class VmInstanceSpec implements Serializable {
+public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
 
     public static class VolumeSpec {
         private PrimaryStorageInventory primaryStorageInventory;
@@ -263,6 +265,7 @@ public class VmInstanceSpec implements Serializable {
     private String usbRedirect = "false";
     private String enableRDP = "false";
     private String VDIMonitorNumber = "1";
+    @NoLogging
     private String consolePassword;
     private VmAccountPreference accountPerference;
     private boolean createPaused;

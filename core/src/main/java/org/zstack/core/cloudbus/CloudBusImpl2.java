@@ -18,6 +18,7 @@ import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.Constants;
 import org.zstack.header.Service;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.apimediator.APIIsReadyToGoMsg;
 import org.zstack.header.apimediator.APIIsReadyToGoReply;
 import org.zstack.header.apimediator.StopRoutingException;
@@ -400,7 +401,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
         private final Gson gson1 = new GsonUtil().setCoder(Message.class, this).setSerializationExclusionStrategy(new ExclusionStrategy() {
             @Override
             public boolean shouldSkipField(FieldAttributes fieldAttributes) {
-                return fieldAttributes.getAnnotation(SkipLogger.class) != null;
+                return fieldAttributes.getAnnotation(NoLogging.class) != null;
             }
 
             @Override

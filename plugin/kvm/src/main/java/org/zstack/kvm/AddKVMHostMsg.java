@@ -1,12 +1,15 @@
 package org.zstack.kvm;
 
 import org.zstack.header.host.AddHostMsg;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.utils.verify.Param;
 
-public class AddKVMHostMsg extends AddHostMsg implements AddKVMHostMessage {
+public class AddKVMHostMsg extends AddHostMsg implements AddKVMHostMessage, HasSensitiveInfo {
     @Param
     private String username;
     @Param
+    @NoLogging
     private String password;
     @Param(numberRange = {1, 65535}, required = false)
     private int sshPort = 22;

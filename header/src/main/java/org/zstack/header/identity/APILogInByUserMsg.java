@@ -2,6 +2,8 @@ package org.zstack.header.identity;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.http.HttpMethod;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APIReply;
@@ -17,7 +19,7 @@ import java.util.Map;
         method = HttpMethod.PUT,
         responseClass = APILogInReply.class
 )
-public class APILogInByUserMsg extends APISessionMessage implements APILoginAuditor {
+public class APILogInByUserMsg extends APISessionMessage implements APILoginAuditor, HasSensitiveInfo {
     @APIParam(required = false)
     private String accountUuid;
     @APIParam(required = false)
@@ -25,6 +27,7 @@ public class APILogInByUserMsg extends APISessionMessage implements APILoginAudi
     @APIParam
     private String userName;
     @APIParam(password = true)
+    @NoLogging
     private String password;
     @APIParam(required = false)
     private Map<String, String> clientInfo;

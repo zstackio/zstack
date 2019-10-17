@@ -15,41 +15,94 @@ import org.zstack.utils.stopwatch.StopWatchImpl;
 import org.zstack.utils.tester.ZTester;
 import org.zstack.utils.tester.ZTesterImpl;
 
+import java.util.*;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+
 public class Utils {
 	private static ArraySpliter arraySpliter = null;
 	private static FieldPrinter fieldPrinter = null;
 	private static PathUtils pathUtil = null;
-	
+
+    private static ThreadLocal<Map<String, String>> maskWords = ThreadLocal.withInitial(Collections::emptyMap);
+
+    private static Pattern simpleWordsPattern = Pattern.compile("^[a-zA-Z0-9]*$");
+    static final Function<String, String> defaultRewriter = raw -> {
+        for (Map.Entry<String, String> s : maskWords.get().entrySet()) {
+            if (simpleWordsPattern.matcher(s.getKey()).matches()) {
+                raw = raw.replaceAll('"' + s.getKey() + "\"(?=[^:])", '"' + s.getValue() + '"');
+            } else {
+                raw = raw.replace('"' + s.getKey() + '"', '"' + s.getValue() + '"');
+            }
+        }
+        return raw;
+    };
+
+    public static Map<String, String> getLogMaskWords() {
+        return maskWords.get();
+    }
+
+    public static void registerSafeLogger(Class clazz) {
+        MaskSensitiveInfoRewritePolicy.loggerNames.add(clazz.getName());
+    }
+
+    public static class MaskWords implements AutoCloseable {
+        public MaskWords(Map<String, String> words) {
+            maskWords.set(new HashMap<>(words));
+        }
+
+        @Override
+        public void close() {
+            maskWords.remove();
+        }
+    }
+
 	static {
 		arraySpliter = new ArraySpliterImpl();
 		fieldPrinter = new FieldPrinterImpl();
 		pathUtil = new PathUtilImpl();
 	}
-	
+
     public static StopWatch getStopWatch() {
         return new StopWatchImpl();
     }
-    
+
     public static CLogger getLogger(String className) {
         return CLoggerImpl.getLogger(className);
      }
-     
+
     public static CLogger getLogger(Class<?> clazz) {
         return CLoggerImpl.getLogger(clazz);
     }
-    
+
+    public static CLogger getLogger(String className, Function<String, String> rewriter) {
+        return CLoggerImpl.getLogger(className,rewriter);
+    }
+
+    public static CLogger getLogger(Class<?> clazz, Function<String, String> rewriter) {
+        return CLoggerImpl.getLogger(clazz, rewriter);
+    }
+
+    public static CLogger getSafeLogger(String className) {
+        return CLoggerImpl.getLogger(className, defaultRewriter);
+    }
+
+    public static CLogger getSafeLogger(Class<?> clazz) {
+        return CLoggerImpl.getLogger(clazz, defaultRewriter);
+    }
+
     public static FileLocator createFileLocator() {
         return new FileLocatorImpl();
     }
-    
+
     public static ArraySpliter getArraySpliter() {
     	return arraySpliter;
     }
-    
+
     public static FieldPrinter getFieldPrinter() {
     	return fieldPrinter;
     }
-    
+
     public static PathUtils getPathUtil() {
     	return pathUtil;
     }
