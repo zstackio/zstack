@@ -2271,29 +2271,44 @@ public class VmInstanceManagerImpl extends AbstractService implements
     @Override
     public void afterHostConnected(HostInventory inv) {
         if (inv.getStatus().equals(HostStatus.Connected.toString())){
-            List<String> vmUuids = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid)
+            List<Tuple> vmStates = Q.New(VmInstanceVO.class)
+                    .select(VmInstanceVO_.uuid, VmInstanceVO_.state)
                     .eq(VmInstanceVO_.hostUuid, inv.getUuid())
-                    .listValues();
-            if(vmUuids.isEmpty()){
+                    .listTuple();
+            if(vmStates.isEmpty()){
                 return;
             }
-            new While<>(vmUuids).step((vmUuid, completion) -> {
-                VmCheckOwnStateMsg msg = new VmCheckOwnStateMsg();
-                msg.setVmInstanceUuid(vmUuid);
-                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
-                bus.send(msg, new CloudBusCallBack(completion) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if(!reply.isSuccess()){
-                            logger.warn(String.format("the host[uuid:%s] connected, but the vm[uuid:%s] fails to " +
-                                    "update it's state , %s", inv.getUuid(), vmUuid, reply.getError()));
-                        }
-                        completion.done();
-                    }
-                });
-            }, 200).run(new NopeNoErrorCompletion());
-        }
 
+            Map<String, VmInstanceState> vmStateMap = vmStates.stream().
+                    collect(Collectors.toMap(i -> i.get(0, String.class), i -> i.get(1, VmInstanceState.class)));
+
+            final CheckVmStateOnHypervisorMsg cmsg = new CheckVmStateOnHypervisorMsg();
+            cmsg.setVmInstanceUuids(new ArrayList<>(vmStateMap.keySet()));
+            cmsg.setHostUuid(inv.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, inv.getUuid());
+            bus.send(cmsg, new CloudBusCallBack(cmsg) {
+                @Override
+                public void run(MessageReply r) {
+                    if (!r.isSuccess()) {
+                        logger.warn(String.format("the host[uuid:%s] connected, but the vm states check fails, %s", inv.getUuid(), r.getError()));
+                        return;
+                    }
+
+                    CheckVmStateOnHypervisorReply reply = r.castReply();
+                    for (Map.Entry<String, String> e : reply.getStates().entrySet()) {
+                        VmInstanceState state = VmInstanceState.valueOf(e.getValue());
+                        if (vmStateMap.get(e.getKey()) != state) {
+                            VmStateChangedOnHostMsg vcmsg = new VmStateChangedOnHostMsg();
+                            vcmsg.setHostUuid(inv.getUuid());
+                            vcmsg.setVmInstanceUuid(e.getKey());
+                            vcmsg.setStateOnHost(state);
+                            bus.makeTargetServiceIdByResourceUuid(vcmsg, VmInstanceConstant.SERVICE_ID, e.getKey());
+                            bus.send(vcmsg);
+                        }
+                    }
+                }
+            });
+        }
     }
 
     @Override
