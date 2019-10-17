@@ -15209,7 +15209,7 @@
   {
     "raw": "unexpected protocol: %s",
     "en_US": "unexpected protocol: {0}",
-    "zh_CN": "",
+    "zh_CN": "不支持的协议类型：{0}",
     "arguments": [
       "url.getProtocol()"
     ],
@@ -15229,7 +15229,7 @@
   {
     "raw": "image not found in BS",
     "en_US": "image not found in BS",
-    "zh_CN": "",
+    "zh_CN": "在镜像服务器上未找到目标镜像",
     "arguments": [],
     "line": 183,
     "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/vmware/VCenterBackupStorage.java"
@@ -15253,7 +15253,7 @@
   {
     "raw": "Duplicated mac address[%s] on VM[uuid: %s, name: %s] and VM[uuid: %s, name: %s]",
     "en_US": "Duplicated mac address[{0}] on VM[uuid: {1}, name: {2}] and VM[uuid: {3}, name: {4}]",
-    "zh_CN": "",
+    "zh_CN": "云主机[uuid：{1}，名称：{2}]和云主机 [uuid：{3}，名称：{4}]中存在重复的mac地址[{0}]",
     "arguments": [
       "nicvo.getMac()",
       "vm1.getUuid()",
@@ -15285,7 +15285,7 @@
   {
     "raw": "Login failed, please check your login parameters.",
     "en_US": "Login failed, please check your login parameters.",
-    "zh_CN": "",
+    "zh_CN": "登录失败，请检查用户名密码是否正确",
     "arguments": [],
     "line": 2947,
     "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
@@ -15293,7 +15293,7 @@
   {
     "raw": "connect %s failed: %s",
     "en_US": "connect {0} failed: {1}",
-    "zh_CN": "",
+    "zh_CN": "连接{0}失败:{1}",
     "arguments": [
       "msg.getDomainName()",
       "ex.getMessage()"
@@ -15304,7 +15304,7 @@
   {
     "raw": "Login to vCenter [%s] failed with user [%s],please check your network connection and credential.",
     "en_US": "Login to vCenter [{0}] failed with user [{1}],please check your network connection and credential.",
-    "zh_CN": "",
+    "zh_CN": "用户[{1}]登录vCenter[{0}]失败，请检查您的网络连接和凭据",
     "arguments": [
       "msg.getDomainName()",
       "msg.getUsername()"
@@ -15315,7 +15315,7 @@
   {
     "raw": "Parse response failed from vCenter [%s],please check the port number[%d].",
     "en_US": "Parse response failed from vCenter [{0}],please check the port number[{1}].",
-    "zh_CN": "",
+    "zh_CN": "解析vCenter[{0}]响应失败，请检查端口号[{1}]",
     "arguments": [
       "msg.getDomainName()",
       "msg.getPort() \u003d\u003d null ? 443 : msg.getPort()"
@@ -15326,7 +15326,7 @@
   {
     "raw": "No clustered compute resource found",
     "en_US": "No clustered compute resource found",
-    "zh_CN": "",
+    "zh_CN": "未找到集群资源",
     "arguments": [],
     "line": 3043,
     "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
@@ -15334,7 +15334,7 @@
   {
     "raw": "No dvSwitch or qualified vSwitch found",
     "en_US": "No dvSwitch or qualified vSwitch found",
-    "zh_CN": "",
+    "zh_CN": "未找到可使用的dvSwitch/vSwitch",
     "arguments": [],
     "line": 3047,
     "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
@@ -15342,7 +15342,7 @@
   {
     "raw": "Datastore %s not found for vCenter %s",
     "en_US": "Datastore {0} not found for vCenter {1}",
-    "zh_CN": "",
+    "zh_CN": "vCenter{1}中未找到Datastore{0}",
     "arguments": [
       "dsMorVal",
       "vcUuid"
@@ -15353,7 +15353,7 @@
   {
     "raw": "Missing host UUID in message",
     "en_US": "Missing host UUID in message",
-    "zh_CN": "",
+    "zh_CN": "消息中缺失物理机UUID",
     "arguments": [],
     "line": 3600,
     "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
@@ -15377,7 +15377,7 @@
   {
     "raw": "Checking compatibility with vm %s failed on host %s",
     "en_US": "Checking compatibility with vm {0} failed on host {1}",
-    "zh_CN": "",
+    "zh_CN": "检查主机{1}与虚拟机{0}的兼容性失败",
     "arguments": [
       "vm.getConfig().getName()",
       "hvo.getManagementIp()"
@@ -15420,7 +15420,7 @@
   {
     "raw": "failed to get VM[%s] root disk usage",
     "en_US": "failed to get VM[{0}] root disk usage",
-    "zh_CN": "",
+    "zh_CN": "获取VM[{0}]根盘使用率失败",
     "arguments": [
       "vm.getName()"
     ],
@@ -15430,7 +15430,7 @@
   {
     "raw": "failed to get VM from installPath: %s",
     "en_US": "failed to get VM from installPath: {0}",
-    "zh_CN": "",
+    "zh_CN": "在路径{0}下未找到云主机",
     "arguments": [
       "msg.getInstallPath()"
     ],
@@ -15440,7 +15440,7 @@
   {
     "raw": "failed to connect to vCenter: %s: %s",
     "en_US": "failed to connect to vCenter: {0}: {1}",
-    "zh_CN": "",
+    "zh_CN": "无法连接到vCenter：{0}：{1}",
     "arguments": [
       "vCenterUrl",
       "ex.getMessage()"
@@ -15481,7 +15481,7 @@
   {
     "raw": "failed to set ESX VM uuid [%s:%s]",
     "en_US": "failed to set ESX VM uuid [{0}:{1}]",
-    "zh_CN": "",
+    "zh_CN": "设置ESX VM uuid [{0}：{1}]失败",
     "arguments": [
       "info.getName()",
       "info.getInstanceUuid()"
@@ -15502,7 +15502,7 @@
   {
     "raw": "failed to search resource pool for host %s",
     "en_US": "failed to search resource pool for host {0}",
-    "zh_CN": "",
+    "zh_CN": "搜索物理机{0}资源池失败",
     "arguments": [
       "host.getName()"
     ],
@@ -15512,7 +15512,7 @@
   {
     "raw": "No resource pool found for host %s",
     "en_US": "No resource pool found for host {0}",
-    "zh_CN": "",
+    "zh_CN": "在物理机{0}上未找到资源池",
     "arguments": [
       "host.getName()"
     ],
@@ -15532,7 +15532,7 @@
   {
     "raw": "guest tools not installed or running for VM: %s",
     "en_US": "guest tools not installed or running for VM: {0}",
-    "zh_CN": "",
+    "zh_CN": "云主机{0}上未安装或运行guest tools",
     "arguments": [
       "vm.getName()"
     ],
@@ -15542,7 +15542,7 @@
   {
     "raw": "upload file failed for VM: %s",
     "en_US": "upload file failed for VM: {0}",
-    "zh_CN": "",
+    "zh_CN": "云主机{0}上传文件失败",
     "arguments": [
       "vm.getName()"
     ],
@@ -15572,7 +15572,7 @@
   {
     "raw": "create portgroup failed for host %s",
     "en_US": "create portgroup failed for host {0}",
-    "zh_CN": "",
+    "zh_CN": "物理机{0}创建端口组失败",
     "arguments": [
       "hvo.getName()"
     ],
@@ -15582,7 +15582,7 @@
   {
     "raw": "create portgroup failed for host %s: because %s",
     "en_US": "create portgroup failed for host {0}: because {1}",
-    "zh_CN": "",
+    "zh_CN": "物理机{0}创建端口组失败，因为{1}",
     "arguments": [
       "hvo.getName()",
       "((OperationFailureException) ex).getErrorCode().getDetails()"
@@ -15593,7 +15593,7 @@
   {
     "raw": "Host[%s:%s] not found on vCenter",
     "en_US": "Host[{0}:{1}] not found on vCenter",
-    "zh_CN": "",
+    "zh_CN": "vCenter上未找到物理机[{0}:{1}]",
     "arguments": [
       "hvo.getName()",
       "hvo.getUuid()"
@@ -15677,7 +15677,7 @@
   {
     "raw": "failed to set ZStack uuid to VCenter ManagedEntity [name:%s, mor:%s] because %s",
     "en_US": "failed to set ZStack uuid to VCenter ManagedEntity [name:{0}, mor:{1}] because {2}",
-    "zh_CN": "",
+    "zh_CN": "在VCenter ManagedEntity [name：{0}，mor：{1}]上设置ZStack uuid失败，因为{2}",
     "arguments": [
       "me.getName()",
       "mor.val",
@@ -15689,7 +15689,7 @@
   {
     "raw": "No VNC ports available",
     "en_US": "No VNC ports available",
-    "zh_CN": "",
+    "zh_CN": "未找到可用的VNC端口",
     "arguments": [],
     "line": 164,
     "fileName": "src/zstack/./premium/mevoco/src/main/java/org/zstack/vmware/VncPortAllocatorImpl.java"
