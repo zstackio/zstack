@@ -215,6 +215,7 @@ public class ShellUtils {
                 pb.directory(new File(baseDir));
 
                 process = pb.start();
+                command = Utils.maskSensitiveInfo(command);
                 if (!suppressTraceLog && logger.isTraceEnabled()) {
                     logger.debug(String.format("exec shell command[%s]", command));
                 }

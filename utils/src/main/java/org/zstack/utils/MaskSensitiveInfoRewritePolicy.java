@@ -31,19 +31,19 @@ public final class MaskSensitiveInfoRewritePolicy implements RewritePolicy {
 
         if (event.getMessage() instanceof ObjectMessage) {
             Log4jLogEvent.Builder builder = new Log4jLogEvent.Builder(event);
-            builder.setMessage(new SimpleMessage(Utils.defaultRewriter.apply(event.getMessage().getFormattedMessage())));
+            builder.setMessage(new SimpleMessage(Utils.maskSensitiveInfo(event.getMessage().getFormattedMessage())));
             return builder.build();
         } else if (event.getMessage() instanceof SimpleMessage) {
             Log4jLogEvent.Builder builder = new Log4jLogEvent.Builder(event);
-            builder.setMessage(new SimpleMessage(Utils.defaultRewriter.apply(event.getMessage().getFormattedMessage())));
+            builder.setMessage(new SimpleMessage(Utils.maskSensitiveInfo(event.getMessage().getFormattedMessage())));
             return builder.build();
         } else if (event.getMessage() instanceof ReusableObjectMessage) {
             ReusableObjectMessage msg = (ReusableObjectMessage) event.getMessage();
-            msg.set(Utils.defaultRewriter.apply(msg.getFormattedMessage()));
+            msg.set(Utils.maskSensitiveInfo(msg.getFormattedMessage()));
             return event;
         } else if (event.getMessage() instanceof ReusableSimpleMessage) {
             ReusableSimpleMessage msg = (ReusableSimpleMessage) event.getMessage();
-            msg.set(Utils.defaultRewriter.apply(msg.getFormattedMessage()));
+            msg.set(Utils.maskSensitiveInfo(msg.getFormattedMessage()));
             return event;
         } else {
             return event;
