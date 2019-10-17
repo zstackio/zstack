@@ -2785,8 +2785,6 @@ public class KVMHost extends HostBase implements Host {
                             checker.setTargetIp(getSelf().getManagementIp());
                             checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/kvm/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
                             checker.addSrcDestPair(srcPath, destPath);
-                            checker.addSrcDestPair((PathUtil.join(PathUtil.getZStackHomeFolder(), "ansible", "files", "kvm") + "/spice-certs/ca-cert.pem"),
-                                    KVMGlobalProperty.REGISTRY_CERTS);
 
                             SshChronyConfigChecker chronyChecker = new SshChronyConfigChecker();
                             chronyChecker.setTargetIp(getSelf().getManagementIp());
@@ -2813,6 +2811,12 @@ public class KVMHost extends HostBase implements Host {
                             runner.installChecker(chronyChecker);
                             runner.installChecker(repoChecker);
                             runner.installChecker(callbackChecker);
+                            for (KVMHostAddSshFileMd5CheckerExtensionPoint exp : pluginRgty.getExtensionList(KVMHostAddSshFileMd5CheckerExtensionPoint.class)) {
+                                SshFileMd5Checker sshFileMd5Checker = exp.getSshFileMd5Checker(getSelf());
+                                if (sshFileMd5Checker != null) {
+                                    runner.installChecker(sshFileMd5Checker);
+                                }
+                            }
                             runner.setAgentPort(KVMGlobalProperty.AGENT_PORT);
                             runner.setTargetIp(getSelf().getManagementIp());
                             runner.setTargetUuid(getSelf().getUuid());
