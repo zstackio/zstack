@@ -1426,7 +1426,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         q.add(VolumeVO_.uuid, Op.EQ, msgData.getRootVolumeUuid());
                         final VolumeVO volvo = q.find();
 
-                        String accountUuid = acntMgr.getOwnerAccountUuidOfResource(volvo.getUuid());
+                        String accountUuid = msgData.getSession().getAccountUuid();
 
                         final ImageVO imvo = new ImageVO();
                         if (msgData.getResourceUuid() != null) {
