@@ -35,7 +35,7 @@ public abstract class Bash {
                 cmd = String.format(cmd, args);
             }
 
-            lastCommand = cmd;
+            lastCommand = Utils.maskSensitiveInfo(cmd);
             ShellResult res = ShellUtils.runAndReturn(cmd, path, useSudo);
             lastReturnCode = res.getRetCode();
             lastStdout = res.getStdout();

@@ -27,7 +27,7 @@ public class Utils {
     private static ThreadLocal<Map<String, String>> maskWords = ThreadLocal.withInitial(Collections::emptyMap);
 
     private static Pattern simpleWordsPattern = Pattern.compile("^[a-zA-Z0-9]*$");
-    static final Function<String, String> defaultRewriter = raw -> {
+    private static final Function<String, String> defaultRewriter = raw -> {
         for (Map.Entry<String, String> s : maskWords.get().entrySet()) {
             if (simpleWordsPattern.matcher(s.getKey()).matches()) {
                 raw = raw.replaceAll('"' + s.getKey() + "\"(?=[^:])", '"' + s.getValue() + '"');
@@ -37,6 +37,10 @@ public class Utils {
         }
         return raw;
     };
+
+    public static String maskSensitiveInfo(String raw) {
+        return defaultRewriter.apply(raw);
+    }
 
     public static Map<String, String> getLogMaskWords() {
         return maskWords.get();
