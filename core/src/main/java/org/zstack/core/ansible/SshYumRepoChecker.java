@@ -3,6 +3,7 @@ package org.zstack.core.ansible;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -31,9 +32,10 @@ public class SshYumRepoChecker implements AnsibleChecker {
                 .setPassword(password).setPort(sshPort)
                 .setHostname(targetIp);
         try {
+
             ssh.command(String.format(
                     "sed -i '/baseurl/s/\\([0-9]\\{1,3\\}\\.\\)\\{3\\}[0-9]\\{1,3\\}:\\([0-9]\\+\\)/%s/g' /etc/yum.repos.d/{zstack,qemu-kvm-ev}-mn.repo",
-                    restf.getBaseUrl()
+                    restf.getHostName() + ":" + restf.getPort()
             ));
             SshResult ret = ssh.run();
             if (ret.getReturnCode() != 0) {

@@ -641,6 +641,11 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     @Override
+    public int getPort() {
+        return port;
+    }
+
+    @Override
     public String makeUrl(String path) {
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(path);
