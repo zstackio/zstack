@@ -21,6 +21,8 @@ public class RBAC {
     public static Map<Class, List<APIPermissionCheckerWrapper>> permissionCheckers = new HashMap<>();
     private static Map<Class, List<RBACEntityFormatter>> entityFormatters = new HashMap<>();
 
+    public static Map<Class, List<ExpendedFieldPermission>> expendApiClassForPermissionCheck = new HashMap<>();
+
     private static List<RoleContributor> roleContributors = new ArrayList<>();
     private static List<RoleBuilder> roleBuilders = new ArrayList<>();
 
@@ -269,6 +271,34 @@ public class RBAC {
         }
     }
 
+    public static class ExpendedFieldPermissionBuilder {
+        ExpendedFieldPermission fieldPermission = new ExpendedFieldPermission();
+        Class basicApiClass;
+
+        public ExpendedFieldPermissionBuilder basicApi(Class v) {
+            basicApiClass = v;
+            return this;
+        }
+
+        public ExpendedFieldPermissionBuilder fieldName(String v) {
+            fieldPermission.fieldName = v;
+            return this;
+        }
+
+        public ExpendedFieldPermissionBuilder expandTo(Class v) {
+            fieldPermission.apiClass = v;
+            return this;
+        }
+
+        public void build() {
+            DebugUtils.Assert(fieldPermission.fieldName != null, "fieldName in ExpendedFieldPermission can not be null");
+            DebugUtils.Assert(fieldPermission.apiClass != null, "apiClass in ExpendedFieldPermission can not be null");
+
+            expendApiClassForPermissionCheck.putIfAbsent(basicApiClass, new ArrayList<>());
+            expendApiClassForPermissionCheck.get(basicApiClass).add(fieldPermission);
+        }
+    }
+
     public static class PermissionBuilder {
         Permission permission = new Permission();
 
@@ -476,6 +506,11 @@ public class RBAC {
             });
             role.allowedActions.addAll(rc.actions);
         });
+    }
+
+    static class ExpendedFieldPermission {
+        String fieldName;
+        Class apiClass;
     }
 
     public static boolean isResourceGlobalReadable(Class clz) {
