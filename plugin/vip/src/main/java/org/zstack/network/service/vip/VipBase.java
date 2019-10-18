@@ -249,6 +249,9 @@ public class VipBase {
             } else if (service.serviceUids.contains(s.getServiceUuid())) {
                 /* remove the service that will be deleted */
                 activeServices += (service.serviceUids.size() - 1);
+            } else {
+                /* this case means, to be released service is inactive */
+                activeServices += service.serviceUids.size();
             }
         }
 
