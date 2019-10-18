@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.jsonlabel.JsonLabelVO;
 import org.zstack.core.jsonlabel.JsonLabelVO_;
@@ -16,7 +17,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.core.trash.InstallPathRecycleVO;
 import org.zstack.header.core.trash.InstallPathRecycleVO_;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageBackupStorageRefVO;
 import org.zstack.header.image.ImageBackupStorageRefVO_;
@@ -47,7 +47,8 @@ import static org.zstack.core.Platform.inerr;
 /**
  * Created by mingjian.deng on 2019/9/19.
  */
-public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDeleteExtensionPoint, VolumeBeforeExpungeExtensionPoint, Component {
+public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDeleteExtensionPoint, VolumeBeforeExpungeExtensionPoint,
+        VolumeJustBeforeDeleteFromDbExtensionPoint,  Component {
     private final static CLogger logger = Utils.getLogger(StorageRecycleImpl.class);
 
     @Autowired
@@ -376,5 +377,14 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
     @Override
     public void volumeBeforeExpunge(VolumeInventory volume, Completion completion) {
         deleteTrashForVolume(volume.getUuid(), volume.getPrimaryStorageUuid(), completion);
+    }
+
+    @Override
+    public void volumeJustBeforeDeleteFromDb(VolumeInventory inv) {
+        deleteTrashInDb(inv);
+    }
+
+    private void deleteTrashInDb(VolumeInventory volume) {
+        SQL.New(InstallPathRecycleVO.class).eq(InstallPathRecycleVO_.resourceUuid, volume.getUuid()).eq(InstallPathRecycleVO_.storageUuid, volume.getPrimaryStorageUuid()).delete();
     }
 }

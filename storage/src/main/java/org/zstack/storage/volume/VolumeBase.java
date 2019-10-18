@@ -20,13 +20,11 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
-import org.zstack.core.workflow.ShareFlowChain;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
@@ -35,8 +33,8 @@ import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.image.ImageVO;
-import org.zstack.header.message.*;
 import org.zstack.header.message.APIDeleteMessage.DeletionMode;
+import org.zstack.header.message.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
@@ -61,10 +59,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.getUuid;
-import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -1038,6 +1033,7 @@ public class VolumeBase implements Volume {
                         VolumeStatus oldStatus = self.getStatus();
 
                         if (deletionPolicy == VolumeDeletionPolicy.Direct) {
+                            callVmJustBeforeDeleteFromDbExtensionPoint();
                             self.setStatus(VolumeStatus.Deleted);
                             self = dbf.updateAndRefresh(self);
                             String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
