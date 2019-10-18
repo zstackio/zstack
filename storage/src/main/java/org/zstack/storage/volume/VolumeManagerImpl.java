@@ -828,8 +828,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     }
 
-    public void volumeBeforeExpunge(VolumeInventory volume) {
-
+    public void volumeBeforeExpunge(VolumeInventory volume, Completion completion) {
+        completion.success();
     }
 
     public void preRecoverDataVolume(VolumeInventory volume) {

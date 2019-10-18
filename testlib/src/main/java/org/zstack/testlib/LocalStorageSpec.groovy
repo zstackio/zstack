@@ -1,6 +1,7 @@
 package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO
@@ -157,7 +158,7 @@ class LocalStorageSpec extends PrimaryStorageSpec {
             simulator(LocalStorageKvmBackend.REVERT_SNAPSHOT_PATH) { HttpEntity<String> e ->
                 def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.RevertVolumeFromSnapshotCmd.class)
                 def rsp = new LocalStorageKvmBackend.RevertVolumeFromSnapshotRsp()
-                rsp.newVolumeInstallPath = cmd.snapshotInstallPath + "/newpath"
+                rsp.newVolumeInstallPath = cmd.snapshotInstallPath + "/${Platform.uuid}".toString()
                 return rsp
             }
 
