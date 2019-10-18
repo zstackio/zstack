@@ -227,7 +227,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     " and nic.vmInstanceUuid = vm.uuid and ip.ipVersion = :ipVersion" +
                     " and vm.type = :vmType and vm.state in (:vmStates) " +
                     // IP = null means the VM is just recovered without any IP allocated
-                    " and nic.ip is not null and vm.uuid not in (:vmInPublicL3s)")
+                    " and nic.ip is not null and vm.uuid not in (:vmInPublicL3s) and vm.clusterUuid is not null")
                     .param("l3Uuids", l3Uuids)
                     .param("vmType", VmInstanceConstant.USER_VM_TYPE)
                     .param("vmStates", EipConstant.attachableVmStates)
@@ -239,7 +239,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     " from VmNicVO nic, VmInstanceVO vm, UsedIpVO ip" +
                     " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid in (:l3Uuids)" +
                     " and nic.vmInstanceUuid = vm.uuid and ip.ipVersion = :ipVersion" +
-                    " and vm.type = :vmType and vm.state in (:vmStates) " +
+                    " and vm.type = :vmType and vm.state in (:vmStates) and vm.clusterUuid is not null" +
                     // IP = null means the VM is just recovered without any IP allocated
                     " and nic.ip is not null")
                     .param("l3Uuids", l3Uuids)
