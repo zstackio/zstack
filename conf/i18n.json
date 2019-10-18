@@ -7461,7 +7461,7 @@
   {
     "raw": "image[uuid:%s] is of mediaType: %s, only RootVolumeTemplate and ISO can be used to create vm",
     "en_US": "image[uuid:{0}] is of mediaType: {1}, only RootVolumeTemplate and ISO can be used to create vm",
-    "zh_CN": "镜像[uuid:{0}] 类型为{1}，该镜像只能用来创建根云盘或者用来创建云主机",
+    "zh_CN": "镜像[uuid:{0}] 类型为{1}，只能用RootVolumeTemplate和ISO来创建云主机",
     "arguments": [
       "imageVO.getUuid()",
       "imageVO.getMediaType()"
