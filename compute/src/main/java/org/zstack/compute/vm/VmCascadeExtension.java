@@ -9,6 +9,7 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -38,6 +39,7 @@ import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageDetachStruct;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.volume.GetVmUuidFromShareableVolumeExtensionPoint;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
@@ -66,6 +68,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
     private CloudBus bus;
     @Autowired
     private VmInstanceDeletionPolicyManager deletionPolicyManager;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private static final String NAME = VmInstanceVO.class.getSimpleName();
 
@@ -269,8 +273,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
     private List<String> getVmUuidForPrimaryStorageDetached(List<PrimaryStorageDetachStruct> structs) {
         List<String> vmUuids = new ArrayList<>();
         for (PrimaryStorageDetachStruct s : structs) {
-            String sql = "select vm.uuid" +
-                    " from VmInstanceVO vm, PrimaryStorageVO ps, VolumeVO vol" +
+            String sql = "select distinct vm.uuid" +
+                    " from VmInstanceVO vm, VolumeVO vol" +
                     " where vm.type = :vmType" +
                     " and vm.state in (:vmStates)" +
                     " and vm.clusterUuid = :clusterUuid" +
@@ -286,6 +290,10 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             q.setParameter("clusterUuid", s.getClusterUuid());
             q.setParameter("psUuid", s.getPrimaryStorageUuid());
             vmUuids.addAll(q.getResultList());
+            //Get the vmuuid attached by the ShareableVolume
+            for (GetVmUuidFromShareableVolumeExtensionPoint exp : pluginRgty.getExtensionList(GetVmUuidFromShareableVolumeExtensionPoint.class)) {
+                vmUuids.addAll(exp.getVmUuidFromShareableVolumeByPrimaryStorage(s));
+            }
         }
 
         return vmUuids;
