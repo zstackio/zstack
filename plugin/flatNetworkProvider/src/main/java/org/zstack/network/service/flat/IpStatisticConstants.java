@@ -10,6 +10,7 @@ public interface IpStatisticConstants {
         String VIP = "Vip";
         String OTHER = "Other";
         String VROUTER = "VRouter";
+        String VPC_VROUTER = "VpcVRouter";
         String DHCP = "DHCP";
     }
 

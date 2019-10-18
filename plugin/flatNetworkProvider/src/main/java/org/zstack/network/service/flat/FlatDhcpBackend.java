@@ -393,9 +393,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 element.setVmInstanceType((String) result[5]);
                 if (result[3] != null) {
                     vmUuids.add((String) result[3]);
-                } else if (result[1] != null) {
+                }
+                if (result[1] != null) {
                     resourceTypes.add(ResourceType.VIP);
-                } else {
+                }
+                if (!(result[1] != null || result[3] != null)) {
                     resourceTypes.add(ResourceType.DHCP);
                 }
             } else {
@@ -435,8 +437,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             if (element.getVmInstanceUuid() != null) {
                 if (VmType.USER_VM.equals(element.getVmInstanceType())) {
                     resourceTypes.add(ResourceType.VM);
-                } else {
+                } else if (VmType.VROUTER.equals(element.getVmInstanceType())) {
                     resourceTypes.add(ResourceType.VROUTER);
+                } else if (VmType.VPC_VROUTER.equals(element.getVmInstanceType())) {
+                    resourceTypes.add(ResourceType.VPC_VROUTER);
                 }
             }
         }
