@@ -691,7 +691,7 @@
     "category": "PS",
     "code": "1010",
     "method": "regex",
-    "regex": ".*unable to connect the shared block group primary storage\\[uuid:.*, name:.*]to the cluster\\[uuid:.*], Can't access shared block group primary storage on host\\[uuid:.*].*",
+    "regex": ".*unable to connect the shared block group primary storage\\[uuid:.*, name:.*] to the cluster\\[uuid:.*], Can't access shared block group primary storage on host\\[uuid:.*].*",
     "message_cn": "无法将主机上的共享块主存储加载到集群",
     "message_en": "unable to connect the shared block group primary storage to the cluster"
   },
@@ -766,6 +766,14 @@
     "regex": "There is no LocalStorage primary storage.*when the cluster mounts multiple primary storage, the system uses the local primary storage.*",
     "message_cn": "集群内没有正处于已启用且已连接状态的LocalStorage主存储，请检查集群内主存储的启用和就绪状态。",
     "message_en": "There is no LocalStorage primary storage with [state: Enabled, status: Connected] in the cluster, please check the state/status of the LocalStorage primary storage."
+  },
+  {
+    "category": "PS",
+    "code": "1020",
+    "method": "regex",
+    "regex": ".*unable to connect the shared block group primary storage\\[uuid:.*, name:.*] to the cluster\\[uuid:.*], Can't access shared block group primary storage on host\\[uuid:.*].*and create vg with forceWipw=False.*",
+    "message_cn": "无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。",
+    "message_en": "Unable to connect the shared block group primary storage to the cluster, because device is not empty, please check the checkbox of \"Clear SharedBlock\" and try again."
   },
   {
     "category": "QUOTA",
