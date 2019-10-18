@@ -76,7 +76,7 @@ import static java.util.Arrays.asList;
  */
 public class RestServer implements Component, CloudBusEventListener {
     private static final CLogger logger = Utils.getLogger(RestServer.class);
-    private static final Logger requestLogger = LogManager.getLogger("api.request");
+    private static final CLogger requestLogger = Utils.getSafeLogger("api.request");
     private static ThreadLocal<RequestInfo> requestInfo = new ThreadLocal<>();
 
     private static final OkHttpClient http;
