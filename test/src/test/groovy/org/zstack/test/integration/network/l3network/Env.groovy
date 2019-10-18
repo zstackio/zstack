@@ -115,7 +115,7 @@ class Env {
                 }
 
                 virtualRouterOffering {
-                    name = "vr"
+                    name = "vro"
                     memory = SizeUnit.MEGABYTE.toByte(512)
                     cpu = 2
                     useManagementL3Network("pubL3")
