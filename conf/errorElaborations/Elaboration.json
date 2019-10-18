@@ -26,6 +26,7 @@
   {
     "category": "APPLIANCE_VM",
     "code": "1000",
+    "method": "regex",
     "regex": "the SSH port is not open after.*Failed to login the vyos router.*",
     "message_cn": "启动虚拟路由器超时,经过 %2$s 秒等待，虚拟路由器的SSH端口仍未开放。",
     "message_en": "Start virtual router timeout, the SSH port of the virtual router is not open after %2$s seconds"
@@ -63,8 +64,9 @@
     "message_en": "More than one BackupStorage on the same host identified by hostname. There has been a SftpBackupStorage existing"
   },
   {
-    "category" : "BS",
+    "category": "BS",
     "code": "1005",
+    "method": "regex",
     "regex": "System can't find imagestore backup Storage. Please do not set imagestore backup Storage server IP to localhost(127.*.*.*),.*",
     "message_cn": "无法找到ImageStore镜像服务器，请勿将镜像服务器的地址设置为localhost(127.*.*.*)。",
     "message_en": "Cannot find imagestore backup storage, try avoid to use the localhost(127.*.*.*) as the ip of the imagestore backup storage server."
@@ -72,6 +74,7 @@
   {
     "category": "BS",
     "code": "1006",
+    "method": "regex",
     "regex": "failed to download bits from the imagestore backup storage\\[hostname:.*, path:.*] to the local primary storage\\[uuid:.*, path:.*].*",
     "message_cn": "无法从ImageStore镜像服务器[主机名：%2$s，路径：%3$s]下载资源到本地主存储[uuid：%4$s，路径：%5$s]",
     "message_en": "Failed to download bits from the imagestore backup storage[hostname: %2$s, path: %3$s] to the local primary storage[uuid: %4$s, path: %5$s]."
@@ -135,6 +138,7 @@
   {
     "category": "EIP",
     "code": "1000",
+    "method": "regex",
     "regex": "unable to attach the L3 network.*L3 network is providing EIP.*",
     "message_cn": "无法为云主机[名称：%4$s，uuid：%3$s]分配指定的IP地址，因为该地址已经被用于为一个网络接口控制设备提供EIP服务。",
     "message_en": "Unable to assign the specific ip address to VM[name:%4$s, uuid:%3$s], because this IP address is occupied by a NIC for EIP service."
@@ -342,6 +346,7 @@
   {
     "category": "HOST",
     "code": "1019",
+    "method": "regex",
     "regex": "unable to resume vm.*on kvm host.*failed to resume vm ,timeout.*",
     "message_cn": "恢复云主机运行超时。",
     "message_en": "Resume vm timeout."
@@ -349,6 +354,7 @@
   {
     "category": "HOST",
     "code": "1020",
+    "method": "regex",
     "regex": "failed to start vm\\[.*] on kvm host.*KvmError: vm\\[.*] is already running.*",
     "message_cn": "无法启动云主机[名称：%2$s，uuid：%1$s]，因为它已在运行。",
     "message_en": "Failed to start vm[name:%2$s, uuid:%1$s], because it is already running."
@@ -356,6 +362,7 @@
   {
     "category": "HOST",
     "code": "1021",
+    "method": "regex",
     "regex": "host\\[.*] capacity is not enough to offer cpu\\[[0-9]], memory\\[[0-9] bytes]",
     "message_cn": "物理机无法提供足够的资源[CPU：%1$s，内存：%2$s 字节]。",
     "message_en": "Host cannot provide enough resources[cpu:[%1$s, memory:[%2$s bytes]]]."
@@ -363,9 +370,18 @@
   {
     "category": "HOST",
     "code": "1022",
+    "method": "regex",
     "regex": "the local primary storage has no hosts with enough disk capacity.*required by the vm.*",
     "message_cn": "没有物理机能为云主机[uuid：%2$s]提供所请求的磁盘空间[%1$s 字节]。",
     "message_en": "Cannot found host with enough disk capacity[%1$s bytes] required by the vm[uuid: %2$s]"
+  },
+  {
+    "category": "HOST",
+    "code": "1023",
+    "method": "regex",
+    "regex": ".*change kernel module kvm_intel status to present failed  error: modprobe: ERROR: could not insert 'kvm_intel': Operation not supported.*",
+    "message_cn": "物理机未加载kvm_intel(虚拟化)模块，无法执行当前操作",
+    "message_en": "kvm_intel mod not be loaded, Operation not supported"
   },
   {
     "category": "IAM2",
@@ -746,6 +762,7 @@
   {
     "category": "PS",
     "code": "1019",
+    "method": "regex",
     "regex": "There is no LocalStorage primary storage.*when the cluster mounts multiple primary storage, the system uses the local primary storage.*",
     "message_cn": "集群内没有正处于已启用且已连接状态的LocalStorage主存储，请检查集群内主存储的启用和就绪状态。",
     "message_en": "There is no LocalStorage primary storage with [state: Enabled, status: Connected] in the cluster, please check the state/status of the LocalStorage primary storage."
@@ -793,6 +810,7 @@
   {
     "category": "Utils",
     "code": "1002",
+    "method": "regex",
     "regex": "\\[.*] is not a standard cidr, do you mean \\[.*]",
     "message_cn": "[%1$s]不是一个标准的CIDR，您是否想使用[%2$s]？",
     "message_en": "[%1$s] is not a standard cidr, do you mean [%2$s]?"
@@ -840,6 +858,7 @@
   {
     "category": "VCenter",
     "code": "1003",
+    "method": "regex",
     "regex": "failed to connect to vCenter:.*RetrieveServiceContent;.*java.net.NoRouteToHostException.*",
     "message_cn": "无法连接到vCenter，请确保vCenter处于运行状态。",
     "message_en": "Failed to connect to vCenter, please ensure vCenter host is running."
@@ -1063,6 +1082,7 @@
   {
     "category": "VM",
     "code": "1027",
+    "method": "regex",
     "regex": ".*because:NIC device is still attached after.*",
     "message_cn": "网络接口控制器设备仍然处于已挂载状态，请检查virtio驱动是否正常运行或关闭云主机后尝试重新卸载设备。",
     "message_en": "NIC device is still attached, Please check virtio driver or stop VM and detach again"
@@ -1134,6 +1154,7 @@
   {
     "category": "Volume",
     "code": "1003",
+    "method": "regex",
     "regex": "failed to create data volume template from volume.*on all backup storage.*. See cause for one of errors",
     "message_cn": "无法在任何一个镜像服务器上成功创建数据磁盘[uuid：%1$s]的磁盘镜像。",
     "message_en": "Failed to create data volume template from volume [uuid:%1$s] on any backup storage."
