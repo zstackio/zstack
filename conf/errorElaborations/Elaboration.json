@@ -259,7 +259,7 @@
     "category": "HOST",
     "code": "1008",
     "method": "regex",
-    "regex": ".*failed to check cidr\\[.*] for l2VxlanNetworkPool\\[uuid:.*, name:VXLAN .*] .*, can not find qualify interface .*",
+    "regex": ".*failed to check cidr\\[.*] for l2VxlanNetworkPool\\[uuid:.*, name:.*] .*, can not find qualify interface .*",
     "message_cn": "未能在kvm物理机上检查cidr[%1$s]上的l2VxlanNetworkPool[name:%3$s]，无法找到cidr[%1$s]的合格接口",
     "message_en": "failed to check cidr[%1$s] for l2VxlanNetworkPool[name:%3$s], can not find qualify interface for cidr[%1$s]"
   },
@@ -420,7 +420,7 @@
     "code": "1000",
     "method": "regex",
     "regex": ".*login iscsi server .* on host .* failed, because can not discovery iscsi portal .*, cause iscsiadm: No portals found.*",
-    "message_cn": "登录iscsi服务器失败，因为无法发现iscsi 端口",
+    "message_cn": "登录iscsi服务器失败，因为无法发现iscsi端口",
     "message_en": "login iscsi server failed, because can not discovery iscsi portal[No portals found]"
   },
   {
@@ -430,6 +430,14 @@
     "regex": ".*iscsiadm: No matching sessions found.*",
     "message_cn": "iscsiadm未能严格登出",
     "message_en": "iscsiadm: No matching sessions found"
+  },
+  {
+    "category": "ISCSI",
+    "code": "1002",
+    "method": "regex",
+    "regex": "login iscsi server .* on host .* failed, because can not discovery iscsi portal .*:.*, cause iscsiadm: cannot make connection to .* Connection refused.*",
+    "message_cn": "登录iscsi服务器失败，因为连接被拒绝。",
+    "message_en": "Failed to login iscsi server, due to connection refused."
   },
   {
     "category": "L2",
@@ -451,7 +459,7 @@
     "category": "L2Network",
     "code": "1000",
     "method": "distance",
-    "regex": "There has been a L2VlanNetwork[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s], vlan[%s]. Failed to attach L2VlanNetwork[uuid:%s]",
+    "regex": "There has been a L2VlanNetwork\\[uuid:.*, name:.*] attached to cluster\\[uuid:.*] that has physical interface\\[.*], vlan\\[.*]. Failed to attach L2VlanNetwork\\[uuid:.*]",
     "message_cn": "L2VlanNetwork挂载失败，L2网络的物理接口[%4$s]已经被L2VlanNetwork网络[%2$s]挂载到集群上",
     "message_en": "L2VlanNetwork attached failed, the physical interface[%4$s] has already been attached to the cluster by L2VlanNetwork[%2$s]"
   },
@@ -459,17 +467,17 @@
     "category": "L2Network",
     "code": "1001",
     "method": "distance",
-    "regex": "There has been a l2Network[uuid:%s, name:%s] attached to cluster[uuid:%s] that has physical interface[%s]. Failed to attach l2Network[uuid:%s]",
-    "message_cn": "L2网络挂载失败, L2网络的物理接口[%4$s]已经被L2网络[%2$s]挂载到集群上",
-    "message_en": "L2Network attached failed, the physical interface[%4$s] has already been attached to the cluster by L2Network[%2$s]"
+    "regex": "There has been a l2Network\\[uuid:.*, name:.*] attached to cluster\\[uuid:*] that has physical interface\\[.*]. Failed to attach l2Network\\[uuid:.*]",
+    "message_cn": "L2网络挂载失败, 物理网络接口设备[%4$s]已经被L2网络[%2$s]使用并挂载到集群上。",
+    "message_en": "Failed to attach L2Network, the physical interface[%4$s] had been attached to the cluster by L2Network[%2$s]."
   },
   {
     "category": "L2Network",
     "code": "1002",
     "method": "distance",
-    "regex": "failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]",
+    "regex": "failed to check physical network interfaces\\[names.*] on kvm host\\[uuid:.*, ip:.*]",
     "message_cn": "L2网络挂载失败， 没有在kvm host上找到这个网络物理接口: [%1$s]",
-    "message_en": "L2 Network attached failed， failed to check physical network interfaces on kvm host: [%1$s]"
+    "message_en": "Failed to attach L2 Network, check physical network interfaces on kvm host[%1$s] failed."
   },
   {
     "category": "L3",
@@ -872,6 +880,14 @@
     "message_en": "Failed to connect to vCenter, please ensure vCenter host is running."
   },
   {
+    "category": "VCenter",
+    "code": "1004",
+    "method": "regex",
+    "regex": ".*invoke method RetrieveServiceContent; .*java.net.SocketException.*",
+    "message_cn": "无法连接到vCenter，请确保vCenter处于运行状态。",
+    "message_en": "Failed to connect to vCenter, please ensure vCenter host is running."
+  },
+  {
     "category": "VM",
     "code": "1000",
     "method": "distance",
@@ -1011,7 +1027,7 @@
     "category": "VM",
     "code": "1017",
     "method": "regex",
-    "regex": ".*unable to allocate hosts; due to pagination is enabled, there might be several allocation failures happened before; .*after filtering, HostAllocatorFilterExtensionPoint\\[class org.zstack.vmware.VCenterHostAllocatorFilterExtensionPoint] returns zero candidate host.*",
+    "regex": ".*unable to allocate hosts; due to pagination is enabled, there might be several allocation failures happened before; [\\s\\S]*after filtering, HostAllocatorFilterExtensionPoint\\[class org.zstack.vmware.VCenterHostAllocatorFilterExtensionPoint] returns zero candidate host.*",
     "message_cn": "找不到合适的host来启动vm",
     "message_en": "unable to allocate hosts"
   },
@@ -1075,7 +1091,7 @@
     "category": "VM",
     "code": "1025",
     "method": "regex",
-    "regex": "Duplicate mac address",
+    "regex": "Duplicate mac address.*",
     "message_cn": "重复的mac地址",
     "message_en": "Duplicate mac address"
   },
@@ -1147,7 +1163,7 @@
     "category": "Volume",
     "code": "1001",
     "method": "regex",
-    "regex": ".*current vm instance state\\[.*] doesn't allow to proceed message\\[org.zstack.header.vm.DetachDataVolumeFromVmMsg], allowed states are \\.*",
+    "regex": ".*current vm instance state\\[.*] doesn't allow to proceed message\\[org.zstack.header.vm.DetachDataVolumeFromVmMsg], allowed states are .*",
     "message_cn": "当前vm状态[%1$s]不能卸载云盘。允许此状态是[%3$s]",
     "message_en": "current vm instance state\\[%1$s] doesn't allow to detach DataVolume, allowed states are [%3$s]"
   },
