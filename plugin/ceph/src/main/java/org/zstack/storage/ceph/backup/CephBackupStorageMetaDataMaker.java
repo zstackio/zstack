@@ -371,9 +371,12 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
 
     public void afterExpungeImage(ImageInventory img, String backupStorageUuid) {
         logger.debug(String.format("starting to delete image %s from metadata file", img.getUuid()));
-        if (!getBackupStorageTypeFromImageInventory(img).equals(CephConstants.CEPH_BACKUP_STORAGE_TYPE)) {
+        if (!Q.New(CephBackupStorageVO.class)
+                .eq(CephBackupStorageVO_.uuid, backupStorageUuid)
+                .isExists()) {
             return;
         }
+
         setAllImagesSystemTags(Collections.singletonList(img));
         SimpleQuery<CephBackupStorageVO> query = dbf.createQuery(CephBackupStorageVO.class);
         query.add(CephBackupStorageVO_.uuid, SimpleQuery.Op.EQ, getBackupStorageUuidFromImageInventory(img));
