@@ -29,6 +29,10 @@ public class CallBackNetworkChecker implements AnsibleChecker {
     private String callbackIp = Platform.getManagementServerIp();
     private int callBackPort = 8080;
 
+    private static StringDSL.StringWrapper ncScript = ln(
+            "echo | sudo nc {0} {1}"
+    );
+
     private static StringDSL.StringWrapper script = ln(
             "sudo nmap -sS -P0 -n -p {0} {1}|grep \"1 host up\""
     );
@@ -43,6 +47,32 @@ public class CallBackNetworkChecker implements AnsibleChecker {
 
     }
 
+    private ErrorCode useNcatToTestConnection(Ssh ssh) {
+        String srcScript = ncScript.format(callbackIp, callBackPort);
+
+        SshResult ret = ssh.shell(srcScript).setTimeout(5).runAndClose();
+        ret.raiseExceptionIfFailed();
+
+        logger.debug(String.format("nc test host connection to %s:%s success", callbackIp, callBackPort));
+
+        return null;
+    }
+
+    private ErrorCode useNmapToTestConnection(Ssh ssh) {
+        String srcScript = script.format(callBackPort, callbackIp);
+
+        SshResult ret = ssh.shell(srcScript).setTimeout(5).runAndClose();
+        ret.raiseExceptionIfFailed();
+
+        logger.debug(String.format("nmap return: %s", ret.toString()));
+
+        if (StringUtils.isEmpty(ret.getStdout())) {
+            return operr("cannot nmap from agent: %s to callback address: %s:%s", targetIp, callbackIp, callBackPort);
+        }
+
+        return null;
+    }
+
     @Override
     public ErrorCode stopAnsible() {
         if (CoreGlobalProperty.UNIT_TEST_ON || !AnsibleGlobalConfig.CHECK_MANAGEMENT_CALLBACK.value(Boolean.class)) {
@@ -52,18 +82,17 @@ public class CallBackNetworkChecker implements AnsibleChecker {
         ssh.setUsername(username).setPrivateKey(privateKey)
                 .setPassword(password).setPort(port)
                 .setHostname(targetIp);
-        String srcScript = script.format(callBackPort, callbackIp);
-        try {
-            SshResult ret = ssh.shell(srcScript).setTimeout(5).runAndClose();
-            ret.raiseExceptionIfFailed();
 
-            if (StringUtils.isEmpty(ret.getStdout())) {
-                logger.debug(String.format("nmap return: %s", ret.toString()));
-                return operr("cannot nmap from agent: %s to callback address: %s:%s", targetIp, callbackIp, callBackPort);
+        try {
+            ErrorCode errorCode = useNcatToTestConnection(ssh);
+
+            if (errorCode == null) {
+                return null;
             }
 
-            logger.debug(ret.getStdout());
-            return null;
+            errorCode = useNmapToTestConnection(ssh);
+
+            return errorCode;
         } catch (SshException e) {
             return operr(e.getMessage());
         }
