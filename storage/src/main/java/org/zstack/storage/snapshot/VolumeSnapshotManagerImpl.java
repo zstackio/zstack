@@ -41,7 +41,7 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupChecker;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
-import org.zstack.storage.volume.VolumeJustBeforeDeleteFromDbExtensionPoint;
+import org.zstack.header.volume.VolumeJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.DebugUtils;

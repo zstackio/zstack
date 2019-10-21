@@ -31,6 +31,7 @@
             <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.core.trash.StorageTrash"/>
             <zstack:extension interface="org.zstack.header.volume.VolumeBeforeExpungeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.volume.VolumeJustBeforeDeleteFromDbExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint"/>
         </zstack:plugin>
     </bean>
