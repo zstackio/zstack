@@ -10,8 +10,10 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.Component;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -63,7 +65,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
     }
 
     @Override
-    public L2NetworkInventory createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg) {
+    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion completion) {
         APICreateL2VxlanNetworkMsg amsg = (APICreateL2VxlanNetworkMsg) msg;
 
         AllocateVniMsg vniMsg = new AllocateVniMsg();
@@ -140,7 +142,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
 
         String info = String.format("successfully create L2VxlanNetwork, %s", JSONObjectUtil.toJsonString(inv));
         logger.debug(info);
-        return inv;
+        completion.success(inv);
     }
 
     @Override
@@ -241,7 +243,7 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
     }
 
     @Override
-    public Integer getL2NetworkVni(String l2NetworkUuid) {
+    public Integer getL2NetworkVni(String l2NetworkUuid, String hostUuid) {
         VxlanNetworkVO vxlanNetworkVO = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.uuid, l2NetworkUuid).find();
         return vxlanNetworkVO.getVni();
     }

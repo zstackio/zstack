@@ -439,7 +439,7 @@ public class VirtualRouter extends ApplianceVmBase {
             info.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
             for (L2NetworkGetVniExtensionPoint ext : pluginRgty.getExtensionList(L2NetworkGetVniExtensionPoint.class)) {
                 if (ext.getL2NetworkVniType().equals(l2NetworkVO.getType())) {
-                    info.setVni(ext.getL2NetworkVni(l2NetworkVO.getUuid()));
+                    info.setVni(ext.getL2NetworkVni(l2NetworkVO.getUuid(), vr.getHostUuid()));
                 }
             }
             cmd.setNics(Arrays.asList(info));

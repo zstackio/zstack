@@ -44,7 +44,7 @@ public class VniRangeInventory {
     public VniRangeInventory() {
     }
 
-    protected VniRangeInventory(VniRangeVO vo) {
+    public VniRangeInventory(VniRangeVO vo) {
         this.uuid = vo.getUuid();
         this.name = vo.getName();
         this.description = vo.getDescription();

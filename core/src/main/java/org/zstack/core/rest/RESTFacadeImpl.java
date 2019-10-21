@@ -521,8 +521,16 @@ public class RESTFacadeImpl implements RESTFacade {
             throw new OperationFailureException(operr("failed to %s to %s, IO Error: %s", method.toString().toLowerCase(), url, e.getMessage()));
         }
 
+        boolean valid = false;
+        if (method == HttpMethod.DELETE && rsp.getStatusCode() == org.springframework.http.HttpStatus.NO_CONTENT) {
+            valid = true;
+        } else if (method == HttpMethod.POST && rsp.getStatusCode() == org.springframework.http.HttpStatus.CREATED) {
+            valid = true;
+        } else if (rsp.getStatusCode() == org.springframework.http.HttpStatus.OK || rsp.getStatusCode() == org.springframework.http.HttpStatus.ACCEPTED) {
+            valid = true;
+        }
 
-        if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK && rsp.getStatusCode() != org.springframework.http.HttpStatus.ACCEPTED) {
+        if (!valid) {
             throw new OperationFailureException(operr("failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, rsp.getStatusCode(), rsp.getBody()));
         }
         

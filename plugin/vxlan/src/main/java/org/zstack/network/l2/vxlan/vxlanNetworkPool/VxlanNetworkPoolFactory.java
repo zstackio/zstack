@@ -7,6 +7,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.APICreateL3NetworkMsg;
@@ -44,7 +46,7 @@ public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component, Glo
 
     @Override
     @Transactional
-    public L2NetworkInventory createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg) {
+    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion completion) {
         VxlanNetworkPoolVO vo = new VxlanNetworkPoolVO(ovo);
         if (vo.getPhysicalInterface() == null) {
             vo.setPhysicalInterface("");
@@ -55,7 +57,7 @@ public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component, Glo
         L2VxlanNetworkPoolInventory inv = L2VxlanNetworkPoolInventory.valueOf(vo);
         String info = String.format("successfully create L2VxlanNetworkPool, %s", JSONObjectUtil.toJsonString(inv));
         logger.debug(info);
-        return inv;
+        completion.success(inv);
     }
 
     @Override

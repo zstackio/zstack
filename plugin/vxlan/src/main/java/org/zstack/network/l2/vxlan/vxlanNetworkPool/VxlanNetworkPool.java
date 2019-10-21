@@ -95,7 +95,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     }
 
     @Override
-    public void deleteHook() {
+    public void deleteHook(NoErrorCompletion completion) {
+        completion.done();
     }
 
     @Override
@@ -132,7 +133,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         }
     }
 
-    private void handle(final PopulateVtepPeersMsg msg) {
+    protected void handle(final PopulateVtepPeersMsg msg) {
         final PopulateVtepPeersReply reply = new PopulateVtepPeersReply();
 
         List<VtepVO> vteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, msg.getPoolUuid()).list();
@@ -217,15 +218,20 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
     private void handle(L2NetworkDeletionMsg msg) {
         L2NetworkInventory inv = L2NetworkInventory.valueOf(self);
         extpEmitter.beforeDelete(inv);
-        deleteHook();
-        dbf.removeByPrimaryKey(msg.getL2NetworkUuid(), L2NetworkVO.class);
-        extpEmitter.afterDelete(inv);
+        deleteHook(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                dbf.removeByPrimaryKey(msg.getL2NetworkUuid(), L2NetworkVO.class);
+                extpEmitter.afterDelete(inv);
 
-        L2NetworkDeletionReply reply = new L2NetworkDeletionReply();
-        bus.reply(msg, reply);
+                L2NetworkDeletionReply reply = new L2NetworkDeletionReply();
+                bus.reply(msg, reply);
+            }
+        });
+
     }
 
-    private void handle(CreateVtepMsg msg) {
+    protected void handle(CreateVtepMsg msg) {
         List<VtepVO> vteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, msg.getPoolUuid()).eq(VtepVO_.vtepIp, msg.getVtepIp()).list();
         for (VtepVO vtep: vteps) {
             if (!vtep.getHostUuid().equals(msg.getHostUuid())) {
@@ -271,7 +277,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         bus.reply(msg, reply);
     }
 
-    private void handle(DeleteVtepMsg msg) {
+    protected void handle(DeleteVtepMsg msg) {
         DeleteVtepReply reply = new DeleteVtepReply();
         VtepVO vo = dbf.findByUuid(msg.getVtepUuid(), VtepVO.class);
         dbf.remove(vo);
@@ -300,7 +306,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         }
     }
 
-    private void handle(final APICreateVxlanVtepMsg msg) {
+    protected void handle(final APICreateVxlanVtepMsg msg) {
         APICreateVxlanVtepEvent evt = new APICreateVxlanVtepEvent(msg.getId());
         HostVO host = Q.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid()).find();
 
@@ -327,12 +333,23 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         });
     }
 
+    protected void afterDetachVxlanPoolFromCluster(APIDetachL2NetworkFromClusterMsg msg) {
+        String tag = TagUtils.tagPatternToSqlPattern(VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.instantiateTag(map(
+                e(VxlanSystemTags.VXLAN_POOL_UUID_TOKEN, msg.getL2NetworkUuid()),
+                e(VxlanSystemTags.CLUSTER_UUID_TOKEN, msg.getClusterUuid()))
+        ));
+
+        VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.delete(msg.getL2NetworkUuid(), tag);
+    }
+
     private void handle(final APIDetachL2NetworkFromClusterMsg msg) {
         final APIDetachL2NetworkFromClusterEvent evt = new APIDetachL2NetworkFromClusterEvent(msg.getId());
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("detach-l2-vxlan-pool-%s", msg.getL2NetworkUuid()));
         chain.then(new NoRollbackFlow() {
+            String __name__ = "detach-l2-vxlan-network-in-pool";
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 List<String> uuids = Q.New(VxlanNetworkVO.class)
@@ -370,6 +387,8 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 });
             }
         }).then(new NoRollbackFlow() {
+            String __name__ = "detach-l2-vxlan-pool";
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 L2NetworkDetachFromClusterMsg dmsg = new L2NetworkDetachFromClusterMsg();
@@ -389,12 +408,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                String tag = TagUtils.tagPatternToSqlPattern(VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.instantiateTag(map(
-                        e(VxlanSystemTags.VXLAN_POOL_UUID_TOKEN, msg.getL2NetworkUuid()),
-                        e(VxlanSystemTags.CLUSTER_UUID_TOKEN, msg.getClusterUuid()))
-                ));
-
-                VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.delete(msg.getL2NetworkUuid(), tag);
+                afterDetachVxlanPoolFromCluster(msg);
 
                 trigger.next();
             }
@@ -436,6 +450,12 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
         bus.publish(evt);
     }
 
+    protected void afterAttachVxlanPoolFromClusterFailed(APIAttachL2NetworkToClusterMsg msg) {
+        for (String tag : msg.getSystemTags()) {
+            VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.delete(msg.getL2NetworkUuid(), tag);
+        }
+    }
+
     private void handle(final APIAttachL2NetworkToClusterMsg msg) {
         final APIAttachL2NetworkToClusterEvent evt = new APIAttachL2NetworkToClusterEvent(msg.getId());
         SimpleQuery<L2NetworkClusterRefVO> rq = dbf.createQuery(L2NetworkClusterRefVO.class);
@@ -448,8 +468,10 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             return;
         }
 
-        for (String tag : msg.getSystemTags()) {
-            tagMgr.createNonInherentSystemTag(msg.getL2NetworkUuid(), tag, L2NetworkVO.class.getSimpleName());
+        if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
+            for (String tag : msg.getSystemTags()) {
+                tagMgr.createNonInherentSystemTag(msg.getL2NetworkUuid(), tag, L2NetworkVO.class.getSimpleName());
+            }
         }
 
         SimpleQuery<HostVO> query = dbf.createQuery(HostVO.class);
@@ -485,9 +507,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
 
             @Override
             public void fail(ErrorCode errorCode) {
-                for (String tag : msg.getSystemTags()) {
-                    VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.delete(msg.getL2NetworkUuid(), tag);
-                }
+                afterAttachVxlanPoolFromClusterFailed(msg);
                 evt.setError(err(L2Errors.ATTACH_ERROR, errorCode, errorCode.getDetails()));
                 bus.publish(evt);
             }

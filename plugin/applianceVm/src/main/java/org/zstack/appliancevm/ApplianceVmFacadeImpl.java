@@ -295,7 +295,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         } else {
             mto.setVni(l2NetworkGetVniExtensionPointMap
                     .get(l2NetworkVO.getType())
-                    .getL2NetworkVni(l2NetworkVO.getUuid()));
+                    .getL2NetworkVni(l2NetworkVO.getUuid(), spec.getVmInventory().getHostUuid()));
         }
 
         ret.put(ApplianceVmConstant.BootstrapParams.managementNic.toString(), mto);
@@ -324,7 +324,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
             t.setCategory(l3NetworkVO.getCategory().toString());
             t.setL2type(l2NetworkVO.getType());
-            t.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid()));
+            t.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid(), spec.getVmInventory().getHostUuid()));
             t.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
             deviceId ++;
             extraTos.add(t);
@@ -339,7 +339,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
             nto.setCategory(l3NetworkVO.getCategory().toString());
             nto.setL2type(l2NetworkVO.getType());
-            nto.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid()));
+            nto.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid(), spec.getVmInventory().getHostUuid()));
             nto.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
             extraTos.add(nto);
             deviceId ++;
