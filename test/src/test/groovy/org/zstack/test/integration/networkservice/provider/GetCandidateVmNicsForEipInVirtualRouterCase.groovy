@@ -3,7 +3,10 @@ package org.zstack.test.integration.networkservice.provider
 import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.appliancevm.ApplianceVmVO_
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmInstanceVO_
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
@@ -263,6 +266,13 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
             }
 
             vm {
+                name = "vmInFlat-1"
+                useImage("image")
+                useL3Networks("flatL3")
+                useInstanceOffering("instanceOffering")
+            }
+
+            vm {
                 name = "vmInCluster-2"
                 useImage("image")
                 useL3Networks("l3-2")
@@ -286,6 +296,14 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
         def fakePubL3 = env.inventoryByName("fakePubL3") as L3NetworkInventory
         def l2Flat = env.inventoryByName("l2-flat") as L2NetworkInventory
         def cluster_1 = env.inventoryByName("cluster-1") as ClusterInventory
+        def vmInFlat_1 = env.inventoryByName("vmInFlat-1") as VmInstanceInventory
+
+        stopVmInstance {
+            uuid = vmInFlat_1.uuid
+        }
+        /* after APIPrimaryStorageMigrateVmMsg, clusterUuid in vmInstanceVO is null
+        * this vm is excluded from eip candidate nic */
+        SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmInFlat_1.uuid).set(VmInstanceVO_.clusterUuid, null).update()
 
         //vmInVirtualRouter vmInFlat should be listed.
         def nics = getEipAttachableVmNics {
