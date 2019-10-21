@@ -10,7 +10,6 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.Component;
-import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -18,6 +17,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
@@ -119,10 +119,10 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
                 protected List<String> scripts() {
                     List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).
                             select(L2NetworkClusterRefVO_.clusterUuid).eq(L2NetworkClusterRefVO_.l2NetworkUuid, inv.getPoolUuid()).listValues();
-                    if (clusterUuids == null || clusterUuids.isEmpty()) {
+                    if (clusterUuids.isEmpty()) {
                         return new ArrayList<>();
                     }
-                    return Q.New(HostVO.class).select(HostVO_.uuid).in(HostVO_.clusterUuid, clusterUuids).listValues();
+                    return Q.New(HostVO.class).select(HostVO_.uuid).in(HostVO_.clusterUuid, clusterUuids).eq(HostVO_.status, HostStatus.Connected).listValues();
                 }
             }.execute();
 
