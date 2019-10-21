@@ -1499,6 +1499,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             }
         }
 
+        for (FlatDhcpGetDnsAddressExtensionPoint exp : pluginRgty.getExtensionList(FlatDhcpGetDnsAddressExtensionPoint.class)) {
+            dns.addAll(exp.getDnsAddress(L3NetworkInventory.valueOf(l3VO)));
+        }
+
         return dns;
     }
 

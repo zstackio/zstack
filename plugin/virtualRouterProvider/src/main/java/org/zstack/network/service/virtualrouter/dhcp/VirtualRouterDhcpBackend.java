@@ -222,6 +222,6 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
 
     @Override
     public void vmDefaultL3NetworkChanged(VmInstanceInventory vm, String previousL3, String nowL3, Completion completion) {
-        return;
+        completion.success();
     }
 }

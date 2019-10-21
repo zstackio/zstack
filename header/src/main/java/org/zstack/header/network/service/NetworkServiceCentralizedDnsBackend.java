@@ -16,6 +16,4 @@ public interface NetworkServiceCentralizedDnsBackend {
     void applyForwardDnsService(List<ForwardDnsStruct> forwardDnsStructs, VmInstanceSpec spec, Completion completion);
 
     void releaseForwardDnsService(List<ForwardDnsStruct> forwardDnsStructs, VmInstanceSpec spec, NoErrorCompletion completion);
-
-    void vmDefaultL3NetworkChanged(VmInstanceInventory vm, String previousL3, String nowL3, Completion completion);
 }
