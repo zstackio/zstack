@@ -10,6 +10,10 @@ public interface RBACDescription {
         return new RBAC.PermissionBuilder();
     }
 
+    default RBAC.ExpendedFieldPermissionBuilder expandedpermissionBuilder() {
+        return new RBAC.ExpendedFieldPermissionBuilder();
+    }
+
     default RBAC.RoleContributorBuilder roleContributorBuilder() {
         return new RBAC.RoleContributorBuilder();
     }

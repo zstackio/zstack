@@ -153,6 +153,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         }
     }
 
+    private boolean additionalApiMatch(String apiName) {
+        return rbacEntity.getAdditionalApisToCheck().stream().anyMatch(api -> policyMatcher.match(apiName, api));
+    }
+
     protected void evalDenyStatements(Map<PolicyInventory, List<PolicyStatement>> denyPolices) {
         // action string format is:
         // api-full-name:optional-api-field-list-split-by-comma
@@ -169,8 +173,8 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                     apiFields = ss[1];
                 }
 
-                if (!policyMatcher.match(apiName, rbacEntity.getApiName())) {
-                    // the statement not matching this API
+                if (!policyMatcher.match(apiName, rbacEntity.getApiName()) && !additionalApiMatch(apiName)) {
+                    // the statement not matching this API and not additional api need to check
                     return;
                 }
 

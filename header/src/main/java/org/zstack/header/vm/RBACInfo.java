@@ -1,6 +1,7 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.identity.rbac.RBACDescription;
+import org.zstack.header.volume.APICreateDataVolumeMsg;
 
 public class RBACInfo implements RBACDescription {
     @Override
@@ -9,6 +10,12 @@ public class RBACInfo implements RBACDescription {
                 .name("vm")
                 .normalAPIs("org.zstack.header.vm.**")
                 .targetResources(VmInstanceVO.class)
+                .build();
+
+        expandedpermissionBuilder()
+                .basicApi(APICreateVmInstanceMsg.class)
+                .fieldName("dataDiskOfferingUuids")
+                .expandTo(APICreateDataVolumeMsg.class)
                 .build();
     }
 
