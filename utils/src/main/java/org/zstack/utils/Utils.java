@@ -30,9 +30,11 @@ public class Utils {
     private static final Function<String, String> defaultRewriter = raw -> {
         for (Map.Entry<String, String> s : maskWords.get().entrySet()) {
             if (simpleWordsPattern.matcher(s.getKey()).matches()) {
-                raw = raw.replaceAll('"' + s.getKey() + "\"(?=[^:])", '"' + s.getValue() + '"');
+                raw = raw.replaceAll('"' + s.getKey() + "\"(?=[^:])", '"' + s.getValue() + '"')
+                        .replaceAll('\'' + s.getKey() + "'(?=[^:])", '\'' + s.getValue() + '\'');
             } else {
-                raw = raw.replace('"' + s.getKey() + '"', '"' + s.getValue() + '"');
+                raw = raw.replace('"' + s.getKey() + '"', '"' + s.getValue() + '"')
+                        .replace('\'' + s.getKey() + '\'', '\'' + s.getValue() + '\'');
             }
         }
         return raw;
