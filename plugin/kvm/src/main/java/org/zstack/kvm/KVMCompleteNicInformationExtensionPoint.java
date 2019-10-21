@@ -7,6 +7,6 @@ import org.zstack.kvm.KVMAgentCommands.NicTO;
 
 public interface KVMCompleteNicInformationExtensionPoint {
 	NicTO completeNicInformation(L2NetworkInventory l2Network, VmNicInventory nic);
-	
+	String getBridgeName(L2NetworkInventory l2Network);
 	L2NetworkType getL2NetworkTypeVmNicOn();
 }

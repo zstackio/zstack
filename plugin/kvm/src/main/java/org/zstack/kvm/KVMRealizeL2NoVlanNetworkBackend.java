@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.errorcode.schema.Error;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -25,7 +24,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.operr;
-
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -159,5 +157,10 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
         to.setDeviceId(nic.getDeviceId());
         to.setNicInternalName(nic.getInternalName());
         return to;
+    }
+
+    @Override
+    public String getBridgeName(L2NetworkInventory l2Network) {
+        return makeBridgeName(l2Network.getPhysicalInterface());
     }
 }

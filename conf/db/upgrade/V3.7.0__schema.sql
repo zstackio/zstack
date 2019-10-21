@@ -201,3 +201,71 @@ CREATE TABLE  IF NOT EXISTS `HardwareL2VxlanNetworkPoolVO` (
   PRIMARY KEY  (`uuid`),
   CONSTRAINT fkHardwareL2VxlanNetworkPoolVOL2NetworkEO FOREIGN KEY (uuid) REFERENCES L2NetworkEO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+--  For port mirror
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `zstack`.`PortMirrorVO` (
+  `uuid` VARCHAR(32) NOT NULL,
+  `name` VARCHAR(128) DEFAULT "",
+  `state` VARCHAR(128) DEFAULT "Enable",
+  `mirrorNetworkUuid` VARCHAR(32) NOT NULL,
+  `description` VARCHAR(1024) DEFAULT NULL,
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`uuid`),
+  UNIQUE KEY `uuid` (`uuid`) USING BTREE,
+  CONSTRAINT `fkPortMirrorVOL3NetworkVO` FOREIGN KEY (`mirrorNetworkUuid`) REFERENCES `L3NetworkEO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`PortMirrorSessionVO` (
+  `uuid` VARCHAR(32) NOT NULL,
+  `name` VARCHAR(128) NOT NULL,
+  `srcEndPoint` VARCHAR(32) NOT NULL,
+  `dstEndPoint` VARCHAR(32) NOT NULL,
+  `type` VARCHAR(32) NOT NULL,
+  `status` VARCHAR(128) DEFAULT 'Created',
+  `internalId` int unsigned NOT NULL,
+  `description` VARCHAR(1024) DEFAULT NULL,
+  `portMirrorUuid` VARCHAR(32) NOT NULL,
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`uuid`),
+  UNIQUE KEY `uuid` (`uuid`) USING BTREE,
+  CONSTRAINT `fkPortMirrorSessionVOPortMirrorVO` FOREIGN KEY (`portMirrorUuid`) REFERENCES `PortMirrorVO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `fkPortMirrorSessionVOSrcNIcVmNicVO` FOREIGN KEY (`srcEndPoint`) REFERENCES `VmNicVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `zstack`.`PortMirrorSessionSequenceNumberVO` (
+    `id` int unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`MirrorNetworkUsedIpVO` (
+  `uuid` VARCHAR(32) NOT NULL,
+  `hostUuid` VARCHAR(32) NOT NULL,
+  `clusterUuid` VARCHAR(32) NOT NULL,
+  `l3NetworkUuid` VARCHAR(32) NOT NULL,
+  `description` VARCHAR(1024) DEFAULT NULL,
+  PRIMARY KEY (`uuid`),
+  UNIQUE KEY `uuid` (`uuid`) USING BTREE,
+  CONSTRAINT `fkMirrorNetworkUsedIpVOL3NetworkEO` FOREIGN KEY (`l3NetworkUuid`) REFERENCES `L3NetworkEO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `fkMirrorNetworkUsedIpVOHostEO` FOREIGN KEY (`hostUuid`) REFERENCES `HostEO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `fkMirrorNetworkUsedIpVOClusterEO` FOREIGN KEY (`clusterUuid`) REFERENCES `ClusterEO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`PortMirrorSessionMirrorNetworkRefVO` (
+  `uuid` VARCHAR(32) NOT NULL,
+  `sessionUuid` VARCHAR(32) NOT NULL,
+  `srcTunnelUuid` VARCHAR(32) NOT NULL,
+  `dstTunnelUuid` VARCHAR(32),
+  `type` VARCHAR(32) DEFAULT 'GRE',
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (`uuid`),
+  UNIQUE KEY `uuid` (`uuid`) USING BTREE,
+  CONSTRAINT `fkMirrorRefVOPortMirrorSessionVO` FOREIGN KEY (`sessionUuid`) REFERENCES `PortMirrorSessionVO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `fkMirrorRefVOMirrorNetworkUsedIpVOSrc` FOREIGN KEY (`srcTunnelUuid`) REFERENCES `MirrorNetworkUsedIpVO` (`uuid`) ON DELETE CASCADE,
+  CONSTRAINT `fkMirrorRefVOMirrorNetworkUsedIpVODst` FOREIGN KEY (`dstTunnelUuid`) REFERENCES `MirrorNetworkUsedIpVO` (`uuid`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

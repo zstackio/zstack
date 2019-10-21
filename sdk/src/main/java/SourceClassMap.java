@@ -191,6 +191,12 @@ public class SourceClassMap {
 			put("org.zstack.header.network.l3.UsedIpInventory", "org.zstack.sdk.UsedIpInventory");
 			put("org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory", "org.zstack.sdk.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.header.network.service.NetworkServiceProviderInventory", "org.zstack.sdk.NetworkServiceProviderInventory");
+			put("org.zstack.header.portMirror.MirrorNetworkUsedIpInventory", "org.zstack.sdk.MirrorNetworkUsedIpInventory");
+			put("org.zstack.header.portMirror.PortMirrorInventory", "org.zstack.sdk.PortMirrorInventory");
+			put("org.zstack.header.portMirror.PortMirrorSessionInventory", "org.zstack.sdk.PortMirrorSessionInventory");
+			put("org.zstack.header.portMirror.PortMirrorState", "org.zstack.sdk.PortMirrorState");
+			put("org.zstack.header.portMirror.SessionStatus", "org.zstack.sdk.SessionStatus");
+			put("org.zstack.header.portMirror.SessionType", "org.zstack.sdk.SessionType");
 			put("org.zstack.header.protocol.Neighbor", "org.zstack.sdk.Neighbor");
 			put("org.zstack.header.protocol.NetworkRouterAreaRefInventory", "org.zstack.sdk.NetworkRouterAreaRefInventory");
 			put("org.zstack.header.protocol.RouterAreaInventory", "org.zstack.sdk.RouterAreaInventory");
@@ -676,6 +682,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MiniStorageInventory", "org.zstack.storage.primary.ministorage.MiniStorageInventory");
 			put("org.zstack.sdk.MiniStorageResourceReplicationInventory", "org.zstack.storage.primary.ministorage.MiniStorageResourceReplicationInventory");
 			put("org.zstack.sdk.MiniStorageType", "org.zstack.storage.primary.ministorage.MiniStorageType");
+			put("org.zstack.sdk.MirrorNetworkUsedIpInventory", "org.zstack.header.portMirror.MirrorNetworkUsedIpInventory");
 			put("org.zstack.sdk.MonitorTriggerActionInventory", "org.zstack.monitoring.actions.MonitorTriggerActionInventory");
 			put("org.zstack.sdk.MonitorTriggerInventory", "org.zstack.monitoring.MonitorTriggerInventory");
 			put("org.zstack.sdk.MulticastRouteInventory", "org.zstack.multicast.router.header.MulticastRouteInventory");
@@ -727,6 +734,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PolicyStatement", "org.zstack.header.identity.PolicyStatement");
 			put("org.zstack.sdk.PolicyStatementEffect", "org.zstack.header.identity.StatementEffect");
 			put("org.zstack.sdk.PortForwardingRuleInventory", "org.zstack.network.service.portforwarding.PortForwardingRuleInventory");
+			put("org.zstack.sdk.PortMirrorInventory", "org.zstack.header.portMirror.PortMirrorInventory");
+			put("org.zstack.sdk.PortMirrorSessionInventory", "org.zstack.header.portMirror.PortMirrorSessionInventory");
+			put("org.zstack.sdk.PortMirrorState", "org.zstack.header.portMirror.PortMirrorState");
 			put("org.zstack.sdk.PowerOffHardwareResult", "org.zstack.header.cluster.PowerOffHardwareResult");
 			put("org.zstack.sdk.PreconfigurationTemplateInventory", "org.zstack.header.baremetal.preconfiguration.PreconfigurationTemplateInventory");
 			put("org.zstack.sdk.PreviewResourceStruct", "org.zstack.header.cloudformation.PreviewResourceStruct");
@@ -783,6 +793,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SecurityGroupInventory", "org.zstack.network.securitygroup.SecurityGroupInventory");
 			put("org.zstack.sdk.SecurityGroupRuleInventory", "org.zstack.network.securitygroup.SecurityGroupRuleInventory");
 			put("org.zstack.sdk.SessionInventory", "org.zstack.header.identity.SessionInventory");
+			put("org.zstack.sdk.SessionStatus", "org.zstack.header.portMirror.SessionStatus");
+			put("org.zstack.sdk.SessionType", "org.zstack.header.portMirror.SessionType");
 			put("org.zstack.sdk.SftpBackupStorageInventory", "org.zstack.storage.backup.sftp.SftpBackupStorageInventory");
 			put("org.zstack.sdk.ShareableVolumeVmInstanceRefInventory", "org.zstack.mevoco.ShareableVolumeVmInstanceRefInventory");
 			put("org.zstack.sdk.SharedBlockCandidateStruct", "org.zstack.storage.primary.sharedblock.SharedBlockCandidateStruct");
