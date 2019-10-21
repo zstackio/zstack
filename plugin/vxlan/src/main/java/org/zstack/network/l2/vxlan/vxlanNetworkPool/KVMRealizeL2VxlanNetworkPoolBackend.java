@@ -368,6 +368,11 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
         return to;
     }
 
+    @Override
+    public String getBridgeName(L2NetworkInventory l2Network) {
+        return null;
+    }
+
     public Map<String, String> getAttachedCidrs(String l2NetworkUuid) {
         List<Map<String, String>> tokenList = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokensOfTagsByResourceUuid(l2NetworkUuid);
 

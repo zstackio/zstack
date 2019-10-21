@@ -159,4 +159,9 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
 		return to;
 	}
 
+    @Override
+    public String getBridgeName(L2NetworkInventory l2Network) {
+        L2VlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), L2VlanNetworkVO.class);
+        return makeBridgeName(l2Network.getPhysicalInterface(), vo.getVlan());
+    }
 }
