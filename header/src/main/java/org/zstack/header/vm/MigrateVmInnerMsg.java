@@ -6,6 +6,7 @@ import org.zstack.header.message.NeedReplyMessage;
  * Created by camile on 3/7/2018.
  * copy by APIMigrateVmMsg for LongJob
  */
+@SkipVmTracer(replyClass = MigrateVmInnerReply.class)
 public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMessage, MigrateVmMessage {
     private String vmInstanceUuid;
     private String hostUuid;
