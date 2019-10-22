@@ -257,3 +257,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PortMirrorSessionMirrorNetworkRefVO` (
   CONSTRAINT `fkMirrorRefVOMirrorNetworkUsedIpVODst` FOREIGN KEY (`dstTunnelUuid`) REFERENCES `MirrorNetworkUsedIpVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+alter table SNSTextTemplateVO add type varchar(255) DEFAULT "ALARM";
+update SNSApplicationEndpointVO set type = "SYSTEM_HTTP" where name = "system-alarm-endpoint" and platformUuid = "02d24b9b0a7f4ee1846f15cda248ceb7" and type = "HTTP";
