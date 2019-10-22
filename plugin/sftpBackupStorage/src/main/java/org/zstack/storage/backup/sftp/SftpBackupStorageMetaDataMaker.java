@@ -504,9 +504,12 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
     }
 
     public void afterExpungeImage(ImageInventory img, String backupStorageUuid) {
-        if (!getBackupStorageTypeFromImageInventory(img).equals(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE)) {
+        if (!Q.New(SftpBackupStorageVO.class)
+                .eq(SftpBackupStorageVO_.uuid, backupStorageUuid)
+                .isExists()) {
             return;
         }
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
 
         chain.setName("delete-image-info-from-metadata-file");
