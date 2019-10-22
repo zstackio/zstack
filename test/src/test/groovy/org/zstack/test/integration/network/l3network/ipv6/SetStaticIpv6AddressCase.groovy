@@ -2,6 +2,7 @@ package org.zstack.test.integration.network.l3network.ipv6
 
 import com.googlecode.ipv6.IPv6Address
 import org.zstack.compute.vm.StaticIpOperator
+import org.zstack.network.service.flat.FlatNetworkSystemTags
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
@@ -135,9 +136,18 @@ class SetStaticIpv6AddressCase extends SubCase {
             uuid = vm.uuid
         }
 
-        IPv6Address address2 = IPv6Address.fromString("2001:2003::02")
-        IPv6Address address3 = IPv6Address.fromString("2001:2003::03")
-        String ip6Str = (ip6.ip == address2.toString() ? address3.toString() : address2.toString())
+        /* static ip should not be dhcp server ip or other used ip */
+        String dhcpserverIp = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokenByResourceUuid(l3_statefull.uuid,
+                FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN)
+
+        List<String> ips = new ArrayList<>()
+        ips.add(IPv6Address.fromString("2001:2003::02").toString())
+        ips.add(IPv6Address.fromString("2001:2003::03").toString())
+        ips.add(IPv6Address.fromString("2001:2003::04").toString())
+        ips.remove(ip6.ip)
+        ips.remove(dhcpserverIp)
+        String ip6Str = ips.get(0)
+
         setVmStaticIp {
             vmInstanceUuid = vm.uuid
             l3NetworkUuid = l3_statefull.uuid
@@ -153,7 +163,17 @@ class SetStaticIpv6AddressCase extends SubCase {
             uuid = vm.uuid
         }
 
-        String ip4Str = (ip4.ip == "192.168.100.11" ? "192.168.100.12" : "192.168.100.11")
+        dhcpserverIp = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokenByResourceUuid(l3.uuid,
+                FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN)
+
+        ips = new ArrayList<>()
+        ips.add("192.168.100.11")
+        ips.add("192.168.100.12")
+        ips.add("192.168.100.13")
+        ips.remove(ip4.ip)
+        ips.remove(dhcpserverIp)
+        String ip4Str = ips.get(0)
+
         setVmStaticIp {
             vmInstanceUuid = vm.uuid
             l3NetworkUuid = l3.uuid
