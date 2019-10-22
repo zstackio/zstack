@@ -128,7 +128,7 @@ public class LongJobUtils {
     private static void setExecuteTimeIfNeed(LongJobVO job) {
         if (job.getExecuteTime() == null) {
             long time = (System.currentTimeMillis() - job.getCreateDate().getTime()) / 1000;
-            job.setExecuteTime(time);
+            job.setExecuteTime(Long.max(time, 1));
             logger.info(String.format("longjob [uuid:%s] set execute time:%d.", job.getUuid(), time));
         }
     }
