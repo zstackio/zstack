@@ -235,7 +235,6 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public boolean start() {
         deployAnsibleModule();
         populateExtensions();
-        installCommandRehasher();
 
         maxDataVolumeNum = KVMGlobalConfig.MAX_DATA_VOLUME_NUM.value(int.class);
         KVMGlobalConfig.MAX_DATA_VOLUME_NUM.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
@@ -330,26 +329,6 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         }));
 
         return true;
-    }
-
-    private void installCommandRehasher() {
-        bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
-            @Override
-            public void beforeDeliveryMessage(Message msg) {
-                KVMHostHttpCallMsg kmsg = (KVMHostHttpCallMsg) msg;
-                Class<?> cmdClass;
-                try {
-                    cmdClass = Class.forName(kmsg.getCommandClassName());
-                } catch (ClassNotFoundException e) {
-                    logger.warn("get class failed", e);
-                    return;
-                }
-
-                if (cmdClass != kmsg.getCommand().getClass()) {
-                    kmsg.setCommand(JSONObjectUtil.rehashObject(kmsg.getCommand(), cmdClass));
-                }
-            }
-        }, Arrays.asList(KVMHostAsyncHttpCallMsg.class, KVMHostSyncHttpCallMsg.class));
     }
 
     private Map<String, String> getHostsWithDiffModel(String clusterUuid) {

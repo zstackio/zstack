@@ -1,6 +1,7 @@
 package org.zstack.core.log;
 
 import com.google.gson.*;
+import org.apache.commons.codec.binary.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.security.access.method.P;
 import org.zstack.header.log.HasSensitiveInfo;
@@ -10,6 +11,7 @@ import org.zstack.utils.BeanUtils;
 import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.GsonUtil;
+import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
@@ -28,6 +30,7 @@ public class LogSafeGson {
     private static class FieldNoLogging {
         Field field;
         NoLogging annotation;
+        Field classNameField;
 
         private static Pattern uriPattern = Pattern.compile(":[^:]*@");
 
@@ -35,9 +38,15 @@ public class LogSafeGson {
             this.field = field;
         }
 
-        FieldNoLogging(Field field, NoLogging annotation) {
+        FieldNoLogging(Field field, NoLogging annotation, Class<? extends HasSensitiveInfo> senClz) {
             this.field = field;
             this.annotation = annotation;
+            if (!Strings.isEmpty(annotation.classNameField())) {
+                this.classNameField = FieldUtils.getField(annotation.classNameField(), senClz);
+                if (this.classNameField != null) {
+                    this.classNameField.setAccessible(true);
+                }
+            }
         }
 
         String getName() {
@@ -46,8 +55,14 @@ public class LogSafeGson {
 
         Object getValue(HasSensitiveInfo obj) {
             try {
-                return field.get(obj);
-            } catch (IllegalAccessException e) {
+                Object value = field.get(obj);
+                if (classNameField == null) {
+                    return value;
+                }
+
+                Class<?> clz = Class.forName((String) classNameField.get(obj));
+                return HasSensitiveInfo.class.isAssignableFrom(clz) ? JSONObjectUtil.toObject((String) value, clz) : value;
+            } catch (IllegalAccessException | ClassNotFoundException e) {
                 return null;
             }
         }
@@ -68,9 +83,9 @@ public class LogSafeGson {
                 f.setAccessible(true);
                 NoLogging an = f.getAnnotation(NoLogging.class);
                 if (an.behavior().auto()) {
-                    autoFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an));
+                    autoFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an, si));
                 } else {
-                    maskFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an));
+                    maskFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an, si));
                 }
             }
 

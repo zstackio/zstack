@@ -10,9 +10,8 @@ import org.zstack.utils.gson.JSONObjectUtil;
 
 public abstract class KVMHostHttpCallMsg extends NeedReplyMessage implements HostMessage, CarrierMessage, HasSensitiveInfo {
     private String path;
-    @NoLogging(behavior = NoLogging.Behavior.Auto)
-    @NoJsonSchema
-    private Object command;
+    @NoLogging(behavior = NoLogging.Behavior.Auto, classNameField = "commandClassName")
+    private String command;
     private String hostUuid;
     private boolean noStatusCheck;
     private String commandClassName;
@@ -37,16 +36,12 @@ public abstract class KVMHostHttpCallMsg extends NeedReplyMessage implements Hos
         this.path = path;
     }
 
-    public Object getCommand() {
+    public String getCommand() {
         return command;
     }
 
-    public String getCommandToJson() {
-        return JSONObjectUtil.toJsonString(command);
-    }
-
     public void setCommand(Object command) {
-        this.command = JSONObjectUtil.rehashObject(command, command.getClass());
+        this.command = JSONObjectUtil.toJsonString(command);
         commandClassName = command.getClass().getName();
     }
 
