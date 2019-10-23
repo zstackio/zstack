@@ -6644,7 +6644,7 @@
   {
     "raw": "There are %d problems with the file. ",
     "en_US": "There are {0} problems with the file. ",
-    "zh_CN": "",
+    "zh_CN": "文件中包含{0}个错误",
     "arguments": [
       "results.size()"
     ],
@@ -6654,7 +6654,7 @@
   {
     "raw": "fail to load VirtualID info from file. because\\n%s",
     "en_US": "fail to load VirtualID info from file. because\\n{0}",
-    "zh_CN": "",
+    "zh_CN": "解析文件内容出错，{0}",
     "arguments": [
       "e.getMessage()"
     ],
@@ -6664,7 +6664,7 @@
   {
     "raw": "name cannot be empty. ",
     "en_US": "name cannot be empty. ",
-    "zh_CN": "",
+    "zh_CN": "名称不能为空",
     "arguments": [],
     "line": 675,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
@@ -6672,7 +6672,7 @@
   {
     "raw": "userName[%s] is repeated. ",
     "en_US": "userName[{0}] is repeated. ",
-    "zh_CN": "",
+    "zh_CN": "用户名[{0}]重复",
     "arguments": [
       "cmsg.getUsername()"
     ],
@@ -6682,7 +6682,7 @@
   {
     "raw": "name exceeds max length of string. expected was \u003c\u003d 255, actual was %s. ",
     "en_US": "name exceeds max length of string. expected was \u003c\u003d 255, actual was {0}. ",
-    "zh_CN": "",
+    "zh_CN": "名称字符数量不能超过255",
     "arguments": [
       "cmsg.username.length()"
     ],
@@ -6692,7 +6692,7 @@
   {
     "raw": "username cannot be empty. ",
     "en_US": "username cannot be empty. ",
-    "zh_CN": "",
+    "zh_CN": "用户名不能为空",
     "arguments": [],
     "line": 679,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
@@ -6700,7 +6700,7 @@
   {
     "raw": "Incorrect password length. expected was \u003e\u003d 6 and \u003c\u003d 255, actual was %s. ",
     "en_US": "Incorrect password length. expected was \u003e\u003d 6 and \u003c\u003d 255, actual was {0}. ",
-    "zh_CN": "",
+    "zh_CN": "密码长度错误，应该大于等于6个字符，小于等于255字符",
     "arguments": [
       "cmsg.password.length()"
     ],
@@ -6710,7 +6710,7 @@
   {
     "raw": "password cannot be empty. ",
     "en_US": "password cannot be empty. ",
-    "zh_CN": "",
+    "zh_CN": "密码不能为空",
     "arguments": [],
     "line": 687,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
@@ -6718,7 +6718,7 @@
   {
     "raw": "email format does not match. ",
     "en_US": "email format does not match. ",
-    "zh_CN": "",
+    "zh_CN": "邮箱格式错误",
     "arguments": [],
     "line": 697,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
@@ -6726,7 +6726,7 @@
   {
     "raw": "organization[%s] is not exist. ",
     "en_US": "organization[{0}] is not exist. ",
-    "zh_CN": "",
+    "zh_CN": "部门[{0}]不存在",
     "arguments": [
       "noMatchNames"
     ],
@@ -6736,7 +6736,7 @@
   {
     "raw": "organization[%s] in line is repeated. ",
     "en_US": "organization[{0}] in line is repeated. ",
-    "zh_CN": "",
+    "zh_CN": "部门[{0}]出现重复",
     "arguments": [
       "repeatNames"
     ],
@@ -6746,7 +6746,7 @@
   {
     "raw": "organization[%s] is repeated. ",
     "en_US": "organization[{0}] is repeated. ",
-    "zh_CN": "",
+    "zh_CN": "部门[{0}]出现重复",
     "arguments": [
       "repeatNames"
     ],
@@ -6756,7 +6756,7 @@
   {
     "raw": "project[%s] is not exist. ",
     "en_US": "project[{0}] is not exist. ",
-    "zh_CN": "",
+    "zh_CN": "项目[{0}]不存在",
     "arguments": [
       "noMatchName"
     ],
@@ -6766,7 +6766,7 @@
   {
     "raw": "fail to build VirtualID info from file. ",
     "en_US": "fail to build VirtualID info from file. ",
-    "zh_CN": "",
+    "zh_CN": "不能解析文件内容",
     "arguments": [],
     "line": 963,
     "fileName": "src/main/java/org/zstack/iam2/IAM2ManagerImpl.java"
