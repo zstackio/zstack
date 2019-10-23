@@ -972,7 +972,7 @@ public class KVMHost extends HostBase implements Host {
         MessageCommandRecorder.record(msg.getCommandClassName());
         Map<String, String> headers = new HashMap<>();
         headers.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, self.getUuid());
-        LinkedHashMap rsp = restf.syncJsonPost(url, msg.getCommandToJson(), headers, LinkedHashMap.class);
+        LinkedHashMap rsp = restf.syncJsonPost(url, msg.getCommand(), headers, LinkedHashMap.class);
         KVMHostSyncHttpCallReply reply = new KVMHostSyncHttpCallReply();
         reply.setResponse(rsp);
         bus.reply(msg, reply);
@@ -1009,7 +1009,7 @@ public class KVMHost extends HostBase implements Host {
 
         String url = buildUrl(msg.getPath());
         MessageCommandRecorder.record(msg.getCommandClassName());
-        new Http<>(url, msg.getCommandToJson(), LinkedHashMap.class)
+        new Http<>(url, msg.getCommand(), LinkedHashMap.class)
                 .call(new ReturnValueCompletion<LinkedHashMap>(msg, completion) {
             @Override
             public void success(LinkedHashMap ret) {

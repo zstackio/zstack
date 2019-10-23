@@ -39,4 +39,6 @@ public @interface NoLogging {
     Behavior behavior() default Behavior.Mask;
 
     Type type() default Type.Simple;
+
+    String classNameField() default "";
 }
