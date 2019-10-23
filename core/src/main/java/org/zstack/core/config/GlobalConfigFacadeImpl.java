@@ -271,8 +271,8 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             private void persistConfigInXmlButNotInDatabase() {
                 List<GlobalConfigVO> toSave = new ArrayList<GlobalConfigVO>();  // new config options
                 List<GlobalConfig> toRemove = new ArrayList<>(); // obsolete config options
-                List<GlobalConfig> toUpdate = new ArrayList<>(); // configs with changed default value
-                List<GlobalConfig> toUpdate2 = new ArrayList<>(); // configs with changed default value
+                List<GlobalConfig> toUpdate = new ArrayList<>(); // update both defaultValue and value
+                List<GlobalConfig> toUpdate2 = new ArrayList<>(); // only update defaultValue
                 List<GlobalConfig> toUpdate3 = new ArrayList<>(); // configs' value is not match type (normally the values were from an old zstack version)
 
                 for (GlobalConfig config : configsFromXml.values()) {
@@ -329,6 +329,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                             .set(GlobalConfigVO_.defaultValue, config.getDefaultValue())
                             .set(GlobalConfigVO_.value, config.value())
                             .update();
+                    configsFromDatabase.get(config.getIdentity()).setValue(config.value());
                 }
 
                 for (GlobalConfig config : toUpdate2) {
