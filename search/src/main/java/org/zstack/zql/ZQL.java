@@ -11,18 +11,16 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.EntityMetadata;
 import org.zstack.core.db.SQLBatch;
-import org.zstack.core.keyvalue.Op;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vo.ToInventory;
-import org.zstack.header.zql.ASTNode;
-import org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint;
-import org.zstack.header.zql.ReturnWithExtensionPoint;
-import org.zstack.header.zql.ZQLCustomizeContextExtensionPoint;
+import org.zstack.header.zql.*;
+import org.zstack.query.MysqlQueryBuilderImpl3;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -41,9 +39,6 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
-
-import static org.zstack.utils.CollectionDSL.e;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ZQL {
@@ -239,6 +234,8 @@ public class ZQL {
                     logger.trace(String.format("ZQL query: %s", astResult.sql));
                 }
 
+                beforeExecuteQuery(astResult, ZQLContext.getAPISession());
+
                 new SQLBatch() {
                     @Override
                     protected void scripts() {
@@ -285,6 +282,8 @@ public class ZQL {
                     logger.trace(String.format("ZQL query: %s", astResult.sql));
                 }
 
+                beforeExecuteQuery(astResult, ZQLContext.getAPISession());
+
                 new SQLBatch() {
                     @Override
                     protected void scripts() {
@@ -318,6 +317,8 @@ public class ZQL {
                     logger.trace(String.format("ZQL query: %s", astResult.sql));
                 }
 
+                beforeExecuteQuery(astResult, ZQLContext.getAPISession());
+
                 new SQLBatch() {
                     @Override
                     protected void scripts() {
@@ -343,6 +344,15 @@ public class ZQL {
         return rs;
     }
 
+    private void beforeExecuteQuery(QueryResult astResult, SessionInventory session) {
+        List<Class> targetInventories = new ArrayList<>();
+
+        targetInventories.add(astResult.inventoryMetadata.selfInventoryClass);
+
+        for (ZQLQueryExtensionPoint ext : pluginRgty.getExtensionList(ZQLQueryExtensionPoint.class)) {
+            ext.beforeQueryExtensionPoint(targetInventories, session);
+        }
+    }
 
     private Map callReturnWithExtensions(QueryResult astResult, ReturnWithQueryNodeWrapper wrapper, List vos) {
         if (astResult.returnWith == null || astResult.returnWith.isEmpty()) {

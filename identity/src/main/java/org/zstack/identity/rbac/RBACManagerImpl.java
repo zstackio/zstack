@@ -19,7 +19,6 @@ import org.zstack.header.identity.role.api.APICreateRoleMsg;
 import org.zstack.header.identity.role.api.RoleMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
-import org.zstack.identity.IdentityGlobalConfig;
 import org.zstack.identity.IdentityResourceGenerateExtensionPoint;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;

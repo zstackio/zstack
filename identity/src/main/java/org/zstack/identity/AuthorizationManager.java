@@ -14,6 +14,8 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.identity.extension.AuthorizationBackend;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.zql.ZQLQueryExtensionPoint;
+import org.zstack.query.QueryHelper;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -21,11 +23,13 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 
-public class AuthorizationManager implements GlobalApiMessageInterceptor, Component {
+public class AuthorizationManager implements GlobalApiMessageInterceptor, Component, ZQLQueryExtensionPoint {
     private static final CLogger logger = Utils.getLogger(AuthorizationManager.class);
 
     private Set apiByPassAuthorizationCheck = new HashSet<>();
@@ -118,5 +122,19 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
     @Override
     public boolean stop() {
         return true;
+    }
+
+    @Override
+    public void beforeQueryExtensionPoint(List<Class> queryTargetInventoryClass, SessionInventory session) {
+        if (session == null) {
+            return;
+        }
+
+        List<Class> targetApis = queryTargetInventoryClass.stream()
+                .map(clz -> QueryHelper.inventoryQueryMessageMap.get(clz))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        findAuthorizationBackend(session).validatePermission(targetApis, session);
     }
 }

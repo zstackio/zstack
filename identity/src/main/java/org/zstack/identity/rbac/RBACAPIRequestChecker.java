@@ -6,10 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.identity.IdentityByPassCheck;
-import org.zstack.header.identity.PolicyInventory;
-import org.zstack.header.identity.PolicyStatement;
+import org.zstack.header.identity.*;
 import org.zstack.header.identity.rbac.*;
 import org.zstack.header.log.NoLogging;
 import org.zstack.identity.APIRequestChecker;
@@ -18,9 +15,12 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BinaryOperator;
 
+import static org.zstack.core.Platform.getUuid;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
@@ -58,6 +58,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         check();
     }
 
+    public boolean evalStatement(String as, String msgName) {
+        String ap = PolicyUtils.apiNamePatternFromAction(as);
+        return policyMatcher.match(ap, msgName);
+    }
 
     protected List<PolicyInventory> getPoliciesForAPI() {
         return RBACManager.getPoliciesByAPI(rbacEntity.getApiMessage());
@@ -217,4 +221,40 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     protected boolean checkAccountPrincipal(String uuidRegex) {
         return policyMatcher.match(uuidRegex, rbacEntity.getApiMessage().getSession().getAccountUuid());
     }
+
+    public Map<String, Boolean> evalAPIPermission(List<Class> classes, SessionInventory session) {
+        List<PolicyInventory> policies = RBACManager.getPoliciesBySession(session);
+        Map<PolicyInventory, List<PolicyStatement>> denyStatements = RBACManager.collectDenyStatements(policies);
+        Map<PolicyInventory, List<PolicyStatement>> allowStatements = RBACManager.collectAllowedStatements(policies);
+
+        Map<String, Boolean> ret = new HashMap<>();
+        classes.forEach(clz -> {
+            for (List<PolicyStatement> dss : denyStatements.values()) {
+                for (PolicyStatement ds : dss) {
+                    for (String as : ds.getActions()) {
+                        if (evalStatement(as, clz.getName())) {
+                            ret.put(clz.getName(), false);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            for (List<PolicyStatement> ass : allowStatements.values()) {
+                for (PolicyStatement as : ass) {
+                    for (String a : as.getActions()) {
+                        if (evalStatement(a, clz.getName())) {
+                            ret.put(clz.getName(), true);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            ret.put(clz.getName(), false);
+        });
+
+        return ret;
+    }
+
 }
