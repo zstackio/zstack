@@ -172,7 +172,7 @@ class KVMSimulator implements Simulator {
                     rsp.states[(vmUuid)] = KVMConstant.KvmVmState.fromVmInstanceState(state).toString()
                 }
             }
-
+            rsp.setVmInShutdowns(new ArrayList<String>())
             return rsp
         }
 

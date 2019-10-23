@@ -1096,6 +1096,14 @@
     "message_en": "NIC device is still attached, Please check virtio driver or stop VM and detach again"
   },
   {
+    "category": "VM",
+    "code": "1028",
+    "method": "regex",
+    "regex": ".*The vm\\[.*] state is in shutdown for a long time, check whether the vm is normal.*",
+    "message_cn": "vm[%1$s]长时间处于in shutdown状态，请检查vm是否正常。",
+    "message_en": "The vm[%1$s] state is in shutdown for a long time, check whether the vm is normal"
+  },
+  {
     "category": "VPC",
     "code": "1000",
     "method": "regex",
