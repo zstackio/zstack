@@ -1910,7 +1910,7 @@ public class KVMHost extends HostBase implements Host {
             socket = 1;
             cpuOnSocket = cpuNum;
         }
-
+        cmd.setImagePlatform(platform);
         cmd.setSocketNum(socket);
         cmd.setCpuOnSocket(cpuOnSocket);
         cmd.setVmName(spec.getVmInventory().getName());
