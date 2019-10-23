@@ -35,6 +35,7 @@ import javax.persistence.Query;
 import javax.persistence.Tuple;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -64,6 +65,8 @@ public class ProgressReportService extends AbstractService implements Management
     private int DELETE_DELAY = 300;
 
     private Future<Void> cleanupThread;
+
+    private static Map<String, ParallelTaskStage> parallelTaskStage = new ConcurrentHashMap<>();
 
     private void startCleanupThread() {
         if (cleanupThread != null) {
@@ -132,7 +135,6 @@ public class ProgressReportService extends AbstractService implements Management
                 Runnable cleanup = ThreadContextUtils.saveThreadContext();
                 Defer.defer(cleanup);
                 setThreadContext(cmd);
-                logger.debug(String.format("report progress is : %s", cmd.getProgress()));
                 taskProgress(TaskType.Progress, cmd.getProgress());
                 return null;
             }
@@ -381,6 +383,21 @@ public class ProgressReportService extends AbstractService implements Management
         ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, vo.getContent());
     }
 
+    private static String calculateFmt(String apiId, TaskType type, String fmt) {
+        ParallelTaskStage pstage = parallelTaskStage.get(apiId);
+        if (type != TaskType.Progress || pstage == null) {
+            return fmt;
+        }
+
+        int percent = Integer.valueOf(fmt);
+        if (pstage.isOver(percent)) {
+            parallelTaskStage.remove(apiId);
+            return fmt;
+        }
+
+        return String.valueOf(parallelTaskStage.get(apiId).calculatePercent(Integer.valueOf(fmt)));
+    }
+
     private static void taskProgress(TaskType type, String fmt, Object...args) {
         if (!ProgressGlobalConfig.PROGRESS_ON.value(Boolean.class)) {
             return;
@@ -413,7 +430,10 @@ public class ProgressReportService extends AbstractService implements Management
         vo.setApiId(apiId);
         vo.setTaskUuid(taskUuid);
         vo.setParentUuid(getParentUuid());
-        vo.setContent(fmt);
+        vo.setContent(calculateFmt(apiId, type, fmt));
+        if (type == TaskType.Progress) {
+            logger.debug(String.format("report progress is : %s", vo.getContent()));
+        }
         if (args != null) {
             vo.setArguments(JSONObjectUtil.toJsonString(args));
         }
@@ -438,7 +458,6 @@ public class ProgressReportService extends AbstractService implements Management
             return;
         }
 
-        logger.debug(String.format("report progress is : %s", fmt));
         taskProgress(TaskType.Progress, fmt);
     }
 
@@ -458,8 +477,10 @@ public class ProgressReportService extends AbstractService implements Management
                 // get current progress
                 Tuple res = SQL.New("SELECT content, timeToDelete FROM TaskProgressVO" +
                         " WHERE apiId = :apiId" +
+                        " AND type = :type" +
                         " ORDER BY CAST(content AS int) DESC", Tuple.class)
                         .param("apiId", apiId)
+                        .param("type", TaskType.Progress)
                         .limit(1)
                         .find();
 
@@ -475,7 +496,7 @@ public class ProgressReportService extends AbstractService implements Management
                 ThreadContext.put(THREAD_CONTEXT_API, apiId);
                 ThreadContext.put(THREAD_CONTEXT_TASK_NAME, taskName);
                 if (endPercent <= currentPercent) {
-                    reportProgress(String.valueOf(endPercent));
+                    reportProgress(String.valueOf(currentPercent));
                     return true;
                 } else {
                     reportProgress(String.valueOf(currentPercent + 1));
@@ -511,6 +532,13 @@ public class ProgressReportService extends AbstractService implements Management
         return exactStage;
     }
 
+    public static ParallelTaskStage markParallelTaskStage(TaskProgressRange parentStage, TaskProgressRange subStage, List<? extends Number> weight) {
+        TaskProgressRange exactStage = parentStage != null ? transformSubStage(parentStage, subStage) : subStage;
+        ParallelTaskStage stage = new ParallelTaskStage(exactStage, weight);
+        Optional.ofNullable(ThreadContext.get(Constants.THREAD_CONTEXT_API)).ifPresent(it -> parallelTaskStage.put(it, stage));
+        return stage;
+    }
+
     public static TaskProgressRange getTaskStage(){
         String stage = ThreadContext.get(Constants.THREAD_CONTEXT_TASK_STAGE) != null ?
                 ThreadContext.get(Constants.THREAD_CONTEXT_TASK_STAGE) : "0-100";
@@ -520,6 +548,10 @@ public class ProgressReportService extends AbstractService implements Management
     public static List<TaskProgressRange> splitTaskStage(TaskProgressRange stage, List<? extends Number> weight) {
         List<TaskProgressRange> results = new ArrayList<>();
         double total = weight.stream().mapToDouble(Number::doubleValue).sum();
+        if (total == 0) {
+            return splitTaskStage(stage, weight.stream().map(it -> 1).collect(Collectors.toList()));
+        }
+
         int range = stage.getEnd() - stage.getStart();
         double end = stage.getStart();
         for (Number w : weight) {
@@ -531,8 +563,8 @@ public class ProgressReportService extends AbstractService implements Management
 
     private static TaskProgressRange transformSubStage(TaskProgressRange parentStage, TaskProgressRange subStage){
         float ratio = (float)(parentStage.getEnd() - parentStage.getStart())/100;
-        int exactStart = (int)(subStage.getStart() * ratio + parentStage.getStart());
-        int exactEnd = (int)(subStage.getEnd() * ratio + parentStage.getStart());
+        int exactStart = Math.round(subStage.getStart() * ratio + parentStage.getStart());
+        int exactEnd = Math.round(subStage.getEnd() * ratio + parentStage.getStart());
         return new TaskProgressRange(exactStart, exactEnd);
     }
 }
