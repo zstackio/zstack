@@ -14,6 +14,8 @@ class Ipv6RangeSpec extends Spec implements HasSession {
     String networkCidr
     @SpecParam(required = true)
     String addressMode
+    @SpecParam
+    List<String> systemTags
 
     IpRangeInventory inventory
 
@@ -30,6 +32,7 @@ class Ipv6RangeSpec extends Spec implements HasSession {
             delegate.addressMode = addressMode
             delegate.sessionId = sessionId
             delegate.l3NetworkUuid = (parent as L3NetworkSpec).inventory.uuid
+            delegate.systemTags = systemTags
         }
 
         postCreate {
