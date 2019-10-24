@@ -6,7 +6,7 @@ package org.zstack.header.core.progress;
 public class PendingTaskInfo extends TaskInfo {
     @Override
     public String toString() {
-        return String.format("PENDING TASK[NAME: %s, CLASS: %s PENDING TIME: %s secs, INDEX: %s] %s",
+        return String.format("\nPENDING TASK[NAME: %s, CLASS: %s PENDING TIME: %s secs, INDEX: %s] %s",
                 name, className, pendingTime, index, context);
     }
 }
