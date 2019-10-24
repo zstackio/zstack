@@ -61,6 +61,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -763,15 +764,14 @@ public class RestServer implements Component, CloudBusEventListener {
                 params.date = dateStr;
 
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z");
-                LocalDateTime date;
+                ZonedDateTime zonedDateTime;
                 try {
-                    date = LocalDateTime.parse(dateStr, formatter);
+                    zonedDateTime = ZonedDateTime.parse(dateStr, formatter);
                 } catch (RuntimeException e) {
                     throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("'Date' format error, correct format is 'EEE, dd MMM yyyy HH:mm:ss '"));
                 }
-
-                LocalDateTime now = LocalDateTime.now();
-                if (date.isAfter(now.plus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES))) || date.isBefore(now.minus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES)))) {
+                ZonedDateTime currentTime = ZonedDateTime.now();
+                if (zonedDateTime.isAfter(currentTime.plus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES))) || zonedDateTime.isBefore(currentTime.minus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES)))) {
                     throw new RestException(HttpStatus.FORBIDDEN.value(), String.format("requestTimeTooSkewed"));
                 }
 
