@@ -134,12 +134,6 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             }
         }
 
-        sql = "select i.primaryStorageUuid from ImageCacheVO i where i.primaryStorageUuid in (:psUuids) and i.imageUuid = :iuuid";
-        TypedQuery<String> iq = dbf.getEntityManager().createQuery(sql, String.class);
-        iq.setParameter("psUuids", psUuids);
-        iq.setParameter("iuuid", spec.getImage().getUuid());
-        List<String> hasImagePrimaryStorage = iq.getResultList();
-
         List<String> hostCandidates = new ArrayList<>();
         sql = "select h.uuid, ref.clusterUuid" +
                 " from PrimaryStorageClusterRefVO ref, HostVO h" +
@@ -160,28 +154,35 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
                     .in(PrimaryStorageClusterRefVO_.primaryStorageUuid, psUuids)
                     .listValues();
 
-            if(clusterPsUuids.isEmpty()){
+            if (clusterPsUuids.isEmpty()) {
                 break;
             }
 
             // background: http://dev.zstack.io/browse/ZSTAC-4852
             // only fix problem one
             long cap = 0L;
-            if(clusterPsUuids.size() == 1){
+            if (spec.getImage() != null && clusterPsUuids.size() == 1) {
                 String psUuid = clusterPsUuids.get(0);
                 Long psAvaCap = Q.New(PrimaryStorageCapacityVO.class).select(PrimaryStorageCapacityVO_.availableCapacity)
                         .eq(PrimaryStorageCapacityVO_.uuid, psUuid).findValue();
 
+
+                sql = "select i.primaryStorageUuid from ImageCacheVO i where i.primaryStorageUuid in (:psUuids) and i.imageUuid = :iuuid";
+                TypedQuery<String> iq = dbf.getEntityManager().createQuery(sql, String.class);
+                iq.setParameter("psUuids", psUuids);
+                iq.setParameter("iuuid", spec.getImage().getUuid());
+                List<String> hasImagePrimaryStorage = iq.getResultList();
+
                 if (hasImagePrimaryStorage.contains(psUuid)) {
-                    cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, psAvaCap );
+                    cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, psAvaCap);
                 } else {
                     // the primary storage doesn't have the image in cache
                     // so we need to add the image size
                     cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, psAvaCap) - spec.getImage().getActualSize();
                 }
-            }else{
+            } else {
                 // multi ps, don't consider image cache, because of cannot determine the primary storage associated with the root disk
-                for(String psUuid : clusterPsUuids){
+                for (String psUuid : clusterPsUuids) {
                     Long psAvaCap = Q.New(PrimaryStorageCapacityVO.class).select(PrimaryStorageCapacityVO_.availableCapacity)
                             .eq(PrimaryStorageCapacityVO_.uuid, psUuid).findValue();
                     cap = cap + ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, psAvaCap);
@@ -207,11 +208,6 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
     public void allocate() {
         if (amITheFirstFlow()) {
             throw new CloudRuntimeException("HostPrimaryStorageAllocatorFlow cannot be the first flow in the chain");
-        }
-
-        if (spec.getImage() == null) {
-            next(candidates);
-            return;
         }
 
         candidates = allocateFromCandidates();
