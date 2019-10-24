@@ -18,6 +18,8 @@ class IpRangeSpec extends Spec implements HasSession {
     String netmask
     @SpecParam(required = true)
     String gateway
+    @SpecParam
+    List<String> systemTags
 
     IpRangeInventory inventory
 
@@ -36,6 +38,7 @@ class IpRangeSpec extends Spec implements HasSession {
             delegate.gateway = gateway
             delegate.sessionId = sessionId
             delegate.l3NetworkUuid = (parent as L3NetworkSpec).inventory.uuid
+            delegate.systemTags = systemTags
         }
 
         postCreate {
