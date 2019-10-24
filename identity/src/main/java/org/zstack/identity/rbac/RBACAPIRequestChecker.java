@@ -4,6 +4,7 @@ import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import edu.emory.mathcs.backport.java.util.Arrays;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
@@ -15,9 +16,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BinaryOperator;
 
 import static org.zstack.core.Platform.getUuid;
@@ -98,6 +97,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     }
 
     protected boolean evalAllowStatements(Map<PolicyInventory, List<PolicyStatement>> policies) {
+        Set<String> apiNeedToCheck = new HashSet<>();
+        apiNeedToCheck.add(rbacEntity.getApiName());
+        apiNeedToCheck.addAll(rbacEntity.getAdditionalApisToCheck());
+
         for (Map.Entry<PolicyInventory, List<PolicyStatement>> e : policies.entrySet()) {
             PolicyInventory policy = e.getKey();
             for (PolicyStatement statement : e.getValue()) {
@@ -106,7 +109,9 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                 }
 
                 for (String as : statement.getActions()) {
-                    if (evalAllowStatement(as)) {
+                    apiNeedToCheck.removeIf(api -> evalAllowStatement(as, api));
+
+                    if (apiNeedToCheck.isEmpty()) {
                         if (logger.isTraceEnabled()) {
                             logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] allows the API:\n%s", policy.getName(),
                                     policy.getUuid(), as, jsonMessage()));
@@ -120,9 +125,9 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         return false;
     }
 
-    protected boolean evalAllowStatement(String as) {
+    protected boolean evalAllowStatement(String as, String targetApiName) {
         String ap = PolicyUtils.apiNamePatternFromAction(as, true);
-        return RBAC.checkAPIPermission(rbacEntity.getApiMessage(), policyMatcher.match(ap, rbacEntity.getApiName()));
+        return RBAC.checkAPIPermission(rbacEntity.getApiMessage(), policyMatcher.match(ap, targetApiName));
     }
 
     protected boolean isPrincipalMatched(List<String> principals) {
