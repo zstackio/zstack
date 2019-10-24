@@ -7,7 +7,9 @@ import org.zstack.header.core.progress.PendingTaskInfo;
 import org.zstack.header.core.progress.RunningTaskInfo;
 import org.zstack.header.core.progress.TaskInfo;
 import org.zstack.header.message.Message;
+import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -50,6 +52,6 @@ public class TaskInfoBuilder {
             }
         }
 
-        info.setContext(info.getContextList().isEmpty() ? "" : String.format("CONTEXT: %s", StringUtils.join(info.getContextList(), "\n")));
+        info.setContext(info.getContextList().isEmpty() ? "\n" : String.format("\nCONTEXT: %s\n", StringUtils.join(info.getContextList(), "\n")));
     }
 }
