@@ -253,6 +253,7 @@ class Env {
                             name = "ipv6-Statefull-DHCP"
                             networkCidr = "2001:2003::/64"
                             addressMode = "Stateful-DHCP"
+                            systemTags = ["flatNetwork::DhcpServer::2001:2003--fffe::ipUuid::null"]
                         }
 
                         service {
@@ -296,6 +297,7 @@ class Env {
                             endIp = "192.168.100.100"
                             netmask = "255.255.255.0"
                             gateway = "192.168.100.1"
+                            systemTags = ["flatNetwork::DhcpServer::192.168.100.99::ipUuid::null"]
                         }
 
                         service {
