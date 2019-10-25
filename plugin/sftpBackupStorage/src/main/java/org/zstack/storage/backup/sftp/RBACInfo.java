@@ -7,6 +7,7 @@ public class RBACInfo implements RBACDescription {
     public void permissions() {
         permissionBuilder()
                 .adminOnlyAPIs("org.zstack.storage.backup.sftp.**")
+                .normalAPIs(APIQuerySftpBackupStorageMsg.class)
                 .build();
     }
 
