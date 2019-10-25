@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.NeedJsonSchema;
 
 /**
@@ -8,6 +9,29 @@ public class VmTracerCanonicalEvents {
     public static final String VM_STATE_CHANGED_PATH = "/vmTracer/vmStateChanged";
     public static final String STRANGER_VM_FOUND_PATH = "/vmTracer/strangerVmFound";
     public static final String VM_OPERATE_FAIL_ON_HYPERVISOR_PATH = "/vmTracer/vmOperateFailOnHypervisor";
+    public static final String VM_STATE_IN_SHUTDOWN_PATH = "/vmTracer/vmStateInShutdown";
+
+    @NeedJsonSchema
+    public static class VmStateInShutdownData {
+        private String vmUuid;
+        private ErrorCode reason;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public ErrorCode getReason() {
+            return reason;
+        }
+
+        public void setReason(ErrorCode reason) {
+            this.reason = reason;
+        }
+    }
 
     @NeedJsonSchema
     public static class OperateFailOnHypervisorData {

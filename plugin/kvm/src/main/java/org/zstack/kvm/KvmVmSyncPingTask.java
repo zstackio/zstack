@@ -5,6 +5,7 @@ import org.zstack.compute.vm.DeleteVmGC;
 import org.zstack.compute.vm.VmTracer;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
@@ -50,12 +51,16 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     private CloudBus bus;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private EventFacade evtf;
 
     // A map from apiId to VM instance uuid
     private ConcurrentHashMap<String, String> vmApis = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Boolean> vmsToSkip = new ConcurrentHashMap<>();
     private List<Class<? extends Message>> skipVmTracerMessages = new ArrayList<>();
     private List<Class> skipVmTracerReplies = new ArrayList<>();
+    private Map<String, Integer> vmInShutdownMap = new ConcurrentHashMap<>();
+    private static Integer vmInShutdownMaxnum = 10;
 
     {
         getReflections().getTypesAnnotatedWith(SkipVmTracer.class).forEach(clz -> {
@@ -151,6 +156,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
                     }
 
+                    checkVmInShutdown(ret.getVmInShutdowns(), states);
                     reportVmState(host.getUuid(), states, vmsToSkipSetHostSide);
                     completion.success();
                 } else {
@@ -159,6 +165,38 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                 }
             }
         });
+    }
+
+    private void checkVmInShutdown(List<String> vmInShutdowns, Map<String, VmInstanceState> states) {
+        if (vmInShutdowns == null) {
+            vmInShutdowns = new ArrayList<>();
+        }
+
+        if ((vmInShutdowns == null || vmInShutdowns.isEmpty()) && vmInShutdownMap.isEmpty()) {
+            return;
+        }
+        for (String vmUuid : states.keySet()) {
+            if (!vmInShutdowns.contains(vmUuid)) {
+                vmInShutdownMap.remove(vmUuid);
+                continue;
+            }
+
+            if (vmInShutdownMap.get(vmUuid) == null) {
+                vmInShutdownMap.put(vmUuid, 1);
+                continue;
+            }
+
+            if (vmInShutdownMap.get(vmUuid) < vmInShutdownMaxnum) {
+                vmInShutdownMap.put(vmUuid, vmInShutdownMap.get(vmUuid) + 1);
+            } else {
+                VmTracerCanonicalEvents.VmStateInShutdownData data = new VmTracerCanonicalEvents.VmStateInShutdownData();
+                data.setVmUuid(vmUuid);
+                ErrorCode err = operr("The vm[%s] state is in shutdown for a long time, check whether the vm is normal", vmUuid);
+                data.setReason(err);
+                evtf.fire(VmTracerCanonicalEvents.VM_STATE_IN_SHUTDOWN_PATH, data);
+                vmInShutdownMap.remove(vmUuid);
+            }
+        }
     }
 
     @Override

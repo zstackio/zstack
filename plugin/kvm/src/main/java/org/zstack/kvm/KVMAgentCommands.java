@@ -1694,12 +1694,22 @@ public class KVMAgentCommands {
     public static class VmSyncResponse extends AgentResponse {
         private HashMap<String, String> states;
 
+        private List<String> vmInShutdowns;
+
         public HashMap<String, String> getStates() {
             return states;
         }
 
         public void setStates(HashMap<String, String> states) {
             this.states = states;
+        }
+
+        public List<String> getVmInShutdowns() {
+            return vmInShutdowns;
+        }
+
+        public void setVmInShutdowns(List<String> vmInShutdowns) {
+            this.vmInShutdowns = vmInShutdowns;
         }
     }
 
