@@ -15,4 +15,12 @@
         <defaultValue>3600</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+
+    <config>
+        <category>rest</category>
+        <name>checkTimeZone</name>
+        <description>Check the time zone of the request time if enabled. Ignore the time zone of that if disabled</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>
