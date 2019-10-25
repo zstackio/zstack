@@ -426,15 +426,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
     @Override
     public void submitLongJob(SubmitLongJobMsg msg, CloudBusCallBack submitCallBack, Function<APIEvent, Void> jobCallBack) {
-        String apiId;
-        if (msg.getId() == null) {
-            apiId = Platform.getUuid();
-        } else {
-            apiId = msg.getId();
-        }
-
-        String originApiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
-        ThreadContext.put(Constants.THREAD_CONTEXT_API, apiId);
+        String apiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
         longJobCallBacks.put(apiId, jobCallBack);
         bus.makeLocalServiceId(msg, LongJobConstants.SERVICE_ID);
         bus.send(msg, new CloudBusCallBack(submitCallBack) {
@@ -446,12 +438,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
                 if (submitCallBack != null) {
                     submitCallBack.run(reply);
-                }
-
-                if (originApiId == null) {
-                    ThreadContext.remove(Constants.THREAD_CONTEXT_API);
-                } else {
-                    ThreadContext.put(Constants.THREAD_CONTEXT_API, originApiId);
                 }
             }
         });
