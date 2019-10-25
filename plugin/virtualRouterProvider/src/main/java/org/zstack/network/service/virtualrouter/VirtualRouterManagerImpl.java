@@ -850,25 +850,33 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }.call();
 
         if (vr != null) {
-            if (!VmInstanceState.Running.toString().equals(vr.getState())) {
-                HaStartVmInstanceMsg msg = new HaStartVmInstanceMsg();
-                String vmUuid = vr.getUuid();
-                msg.setVmInstanceUuid(vmUuid);
-                msg.setJudgerClassName(HaStartVirtualRouterVmJudger.class.getName());
-                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
-                bus.send(msg, new CloudBusCallBack(completion) {
+            ErrorCodeList errorCodeList = new ErrorCodeList();
+
+            new While<>(pluginRgty.getExtensionList(AfterAcquireVirtualRouterExtensionPoint.class)).each((ext, c) -> {
+                ext.afterAcquireVirtualRouter(vr, new Completion(c) {
                     @Override
-                    public void run(MessageReply reply) {
-                        if (reply.isSuccess()) {
-                            completion.success(new VirtualRouterVmInventory(dbf.findByUuid(vr.getUuid(), VirtualRouterVmVO.class)));
-                        } else {
-                            completion.fail(reply.getError());
-                        }
+                    public void success() {
+                        c.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        errorCodeList.getCauses().add(errorCode);
+                        c.done();
                     }
                 });
-            } else {
-                completion.success(vr);
-            }
+            }).run(new NoErrorCompletion(completion) {
+                @Override
+                public void done() {
+                    if (!errorCodeList.getCauses().isEmpty()) {
+                        completion.fail(errorCodeList.getCauses().get(0));
+                        return;
+                    }
+
+                    VirtualRouterVmVO vo = dbf.findByUuid(vr.getUuid(), VirtualRouterVmVO.class);
+                    completion.success(VirtualRouterVmInventory.valueOf(vo));
+                }
+            });
             return;
         }
 
