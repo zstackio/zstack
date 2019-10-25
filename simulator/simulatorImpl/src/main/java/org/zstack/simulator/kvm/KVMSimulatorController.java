@@ -20,6 +20,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -264,6 +265,7 @@ public class KVMSimulatorController {
                 vms.put(e.getKey(), e.getValue().toString());
             }
             rsp.setStates(vms);
+            rsp.setVmInShutdowns(new ArrayList<String>());
             reply(entity, rsp);
         }
     }
