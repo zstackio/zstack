@@ -4,6 +4,7 @@ import org.zstack.header.core.progress.TaskProgressRange;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 /**
  * Created by MaJin on 2019/10/15.
@@ -31,16 +32,17 @@ public class ParallelTaskStage {
         taskStartPercentSum -= subTaskStages.remove(0).getStart();
     }
 
-    synchronized int calculatePercent(int percent) {
+    synchronized void calculatePercent(int percent, Consumer<Integer> consumer) {
         if (percent < start || percent > end || percent >= 100) {
-            return percent;
+            consumer.accept(percent);
+            return;
         }
 
         int key = subTaskPercent.keySet().stream().filter(it -> it <= percent).max(Comparator.comparingInt(it -> it)).orElse(0);
         if (subTaskPercent.get(key) < percent) {
             subTaskPercent.put(key, percent);
         }
-        return subTaskPercent.values().stream().mapToInt(it -> it).sum() - taskStartPercentSum;
+        consumer.accept(subTaskPercent.values().stream().mapToInt(it -> it).sum() - taskStartPercentSum);
     }
 
     boolean isOver(int percent) {
