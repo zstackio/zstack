@@ -1585,6 +1585,15 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
     private void validate(APIUpdateAccountMsg msg) {
         AccountVO a = dbf.findByUuid(msg.getSession().getAccountUuid(), AccountVO.class);
+
+        if (msg.getName() != null) {
+            SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
+            q.add(AccountVO_.name, Op.EQ, msg.getName());
+            if (q.isExists()) {
+                throw new ApiMessageInterceptionException(argerr("unable to update name. An account already called %s", msg.getName()));
+            }
+        }
+
         if (msg.getUuid() == null) {
             msg.setUuid(msg.getSession().getAccountUuid());
         }
