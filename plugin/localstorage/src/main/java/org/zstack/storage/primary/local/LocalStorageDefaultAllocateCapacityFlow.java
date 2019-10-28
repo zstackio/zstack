@@ -81,14 +81,13 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
     @Transactional(readOnly = true)
     private String getMostFreeLocalStorageUuid(String hostUuid) {
         String sql = "select ref.primaryStorageUuid" +
-                " from LocalStorageHostRefVO ref, PrimaryStorageCapacityVO cap, PrimaryStorageVO pri" +
-                " where cap.uuid = ref.primaryStorageUuid" +
-                " and ref.primaryStorageUuid = pri.uuid" +
+                " from LocalStorageHostRefVO ref, PrimaryStorageVO pri" +
+                " where ref.primaryStorageUuid = pri.uuid" +
                 " and pri.state = :state" +
                 " and pri.status = :status" +
                 " and ref.hostUuid = :huuid" +
                 " group by ref.primaryStorageUuid" +
-                " order by cap.availableCapacity desc";
+                " order by ref.availableCapacity desc";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("huuid", hostUuid);
         q.setParameter("state", PrimaryStorageState.Enabled);
