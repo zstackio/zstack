@@ -406,6 +406,8 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
                     String info = String.format("sync port forwardings on virtual router[uuid:%s] successfully",
                             vrVO.getUuid());
                     logger.debug(info);
+                    proxy.attachNetworkServiceToVirtualRouter(vrVO.getUuid(), PortForwardingRuleVO.class.getSimpleName(),
+                            pfs.stream().map(PortForwardingRuleTO::getUuid).collect(Collectors.toList()));
                     completion.success();
                 }
             }

@@ -1832,7 +1832,19 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             return;
         }
 
-        syncOnStart(vr, lbs, completion);
+        syncOnStart(vr, lbs, new Completion(completion) {
+            @Override
+            public void success() {
+                List<String> lbUuids = lbs.stream().map(s -> s.getLb().getUuid()).collect(Collectors.toList());
+                proxy.attachNetworkServiceToVirtualRouter(vr.getUuid(), LoadBalancerVO.class.getSimpleName(), lbUuids);
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override
