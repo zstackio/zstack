@@ -1,11 +1,15 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -19,7 +23,10 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
@@ -50,9 +57,34 @@ public class VmAllocatePrimaryStorageForAttachingDiskFlow implements Flow {
         AllocatePrimaryStorageMsg msg = new AllocatePrimaryStorageMsg();
         msg.setSize(volume.getSize());
         msg.setPurpose(PrimaryStorageAllocationPurpose.CreateVolume.toString());
-        msg.setRequiredHostUuid(hinv.getUuid());
         msg.setDiskOfferingUuid(volume.getDiskOfferingUuid());
         msg.setServiceId(bus.makeLocalServiceId(PrimaryStorageConstant.SERVICE_ID));
+
+        if (volume.isShareable()) {
+            String clusterUuid = spec.getVmInventory().getClusterUuid();
+            List<PrimaryStorageVO> vos = SQL.New("select pri" +
+            " from PrimaryStorageVO pri, PrimaryStorageClusterRefVO ref" +
+                    " where ref.clusterUuid = :clusterUuid" +
+                    " and ref.primaryStorageUuid = pri.uuid" +
+                    " and pri.status = :status" +
+                    " and pri.state = :priState")
+                    .param("clusterUuid", clusterUuid)
+                    .param("status", PrimaryStorageStatus.Connected)
+                    .param("priState", PrimaryStorageState.Enabled)
+                    .list();
+
+            if (CollectionUtils.isNotEmpty(vos)) {
+                msg.setPossiblePrimaryStorageTypes(vos.stream()
+                        .filter(v -> PrimaryStorageType.valueOf(v.getType()).isSupportSharedVolume())
+                        .map(PrimaryStorageVO::getType)
+                        .collect(Collectors.toList()));
+            }
+
+            msg.setRequiredClusterUuids(Arrays.asList(clusterUuid));
+        } else {
+            msg.setRequiredHostUuid(hinv.getUuid());
+        }
+
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override
             public void run(MessageReply reply) {

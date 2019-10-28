@@ -83,6 +83,10 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
 
+    {
+        type.setSupportSharedVolume(true);
+    }
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired

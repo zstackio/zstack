@@ -15,8 +15,17 @@ public class PrimaryStorageType {
     private boolean supportVolumeMigration;
     private boolean supportVolumeMigrationInCurrentPrimaryStorage;
     private boolean supportVolumeMigrationToOtherPrimaryStorage;
+    private boolean supportSharedVolume;
     private int order;
     private PrimaryStorageFindBackupStorage primaryStorageFindBackupStorage;
+
+    public boolean isSupportSharedVolume() {
+        return supportSharedVolume;
+    }
+
+    public void setSupportSharedVolume(boolean supportSharedVolume) {
+        this.supportSharedVolume = supportSharedVolume;
+    }
 
     public int getOrder() {
         return order;
