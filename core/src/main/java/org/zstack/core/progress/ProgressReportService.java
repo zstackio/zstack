@@ -383,19 +383,35 @@ public class ProgressReportService extends AbstractService implements Management
         ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, vo.getContent());
     }
 
-    private static String calculateFmt(String apiId, TaskType type, String fmt) {
+    private static void calculateFmtAndPersist(TaskProgressVO vo, String apiId, TaskType type, String fmt) {
         ParallelTaskStage pstage = parallelTaskStage.get(apiId);
         if (type != TaskType.Progress || pstage == null) {
-            return fmt;
+            vo.setContent(fmt);
+            persistProgress(vo, type);
+            return;
         }
 
         int percent = Integer.valueOf(fmt);
         if (pstage.isOver(percent)) {
             parallelTaskStage.remove(apiId);
-            return fmt;
+            vo.setContent(fmt);
+            persistProgress(vo, type);
+            return;
         }
 
-        return String.valueOf(parallelTaskStage.get(apiId).calculatePercent(Integer.valueOf(fmt)));
+        pstage.calculatePercent(percent, p -> {
+            vo.setContent(String.valueOf(p));
+            vo.setTime(System.currentTimeMillis());
+            persistProgress(vo, type);
+        });
+    }
+
+    private static void persistProgress(TaskProgressVO vo, TaskType type) {
+        if (type == TaskType.Progress) {
+            logger.trace(String.format("report progress is : %s", vo.getContent()));
+        }
+
+        Platform.getComponentLoader().getComponent(DatabaseFacade.class).persist(vo);
     }
 
     private static void taskProgress(TaskType type, String fmt, Object...args) {
@@ -430,10 +446,6 @@ public class ProgressReportService extends AbstractService implements Management
         vo.setApiId(apiId);
         vo.setTaskUuid(taskUuid);
         vo.setParentUuid(getParentUuid());
-        vo.setContent(calculateFmt(apiId, type, fmt));
-        if (type == TaskType.Progress) {
-            logger.debug(String.format("report progress is : %s", vo.getContent()));
-        }
         if (args != null) {
             vo.setArguments(JSONObjectUtil.toJsonString(args));
         }
@@ -442,7 +454,7 @@ public class ProgressReportService extends AbstractService implements Management
         vo.setManagementUuid(Platform.getManagementServerId());
         vo.setTaskName(ThreadContext.get(Constants.THREAD_CONTEXT_TASK_NAME));
 
-        Platform.getComponentLoader().getComponent(DatabaseFacade.class).persist(vo);
+        calculateFmtAndPersist(vo, apiId, type, fmt);
     }
 
     public static void taskProgress(String fmt, Object...args) {
