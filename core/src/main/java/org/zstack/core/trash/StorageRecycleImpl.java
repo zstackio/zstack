@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -57,6 +58,8 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
     private CloudBus bus;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private String getResourceType(String resourceUuid) {
         ResourceVO vo = dbf.findByUuid(resourceUuid, ResourceVO.class);
@@ -77,6 +80,10 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         vo.setStorageType(PrimaryStorageVO.class.getSimpleName());
         vo.setTrashType(type.toString());
         vo.setSize(vol.getSize());
+
+        for (CreateRecycleExtensionPoint ext : pluginRgty.getExtensionList(CreateRecycleExtensionPoint.class)) {
+            ext.setHostUuid(vo, vol.getPrimaryStorageUuid());
+        }
 
         vo = dbf.persistAndRefresh(vo);
         return InstallPathRecycleInventory.valueOf(vo);
@@ -108,6 +115,10 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         vo.setStorageType(PrimaryStorageVO.class.getSimpleName());
         vo.setTrashType(type.toString());
         vo.setSize(snapshot.getSize());
+
+        for (CreateRecycleExtensionPoint ext : pluginRgty.getExtensionList(CreateRecycleExtensionPoint.class)) {
+            ext.setHostUuid(vo, snapshot.getPrimaryStorageUuid());
+        }
 
         vo = dbf.persistAndRefresh(vo);
         return InstallPathRecycleInventory.valueOf(vo);

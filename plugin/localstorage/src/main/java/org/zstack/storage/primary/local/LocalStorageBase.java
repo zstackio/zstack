@@ -3,7 +3,6 @@ package org.zstack.storage.primary.local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.VolumeMigrationTargetHostFilter;
-import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
@@ -39,12 +38,9 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
-import org.zstack.kvm.GetKVMHostDownloadCredentialMsg;
-import org.zstack.kvm.GetKVMHostDownloadCredentialReply;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
-import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
 import org.zstack.tag.SystemTagCreator;
@@ -1938,7 +1934,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
         q.add(LocalStorageResourceRefVO_.primaryStorageUuid, Op.EQ, self.getUuid());
         q.add(LocalStorageResourceRefVO_.resourceUuid, Op.EQ, resourceUuid);
         LocalStorageResourceRefVO ref = q.find();
-        dbf.remove(ref);
+        if (ref != null) {
+            dbf.remove(ref);
+        }
     }
 
     private void createResourceRefVO(String resUuid, String resType, long size, String hostUuid) {
@@ -2151,7 +2149,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getBitsUuid(), msg.getBitsType());
+                        LocalStorageHypervisorFactory f = msg.getHypervisorType() != null ? getHypervisorBackendFactory(msg.getHypervisorType()) :
+                                getHypervisorBackendFactoryByResourceUuid(msg.getBitsUuid(), msg.getBitsType());
                         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
                         bkd.handle(msg, new ReturnValueCompletion<DeleteVolumeBitsOnPrimaryStorageReply>(msg) {
                             @Override
