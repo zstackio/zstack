@@ -5,8 +5,6 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -61,7 +59,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -773,23 +771,8 @@ public class RestServer implements Component, CloudBusEventListener {
             } else if (auth.startsWith(RestConstants.HEADER_ACCESSKEY)) {
                 authType =  RestAuthenticationType.valueOf(RestConstants.ACCOUNT_REST_ACCESSKEY);
                 String dateStr = entity.getHeaders().getFirst(RestConstants.HEADER_DATE);
-                if (dateStr == null) {
-                    throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("'Date' must be incuded in request header"));
-                }
                 params.date = dateStr;
-
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z");
-                LocalDateTime date;
-                try {
-                    date = LocalDateTime.parse(dateStr, formatter);
-                } catch (RuntimeException e) {
-                    throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("'Date' format error, correct format is 'EEE, dd MMM yyyy HH:mm:ss '"));
-                }
-
-                LocalDateTime now = LocalDateTime.now();
-                if (date.isAfter(now.plus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES))) || date.isBefore(now.minus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES)))) {
-                    throw new RestException(HttpStatus.FORBIDDEN.value(), String.format("requestTimeTooSkewed"));
-                }
+                checkTime(dateStr, RestGlobalConfig.CHECK_TIME_ZONE.value(Boolean.class));
 
                 String str = auth.replaceFirst(RestConstants.HEADER_ACCESSKEY, "").trim();
                 String[] res = str.split(":");
@@ -914,6 +897,35 @@ public class RestServer implements Component, CloudBusEventListener {
 
         msg.setServiceId(ApiMediatorConstant.SERVICE_ID);
         sendMessage(msg, api, rsp);
+    }
+
+    private void checkTime(String dateStr, boolean checkTimeZone) throws RestException {
+        if (dateStr == null) {
+            throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("'Date' must be incuded in request header"));
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z");
+        ZonedDateTime date;
+        try {
+            date = ZonedDateTime.parse(dateStr, formatter);
+        } catch (RuntimeException e) {
+            throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("'Date' format error, correct format is 'EEE, dd MMM yyyy HH:mm:ss '"));
+        }
+
+        ZonedDateTime now = ZonedDateTime.now();
+        if (!checkTimeSkewing(date, now, checkTimeZone)) {
+            throw new RestException(HttpStatus.FORBIDDEN.value(), String.format("requestTimeTooSkewed"));
+        }
+    }
+
+    private boolean checkTimeSkewing(ZonedDateTime date, ZonedDateTime now, boolean checkTimeZone) {
+        if (checkTimeZone) {
+            return !date.isAfter(now.plus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES))) &&
+                    !date.isBefore(now.minus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES)));
+        } else {
+            return !date.toLocalDateTime().isAfter(now.toLocalDateTime().plus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES))) &&
+                    !date.toLocalDateTime().isBefore(now.toLocalDateTime().minus(Duration.ofMinutes(RestConstants.REQUEST_DURATION_MINUTES)));
+        }
     }
 
     private static final LinkedHashMap<String, String> QUERY_OP_MAPPING = new LinkedHashMap();
