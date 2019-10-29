@@ -1519,7 +1519,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     void handle(DeleteVolumeBitsOnPrimaryStorageMsg msg, final ReturnValueCompletion<DeleteVolumeBitsOnPrimaryStorageReply> completion) {
-        String hostUuid = getHostUuidByResourceUuid(msg.getBitsUuid(), msg.getBitsType());
+        String hostUuid = msg.getHostUuid() != null ? msg.getHostUuid() : getHostUuidByResourceUuid(msg.getBitsUuid(), msg.getBitsType());
+        if (!Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).isExists()) {
+            logger.warn(String.format("delete volume on host: %s, but it is not existed", hostUuid));
+            completion.success(new DeleteVolumeBitsOnPrimaryStorageReply());
+            return;
+        }
         deleteBits(msg.getInstallPath(), hostUuid, msg.isFolder(), new Completion(completion) {
             @Override
             public void success() {

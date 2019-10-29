@@ -29,6 +29,8 @@ public class InstallPathRecycleVO implements Serializable {
     @Column
     private String hypervisorType;
     @Column
+    private String hostUuid;
+    @Column
     private Long size;
     @Column
     private String trashType;
@@ -121,5 +123,13 @@ public class InstallPathRecycleVO implements Serializable {
 
     public void setCreateDate(Timestamp createDate) {
         this.createDate = createDate;
+    }
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
     }
 }
