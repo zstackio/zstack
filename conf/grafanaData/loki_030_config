@@ -3,6 +3,7 @@ auth_enabled: false
 server:
   http_listen_port: ${LOKI_SERVICE_PORT}
   grpc_listen_port: ${LOKI_GRPC_PORT}
+  log_level: warn
 
 ingester:
   lifecycler:
