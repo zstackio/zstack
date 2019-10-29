@@ -19,6 +19,7 @@ public class InstallPathRecycleInventory implements Serializable {
     private String resourceType;
     private String installPath;
     private Boolean isFolder;
+    private String hostUuid;
     private String hypervisorType;
     private Long size;
     private String trashType;
@@ -31,6 +32,7 @@ public class InstallPathRecycleInventory implements Serializable {
         this.setStorageUuid(vo.getStorageUuid());
         this.setStorageType(vo.getStorageType());
         this.setInstallPath(vo.getInstallPath());
+        this.setHostUuid(vo.getHostUuid());
         this.setFolder(vo.getFolder());
         this.setHypervisorType(vo.getHypervisorType());
         this.setSize(vo.getSize());
@@ -139,5 +141,13 @@ public class InstallPathRecycleInventory implements Serializable {
 
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
+    }
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
     }
 }

@@ -817,6 +817,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             completion.success(result);
             return;
         }
+
         DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
         msg.setPrimaryStorageUuid(self.getUuid());
         msg.setInstallPath(inv.getInstallPath());
@@ -824,6 +825,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         msg.setFolder(inv.getFolder());
         msg.setBitsUuid(inv.getResourceUuid());
         msg.setBitsType(inv.getResourceType());
+        msg.setHostUuid(inv.getHostUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
         bus.send(msg, new CloudBusCallBack(msg) {
             @Override

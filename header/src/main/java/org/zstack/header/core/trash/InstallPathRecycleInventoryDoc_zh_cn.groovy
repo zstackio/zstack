@@ -41,6 +41,12 @@ doc {
 		since "3.7.0"
 	}
 	field {
+		name "hostUuid"
+		desc "回收数据原来所在的Host(LocalStorage)"
+		type "String"
+		since "3.7.0"
+	}
+	field {
 		name "isFolder"
 		desc "清理时是否以目录为单位"
 		type "Boolean"
