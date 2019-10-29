@@ -13,6 +13,7 @@ public class DeleteVolumeBitsOnPrimaryStorageMsg extends NeedReplyMessage implem
     private boolean folder;
     private String bitsUuid;
     private String bitsType;
+    private String hostUuid;
 
     public String getBitsUuid() {
         return bitsUuid;
@@ -61,5 +62,13 @@ public class DeleteVolumeBitsOnPrimaryStorageMsg extends NeedReplyMessage implem
 
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
+    }
+
+    public String getHostUuid() {
+        return hostUuid;
+    }
+
+    public void setHostUuid(String hostUuid) {
+        this.hostUuid = hostUuid;
     }
 }

@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS `InstallPathRecycleVO` (
     `storageUuid` varchar(32) NOT NULL,
     `storageType` varchar(32) NOT NULL,
     `installPath` varchar(1024) NOT NULL,
+    `hostUuid` varchar(32) DEFAULT NULL,
     `hypervisorType` varchar(32) DEFAULT NULL,
     `trashType` varchar(32) NOT NULL,
     `isFolder` boolean NOT NULL DEFAULT FALSE,

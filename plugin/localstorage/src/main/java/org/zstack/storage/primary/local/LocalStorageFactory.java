@@ -12,10 +12,12 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.trash.CreateRecycleExtensionPoint;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.trash.InstallPathRecycleVO;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -65,7 +67,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
         RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint,
         InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint, PostMarkRootVolumeAsSnapshotExtension,
-        AfterTakeLiveSnapshotsOnVolumes, VmCapabilitiesExtensionPoint, PrimaryStorageDetachExtensionPoint {
+        AfterTakeLiveSnapshotsOnVolumes, VmCapabilitiesExtensionPoint, PrimaryStorageDetachExtensionPoint, CreateRecycleExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
         @Override
@@ -1190,6 +1192,21 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED.deleteInherentTag(hostUuid,
                     LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED.instantiateTag(map(
                     e(LocalStorageSystemTags.LOCALSTORAGE_HOST_INITIALIZED_TOKEN, inventory.getUuid()))));
+        }
+    }
+
+    @Override
+    public void setHostUuid(InstallPathRecycleVO vo, String primaryStorageUuid) {
+        PrimaryStorageVO ps = dbf.findByUuid(primaryStorageUuid, PrimaryStorageVO.class);
+        if (!ps.getType().equals(LocalStorageConstants.LOCAL_STORAGE_TYPE)) {
+            return;
+        }
+        List<String> hostUuids = Q.New(LocalStorageResourceRefVO.class).
+                eq(LocalStorageResourceRefVO_.primaryStorageUuid, primaryStorageUuid).
+                eq(LocalStorageResourceRefVO_.resourceUuid, vo.getResourceUuid()).
+                select(LocalStorageResourceRefVO_.hostUuid).listValues();
+        if (!hostUuids.isEmpty()) {
+            vo.setHostUuid(hostUuids.get(0));
         }
     }
 }
