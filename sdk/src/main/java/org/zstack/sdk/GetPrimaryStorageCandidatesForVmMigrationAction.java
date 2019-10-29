@@ -28,6 +28,9 @@ public class GetPrimaryStorageCandidatesForVmMigrationAction extends AbstractAct
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vmInstanceUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean withDataVolumes = true;
+
     @Param(required = false)
     public java.util.List systemTags;
 
