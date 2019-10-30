@@ -1741,6 +1741,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     hostUuid, self.getUuid());
             if (ignoreError) {
                 logger.error(errInfo);
+                return;
             } else {
                 throw new CloudRuntimeException(errInfo);
             }
