@@ -15,6 +15,7 @@ public class VmAbnormalLifeCycleStruct {
         VmStoppedFromPausedStateHostNotChanged,
         VmMigrateToAnotherHost,
         VmRunningOnTheHost,
+        VmRunningFromDestroyed,
         VmPausedFromRunningStateHostNotChanged,
         VmRunningFromPausedStateHostNotChanged,
         VmPausedFromStoppedStateHostNotChanged,
