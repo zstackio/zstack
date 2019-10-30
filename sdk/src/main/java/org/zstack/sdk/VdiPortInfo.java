@@ -1,9 +1,7 @@
 package org.zstack.sdk;
 
-/**
- * author:kaicai.hu
- * Date:2019/9/16
- */
+
+
 public class VdiPortInfo  {
 
     public java.lang.Integer vncPort;

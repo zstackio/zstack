@@ -94,7 +94,7 @@ public class DetachAutoScalingTemplateFromGroupAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/autoscaling/template/{uuid}/groups/{groupUuid}";
+        info.path = "/autoscaling/template/{templateUuid}/groups/{groupUuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

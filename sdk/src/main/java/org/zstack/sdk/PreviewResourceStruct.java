@@ -19,4 +19,5 @@ public class PreviewResourceStruct  {
     public java.util.Map getConditions() {
         return this.conditions;
     }
+
 }
