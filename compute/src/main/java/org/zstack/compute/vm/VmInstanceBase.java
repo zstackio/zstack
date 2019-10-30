@@ -1089,6 +1089,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             return VmAbnormalLifeCycleOperation.VmStoppedFromPausedStateHostNotChanged;
         }
 
+        if (originalState == VmInstanceState.Destroyed &&
+                (currentState == VmInstanceState.Running || currentState == VmInstanceState.Paused)) {
+            return VmAbnormalLifeCycleOperation.VmRunningFromDestroyed;
+        }
+
         throw new CloudRuntimeException(String.format("unknown VM[uuid:%s] abnormal state combination[original state: %s," +
                         " current state: %s, original host:%s, current host:%s]",
                 self.getUuid(), originalState, currentState, originalHostUuid, currentHostUuid));
@@ -1197,6 +1202,18 @@ public class VmInstanceBase extends AbstractVmInstance {
             // just synchronize database
             changeVmStateInDb(VmInstanceStateEvent.running, ()->self.setHostUuid(msg.getHostUuid()));
             fireEvent.run();
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        } else if (operation == VmAbnormalLifeCycleOperation.VmRunningFromDestroyed) {
+            DestroyVmOnHypervisorMsg dmsg = new DestroyVmOnHypervisorMsg();
+            dmsg.setVmInventory(getSelfInventory());
+            if (!msg.getHostUuid().equals(dmsg.getHostUuid())) {
+                dmsg.getVmInventory().setHostUuid(msg.getHostUuid());
+            }
+            bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
+            bus.send(dmsg);
+
             bus.reply(msg, reply);
             completion.done();
             return;
