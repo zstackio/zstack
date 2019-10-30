@@ -210,6 +210,7 @@ public class SourceClassMap {
 			put("org.zstack.header.simulator.SimulatorHostInventory", "org.zstack.sdk.SimulatorHostInventory");
 			put("org.zstack.header.storage.backup.BackupMode", "org.zstack.sdk.BackupMode");
 			put("org.zstack.header.storage.backup.BackupStorageInventory", "org.zstack.sdk.BackupStorageInventory");
+			put("org.zstack.header.storage.backup.SyncBackupResult", "org.zstack.sdk.SyncBackupResult");
 			put("org.zstack.header.storage.backup.VolumeBackupInventory", "org.zstack.sdk.VolumeBackupInventory");
 			put("org.zstack.header.storage.backup.VolumeBackupStorageRefInventory", "org.zstack.sdk.VolumeBackupStorageRefInventory");
 			put("org.zstack.header.storage.database.backup.DatabaseBackupInventory", "org.zstack.sdk.databasebackup.DatabaseBackupInventory");
@@ -241,6 +242,7 @@ public class SourceClassMap {
 			put("org.zstack.header.vipQos.VipQosInventory", "org.zstack.sdk.VipQosInventory");
 			put("org.zstack.header.vm.CloneVmInstanceInventory", "org.zstack.sdk.CloneVmInstanceInventory");
 			put("org.zstack.header.vm.CloneVmInstanceResults", "org.zstack.sdk.CloneVmInstanceResults");
+			put("org.zstack.header.vm.VdiPortInfo", "org.zstack.sdk.VdiPortInfo");
 			put("org.zstack.header.vm.VmInstanceInventory", "org.zstack.sdk.VmInstanceInventory");
 			put("org.zstack.header.vm.VmNicInventory", "org.zstack.sdk.VmNicInventory");
 			put("org.zstack.header.vm.VmPriorityConfigInventory", "org.zstack.sdk.VmPriorityConfigInventory");
@@ -493,7 +495,6 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.datatype.Label$Operator", "org.zstack.sdk.zwatch.datatype.Operator");
 			put("org.zstack.zwatch.datatype.MetricDatum", "org.zstack.sdk.zwatch.datatype.MetricDatum");
 			put("org.zstack.zwatch.ruleengine.ComparisonOperator", "org.zstack.sdk.zwatch.ruleengine.ComparisonOperator");
-			put("org.zstack.header.vm.VdiPortInfo", "org.zstack.sdk.VdiPortInfo");
         }
     };
 
@@ -817,6 +818,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.StackParameters", "org.zstack.header.cloudformation.StackParameters");
 			put("org.zstack.sdk.StackTemplateInventory", "org.zstack.header.cloudformation.StackTemplateInventory");
 			put("org.zstack.sdk.SupportedResourceStruct", "org.zstack.header.cloudformation.SupportedResourceStruct");
+			put("org.zstack.sdk.SyncBackupResult", "org.zstack.header.storage.backup.SyncBackupResult");
 			put("org.zstack.sdk.SystemTagInventory", "org.zstack.header.tag.SystemTagInventory");
 			put("org.zstack.sdk.TagInventory", "org.zstack.header.tag.TagInventory");
 			put("org.zstack.sdk.TagPatternInventory", "org.zstack.header.tag.TagPatternInventory");
@@ -845,6 +847,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VRouterRouteEntryInventory", "org.zstack.vrouterRoute.VRouterRouteEntryInventory");
 			put("org.zstack.sdk.VRouterRouteEntryType", "org.zstack.vrouterRoute.VRouterRouteEntryType");
 			put("org.zstack.sdk.VRouterRouteTableInventory", "org.zstack.vrouterRoute.VRouterRouteTableInventory");
+			put("org.zstack.sdk.VdiPortInfo", "org.zstack.header.vm.VdiPortInfo");
 			put("org.zstack.sdk.VipBandwidthSpendingDetails", "org.zstack.billing.spendingcalculator.vip.VipBandwidthSpendingDetails");
 			put("org.zstack.sdk.VipInventory", "org.zstack.network.service.vip.VipInventory");
 			put("org.zstack.sdk.VipNetworkServicesRefInventory", "org.zstack.network.service.vip.VipNetworkServicesRefInventory");
@@ -987,7 +990,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.datatype.MetricDatum", "org.zstack.zwatch.datatype.MetricDatum");
 			put("org.zstack.sdk.zwatch.datatype.Operator", "org.zstack.zwatch.datatype.Label$Operator");
 			put("org.zstack.sdk.zwatch.ruleengine.ComparisonOperator", "org.zstack.zwatch.ruleengine.ComparisonOperator");
-			put("org.zstack.sdk.VdiPortInfo", "org.zstack.header.vm.VdiPortInfo");
         }
     };
 }

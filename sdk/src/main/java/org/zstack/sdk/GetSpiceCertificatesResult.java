@@ -3,11 +3,11 @@ package org.zstack.sdk;
 
 
 public class GetSpiceCertificatesResult {
-    public String certificateStr;
-    public void setCertificateStr(String certificateStr) {
+    public java.lang.String certificateStr;
+    public void setCertificateStr(java.lang.String certificateStr) {
         this.certificateStr = certificateStr;
     }
-    public String getCertificateStr() {
+    public java.lang.String getCertificateStr() {
         return this.certificateStr;
     }
 

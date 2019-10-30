@@ -68,4 +68,12 @@ public class TaskInfo  {
         return this.apiName;
     }
 
+    public java.util.List contextList;
+    public void setContextList(java.util.List contextList) {
+        this.contextList = contextList;
+    }
+    public java.util.List getContextList() {
+        return this.contextList;
+    }
+
 }
