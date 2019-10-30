@@ -8,6 +8,8 @@ import org.zstack.core.db.SimpleQuery
 import org.zstack.header.network.service.NetworkServiceProviderVO
 import org.zstack.header.network.service.NetworkServiceProviderVO_
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg
 import org.zstack.network.securitygroup.SecurityGroupRuleProtocolType
 import org.zstack.network.securitygroup.SecurityGroupRuleType
@@ -553,6 +555,24 @@ class VirtualrouterMultiNicCase extends SubCase {
 
         assert vm.vmNics.size() == 3
 
+        VmNicInventory nic = createVmNic {
+            l3NetworkUuid = l3.uuid
+        }
+
+        KVMAgentCommands.NicTO nicTo;
+        env.afterSimulator(KVMConstant.KVM_ATTACH_NIC_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.AttachNicCommand.class)
+            if (cmd.vmUuid == vm.uuid) {
+                nicTo = cmd.nic
+            }
+            return rsp
+        }
+        attachVmNicToVm {
+            vmInstanceUuid = vm.uuid
+            vmNicUuid = nic.uuid
+        }
+        assert nicTo != null && nicTo.uuid.equals(nic.uuid)
+
         expect(AssertionError.class) {
             updateGlobalConfig {
                 category = VmGlobalConfig.CATEGORY
@@ -560,6 +580,11 @@ class VirtualrouterMultiNicCase extends SubCase {
                 value = "false"
             }
         }
+
+        vm = detachL3NetworkFromVm {
+            vmNicUuid = vm.vmNics[1].uuid
+        }
+        assert vm.vmNics.size() == 3
 
         vm = detachL3NetworkFromVm {
             vmNicUuid = vm.vmNics[1].uuid
