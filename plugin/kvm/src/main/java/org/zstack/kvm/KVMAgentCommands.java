@@ -2191,6 +2191,7 @@ public class KVMAgentCommands {
     }
 
     public static class UpdateSpiceChannelConfigResponse extends AgentResponse {
+        public boolean restartLibvirt = false;
     }
 
     public static class PrimaryStorageCommand extends AgentCommand {
