@@ -1952,6 +1952,7 @@ public class KVMHost extends HostBase implements Host {
                     reply.setError(operr("Host[%s] update spice channel config faild, because %s", msg.getHostUuid(), ret.getError()));
                     logger.warn(reply.getError().getDetails());
                 }
+                reply.setRestartLibvirt(ret.restartLibvirt);
                 bus.reply(msg, reply);
             }
 
@@ -2572,6 +2573,7 @@ public class KVMHost extends HostBase implements Host {
             KVMHostConnectedContext ctx = new KVMHostConnectedContext();
             ctx.setInventory((KVMHostInventory) getSelfInventory());
             ctx.setNewAddedHost(newAdded);
+            ctx.setBaseUrl(baseUrl);
 
             chain.then(extp.createKvmHostConnectingFlow(ctx));
         }
