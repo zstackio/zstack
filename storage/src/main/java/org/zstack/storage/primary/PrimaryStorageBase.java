@@ -845,7 +845,13 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                     completion.success(result);
                 } else {
                     logger.warn(String.format("Failed to delete volume %s in Trash, because: %s", inv.getInstallPath(), reply.getError().getDetails()));
-                    completion.fail(reply.getError());
+                    if ("LocalStorage".equals(self.getType()) && inv.getHostUuid() == null) {
+                        result.setSize(0L);
+                        result.setResourceUuids(CollectionDSL.list(inv.getResourceUuid()));
+                        completion.success(result);
+                    } else {
+                        completion.fail(reply.getError());
+                    }
                 }
             }
         });
