@@ -14,6 +14,8 @@ public class DeleteVolumeBitsOnPrimaryStorageMsg extends NeedReplyMessage implem
     private String bitsUuid;
     private String bitsType;
     private String hostUuid;
+    // used for recycle, true means only delete install path, not delete volume
+    private boolean fromRecycle;
 
     public String getBitsUuid() {
         return bitsUuid;
@@ -70,5 +72,13 @@ public class DeleteVolumeBitsOnPrimaryStorageMsg extends NeedReplyMessage implem
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
+    }
+
+    public boolean isFromRecycle() {
+        return fromRecycle;
+    }
+
+    public void setFromRecycle(boolean fromRecycle) {
+        this.fromRecycle = fromRecycle;
     }
 }
