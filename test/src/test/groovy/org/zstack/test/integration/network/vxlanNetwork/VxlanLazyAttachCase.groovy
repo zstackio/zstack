@@ -2,17 +2,22 @@ package org.zstack.test.integration.network.vxlanNetwork
 
 import org.apache.commons.collections.list.SynchronizedList
 import org.springframework.http.HttpEntity
+import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkGlobalConfig
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
+import org.zstack.network.securitygroup.SecurityGroupConstant
+import org.zstack.network.service.flat.FlatDhcpBackend
+import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.network.NetworkTest
-import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.SubCase
+import org.zstack.testlib.*
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
+
+import static java.util.Arrays.asList
 /**
  * @author: zhanyong.miao
  * @date: 2019-10-23
@@ -81,14 +86,38 @@ class VxlanLazyAttachCase extends SubCase {
                     }
 
                     attachPrimaryStorage("local")
-
+                    attachL2Network("l2-novlan")
                 }
 
                 localPrimaryStorage {
                     name = "local"
                     url = "/local_ps"
                 }
+                l2NoVlanNetwork {
+                    name = "l2-novlan"
+                    physicalInterface = "eth0"
 
+                    l3Network {
+                        name = "l3-novlan"
+
+                        service {
+                            provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE
+                            types = [NetworkServiceType.DHCP.toString()]
+                        }
+
+                        service {
+                            provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
+                            types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
+                        }
+
+                        ip {
+                            startIp = "192.168.99.10"
+                            endIp = "192.168.99.249"
+                            netmask = "255.255.255.0"
+                            gateway = "192.168.99.1"
+                        }
+                    }
+                }
                 attachBackupStorage("sftp")
             }
         }
@@ -98,12 +127,109 @@ class VxlanLazyAttachCase extends SubCase {
     void test() {
         env.create {
             testVxlanCreateCase()
+            testVxlanAttachNetworkCase()
         }
     }
 
     @Override
     void clean() {
         env.delete()
+    }
+
+    void testVxlanAttachNetworkCase() {
+        def zone = env.inventoryByName("zone") as ZoneInventory
+        def cluster = env.inventoryByName("cluster1") as ClusterInventory
+
+        VxlanNetworkGlobalConfig.CLUSTER_LAZY_ATTACH.@value = true;
+        assert VxlanNetworkGlobalConfig.CLUSTER_LAZY_ATTACH.value(boolean .class) == true
+
+        L2VxlanNetworkPoolInventory poolinv = createL2VxlanNetworkPool {
+            delegate.name = "TestVxlanPool"
+            delegate.zoneUuid = zone.uuid
+        }
+
+
+        createVniRange {
+            delegate.startVni = 10
+            delegate.endVni = 50
+            delegate.l2NetworkUuid = poolinv.uuid
+            delegate.name = "TestRange1"
+        }
+
+        L2NetworkInventory netinv = createL2VxlanNetwork {
+            delegate.poolUuid = poolinv.uuid
+            delegate.name = "TestVxlan1"
+            delegate.zoneUuid = zone.uuid
+        }
+
+        L3NetworkInventory l3 = createL3Network {
+            delegate.name = "TestL3Net1"
+            delegate.l2NetworkUuid = netinv.uuid
+        }
+
+        addIpRange {
+            delegate.name = "TestIpRange"
+            delegate.l3NetworkUuid = l3.uuid
+            delegate.startIp = "192.168.100.2"
+            delegate.endIp = "192.168.100.253"
+            delegate.gateway = "192.168.100.1"
+            delegate.netmask = "255.255.255.0"
+        }
+
+        NetworkServiceProviderInventory networkServiceProvider = queryNetworkServiceProvider {
+            delegate.conditions = ["type=Flat"]
+        }[0]
+
+        Map<String, List<String>> netServices = new HashMap<>()
+        netServices.put(networkServiceProvider.getUuid(), asList("DHCP", "Eip", "Userdata"))
+
+        attachNetworkServiceToL3Network {
+            delegate.l3NetworkUuid = l3.uuid
+            delegate.networkServices = netServices
+        }
+
+        VmInstanceInventory vm = createVmInstance {
+            delegate.name = "TestVm0"
+            delegate.instanceOfferingUuid = (env.specByName("instanceOffering") as InstanceOfferingSpec).inventory.uuid
+            delegate.imageUuid = (env.specByName("image1") as ImageSpec).inventory.uuid
+            delegate.l3NetworkUuids = [(env.specByName("l3-novlan") as L3NetworkSpec).inventory.uuid]
+        }
+
+        FlatDhcpBackend.PrepareDhcpCmd dhcpCmd
+        env.afterSimulator(FlatDhcpBackend.PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            FlatDhcpBackend.PrepareDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.PrepareDhcpCmd.class)
+
+            if (cmd.namespaceName.contains(l3.uuid)) {
+                dhcpCmd = cmd
+            }
+
+            return rsp
+        }
+
+        expect(AssertionError.class) {
+            attachL3NetworkToVm {
+                delegate.l3NetworkUuid = l3.uuid
+                delegate.vmInstanceUuid = vm.uuid
+            }
+        }
+
+        attachL2NetworkToCluster {
+            delegate.l2NetworkUuid = poolinv.uuid
+            delegate.clusterUuid = cluster.uuid
+            delegate.systemTags = ["l2NetworkUuid::${poolinv.uuid}::clusterUuid::${cluster.uuid}::cidr::{192.168.100.0/24}".toString()]
+        }
+
+        attachL3NetworkToVm {
+            delegate.l3NetworkUuid = l3.uuid
+            delegate.vmInstanceUuid = vm.uuid
+        }
+
+        assert dhcpCmd != null && dhcpCmd.bridgeName != null
+
+        deleteL2Network {
+            delegate.uuid = poolinv.getUuid()
+        }
+
     }
 
     void testVxlanCreateCase() {
