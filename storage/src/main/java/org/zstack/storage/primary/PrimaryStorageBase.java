@@ -826,6 +826,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         msg.setBitsUuid(inv.getResourceUuid());
         msg.setBitsType(inv.getResourceType());
         msg.setHostUuid(inv.getHostUuid());
+        msg.setFromRecycle(true);
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
         bus.send(msg, new CloudBusCallBack(msg) {
             @Override
@@ -846,6 +847,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 } else {
                     logger.warn(String.format("Failed to delete volume %s in Trash, because: %s", inv.getInstallPath(), reply.getError().getDetails()));
                     if ("LocalStorage".equals(self.getType()) && inv.getHostUuid() == null) {
+                        // to compatible old version(they did not record hostUuid)
                         result.setSize(0L);
                         result.setResourceUuids(CollectionDSL.list(inv.getResourceUuid()));
                         completion.success(result);

@@ -2174,7 +2174,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        deleteResourceRefVO(msg.getBitsUuid());
+                        if (!msg.isFromRecycle()) {
+                            deleteResourceRefVO(msg.getBitsUuid());
+                        }
                         bus.reply(msg, reply);
                     }
                 });
