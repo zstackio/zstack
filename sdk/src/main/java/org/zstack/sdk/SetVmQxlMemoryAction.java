@@ -26,16 +26,16 @@ public class SetVmQxlMemoryAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String uuid;
+    public java.lang.String uuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,524288L}, noTrim = false)
-    public Integer ram = 65536;
+    public java.lang.Integer ram = 65536;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,524288L}, noTrim = false)
-    public Integer vram = 32768;
+    public java.lang.Integer vram = 32768;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1024L,524288L}, noTrim = false)
-    public Integer vgamem = 16384;
+    public java.lang.Integer vgamem = 16384;
 
     @Param(required = false)
     public java.util.List systemTags;

@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.VdiPortInfo;
 
 public class GetVmConsoleAddressResult {
     public java.lang.String hostIp;
@@ -28,10 +28,11 @@ public class GetVmConsoleAddressResult {
     }
 
     public VdiPortInfo vdiPortInfo;
-    public VdiPortInfo getVdiPortInfo() {
-        return vdiPortInfo;
-    }
     public void setVdiPortInfo(VdiPortInfo vdiPortInfo) {
         this.vdiPortInfo = vdiPortInfo;
     }
+    public VdiPortInfo getVdiPortInfo() {
+        return this.vdiPortInfo;
+    }
+
 }
