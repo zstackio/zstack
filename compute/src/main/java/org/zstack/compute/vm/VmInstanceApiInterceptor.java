@@ -24,6 +24,8 @@ import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.cdrom.*;
@@ -445,6 +447,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     newAddedL3Uuids, l2Uuids));
         }
 
+        List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2Uuids.get(0))
+                                     .select(L2NetworkClusterRefVO_.clusterUuid).listValues();
+        if (clusterUuids.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] are belonged to l2 networks [uuids:%s] that have not been attached to any cluster",
+                    newAddedL3Uuids, l2Uuids));
+        }
+
         String sql = "select ip.l3NetworkUuid from UsedIpVO ip, VmNicVO nic where ip.vmNicUuid = nic.uuid and nic.vmInstanceUuid = :vmUuid and ip.l3NetworkUuid in (:l3Uuids)";
         List<String> attachedL3Uuids = SQL.New(sql, String.class)
                 .param("vmUuid", msg.getVmInstanceUuid())
@@ -571,7 +580,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         VmInstanceState state = vmInstanceVO.getState();
 
         if (!VmInstanceState.Running.equals(state) && !VmInstanceState.Stopped.equals(state)) {
-            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
+            throw new ApiMessageInterceptionException(operr("unable to attach the nic. The vm[uuid: %s] is not Running or Stopped; the current state is %s",
                     msg.getVmInstanceUuid(), state));
         }
 
@@ -585,12 +594,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (exist) {
             if (!VmGlobalConfig.MULTI_VNIC_SUPPORT.value(Boolean.class)
                     || !VmInstanceConstant.USER_VM_TYPE.equals(type)) {
-                throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                throw new ApiMessageInterceptionException(operr("unable to attach the nic. Its L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
                         vmNicVO.getL3NetworkUuid(), msg.getVmInstanceUuid()));
             }
 
             if (!L3NetworkCategory.Private.equals(l3NetworkVO.getCategory())) {
-                throw new ApiMessageInterceptionException(operr("unable to attach a non-guest L3 network. The L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
+                throw new ApiMessageInterceptionException(operr("unable to attach the nic with a non-guest L3 network. Its L3 network[uuid:%s] is already attached to the vm[uuid: %s]",
                         vmNicVO.getL3NetworkUuid(), msg.getVmInstanceUuid()));
             }
         }
@@ -599,11 +608,18 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         boolean system = l3NetworkVO.isSystem();
 
         if (l3state == L3NetworkState.Disabled) {
-            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is disabled", l3NetworkVO.getUuid()));
+            throw new ApiMessageInterceptionException(operr("unable to attach the nic. Its L3 network[uuid:%s] is disabled", l3NetworkVO.getUuid()));
         }
         if (VmInstanceConstant.USER_VM_TYPE.equals(type) && system) {
-            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] is a system network and vm is a user vm",
+            throw new ApiMessageInterceptionException(operr("unable to attach the nic. Its L3 network[uuid:%s] is a system network and vm is a user vm",
                     l3NetworkVO.getUuid()));
+        }
+
+        List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, l3NetworkVO.getL2NetworkUuid())
+                                     .select(L2NetworkClusterRefVO_.clusterUuid).listValues();
+        if (clusterUuids.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr("unable to attach the nic. Its l2 network [uuid:%s] that have not been attached to any cluster",
+                    l3NetworkVO.getL2NetworkUuid()));
         }
     }
 
