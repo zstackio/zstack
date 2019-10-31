@@ -5,7 +5,9 @@ package org.zstack.header.host;
 public class ConnectHostInfo {
     private boolean isNewAdded;
     private boolean isStartPingTaskOnFailure;
-    private boolean isSkipInstallVirtPkgs;
+
+    // do not install these packages when connect host
+    private String skipPackages;
 
     public boolean isNewAdded() {
         return isNewAdded;
@@ -23,12 +25,12 @@ public class ConnectHostInfo {
         this.isStartPingTaskOnFailure = isStartPingTaskOnFailure;
     }
 
-    public boolean isSkipInstallVirtPkgs() {
-        return isSkipInstallVirtPkgs;
+    public String getSkipPackages() {
+        return skipPackages;
     }
 
-    public void setSkipInstallVirtPkgs(boolean skipInstallVirtPkgs) {
-        isSkipInstallVirtPkgs = skipInstallVirtPkgs;
+    public void setSkipPackages(String skipPackages) {
+        this.skipPackages = skipPackages;
     }
 
     public static ConnectHostInfo fromConnectHostMsg(ConnectHostMsg msg) {
