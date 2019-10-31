@@ -55,6 +55,9 @@ public class CreateAliyunSmsSNSTextTemplateAction extends AbstractAction {
     @Param(required = false)
     public java.lang.Boolean defaultTemplate;
 
+    @Param(required = false, validValues = {"alarm","event"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

@@ -26,10 +26,10 @@ public class SetVmSoundTypeAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String uuid;
+    public java.lang.String uuid;
 
     @Param(required = true, validValues = {"ac97","ich6"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String soundType;
+    public java.lang.String soundType;
 
     @Param(required = false)
     public java.util.List systemTags;

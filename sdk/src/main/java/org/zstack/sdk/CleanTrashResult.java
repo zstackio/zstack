@@ -1,7 +1,6 @@
 package org.zstack.sdk;
 
 
-import java.util.List;
 
 public class CleanTrashResult  {
 
@@ -14,11 +13,11 @@ public class CleanTrashResult  {
     }
 
     public java.util.List details;
-    public List getDetails() {
-        return details;
-    }
-    public void setDetails(List details) {
+    public void setDetails(java.util.List details) {
         this.details = details;
+    }
+    public java.util.List getDetails() {
+        return this.details;
     }
 
     public java.lang.Long size;

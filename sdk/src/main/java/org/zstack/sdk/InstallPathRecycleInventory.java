@@ -52,20 +52,20 @@ public class InstallPathRecycleInventory  {
         return this.installPath;
     }
 
-    public java.lang.String hostUuid;
-    public void setHostUuid(java.lang.String hostUuid) {
-        this.hostUuid = hostUuid;
-    }
-    public java.lang.String getHostUuid() {
-        return this.hostUuid;
-    }
-
     public java.lang.Boolean isFolder;
     public void setIsFolder(java.lang.Boolean isFolder) {
         this.isFolder = isFolder;
     }
     public java.lang.Boolean getIsFolder() {
         return this.isFolder;
+    }
+
+    public java.lang.String hostUuid;
+    public void setHostUuid(java.lang.String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
+    public java.lang.String getHostUuid() {
+        return this.hostUuid;
     }
 
     public java.lang.String hypervisorType;

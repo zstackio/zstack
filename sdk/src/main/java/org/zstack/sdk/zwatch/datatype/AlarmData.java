@@ -68,6 +68,14 @@ public class AlarmData  {
         return this.dataUuid;
     }
 
+    public java.lang.String context;
+    public void setContext(java.lang.String context) {
+        this.context = context;
+    }
+    public java.lang.String getContext() {
+        return this.context;
+    }
+
     public java.util.Set queryableLabels;
     public void setQueryableLabels(java.util.Set queryableLabels) {
         this.queryableLabels = queryableLabels;
@@ -138,6 +146,14 @@ public class AlarmData  {
     }
     public java.lang.String getTAG_DATA_UUID() {
         return this.TAG_DATA_UUID;
+    }
+
+    public java.lang.String FIELD_CONTEXT;
+    public void setFIELD_CONTEXT(java.lang.String FIELD_CONTEXT) {
+        this.FIELD_CONTEXT = FIELD_CONTEXT;
+    }
+    public java.lang.String getFIELD_CONTEXT() {
+        return this.FIELD_CONTEXT;
     }
 
     public java.lang.String FIELD_READ_STATUS;
