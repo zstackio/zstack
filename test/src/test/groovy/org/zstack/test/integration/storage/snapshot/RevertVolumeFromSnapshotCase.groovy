@@ -10,6 +10,8 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
 import org.zstack.sdk.VolumeSnapshotInventory
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO_
 import org.zstack.test.integration.ldap.Env
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -118,6 +120,7 @@ STEP:
 
         trashs = trash.getTrashList(root.primaryStorageUuid) as List<InstallPathRecycleInventory>
         assert trashs.size() == 0
+        assert Q.New(LocalStorageResourceRefVO.class).eq(LocalStorageResourceRefVO_.resourceUuid, root.uuid).exists
     }
 
     private VolumeSnapshotInventory createSnapshot(String uuid){
