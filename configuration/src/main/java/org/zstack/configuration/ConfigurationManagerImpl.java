@@ -3,6 +3,7 @@ package org.zstack.configuration;
 import javassist.Modifier;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -29,6 +30,7 @@ import org.zstack.header.allocator.HostAllocatorStrategyType;
 import org.zstack.header.configuration.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
@@ -429,17 +431,17 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
     }
 
     private String classToApiMessagePythonClass(Class<?> clazz) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder result = new StringBuilder();
         boolean emptyLine = true;
 
         String signature = String.format("%s_FULL_NAME", clazz.getSimpleName()).toUpperCase();
-        sb.append(String.format("\n%s = '%s'", signature, clazz.getName()));
-        sb.append(String.format("\nclass %s(object):", clazz.getSimpleName()));
-        sb.append(String.format("\n%sFULL_NAME='%s'", whiteSpace(4), clazz.getName()));
-        sb.append(String.format("\n%sdef __init__(self):", whiteSpace(4)));
+        result.append(String.format("\n%s = '%s'", signature, clazz.getName()));
+        result.append(String.format("\nclass %s(object):", clazz.getSimpleName()));
+        result.append(String.format("\n%sFULL_NAME='%s'", whiteSpace(4), clazz.getName()));
 
+        StringBuilder sb = new StringBuilder();
         List<Field> fs = FieldUtils.getAllFields(clazz);
-
+        Map<String, NoLogging.Type> sensitiveFields = new HashMap<>();
         for (Field f : fs) {
             APINoSee nosee = f.getAnnotation(APINoSee.class);
             if (nosee != null && !f.getName().equals("timeout") && !f.getName().equals("session")) {
@@ -455,6 +457,11 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                         break;
                     }
                 }
+            }
+
+            NoLogging noLogging = f.getAnnotation(NoLogging.class);
+            if (noLogging != null) {
+                sensitiveFields.put(f.getName(), noLogging.type());
             }
 
             if (at != null && at.required()) {
@@ -497,9 +504,16 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
             sb.append(String.format("\n%spass", whiteSpace(8)));
         }
 
-        sb.append("\n\n");
+        if (!sensitiveFields.isEmpty()) {
+            result.append(String.format("\n%s@log.sensitive_fields(\"%s\")", whiteSpace(4),
+                    String.join("\", \"", sensitiveFields.keySet())));
+        }
+
+        result.append(String.format("\n%sdef __init__(self):", whiteSpace(4)));
+        result.append(sb.toString());
+        result.append("\n\n");
         markPythonClassAsGenerated(clazz);
-        return sb.toString();
+        return result.toString();
     }
 
     private void generateSimplePythonClass(StringBuilder sb, Class<?> clazz) {
@@ -803,6 +817,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         // write inventory.py
         {
             StringBuilder pysb = new StringBuilder();
+            pysb.append("from zstacklib.utils import log");
             generateMandoryFieldClass(pysb);
             generateApiMessagePythonClass(pysb, basePkgs);
             generateInventoryPythonClass(pysb, basePkgs);
