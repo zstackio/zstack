@@ -2729,11 +2729,8 @@ public class KVMHost extends HostBase implements Host {
                                 }
                                 runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
                             }
+                            runner.putArgument("skip_packages", info.getSkipPackages());
                             runner.putArgument("update_packages", String.valueOf(CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT));
-
-                            if (info.isSkipInstallVirtPkgs()) {
-                                runner.putArgument("skip_install_virt_pkgs", "true");
-                            }
 
                             UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
                             ub.path(new StringBind(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT).bind("uuid", self.getUuid()).toString());
