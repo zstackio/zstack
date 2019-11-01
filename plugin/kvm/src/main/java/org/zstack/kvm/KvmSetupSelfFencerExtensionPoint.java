@@ -34,6 +34,7 @@ public interface KvmSetupSelfFencerExtensionPoint {
         private int maxAttempts;
         private int storageCheckerTimeout;
         private PrimaryStorageInventory primaryStorage;
+        private String strategy;
 
         public String getHostUuid() {
             return hostUuid;
@@ -73,6 +74,14 @@ public interface KvmSetupSelfFencerExtensionPoint {
 
         public void setPrimaryStorage(PrimaryStorageInventory primaryStorage) {
             this.primaryStorage = primaryStorage;
+        }
+
+        public String getStrategy() {
+            return strategy;
+        }
+
+        public void setStrategy(String strategy) {
+            this.strategy = strategy;
         }
     }
 

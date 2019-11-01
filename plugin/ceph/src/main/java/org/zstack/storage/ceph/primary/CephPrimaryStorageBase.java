@@ -736,6 +736,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public int storageCheckerTimeout;
         public String userKey;
         public List<String> monUrls;
+        public String strategy;
     }
 
     public static class KvmCancelSelfFencerCmd extends AgentCommand {
@@ -3660,6 +3661,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 return String.format("%s:%s", arg.getMonAddr(), arg.getMonPort());
             }
         });
+        cmd.strategy = param.getStrategy();
 
         final SetupSelfFencerOnKvmHostReply reply = new SetupSelfFencerOnKvmHostReply();
         new KvmCommandSender(param.getHostUuid()).send(cmd, KVM_HA_SETUP_SELF_FENCER, new KvmCommandFailureChecker() {
