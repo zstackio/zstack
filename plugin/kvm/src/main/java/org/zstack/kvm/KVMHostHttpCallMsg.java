@@ -8,7 +8,7 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.message.NoJsonSchema;
 import org.zstack.utils.gson.JSONObjectUtil;
 
-public abstract class KVMHostHttpCallMsg extends NeedReplyMessage implements HostMessage, CarrierMessage, HasSensitiveInfo {
+public abstract class KVMHostHttpCallMsg extends NeedReplyMessage implements HostMessage, CarrierMessage {
     private String path;
     @NoLogging(behavior = NoLogging.Behavior.Auto, classNameField = "commandClassName")
     private String command;
