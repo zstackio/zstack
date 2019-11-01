@@ -850,6 +850,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                         // to compatible old version(they did not record hostUuid)
                         result.setSize(0L);
                         result.setResourceUuids(CollectionDSL.list(inv.getResourceUuid()));
+                        trash.removeFromDb(trashId);
                         completion.success(result);
                     } else {
                         completion.fail(reply.getError());
