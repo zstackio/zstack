@@ -34,6 +34,12 @@ public class CreateAccessKeyAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = false, maxLength = 20, minLength = 12, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String AccessKeyID;
+
+    @Param(required = false, maxLength = 40, minLength = 24, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String AccessKeySecret;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
