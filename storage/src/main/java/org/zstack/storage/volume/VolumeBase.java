@@ -1102,44 +1102,6 @@ public class VolumeBase implements Volume {
         FlowChain chain = new SimpleFlowChain();
         chain.setName("cover-volume-from-transient-volume");
         chain.then(new NoRollbackFlow() {
-            String __name__ = "attach-transient-volume-" + transientVolume.getUuid();
-
-            @Override
-            public boolean skip(Map data) {
-                return transientVolume.isAttached() || !volume.isAttached();
-            }
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                ErrorCodeList err = new ErrorCodeList();
-                new While<>(volume.getAttachedVmUuids()).each((vmUuid, compl) -> {
-                    AttachDataVolumeToVmMsg amsg = new AttachDataVolumeToVmMsg();
-                    amsg.setVolume(msg.getTransientVolume());
-                    amsg.setVmInstanceUuid(msg.getOriginVolume().getVmInstanceUuid());
-                    bus.makeLocalServiceId(amsg, VmInstanceConstant.SERVICE_ID);
-                    bus.send(amsg, new CloudBusCallBack(trigger) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (reply.isSuccess()) {
-                                compl.done();
-                            } else {
-                                err.getCauses().add(reply.getError());
-                                compl.allDone();
-                            }
-                        }
-                    });
-                }).run(new NoErrorCompletion() {
-                    @Override
-                    public void done() {
-                        if (err.getCauses().isEmpty()) {
-                            trigger.next();
-                        } else {
-                            trigger.fail(err.getCauses().get(0));
-                        }
-                    }
-                });
-            }
-        }).then(new NoRollbackFlow() {
             String __name__ = "swap-volume-path";
 
             @Override
