@@ -183,7 +183,7 @@ public class VirtualRouter extends ApplianceVmBase {
                             }
                             reply.setConnected(connected);
                             reply.setHaStatus(ret.getHaStatus());
-                            if ((!ret.getHealthy()) && (ret.getHealthDetail() != null)) {
+                            if ((ret.getHealthy() != null) && (!ret.getHealthy()) && (ret.getHealthDetail() != null)) {
                                 fireServiceUnhealthyCanonicalEvent(inerr("virtual router %s unhealthy, detail %s", getSelf().getUuid(), ret.getHealthDetail()));
                             } else {
                                 fireServicehealthyCanonicalEvent();
