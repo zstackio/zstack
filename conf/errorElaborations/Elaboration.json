@@ -41,7 +41,7 @@
   },
   {
     "category": "BS",
-    "code": "1001",
+    "code": "1000",
     "method": "regex",
     "regex": ".*certificate has expired or is not yet valid",
     "message_cn": "当前系统时间不在镜像仓库证书有效期内, 调整过镜像仓库服务器的系统时间，或者证书被修改",
@@ -49,7 +49,7 @@
   },
   {
     "category": "BS",
-    "code": "1002",
+    "code": "1001",
     "method": "regex",
     "regex": "duplicate backup storage. There has been an image store backup storage.*",
     "message_cn": "重复的镜像仓库ip地址，该地址己经被镜像服务器[%1$s]占用。",
@@ -57,7 +57,7 @@
   },
   {
     "category": "BS",
-    "code": "1003",
+    "code": "1002",
     "method": "regex",
     "regex": ".*Failed to download image\\[name:.*] on all backup storage.*",
     "message_cn": "在备份存储上下载镜像失败。",
@@ -65,7 +65,7 @@
   },
   {
     "category": "BS",
-    "code": "1004",
+    "code": "1003",
     "method": "regex",
     "regex": ".*More than one BackupStorage on the same host identified by hostname. There has been a SftpBackupStorage \\[hostname:.*] existing. The BackupStorage type to be added is ImageStoreBackupStorage.*",
     "message_cn": "同一IP只能添加成为一个镜像服务器。目前已经存在一个Sftp类型镜像服务器",
@@ -73,7 +73,7 @@
   },
   {
     "category": "BS",
-    "code": "1005",
+    "code": "1004",
     "method": "regex",
     "regex": "System can't find imagestore backup Storage. Please do not set imagestore backup Storage server IP to localhost(127.*.*.*),.*",
     "message_cn": "无法找到ImageStore镜像服务器，请勿将镜像服务器的地址设置为localhost(127.*.*.*)。",
@@ -81,7 +81,7 @@
   },
   {
     "category": "BS",
-    "code": "1006",
+    "code": "1005",
     "method": "regex",
     "regex": "failed to download bits from the imagestore backup storage\\[hostname:.*, path:.*] to the local primary storage\\[uuid:.*, path:.*].*",
     "message_cn": "无法从ImageStore镜像服务器[主机名：%2$s，路径：%3$s]下载资源到本地主存储[uuid：%4$s，路径：%5$s]",
@@ -91,9 +91,41 @@
     "category": "CEPH",
     "code": "1000",
     "method": "regex",
+    "regex": ".*cannot add ceph primary storage, there has been some ceph primary storage using mon\\[hostnames:.*].*",
+    "message_cn": "无法添加Ceph主存储，监控节点[%1$s]已被占用。",
+    "message_en": "Cannot add ceph primary storage, there has been some ceph primary storage using mon[%1$s]"
+  },
+  {
+    "category": "CEPH",
+    "code": "1001",
+    "method": "regex",
     "regex": "cannot find any Connected ceph mon for the primary storage.*",
     "message_cn": "无法为Ceph主存储找到一个已连接的监控节点。",
     "message_en": "Cannot find any connected Ceph monitor for the primary storage."
+  },
+  {
+    "category": "CEPH",
+    "code": "1002",
+    "method": "regex",
+    "regex": "operation error, because:The ceph storage type to be added does not support auto initialize pool, please create it manually",
+    "message_cn": "要添加的ceph存储类型不支持自动创建存储池，请手动创建。",
+    "message_en": "The ceph storage type to be added does not support auto initialize pool, please create it manually."
+  },
+  {
+    "category": "CEPH",
+    "code": "1003",
+    "method": "regex",
+    "regex": "there is another CEPH primary storage.* with the same FSID.*, you cannot add the same CEPH setup as two different primary storage",
+    "message_cn": "已经存在一个FSID为[%3$s]的Ceph主存储，您不能将同一个Ceph集群设置为两个不同的主存储。",
+    "message_en": "There has been another Ceph primary storage with the same FSID[%3$s], you cannot add the same Ceph cluster as two different primary storage."
+  },
+  {
+    "category": "CEPH",
+    "code": "1004",
+    "method": "regex",
+    "regex": ".*rbd: error opening image .* snap .* Connection timed out.*",
+    "message_cn": "rbd：打开镜像或快照失败，连接超时。",
+    "message_en": "rbd: failed to open image or snapshot, connection timed out."
   },
   {
     "category": "CLOUDFORMATION",
@@ -120,38 +152,6 @@
     "message_en": "The input value cannot be converted to expected type for this Global Config."
   },
   {
-    "category": "Ceph",
-    "code": "1000",
-    "method": "regex",
-    "regex": ".*cannot add ceph primary storage, there has been some ceph primary storage using mon\\[hostnames:.*].*",
-    "message_cn": "无法添加Ceph主存储，监控节点[%1$s]已被占用。",
-    "message_en": "Cannot add ceph primary storage, there has been some ceph primary storage using mon[%1$s]"
-  },
-  {
-    "category": "Ceph",
-    "code": "1001",
-    "method": "regex",
-    "regex": "operation error, because:The ceph storage type to be added does not support auto initialize pool, please create it manually",
-    "message_cn": "要添加的ceph存储类型不支持自动创建存储池，请手动创建。",
-    "message_en": "The ceph storage type to be added does not support auto initialize pool, please create it manually."
-  },
-  {
-    "category": "Ceph",
-    "code": "1002",
-    "method": "regex",
-    "regex": "there is another CEPH primary storage.* with the same FSID.*, you cannot add the same CEPH setup as two different primary storage",
-    "message_cn": "已经存在一个FSID为[%3$s]的Ceph主存储，您不能将同一个Ceph集群设置为两个不同的主存储。",
-    "message_en": "There has been another Ceph primary storage with the same FSID[%3$s], you cannot add the same Ceph cluster as two different primary storage."
-  },
-  {
-    "category": "Ceph",
-    "code": "1003",
-    "method": "regex",
-    "regex": ".*rbd: error opening image .* snap .* Connection timed out.*",
-    "message_cn": "rbd：打开镜像或快照失败，连接超时。",
-    "message_en": "rbd: failed to open image or snapshot, connection timed out."
-  },
-  {
     "category": "EIP",
     "code": "1000",
     "method": "regex",
@@ -160,7 +160,7 @@
     "message_en": "Unable to assign the specific ip address to VM[name:%4$s, uuid:%3$s], because this IP address is occupied by a NIC for EIP service."
   },
   {
-    "category": "Elaboration",
+    "category": "ELABORATION",
     "code": "1000",
     "method": "distance",
     "regex": "%s is not existed or is empty folder",
@@ -168,7 +168,7 @@
     "message_en": "%1$s is not existed or is empty folder"
   },
   {
-    "category": "Elaboration",
+    "category": "ELABORATION",
     "code": "1001",
     "method": "distance",
     "regex": "read error elaboration template files [%s] failed, due to: %s",
@@ -176,7 +176,7 @@
     "message_en": "read error elaboration template files [%1$s] failed"
   },
   {
-    "category": "Elaboration",
+    "category": "ELABORATION",
     "code": "1002",
     "method": "distance",
     "regex": "input args 'regex' or 'category' must be set",
@@ -184,7 +184,7 @@
     "message_en": "input args 'regex' or 'category' must be set"
   },
   {
-    "category": "Elaboration",
+    "category": "ELABORATION",
     "code": "1003",
     "method": "distance",
     "regex": "%s is not a Long value Number",
@@ -192,7 +192,7 @@
     "message_en": "%1$s is not a Long value Number"
   },
   {
-    "category": "Elaboration",
+    "category": "ELABORATION",
     "code": "1004",
     "method": "distance",
     "regex": "arg 'startTime' should format like 'yyyy-MM-dd HH:mm:ss' or '1545380003000'",
@@ -200,7 +200,7 @@
     "message_en": "arg 'startTime' should format like 'yyyy-MM-dd HH:mm:ss' or '1545380003000'"
   },
   {
-    "category": "Elaboration",
+    "category": "ELABORATION",
     "code": "1005",
     "method": "distance",
     "regex": "elaboration code must be number!",
@@ -472,7 +472,7 @@
     "message_en": "Cannot find file:/sys/class/net/eth0/operstate"
   },
   {
-    "category": "L2Network",
+    "category": "L2NETWORK",
     "code": "1000",
     "method": "distance",
     "regex": "There has been a L2VlanNetwork\\[uuid:.*, name:.*] attached to cluster\\[uuid:.*] that has physical interface\\[.*], vlan\\[.*]. Failed to attach L2VlanNetwork\\[uuid:.*]",
@@ -480,7 +480,7 @@
     "message_en": "L2VlanNetwork attached failed, the physical interface[%4$s] has already been attached to the cluster by L2VlanNetwork[%2$s]"
   },
   {
-    "category": "L2Network",
+    "category": "L2NETWORK",
     "code": "1001",
     "method": "distance",
     "regex": "There has been a l2Network\\[uuid:.*, name:.*] attached to cluster\\[uuid:.*] that has physical interface\\[.*]. Failed to attach l2Network\\[uuid:.*]",
@@ -488,7 +488,7 @@
     "message_en": "Failed to attach L2Network, the physical interface[%4$s] had been attached to the cluster by L2Network[%2$s]."
   },
   {
-    "category": "L2Network",
+    "category": "L2NETWORK",
     "code": "1002",
     "method": "distance",
     "regex": "failed to check physical network interfaces\\[names.*] on kvm host\\[uuid:.*, ip:.*]",
@@ -608,24 +608,24 @@
     "message_en": "the license has been expired"
   },
   {
-    "category": "License",
-    "code": "1000",
+    "category": "LICENSE",
+    "code": "1001",
     "method": "regex",
     "regex": ".*hijacked detected. Your license.* permits .* hosts, but consumed .*, request additional .*. You can either apply a new license or delete additional hosts.*",
     "message_cn": "强制检测，您的许可证[%1$s]允许%2$s台主机，目前己用%3$s台。您可以申请新的许可证，也可以删除添加的主机",
     "message_en": "hijacked detected. Your license[%1$s] permits %2$s hosts, but consumed %3$s. You can either apply a new license or delete additional hosts"
   },
   {
-    "category": "License",
-    "code": "1001",
+    "category": "LICENSE",
+    "code": "1002",
     "method": "regex",
     "regex": ".*you can only add .* hosts with the trail license; please apply for a commercial license if you want to add more hosts.*",
     "message_cn": "您当前的许可证只允许添加%1$s台物理主机，如果您想要添加更多物理主机，请申请商业许可证。",
     "message_en": "you can only add %1$s hosts with the trail license; please apply for a commercial license if you want to add more hosts."
   },
   {
-    "category": "License",
-    "code": "1002",
+    "category": "LICENSE",
+    "code": "1003",
     "method": "regex",
     "regex": "you can only add [0-9]* hosts with current license; please upgrade the license if you want to add more hosts",
     "message_cn": "您当前的许可证只允许添加%1$s台物理主机，如果您想要添加更多物理主机，请更新或申请商业许可证",
@@ -641,7 +641,7 @@
   },
   {
     "category": "PS",
-    "code": "1001",
+    "code": "1000",
     "method": "distance",
     "regex": "failed to detach data volume[uuid:%s, installPath:%s] from vm[uuid:%s, name:%s] on kvm host[uuid:%s, ip:%s], because unable to detach the volume from the vm;it's still attached after 5 seconds",
     "message_cn": "由于云主机操作系统限制可能会导致卸载云盘失败，请尝试对云主机关机后再次卸载",
@@ -649,7 +649,7 @@
   },
   {
     "category": "PS",
-    "code": "1002",
+    "code": "1001",
     "method": "regex",
     "regex": ".*the physical capacity usage of the host.* has exceeded the threshold.*",
     "message_cn": "物理机[uuid:%1$s]的己用容量超过了阈值[%2$s]",
@@ -657,7 +657,7 @@
   },
   {
     "category": "PS",
-    "code": "1003",
+    "code": "1002",
     "method": "regex",
     "regex": "required local primary storage.* cannot satisfy conditions.*, or hosts providing the primary storage don't satisfy conditions\\[.*, size \u003e .*]",
     "message_cn": "localstorage主存储的状态不是Enabled/Connected, 或者主存储内的物理机状态不满足条件：[状态为Enabled/Connected,存储容量 \u003e %6$s字节]",
@@ -665,7 +665,7 @@
   },
   {
     "category": "PS",
-    "code": "1004",
+    "code": "1003",
     "method": "regex",
     "regex": "the required host.* or doesn't belong to a local primary storage satisfying conditions.* or its cluster doesn't attach to any local primary storage",
     "message_cn": "所需要的物理机属于以下情况: 1 状态不为Enabled/Connected, 2 所属于的localstorage状态不为enabled/Connected, 3 所属的cluster没有挂载到任何localstorage上",
@@ -673,7 +673,7 @@
   },
   {
     "category": "PS",
-    "code": "1005",
+    "code": "1004",
     "method": "regex",
     "regex": "no local primary storage in zone.* or contain hosts satisfying conditions.*",
     "message_cn": "该zone内所有的localstorage都不满足以下条件: 1 状态为Enabled/Connected, 2 没有包含任何状态为Enabled/Connected,并且存储容量 \u003e %6$s字节的物理机",
@@ -681,7 +681,7 @@
   },
   {
     "category": "PS",
-    "code": "1006",
+    "code": "1005",
     "method": "regex",
     "regex": "no local primary storage can satisfy conditions.* or contain hosts satisfying conditions.*, size .*",
     "message_cn": "所有的localstorage都不满足以下条件: 1 状态为Enabled/Connected, 2 没有包含任何状态为Enabled/Connected,并且存储容量 \u003e %6$s字节的物理机",
@@ -689,7 +689,7 @@
   },
   {
     "category": "PS",
-    "code": "1007",
+    "code": "1006",
     "method": "regex",
     "regex": "cannot find any qualified primary storage, errors are.*physical capacity usage has exceeded the threshold.*",
     "message_cn": "找不到符合条件的主存储主存储,主存储的己用物理容量超过了所设阈值",
@@ -697,7 +697,7 @@
   },
   {
     "category": "PS",
-    "code": "1008",
+    "code": "1007",
     "method": "regex",
     "regex": "cannot find any qualified primary storage, errors are.*it has no space.*",
     "message_cn": "找不到符合条件的主存储主存储,主存储的己经没有空间分配所需的容量",
@@ -705,7 +705,7 @@
   },
   {
     "category": "PS",
-    "code": "1009",
+    "code": "1008",
     "method": "regex",
     "regex": "[0-9]* is Integer overflow",
     "message_cn": "找不到符合条件的主存储主存储,主存储的己经没有空间分配所需的容量",
@@ -713,7 +713,7 @@
   },
   {
     "category": "PS",
-    "code": "1010",
+    "code": "1009",
     "method": "regex",
     "regex": ".*unable to connect the shared block group primary storage\\[uuid:.*, name:.*] to the cluster\\[uuid:.*], Can't access shared block group primary storage on host\\[uuid:.*].*",
     "message_cn": "无法将主机上的共享块主存储加载到集群",
@@ -721,7 +721,7 @@
   },
   {
     "category": "PS",
-    "code": "1011",
+    "code": "1010",
     "method": "regex",
     "regex": "operation error, because:\\[Errno 30] Read-only file system:.*",
     "message_cn": "操作错误，因为主存储所在的文件系统是只读的。",
@@ -729,7 +729,7 @@
   },
   {
     "category": "PS",
-    "code": "1012",
+    "code": "1011",
     "method": "regex",
     "regex": ".*after subtracting reserved capacity\\[.*], there is no primary storage having required size\\[.* bytes].*",
     "message_cn": "减去保留容量[%1$s]后，没有主存储有所需的容量大小[%2$s], 可能是主存储使用阈值设置较低",
@@ -737,7 +737,7 @@
   },
   {
     "category": "PS",
-    "code": "1013",
+    "code": "1012",
     "method": "regex",
     "regex": ".*the NFS primary storage\\[uuid:.*, name:.*] has not attached to any clusters, or no hosts in the attached clusters are connected.*",
     "message_cn": "NFS主存储没有连接到任何集群，或者没有连接到所连接集群中的主机",
@@ -745,7 +745,7 @@
   },
   {
     "category": "PS",
-    "code": "1014",
+    "code": "1013",
     "method": "regex",
     "regex": "operation error, because:mount failed: mount -t nfs4 .*:.*",
     "message_cn": "挂载nfs4失败",
@@ -753,7 +753,7 @@
   },
   {
     "category": "PS",
-    "code": "1015",
+    "code": "1014",
     "method": "regex",
     "regex": ".*url\\[.*] has been occupied, it cannot be duplicate in same cluster.*",
     "message_cn": "url[%1$s]已被占用，不能在同一集群重复使用",
@@ -761,7 +761,7 @@
   },
   {
     "category": "PS",
-    "code": "1016",
+    "code": "1015",
     "method": "regex",
     "regex": ".*operation error, because:\\[Errno 2] No such file or directory: '.*rootVolumes.*'",
     "message_cn": "找不到根盘的镜像文件。",
@@ -769,7 +769,7 @@
   },
   {
     "category": "PS",
-    "code": "1017",
+    "code": "1016",
     "method": "regex",
     "regex": ".*operation error, because:\\[Errno 2] No such file or directory: '.*DataVolumes.*.qcow2'",
     "message_cn": "找不到数据盘的镜像文件",
@@ -777,7 +777,7 @@
   },
   {
     "category": "PS",
-    "code": "1018",
+    "code": "1017",
     "method": "regex",
     "regex": ".*operation error, because:unable to mount the nfs primary storage\\[url:.*] in .*",
     "message_cn": "挂载NFS主存储超时。",
@@ -785,7 +785,7 @@
   },
   {
     "category": "PS",
-    "code": "1019",
+    "code": "1018",
     "method": "regex",
     "regex": "There is no LocalStorage primary storage.*when the cluster mounts multiple primary storage, the system uses the local primary storage.*",
     "message_cn": "集群内没有正处于已启用且已连接状态的LocalStorage主存储，请检查集群内主存储的启用和就绪状态。",
@@ -793,7 +793,7 @@
   },
   {
     "category": "PS",
-    "code": "1020",
+    "code": "1019",
     "method": "regex",
     "regex": ".*unable to connect the shared block group primary storage\\[uuid:.*, name:.*] to the cluster\\[uuid:.*], Can't access shared block group primary storage on host\\[uuid:.*].*and create vg with forceWipw=False.*",
     "message_cn": "无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。",
@@ -808,6 +808,14 @@
     "message_en": "quota exceeding.The resource owner(or target resource owner) account[uuid:%1$s ] exceeds a quota[name: %2$s , value: %3$s]. Please contact the administrator."
   },
   {
+    "category": "SHAREDBLOCK",
+    "code": "1000",
+    "method": "regex",
+    "regex": "Cannot shrink .* volume\\[uuid:.*]'s size",
+    "message_cn": "不能缩小卷[uuid:%2$s]的大小",
+    "message_en": "Cannot shrink volume[uuid:%2$s]'s size"
+  },
+  {
     "category": "SNS",
     "code": "1000",
     "method": "regex",
@@ -816,15 +824,7 @@
     "message_en": "Couldn't connect to host. The problem may be caused by an incorrect smtpServer or smtpPort "
   },
   {
-    "category": "SharedBlock",
-    "code": "1000",
-    "method": "regex",
-    "regex": "Cannot shrink .* volume\\[uuid:.*]'s size",
-    "message_cn": "不能缩小卷[uuid:%2$s]的大小",
-    "message_en": "Cannot shrink volume[uuid:%2$s]'s size"
-  },
-  {
-    "category": "Utils",
+    "category": "UTILS",
     "code": "1000",
     "method": "regex",
     "regex": ".*quota exceeding.The resource owner\\(or target resource owner\\) account\\[uuid:.*] exceeds a quota\\[name:.*, value: .*], Current used:.*, Request:.*. Please contact the administrator.",
@@ -832,7 +832,7 @@
     "message_en": "Quota exceeded. The resource owner or target resource owner account[uuid:%1$s] exceeds a quota[name: %2$s, value: %3$s], current used: %4$s, request: %5$s. Please contact the administrator."
   },
   {
-    "category": "Utils",
+    "category": "UTILS",
     "code": "1001",
     "method": "regex",
     "regex": ".*field\\[mtu] must be in range of .*",
@@ -840,7 +840,7 @@
     "message_en": "The field MTU must be in range of [%2$s, %3$s]."
   },
   {
-    "category": "Utils",
+    "category": "UTILS",
     "code": "1002",
     "method": "regex",
     "regex": "\\[.*] is not a standard cidr, do you mean \\[.*]",
@@ -864,7 +864,7 @@
     "message_en": "The state and the status of the conversion host should be Enabled and Connected while v2v is working."
   },
   {
-    "category": "VCenter",
+    "category": "VCENTER",
     "code": "1000",
     "method": "regex",
     "regex": ".*field\\[zoneUuid] of message\\[org.zstack.vmware.APIAddVCenterMsg] is mandatory, can not be null.*",
@@ -872,7 +872,7 @@
     "message_en": "field[zoneUuid] can not be null when APIAddVCenterMsg"
   },
   {
-    "category": "VCenter",
+    "category": "VCENTER",
     "code": "1001",
     "method": "regex",
     "regex": "No clustered compute resource found",
@@ -880,7 +880,7 @@
     "message_en": "No clustered compute resource found."
   },
   {
-    "category": "VCenter",
+    "category": "VCENTER",
     "code": "1002",
     "method": "regex",
     "regex": "VNC not enabled for vmUuid .* in ESX host .*",
@@ -888,7 +888,7 @@
     "message_en": "VNC not enabled for vm in ESX host, you need reboot or migrate vm at least once"
   },
   {
-    "category": "VCenter",
+    "category": "VCENTER",
     "code": "1003",
     "method": "regex",
     "regex": "failed to connect to vCenter:.*RetrieveServiceContent;.*java.net.NoRouteToHostException.*",
@@ -896,7 +896,7 @@
     "message_en": "Failed to connect to vCenter, please ensure vCenter host is running."
   },
   {
-    "category": "VCenter",
+    "category": "VCENTER",
     "code": "1004",
     "method": "regex",
     "regex": ".*invoke method RetrieveServiceContent; .*java.net.SocketException.*",
@@ -904,8 +904,24 @@
     "message_en": "Failed to connect to vCenter, please ensure vCenter host is running."
   },
   {
+    "category": "VIRTUALROUTER",
+    "code": "1000",
+    "method": "regex",
+    "regex": ".*the management network\\[uuid:.*, gateway:.*] is not reachable.*",
+    "message_cn": "无法访问管理网络。",
+    "message_en": "The management network is not reachable."
+  },
+  {
     "category": "VM",
     "code": "1000",
+    "method": "regex",
+    "regex": "Destination PrimaryStorageType is .* but the selected BackupStorageType for source Volume is .* which cannot be matched",
+    "message_cn": "克隆指定的主存储类型是 %1$s，但源主存储对应的备份存储类型是 %2$s,这两者不能匹配使用,请重新检查参数",
+    "message_en": "Destination PrimaryStorageType is %1$s but the selected BackupStorageType for source Volume is %2$s, which cannot be matched"
+  },
+  {
+    "category": "VM",
+    "code": "1001",
     "method": "distance",
     "regex": "The state of vm[uuid:%s] is %s. Only these state[Running,Stopped] is allowed to update cpu or memory.",
     "message_cn": "云主机的状态为%2$s,只有状态[Running,Stopped]允许升级CPU/内存",
@@ -913,7 +929,7 @@
   },
   {
     "category": "VM",
-    "code": "1001",
+    "code": "1002",
     "method": "regex",
     "regex": "no Enabled hosts found in the \\[[0-9]*] candidate hosts",
     "message_cn": "找不到合适的host来启动vm, 因为满足分配条件的%1$s个hosts都不处于Enable状态",
@@ -921,7 +937,7 @@
   },
   {
     "category": "VM",
-    "code": "1002",
+    "code": "1003",
     "method": "regex",
     "regex": "no Connected hosts found in the \\[[0-9]*] candidate hosts",
     "message_cn": "找不到合适的host来启动vm, 因为满足分配条件的%1$s个hosts都不处于Connected状态",
@@ -929,7 +945,7 @@
   },
   {
     "category": "VM",
-    "code": "1003",
+    "code": "1004",
     "method": "regex",
     "regex": "no Connected hosts found in the \\[[0-9]*] candidate hosts having the hypervisor type \\[.*]",
     "message_cn": "找不到合适的host来启动vm, 因为满足分配条件的%1$s个hosts都不是%2$s的虚拟化类型",
@@ -937,7 +953,7 @@
   },
   {
     "category": "VM",
-    "code": "1004",
+    "code": "1005",
     "method": "regex",
     "regex": "no host having cpu\\[[0-9]*], memory\\[[0-9]* bytes] found",
     "message_cn": "找不到合适的host来启动vm, 因为可以用于分配vm的host都没有足够的资源: cpu [%1$s], 内存 [%2$s]",
@@ -945,7 +961,7 @@
   },
   {
     "category": "VM",
-    "code": "1005",
+    "code": "1006",
     "method": "regex",
     "regex": "the vm.*, but the host is either not having enough CPU/memory or in the state\\[Enabled] or status\\[Connected] to start the vm",
     "message_cn": "找不到合适的host来启动vm, 因为该主存储的vm只能启动在host[%2$s]上，但这个host没有足够的cpu/memory资源，或不处于Enabled/Connected 状态",
@@ -953,7 +969,7 @@
   },
   {
     "category": "VM",
-    "code": "1006",
+    "code": "1007",
     "method": "regex",
     "regex": "after filtering, .* returns zero candidate host, it means: .*",
     "message_cn": "创建云主机在[%1$s]这个过滤器后找不到满足条件的host了，这意味着 [%2$s]",
@@ -961,7 +977,7 @@
   },
   {
     "category": "VM",
-    "code": "1007",
+    "code": "1008",
     "method": "regex",
     "regex": "No host with .* found",
     "message_cn": "以下条件导致分配时没有可满足的host: %1$s",
@@ -969,7 +985,7 @@
   },
   {
     "category": "VM",
-    "code": "1008",
+    "code": "1009",
     "method": "regex",
     "regex": "unable to start the vm.*It doesn't have any nic, please attach a nic and try again",
     "message_cn": "网卡删除后，无法启动主机",
@@ -977,7 +993,7 @@
   },
   {
     "category": "VM",
-    "code": "1009",
+    "code": "1010",
     "method": "regex",
     "regex": "The vm's root volume is on the local storage.* however, the host on which the root volume is has been deleted",
     "message_cn": "云主机的根盘在localstorage的主存储上,并且该根盘所在的host己经被删除",
@@ -985,7 +1001,7 @@
   },
   {
     "category": "VM",
-    "code": "1010",
+    "code": "1011",
     "method": "regex",
     "regex": "no host having state=Enabled status=Connected.*found",
     "message_cn": "找不到状态为Enabled/Connected的host",
@@ -993,7 +1009,7 @@
   },
   {
     "category": "VM",
-    "code": "1011",
+    "code": "1012",
     "method": "regex",
     "regex": "no host found in clusters that has attached to L2Networks which have L3Networks.*",
     "message_cn": "这个L3网络所在的L2网络加载的所有集群中，都没有host",
@@ -1001,7 +1017,7 @@
   },
   {
     "category": "VM",
-    "code": "1012",
+    "code": "1013",
     "method": "regex",
     "regex": "no host found in clusters which have attached to all primary storage .* volumes locate",
     "message_cn": "与vm的volume所在的主存储所关联的所有集群中，都没有host",
@@ -1009,7 +1025,7 @@
   },
   {
     "category": "VM",
-    "code": "1013",
+    "code": "1014",
     "method": "regex",
     "regex": ".*requested vcpus is greater than max allowable vcpus for the live domain: .* make NUMA take effect.*",
     "message_cn": "请求的vcpu超过允许最大vcpu的范围, 请检查你是否重新启动了虚拟机使NUMA生效",
@@ -1017,7 +1033,7 @@
   },
   {
     "category": "VM",
-    "code": "1014",
+    "code": "1015",
     "method": "regex",
     "regex": ".*host\\[uuid: .*] of local primary storage\\[uuid: .*] doesn't have enough capacity\\[current: .*bytes, needed: .*]",
     "message_cn": "在物理机[uuid: %1$s]的本地主存储[%2$s]没有足够的容量[当前:%3$s字节，需要:%4$s]",
@@ -1025,7 +1041,7 @@
   },
   {
     "category": "VM",
-    "code": "1015",
+    "code": "1016",
     "method": "regex",
     "regex": ".*unable to allocate hosts; due to pagination is enabled, there might be several allocation failures happened before; [\\s\\S]*no Connected hosts found in the \\[[0-9]*] candidate hosts.*",
     "message_cn": "找不到合适的host来启动vm。",
@@ -1033,7 +1049,7 @@
   },
   {
     "category": "VM",
-    "code": "1016",
+    "code": "1017",
     "method": "regex",
     "regex": ".*\\[Errno 5] Input\\/output error.*",
     "message_cn": "操作失败，I/O错误。",
@@ -1041,7 +1057,7 @@
   },
   {
     "category": "VM",
-    "code": "1017",
+    "code": "1018",
     "method": "regex",
     "regex": ".*unable to allocate hosts; due to pagination is enabled, there might be several allocation failures happened before; [\\s\\S]*after filtering, HostAllocatorFilterExtensionPoint\\[class org.zstack.vmware.VCenterHostAllocatorFilterExtensionPoint] returns zero candidate host.*",
     "message_cn": "找不到合适的host来启动vm",
@@ -1049,7 +1065,7 @@
   },
   {
     "category": "VM",
-    "code": "1018",
+    "code": "1019",
     "method": "regex",
     "regex": "unable to start the vm\\[uuid:.*]. It doesn't have any nic, please attach a nic and try again",
     "message_cn": "无法启动虚拟机. 因为没有找到网卡, 请连接一个网卡, 然后重试",
@@ -1057,7 +1073,7 @@
   },
   {
     "category": "VM",
-    "code": "1019",
+    "code": "1020",
     "method": "regex",
     "regex": "unable to recover the vm.*. The vm's root volume is on the local storage.* however, the host on which the root volume is has been deleted",
     "message_cn": "无法恢复云主机，因为虚拟机的根云盘处于物理机的本地存储上，但该物理机已经下线。",
@@ -1065,7 +1081,7 @@
   },
   {
     "category": "VM",
-    "code": "1020",
+    "code": "1021",
     "method": "regex",
     "regex": "the vm\\[uuid:.*] doesn't support to online attach volume\\[.*] on the basis of that the image platform type of the vm is other.*",
     "message_cn": "该虚拟机不支持在线添加云盘，因为这台虚拟机的基础镜像平台类型为“其他”。",
@@ -1073,7 +1089,7 @@
   },
   {
     "category": "VM",
-    "code": "1021",
+    "code": "1022",
     "method": "regex",
     "regex": "unable to allocate hosts; .* HostAllocatorFilterExtensionPoint.*AffinityGroupFilterFlow] returns zero candidate host}]",
     "message_cn": "创建云主机不能满足亲和组的条件",
@@ -1081,7 +1097,7 @@
   },
   {
     "category": "VM",
-    "code": "1022",
+    "code": "1023",
     "method": "regex",
     "regex": ".*can't decrease cpu of vm.* when it is running.*",
     "message_cn": "当云主机运行时，无法在线减少cpu数量",
@@ -1089,7 +1105,7 @@
   },
   {
     "category": "VM",
-    "code": "1023",
+    "code": "1024",
     "method": "regex",
     "regex": "Message\\[name: .*StartNewCreatedApplianceVmMsg.* timeout after .* seconds.*",
     "message_cn": "启动Vm超时",
@@ -1097,7 +1113,7 @@
   },
   {
     "category": "VM",
-    "code": "1024",
+    "code": "1025",
     "method": "regex",
     "regex": ".*Expected unicast mac address, found multicast MAC address \\[.*].*",
     "message_cn": "请输入单播MAC地址，但输入为组播MAC地址[%1$s]",
@@ -1105,7 +1121,7 @@
   },
   {
     "category": "VM",
-    "code": "1025",
+    "code": "1026",
     "method": "regex",
     "regex": "Duplicate mac address.*",
     "message_cn": "重复的mac地址",
@@ -1113,7 +1129,7 @@
   },
   {
     "category": "VM",
-    "code": "1026",
+    "code": "1027",
     "method": "regex",
     "regex": ".*no host having cpu\\[.*], memory\\[.*bytes] found.*",
     "message_cn": "没有找到可以提供cpu[%1$s]，内存[%2$s字节]]的物理机",
@@ -1121,7 +1137,7 @@
   },
   {
     "category": "VM",
-    "code": "1027",
+    "code": "1028",
     "method": "regex",
     "regex": ".*because:NIC device is still attached after.*",
     "message_cn": "网络接口控制器设备仍然处于已挂载状态，请检查virtio驱动是否正常运行或关闭云主机后尝试重新卸载设备。",
@@ -1129,7 +1145,7 @@
   },
   {
     "category": "VM",
-    "code": "1028",
+    "code": "1029",
     "method": "regex",
     "regex": ".*The vm\\[.*] state is in shutdown for a long time, check whether the vm is normal.*",
     "message_cn": "vm[%1$s]长时间处于in shutdown状态，请检查vm是否正常。",
@@ -1137,11 +1153,43 @@
   },
   {
     "category": "VM",
-    "code": "1029",
+    "code": "1030",
     "method": "regex",
     "regex": ".*current vm instance state\\[.*] doesn't allow to proceed message[org.zstack.header.vm.APIStartVmInstanceMsg], allowed states are [Stopped, Created]",
     "message_cn": "只有状态为已创建或者已停止的云主机允许被启动。",
     "message_en": "The Start action is only allowed to excuted on a vm instance whose state is Stopped or Created."
+  },
+  {
+    "category": "VOLUME",
+    "code": "1000",
+    "method": "regex",
+    "regex": "data volume can only be attached when status is .*, current is .*",
+    "message_cn": "云盘只能在状态就绪或未初始化时加载，当前状态为%3$s",
+    "message_en": "data volume can only be attached when status is Ready / NotInstantiated, current is %3$s"
+  },
+  {
+    "category": "VOLUME",
+    "code": "1001",
+    "method": "regex",
+    "regex": ".*current vm instance state\\[.*] doesn't allow to proceed message\\[org.zstack.header.vm.DetachDataVolumeFromVmMsg], allowed states are .*",
+    "message_cn": "当前vm状态[%1$s]不能卸载云盘。允许此状态是[%3$s]",
+    "message_en": "current vm instance state\\[%1$s] doesn't allow to detach DataVolume, allowed states are [%3$s]"
+  },
+  {
+    "category": "VOLUME",
+    "code": "1002",
+    "method": "regex",
+    "regex": "non admin account cannot set bandwidth more than.*",
+    "message_cn": "非admin帐号设置磁盘带宽超出限制 [%1$s]",
+    "message_en": "non admin account cannot set bandwidth more than [%1$s]"
+  },
+  {
+    "category": "VOLUME",
+    "code": "1003",
+    "method": "regex",
+    "regex": "failed to create data volume template from volume.*on all backup storage.*. See cause for one of errors",
+    "message_cn": "无法在任何一个镜像服务器上成功创建数据磁盘[uuid：%1$s]的磁盘镜像。",
+    "message_en": "Failed to create data volume template from volume [uuid:%1$s] on any backup storage."
   },
   {
     "category": "VPC",
@@ -1166,53 +1214,5 @@
     "regex": ".*Message\\[name: org.zstack.appliancevm.StartNewCreatedApplianceVmMsg, id: .*] timeout after 1800 seconds.*",
     "message_cn": "创建VPC路由器超时。",
     "message_en": "Creating VPC router timeout."
-  },
-  {
-    "category": "VirtualRouter",
-    "code": "1000",
-    "method": "regex",
-    "regex": ".*the management network\\[uuid:.*, gateway:.*] is not reachable.*",
-    "message_cn": "无法访问管理网络。",
-    "message_en": "The management network is not reachable."
-  },
-  {
-    "category": "Vm",
-    "code": "1000",
-    "method": "regex",
-    "regex": "Destination PrimaryStorageType is .* but the selected BackupStorageType for source Volume is .* which cannot be matched",
-    "message_cn": "克隆指定的主存储类型是 %1$s，但源主存储对应的备份存储类型是 %2$s,这两者不能匹配使用,请重新检查参数",
-    "message_en": "Destination PrimaryStorageType is %1$s but the selected BackupStorageType for source Volume is %2$s, which cannot be matched"
-  },
-  {
-    "category": "Volume",
-    "code": "1000",
-    "method": "regex",
-    "regex": "data volume can only be attached when status is .*, current is .*",
-    "message_cn": "云盘只能在状态就绪或未初始化时加载，当前状态为%3$s",
-    "message_en": "data volume can only be attached when status is Ready / NotInstantiated, current is %3$s"
-  },
-  {
-    "category": "Volume",
-    "code": "1001",
-    "method": "regex",
-    "regex": ".*current vm instance state\\[.*] doesn't allow to proceed message\\[org.zstack.header.vm.DetachDataVolumeFromVmMsg], allowed states are .*",
-    "message_cn": "当前vm状态[%1$s]不能卸载云盘。允许此状态是[%3$s]",
-    "message_en": "current vm instance state\\[%1$s] doesn't allow to detach DataVolume, allowed states are [%3$s]"
-  },
-  {
-    "category": "Volume",
-    "code": "1002",
-    "method": "regex",
-    "regex": "non admin account cannot set bandwidth more than.*",
-    "message_cn": "非admin帐号设置磁盘带宽超出限制 [%1$s]",
-    "message_en": "non admin account cannot set bandwidth more than [%1$s]"
-  },
-  {
-    "category": "Volume",
-    "code": "1003",
-    "method": "regex",
-    "regex": "failed to create data volume template from volume.*on all backup storage.*. See cause for one of errors",
-    "message_cn": "无法在任何一个镜像服务器上成功创建数据磁盘[uuid：%1$s]的磁盘镜像。",
-    "message_en": "Failed to create data volume template from volume [uuid:%1$s] on any backup storage."
   }
 ]
