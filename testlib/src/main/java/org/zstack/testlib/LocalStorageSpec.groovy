@@ -3,7 +3,6 @@ package org.zstack.testlib
 import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.core.db.Q
-import org.zstack.core.db.SQL
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
 import org.zstack.header.volume.VolumeVO
@@ -13,7 +12,6 @@ import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow
 import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl
 import org.zstack.utils.gson.JSONObjectUtil
-
 /**
  * Created by xing5 on 2017/2/20.
  */
@@ -118,7 +116,7 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 def rsp = new LocalStorageKvmBackend.AgentResponse()
                 rsp.totalCapacity = lspec.totalCapacity
                 rsp.availableCapacity = lspec.availableCapacity
-                return
+                return rsp
             }
 
             simulator(LocalStorageKvmBackend.CREATE_EMPTY_VOLUME_PATH) {
