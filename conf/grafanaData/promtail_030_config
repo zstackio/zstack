@@ -105,7 +105,7 @@ scrape_configs:
     labels:
       host: ha
       instance: ${LOCAL_IP}
-      __path__:/var/log/zstack/ha.log
+      __path__: /var/log/zstack/ha.log
 - job_name: ps-1
   static_configs:
   - targets:
