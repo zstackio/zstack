@@ -88,6 +88,30 @@
     "message_en": "Failed to download bits from the imagestore backup storage[hostname: %2$s, path: %3$s] to the local primary storage[uuid: %4$s, path: %5$s]."
   },
   {
+    "category": "BS",
+    "code": "1006",
+    "method": "regex",
+    "regex": ".*, because:can not find lv .* after create, lvcreate return: .*, , WARNING: Not using lvmetad because config setting use_lvmetad=0.*",
+    "message_cn": "在存储上创建云盘后找不到逻辑卷, WARNING: using lvmetad because config setting use_lvmetad=0",
+    "message_en": "Failed to find lv after create volume, WARNING: using lvmetad because config setting use_lvmetad=0"
+  },
+  {
+    "category": "BS",
+    "code": "1007",
+    "method": "regex",
+    "regex": ".*, because:.*\\[ .*.go:.* importLocalImage:failed to get image info at importLocalImage.*",
+    "message_cn": "镜像仓库从本地获取镜像信息失败",
+    "message_en": "ImageStore failed to get image info at local image"
+  },
+  {
+    "category": "BS",
+    "code": "1008",
+    "method": "regex",
+    "regex": ".*, because:cannot find pool\\[.*] in the ceph cluster, you must create it manually",
+    "message_cn": "未能在ceph集群中找到存储池[%1$s],您需要先手动创建",
+    "message_en": "Cann't find pool[%1$s] in the ceph cluster, you need to create it manually"
+  },
+  {
     "category": "CEPH",
     "code": "1000",
     "method": "regex",
@@ -400,6 +424,38 @@
     "message_en": "kvm_intel mod not be loaded, Operation not supported"
   },
   {
+    "category": "HOST",
+    "code": "1024",
+    "method": "regex",
+    "regex": "unable to connect to KVM\\[ip:.*, username:.*, sshPort:.*] to check the management node connectivity,.*",
+    "message_cn": "无法登陆到KVM物理机[ip:%1$s, sshPort:%3$s]上检测物理机到管理节点的连通性",
+    "message_en": "Cloudn't connetc to KVM[ip:%1$s, sshPort:%3$s] to check the connectivity of host to management node."
+  },
+  {
+    "category": "HOST",
+    "code": "1025",
+    "method": "regex",
+    "regex": "The host\\[uuid:.*]'s available memory capacity\\[.*] is lower than the reserved capacity\\[.*]",
+    "message_cn": "物理机[uuid:%1$s]的可用内存容量[%2$s]低于预留容量[%3$s]",
+    "message_en": "The host[uuid:%1$s]'s available memory capacity[%2$s] is lower than the reserved capacity[%3$s]"
+  },
+  {
+    "category": "HOST",
+    "code": "1026",
+    "method": "regex",
+    "regex": "failed to create bridge\\[.*] for l2Network\\[uuid:.*, type:.*] on kvm host\\[uuid:.*], because unable to create bridge\\[.*] from device\\[.*], because failed to execute shell command: brctl.*return code: 1\\nstdout: \\nstderr: device .* is already a member of a bridge; can't enslave it to bridge .*.\\n",
+    "message_cn": "网卡上已存在网桥",
+    "message_en": "device is already a member of a bridge"
+  },
+  {
+    "category": "HOST",
+    "code": "1027",
+    "method": "regex",
+    "regex": ".*, because:.* | FAILED =\u003e SSH Error: ssh: connect to host .* port .*: No route to host.*",
+    "message_cn": "找不到访问物理机的路由",
+    "message_en": "Can't find the route to host"
+  },
+  {
     "category": "IAM2",
     "code": "1000",
     "method": "regex",
@@ -632,6 +688,14 @@
     "message_en": "you can only add %1$s hosts with the current license; please upgrade the license if you want to add more hosts"
   },
   {
+    "category": "LICENSE",
+    "code": "1004",
+    "method": "regex",
+    "regex": "Parse license error.*",
+    "message_cn": "解析许可证失败",
+    "message_en": "Failed to parse license"
+  },
+  {
     "category": "MN",
     "code": "1000",
     "method": "distance",
@@ -808,6 +872,14 @@
     "message_en": "quota exceeding.The resource owner(or target resource owner) account[uuid:%1$s ] exceeds a quota[name: %2$s , value: %3$s]. Please contact the administrator."
   },
   {
+    "category": "QUOTA",
+    "code": "1001",
+    "method": "regex",
+    "regex": "quota exceeding. The account\\[uuid: .*] exceeds a quota\\[name: .*, value: .*], Current used:.*, Request:.*. Please contact the administrator.",
+    "message_cn": "帐户[%1$s]的配额超出限制[名称: %2$s, 配额: $3$s]",
+    "message_en": "The account[uuid:%1$s]'s quota exceeds the limit, name: %2$s, value:%3$s."
+  },
+  {
     "category": "SHAREDBLOCK",
     "code": "1000",
     "method": "regex",
@@ -845,6 +917,14 @@
     "method": "regex",
     "regex": "\\[.*] is not a standard cidr, do you mean \\[.*]",
     "message_cn": "[%1$s]不是一个标准的CIDR，您是否想使用[%2$s]？",
+    "message_en": "[%1$s] is not a standard cidr, do you mean [%2$s]?"
+  },
+  {
+    "category": "UTILS",
+    "code": "1003",
+    "method": "regex",
+    "regex": "\\[.*] is not a standard cidr, do you mean \\[.*]?",
+    "message_cn": "[%1$s]不是一个标准CIDR,您是否想使用[%2$s]?",
     "message_en": "[%1$s] is not a standard cidr, do you mean [%2$s]?"
   },
   {
@@ -1160,6 +1240,70 @@
     "message_en": "The Start action is only allowed to excuted on a vm instance whose state is Stopped or Created."
   },
   {
+    "category": "VM",
+    "code": "1031",
+    "method": "regex",
+    "regex": ".*, because:user \\[.*] not exist!",
+    "message_cn": "云主机用戶不存在",
+    "message_en": "VM user not exist"
+  },
+  {
+    "category": "VM",
+    "code": "1032",
+    "method": "regex",
+    "regex": "current vm instance state\\[.*] doesn't allow to proceed message\\[org.zstack.header.vm.APIStartVmInstanceMsg], allowed states are \\[.*, .*]",
+    "message_cn": "云主机当前状态[%1$s]不支持该操作",
+    "message_en": "Current vm instance state[%1$s] doesn't allow the operation"
+  },
+  {
+    "category": "VM",
+    "code": "1033",
+    "method": "regex",
+    "regex": ".*, because:qemu-agent service is not ready in vm...",
+    "message_cn": "未安装qemu-agent，或相关进程没有成功启动",
+    "message_en": "qemu-agent service is not ready or thr related process did not start successfully"
+  },
+  {
+    "category": "VM",
+    "code": "1034",
+    "method": "regex",
+    "regex": "failed to create image from backup \\[.*, .*]",
+    "message_cn": "创建镜像失败",
+    "message_en": "Failed to create image"
+  },
+  {
+    "category": "VM",
+    "code": "1035",
+    "method": "regex",
+    "regex": "failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.*], because Traceback .*:\\n File.*",
+    "message_cn": "启动云主机失败，因为读取云主机xml文件错误",
+    "message_en": "Failed to start the VM, because failed to read VM xml file"
+  },
+  {
+    "category": "VM",
+    "code": "1036",
+    "method": "regex",
+    "regex": ".*, because:Requested operation is not valid: transient domains do not have any persistent config",
+    "message_cn": "请求的操作无效：临时域没有任何持久性配置",
+    "message_en": "Requested operation is not valid: transient domains do not have any persistent config"
+  },
+  {
+    "category": "VM",
+    "code": "1037",
+    "method": "regex",
+    "regex": ".*, because:error: Failed to attach device from .*\\nerror: XML error: requested USB port .* not present on USB bus .*",
+    "message_cn": "加载USB设置的xml信息失败,USB设备的总线和端口发生了变化",
+    "message_en": "Failed to load the xml information of the USB, the bus and port of the USB device changed."
+  },
+  {
+    "category": "VM",
+    "code": "1038",
+    "method": "regex",
+    "regex": "I/O error on POST request for .*http:.*getvncport.*:Connect to .* \\[.*] failed: Connection refused.*",
+    "message_cn": "打开vncport时发生I/O错误",
+    "message_en": "I/O error when opening vncport"
+  },
+  {
     "category": "VOLUME",
     "code": "1000",
     "method": "regex",
@@ -1187,7 +1331,7 @@
     "category": "VOLUME",
     "code": "1003",
     "method": "regex",
-    "regex": "failed to create data volume template from volume.*on all backup storage.*. See cause for one of errors",
+    "regex": "failed to create data volume template from volume.*on all backup storage.*. See cause for one of errors.*",
     "message_cn": "无法在任何一个镜像服务器上成功创建数据磁盘[uuid：%1$s]的磁盘镜像。",
     "message_en": "Failed to create data volume template from volume [uuid:%1$s] on any backup storage."
   },
