@@ -10,6 +10,15 @@ public class EipTO implements Serializable {
     private String publicMac;
     private String guestIp;
     private boolean snatInboundTraffic;
+    private boolean needCleanGuestIp;
+
+    public boolean isNeedCleanGuestIp() {
+        return needCleanGuestIp;
+    }
+
+    public void setNeedCleanGuestIp(boolean needCleanGuestIp) {
+        this.needCleanGuestIp = needCleanGuestIp;
+    }
 
     public boolean isSnatInboundTraffic() {
         return snatInboundTraffic;
