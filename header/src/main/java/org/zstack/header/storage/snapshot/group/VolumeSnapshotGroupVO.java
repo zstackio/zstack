@@ -1,5 +1,6 @@
 package org.zstack.header.storage.snapshot.group;
 
+import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.NoView;
@@ -21,7 +22,7 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = VolumeSnapshotGroupRefVO.class, myField = "uuid", targetField = "volumeSnapshotGroupUuid")
         }
 )
-public class VolumeSnapshotGroupVO extends ResourceVO {
+public class VolumeSnapshotGroupVO extends ResourceVO implements OwnedByAccount {
     @Column
     private Integer snapshotCount;
     @Column
@@ -34,6 +35,8 @@ public class VolumeSnapshotGroupVO extends ResourceVO {
     private Timestamp createDate;
     @Column
     private Timestamp lastOpDate;
+    @Transient
+    private String accountUuid;
 
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "volumeSnapshotGroupUuid", insertable = false, updatable = false)
@@ -94,5 +97,15 @@ public class VolumeSnapshotGroupVO extends ResourceVO {
 
     public void setVolumeSnapshotRefs(Set<VolumeSnapshotGroupRefVO> volumeSnapshotRefs) {
         this.volumeSnapshotRefs = volumeSnapshotRefs;
+    }
+
+    @Override
+    public String getAccountUuid() {
+        return accountUuid;
+    }
+
+    @Override
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
     }
 }

@@ -2179,6 +2179,7 @@ public class VolumeBase implements Volume {
                 group.setName(msg.getName());
                 group.setDescription(msg.getDescription());
                 group.setVmInstanceUuid(vm.getUuid());
+                group.setAccountUuid(msg.getSession().getAccountUuid());
                 for (VolumeSnapshotInventory inv : r.getInventories()) {
                     VolumeSnapshotGroupRefVO ref = new VolumeSnapshotGroupRefVO();
                     ref.setVolumeUuid(inv.getVolumeUuid());
