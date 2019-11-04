@@ -21,4 +21,6 @@ public class IdentityGlobalConfig {
     public static GlobalConfig SHOW_ALL_RESOURCE_TO_ADMIN = new GlobalConfig(CATEGORY, "admin.showAllResource");
     @GlobalConfigValidation(notEmpty = false)
     public static GlobalConfig ACCOUNT_API_CONTROL = new GlobalConfig(CATEGORY, "account.api.control");
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig ENABLE_UNIQUE_SESSION = new GlobalConfig(CATEGORY, "enable.unique.session");
 }

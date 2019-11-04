@@ -27,8 +27,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 
 public class Session implements Component {
     private static final CLogger logger = Utils.getLogger(Session.class);
@@ -45,6 +44,29 @@ public class Session implements Component {
     private static Map<String, SessionInventory> sessions = new ConcurrentHashMap<>();
 
     public static SessionInventory login(String accountUuid, String userUuid) {
+        if (IdentityGlobalConfig.ENABLE_UNIQUE_SESSION.value(Boolean.class)) {
+            List<String> currentSessionUuids = Q.New(SessionVO.class)
+                    .select(SessionVO_.uuid)
+                    .eq(SessionVO_.accountUuid, accountUuid)
+                    .eq(SessionVO_.userUuid, userUuid)
+                    .listValues();
+            IdentityCanonicalEvents.SessionForceLogoutData data = new IdentityCanonicalEvents.SessionForceLogoutData();
+            data.setAccountUuid(accountUuid);
+            data.setUserUuid(userUuid);
+
+            PluginRegistry pluginRgty = getComponentLoader().getComponent(PluginRegistry.class);
+            EventFacade evtf = getComponentLoader().getComponent(EventFacade.class);
+            for (String sessionUuid : currentSessionUuids) {
+                logout(sessionUuid);
+                data.setSessionUuid(sessionUuid);
+
+                evtf.fire(IdentityCanonicalEvents.SESSION_FORCE_LOGOUT_PATH, data);
+                for (ForceLogoutSessionExtensionPoint ext : pluginRgty.getExtensionList(ForceLogoutSessionExtensionPoint.class)) {
+                    ext.afterForceLogoutSession(data);
+                }
+            }
+        }
+
         return new SQLBatchWithReturn<SessionInventory>() {
             @Transactional(readOnly = true)
             private Timestamp getCurrentSqlDate() {
@@ -120,7 +142,7 @@ public class Session implements Component {
                 }
 
                 SessionInventory finalS = s;
-                Platform.getComponentLoader().getComponent(PluginRegistry.class)
+                getComponentLoader().getComponent(PluginRegistry.class)
                         .getExtensionList(SessionLogoutExtensionPoint.class)
                         .forEach(ext -> ext.sessionLogout(finalS));
 
