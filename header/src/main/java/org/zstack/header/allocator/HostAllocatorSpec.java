@@ -1,10 +1,8 @@
 package org.zstack.header.allocator;
 
 import org.zstack.header.configuration.DiskOfferingInventory;
-import org.zstack.header.host.HypervisorType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.volume.VolumeFormat;
 
 import java.util.*;
 
@@ -207,12 +205,6 @@ public class HostAllocatorSpec {
         String hvType = null;
         if (msg.getVmInstance() != null && msg.getVmInstance().getHypervisorType() != null) {
             hvType = msg.getVmInstance().getHypervisorType();
-        }
-        if (hvType == null && msg.getImage() != null) {
-            HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getImage().getFormat());
-            if (type != null) {
-                hvType = type.toString();
-            }
         }
         spec.setHypervisorType(hvType);
         spec.setMemoryCapacity(msg.getMemoryCapacity());
