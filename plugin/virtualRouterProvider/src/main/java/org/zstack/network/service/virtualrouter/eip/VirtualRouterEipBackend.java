@@ -311,6 +311,11 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 to.setSnatInboundTraffic(struct.isSnatInboundTraffic());
                 to.setVipIp(struct.getVip().getIp());
                 to.setGuestIp(struct.getNic().getIp());
+                to.setNeedCleanGuestIp(!Q.New(EipVO.class)
+                        .eq(EipVO_.guestIp, struct.getEip().getGuestIp())
+                        .eq(EipVO_.vmNicUuid, struct.getEip().getVmNicUuid())
+                        .notEq(EipVO_.vipIp, struct.getEip().getVipIp())
+                        .isExists());
                 cmd.setEip(to);
 
                 VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
