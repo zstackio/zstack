@@ -728,13 +728,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
-    public static class KvmSetupSelfFencerCmd extends AgentCommand {
+    public static class KvmSetupSelfFencerCmd extends AgentCommand implements HasSensitiveInfo {
         public String heartbeatImagePath;
         public String hostUuid;
         public long interval;
         public int maxAttempts;
         public int storageCheckerTimeout;
         public String userKey;
+        @NoLogging(type = NoLogging.Type.Uri)
         public List<String> monUrls;
         public String strategy;
     }

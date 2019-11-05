@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph.backup;
 
 import org.springframework.http.HttpMethod;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -24,6 +25,7 @@ public class APIAddMonToCephBackupStorageMsg extends APIMessage implements Backu
     @APIParam(resourceType = CephBackupStorageVO.class)
     private String uuid;
     @APIParam(nonempty = true)
+    @NoLogging(type = NoLogging.Type.Uri)
     private List<String> monUrls;
 
     public String getUuid() {
