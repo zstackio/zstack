@@ -15,6 +15,8 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.*;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
@@ -39,6 +41,7 @@ import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.volume.VolumeFormat;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -346,6 +349,24 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     private void doHandleAllocateHost(final AllocateHostMsg msg, Completion completion) {
         HostAllocatorSpec spec = HostAllocatorSpec.fromAllocationMsg(msg);
         spec.setBackupStoragePrimaryStorageMetrics(backupStoragePrimaryStorageMetrics);
+
+        String hvType = spec.getHypervisorType();
+        if (hvType == null && msg instanceof DesignatedAllocateHostMsg) {
+            DesignatedAllocateHostMsg dmsg = (DesignatedAllocateHostMsg) msg;
+            if (dmsg.getHostUuid() != null) {
+                hvType = Q.New(HostVO.class).eq(HostVO_.uuid, dmsg.getHostUuid()).select(HostVO_.hypervisorType).findValue();
+            } else if (dmsg.getClusterUuid() != null) {
+                hvType = Q.New(ClusterVO.class).eq(ClusterVO_.uuid, dmsg.getClusterUuid()).select(ClusterVO_.hypervisorType).findValue();
+            }
+        }
+
+        if (hvType == null && msg.getImage() != null) {
+            HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getImage().getFormat());
+            if (type != null) {
+                hvType = type.toString();
+            }
+        }
+        spec.setHypervisorType(hvType);
 
         String allocatorStrategyType = null;
         for (HostAllocatorStrategyExtensionPoint ext : pluginRgty.getExtensionList(HostAllocatorStrategyExtensionPoint.class)) {
