@@ -24,6 +24,7 @@ public class APIAddLdapServerMsg extends APIMessage implements APIAuditor, HasSe
     private String description;
 
     @APIParam(maxLength = 1024)
+    @NoLogging(type = NoLogging.Type.Uri)
     private String url;
 
     @APIParam(maxLength = 1024)
