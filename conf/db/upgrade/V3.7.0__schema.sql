@@ -260,3 +260,39 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PortMirrorSessionMirrorNetworkRefVO` (
 
 alter table SNSTextTemplateVO add type varchar(255) DEFAULT "ALARM";
 update SNSApplicationEndpointVO set type = "SYSTEM_HTTP" where name = "system-alarm-endpoint" and platformUuid = "02d24b9b0a7f4ee1846f15cda248ceb7" and type = "HTTP";
+
+
+DROP PROCEDURE IF EXISTS addMissingResourceRef;
+DELIMITER $$
+CREATE PROCEDURE addMissingResourceRef()
+    BEGIN
+        DECLARE groupUuid VARCHAR(32);
+        DECLARE accountUuid VARCHAR(32);
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE cur CURSOR FOR SELECT sgroup.uuid FROM `zstack`.`VolumeSnapshotGroupVO` sgroup
+        WHERE NOT EXISTS (SELECT resourceUuid FROM zstack.AccountResourceRefVO WHERE resourceUuid = sgroup.uuid);
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO groupUuid;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            SELECT aref.accountUuid INTO accountUuid FROM `zstack`.`VolumeSnapshotGroupRefVO` sref, `zstack`.`AccountResourceRefVO` aref
+            WHERE sref.volumeSnapshotGroupUuid = groupUuid
+                  AND sref.volumeType = 'Root'
+                  AND sref.volumeSnapshotUuid = aref.resourceUuid;
+
+            IF accountUuid IS NOT NULL THEN
+                INSERT INTO `zstack`.`AccountResourceRefVO` (`resourceType`, `resourceUuid`, `accountUuid`, `ownerAccountUuid`, `concreteResourceType`, `permission`, `isShared`, `createDate`, `lastOpDate`)
+                VALUES ('VolumeSnapshotGroupVO', groupUuid, accountUuid, accountUuid, 'org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO', 2, 0, NOW(), NOW());
+            END IF;
+        END LOOP;
+        CLOSE cur;
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+CALL addMissingResourceRef();
+DROP PROCEDURE IF EXISTS addMissingResourceRef;

@@ -287,6 +287,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
             newGroup.setDescription(String.format("save snapshot for revert vm [uuid:%s]", vmUuid));
             newGroup.setSnapshotCount(snapshots.size());
             newGroup.setVmInstanceUuid(vmUuid);
+            newGroup.setAccountUuid(msg.getSession().getAccountUuid());
             dbf.persist(newGroup);
         }
 
