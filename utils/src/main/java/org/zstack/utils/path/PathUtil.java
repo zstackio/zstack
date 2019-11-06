@@ -7,13 +7,16 @@ import org.zstack.utils.logging.CLogger;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class PathUtil {
     private static final CLogger logger = Utils.getLogger(PathUtil.class);
@@ -221,6 +224,20 @@ public class PathUtil {
         try {
             return Files.createTempFile(prefix, suffix).toAbsolutePath().normalize().toString();
         } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public static String createTempFileWithContent(String content){
+        String tmpFile = null;
+        try {
+            tmpFile = Files.createTempFile("zs-", ".tmp").toAbsolutePath().normalize().toString();
+            FileOutputStream outputStream = new FileOutputStream(new File(tmpFile));
+            outputStream.write(content.getBytes(StandardCharsets.UTF_8));
+            outputStream.close();
+            return tmpFile;
+        } catch (IOException e) {
+            Optional.ofNullable(tmpFile).ifPresent(PathUtil::forceRemoveFile);
             throw new RuntimeException(e.getMessage());
         }
     }
