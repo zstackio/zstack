@@ -12,6 +12,8 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
@@ -60,6 +62,14 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             APIDeleteHostEvent evt = new APIDeleteHostEvent(msg.getId());
             bus.publish(evt);
             throw new StopRoutingException();
+        }
+
+        if (HostGlobalConfig.DELETION_POLICY.value().equals("Force")) {
+            return;
+        }
+
+        if (Q.New(VmInstanceVO.class).eq(VmInstanceVO_.hostUuid, msg.getUuid()).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("there are still vm on host[uuid:%s], can not delete it", msg.getHostUuid()));
         }
     }
 
