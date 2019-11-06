@@ -5,13 +5,17 @@ import org.zstack.core.cascade.*;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -21,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.inerr;
 
 /**
@@ -108,6 +113,10 @@ public class HostCascadeExtension extends AbstractAsyncCascadeExtension {
 
         try {
             for (HostInventory hinv : hinvs) {
+                if (!HostGlobalConfig.DELETION_POLICY.value().equals("Force") && Q.New(VmInstanceVO.class).eq(VmInstanceVO_.hostUuid, hinv.getUuid()).isExists()) {
+                    throw new HostException(String.format("there are still vm on host[uuid:%s], can not delete it", hinv.getUuid()));
+                }
+
                 extpEmitter.preDelete(hinv);
             }
 

@@ -1,6 +1,7 @@
 package org.zstack.storage.primary;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 
@@ -26,4 +27,7 @@ public class PrimaryStorageGlobalConfig {
     public static GlobalConfig PING_INTERVAL = new GlobalConfig(CATEGORY, "ping.interval");
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig PING_PARALLELISM_DEGREE = new GlobalConfig(CATEGORY, "ping.parallelismDegree");
+    @GlobalConfigValidation(validValues = {"Force", "Permissive"})
+    @GlobalConfigDef(defaultValue = "Force", description = "Deletion policy for primary storage")
+    public static GlobalConfig DELETION_POLICY = new GlobalConfig(CATEGORY, "deletion.policy");
 }

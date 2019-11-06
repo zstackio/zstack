@@ -17,6 +17,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg;
 import org.zstack.header.volume.APICreateVolumeSnapshotGroupMsg;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 
@@ -181,6 +182,20 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr("primary storage[uuid:%s] cannot be deleted for still " +
                             "being attached to cluster[uuid:%s].",
                     msg.getPrimaryStorageUuid(), clusterUuidsString));
+        }
+
+        if (PrimaryStorageGlobalConfig.DELETION_POLICY.value().equals("Force")) {
+            return;
+        }
+
+        Long count = SQL.New("select count(*) from VolumeVO volume, PrimaryStorageVO ps where ps.uuid = :psUuid" +
+                " and volume.primaryStorageUuid = ps.uuid and volume.type = :type", Long.class)
+                .param("psUuid", msg.getPrimaryStorageUuid())
+                .param("type", VolumeType.Root)
+                .find();
+
+        if (count > 0) {
+            throw new ApiMessageInterceptionException(argerr("can not delete primary storage[uuid:%s] because there are still vm on it", msg.getPrimaryStorageUuid()));
         }
     }
 

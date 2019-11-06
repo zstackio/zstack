@@ -1,25 +1,17 @@
 package org.zstack.test.integration.storage.primary
 
+import org.zstack.compute.host.HostGlobalConfig
 import org.zstack.core.db.Q
 import org.zstack.header.cluster.ClusterVO
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.network.l3.L3NetworkVO
-import org.zstack.header.network.service.NetworkServiceType
-import org.zstack.header.storage.primary.PrimaryStorageState
-import org.zstack.header.storage.primary.PrimaryStorageStateEvent
 import org.zstack.header.storage.primary.PrimaryStorageVO
-import org.zstack.header.storage.primary.PrimaryStorageVO_
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.zone.ZoneVO
 import org.zstack.kvm.KVMHostVO
-import org.zstack.network.securitygroup.SecurityGroupConstant
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant
-import org.zstack.sdk.DiskOfferingInventory
-import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.VmInstanceInventory
-import org.zstack.sdk.VolumeInventory
-import org.zstack.sdk.ZoneInventory
+import org.zstack.sdk.*
+import org.zstack.storage.primary.PrimaryStorageGlobalConfig
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -92,12 +84,6 @@ class DeleteZoneCascadeCase extends SubCase {
                     }
 
 
-                    kvm {
-                        name = "kvm1"
-                        username = "root"
-                        password = "password"
-                    }
-
                     attachPrimaryStorage("nfs")
                     attachL2Network("l2")
                 }
@@ -131,6 +117,7 @@ class DeleteZoneCascadeCase extends SubCase {
                 useInstanceOffering("instanceOffering")
                 useImage("image1")
                 useL3Networks("pubL3")
+                useHost("kvm")
                 useRootDiskOffering("diskOffering")
             }
 
@@ -162,6 +149,8 @@ class DeleteZoneCascadeCase extends SubCase {
     void testDeleteZone() {
         ZoneInventory zone = env.inventoryByName("zone")
         PrimaryStorageInventory ps = env.inventoryByName("nfs")
+        HostInventory host = env.inventoryByName("kvm")
+        ClusterInventory cluster = env.inventoryByName("cluster")
         DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
 
         for (int i = 0; i < 5; i++) {
@@ -182,6 +171,31 @@ class DeleteZoneCascadeCase extends SubCase {
                 uuid = volume.uuid
             }
         }
+
+        HostGlobalConfig.DELETION_POLICY.updateValue("Permissive")
+        PrimaryStorageGlobalConfig.DELETION_POLICY.updateValue("Permissive")
+        expect(AssertionError.class) {
+            deleteHost {
+                uuid = host.uuid
+            }
+        }
+
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+        expect(AssertionError.class) {
+            deletePrimaryStorage {
+                uuid = ps.uuid
+            }
+        }
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        HostGlobalConfig.DELETION_POLICY.updateValue("Force")
+        PrimaryStorageGlobalConfig.DELETION_POLICY.updateValue("Force")
 
         deleteZone {
             uuid = zone.uuid
