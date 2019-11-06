@@ -72,6 +72,7 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
     private List<VyosPostRebootFlowExtensionPoint> postRebootFlowExtensionPoints;
     private List<VyosPostReconnectFlowExtensionPoint> postReconnectFlowExtensionPoints;
     private List<VyosPostStartFlowExtensionPoint> postStartFlowExtensionPoints;
+    private List<VyosPostMigrateFlowExtensionPoint> postMigrateFlowExtensionPoints;
 
     private final static List<String> supportedL2NetworkTypes = new ArrayList<>();
 
@@ -126,7 +127,9 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
     }
 
     public List<Flow> getPostMigrateFlows() {
-        return null;
+        List<Flow> flows = new ArrayList<>();
+        flows.addAll(postMigrateFlowExtensionPoints.stream().map(VyosPostMigrateFlowExtensionPoint::vyosPostMigrateFlow).collect(Collectors.toList()));
+        return flows;
     }
 
     public List<Flow> getPostDestroyFlows() {
@@ -182,6 +185,7 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
         postRebootFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostRebootFlowExtensionPoint.class);
         postReconnectFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostReconnectFlowExtensionPoint.class);
         postStartFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostStartFlowExtensionPoint.class);
+        postMigrateFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostMigrateFlowExtensionPoint.class);
     }
 
     @Override
