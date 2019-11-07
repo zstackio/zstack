@@ -771,10 +771,12 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             @Override
             public void run(NeedReplyMessage msg, MessageReply reply) {
                 ConnectHostMsg cmsg = (ConnectHostMsg) msg;
-                if (!reply.isSuccess()) {
-                    logger.warn(String.format("failed to load host[uuid:%s], %s", cmsg.getHostUuid(), reply.getError()));
-                } else {
+                if (reply.isSuccess()) {
                     logger.debug(String.format("host[uuid:%s] load successfully", cmsg.getHostUuid()));
+                } else if (reply.isCanceled()) {
+                    logger.warn(String.format("canceled connect kvm host[uuid:%s], because it connecting now", cmsg.getHostUuid()));
+                } else {
+                    logger.warn(String.format("failed to load host[uuid:%s], %s", cmsg.getHostUuid(), reply.getError()));
                 }
             }
         });
