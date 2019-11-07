@@ -64,4 +64,6 @@ public class CoreGlobalProperty {
     public static boolean ENABLE_ELABORATION;
     @GlobalProperty(name = "recordElaboration", defaultValue = "false")
     public static boolean RECORD_TO_DB_ELABORATION;
+    @GlobalProperty(name = "chain.task.qos", defaultValue = "false")
+    public static boolean CHAIN_TASK_QOS;
 }

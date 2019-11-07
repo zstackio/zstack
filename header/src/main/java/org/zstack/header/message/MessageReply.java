@@ -11,6 +11,10 @@ public class MessageReply extends Message {
      */
     private boolean success = true;
     /**
+     * @desc sometimes we just cancel this msg execution, neither success or failed
+     */
+    private boolean canceled = false;
+    /**
      * @desc indicate the reason of api failure. It presents only if success = false
      * @nullable
      */
@@ -30,6 +34,16 @@ public class MessageReply extends Message {
 
     public void setError(ErrorCode error) {
         this.error = error;
+        this.setSuccess(false);
+    }
+
+    public boolean isCanceled() {
+        return canceled;
+    }
+
+    public void setCanceled(ErrorCode error) {
+        this.error = error;
+        this.canceled = true;
         this.setSuccess(false);
     }
 
