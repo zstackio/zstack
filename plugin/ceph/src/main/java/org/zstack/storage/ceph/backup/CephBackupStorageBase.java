@@ -273,7 +273,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
     }
 
-    public static class DownloadCmd extends AgentCommand implements HasThreadContext {
+    public static class DownloadCmd extends AgentCommand implements HasThreadContext, HasSensitiveInfo {
+        @NoLogging(type = NoLogging.Type.Uri)
         String url;
         String installPath;
         String imageUuid;
@@ -349,40 +350,6 @@ public class CephBackupStorageBase extends BackupStorageBase {
         public void setFormat(String format) {
             this.format = format;
         }
-    }
-
-    public static class CancelDownloadCmd extends AgentCommand {
-        String url;
-        String installPath;
-        String imageUuid;
-
-        public String getImageUuid() {
-            return imageUuid;
-        }
-
-        public void setImageUuid(String imageUuid) {
-            this.imageUuid = imageUuid;
-        }
-
-        public String getUrl() {
-            return url;
-        }
-
-        public void setUrl(String url) {
-            this.url = url;
-        }
-
-        public String getInstallPath() {
-            return installPath;
-        }
-
-        public void setInstallPath(String installPath) {
-            this.installPath = installPath;
-        }
-    }
-
-    public static class CancelDownloadRsp extends AgentResponse {
-
     }
 
     public static class DeleteCmd extends AgentCommand {

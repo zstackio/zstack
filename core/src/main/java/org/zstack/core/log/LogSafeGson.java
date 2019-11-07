@@ -7,6 +7,7 @@ import org.springframework.security.access.method.P;
 import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.GsonTransient;
+import org.zstack.header.message.Message;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
@@ -27,6 +28,8 @@ public class LogSafeGson {
     private static Map<Class, Set<FieldNoLogging>> maskFields = new HashMap<>();
     private static Map<Class, Set<FieldNoLogging>> autoFields = new HashMap<>();
 
+    private static final List<Class<?>> searchClasses = Arrays.asList(HasSensitiveInfo.class, Message.class);
+    private static final Gson logSafeGson;
     private static class FieldNoLogging {
         Field field;
         NoLogging annotation;
@@ -38,7 +41,7 @@ public class LogSafeGson {
             this.field = field;
         }
 
-        FieldNoLogging(Field field, NoLogging annotation, Class<? extends HasSensitiveInfo> senClz) {
+        FieldNoLogging(Field field, NoLogging annotation, Class<?> senClz) {
             this.field = field;
             this.annotation = annotation;
             if (!Strings.isEmpty(annotation.classNameField())) {
@@ -53,7 +56,7 @@ public class LogSafeGson {
             return field.getName();
         }
 
-        Object getValue(HasSensitiveInfo obj) {
+        Object getValue(Object obj) {
             try {
                 Object value = field.get(obj);
                 if (classNameField == null) {
@@ -61,7 +64,7 @@ public class LogSafeGson {
                 }
 
                 Class<?> clz = Class.forName((String) classNameField.get(obj));
-                return HasSensitiveInfo.class.isAssignableFrom(clz) ? JSONObjectUtil.toObject((String) value, clz) : value;
+                return mayHasSensitiveInfo(clz) ? JSONObjectUtil.toObject((String) value, clz) : value;
             } catch (IllegalAccessException | ClassNotFoundException e) {
                 return null;
             }
@@ -77,32 +80,46 @@ public class LogSafeGson {
     }
 
     static {
-        for (Class<? extends HasSensitiveInfo> si : BeanUtils.reflections.getSubTypesOf(HasSensitiveInfo.class)) {
-            List<Field> noLogFs = FieldUtils.getAnnotatedFields(NoLogging.class, si);
-            for (Field f : noLogFs) {
+        GsonUtil util = new GsonUtil();
+        searchClasses.forEach(it -> util.setInstanceCreator(it, getSerializer()));
+        logSafeGson = util.setSerializationExclusionStrategy(new ExclusionStrategy() {
+            @Override
+            public boolean shouldSkipField(FieldAttributes f) {
+                return f.getAnnotation(GsonTransient.class) != null;
+            }
+
+            @Override
+            public boolean shouldSkipClass(Class<?> clazz) {
+                return false;
+            }
+        }).create();
+
+        for (Class<?> baseClz : searchClasses) {
+            for (Class<?> clz : BeanUtils.reflections.getSubTypesOf(baseClz)) {
+                cacheNoLoggingInfo(clz);
+            }
+        }
+    }
+
+    private static void cacheNoLoggingInfo(Class<?> si) {
+        for (Field f : FieldUtils.getAllFields(si)) {
+            NoLogging an = f.getAnnotation(NoLogging.class);
+            if (an != null) {
                 f.setAccessible(true);
-                NoLogging an = f.getAnnotation(NoLogging.class);
                 if (an.behavior().auto()) {
                     autoFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an, si));
                 } else {
                     maskFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an, si));
                 }
-            }
-
-            List<Field> siFs = FieldUtils.getDeclaringClassFields(HasSensitiveInfo.class, si);
-            for (Field f : siFs) {
-                if (!f.isAnnotationPresent(NoLogging.class)) {
-                    f.setAccessible(true);
-                    autoFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f));
-                }
+            } else if (mayHasSensitiveInfo(f.getType())) {
+                f.setAccessible(true);
+                autoFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f));
             }
         }
     }
 
-    private static Gson logSafeGson = new GsonUtil().setInstanceCreator(HasSensitiveInfo.class, new JsonSerializer<HasSensitiveInfo>() {
-
-        @Override
-        public JsonElement serialize(HasSensitiveInfo o, Type type, JsonSerializationContext jsonSerializationContext) {
+    private static <T> JsonSerializer<T> getSerializer() {
+        return (o, type, jsonSerializationContext) -> {
             JsonObject jObj = logSafeGson.toJsonTree(o).getAsJsonObject();
             maskFields.getOrDefault(o.getClass(), Collections.emptySet()).forEach(f -> {
                 Object obj = f.getValue(o);
@@ -117,57 +134,32 @@ public class LogSafeGson {
 
             autoFields.getOrDefault(o.getClass(), Collections.emptySet()).forEach(f -> {
                 Object si = f.getValue(o);
-                if (si instanceof HasSensitiveInfo) {
-                    jObj.add(f.getName(), logSafeGson.toJsonTree(si, HasSensitiveInfo.class));
+                if (mayHasSensitiveInfo(si)) {
+                    jObj.add(f.getName(), toJsonElement(si));
                 } else if (si instanceof Collection) {
                     JsonArray array = new JsonArray();
-                    ((Collection<?>) si).forEach(v -> {
-                        if (v instanceof HasSensitiveInfo) {
-                            array.add(logSafeGson.toJsonTree(si, HasSensitiveInfo.class));
-                        } else {
-                            array.add(logSafeGson.toJsonTree(si));
-                        }
-                    });
+                    ((Collection<?>) si).forEach(v -> array.add(toJsonElement(v)));
                     jObj.add(f.getName(), array);
                 }
             });
 
             return jObj;
-        }
-
-    }).setSerializationExclusionStrategy(new ExclusionStrategy() {
-        @Override
-        public boolean shouldSkipField(FieldAttributes f) {
-            return f.getAnnotation(GsonTransient.class) != null;
-        }
-
-        @Override
-        public boolean shouldSkipClass(Class<?> clazz) {
-            return false;
-        }
-    }).create();
+        };
+    }
 
     public static JsonElement toJsonElement(Object o) {
-        if (o instanceof HasSensitiveInfo) {
-            return logSafeGson.toJsonTree(o, HasSensitiveInfo.class);
-        } else {
-            return logSafeGson.toJsonTree(o);
-        }
+        return logSafeGson.toJsonTree(o, getGsonType(o.getClass()));
     }
 
     public static String toJson(Object o) {
-        if (o instanceof HasSensitiveInfo) {
-            return logSafeGson.toJson(o, HasSensitiveInfo.class);
-        } else {
-            return logSafeGson.toJson(o);
-        }
+        return logSafeGson.toJson(o, getGsonType(o.getClass()));
     }
 
     public static boolean needMaskLog(Class clz) {
         return maskFields.keySet().contains(clz);
     }
 
-    public static Map<String, String> getValuesToMask(HasSensitiveInfo o) {
+    public static Map<String, String> getValuesToMask(Object o) {
         Map<String, String> results = new HashMap<>();
         maskFields.getOrDefault(o.getClass(), Collections.emptySet()).forEach(f -> {
             Object obj = f.getValue(o);
@@ -180,11 +172,11 @@ public class LogSafeGson {
 
         autoFields.getOrDefault(o.getClass(), Collections.emptySet()).forEach(f -> {
             Object si = f.getValue(o);
-            if (si instanceof HasSensitiveInfo) {
-                results.putAll(getValuesToMask((HasSensitiveInfo) si));
+            if (mayHasSensitiveInfo(si)) {
+                results.putAll(getValuesToMask(si));
             } else if (si instanceof Collection) {
                 ((Collection<?>) si).forEach(v -> {
-                    if (v instanceof HasSensitiveInfo) {
+                    if (mayHasSensitiveInfo(v)) {
                         results.put(v.toString(), f.getMaskedValue(v.toString()));
                     }
                 });
@@ -193,5 +185,33 @@ public class LogSafeGson {
 
         results.remove(Strings.EMPTY);
         return results;
+    }
+
+    public static Map<String, NoLogging.Type> getSensitiveFields(Class<?> clz) {
+        Map<String, NoLogging.Type> paths = new HashMap<>();
+        List<Field> fs = FieldUtils.getAllFields(clz);
+        for (Field f : fs) {
+            NoLogging an = f.getAnnotation(NoLogging.class);
+            if (an != null && an.type() == NoLogging.Type.Simple) {
+                paths.put(f.getName(), NoLogging.Type.Simple);
+            } else if (mayHasSensitiveInfo(f.getType())) {
+                String path = f.getName();
+                getSensitiveFields(f.getType()).forEach((k, v) -> paths.put(path + '.' + k, v));
+            }
+        }
+
+        return paths;
+    }
+
+    private static boolean mayHasSensitiveInfo(Class<?> clz) {
+        return searchClasses.stream().anyMatch(it -> it.isAssignableFrom(clz));
+    }
+
+    private static boolean mayHasSensitiveInfo(Object obj) {
+        return obj != null && mayHasSensitiveInfo(obj.getClass());
+    }
+
+    private static Class<?> getGsonType(Class<?> clz) {
+        return searchClasses.stream().filter(it -> it.isAssignableFrom(clz)).findFirst().orElse(Object.class);
     }
 }

@@ -1,5 +1,6 @@
 package org.zstack.header.storage.backup;
 
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
@@ -13,6 +14,7 @@ public abstract class APIAddBackupStorageMsg extends APICreateMessage implements
      * max length of 2048 characters
      */
     @APIParam(maxLength = 2048, emptyString = false)
+    @NoLogging(type = NoLogging.Type.Uri)
     private String url;
     /**
      * @desc max length of 255 characters

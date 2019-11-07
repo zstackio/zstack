@@ -195,15 +195,7 @@ public class RESTFacadeImpl implements RESTFacade {
         // for unit test finding invocation chain
         MessageCommandRecorder.record(body.getClass());
         String bodyStr = JSONObjectUtil.toJsonString(body);
-        Map<String, String> maskValues;
-        if (!(body instanceof HasSensitiveInfo) || (maskValues = LogSafeGson.getValuesToMask((HasSensitiveInfo) body)).isEmpty()) {
-            asyncJsonPost(url, bodyStr, headers, callback, unit, timeout);
-            return;
-        }
-
-        try (Utils.MaskWords h = new Utils.MaskWords(maskValues)) {
-            asyncJsonPost(url, bodyStr, headers, callback, unit, timeout);
-        }
+        asyncJsonPost(url, bodyStr, headers, callback, unit, timeout);
     }
 
     @Override

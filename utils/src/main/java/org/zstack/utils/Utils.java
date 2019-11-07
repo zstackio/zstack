@@ -53,13 +53,30 @@ public class Utils {
     }
 
     public static class MaskWords implements AutoCloseable {
+        Map<String, String> originMaskWords = new HashMap<>();
+
         public MaskWords(Map<String, String> words) {
+            this(words, false);
+        }
+
+        public MaskWords(Map<String, String> words, boolean extend) {
+            if (!extend) {
+                maskWords.set(new HashMap<>(words));
+                return;
+            }
+
+            originMaskWords.putAll(maskWords.get());
             maskWords.set(new HashMap<>(words));
+            maskWords.get().putAll(originMaskWords);
         }
 
         @Override
         public void close() {
-            maskWords.remove();
+            if (!originMaskWords.isEmpty()) {
+                maskWords.set(originMaskWords);
+            } else {
+                maskWords.remove();
+            }
         }
     }
 
