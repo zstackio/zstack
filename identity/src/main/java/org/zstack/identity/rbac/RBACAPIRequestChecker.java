@@ -5,6 +5,7 @@ import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import edu.emory.mathcs.backport.java.util.Arrays;
+import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
@@ -29,19 +30,6 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
     protected RBACEntity rbacEntity;
     protected PolicyMatcher policyMatcher = new PolicyMatcher();
-
-    private static final Gson gson = new GsonBuilder().disableHtmlEscaping().
-            addSerializationExclusionStrategy(new ExclusionStrategy() {
-        @Override
-        public boolean shouldSkipField(FieldAttributes fieldAttributes) {
-            return fieldAttributes.getAnnotation(NoLogging.class) != null;
-        }
-
-        @Override
-        public boolean shouldSkipClass(Class<?> aClass) {
-            return false;
-        }
-    }).create();
 
     public boolean bypass(RBACEntity entity) {
         return entity.getApiMessage().getHeaders().containsKey(IdentityByPassCheck.NoRBACCheck.toString());
@@ -93,7 +81,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     }
 
     private String jsonMessage() {
-        return gson.toJson(map(e(rbacEntity.getApiMessage().getClass().getName(), rbacEntity.getApiMessage())));
+        return CloudBusGson.toLogSafeJson(rbacEntity.getApiMessage());
     }
 
     protected boolean evalAllowStatements(Map<PolicyInventory, List<PolicyStatement>> policies) {

@@ -23,6 +23,7 @@ import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
+import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.rest.RESTApiJsonTemplateGenerator;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.HostAllocatorConstant;
@@ -431,6 +432,10 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
     }
 
     private String classToApiMessagePythonClass(Class<?> clazz) {
+        return classToApiMessagePythonClass(clazz, null);
+    }
+
+    private String classToApiMessagePythonClass(Class<?> clazz, RestRequest request) {
         StringBuilder result = new StringBuilder();
         boolean emptyLine = true;
 
@@ -438,6 +443,9 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         result.append(String.format("\n%s = '%s'", signature, clazz.getName()));
         result.append(String.format("\nclass %s(object):", clazz.getSimpleName()));
         result.append(String.format("\n%sFULL_NAME='%s'", whiteSpace(4), clazz.getName()));
+        if (request != null) {
+            result.append(String.format("\n%sRESPONSE_NAME='%s'", whiteSpace(4), request.responseClass().getSimpleName()));
+        }
 
         StringBuilder sb = new StringBuilder();
         List<Field> fs = FieldUtils.getAllFields(clazz);
@@ -511,6 +519,24 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
 
         result.append(String.format("\n%sdef __init__(self):", whiteSpace(4)));
         result.append(sb.toString());
+        result.append("\n\n");
+        markPythonClassAsGenerated(clazz);
+        return result.toString();
+    }
+
+    private String classToApiEventPythonClass(Class<?> clazz) {
+        Map<String, NoLogging.Type> sensitiveFields = LogSafeGson.getSensitiveFields(clazz);
+        if (sensitiveFields.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder result = new StringBuilder();
+        result.append(String.format("\nclass %s(object):", clazz.getSimpleName()));
+        result.append(String.format("\n%sFULL_NAME='%s'", whiteSpace(4), clazz.getName()));
+        result.append(String.format("\n%s@log.sensitive_fields(\"%s\")", whiteSpace(4),
+                String.join("\", \"", sensitiveFields.keySet())));
+        result.append(String.format("\n%sdef __init__(self):", whiteSpace(4)));
+        result.append(String.format("\n%spass", whiteSpace(8)));
         result.append("\n\n");
         markPythonClassAsGenerated(clazz);
         return result.toString();
@@ -607,14 +633,16 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                     if (Modifier.isAbstract(clazz.getModifiers())) {
                         continue;
                     }
-                    if (!clazz.isAnnotationPresent(RestRequest.class)) {
+                    RestRequest request;
+                    if ((request = clazz.getAnnotation(RestRequest.class)) == null) {
                         continue;
                     }
                     if (isPythonClassGenerated(clazz)) {
                         /* This class was generated as other's parent class */
                         continue;
                     }
-                    sb.append(classToApiMessagePythonClass(clazz));
+                    sb.append(classToApiMessagePythonClass(clazz, request));
+                    sb.append(classToApiEventPythonClass(request.responseClass()));
                     apiNames.add(clazz.getSimpleName());
                 } catch (ClassNotFoundException e) {
                     logger.warn(String.format("Unable to generate python class for %s", bd.getBeanClassName()), e);

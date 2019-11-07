@@ -1,6 +1,7 @@
 package org.zstack.header.image;
 
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.*;
 
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.util.List;
 public class AddImageMsg extends NeedReplyMessage {
     private String name;
     private String description;
+    @NoLogging(type = NoLogging.Type.Uri)
     private String url;
     private String mediaType;
     private String guestOsType;

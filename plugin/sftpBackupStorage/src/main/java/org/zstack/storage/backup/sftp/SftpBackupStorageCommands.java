@@ -1,6 +1,8 @@
 package org.zstack.storage.backup.sftp;
 
 import org.zstack.header.agent.CancelCommand;
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
 
 public class SftpBackupStorageCommands {
     public static class AgentCommand {
@@ -78,9 +80,10 @@ public class SftpBackupStorageCommands {
     public static class ConnectResponse extends AgentResponse {
     }
 
-    public static class DownloadCmd extends AgentCommand {
+    public static class DownloadCmd extends AgentCommand implements HasSensitiveInfo {
         private String imageUuid;
         private String installPath;
+        @NoLogging(type = NoLogging.Type.Uri)
         private String url;
         private long timeout;
         private String urlScheme;
