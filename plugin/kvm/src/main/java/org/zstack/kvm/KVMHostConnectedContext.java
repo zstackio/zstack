@@ -6,6 +6,7 @@ public class KVMHostConnectedContext {
     private KVMHostInventory inventory;
     private boolean newAddedHost;
     private String baseUrl;
+    private String skipPackages;
 
     public boolean isNewAddedHost() {
         return newAddedHost;
@@ -29,5 +30,13 @@ public class KVMHostConnectedContext {
 
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
+    }
+
+    public String getSkipPackages() {
+        return skipPackages;
+    }
+
+    public void setSkipPackages(String skipPackages) {
+        this.skipPackages = skipPackages;
     }
 }
