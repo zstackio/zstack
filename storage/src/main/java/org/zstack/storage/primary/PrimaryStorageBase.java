@@ -1281,6 +1281,20 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             public String getName() {
                 return String.format("attach-primary-storage-%s-to-cluster-%s", self.getUuid(), msg.getClusterUuid());
             }
+
+            protected int getMaxPendingTasks() {
+                return 0;
+            }
+
+            protected void exceedMaxPendingCallback() {
+                APIAttachPrimaryStorageToClusterEvent evt = new APIAttachPrimaryStorageToClusterEvent(msg.getId());
+                evt.setError(operr(ErrorCode.getDeduplicateError(getName())));
+                bus.publish(evt);
+            }
+
+            protected String getDeduplicateString() {
+                return String.format("attach-primary-storage-%s-to-cluster-%s", self.getUuid(), msg.getClusterUuid());
+            }
         });
 
     }
