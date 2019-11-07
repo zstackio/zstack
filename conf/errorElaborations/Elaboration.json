@@ -1243,7 +1243,7 @@
     "category": "VM",
     "code": "1031",
     "method": "regex",
-    "regex": ".*, because:user \\[.*] not exist!",
+    "regex": ".*user \\[.*] not exist on vm\\[.*]!",
     "message_cn": "云主机用戶不存在",
     "message_en": "VM user not exist"
   },
