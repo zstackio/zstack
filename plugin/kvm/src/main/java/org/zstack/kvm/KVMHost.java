@@ -2560,7 +2560,7 @@ public class KVMHost extends HostBase implements Host {
         return (KVMHostVO) self;
     }
 
-    private void continueConnect(final boolean newAdded, final Completion completion) {
+    private void continueConnect(final ConnectHostInfo info, final Completion completion) {
         ErrorCode errCode = connectToAgent();
         if (errCode != null) {
             throw new OperationFailureException(errCode);
@@ -2572,8 +2572,9 @@ public class KVMHost extends HostBase implements Host {
         for (KVMHostConnectExtensionPoint extp : factory.getConnectExtensions()) {
             KVMHostConnectedContext ctx = new KVMHostConnectedContext();
             ctx.setInventory((KVMHostInventory) getSelfInventory());
-            ctx.setNewAddedHost(newAdded);
+            ctx.setNewAddedHost(info.isNewAdded());
             ctx.setBaseUrl(baseUrl);
+            ctx.setSkipPackages(info.getSkipPackages());
 
             chain.then(extp.createKvmHostConnectingFlow(ctx));
         }
@@ -2697,7 +2698,7 @@ public class KVMHost extends HostBase implements Host {
                 }
             }
 
-            continueConnect(info.isNewAdded(), complete);
+            continueConnect(info, complete);
         } else {
             FlowChain chain = FlowChainBuilder.newShareFlowChain();
             chain.setName(String.format("run-ansible-for-kvm-%s", self.getUuid()));
@@ -3126,7 +3127,7 @@ public class KVMHost extends HostBase implements Host {
                     done(new FlowDoneHandler(complete) {
                         @Override
                         public void handle(Map data) {
-                            continueConnect(info.isNewAdded(), complete);
+                            continueConnect(info, complete);
                         }
                     });
                 }
