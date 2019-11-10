@@ -1,8 +1,10 @@
 package org.zstack.core.aspect;
 
 import org.zstack.core.log.LogSafeGson;
+import org.zstack.header.message.Event;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.utils.Utils;
 
 import java.util.Collections;
@@ -12,10 +14,11 @@ import java.util.Map;
  * Created by MaJin on 2019/9/23.
  */
 public aspect LogSafeAspect {
-    pointcut send(Message obj) : args(obj, ..) && execution(void org.zstack.core.cloudbus.CloudBus.send(Message+, ..));
-    pointcut reply(MessageReply obj) : args(.., obj) && execution(void org.zstack.core.cloudbus.CloudBus.reply(.., MessageReply+));
-    pointcut publish(Message obj) : args(obj, ..) && execution(void org.zstack.core.cloudbus.CloudBus.publish(Message+, ..));
-    pointcut handle(Message obj) : args(obj) && execution(void *.handle(Message+));
+    pointcut send() : execution(void org.zstack.core.cloudbus.CloudBus.send(Message));
+    pointcut sendCallBack() : execution(void org.zstack.core.cloudbus.CloudBus.send(NeedReplyMessage, CloudBusCallBack));
+    pointcut reply(MessageReply obj) : args(*, obj) && execution(void org.zstack.core.cloudbus.CloudBus.reply(Message, MessageReply));
+    pointcut publish() : execution(void org.zstack.core.cloudbus.CloudBus.publish(Event));
+    pointcut handle() : execution(void *.handle(Message+));
 
     void around(org.zstack.core.thread.ChainTask obj) : target(obj) && execution(void org.zstack.core.thread.ChainTask+.run(..)) {
         if (obj.maskWords.isEmpty()) {
@@ -48,15 +51,28 @@ public aspect LogSafeAspect {
         }
     }
 
-    void around(org.zstack.header.message.Message obj) : send(obj) || reply(obj) || publish(obj) || handle(obj) {
+    void around() : send() || sendCallBack() || publish() || handle() {
+        Object obj = thisJoinPoint.getArgs()[0];
+        Map<String, String> maskWords = getValuesToMask(obj);
+        if (maskWords.isEmpty()) {
+            proceed();
+            return;
+        }
+
+        boolean extend = !thisJoinPoint.getSignature().getName().equals("handle");
+        try (Utils.MaskWords h = new Utils.MaskWords(maskWords, extend)) {
+            proceed();
+        }
+    }
+
+    void around(org.zstack.header.message.MessageReply obj) : reply(obj) {
         Map<String, String> maskWords = getValuesToMask(obj);
         if (maskWords.isEmpty()) {
             proceed(obj);
             return;
         }
 
-        boolean extend = !thisJoinPoint.getSignature().getName().equals("handle");
-        try (Utils.MaskWords h = new Utils.MaskWords(maskWords, extend)) {
+        try (Utils.MaskWords h = new Utils.MaskWords(maskWords, true)) {
             proceed(obj);
         }
     }
