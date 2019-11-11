@@ -26,6 +26,7 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
+import org.zstack.header.encryption.LuksEncryptedImageVO;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -374,6 +375,24 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public static class CreateTemplateFromVolumeRsp extends AgentResponse {
+        private String encryptUuid;
+        private String hashValue;
+
+        public String getEncryptUuid() {
+            return encryptUuid;
+        }
+
+        public void setEncryptUuid(String encryptUuid) {
+            this.encryptUuid = encryptUuid;
+        }
+
+        public String getHashValue() {
+            return hashValue;
+        }
+
+        public void setHashValue(String hashValue) {
+            this.hashValue = hashValue;
+        }
     }
 
     public static class RevertVolumeFromSnapshotCmd extends AgentCommand {
@@ -2914,6 +2933,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 new ReturnValueCompletion<CreateTemplateFromVolumeRsp>(trigger) {
                                     @Override
                                     public void success(CreateTemplateFromVolumeRsp rsp) {
+                                        // record encrypted image -- fast implementation
+                                        LuksEncryptedImageVO evo = new LuksEncryptedImageVO();
+                                        evo.setEncryptUuid(rsp.getEncryptUuid());
+                                        evo.setHashValue(rsp.getHashValue());
+                                        dbf.persist(evo);
+
                                         reportProgress(stage.getEnd().toString());
                                         trigger.next();
                                     }

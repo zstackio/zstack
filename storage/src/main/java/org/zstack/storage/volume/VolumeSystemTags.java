@@ -1,9 +1,7 @@
 package org.zstack.storage.volume;
 
-import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagDefinition;
-import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.tag.EphemeralSystemTag;
 import org.zstack.tag.PatternedSystemTag;
@@ -36,4 +34,6 @@ public class VolumeSystemTags {
 
     public static PatternedSystemTag PACKER_BUILD = new PatternedSystemTag("packer", VolumeVO.class);
 
+    public static String VM_INSTANCE_BINDING_TOKEN = "vmInstanceBinding";
+    public static PatternedSystemTag VM_INSTANCE_BINDING = new PatternedSystemTag(String.format("vmInstanceBinding::{%s}", VM_INSTANCE_BINDING_TOKEN), VolumeVO.class);
 }

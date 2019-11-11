@@ -1428,6 +1428,35 @@ public class VolumeSnapshotTreeBase {
         });
     }
 
+    private void beforeRevertVolumeFromSnapshot(VolumeSnapshotInventory snapshot, Completion completion) {
+        List<BeforeRevertVolumeFromSnapshotExtensionPoint> revertExts = pluginRgty.getExtensionList(BeforeRevertVolumeFromSnapshotExtensionPoint.class);
+        if (revertExts.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        beforeRevertVolumeFromSnapshot(revertExts.iterator(), snapshot, completion);
+    }
+
+    private void beforeRevertVolumeFromSnapshot(final Iterator<BeforeRevertVolumeFromSnapshotExtensionPoint> it, final VolumeSnapshotInventory snapshot, final Completion completion) {
+        if (!it.hasNext()) {
+            completion.success();
+            return;
+        }
+
+        BeforeRevertVolumeFromSnapshotExtensionPoint ext = it.next();
+        ext.beforeRevertVolumeFromSnapshot(snapshot, new Completion(completion) {
+            @Override
+            public void success() {
+                beforeRevertVolumeFromSnapshot(it, snapshot, completion);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
 
     private void revert(final RevertVolumeSnapshotMessage msg, final Completion completion) {
         refreshVO();
@@ -1473,6 +1502,25 @@ public class VolumeSnapshotTreeBase {
                         }
 
                         trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "before-revert-volume-from-snapshot";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        beforeRevertVolumeFromSnapshot(getSelfInventory(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
                     }
                 });
 
