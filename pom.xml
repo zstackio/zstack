@@ -13,7 +13,7 @@
         <spring.framework.version>4.0.3.RELEASE</spring.framework.version>
         <spring.security.version>4.0.2.RELEASE</spring.security.version>
         <hibernate.version>5.1.0.Final</hibernate.version>
-        <aspectj.version>1.8.9</aspectj.version>
+        <aspectj.version>1.9.4</aspectj.version>
         <aspectj.plugin.version>1.10</aspectj.plugin.version>
         <groovy.eclipse.compiler>2.9.2-01</groovy.eclipse.compiler>
         <groovy.eclipse.batch>2.4.3-01</groovy.eclipse.batch>
