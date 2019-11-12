@@ -242,7 +242,7 @@
   {
     "category": "HOST",
     "code": "1004",
-    "method": "distance",
+    "method": "regex",
     "regex": "unable to connect to KVM\\[ip:.*, username:.*, sshPort:.*] to check the management node connectivity,please check if username/password is wrong;.*",
     "message_cn": "无法连接物理机，可能由于物理机的ssh端口与管理节点不通, 或者ssh端口的用户名密码有误。",
     "message_en": "Unable to connect to KVM Host, please check the username and password, and make sure the host is reachable by management node."
@@ -474,7 +474,7 @@
   {
     "category": "L2NETWORK",
     "code": "1000",
-    "method": "distance",
+    "method": "regex",
     "regex": "There has been a L2VlanNetwork\\[uuid:.*, name:.*] attached to cluster\\[uuid:.*] that has physical interface\\[.*], vlan\\[.*]. Failed to attach L2VlanNetwork\\[uuid:.*]",
     "message_cn": "L2VlanNetwork挂载失败，L2网络的物理接口[%4$s]已经被L2VlanNetwork网络[%2$s]挂载到集群上",
     "message_en": "L2VlanNetwork attached failed, the physical interface[%4$s] has already been attached to the cluster by L2VlanNetwork[%2$s]"
@@ -482,7 +482,7 @@
   {
     "category": "L2NETWORK",
     "code": "1001",
-    "method": "distance",
+    "method": "regex",
     "regex": "There has been a l2Network\\[uuid:.*, name:.*] attached to cluster\\[uuid:.*] that has physical interface\\[.*]. Failed to attach l2Network\\[uuid:.*]",
     "message_cn": "L2网络挂载失败, 物理网络接口设备[%4$s]已经被L2网络[%2$s]使用并挂载到集群上。",
     "message_en": "Failed to attach L2Network, the physical interface[%4$s] had been attached to the cluster by L2Network[%2$s]."
@@ -490,7 +490,7 @@
   {
     "category": "L2NETWORK",
     "code": "1002",
-    "method": "distance",
+    "method": "regex",
     "regex": "failed to check physical network interfaces\\[names.*] on kvm host\\[uuid:.*, ip:.*]",
     "message_cn": "L2网络挂载失败， 没有在kvm host上找到这个网络物理接口: [%1$s]",
     "message_en": "Failed to attach L2 Network, check physical network interfaces on kvm host[%1$s] failed."
@@ -1158,6 +1158,70 @@
     "regex": ".*current vm instance state\\[.*] doesn't allow to proceed message[org.zstack.header.vm.APIStartVmInstanceMsg], allowed states are [Stopped, Created]",
     "message_cn": "只有状态为已创建或者已停止的云主机允许被启动。",
     "message_en": "The Start action is only allowed to excuted on a vm instance whose state is Stopped or Created."
+  },
+  {
+    "category": "VM",
+    "code": "1031",
+    "method": "regex",
+    "regex": ".*user \\[.*] not exist on vm\\[.*]!",
+    "message_cn": "云主机用戶不存在",
+    "message_en": "VM user not exist"
+  },
+  {
+    "category": "VM",
+    "code": "1032",
+    "method": "regex",
+    "regex": "current vm instance state\\[.*] doesn't allow to proceed message\\[org.zstack.header.vm.APIStartVmInstanceMsg], allowed states are \\[.*, .*]",
+    "message_cn": "云主机当前状态[%1$s]不支持该操作",
+    "message_en": "Current vm instance state[%1$s] doesn't allow the operation"
+  },
+  {
+    "category": "VM",
+    "code": "1033",
+    "method": "regex",
+    "regex": ".*, because:qemu-agent service is not ready in vm...",
+    "message_cn": "未安装qemu-agent，或相关进程没有成功启动",
+    "message_en": "qemu-agent service is not ready or thr related process did not start successfully"
+  },
+  {
+    "category": "VM",
+    "code": "1034",
+    "method": "regex",
+    "regex": "failed to create image from backup \\[.*, .*]",
+    "message_cn": "创建镜像失败",
+    "message_en": "Failed to create image"
+  },
+  {
+    "category": "VM",
+    "code": "1035",
+    "method": "regex",
+    "regex": "failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.*], because Traceback .*libvirt error.*error reading header from.*Remote I/O error.*",
+    "message_cn": "启动云主机失败，因为读取云主机xml文件错误",
+    "message_en": "Failed to start the VM, because failed to read VM xml file"
+  },
+  {
+    "category": "VM",
+    "code": "1036",
+    "method": "regex",
+    "regex": ".*, because:Requested operation is not valid: transient domains do not have any persistent config",
+    "message_cn": "请求的操作无效：临时域没有任何持久性配置",
+    "message_en": "Requested operation is not valid: transient domains do not have any persistent config"
+  },
+  {
+    "category": "VM",
+    "code": "1037",
+    "method": "regex",
+    "regex": ".*, because:error: Failed to attach device from .*error: XML error: requested USB port .* not present on USB bus .*",
+    "message_cn": "加载USB设置的xml信息失败,USB设备的总线和端口发生了变化",
+    "message_en": "Failed to load the xml information of the USB, the bus and port of the USB device changed."
+  },
+  {
+    "category": "VM",
+    "code": "1038",
+    "method": "regex",
+    "regex": "I/O error on POST request for .*http:.*getvncport.*:Connect to .* \\[.*] failed: Connection refused.*",
+    "message_cn": "打开vncport时发生I/O错误",
+    "message_en": "I/O error when opening vncport"
   },
   {
     "category": "VOLUME",
