@@ -217,8 +217,8 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
         }
 
         L3NetworkVO defaultL3 = dbf.findByUuid(inv.getDefaultL3NetworkUuid(), L3NetworkVO.class);
-        if (defaultL3.getNetworkServices().stream().map(NetworkServiceL3NetworkRefVO::getNetworkServiceType)
-                .collect(Collectors.toList()).contains(NetworkServiceType.Centralized_DNS)) {
+        if (!defaultL3.getNetworkServices().stream().map(NetworkServiceL3NetworkRefVO::getNetworkServiceType)
+                .collect(Collectors.toList()).contains(NetworkServiceType.Centralized_DNS.toString())) {
             return;
         }
 
@@ -270,8 +270,8 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
         }
         
         L3NetworkVO defaultL3 = dbf.findByUuid(inv.getDefaultL3NetworkUuid(), L3NetworkVO.class);
-        if (defaultL3.getNetworkServices().stream().map(NetworkServiceL3NetworkRefVO::getNetworkServiceType)
-                .collect(Collectors.toList()).contains(NetworkServiceType.Centralized_DNS)) {
+        if (!defaultL3.getNetworkServices().stream().map(NetworkServiceL3NetworkRefVO::getNetworkServiceType)
+                .collect(Collectors.toList()).contains(NetworkServiceType.Centralized_DNS.toString())) {
             return;
         }
 
