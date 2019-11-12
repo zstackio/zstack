@@ -266,7 +266,7 @@
   {
     "category": "HOST",
     "code": "1004",
-    "method": "distance",
+    "method": "regex",
     "regex": "unable to connect to KVM\\[ip:.*, username:.*, sshPort:.*] to check the management node connectivity,please check if username/password is wrong;.*",
     "message_cn": "无法连接物理机，可能由于物理机的ssh端口与管理节点不通, 或者ssh端口的用户名密码有误。",
     "message_en": "Unable to connect to KVM Host, please check the username and password, and make sure the host is reachable by management node."
@@ -530,7 +530,7 @@
   {
     "category": "L2NETWORK",
     "code": "1000",
-    "method": "distance",
+    "method": "regex",
     "regex": "There has been a L2VlanNetwork\\[uuid:.*, name:.*] attached to cluster\\[uuid:.*] that has physical interface\\[.*], vlan\\[.*]. Failed to attach L2VlanNetwork\\[uuid:.*]",
     "message_cn": "L2VlanNetwork挂载失败，L2网络的物理接口[%4$s]已经被L2VlanNetwork网络[%2$s]挂载到集群上",
     "message_en": "L2VlanNetwork attached failed, the physical interface[%4$s] has already been attached to the cluster by L2VlanNetwork[%2$s]"
@@ -538,7 +538,7 @@
   {
     "category": "L2NETWORK",
     "code": "1001",
-    "method": "distance",
+    "method": "regex",
     "regex": "There has been a l2Network\\[uuid:.*, name:.*] attached to cluster\\[uuid:.*] that has physical interface\\[.*]. Failed to attach l2Network\\[uuid:.*]",
     "message_cn": "L2网络挂载失败, 物理网络接口设备[%4$s]已经被L2网络[%2$s]使用并挂载到集群上。",
     "message_en": "Failed to attach L2Network, the physical interface[%4$s] had been attached to the cluster by L2Network[%2$s]."
@@ -546,7 +546,7 @@
   {
     "category": "L2NETWORK",
     "code": "1002",
-    "method": "distance",
+    "method": "regex",
     "regex": "failed to check physical network interfaces\\[names.*] on kvm host\\[uuid:.*, ip:.*]",
     "message_cn": "L2网络挂载失败， 没有在kvm host上找到这个网络物理接口: [%1$s]",
     "message_en": "Failed to attach L2 Network, check physical network interfaces on kvm host[%1$s] failed."
@@ -1275,7 +1275,7 @@
     "category": "VM",
     "code": "1035",
     "method": "regex",
-    "regex": "failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.*], because Traceback .*:\\n File.*",
+    "regex": "failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.*], because Traceback .*libvirt error.*error reading header from.*Remote I/O error.*",
     "message_cn": "启动云主机失败，因为读取云主机xml文件错误",
     "message_en": "Failed to start the VM, because failed to read VM xml file"
   },
@@ -1291,7 +1291,7 @@
     "category": "VM",
     "code": "1037",
     "method": "regex",
-    "regex": ".*, because:error: Failed to attach device from .*\\nerror: XML error: requested USB port .* not present on USB bus .*",
+    "regex": ".*, because:error: Failed to attach device from .*error: XML error: requested USB port .* not present on USB bus .*",
     "message_cn": "加载USB设置的xml信息失败,USB设备的总线和端口发生了变化",
     "message_en": "Failed to load the xml information of the USB, the bus and port of the USB device changed."
   },
