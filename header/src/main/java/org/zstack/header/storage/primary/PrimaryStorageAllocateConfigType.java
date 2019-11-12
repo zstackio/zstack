@@ -6,6 +6,7 @@ package org.zstack.header.storage.primary;
 public enum PrimaryStorageAllocateConfigType {
     LOCAL(DefaultPrimaryStorageAllocateConfig.class, "LocalStorage"),
     NFS(DefaultPrimaryStorageAllocateConfig.class, "NFS"),
+    SHBK(DefaultPrimaryStorageAllocateConfig.class, "SharedBlock"),
     CEPH(CephPrimaryStorageAllocateConfig.class, "Ceph");
 
     private Class<? extends PrimaryStorageAllocateConfig> type;

@@ -39,5 +39,20 @@ public class OfferingUserConfigUtilsCase {
                 "    }\n" +
                 "}";
         config = OfferingUserConfigUtils.toObject(userConfig, InstanceOfferingUserConfig.class);
+
+        userConfig = "{\n" +
+                "    \"allocate\": {\n" +
+                "        \"primaryStorage\": {\n" +
+                "            \"type\": \"sharedblock\", \n" +
+                "            \"uuid\": \"c56d0ff8d24f4f119837742d4658aa83\"\n" +
+                "        }\n" +
+                "    }, \n" +
+                "    \"displayAttribute\": {\n" +
+                "        \"rootVolume\": {\n" +
+                "            \"云盘类型\": \"高速云盘\"\n" +
+                "        }\n" +
+                "    }\n" +
+                "}";
+        config = OfferingUserConfigUtils.toObject(userConfig, InstanceOfferingUserConfig.class);
     }
 }
