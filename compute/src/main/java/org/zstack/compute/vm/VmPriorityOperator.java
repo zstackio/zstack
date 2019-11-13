@@ -99,7 +99,7 @@ public class VmPriorityOperator implements PrepareDbInitialValueExtensionPoint {
         }
     }
 
-    public void updatePriorityConfig(String uuid, PriorityStruct struct) {
+    public VmPriorityConfigVO updatePriorityConfig(String uuid, PriorityStruct struct) {
         VmPriorityConfigVO vo = dbf.findByUuid(uuid, VmPriorityConfigVO.class);
         boolean update = false;
         if (struct.getCpuShares() != null && struct.getCpuShares() != vo.getCpuShares()) {
@@ -113,8 +113,9 @@ public class VmPriorityOperator implements PrepareDbInitialValueExtensionPoint {
         }
 
         if (update) {
-            dbf.update(vo);
+            return dbf.updateAndRefresh(vo);
         }
+        return null;
     }
 
     public boolean needEffectImmediately(VmInstanceState state) {
