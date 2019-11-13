@@ -74,6 +74,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
@@ -6286,11 +6287,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        VmPriorityConfigVO priorityVO = Q.New(VmPriorityConfigVO.class).eq(VmPriorityConfigVO_.level, newLevel).find();
+
         UpdateVmPriorityMsg smsg = new UpdateVmPriorityMsg();
-        Map<String, VmPriorityLevel> vmLevelMap = new HashMap();
-        vmLevelMap.put(self.getUuid(), newLevel);
         smsg.setHostUuid(self.getHostUuid());
-        smsg.setVmlevelMap(vmLevelMap);
+        smsg.setPriorityConfigStructs(asList(new PriorityConfigStruct(priorityVO, self.getUuid())));
         bus.makeTargetServiceIdByResourceUuid(smsg, HostConstant.SERVICE_ID, self.getHostUuid());
         bus.send(smsg, new CloudBusCallBack(msg) {
             @Override

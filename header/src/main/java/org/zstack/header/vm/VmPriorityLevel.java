@@ -2,7 +2,8 @@ package org.zstack.header.vm;
 
 public enum VmPriorityLevel {
     Normal(512, 0),
-    High(1024, -900);
+    High(1024, -900),
+    ApplianceVmHigh(1536, -950);
 
     private int cpuShares;
 

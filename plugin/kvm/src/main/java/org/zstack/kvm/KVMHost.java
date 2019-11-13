@@ -758,15 +758,8 @@ public class KVMHost extends HostBase implements Host {
             return;
         }
 
-        Map<VmPriorityLevel, VmPriorityConfigVO> vos = dbf.listAll(VmPriorityConfigVO.class)
-                .stream().collect(Collectors.toMap(VmPriorityConfigVO::getLevel, v -> v));
-
         UpdateVmPriorityCmd cmd = new UpdateVmPriorityCmd();
-        List<PriorityConfigStruct> priorityConfigStructs = new ArrayList<>();
-        msg.getVmlevelMap().forEach((key, value) -> {
-            priorityConfigStructs.add(new PriorityConfigStruct(vos.get(value), key));
-        });
-        cmd.priorityConfigStructs = priorityConfigStructs;
+        cmd.priorityConfigStructs = msg.getPriorityConfigStructs();
         new Http<>(updateVmPriorityPath, cmd, UpdateVmPriorityRsp.class).call(new ReturnValueCompletion<UpdateVmPriorityRsp>(msg) {
             @Override
             public void success(UpdateVmPriorityRsp ret) {
