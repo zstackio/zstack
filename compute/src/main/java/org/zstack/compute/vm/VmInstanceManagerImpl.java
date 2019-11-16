@@ -52,7 +52,6 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
@@ -65,7 +64,6 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
-import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
@@ -235,11 +233,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
         VmPriorityOperator.PriorityStruct struct = new VmPriorityOperator.PriorityStruct();
         struct.setCpuShares(msg.getCpuShares());
         struct.setOomScoreAdj(msg.getOomScoreAdj());
-        new VmPriorityOperator().updatePriorityConfig(msg.getUuid(), struct);
-
+        VmPriorityConfigVO vmPriorityConfigVO = new VmPriorityOperator().updatePriorityConfig(msg.getUuid(), struct);
+        if (vmPriorityConfigVO != null) {
+            for (UpdatePriorityConfigExtensionPoint exp : pluginRgty.getExtensionList(UpdatePriorityConfigExtensionPoint.class)) {
+                exp.afterUpdatePriorityConfig(vmPriorityConfigVO);
+            }
+        }
         bus.publish(evt);
     }
-
 
     private void handle(APIGetSpiceCertificatesMsg msg) {
         APIGetSpiceCertificatesReply reply = new APIGetSpiceCertificatesReply();
@@ -2328,10 +2329,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }
 
         VmPriorityLevel level = new VmPriorityOperator().getVmPriority(inv.getUuid());
+        VmPriorityConfigVO priorityVO = Q.New(VmPriorityConfigVO.class).eq(VmPriorityConfigVO_.level, level).find();
+
         UpdateVmPriorityMsg msg = new UpdateVmPriorityMsg();
-        Map<String, VmPriorityLevel> map = new HashMap<>();
-        map.put(inv.getUuid(), level);
-        msg.setVmlevelMap(map);
+        msg.setPriorityConfigStructs(asList(new PriorityConfigStruct(priorityVO, inv.getUuid())));
         msg.setHostUuid(inv.getHostUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, inv.getHostUuid());
         bus.send(msg, new CloudBusCallBack(msg) {
