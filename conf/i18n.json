@@ -6249,6 +6249,74 @@
     "fileName": "src/main/java/org/zstack/flowMeter/FlowMeterManagerImpl.java"
   },
   {
+    "raw": "failed to get hash value of %s[uuid:%s]",
+    "en_US": "failed to get hash value of {0}[uuid:{1}]",
+    "zh_CN": "无法获取资源{0}[uuid:{1}]的哈希值",
+    "arguments": [
+      "resourceType",
+      "resourceUuid"
+    ],
+    "line": 191,
+    "fileName": "src/main/java/org/zstack/encryption/EncryptionManagerImpl.java"
+  },
+  {
+    "raw": "%s[uuid:%s] corrupted, it\u0027s content may have been changed illegally",
+    "en_US": "{0}[uuid:{1}] corrupted, it\u0027s content may have been changed illegally",
+    "zh_CN": "资源{0}[uuid:{1}]数据不完整，可能被非法修改",
+    "arguments": [
+      "resourceType",
+      "resourceUuid"
+    ],
+    "line": 205,
+    "fileName": "src/main/java/org/zstack/encryption/EncryptionManagerImpl.java"
+  },
+  {
+    "raw": "%s[path:%s] belongs to vm[uuid:%s], it cannot be used by vm[uuid:%s]",
+    "en_US": "{0}[path:{1}] belongs to vm[uuid:{2}], it cannot be used by vm[uuid:{3}]",
+    "zh_CN": "资源{0}[路径:{1}]绑定于云主机[uuid:{2}]，无法被云主机[uuid:{3}]使用",
+    "arguments": [
+      "resourceType",
+      "installPath",
+      "luks.getBindingVmUuid()",
+      "vmUuid"
+    ],
+    "line": 210,
+    "fileName": "src/main/java/org/zstack/encryption/EncryptionManagerImpl.java"
+  },
+  {
+    "raw": "the volume[uuid:%s, name:%s] is binded to vm[uuid:%s], it cannot be attached to vm[uuid:%s]",
+    "en_US": "the volume[uuid:{0}, name:{1}] is binded to vm[uuid:{2}], it cannot be attached to vm[uuid:{3}]",
+    "zh_CN": "云盘[uuid:{0}, name:{1}]绑定于云主机[uuid:{2}]，不能再被挂载到云主机[uuid:{3}]",
+    "arguments": [
+      "volume.getUuid()",
+      "volume.getName()",
+      "vmUuid",
+      "toVmUuid"
+    ],
+    "line": 248,
+    "fileName": "src/main/java/org/zstack/encryption/EncryptionManagerImpl.java"
+  },
+  {
+    "raw": "cannot find any host which has resource[uuid:%s]",
+    "en_US": "cannot find any host which has resource[uuid:{0}]",
+    "zh_CN": "找不到任何拥有资源[uuid:{0}]的物理机",
+    "arguments": [
+      "resourceUuid"
+    ],
+    "line": 46,
+    "fileName": "src/main/java/org/zstack/encryption/localstorage/LocalStorageEncryptionBase.java"
+  },
+  {
+    "raw": "cannot find host[uuid:%s], it may have been deleted",
+    "en_US": "cannot find host[uuid:{0}], it may have been deleted",
+    "zh_CN": "无法找到物理机[uuid:{0}]，可能已经被删除",
+    "arguments": [
+      "hostUuid"
+    ],
+    "line": 60,
+    "fileName": "src/main/java/org/zstack/encryption/localstorage/LocalStorageEncryptionBase.java"
+  },
+  {
     "raw": "cannot get latest guest-tools for vm[uuid:%s] because it\u0027s hypervisor type is not supported",
     "en_US": "cannot get latest guest-tools for vm[uuid:{0}] because it\u0027s hypervisor type is not supported",
     "zh_CN": "无法为云主机[uuid:{0}获取最新可用的增强工具镜像，因为其虚拟化层目前不支持增强工具",

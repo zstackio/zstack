@@ -2,11 +2,7 @@ package org.zstack.testlib
 
 import groovy.transform.AutoClone
 import org.codehaus.groovy.runtime.InvokerHelper
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
+import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestTemplate
 import org.zstack.compute.vm.VmGlobalConfig
@@ -27,7 +23,6 @@ import org.zstack.header.image.ImageDeletionPolicyManager
 import org.zstack.header.message.Message
 import org.zstack.header.rest.RESTConstant
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager
-import org.zstack.header.vm.VmPriorityConfigVO
 import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.image.ImageGlobalConfig
@@ -66,7 +61,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
-
 /**
  * Created by xing5 on 2017/2/12.
  */
@@ -627,7 +621,8 @@ class EnvSpec implements Node, ApiHelper {
                               "TaskProgressVO", "TaskStepVO",
                               "ResourceVO","SecurityGroupSequenceNumberVO", "MediaVO",
                               "CaptchaVO", "LoginAttemptsVO", "ElaborationVO", "SchedulerJobHistoryVO",
-                              "HistoricalPasswordVO", "InstallPathRecycleVO", "PortMirrorSessionSequenceNumberVO"]) {
+                              "HistoricalPasswordVO", "InstallPathRecycleVO",
+                              "PortMirrorSessionSequenceNumberVO", "LuksEncryptedImageVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
             }
