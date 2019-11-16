@@ -490,6 +490,10 @@
                 <dependency>
                     <groupId>org.zstack</groupId>
                     <artifactId>authentication</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>encryption</artifactId>
                     <version>${project.version}</version>
                 </dependency>

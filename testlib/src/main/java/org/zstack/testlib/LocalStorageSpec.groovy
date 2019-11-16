@@ -152,7 +152,10 @@ class LocalStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(LocalStorageKvmBackend.CREATE_TEMPLATE_FROM_VOLUME) {
-                return new LocalStorageKvmBackend.CreateTemplateFromVolumeRsp()
+                def rsp = new LocalStorageKvmBackend.CreateTemplateFromVolumeRsp()
+                rsp.encryptUuid = Platform.getUuid()
+                rsp.hashValue = "qcow2_hash_value"
+                return rsp
             }
 
             simulator(LocalStorageKvmBackend.REINIT_IMAGE_PATH) {

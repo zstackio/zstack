@@ -2,11 +2,7 @@ package org.zstack.testlib
 
 import groovy.transform.AutoClone
 import org.codehaus.groovy.runtime.InvokerHelper
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
+import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestTemplate
 import org.zstack.compute.vm.VmGlobalConfig
@@ -630,8 +626,8 @@ class EnvSpec extends ApiHelper implements Node  {
                               "TaskProgressVO", "TaskStepVO",
                               "ResourceVO","SecurityGroupSequenceNumberVO", "MediaVO",
                               "CaptchaVO", "LoginAttemptsVO", "ElaborationVO", "SchedulerJobHistoryVO",
-                              "HistoricalPasswordVO", "BuildAppExportHistoryVO", "InstallPathRecycleVO", 
-                              "PortMirrorSessionSequenceNumberVO"]) {
+                              "HistoricalPasswordVO", "BuildAppExportHistoryVO", "InstallPathRecycleVO",
+                              "PortMirrorSessionSequenceNumberVO", "LuksEncryptedImageVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
             }
