@@ -1,5 +1,6 @@
 package org.zstack.header.storage.backup;
 
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.NeedReplyMessage;
 
 /**
@@ -7,6 +8,7 @@ import org.zstack.header.message.NeedReplyMessage;
  */
 public class GetLocalFileSizeOnBackupStorageMsg extends NeedReplyMessage implements BackupStorageMessage {
     private String backupStorageUuid;
+    @NoLogging(type = NoLogging.Type.Uri)
     private String url;
 
     @Override

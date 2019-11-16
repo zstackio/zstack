@@ -296,3 +296,32 @@ CREATE PROCEDURE addMissingResourceRef()
 DELIMITER ;
 CALL addMissingResourceRef();
 DROP PROCEDURE IF EXISTS addMissingResourceRef;
+
+DROP PROCEDURE IF EXISTS modifyHostXfsFragAlarmDefaultThreshold;
+
+DELIMITER $$
+CREATE PROCEDURE modifyHostXfsFragAlarmDefaultThreshold()
+    BEGIN
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE uuid VARCHAR(32);
+        DECLARE threshold DOUBLE;
+        DECLARE cur CURSOR FOR SELECT v.uuid,v.threshold FROM AlarmVO v WHERE v.uuid = "bf7359930ee444d286fb88d2e51acf51";
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cur;
+        read_loop: LOOP
+            FETCH cur INTO uuid,threshold;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            IF threshold != "85" THEN
+                UPDATE AlarmVO v SET v.threshold = "85" WHERE v.uuid = uuid;
+            END IF;
+        END LOOP;
+        CLOSE cur;
+        SELECT CURTIME();
+    END $$
+DELIMITER ;
+
+call modifyHostXfsFragAlarmDefaultThreshold();
+DROP PROCEDURE IF EXISTS modifyHostXfsFragAlarmDefaultThreshold;

@@ -4,7 +4,7 @@ import org.zstack.header.host.HostMessage;
 import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.message.NeedReplyMessage;
 
-public class StartVmOnHypervisorMsg extends NeedReplyMessage implements HostMessage, HasSensitiveInfo {
+public class StartVmOnHypervisorMsg extends NeedReplyMessage implements HostMessage {
     private VmInstanceSpec vmSpec;
 
     @Override

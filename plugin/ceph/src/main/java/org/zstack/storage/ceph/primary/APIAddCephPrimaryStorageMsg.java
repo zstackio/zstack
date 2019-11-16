@@ -27,7 +27,7 @@ import java.util.List;
         responseClass = APIAddPrimaryStorageEvent.class,
         parameterName = "params"
 )
-public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg implements HasSensitiveInfo {
+public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     @APIParam(nonempty = false, emptyString = false)
     @NoLogging(type = NoLogging.Type.Uri)
     private List<String> monUrls;

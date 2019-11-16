@@ -204,4 +204,8 @@ public class ErrorCode implements Serializable, Cloneable {
     public void setCost(String cost) {
         this.cost = cost;
     }
+
+    public static String getDeduplicateError(String operationName) {
+        return String.format("an other %s task is running, cancel this operation", operationName);
+    }
 }

@@ -42,7 +42,6 @@ class CreateInstanceOfferingCase extends SubCase {
             }
         } catch (Exception e) {
             assert e.message.contains("bytes")
-            assert e.message.contains("byte")
         }
     }
 }
