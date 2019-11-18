@@ -1,5 +1,6 @@
 package org.zstack.identity.rbac;
 
+import edu.emory.mathcs.backport.java.util.Arrays;
 import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -8,6 +9,7 @@ import org.zstack.header.identity.rbac.PolicyMatcher;
 import org.zstack.header.identity.rbac.RBAC;
 import org.zstack.header.identity.rbac.RBACEntity;
 import org.zstack.header.identity.rbac.SuppressRBACCheck;
+import org.zstack.header.message.APIMessage;
 import org.zstack.identity.APIRequestChecker;
 import org.zstack.identity.rbac.datatype.Entity;
 import org.zstack.utils.Utils;
@@ -78,32 +80,105 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     }
 
     protected boolean evalAllowStatements(Map<PolicyInventory, List<PolicyStatement>> policies) {
-        Set<String> apiNeedToCheck = new HashSet<>();
-        apiNeedToCheck.add(rbacEntity.getApiName());
-        apiNeedToCheck.addAll(rbacEntity.getAdditionalApisToCheck());
+        AllowActionChecker aac = new AllowActionChecker();
+        aac.policies = policies;
 
-        for (Map.Entry<PolicyInventory, List<PolicyStatement>> e : policies.entrySet()) {
-            PolicyInventory policy = e.getKey();
-            for (PolicyStatement statement : e.getValue()) {
-                if (!isPrincipalMatched(statement.getPrincipals())) {
-                    continue;
-                }
+        AllowFilterResourceChecker cfc = new AllowFilterResourceChecker();
+        cfc.policies = policies;
 
-                for (String as : statement.getActions()) {
-                    apiNeedToCheck.removeIf(api -> evalAllowStatement(as, api));
+        return aac.isAllowed() && cfc.isAllowed();
+    }
 
-                    if (apiNeedToCheck.isEmpty()) {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] allows the API:\n%s", policy.getName(),
-                                    policy.getUuid(), as, jsonMessage()));
+    class AllowActionChecker {
+        Map<PolicyInventory, List<PolicyStatement>> policies;
+
+        boolean isAllowed() {
+            Set<String> apiNeedToCheck = new HashSet<>();
+            apiNeedToCheck.add(rbacEntity.getApiName());
+            apiNeedToCheck.addAll(rbacEntity.getAdditionalApisToCheck());
+
+            for (Map.Entry<PolicyInventory, List<PolicyStatement>> e : policies.entrySet()) {
+                PolicyInventory policy = e.getKey();
+
+                for (PolicyStatement statement : e.getValue()) {
+                    if (!isPrincipalMatched(statement.getPrincipals())) {
+                        continue;
+                    }
+
+                    for (String as : statement.getActions()) {
+                        apiNeedToCheck.removeIf(api -> evalAllowStatement(as, api));
+
+                        if (apiNeedToCheck.isEmpty()) {
+                            if (logger.isTraceEnabled()) {
+                                logger.trace(String.format("[RBAC] policy[name:%s, uuid:%s]'s statement[%s] allows the API:\n%s", policy.getName(),
+                                        policy.getUuid(), as, jsonMessage()));
+                            }
+                            return true;
                         }
-                        return true;
                     }
                 }
             }
-        }
 
-        return false;
+
+            return false;
+        }
+    }
+
+    class AllowFilterResourceChecker {
+        Map<PolicyInventory, List<PolicyStatement>> policies;
+
+        boolean isAllowed() {
+            Map<String, List<String>> resourceUuidOfAllParamInApiMessage = getResourceUuidOfAllParamInApiMessage();
+
+            if (resourceUuidOfAllParamInApiMessage.isEmpty()) {
+                return true;
+            }
+
+            Map<String, List<String>> resourceUuidInPolicy = new HashMap<>();
+            for (Map.Entry<PolicyInventory, List<PolicyStatement>> e : policies.entrySet()) {
+                for (PolicyStatement statement : e.getValue()) {
+                    if (!isPrincipalMatched(statement.getPrincipals())) {
+                        continue;
+                    }
+
+                    if (statement.getTargetResources() == null) {
+                        continue;
+                    }
+
+                    for (String filter : statement.getTargetResources()) {
+                        String[] ss = filter.split(":", 2);
+                        String resourceName = ss[0];
+                        Set<String> allowedResourceUuids = new HashSet<>();
+
+                        if (ss.length > 1) {
+                            allowedResourceUuids.addAll(Arrays.asList(ss[1].split(",")));
+                        }
+
+                        resourceUuidInPolicy.putIfAbsent(resourceName, new ArrayList<>());
+                        resourceUuidInPolicy.get(resourceName).addAll(allowedResourceUuids);
+                    }
+                }
+            }
+
+            for (Map.Entry<String, List<String>> e : resourceUuidInPolicy.entrySet()) {
+                List<String> uuids = resourceUuidOfAllParamInApiMessage.get(e.getKey());
+                if (uuids == null || uuids.isEmpty()) {
+                    continue;
+                }
+
+                uuids.retainAll(e.getValue());
+
+                if (!uuids.isEmpty()) {
+                    if (logger.isTraceEnabled()) {
+                        logger.debug(String.format("uuid %s are not allowed by resource filter policy", uuids));
+                    }
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 
     protected boolean evalAllowStatement(String as, String targetApiName) {
@@ -150,13 +225,35 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
     protected void evalDenyStatements(Map<PolicyInventory, List<PolicyStatement>> denyPolices) {
         // action string format is:
         // api-full-name:optional-api-field-list-split-by-comma
-        denyPolices.forEach((p, sts)-> sts.forEach(st-> {
-            if (!isPrincipalMatched(st.getPrincipals())) {
+        denyPolices.forEach((p, sts)-> {
+            sts.forEach(st -> {
+                if (!isPrincipalMatched(st.getPrincipals())) {
+                    return;
+                }
+
+                ActionChecker ac = new ActionChecker();
+                ac.p = p;
+                ac.st = st;
+                ac.check();
+
+                DenyFilterResourceChecker checker = new DenyFilterResourceChecker();
+                checker.policyStatement = st;
+                checker.check();
+            });
+        });
+    }
+
+    class ActionChecker {
+        PolicyStatement st;
+        PolicyInventory p;
+
+        void check() {
+            if (st.getActions() == null) {
                 return;
             }
 
-            st.getActions().forEach(statement-> {
-                String[] ss = statement.split(":",2);
+            st.getActions().forEach(statement -> {
+                String[] ss = statement.split(":", 2);
                 String apiName = ss[0];
                 String apiFields = null;
                 if (ss.length > 1) {
@@ -197,7 +294,89 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                     }
                 }
             });
-        }));
+        }
+    }
+
+    class DenyFilterResourceChecker {
+        PolicyStatement policyStatement;
+
+        void check() {
+            Map<String, List<String>> resourceUuidOfAllParamInApiMessage = getResourceUuidOfAllParamInApiMessage();
+
+            if (resourceUuidOfAllParamInApiMessage.isEmpty()) {
+                return;
+            }
+
+            if (policyStatement.getTargetResources() == null) {
+                return;
+            }
+
+            policyStatement.getTargetResources().forEach(filter -> {
+                String[] ss = filter.split(":", 2);
+                String resourceName = ss[0];
+                Set<String> deniedResourceUuids = new HashSet<>();
+
+                if (ss.length > 1) {
+                    deniedResourceUuids.addAll(Arrays.asList(ss[1].split(",")));
+                }
+
+                List<String> resourceUuidsInMessage = resourceUuidOfAllParamInApiMessage.get(resourceName);
+
+                // no matching resource in message skip check
+                if (resourceUuidsInMessage == null || resourceUuidsInMessage.isEmpty()) {
+                    return;
+                }
+
+                // means deny all the resource uuid
+                if (deniedResourceUuids.isEmpty()) {
+                    throw new OperationFailureException(operr("operation denied"));
+                }
+                Optional optional = resourceUuidsInMessage.stream().filter(deniedResourceUuids::contains).findAny();
+                if (optional.isPresent()) {
+                    throw new OperationFailureException(operr("operation to resource [uuid:%s] is denied", optional.get()));
+                }
+            });
+        }
+    }
+
+    private Map<String, List<String>> getResourceUuidOfAllParamInApiMessage() {
+        Map<String, List<String>> resourceUuidOfAllParamInApiMessage = new HashMap<>();
+
+        APIMessage.getApiParams().get(rbacEntity.getApiMessage().getClass()).forEach(param -> {
+            List<String> uuids = new ArrayList<>();
+            if (param.param.resourceType() == Object.class) {
+                return;
+            }
+
+            if (String.class.isAssignableFrom(param.field.getType())) {
+                String uuid = null;
+                try {
+                    uuid = (String) param.field.get(rbacEntity.getApiMessage());
+                } catch (IllegalAccessException e) {
+                    throw new CloudRuntimeException(e);
+                }
+                if (uuid != null) {
+                    uuids.add(uuid);
+                }
+            } else if (Collection.class.isAssignableFrom(param.field.getType())) {
+                Collection u = null;
+                try {
+                    u = (Collection<? extends String>) param.field.get(rbacEntity.getApiMessage());
+                } catch (IllegalAccessException e) {
+                    throw new CloudRuntimeException(e);
+                }
+                if (u != null) {
+                    uuids.addAll(u);
+                }
+            } else {
+                throw new CloudRuntimeException(String.format("not supported field type[%s] for %s#%s", param.field.getType(), rbacEntity.getApiMessage().getClass(), param.field.getName()));
+            }
+
+            resourceUuidOfAllParamInApiMessage.putIfAbsent(param.param.resourceType().getSimpleName(), new ArrayList<>());
+            resourceUuidOfAllParamInApiMessage.get(param.param.resourceType().getSimpleName()).addAll(uuids);
+        });
+
+        return resourceUuidOfAllParamInApiMessage;
     }
 
     protected boolean checkUserPrincipal(String uuidRegex) {
