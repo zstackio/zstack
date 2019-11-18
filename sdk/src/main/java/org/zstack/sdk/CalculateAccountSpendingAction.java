@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class CalculateAccountSpendingAction extends AbstractAction {
 
@@ -27,6 +26,9 @@ public class CalculateAccountSpendingAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String accountUuid;
+
+    @Param(required = false, validValues = {"KVM","Simulator","ESX","xdragon"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hypervisorType;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
     public java.lang.Long dateStart;
