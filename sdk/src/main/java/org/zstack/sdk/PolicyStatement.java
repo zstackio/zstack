@@ -44,4 +44,12 @@ public class PolicyStatement  {
         return this.resources;
     }
 
+    public java.util.List targetResources;
+    public void setTargetResources(java.util.List targetResources) {
+        this.targetResources = targetResources;
+    }
+    public java.util.List getTargetResources() {
+        return this.targetResources;
+    }
+
 }

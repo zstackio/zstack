@@ -14,6 +14,7 @@ public class PolicyStatement {
     private List<String> principals;
     private List<String> actions;
     private List<String> resources;
+    private List<String> targetResources;
 
     public String toJSON() {
         return JSONObjectUtil.toJsonString(this);
@@ -70,6 +71,13 @@ public class PolicyStatement {
         actions.add(a);
     }
 
+    public List<String> getTargetResources() {
+        return targetResources;
+    }
+
+    public void setTargetResources(List<String> targetResources) {
+        this.targetResources = targetResources;
+    }
 
     public static PolicyStatementBuilder builder() {
         return new PolicyStatementBuilder();
@@ -81,6 +89,7 @@ public class PolicyStatement {
         private List<String> principals;
         private List<String> actions;
         private List<String> resources;
+        private List<String> targetResources;
 
         private PolicyStatementBuilder() {
         }
@@ -110,6 +119,11 @@ public class PolicyStatement {
             return this;
         }
 
+        public PolicyStatementBuilder targetResources(List<String> targetResources) {
+            this.targetResources = targetResources;
+            return this;
+        }
+
         public PolicyStatement build() {
             PolicyStatement policyStatement = new PolicyStatement();
             DebugUtils.Assert(effect != null, "effect cannot be null");
@@ -118,6 +132,7 @@ public class PolicyStatement {
             policyStatement.setPrincipals(principals);
             policyStatement.setActions(actions);
             policyStatement.setResources(resources);
+            policyStatement.setTargetResources(targetResources);
             return policyStatement;
         }
     }
