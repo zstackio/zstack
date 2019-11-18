@@ -28,6 +28,14 @@ public class SpendingDetails  {
         return this.spending;
     }
 
+    public java.lang.String hypervisorType;
+    public void setHypervisorType(java.lang.String hypervisorType) {
+        this.hypervisorType = hypervisorType;
+    }
+    public java.lang.String getHypervisorType() {
+        return this.hypervisorType;
+    }
+
     public java.lang.String type;
     public void setType(java.lang.String type) {
         this.type = type;
