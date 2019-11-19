@@ -443,15 +443,15 @@
     "category": "HOST",
     "code": "1026",
     "method": "regex",
-    "regex": "failed to create bridge\\[.*] for l2Network\\[uuid:.*, type:.*] on kvm host\\[uuid:.*], because unable to create bridge\\[.*] from device\\[.*], because failed to execute shell command: brctl.*return code: 1\\nstdout: \\nstderr: device .* is already a member of a bridge; can't enslave it to bridge .*.\\n",
-    "message_cn": "网卡上已存在网桥",
+    "regex": "failed to create bridge\\[.*] for l2Network\\[uuid:.*, type:.*] on kvm host\\[uuid:.*], because unable to create bridge\\[.*] from device\\[.*], because failed to execute shell command: brctl.*return code: 1.*stdout: .*stderr: device .* is already a member of a bridge; can't enslave it to bridge .*",
+    "message_cn": "设备己经属于另一个网桥",
     "message_en": "device is already a member of a bridge"
   },
   {
     "category": "HOST",
     "code": "1027",
     "method": "regex",
-    "regex": ".*, because:.* | FAILED =\u003e SSH Error: ssh: connect to host .* port .*: No route to host.*",
+    "regex": ".*, because:.*SSH Error: ssh: connect to host .* port .*: No route to host.*",
     "message_cn": "找不到访问物理机的路由",
     "message_en": "Can't find the route to host"
   },
@@ -1302,6 +1302,22 @@
     "regex": "I/O error on POST request for .*http:.*getvncport.*:Connect to .* \\[.*] failed: Connection refused.*",
     "message_cn": "打开vncport时发生I/O错误",
     "message_en": "I/O error when opening vncport"
+  },
+  {
+    "category": "VM",
+    "code": "1039",
+    "method": "regex",
+    "regex": "failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.*libvirt error: cannot read header '.*': Input/output error.*",
+    "message_cn": "启动云主机失败，因为读取云盘时发生了libvirt和I/O错误",
+    "message_en": "Failed to start the VM because libvirt and I/O errors occurred while reading the cloud disk"
+  },
+  {
+    "category": "VM",
+    "code": "1040",
+    "method": "regex",
+    "regex": "failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.* error reading header from .*: Operation not permitted.*",
+    "message_cn": "无法启动云主机，因为云盘对应的ceph文件读取失败",
+    "message_en": "Failed to start VM because the ceph file corresponding to the volume failed to be read."
   },
   {
     "category": "VOLUME",
