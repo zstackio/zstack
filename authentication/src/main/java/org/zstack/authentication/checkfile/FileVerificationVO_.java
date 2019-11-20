@@ -8,8 +8,10 @@ public class FileVerificationVO_ {
     public static volatile SingularAttribute<FileVerificationVO, String> uuid;
     public static volatile SingularAttribute<FileVerificationVO, String> path;
     public static volatile SingularAttribute<FileVerificationVO, String> node;
-    public static volatile SingularAttribute<FileVerificationVO, String> type;
+    public static volatile SingularAttribute<FileVerificationVO, String> hexType;
     public static volatile SingularAttribute<FileVerificationVO, String> category;
     public static volatile SingularAttribute<FileVerificationVO, String> digest;
     public static volatile SingularAttribute<FileVerificationVO, String> state;
+    public static volatile SingularAttribute<FileVerificationVO, Timestamp> createDate;
+    public static volatile SingularAttribute<FileVerificationVO, Timestamp> lastOpDate;
 }

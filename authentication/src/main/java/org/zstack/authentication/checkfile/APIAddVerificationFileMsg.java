@@ -19,7 +19,7 @@ public class APIAddVerificationFileMsg extends APIMessage {
     private String node;
 
     @APIParam
-    private String type;
+    private String hexType;
 
     @APIParam(maxLength = 64)
     private String category;
@@ -40,12 +40,12 @@ public class APIAddVerificationFileMsg extends APIMessage {
         this.node = node;
     }
 
-    public String getType() {
-        return type;
+    public String getHexType() {
+        return hexType;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setHexType(String hexType) {
+        this.hexType = hexType;
     }
 
     public String getCategory() {
@@ -59,9 +59,9 @@ public class APIAddVerificationFileMsg extends APIMessage {
     public static APIAddVerificationFileMsg __example__(){
         APIAddVerificationFileMsg msg = new APIAddVerificationFileMsg();
         msg.setPath("/usr/local/zstack/VERSION");
-        msg.setNode("");
-        msg.setType("md5");
-        msg.setCategory("other");
+        msg.setNode("mn");
+        msg.setHexType("md5");
+        msg.setCategory("versionFile");
         return msg;
     }
 

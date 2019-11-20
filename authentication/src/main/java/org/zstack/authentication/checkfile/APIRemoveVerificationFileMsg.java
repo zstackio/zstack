@@ -27,7 +27,7 @@ public class APIRemoveVerificationFileMsg extends APIMessage {
 
     public static APIRemoveVerificationFileMsg __example__(){
         APIRemoveVerificationFileMsg msg = new APIRemoveVerificationFileMsg();
-        msg.setUuid("00001");
+        msg.setUuid(uuid());
         return msg;
     }
 }

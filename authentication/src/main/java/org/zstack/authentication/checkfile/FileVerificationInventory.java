@@ -1,5 +1,7 @@
 package org.zstack.authentication.checkfile;
 import org.zstack.header.search.Inventory;
+
+import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,9 +11,12 @@ public class FileVerificationInventory {
     private String uuid;
     private String path;
     private String node;
-    private String type;
+    private String category;
+    private String hexType;
     private String digest;
     private String state;
+    private Timestamp createDate;
+    private Timestamp lastOpDate;
 
     public String getUuid() {
         return uuid;
@@ -45,12 +50,12 @@ public class FileVerificationInventory {
         this.node = node;
     }
 
-    public String getType() {
-        return type;
+    public String getHexType() {
+        return hexType;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setHexType(String hexType) {
+        this.hexType = hexType;
     }
 
     public String getDigest() {
@@ -61,14 +66,41 @@ public class FileVerificationInventory {
         this.digest = digest;
     }
 
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public Timestamp getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(Timestamp createDate) {
+        this.createDate = createDate;
+    }
+
+    public Timestamp getLastOpDate() {
+        return lastOpDate;
+    }
+
+    public void setLastOpDate(Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
+    }
+
     public static FileVerificationInventory valueOf(FileVerificationVO vo) {
         FileVerificationInventory inv = new FileVerificationInventory();
         inv.setUuid(vo.getUuid());
         inv.setPath(vo.getPath());
         inv.setNode(vo.getNode());
-        inv.setType(vo.getType());
+        inv.setHexType(vo.getHexType());
         inv.setDigest(vo.getDigest());
         inv.setState(vo.getState());
+        inv.setCategory(vo.getCategory());
+        inv.setCreateDate(vo.getCreateDate());
+        inv.setLastOpDate(vo.getLastOpDate());
         return inv;
     }
 

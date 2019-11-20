@@ -26,7 +26,7 @@ public class APIRecoverVerificationFileMsg extends APIMessage {
 
     public static APIRecoverVerificationFileMsg __example__(){
         APIRecoverVerificationFileMsg msg = new APIRecoverVerificationFileMsg();
-        msg.setUuid("00001");
+        msg.setUuid(uuid());
         return msg;
     }
 }
