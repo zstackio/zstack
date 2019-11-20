@@ -28,12 +28,20 @@ public class FileVerificationInventory  {
         return this.node;
     }
 
-    public java.lang.String type;
-    public void setType(java.lang.String type) {
-        this.type = type;
+    public java.lang.String category;
+    public void setCategory(java.lang.String category) {
+        this.category = category;
     }
-    public java.lang.String getType() {
-        return this.type;
+    public java.lang.String getCategory() {
+        return this.category;
+    }
+
+    public java.lang.String hexType;
+    public void setHexType(java.lang.String hexType) {
+        this.hexType = hexType;
+    }
+    public java.lang.String getHexType() {
+        return this.hexType;
     }
 
     public java.lang.String digest;
@@ -50,6 +58,22 @@ public class FileVerificationInventory  {
     }
     public java.lang.String getState() {
         return this.state;
+    }
+
+    public java.sql.Timestamp createDate;
+    public void setCreateDate(java.sql.Timestamp createDate) {
+        this.createDate = createDate;
+    }
+    public java.sql.Timestamp getCreateDate() {
+        return this.createDate;
+    }
+
+    public java.sql.Timestamp lastOpDate;
+    public void setLastOpDate(java.sql.Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
+    }
+    public java.sql.Timestamp getLastOpDate() {
+        return this.lastOpDate;
     }
 
 }

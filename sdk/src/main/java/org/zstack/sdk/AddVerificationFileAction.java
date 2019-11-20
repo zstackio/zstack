@@ -32,7 +32,7 @@ public class AddVerificationFileAction extends AbstractAction {
     public java.lang.String node;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
+    public java.lang.String hexType;
 
     @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String category;

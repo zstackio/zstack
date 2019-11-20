@@ -208,7 +208,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
             FileInputStream fis = null;
             fis = new FileInputStream(fv.getPath());
             Class clazz = Class.forName("org.apache.commons.codec.digest.DigestUtils");
-            String methodName = fv.getType() + "Hex";
+            String methodName = fv.getHexType() + "Hex";
             Object fileDigest = clazz.getMethod(methodName, InputStream.class).invoke(clazz.newInstance(), fis);
             return fileDigest.toString();
         }catch (Exception e){
@@ -349,16 +349,17 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
         String uuid = Platform.getUuid();
         String path = msg.getPath();
         String node = msg.getNode();
-        String type = msg.getType();
+        String hexType = msg.getHexType();
         String category = msg.getCategory();
         FileVerification fv = new FileVerification();
         fv.setUuid(uuid);
         fv.setNode(node);
         fv.setPath(path);
-        fv.setType(type);
+        fv.setHexType(hexType);
         fv.setCategory(category);
         fv.setState(FileVerificationState.Enabled.toString());
-        if(allFile.get(uuid) == null){
+        FileVerificationVO fvo = Q.New(FileVerificationVO.class).eq(FileVerificationVO_.node, node).eq(FileVerificationVO_.path, path).find();
+        if(fvo == null){
             if(! fv.isFileExists()){
                 throw new CloudRuntimeException(String.format("No such file [%s] on node: %s", path, node));
             }

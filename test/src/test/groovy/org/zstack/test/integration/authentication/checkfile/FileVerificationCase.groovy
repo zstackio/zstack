@@ -44,14 +44,19 @@ class FileVerificationCase extends SubCase{
         addVerificationFile{
             path=FileVerificationForTest.LOCALFILE
             node=FileVerificationForTest.LOCALNODE
-            type=FileVerificationForTest.DEFAULTTYPE
+            hexType=FileVerificationForTest.DEFAULTHEXTYPE
             category=FileVerificationForTest.DEFAULTCATEGORY
         }
         FileVerificationInventory fvi = queryVerificationFile {
-            conditions = ["path=${FileVerificationForTest.LOCALFILE}", "node=${FileVerificationForTest.LOCALNODE}", "type=${FileVerificationForTest.DEFAULTTYPE}"]
+            conditions = ["path=${FileVerificationForTest.LOCALFILE}", "node=${FileVerificationForTest.LOCALNODE}", "hexType=${FileVerificationForTest.DEFAULTHEXTYPE}"]
         }[0]
         fileUuid = fvi.getUuid()
         assert fvi != null
+        assert fvi.state == "Enabled"
+        assert fvi.path == FileVerificationForTest.LOCALFILE
+        assert fvi.node == FileVerificationForTest.LOCALNODE
+        assert fvi.hexType == FileVerificationForTest.DEFAULTHEXTYPE
+        assert fvi.category == FileVerificationForTest.DEFAULTCATEGORY
 
     }
 

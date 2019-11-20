@@ -37,7 +37,7 @@ public class FileVerification {
     private String uuid;
     private String path;
     private String node; //for managementNode, node="mn", for host, node=HostUuid
-    private String type;
+    private String hexType;
     private String digest;
     private String category;
     private String state;
@@ -75,12 +75,12 @@ public class FileVerification {
         this.node = node;
     }
 
-    public String getType() {
-        return type;
+    public String getHexType() {
+        return hexType;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setHexType(String hexType) {
+        this.hexType = hexType;
     }
 
     public String getCategory() {
@@ -116,7 +116,7 @@ public class FileVerification {
     public static class AddHostFileCmd extends KVMAgentCommands.AgentCommand {
         private String uuid;
         private String path;
-        private String type;
+        private String hexType;
 
         public String getUuid() {
             return uuid;
@@ -134,12 +134,12 @@ public class FileVerification {
             this.path = path;
         }
 
-        public String getType() {
-            return type;
+        public String getHexType() {
+            return hexType;
         }
 
-        public void setType(String type) {
-            this.type = type;
+        public void setHexType(String hexType) {
+            this.hexType = hexType;
         }
     }
 
@@ -153,7 +153,7 @@ public class FileVerification {
         vo.setUuid(uuid);
         vo.setPath(path);
         vo.setNode(node);
-        vo.setType(type);
+        vo.setHexType(hexType);
         vo.setDigest(digest);
         vo.setState(state);
         vo.setCategory(category);
@@ -183,7 +183,7 @@ public class FileVerification {
         AddHostFileCmd cmd = new AddHostFileCmd();
         cmd.setUuid(uuid);
         cmd.setPath(path);
-        cmd.setType(type);
+        cmd.setHexType(hexType);
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
         msg.setHostUuid(node);

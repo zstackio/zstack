@@ -22,7 +22,7 @@ public class APIQueryVerificationFileReply extends APIQueryReply {
         FileVerificationInventory inv = new FileVerificationInventory();
         inv.setPath("/usr/local/zstack/VERSION");
         inv.setNode("");
-        inv.setType("md5");
+        inv.setHexType("md5");
         reply.setInventories(asList(inv));
         return reply;
     }
