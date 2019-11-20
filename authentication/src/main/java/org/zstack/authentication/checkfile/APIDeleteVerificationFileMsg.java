@@ -27,7 +27,7 @@ public class APIDeleteVerificationFileMsg extends APIMessage {
 
     public static APIDeleteVerificationFileMsg __example__(){
         APIDeleteVerificationFileMsg msg = new APIDeleteVerificationFileMsg();
-        msg.setUuid("00001");
+        msg.setUuid(uuid());
         return msg;
     }
 }
