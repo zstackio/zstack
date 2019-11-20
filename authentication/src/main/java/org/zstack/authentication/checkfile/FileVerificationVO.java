@@ -19,7 +19,7 @@ public class FileVerificationVO {
     private String node;
 
     @Column
-    private String type;
+    private String hexType;
 
     @Column
     private String digest;
@@ -29,6 +29,9 @@ public class FileVerificationVO {
 
     @Column
     private Timestamp lastOpDate;
+
+    @Column
+    private Timestamp createDate;
 
     @PreUpdate
     private void preUpdate() {
@@ -59,12 +62,12 @@ public class FileVerificationVO {
         this.node = node;
     }
 
-    public String getType() {
-        return type;
+    public String getHexType() {
+        return hexType;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setHexType(String hexType) {
+        this.hexType = hexType;
     }
 
     public String getCategory() {
@@ -99,12 +102,20 @@ public class FileVerificationVO {
         this.lastOpDate = lastOpDate;
     }
 
+    public Timestamp getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(Timestamp createDate) {
+        this.createDate = createDate;
+    }
+
     public FileVerification toFile() {
         FileVerification f = new FileVerification();
         f.setUuid(this.getUuid());
         f.setPath(this.getPath());
         f.setNode(this.getNode());
-        f.setType(this.getType());
+        f.setHexType(this.getHexType());
         f.setCategory(this.getCategory());
         f.setDigest(this.getDigest());
         f.setState(this.getState());
