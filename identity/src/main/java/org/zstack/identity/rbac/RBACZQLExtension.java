@@ -92,6 +92,10 @@ public class RBACZQLExtension implements MarshalZQLASTTreeExtensionPoint, Restri
 
         Set<String> deniedUuids = deniedResourceUuidFilter.get(src.inventoryAnnotation.mappingVOClass().getSimpleName());
         Set<String> allowedUuids = allowedResourceUuidFilter.get(src.inventoryAnnotation.mappingVOClass().getSimpleName());
+        if ((deniedUuids == null || deniedUuids.isEmpty()) && (allowedUuids == null || allowedUuids.isEmpty())) {
+            throw new RestrictByExprExtensionPoint.SkipThisRestrictExprException();
+        }
+
         String primaryKey = EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).getName();
 
         String restrictStr = "";
@@ -109,10 +113,6 @@ public class RBACZQLExtension implements MarshalZQLASTTreeExtensionPoint, Restri
             restrictStr += restrictStr + String.format("(%s.%s NOT IN (%s))", src.simpleInventoryName(), primaryKey, deniedUuids.stream()
                     .map(uuid -> String.format("'%s'", uuid))
                     .collect(Collectors.joining(",")));
-        }
-
-        if (StringUtils.isEmpty(restrictStr)) {
-            throw new RestrictByExprExtensionPoint.SkipThisRestrictExprException();
         }
 
         return restrictStr;
