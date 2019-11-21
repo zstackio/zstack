@@ -59,7 +59,9 @@ public abstract class TimeBasedGarbageCollector extends GarbageCollector {
         NEXT_TIME_UNIT = unit;
         NEXT_TIME = next;
 
-        saveToDb();
+        if (!saveToDb()) {
+            return;
+        }
         setupTimer();
 
         gcMgr.registerGC(this);

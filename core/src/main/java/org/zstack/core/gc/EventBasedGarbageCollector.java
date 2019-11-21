@@ -78,7 +78,10 @@ public abstract class EventBasedGarbageCollector extends GarbageCollector {
     }
 
     public final void submit() {
-        saveToDb();
+        if (!saveToDb()) {
+            return;
+        }
+
         installTriggers();
 
         gcMgr.registerGC(this);
