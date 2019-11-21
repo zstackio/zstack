@@ -360,7 +360,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             }
         }
 
-        if (hvType == null && msg.getImage() != null) {
+        if (hvType == null && msg.getImage() != null && !msg.isDryRun()) {
             HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getImage().getFormat());
             if (type != null) {
                 hvType = type.toString();
