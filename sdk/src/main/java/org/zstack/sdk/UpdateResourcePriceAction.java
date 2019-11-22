@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteResourcePriceAction extends AbstractAction {
+public class UpdateResourcePriceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteResourcePriceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteResourcePriceResult value;
+        public org.zstack.sdk.UpdateResourcePriceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -29,10 +29,10 @@ public class DeleteResourcePriceAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean cutoffPrice = false;
+    public java.lang.Long endDateInLong;
 
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean setEndDateInLongBaseOnCurrentTime = false;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +66,8 @@ public class DeleteResourcePriceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteResourcePriceResult value = res.getResult(org.zstack.sdk.DeleteResourcePriceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteResourcePriceResult() : value; 
+        org.zstack.sdk.UpdateResourcePriceResult value = res.getResult(org.zstack.sdk.UpdateResourcePriceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateResourcePriceResult() : value; 
 
         return ret;
     }
@@ -96,11 +96,11 @@ public class DeleteResourcePriceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/billings/prices/{uuid}";
+        info.httpMethod = "PUT";
+        info.path = "/billings/prices/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "updateResourcePrice";
         return info;
     }
 

@@ -52,6 +52,14 @@ public class PriceInventory  {
         return this.dateInLong;
     }
 
+    public java.lang.Long endDateInLong;
+    public void setEndDateInLong(java.lang.Long endDateInLong) {
+        this.endDateInLong = endDateInLong;
+    }
+    public java.lang.Long getEndDateInLong() {
+        return this.endDateInLong;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
@@ -66,6 +74,14 @@ public class PriceInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
+    }
+
+    public java.lang.String tableUuid;
+    public void setTableUuid(java.lang.String tableUuid) {
+        this.tableUuid = tableUuid;
+    }
+    public java.lang.String getTableUuid() {
+        return this.tableUuid;
     }
 
     public java.util.List pciDeviceOfferings;
