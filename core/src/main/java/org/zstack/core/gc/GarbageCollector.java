@@ -1,5 +1,6 @@
 package org.zstack.core.gc;
 
+import lombok.Synchronized;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -7,6 +8,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
@@ -19,6 +21,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -108,8 +111,32 @@ public abstract class GarbageCollector {
         dbf.update(vo);
     }
 
+    @Synchronized
+    private boolean isDuplicate() {
+        List<String> duplicateGCUuid = Q.New(GarbageCollectorVO.class)
+                .select(GarbageCollectorVO_.uuid)
+                .eq(GarbageCollectorVO_.name, NAME)
+                .notEq(GarbageCollectorVO_.status, GCStatus.Done)
+                .limit(1)
+                .listValues();
 
-    final protected void saveToDb() {
+        if (!duplicateGCUuid.isEmpty()) {
+            logger.debug(String.format("[GC] duplicate job[name:%s, id:%s] with %s found in DB", uuid, NAME, duplicateGCUuid.get(0)));
+        }
+
+        return !duplicateGCUuid.isEmpty();
+    }
+
+    /**
+     * Returns <tt>true</tt> if this successfully saved GC job to DB.
+     *
+     * Returns <tt>false</tt> if there is already a duplicate GC job in DB.
+     */
+    final protected boolean saveToDb() {
+        if (isDuplicate()) {
+            return false;
+        }
+
         Map context = new HashMap<>();
 
         for (Field f : FieldUtils.getAllFields(getClass())) {
@@ -143,6 +170,7 @@ public abstract class GarbageCollector {
         uuid = vo.getUuid();
 
         logger.debug(String.format("[GC] saved a job[name:%s, id:%s] to DB", NAME, uuid));
+        return true;
     }
 
     void loadFromVO(GarbageCollectorVO vo) {
