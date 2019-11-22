@@ -62,6 +62,9 @@ public class SourceClassMap {
 			put("org.zstack.billing.spendingcalculator.volume.data.DataVolumeSpendingInventory", "org.zstack.sdk.DataVolumeSpendingInventory");
 			put("org.zstack.billing.spendingcalculator.volume.root.RootVolumeSpending", "org.zstack.sdk.RootVolumeSpending");
 			put("org.zstack.billing.spendingcalculator.volume.root.RootVolumeSpendingInventory", "org.zstack.sdk.RootVolumeSpendingInventory");
+			put("org.zstack.billing.table.APICreatePriceTableMsg$Price", "org.zstack.sdk.Price");
+			put("org.zstack.billing.table.AccountPriceTableRefInventory", "org.zstack.sdk.AccountPriceTableRefInventory");
+			put("org.zstack.billing.table.PriceTableInventory", "org.zstack.sdk.PriceTableInventory");
 			put("org.zstack.cloudformation.template.struct.ActionStruct", "org.zstack.sdk.ActionStruct");
 			put("org.zstack.cloudformation.template.struct.ResourceStruct", "org.zstack.sdk.ResourceStruct");
 			put("org.zstack.cloudformation.template.struct.ResourceType", "org.zstack.sdk.ResourceType");
@@ -504,6 +507,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AccessKeyInventory", "org.zstack.accessKey.AccessKeyInventory");
 			put("org.zstack.sdk.AccessKeyState", "org.zstack.accessKey.AccessKeyState");
 			put("org.zstack.sdk.AccountInventory", "org.zstack.header.identity.AccountInventory");
+			put("org.zstack.sdk.AccountPriceTableRefInventory", "org.zstack.billing.table.AccountPriceTableRefInventory");
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");
 			put("org.zstack.sdk.ActionStruct", "org.zstack.cloudformation.template.struct.ActionStruct");
 			put("org.zstack.sdk.ActionType", "org.zstack.vpcfirewall.entity.ActionType");
@@ -741,8 +745,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PowerOffHardwareResult", "org.zstack.header.cluster.PowerOffHardwareResult");
 			put("org.zstack.sdk.PreconfigurationTemplateInventory", "org.zstack.header.baremetal.preconfiguration.PreconfigurationTemplateInventory");
 			put("org.zstack.sdk.PreviewResourceStruct", "org.zstack.header.cloudformation.PreviewResourceStruct");
+			put("org.zstack.sdk.Price", "org.zstack.billing.table.APICreatePriceTableMsg$Price");
 			put("org.zstack.sdk.PriceInventory", "org.zstack.billing.PriceInventory");
 			put("org.zstack.sdk.PricePciDeviceOfferingRefInventory", "org.zstack.billing.spendingcalculator.pcidevice.PricePciDeviceOfferingRefInventory");
+			put("org.zstack.sdk.PriceTableInventory", "org.zstack.billing.table.PriceTableInventory");
 			put("org.zstack.sdk.PrimaryStorageHostStatus", "org.zstack.header.storage.primary.PrimaryStorageHostStatus");
 			put("org.zstack.sdk.PrimaryStorageInventory", "org.zstack.header.storage.primary.PrimaryStorageInventory");
 			put("org.zstack.sdk.ProgressProperty", "org.zstack.header.aliyun.image.ProgressProperty");

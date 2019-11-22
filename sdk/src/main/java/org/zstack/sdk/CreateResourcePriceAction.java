@@ -43,6 +43,9 @@ public class CreateResourcePriceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
     public java.lang.Long dateInLong;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String tableUuid;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

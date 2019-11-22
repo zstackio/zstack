@@ -156,7 +156,8 @@ class EnvSpec implements Node, ApiHelper {
             [BatchCreateBaremetalChassisAction.metaClass, BatchCreateBaremetalChassisAction.Result.metaClass, DeleteLongJobAction.class],
             [AddSharedBlockGroupPrimaryStorageAction.metaClass, AddSharedBlockGroupPrimaryStorageAction.Result.metaClass, DeletePrimaryStorageAction.class],
             [CreateTagAction.metaClass, CreateTagAction.Result.metaClass, DeleteTagAction.class],
-            [CreateResourcePriceAction.metaClass, CreateResourcePriceAction.Result.metaClass, DeleteResourcePriceAction.class]
+            [CreateResourcePriceAction.metaClass, CreateResourcePriceAction.Result.metaClass, DeleteResourcePriceAction.class],
+            [CreatePriceTableAction.metaClass, CreatePriceTableAction.Result.metaClass, DeletePriceTableAction.class]
     ]
 
     static Closure GLOBAL_DELETE_HOOK
@@ -624,8 +625,7 @@ class EnvSpec implements Node, ApiHelper {
                               "BaremetalInstanceSequenceNumberVO", "BaremetalImageCacheVO",
                               "GarbageCollectorVO",
                               "TaskProgressVO", "TaskStepVO",
-                              "DataVolumeUsageVO", "RootVolumeUsageVO", "VmUsageVO", "GpuUsageVO",
-                              "ResourceVO","SecurityGroupSequenceNumberVO","SnapShotUsageVO", "MediaVO",
+                              "ResourceVO","SecurityGroupSequenceNumberVO", "MediaVO",
                               "CaptchaVO", "LoginAttemptsVO", "ElaborationVO", "SchedulerJobHistoryVO",
                               "HistoricalPasswordVO", "InstallPathRecycleVO", "PortMirrorSessionSequenceNumberVO"]) {
                 // those tables will continue having entries during running a test suite
