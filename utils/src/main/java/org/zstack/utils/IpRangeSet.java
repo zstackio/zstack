@@ -75,6 +75,17 @@ public class IpRangeSet {
         return contain;
     }
 
+    public static RangeSet<Long> listAllRanges(String word) {
+        IpRangeSet contain = generateIpRangeSet(word);
+
+        long size = contain.size();
+        if (size == 0) {
+            throw new IllegalArgumentException(String.format("Invalid empty ipset [%s]", word));
+        }
+
+        return contain.rangeSet;
+    }
+
     public static Set<String> listAllIps(String word, long limit) {
         IpRangeSet contain = generateIpRangeSet(word);
 
