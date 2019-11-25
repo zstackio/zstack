@@ -21,7 +21,10 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
 import org.zstack.header.vm.*;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.AfterAcquireVipExtensionPoint;
+import org.zstack.network.service.vip.VipBaseBackend;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
@@ -31,11 +34,10 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.*;
 
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by xing5 on 2016/11/20.
@@ -154,16 +156,24 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
             }
         }
 
-        throw new CloudRuntimeException(String.format("virtual router vm[uuid:%s] has no nic on l3Network[uuid:%s] for vip[uuid:%s, ip:%s]",
-                vr.getUuid(), vip.getL3NetworkUuid(), vip.getUuid(), vip.getIp()));
+        return null;
     }
 
     private void releaseVipOnVirtualRouterVm(final VirtualRouterVmInventory vr, List<VipInventory> vips, final Completion completion) {
         final List<VirtualRouterCommands.VipTO> tos = new ArrayList<VirtualRouterCommands.VipTO>(vips.size());
         for (VipInventory vip : vips) {
             String mac = getOwnerMac(vr, vip);
+            if (mac == null) {
+                /*the nic will be detached during the vip network deleted */
+                continue;
+            }
             VirtualRouterCommands.VipTO to = VirtualRouterCommands.VipTO.valueOf(vip, mac);
             tos.add(to);
+        }
+
+        if (tos.isEmpty()) {
+            completion.success();
+            return;
         }
 
         VirtualRouterCommands.RemoveVipCmd cmd = new VirtualRouterCommands.RemoveVipCmd();
@@ -198,6 +208,10 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
         final List<VirtualRouterCommands.VipTO> tos = new ArrayList<VirtualRouterCommands.VipTO>(vips.size());
         for (VipInventory vip : vips) {
             String mac = getOwnerMac(vr, vip);
+            if (mac == null) {
+                throw new CloudRuntimeException(String.format("virtual router vm[uuid:%s] has no nic on l3Network[uuid:%s] for vip[uuid:%s, ip:%s]",
+                            vr.getUuid(), vip.getL3NetworkUuid(), vip.getUuid(), vip.getIp()));
+            }
             VirtualRouterCommands.VipTO to = VirtualRouterCommands.VipTO.valueOf(vip, mac);
             tos.add(to);
         }

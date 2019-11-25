@@ -525,6 +525,9 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Transactional
     protected List<ApplianceVmInventory> apvmFromDeleteAction(CascadeAction action) {
+        /*
+        * return null or non-empty list
+        * */
         List<ApplianceVmInventory> ret = null;
 
         if (HostVO.class.getSimpleName().equals(action.getParentIssuer())) {
@@ -620,7 +623,9 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                 for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
                     apvms = ext.filterApplianceVmCascade(apvms, action.getParentIssuer(), l3uuids);
                 }
-                ret = ApplianceVmInventory.valueOf1(apvms);
+                if (!apvms.isEmpty()) {
+                    ret = ApplianceVmInventory.valueOf1(apvms);
+                }
             }
         } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
             final List<String> ipruuids = CollectionUtils.transformToList((List<IpRangeInventory>) action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
@@ -702,7 +707,7 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             }.call();
 
             if (!vos.isEmpty()) {
-                return ApplianceVmInventory.valueOf1(vos);
+                ret = ApplianceVmInventory.valueOf1(vos);
             }
         }
 
@@ -713,14 +718,14 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
     public CascadeAction createActionForChildResource(CascadeAction action) {
         if (CascadeConstant.DELETION_CODES.contains(action.getActionCode())) {
             int op = toDeleteOpCode(action);
-            if (op == OP_NOPE) {
-                return null;
-            } else {
+            if (op != OP_NOPE) {
                 List<ApplianceVmInventory> apvms = apvmFromDeleteAction(action);
-                return action.copy().setParentIssuer(NAME).setParentIssuerContext(apvms);
+                if (apvms != null) {
+                    return action.copy().setParentIssuer(NAME).setParentIssuerContext(apvms);
+                }
             }
-        } else {
-            return null;
         }
+
+        return null;
     }
 }

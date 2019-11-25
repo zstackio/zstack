@@ -7,37 +7,31 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
-import org.zstack.core.workflow.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
 import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
-import org.zstack.header.vm.*;
-import org.zstack.network.service.vip.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.vip.VipBackend;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.operr;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implements
@@ -267,7 +261,32 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
 
     @Override
     public void beforeDetachNic(VmNicInventory nic, Completion completion) {
-        completion.success();
+        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+            completion.success();
+            return;
+        }
+
+        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(nic.getVmInstanceUuid())) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf((VirtualRouterVmVO)
+                Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find());
+
+        List<VipVO> vips = SQL.New("select vip from VipVO vip, VipPeerL3NetworkRefVO ref " +
+                "where ref.vipUuid = vip.uuid and ref.l3NetworkUuid in (:routerNetworks) " +
+                "and vip.l3NetworkUuid = :l3Uuid")
+                              .param("l3Uuid", nic.getL3NetworkUuid())
+                              .param("routerNetworks", vr.getAllL3Networks())
+                              .list();
+
+        if (vips.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        releaseVipOnVirtualRouterVm(vr, VipInventory.valueOf(vips), completion);
     }
 
     @Override
