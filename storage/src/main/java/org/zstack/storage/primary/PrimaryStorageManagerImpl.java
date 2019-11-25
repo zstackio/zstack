@@ -137,17 +137,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             return;
         }
 
-        if (primaryStorageLicenseInfoMap.containsKey(msg.getUuid())) {
-            PrimaryStorageLicenseInfo primaryStorageLicenseInfo = primaryStorageLicenseInfoMap.get(msg.getUuid());
-            reply.setUuid(primaryStorageLicenseInfo.getUuid());
-            reply.setExpireTime(primaryStorageLicenseInfo.getExpireTime());
-            reply.setName(primaryStorageVO.getName());
-            bus.reply(msg, reply);
-            return;
-        }
-
         GetPrimaryStorageLicenseInfoMsg gmsg = new GetPrimaryStorageLicenseInfoMsg();
         gmsg.setPrimaryStorageUuid(msg.getUuid());
+        gmsg.setGetCache(true);
         bus.makeTargetServiceIdByResourceUuid(gmsg, PrimaryStorageConstant.SERVICE_ID, gmsg.getPrimaryStorageUuid());
         bus.send(gmsg, new CloudBusCallBack(msg) {
             @Override
@@ -346,6 +338,12 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     private void handle(GetPrimaryStorageLicenseInfoMsg msg) {
         GetPrimaryStorageLicenseInfoReply reply = new GetPrimaryStorageLicenseInfoReply();
+
+        if (msg.isGetCache() && primaryStorageLicenseInfoMap.containsKey(msg.getPrimaryStorageUuid())) {
+            reply.setPrimaryStorageLicenseInfo(primaryStorageLicenseInfoMap.get(msg.getPrimaryStorageUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
 
         if (!PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR.hasTag(msg.getPrimaryStorageUuid())) {
             bus.reply(msg, reply);
