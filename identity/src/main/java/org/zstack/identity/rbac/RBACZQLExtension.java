@@ -105,11 +105,11 @@ public class RBACZQLExtension implements MarshalZQLASTTreeExtensionPoint, Restri
                     .collect(Collectors.joining(",")));
         }
 
-        if (!StringUtils.isEmpty(restrictStr)) {
-            restrictStr += " AND ";
-        }
-
         if (deniedUuids != null && !deniedUuids.isEmpty()) {
+            if (!StringUtils.isEmpty(restrictStr)) {
+                restrictStr += " AND ";
+            }
+
             restrictStr += restrictStr + String.format("(%s.%s NOT IN (%s))", src.simpleInventoryName(), primaryKey, deniedUuids.stream()
                     .map(uuid -> String.format("'%s'", uuid))
                     .collect(Collectors.joining(",")));
