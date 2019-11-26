@@ -2,7 +2,6 @@ package org.zstack.storage.primary;
 
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
-import com.google.common.collect.Maps;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.configuration.DiskOfferingSystemTags;
@@ -27,7 +26,6 @@ import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
@@ -42,8 +40,14 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagValidator;
-import org.zstack.header.vm.*;
-import org.zstack.header.volume.*;
+import org.zstack.header.vm.CreateVmInstanceMsg;
+import org.zstack.header.vm.VmInstanceCreateExtensionPoint;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceStartExtensionPoint;
+import org.zstack.header.volume.APICreateDataVolumeMsg;
+import org.zstack.header.volume.CreateDataVolumeExtensionPoint;
+import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
@@ -59,7 +63,7 @@ import static org.zstack.core.Platform.*;
 
 public class PrimaryStorageManagerImpl extends AbstractService implements PrimaryStorageManager,
         ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, VmInstanceStartExtensionPoint,
-        VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint, PrimaryStorageDeleteExtensionPoint, InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator {
+        VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint, InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator {
     private static final CLogger logger = Utils.getLogger(PrimaryStorageManager.class);
 
     @Autowired
@@ -85,9 +89,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     private Map<String, PrimaryStorageFactory> primaryStorageFactories = Collections.synchronizedMap(new HashMap<>());
     private Map<String, PrimaryStorageAllocatorStrategyFactory> allocatorFactories = Collections.synchronizedMap(new HashMap<>());
-    private Map<String, PrimaryStorageLicenseInfoFactory> primaryStorageLicenseInfoFactories = Collections.synchronizedMap(new HashMap<>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
-    private Map<String, PrimaryStorageLicenseInfo> primaryStorageLicenseInfoMap = Maps.newConcurrentMap();
 
     static {
         allowedMessageAfterSoftDeletion.add(PrimaryStorageDeletionMsg.class);
@@ -129,32 +131,31 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private void handle(APIGetPrimaryStorageLicenseInfoMsg msg) {
-        APIGetPrimaryStorageLicenseInfoReply reply = new APIGetPrimaryStorageLicenseInfoReply();
-        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(msg.getUuid(), PrimaryStorageVO.class);
-        if (primaryStorageVO == null) {
-            reply.setError(operr("primaryStorage[uuid=%s] does not exist", msg.getUuid()));
-            bus.reply(msg, reply);
+        APIGetPrimaryStorageLicenseInfoReply sreply = new APIGetPrimaryStorageLicenseInfoReply();
+        PrimaryStorageVO vo = dbf.findByUuid(msg.getUuid(), PrimaryStorageVO.class);
+        if (vo == null) {
+            sreply.setError(operr("primaryStorage[uuid=%s] does not exist", msg.getUuid()));
+            bus.reply(msg, sreply);
             return;
         }
-
         GetPrimaryStorageLicenseInfoMsg gmsg = new GetPrimaryStorageLicenseInfoMsg();
         gmsg.setPrimaryStorageUuid(msg.getUuid());
-        gmsg.setGetCache(true);
-        bus.makeTargetServiceIdByResourceUuid(gmsg, PrimaryStorageConstant.SERVICE_ID, gmsg.getPrimaryStorageUuid());
+        bus.makeTargetServiceIdByResourceUuid(gmsg, PrimaryStorageConstant.SERVICE_ID, msg.getUuid());
         bus.send(gmsg, new CloudBusCallBack(msg) {
             @Override
-            public void run(MessageReply r) {
-                if (r.isSuccess()) {
-                    GetPrimaryStorageLicenseInfoReply reply1 = r.castReply();
-                    if (reply1.getPrimaryStorageLicenseInfo() != null) {
-                        reply.setUuid(reply1.getPrimaryStorageLicenseInfo().getUuid());
-                        reply.setExpireTime(reply1.getPrimaryStorageLicenseInfo().getExpireTime());
-                        reply.setName(primaryStorageVO.getName());
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    GetPrimaryStorageLicenseInfoReply r = reply.castReply();
+                    PrimaryStorageLicenseInfo info = r.getPrimaryStorageLicenseInfo();
+                    if (info != null) {
+                        sreply.setUuid(msg.getUuid());
+                        sreply.setExpireTime(info.getExpireTime());
+                        sreply.setName(vo.getName());
                     }
                 } else {
-                    reply.setError(r.getError());
+                    sreply.setError(reply.getError());
                 }
-                bus.reply(msg, reply);
+                bus.reply(msg, sreply);
             }
         });
     }
@@ -329,44 +330,9 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             handle((RecalculatePrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof PrimaryStorageMessage) {
             passThrough((PrimaryStorageMessage) msg);
-        } else if (msg instanceof GetPrimaryStorageLicenseInfoMsg) {
-            handle((GetPrimaryStorageLicenseInfoMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
-    }
-
-    private void handle(GetPrimaryStorageLicenseInfoMsg msg) {
-        GetPrimaryStorageLicenseInfoReply reply = new GetPrimaryStorageLicenseInfoReply();
-
-        if (msg.isGetCache() && primaryStorageLicenseInfoMap.containsKey(msg.getPrimaryStorageUuid())) {
-            reply.setPrimaryStorageLicenseInfo(primaryStorageLicenseInfoMap.get(msg.getPrimaryStorageUuid()));
-            bus.reply(msg, reply);
-            return;
-        }
-
-        if (!PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR.hasTag(msg.getPrimaryStorageUuid())) {
-            bus.reply(msg, reply);
-            return;
-        }
-        String vendor = PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR.getTokenByResourceUuid(msg.getPrimaryStorageUuid(), PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR_TOKEN);
-        PrimaryStorageVendor primaryStorageVendor = PrimaryStorageVendor.valueOf(vendor);
-        final PrimaryStorageLicenseInfoFactory factory = getPrimaryStorageLicenseInfoFactory(primaryStorageVendor);
-        factory.getPrimaryStorageLicenseInfo(msg.getPrimaryStorageUuid(), new ReturnValueCompletion<PrimaryStorageLicenseInfo>(msg) {
-
-            @Override
-            public void success(PrimaryStorageLicenseInfo primaryStorageLicenseInfo) {
-                primaryStorageLicenseInfoMap.put(msg.getPrimaryStorageUuid(), primaryStorageLicenseInfo);
-                reply.setPrimaryStorageLicenseInfo(primaryStorageLicenseInfo);
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
     }
 
     private void handle(final RecalculatePrimaryStorageCapacityMsg msg) {
@@ -629,15 +595,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             }
             primaryStorageFactories.put(f.getPrimaryStorageType().toString(), f);
         }
-
-        for (PrimaryStorageLicenseInfoFactory f : pluginRgty.getExtensionList(PrimaryStorageLicenseInfoFactory.class)) {
-            PrimaryStorageLicenseInfoFactory old = primaryStorageLicenseInfoFactories.get(f.getPrimaryStorageVendor().toString());
-            if (old != null) {
-                throw new CloudRuntimeException(String.format("duplicate PrimaryStorageLicenseInfoFactory[%s, %s] for type[%s]",
-                        f.getClass().getName(), old.getClass().getName(), old.getPrimaryStorageVendor()));
-            }
-            primaryStorageLicenseInfoFactories.put(f.getPrimaryStorageVendor().toString(), f);
-        }
     }
 
 
@@ -654,14 +611,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageFactory factory = primaryStorageFactories.get(type.toString());
         if (factory == null) {
             throw new CloudRuntimeException(String.format("No PrimaryStorageFactory for type: %s found", type));
-        }
-        return factory;
-    }
-
-    public PrimaryStorageLicenseInfoFactory getPrimaryStorageLicenseInfoFactory(PrimaryStorageVendor type) {
-        PrimaryStorageLicenseInfoFactory factory = primaryStorageLicenseInfoFactories.get(type.toString());
-        if (factory == null) {
-            throw new CloudRuntimeException(String.format("No PrimaryStorageLicenseInfoFactory for type: %s found", type));
         }
         return factory;
     }
@@ -967,20 +916,5 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         if (!primaryStorageVO.getType().equalsIgnoreCase(primaryStorageAllocateConfig.getType())) {
             throw new IllegalArgumentException(String.format("primaryStorage[uuid=%s] type is %s", psUuid, primaryStorageVO.getType()));
         }
-    }
-
-    @Override
-    public void preDeletePrimaryStorage(PrimaryStorageInventory inv) throws PrimaryStorageException {
-
-    }
-
-    @Override
-    public void beforeDeletePrimaryStorage(PrimaryStorageInventory inv) {
-
-    }
-
-    @Override
-    public void afterDeletePrimaryStorage(PrimaryStorageInventory inv) {
-        primaryStorageLicenseInfoMap.remove(inv.getUuid());
     }
 }

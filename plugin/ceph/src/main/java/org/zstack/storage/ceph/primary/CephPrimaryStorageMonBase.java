@@ -67,7 +67,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
         public Long totalCapacity;
         public Long availableCapacity;
         public List<CephPoolCapacity> poolCapacities;
-        public boolean xsky;
+        public String type;
     }
 
     public static class PingCmd extends AgentCmd {
@@ -413,7 +413,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                     cephCapacity.setAvailableCapacity(rsp.availableCapacity);
                     cephCapacity.setTotalCapacity(rsp.totalCapacity);
                     cephCapacity.setPoolCapacities(rsp.poolCapacities);
-                    cephCapacity.setXsky(rsp.xsky);
+                    cephCapacity.setXsky(rsp.type);
                     new CephCapacityUpdater().update(cephCapacity);
                 }
 

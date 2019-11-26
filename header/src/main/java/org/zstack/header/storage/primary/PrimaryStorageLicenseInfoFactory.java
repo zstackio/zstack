@@ -5,5 +5,7 @@ import org.zstack.header.core.ReturnValueCompletion;
 public interface PrimaryStorageLicenseInfoFactory {
     void getPrimaryStorageLicenseInfo(String primaryStorageUuid, final ReturnValueCompletion<PrimaryStorageLicenseInfo> completion);
 
-    PrimaryStorageVendor getPrimaryStorageVendor();
+    String getPrimaryStorageVendor();
+
+    void createPrimaryStorageVendorSystemTag(String primaryStorageUuid, String type);
 }
