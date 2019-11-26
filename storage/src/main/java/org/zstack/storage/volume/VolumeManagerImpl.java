@@ -1,5 +1,6 @@
 package org.zstack.storage.volume;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -127,6 +128,36 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         }
     }
 
+    private boolean getShareableCapabilityFromMsg(CreateDataVolumeFromVolumeTemplateMsg msg) {
+        boolean isShareable = false;
+
+        if (msg.getApiMsg() != null &&
+            msg.getApiMsg().hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
+                isShareable = true;
+        }
+
+        if (msg.hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
+            isShareable = true;
+        }
+
+        if (isShareable && StringUtils.isNotEmpty(msg.getPrimaryStorageUuid())) {
+            String psType = Q.New(PrimaryStorageVO.class)
+                    .select(PrimaryStorageVO_.type)
+                    .eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid())
+                    .findValue();
+
+            if (StringUtils.isEmpty(psType)) {
+                throw new OperationFailureException(operr("get primaryStorage %s type failed", msg.getPrimaryStorageUuid()));
+            }
+
+            if (!PrimaryStorageType.getSupportSharedVolumePSTypeNames().contains(psType)) {
+                throw new OperationFailureException(operr("primaryStorage type [%s] not support shared volume yet", psType));
+            }
+        }
+
+        return isShareable;
+    }
+
     private void handle(CreateDataVolumeFromVolumeTemplateMsg msg) {
         CreateDataVolumeFromVolumeTemplateReply reply = new CreateDataVolumeFromVolumeTemplateReply();
 
@@ -146,6 +177,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vol.setType(VolumeType.Data);
         vol.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         vol.setAccountUuid(msg.getSession().getAccountUuid());
+        vol.setShareable(getShareableCapabilityFromMsg(msg));
         VolumeVO vvo = new SQLBatchWithReturn<VolumeVO>() {
             @Override
             protected VolumeVO scripts() {
@@ -235,6 +267,11 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
                         amsg.setRequiredPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                         amsg.setRequiredHostUuid(msg.getHostUuid());
+
+                        if (vvo.isShareable()) {
+                            amsg.setPossiblePrimaryStorageTypes(PrimaryStorageType.getSupportSharedVolumePSTypeNames());
+                        }
+
                         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                         bus.send(amsg, new CloudBusCallBack(trigger) {
                             @Override

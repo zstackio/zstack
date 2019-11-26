@@ -9,6 +9,15 @@ public class MediatorDowloadParam implements MediatorParam{
     private VmInstanceSpec.ImageSpec image;
     private String installPath;
     private String primaryStorageUuid;
+    private boolean isShareable;
+
+    public boolean isShareable() {
+        return isShareable;
+    }
+
+    public void setShareable(boolean shareable) {
+        isShareable = shareable;
+    }
 
     public VmInstanceSpec.ImageSpec getImage() {
         return image;
