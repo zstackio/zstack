@@ -40,8 +40,8 @@ public class CephCapacity {
         return xsky;
     }
 
-    public void setXsky(boolean xsky) {
-        this.xsky = xsky;
+    public void setXsky(String type) {
+        this.xsky = "xsky".equals(type);
     }
 
     public String getFsid() {

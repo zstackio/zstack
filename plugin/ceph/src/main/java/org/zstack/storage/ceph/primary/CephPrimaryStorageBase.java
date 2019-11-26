@@ -147,7 +147,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         Long totalCapacity;
         Long availableCapacity;
         List<CephPoolCapacity> poolCapacities;
-        boolean xsky = false;
+        String type;
 
         public String getError() {
             return error;
@@ -190,14 +190,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             this.poolCapacities = poolCapacities;
         }
 
-        public boolean isXsky() {
-            return xsky;
+        public String getType() {
+            return type;
         }
 
-        public void setXsky(boolean xsky) {
-            this.xsky = xsky;
+        public void setType(String type) {
+            this.type = type;
         }
-
     }
 
     public static class AddPoolCmd extends AgentCommand {
@@ -1012,12 +1011,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String CHECK_SNAPSHOT_COMPLETED = "/ceph/primarystorage/check/snapshot";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
+    List<PrimaryStorageLicenseInfoFactory> licenseExts = new ArrayList<>();
 
     {
         backupStorageMediators.put(SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE, new SftpBackupStorageMediator());
         backupStorageMediators.put(CephConstants.CEPH_BACKUP_STORAGE_TYPE, new CephBackupStorageMediator());
         List<PrimaryStorageToBackupStorageMediatorExtensionPoint> exts = pluginRgty.getExtensionList(PrimaryStorageToBackupStorageMediatorExtensionPoint.class);
         exts.forEach(ext -> backupStorageMediators.putAll(ext.getBackupStorageMediators()));
+        licenseExts = pluginRgty.getExtensionList(PrimaryStorageLicenseInfoFactory.class);
     }
 
     class UploadParam implements MediatorParam {
@@ -1711,6 +1712,49 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public String getName() {
                 return name;
+            }
+        });
+    }
+
+    private PrimaryStorageLicenseInfoFactory getPrimaryStorageLicenseInfoFactory(String vendor) {
+        for(PrimaryStorageLicenseInfoFactory ext: licenseExts) {
+            if (ext.getPrimaryStorageVendor().equals(vendor)) {
+                return ext;
+            }
+        }
+        return null;
+    }
+
+    private void createPrimaryStorageLicenseVendor(String type) {
+        for(PrimaryStorageLicenseInfoFactory ext: licenseExts) {
+            ext.createPrimaryStorageVendorSystemTag(self.getUuid(), type);
+        }
+    }
+
+    private void handle(GetPrimaryStorageLicenseInfoMsg msg) {
+        GetPrimaryStorageLicenseInfoReply reply = new GetPrimaryStorageLicenseInfoReply();
+
+        if (!PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR.hasTag(msg.getPrimaryStorageUuid())) {
+            bus.reply(msg, reply);
+            return;
+        }
+        String vendor = PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR.getTokenByResourceUuid(msg.getPrimaryStorageUuid(), PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR_TOKEN);
+        final PrimaryStorageLicenseInfoFactory factory = getPrimaryStorageLicenseInfoFactory(vendor);
+        if (factory == null) {
+            bus.reply(msg, reply);
+            return;
+        }
+        factory.getPrimaryStorageLicenseInfo(msg.getPrimaryStorageUuid(), new ReturnValueCompletion<PrimaryStorageLicenseInfo>(msg) {
+            @Override
+            public void success(PrimaryStorageLicenseInfo primaryStorageLicenseInfo) {
+                reply.setPrimaryStorageLicenseInfo(primaryStorageLicenseInfo);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }
@@ -2630,7 +2674,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             cephCapacity.setAvailableCapacity(rsp.availableCapacity);
             cephCapacity.setTotalCapacity(rsp.totalCapacity);
             cephCapacity.setPoolCapacities(rsp.poolCapacities);
-            cephCapacity.setXsky(rsp.isXsky());
+            cephCapacity.setXsky(rsp.getType());
             new CephCapacityUpdater().update(cephCapacity);
         }
     }
@@ -2888,9 +2932,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 cephCapacity.setAvailableCapacity(ret.availableCapacity);
                                 cephCapacity.setTotalCapacity(ret.totalCapacity);
                                 cephCapacity.setPoolCapacities(ret.poolCapacities);
-                                cephCapacity.setXsky(ret.isXsky());
+                                cephCapacity.setXsky(ret.getType());
                                 updater.update(cephCapacity, true);
-                                createPrimaryStorageVendorTag(ret.isXsky());
+                                createPrimaryStorageLicenseVendor(ret.getType());
                                 trigger.next();
                             }
                         });
@@ -2926,18 +2970,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 });
             }
         }).start();
-    }
-
-    private void createPrimaryStorageVendorTag(boolean isXsky) {
-        if(isXsky){
-            SystemTagCreator creator = PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR.newSystemTagCreator(self.getUuid());
-            creator.setTagByTokens(map(
-                    e(PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR_TOKEN, "xsky")
-            ));
-            creator.ignoreIfExisting = true;
-            creator.inherent = false;
-            creator.create();
-        }
     }
 
     @Override
@@ -3451,9 +3483,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else if ((msg instanceof CleanUpTrashOnPrimaryStroageMsg)) {
             handle((CleanUpTrashOnPrimaryStroageMsg) msg);
+        } else if ((msg instanceof GetPrimaryStorageLicenseInfoMsg)) {
+            handle((GetPrimaryStorageLicenseInfoMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+
     }
 
     public static class CheckIsBitsExistingRsp extends AgentResponse {
