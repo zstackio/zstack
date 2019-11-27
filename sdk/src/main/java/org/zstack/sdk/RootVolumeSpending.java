@@ -12,12 +12,4 @@ public class RootVolumeSpending extends org.zstack.sdk.SpendingDetails {
         return this.sizeInventory;
     }
 
-    public java.lang.String hypervisorType;
-    public void setHypervisorType(java.lang.String hypervisorType) {
-        this.hypervisorType = hypervisorType;
-    }
-    public java.lang.String getHypervisorType() {
-        return this.hypervisorType;
-    }
-
 }

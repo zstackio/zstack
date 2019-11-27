@@ -20,6 +20,14 @@ public class Spending  {
         return this.spending;
     }
 
+    public java.util.Map hypervisorTypeSpending;
+    public void setHypervisorTypeSpending(java.util.Map hypervisorTypeSpending) {
+        this.hypervisorTypeSpending = hypervisorTypeSpending;
+    }
+    public java.util.Map getHypervisorTypeSpending() {
+        return this.hypervisorTypeSpending;
+    }
+
     public java.lang.Long dateStart;
     public void setDateStart(java.lang.Long dateStart) {
         this.dateStart = dateStart;
