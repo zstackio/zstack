@@ -12,7 +12,7 @@ public class GetFreeIpAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetFreeIpResult value;
+        public org.zstack.sdk.GetFreeIpResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,13 +26,13 @@ public class GetFreeIpAction extends AbstractAction {
     }
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String l3NetworkUuid;
+    public java.lang.String l3NetworkUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String ipRangeUuid;
+    public java.lang.String ipRangeUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String start;
+    public java.lang.String start;
 
     @Param(required = false)
     public int limit = 100;
@@ -63,8 +63,8 @@ public class GetFreeIpAction extends AbstractAction {
             return ret;
         }
         
-        GetFreeIpResult value = res.getResult(GetFreeIpResult.class);
-        ret.value = value == null ? new GetFreeIpResult() : value;
+        org.zstack.sdk.GetFreeIpResult value = res.getResult(org.zstack.sdk.GetFreeIpResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetFreeIpResult() : value; 
 
         return ret;
     }
