@@ -55,4 +55,12 @@ public class VmGlobalConfig {
 
     @GlobalConfigValidation(inNumberRange = {0, 28})
     public static GlobalConfig PCIE_PORT_NUMS = new GlobalConfig(CATEGORY, "pciePortNums");
+
+    @GlobalConfigValidation(validValues = {"Hard", "Soft"})
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig RESOURCE_BINDING_STRATEGY = new GlobalConfig(CATEGORY, "resourceBinding.strategy");
+
+    @GlobalConfigValidation(validValues = {"Auto", "All"})
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig RESOURCE_BINDING_SCENE = new GlobalConfig(CATEGORY, "resourceBinding.Scene");
 }

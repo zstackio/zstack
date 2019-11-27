@@ -197,4 +197,20 @@
 		<category>vm</category>
 		<type>java.lang.String</type>
 	</config>
+
+	<config>
+		<name>resourceBinding.strategy</name>
+		<description>Strategy of resource binding</description>
+		<defaultValue>Hard</defaultValue>
+		<category>vm</category>
+		<type>java.lang.String</type>
+	</config>
+
+	<config>
+		<name>resourceBinding.Scene</name>
+		<description>Scenarios supported by resource binding</description>
+		<defaultValue>Auto</defaultValue>
+		<category>vm</category>
+		<type>java.lang.String</type>
+	</config>
 </globalConfig>

@@ -29,6 +29,15 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private Set<String> requiredPrimaryStorageUuids = new HashSet<>();
     private boolean fullAllocate = true;
     private long oldMemoryCapacity = 0;
+    private AllocationScene allocationScene;
+
+    public AllocationScene getAllocationScene() {
+        return allocationScene;
+    }
+
+    public void setAllocationScene(AllocationScene allocationScene) {
+        this.allocationScene = allocationScene;
+    }
 
     public Set<String> getRequiredPrimaryStorageUuids() {
         return requiredPrimaryStorageUuids;

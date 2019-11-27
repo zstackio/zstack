@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
@@ -271,9 +272,18 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
     private boolean createPaused;
     private boolean instantiateResourcesSuccess;
     private boolean instantiateResourcesSkipExisting;
+    private AllocationScene allocationScene;
 
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
+
+    public AllocationScene getAllocationScene() {
+        return allocationScene;
+    }
+
+    public void setAllocationScene(AllocationScene allocationScene) {
+        this.allocationScene = allocationScene;
+    }
 
     public String getVDIMonitorNumber() {
         return VDIMonitorNumber == null ? "1" : VDIMonitorNumber;

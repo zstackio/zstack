@@ -32,6 +32,15 @@ public class HostAllocatorSpec {
     private Map<String, Set<String>> host2PrimaryStorageBlacklist = new HashMap<>();
     private boolean fullAllocate;
     private long oldMemoryCapacity = 0;
+    private AllocationScene allocationScene;
+
+    public AllocationScene getAllocationScene() {
+        return allocationScene;
+    }
+
+    public void setAllocationScene(AllocationScene allocationScene) {
+        this.allocationScene = allocationScene;
+    }
 
     public List<String> getSystemTags() {
         return systemTags;
@@ -216,6 +225,7 @@ public class HostAllocatorSpec {
         spec.setAllowNoL3Networks(msg.isAllowNoL3Networks());
         spec.setRequiredBackupStorageUuid(msg.getRequiredBackupStorageUuid());
         spec.setRequiredPrimaryStorageUuids(msg.getRequiredPrimaryStorageUuids());
+        spec.setAllocationScene(msg.getAllocationScene());
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()){
             spec.setSystemTags(new ArrayList<String>(msg.getSystemTags()));
         }
