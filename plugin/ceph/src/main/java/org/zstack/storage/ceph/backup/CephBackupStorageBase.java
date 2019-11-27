@@ -115,7 +115,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         Long totalCapacity;
         Long availableCapacity;
         List<CephPoolCapacity> poolCapacities;
-        boolean xsky = false;
+        String type;
 
         public String getError() {
             return error;
@@ -158,12 +158,12 @@ public class CephBackupStorageBase extends BackupStorageBase {
             this.poolCapacities = poolCapacities;
         }
 
-        public boolean isXsky() {
-            return xsky;
+        public String getType() {
+            return type;
         }
 
-        public void setXsky(boolean xsky) {
-            this.xsky = xsky;
+        public void setType(String type) {
+            this.type = type;
         }
     }
 
@@ -791,7 +791,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
             cephCapacity.setAvailableCapacity(rsp.availableCapacity);
             cephCapacity.setTotalCapacity(rsp.totalCapacity);
             cephCapacity.setPoolCapacities(rsp.getPoolCapacities());
-            cephCapacity.setXsky(rsp.isXsky());
+            cephCapacity.setXsky(rsp.getType());
             new CephCapacityUpdater().update(cephCapacity);
         }
     }
@@ -1412,7 +1412,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                 cephCapacity.setAvailableCapacity(ret.availableCapacity);
                                 cephCapacity.setTotalCapacity(ret.totalCapacity);
                                 cephCapacity.setPoolCapacities(ret.poolCapacities);
-                                cephCapacity.setXsky(ret.isXsky());
+                                cephCapacity.setXsky(ret.getType());
                                 updater.update(cephCapacity, true);
                                 trigger.next();
                             }
