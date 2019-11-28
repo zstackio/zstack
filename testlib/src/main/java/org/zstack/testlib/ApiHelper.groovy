@@ -15841,24 +15841,24 @@ abstract class ApiHelper {
 
     def generateChallenge(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GenerateChallengeAction.class) Closure c) {
         def a = new org.zstack.sdk.GenerateChallengeAction()
-
+        
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-
+        
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-
+    
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
+        
             return out
         } else {
             return errorOut(a.call())
@@ -21727,24 +21727,24 @@ abstract class ApiHelper {
 
     def loginIAM2VirtualIDWithRMS(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.LoginIAM2VirtualIDWithRMSAction.class) Closure c) {
         def a = new org.zstack.sdk.LoginIAM2VirtualIDWithRMSAction()
-
+        
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-
+        
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-
+    
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
+        
             return out
         } else {
             return errorOut(a.call())
@@ -33004,24 +33004,24 @@ abstract class ApiHelper {
 
     def syncWithRMS(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SyncWithRMSAction.class) Closure c) {
         def a = new org.zstack.sdk.SyncWithRMSAction()
-
+        
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-
+        
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-
+    
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
+        
             return out
         } else {
             return errorOut(a.call())
