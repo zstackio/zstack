@@ -105,6 +105,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                         continue;
                     }
 
+                    if (statement.getActions() == null) {
+                        continue;
+                    }
+
                     for (String as : statement.getActions()) {
                         apiNeedToCheck.removeIf(api -> evalAllowStatement(as, api));
 
@@ -166,7 +170,7 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
                     continue;
                 }
 
-                uuids.retainAll(e.getValue());
+                uuids.removeAll(e.getValue());
 
                 if (!uuids.isEmpty()) {
                     if (logger.isTraceEnabled()) {
