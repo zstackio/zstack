@@ -142,6 +142,8 @@
         <Logger name="com.datastax.driver.core" level="TRACE" />
         -->
 
+        <Logger name="org.zstack.drs" level="TRACE" />
+
         <Logger name="org.springframework.data.cassandra.core" level="TRACE" />
 
         <Logger name="org.hibernate" level="WARN">
