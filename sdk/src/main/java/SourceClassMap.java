@@ -72,6 +72,13 @@ public class SourceClassMap {
 			put("org.zstack.core.errorcode.ElaborationContent", "org.zstack.sdk.ElaborationContent");
 			put("org.zstack.core.gc.GarbageCollectorInventory", "org.zstack.sdk.GarbageCollectorInventory");
 			put("org.zstack.core.jsonlabel.JsonLabelInventory", "org.zstack.sdk.JsonLabelInventory");
+			put("org.zstack.drs.api.HostLoad", "org.zstack.sdk.HostLoad");
+			put("org.zstack.drs.api.Threshold", "org.zstack.sdk.Threshold");
+			put("org.zstack.drs.data.DRSAutomationLevel", "org.zstack.sdk.DRSAutomationLevel");
+			put("org.zstack.drs.data.DRSState", "org.zstack.sdk.DRSState");
+			put("org.zstack.drs.entity.ClusterDRSInventory", "org.zstack.sdk.ClusterDRSInventory");
+			put("org.zstack.drs.entity.DRSAdviceInventory", "org.zstack.sdk.DRSAdviceInventory");
+			put("org.zstack.drs.entity.DRSVmMigrationActivityInventory", "org.zstack.sdk.DRSVmMigrationActivityInventory");
 			put("org.zstack.guesttools.GuestToolsInventory", "org.zstack.sdk.GuestToolsInventory");
 			put("org.zstack.header.affinitygroup.AffinityGroupInventory", "org.zstack.sdk.AffinityGroupInventory");
 			put("org.zstack.header.affinitygroup.AffinityGroupUsageInventory", "org.zstack.sdk.AffinityGroupUsageInventory");
@@ -565,6 +572,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CloneVmInstanceInventory", "org.zstack.header.vm.CloneVmInstanceInventory");
 			put("org.zstack.sdk.CloneVmInstanceResults", "org.zstack.header.vm.CloneVmInstanceResults");
 			put("org.zstack.sdk.CloudFormationStackEventInventory", "org.zstack.header.cloudformation.CloudFormationStackEventInventory");
+			put("org.zstack.sdk.ClusterDRSInventory", "org.zstack.drs.entity.ClusterDRSInventory");
 			put("org.zstack.sdk.ClusterInventory", "org.zstack.header.cluster.ClusterInventory");
 			put("org.zstack.sdk.ConnectionAccessPointInventory", "org.zstack.header.aliyun.network.connection.ConnectionAccessPointInventory");
 			put("org.zstack.sdk.ConnectionRelationShipInventory", "org.zstack.header.aliyun.network.connection.ConnectionRelationShipInventory");
@@ -574,6 +582,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ControlStrategy", "org.zstack.loginControl.entity.ControlStrategy");
 			put("org.zstack.sdk.CreateDataVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeSnapshotEvent$Failure");
 			put("org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure");
+			put("org.zstack.sdk.DRSAdviceInventory", "org.zstack.drs.entity.DRSAdviceInventory");
+			put("org.zstack.sdk.DRSAutomationLevel", "org.zstack.drs.data.DRSAutomationLevel");
+			put("org.zstack.sdk.DRSState", "org.zstack.drs.data.DRSState");
+			put("org.zstack.sdk.DRSVmMigrationActivityInventory", "org.zstack.drs.entity.DRSVmMigrationActivityInventory");
 			put("org.zstack.sdk.DahoCloudConnectionInventory", "org.zstack.header.daho.process.DahoCloudConnectionInventory");
 			put("org.zstack.sdk.DahoConnectionInventory", "org.zstack.header.daho.process.DahoConnectionInventory");
 			put("org.zstack.sdk.DahoVllVbrRefInventory", "org.zstack.header.daho.process.DahoVllVbrRefInventory");
@@ -619,6 +631,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HostInventory", "org.zstack.header.host.HostInventory");
 			put("org.zstack.sdk.HostIommuStateType", "org.zstack.pciDevice.HostIommuStateType");
 			put("org.zstack.sdk.HostIommuStatusType", "org.zstack.pciDevice.HostIommuStatusType");
+			put("org.zstack.sdk.HostLoad", "org.zstack.drs.api.HostLoad");
 			put("org.zstack.sdk.HostNetworkBondingInventory", "org.zstack.header.host.HostNetworkBondingInventory");
 			put("org.zstack.sdk.HostNetworkInterfaceInventory", "org.zstack.header.host.HostNetworkInterfaceInventory");
 			put("org.zstack.sdk.HybridAccountInventory", "org.zstack.hybrid.account.HybridAccountInventory");
@@ -828,6 +841,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.TaskInfo", "org.zstack.header.core.progress.TaskInfo");
 			put("org.zstack.sdk.TaskProgressInventory", "org.zstack.header.core.progress.TaskProgressInventory");
 			put("org.zstack.sdk.TemplateConfigInventory", "org.zstack.templateConfig.TemplateConfigInventory");
+			put("org.zstack.sdk.Threshold", "org.zstack.drs.api.Threshold");
 			put("org.zstack.sdk.TwoFactorAuthenticationInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretInventory", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory");
 			put("org.zstack.sdk.TwoFactorAuthenticationSecretStatus", "org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretStatus");

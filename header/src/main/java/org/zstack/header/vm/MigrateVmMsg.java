@@ -12,6 +12,18 @@ public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage,
     private String strategy;
     private List<String> avoidHostUuids;
 
+    private AllocationScene allocationScene;
+    private String targetHostUuid;
+
+    @Override
+    public AllocationScene getAllocationScene() {
+        return allocationScene;
+    }
+
+    public void setAllocationScene(AllocationScene allocationScene) {
+        this.allocationScene = allocationScene;
+    }
+
     public List<String> getAvoidHostUuids() {
         return avoidHostUuids;
     }
@@ -30,7 +42,7 @@ public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage,
 
     @Override
     public String getHostUuid() {
-        return null;
+        return targetHostUuid;
     }
 
     @Override
@@ -50,5 +62,13 @@ public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage,
 
     public void setStrategy(String strategy) {
         this.strategy = strategy;
+    }
+
+    public String getTargetHostUuid() {
+        return targetHostUuid;
+    }
+
+    public void setTargetHostUuid(String targetHostUuid) {
+        this.targetHostUuid = targetHostUuid;
     }
 }
