@@ -1,3 +1,5 @@
+SET FOREIGN_KEY_CHECKS = 0;
+
 CREATE TABLE IF NOT EXISTS `zstack`.`PriceTableVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
     `name` varchar(255) NOT NULL,
@@ -26,3 +28,5 @@ PRIMARY KEY (`tableUuid`,`accountUuid`),
 CONSTRAINT `fkAccountPriceTableRefVOPriceTableVO` FOREIGN KEY (`tableUuid`) REFERENCES `PriceTableVO` (`uuid`) ON DELETE CASCADE,
 CONSTRAINT `fkAccountPriceTableRefVOAccountVO` FOREIGN KEY (`accountUuid`) REFERENCES `AccountVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+SET FOREIGN_KEY_CHECKS = 1;
