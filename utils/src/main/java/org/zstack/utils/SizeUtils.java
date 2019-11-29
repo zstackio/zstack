@@ -9,24 +9,32 @@ import java.util.List;
  */
 public class SizeUtils {
     private static final String T_SUFFIX = "T";
+    private static final String TB_SUFFIX = "TB";
     private static final String t_SUFFIX = "t";
     private static final String G_SUFFIX = "G";
+    private static final String GB_SUFFIX = "GB";
     private static final String g_SUFFIX = "g";
     private static final String M_SUFFIX = "M";
+    private static final String MB_SUFFIX = "MB";
     private static final String m_SUFFIX = "m";
     private static final String K_SUFFIX = "K";
+    private static final String KB_SUFFIX = "KB";
     private static final String k_SUFFIX = "k";
     private static final String B_SUFFIX = "B";
     private static final String b_SUFFIX = "b";
 
     private static final List<String> validSuffix = Arrays.asList(
             T_SUFFIX,
+            TB_SUFFIX,
             t_SUFFIX,
             G_SUFFIX,
+            GB_SUFFIX,
             g_SUFFIX,
             M_SUFFIX,
+            MB_SUFFIX,
             m_SUFFIX,
             K_SUFFIX,
+            KB_SUFFIX,
             k_SUFFIX,
             B_SUFFIX,
             b_SUFFIX
@@ -34,6 +42,16 @@ public class SizeUtils {
 
     private static boolean isPositiveNumber(String str) {
         return str.matches("\\d+");
+    }
+
+    public static boolean isSizeString2(String str) {
+        String suffix = str.substring(str.length() - 2);
+        if (!validSuffix.contains(suffix)) {
+            return false;
+        }
+
+        String num = str.substring(0, str.length() - 2);
+        return isPositiveNumber(num);
     }
 
     public static boolean isSizeString(String str) {
