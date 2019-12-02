@@ -73,6 +73,8 @@ public interface RESTFacade {
 
     String getHostName();
 
+    int getPort();
+
     String makeUrl(String path);
 
     Runnable installBeforeAsyncJsonPostInterceptor(BeforeAsyncJsonPostInterceptor interceptor);

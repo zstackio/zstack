@@ -492,29 +492,15 @@ public class NetworkUtils {
     }
 
     public static List<String> getAllMac() {
-        try {
-            List<String> macs = new ArrayList<String>();
-            Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
-            while (ifaces.hasMoreElements()) {
-                NetworkInterface iface = ifaces.nextElement();
+        ShellResult res = ShellUtils.runAndReturn("ip a | awk '/ether/ {print $2}' | sort -u");
 
-                byte[] mac = iface.getHardwareAddress();
-                if (mac == null) {
-                    // lo device
-                    continue;
-                }
-
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < mac.length; i++) {
-                    sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? ":" : ""));
-                }
-
-                macs.add(sb.toString().toLowerCase());
-            }
-            return macs;
-        } catch (SocketException e) {
-            throw new RuntimeException(e);
+        if (!res.isReturnCode(0)) {
+            throw new RuntimeException("Fail to get mac address");
         }
+
+        List<String> macs = Arrays.asList(res.getStdout().split("\n"));
+
+        return macs.stream().map(StringUtils::strip).collect(Collectors.toList());
     }
 
     public static boolean isFullCidr(String cidr) {
