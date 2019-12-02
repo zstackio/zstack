@@ -533,6 +533,30 @@ public class KVMAgentCommands {
     public static class CheckVlanBridgeResponse extends CheckBridgeResponse {
     }
 
+    public static class AddInterfaceToBridgeCmd extends KVMAgentCommands.AgentCommand {
+        private String physicalInterfaceName;
+        private String bridgeName;
+
+        public String getPhysicalInterfaceName() {
+            return physicalInterfaceName;
+        }
+
+        public void setPhysicalInterfaceName(String physicalInterfaceName) {
+            this.physicalInterfaceName = physicalInterfaceName;
+        }
+
+        public String getBridgeName() {
+            return bridgeName;
+        }
+
+        public void setBridgeName(String bridgeName) {
+            this.bridgeName = bridgeName;
+        }
+    }
+
+    public static class AddInterfaceToBridgeResponse extends KVMAgentCommands.AgentResponse {
+    }
+
     public static class CreateVlanBridgeCmd extends CreateBridgeCmd {
         private int vlan;
 
