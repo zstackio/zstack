@@ -586,6 +586,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         VmNicVO vmNicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
 
+        if (vmNicVO.getVmInstanceUuid() != null) {
+            throw new ApiMessageInterceptionException(operr("unable to attach the nic. The nic has been attached with vm[uuid: %s]", vmNicVO.getVmInstanceUuid()));
+        }
+
         boolean exist = Q.New(VmNicVO.class)
                 .eq(VmNicVO_.l3NetworkUuid, vmNicVO.getL3NetworkUuid())
                 .eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid())
