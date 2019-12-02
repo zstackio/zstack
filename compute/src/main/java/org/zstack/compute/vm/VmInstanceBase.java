@@ -1953,7 +1953,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         vmNicVO.setDeviceId(deviceId);
                         vmNicVO.setInternalName(internalName);
                         vmNicVO.setHypervisorType(spec.getVmInventory().getHypervisorType());
-                        spec.getDestNics().add(VmNicInventory.valueOf(vmNicVO));
+                        spec.getDestNics().add(0, VmNicInventory.valueOf(vmNicVO));
 
                         trigger.next();
                     }
