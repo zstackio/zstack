@@ -2,7 +2,6 @@ package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
-import org.zstack.core.db.SQL
 import org.zstack.header.Constants
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
@@ -20,7 +19,6 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.persistence.Tuple
-
 /**
  * Created by xing5 on 2017/6/6.
  */
@@ -189,6 +187,10 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.KVM_CHECK_PHYSICAL_NETWORK_INTERFACE_PATH) { HttpEntity<String> e ->
             Spec.checkHttpCallType(e, true)
             return new KVMAgentCommands.CheckPhysicalNetworkInterfaceResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_ADD_INTERFACE_TO_BRIDGE_PATH) {
+            return new KVMAgentCommands.AddInterfaceToBridgeResponse()
         }
 
         spec.simulator(KVMConstant.KVM_REALIZE_L2NOVLAN_NETWORK_PATH) {
