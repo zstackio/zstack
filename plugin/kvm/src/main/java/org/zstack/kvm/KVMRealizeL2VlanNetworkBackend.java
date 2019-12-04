@@ -15,6 +15,7 @@ import org.zstack.kvm.KVMAgentCommands.CheckVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeCmd;
 import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
+import org.zstack.network.l3.NetworkGlobalProperty;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -43,6 +44,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
         cmd.setBridgeName(makeBridgeName(l2vlan.getPhysicalInterface(), l2vlan.getVlan()));
         cmd.setVlan(l2vlan.getVlan());
         cmd.setL2NetworkUuid(l2Network.getUuid());
+        cmd.setDisableIptables(NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES);
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
