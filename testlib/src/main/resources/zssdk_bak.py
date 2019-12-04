@@ -407,6 +407,7 @@ class QueryAction(AbstractAction):
         'count': ParamAnnotation(),
         'groupBy': ParamAnnotation(),
         'replyWithCount': ParamAnnotation(),
+        'filterName': ParamAnnotation(),
         'sortBy': ParamAnnotation(),
         'sortDirection': ParamAnnotation(valid_values=['asc', 'desc']),
         'fields': ParamAnnotation(),

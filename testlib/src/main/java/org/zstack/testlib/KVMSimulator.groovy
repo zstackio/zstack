@@ -270,5 +270,9 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH) {
             return new KVMAgentCommands.UpdateSpiceChannelConfigResponse()
         }
+
+        spec.simulator(KVMConstant.KVM_SCAN_VM_PORT_STATUS) {
+            return new KVMAgentCommands.ScanVmPortResponse()
+        }
     }
 }

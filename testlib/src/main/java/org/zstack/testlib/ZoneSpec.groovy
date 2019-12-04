@@ -172,13 +172,17 @@ class ZoneSpec extends Spec {
             assert res.error == null : "AttachBackupStorageToZoneAction failure: ${JSONObjectUtil.toJsonString(res.error)}"
         }
 
+        doPost(sessionId)
+
+        return id(name, inventory.uuid)
+    }
+
+    void doPost(sessionId) {
         postCreate {
             inventory = queryZone {
                 conditions=["uuid=${inventory.uuid}".toString()]
             }[0]
         }
-
-        return id(name, inventory.uuid)
     }
 
     @Override

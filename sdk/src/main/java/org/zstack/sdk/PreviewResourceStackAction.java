@@ -37,6 +37,9 @@ public class PreviewResourceStackAction extends AbstractAction {
     @Param(required = false, maxLength = 524288, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String parameters;
 
+    @Param(required = false, maxLength = 524288, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String preParameters;
+
     @Param(required = false)
     public java.util.List systemTags;
 
