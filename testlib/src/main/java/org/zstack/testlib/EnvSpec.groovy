@@ -627,7 +627,8 @@ class EnvSpec implements Node, ApiHelper {
                               "TaskProgressVO", "TaskStepVO",
                               "ResourceVO","SecurityGroupSequenceNumberVO", "MediaVO",
                               "CaptchaVO", "LoginAttemptsVO", "ElaborationVO", "SchedulerJobHistoryVO",
-                              "HistoricalPasswordVO", "InstallPathRecycleVO", "PortMirrorSessionSequenceNumberVO"]) {
+                              "HistoricalPasswordVO", "BuildAppExportHistoryVO", "InstallPathRecycleVO", 
+                              "PortMirrorSessionSequenceNumberVO"]) {
                 // those tables will continue having entries during running a test suite
                 return
             }

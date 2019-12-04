@@ -548,6 +548,8 @@ public abstract class HostBase extends AbstractHost {
             handle((ChangeHostConnectionStateMsg) msg);
         } else if (msg instanceof PingHostMsg) {
             handle((PingHostMsg) msg);
+        } else if (msg instanceof ScanVmPortMsg) {
+            handle((ScanVmPortMsg) msg);
         } else if (msg instanceof UpdateHostOSMsg) {
             handle((UpdateHostOSMsg) msg);
         } else {
@@ -603,7 +605,17 @@ public abstract class HostBase extends AbstractHost {
         });
     }
 
-    private void doPingHost(PingHostMsg msg, ReturnValueCompletion<PingHostReply> completion) {
+    protected void scanVmPorts(final ScanVmPortMsg msg) {
+        ScanVmPortReply reply = new ScanVmPortReply();
+        reply.setSupportScan(false);
+        bus.reply(msg, reply);
+    }
+
+    private void handle(final ScanVmPortMsg msg) {
+        scanVmPorts(msg);
+    }
+
+    private void handle(final PingHostMsg msg, ReturnValueCompletion<PingHostReply> completion) {
         final PingHostReply reply = new PingHostReply();
         if (self.getStatus() == HostStatus.Connecting) {
             completion.fail(operr("host is connecting, ping failed"));

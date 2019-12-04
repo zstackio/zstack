@@ -150,6 +150,7 @@ public class KVMHost extends HostBase implements Host {
     private String updateSpiceChannelConfigPath;
     private String cancelJob;
     private String getVmFirstBootDevicePath;
+    private String scanVmPortPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -290,6 +291,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_GET_VM_FIRST_BOOT_DEVICE_PATH);
         getVmFirstBootDevicePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_SCAN_VM_PORT_STATUS);
+        scanVmPortPath = ub.build().toString();
     }
 
     class Http<T> {
@@ -3632,5 +3637,35 @@ public class KVMHost extends HostBase implements Host {
         }
 
         return vo;
+    }
+
+    @Override
+    protected void scanVmPorts(ScanVmPortMsg msg) {
+        ScanVmPortReply reply = new ScanVmPortReply();
+        reply.setSupportScan(true);
+
+        checkStatus();
+
+        ScanVmPortCmd cmd = new ScanVmPortCmd();
+        cmd.setIp(msg.getIp());
+        cmd.setBrname(msg.getBrName());
+        cmd.setPort(msg.getPort());
+        new Http<>(scanVmPortPath, cmd, ScanVmPortResponse.class).call(new ReturnValueCompletion<ScanVmPortResponse>(msg) {
+            @Override
+            public void success(ScanVmPortResponse ret) {
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("operation error, because:%s", ret.getError()));
+                } else {
+                    reply.setStatus(ret.getPortStatus());
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 }

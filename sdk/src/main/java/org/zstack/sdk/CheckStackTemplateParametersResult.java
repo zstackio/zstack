@@ -11,4 +11,12 @@ public class CheckStackTemplateParametersResult {
         return this.parameters;
     }
 
+    public java.util.List preparameters;
+    public void setPreparameters(java.util.List preparameters) {
+        this.preparameters = preparameters;
+    }
+    public java.util.List getPreparameters() {
+        return this.preparameters;
+    }
+
 }

@@ -6,6 +6,7 @@ import org.zstack.header.message.*;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.tag.TagResourceType;
 import org.zstack.header.volume.VolumeVO;
 
 import java.util.Collections;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Action(category = ImageConstant.ACTION_CATEGORY)
+@TagResourceType(ImageVO.class)
 @RestRequest(
         path = "/images/root-volume-templates/from/volumes/{rootVolumeUuid}",
         method = HttpMethod.POST,
