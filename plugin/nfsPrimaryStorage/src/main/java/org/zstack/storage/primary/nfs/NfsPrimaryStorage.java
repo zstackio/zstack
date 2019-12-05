@@ -216,7 +216,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(APICleanUpImageCacheOnPrimaryStorageMsg msg) {
         APICleanUpImageCacheOnPrimaryStorageEvent evt = new APICleanUpImageCacheOnPrimaryStorageEvent(msg.getId());
-        imageCacheCleaner.cleanup(msg.getUuid());
+        imageCacheCleaner.cleanup(msg.getUuid(), false);
         bus.publish(evt);
     }
 

@@ -73,11 +73,11 @@ public abstract class ImageCacheCleaner {
         return PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL;
     }
 
-    public void cleanup() {
-        cleanup(null);
+    public void cleanup(boolean needDestinationCheck) {
+        cleanup(null, needDestinationCheck);
     }
 
-    public void cleanup(String psUuid) {
+    public void cleanup(String psUuid, boolean needDestinationCheck) {
         ImageCacheCleaner self = this;
         thdf.chainSubmit(new ChainTask(null) {
             @Override
@@ -87,7 +87,7 @@ public abstract class ImageCacheCleaner {
 
             @Override
             public void run(SyncTaskChain chain) {
-                doCleanup(psUuid, new NoErrorCompletion() {
+                doCleanup(psUuid, needDestinationCheck, new NoErrorCompletion() {
                     @Override
                     public void done() {
                         chain.next();
@@ -102,7 +102,7 @@ public abstract class ImageCacheCleaner {
         });
     }
 
-    private void cleanUpVolumeCache(String psUuid, NoErrorCompletion completion) {
+    private void cleanUpVolumeCache(String psUuid, boolean needDestinationCheck, NoErrorCompletion completion) {
         List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs(psUuid);
         if (shadowVOs == null || shadowVOs.isEmpty()) {
             completion.done();
@@ -110,7 +110,7 @@ public abstract class ImageCacheCleaner {
         }
 
         new While<>(shadowVOs).each((vo, whileCompletion) -> {
-            if (!destMaker.isManagedByUs(vo.getImageUuid())) {
+            if (needDestinationCheck && !destMaker.isManagedByUs(vo.getImageUuid())) {
                 whileCompletion.done();
                 return;
             }
@@ -168,13 +168,13 @@ public abstract class ImageCacheCleaner {
         });
     }
 
-    protected void doCleanup(String psUuid, NoErrorCompletion completion) {
+    protected void doCleanup(String psUuid, boolean needDestinationCheck, NoErrorCompletion completion) {
         SimpleFlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("do-clean-up-image-cache-on-%s", psUuid));
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                cleanUpVolumeCache(psUuid, new NoErrorCompletion() {
+                cleanUpVolumeCache(psUuid, needDestinationCheck, new NoErrorCompletion() {
                     @Override
                     public void done() {
                         trigger.next();
@@ -232,7 +232,7 @@ public abstract class ImageCacheCleaner {
 
             @Override
             public void run() {
-                cleanup();
+                cleanup(true);
             }
         });
     }
