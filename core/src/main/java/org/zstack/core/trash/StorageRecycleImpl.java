@@ -318,11 +318,22 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         List<String> recycles = new ArrayList<>();
         for (JsonLabelVO trash: trashs) {
             InstallPathRecycleVO vo = JSONObjectUtil.toObject(trash.getLabelValue(), InstallPathRecycleVO.class);
-            vo = dbf.persistAndRefresh(vo);
-            recycles.add(String.valueOf(vo.getTrashId()));
+            try {
+                vo = dbf.persistAndRefresh(vo);
+                recycles.add(String.valueOf(vo.getTrashId()));
+            } catch (Exception e) {
+                logger.warn(e.getMessage());
+                logger.warn(trash.getLabelValue());
+            }
         }
         for (JsonLabelVO trash: trashs) {
-            dbf.remove(trash);
+            try {
+                dbf.remove(trash);
+            } catch (Exception e) {
+                logger.warn(e.getMessage());
+                logger.warn(trash.getLabelValue());
+            }
+
         }
         if (!recycles.isEmpty()) {
             logger.debug(String.format("transfer %s trash to recycles from %s: %s", recycles.size(), type, recycles));
