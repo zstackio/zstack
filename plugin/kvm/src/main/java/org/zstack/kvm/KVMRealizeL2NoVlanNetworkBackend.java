@@ -37,7 +37,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     @Autowired
     private ApiTimeoutManager timeoutMgr;
 
-    public static String makeBridgeName(String physicalInterfaceName) {
+    private static String makeBridgeName(String physicalInterfaceName) {
         return "br_" + physicalInterfaceName;
     }
 
