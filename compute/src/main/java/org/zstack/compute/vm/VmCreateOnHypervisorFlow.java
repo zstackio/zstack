@@ -7,6 +7,10 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.Q;
+import org.zstack.core.gc.GCStatus;
+import org.zstack.core.gc.GarbageCollectorVO;
+import org.zstack.core.gc.GarbageCollectorVO_;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -84,8 +88,18 @@ public class VmCreateOnHypervisorFlow implements Flow {
                             spec.getDestHost().getUuid(), spec.getDestHost().getName(), reply.getError()));
 
                     if (reply.getError().isError(HostErrors.OPERATION_FAILURE_GC_ELIGIBLE)) {
+                        String gcName = String.format("gc-vm-%s-on-host-%s", spec.getVmInventory().getUuid(), spec.getDestHost().getUuid());
+                        if (Q.New(GarbageCollectorVO.class)
+                                .eq(GarbageCollectorVO_.name, gcName)
+                                .notEq(GarbageCollectorVO_.status, GCStatus.Done)
+                                .isExists()) {
+                            logger.debug(String.format("There is already a DeleteVmGC of vm[uuid:%s] " +
+                                    "on host[uuid:%s], skip.", spec.getVmInventory().getUuid(), spec.getDestHost().getUuid()));
+                            return;
+                        }
+
                         DeleteVmGC gc = new DeleteVmGC();
-                        gc.NAME = String.format("gc-vm-%s-on-host-%s", spec.getVmInventory().getUuid(), spec.getVmInventory().getHostUuid());
+                        gc.NAME = gcName;
                         gc.hostUuid = spec.getVmInventory().getHostUuid();
                         gc.inventory = spec.getVmInventory();
                         gc.submit();

@@ -53,18 +53,7 @@ public class DeleteVmGC extends EventBasedGarbageCollector {
 
         VmInstanceState vmstate = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state)
                 .eq(VmInstanceVO_.uuid, inventory.getUuid()).findValue();
-        /**
-         * zhanyong.miao, GC will be executed with the case in ZSTAC-17639.
-         * only following conditions need to execute delete vm gc
-         * 1. VmInstanceState is null: no VmInstanceVO exits
-         * 2. VmInstanceState is Destroyed: all the resources related is released, except destroy vm on hypervisor
-         * 3. VmInstanceState is Destroying: this state need to invoke APIDestroyVmInstanceMsg to redo destroy
-         * 4. VmInstanceState is Stopped: this situation occurs only if host disconnected which make the vm unknown, and
-         * then destroy the vm and recover it, so try to destroy the vm is needed
-         *
-         * notice: Unknown state is no need to be handled, because this state occurs when destroy vm on hypervisor fail
-         * and the destroy vm API also fails, so invoke APIDestroyVmInstanceMsg to redo destroy is the right way
-         */
+        //zhanyong.miao, GC will be executed with the case in ZSTAC-17639.
         if (vmstate != null && (vmstate != VmInstanceState.Destroyed && vmstate != VmInstanceState.Destroying
                 &&vmstate != VmInstanceState.Stopped)) {
             // the vm has been recovered
