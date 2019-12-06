@@ -12,7 +12,7 @@ import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -47,6 +47,7 @@ public class VmPriorityUpgradeExtension implements Component {
     private void updateVmPriorityOnHost(HostInventory inv) {
         List<VmInstanceVO> vos = Q.New(VmInstanceVO.class)
                 .eq(VmInstanceVO_.hostUuid, inv.getUuid())
+                .eq(VmInstanceVO_.type, VmInstanceConstant.USER_VM_TYPE)
                 .list();
 
         List<String> vmUuids = vos.stream().filter(v -> v.getState().equals(VmInstanceState.Running))
@@ -66,13 +67,15 @@ public class VmPriorityUpgradeExtension implements Component {
             return;
         }
 
-        Map<String, VmPriorityLevel> vmLevelMap = new HashMap<>();
-        vmUuids.forEach(v-> {
-            vmLevelMap.put(v, VmPriorityLevel.Normal);
+        VmPriorityConfigVO priorityVO = Q.New(VmPriorityConfigVO.class).eq(VmPriorityConfigVO_.level, VmPriorityLevel.Normal).find();
+        List<PriorityConfigStruct> priorityConfigStructs = new ArrayList<>();
+        vmUuids.forEach(v -> {
+            priorityConfigStructs.add(new PriorityConfigStruct(priorityVO, v));
         });
+
         UpdateVmPriorityMsg msg = new UpdateVmPriorityMsg();
         msg.setHostUuid(inv.getUuid());
-        msg.setVmlevelMap(vmLevelMap);
+        msg.setPriorityConfigStructs(priorityConfigStructs);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, inv.getUuid());
         bus.send(msg, new CloudBusCallBack(msg) {
             @Override

@@ -12,4 +12,6 @@ public class VmPriorityGlobalProperty {
 
     @GlobalProperty(name="initRunningVmPriority", defaultValue = "false")
     public static boolean initRunningVmPriority;
+    @GlobalProperty(name="initRunningApplianceVmPriority", defaultValue = "false")
+    public static boolean initRunningApplianceVmPriority;
 }

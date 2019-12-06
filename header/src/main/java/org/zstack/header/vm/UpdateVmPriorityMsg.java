@@ -3,7 +3,7 @@ package org.zstack.header.vm;
 import org.zstack.header.host.HostMessage;
 import org.zstack.header.message.NeedReplyMessage;
 
-import java.util.Map;
+import java.util.List;
 
 /**
  * @ Author : yh.w
@@ -11,18 +11,9 @@ import java.util.Map;
  */
 public class UpdateVmPriorityMsg extends NeedReplyMessage implements HostMessage {
 
-    // vmUuid, VmPriorityLevel
-    private Map<String, VmPriorityLevel> vmlevelMap;
+    private List<PriorityConfigStruct> priorityConfigStructs;
 
     private String hostUuid;
-
-    public Map<String, VmPriorityLevel> getVmlevelMap() {
-        return vmlevelMap;
-    }
-
-    public void setVmlevelMap(Map<String, VmPriorityLevel> vmlevelMap) {
-        this.vmlevelMap = vmlevelMap;
-    }
 
     @Override
     public String getHostUuid() {
@@ -31,5 +22,13 @@ public class UpdateVmPriorityMsg extends NeedReplyMessage implements HostMessage
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
+    }
+
+    public List<PriorityConfigStruct> getPriorityConfigStructs() {
+        return priorityConfigStructs;
+    }
+
+    public void setPriorityConfigStructs(List<PriorityConfigStruct> priorityConfigStructs) {
+        this.priorityConfigStructs = priorityConfigStructs;
     }
 }
