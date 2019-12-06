@@ -152,7 +152,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
         });
     }
 
-    private void cleanUpVolumeCache(String psUuid, NoErrorCompletion completion) {
+    private void cleanUpVolumeCache(String psUuid, boolean needDestinationCheck, NoErrorCompletion completion) {
         List<ImageCacheShadowVO> shadowVOs = createShadowImageCacheVOs(psUuid);
         if (shadowVOs == null || shadowVOs.isEmpty()) {
             completion.done();
@@ -160,7 +160,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
         }
 
         new While<>(shadowVOs).each((vo, whileCompletion) -> {
-            if (!destMaker.isManagedByUs(vo.getImageUuid())) {
+            if (needDestinationCheck && !destMaker.isManagedByUs(vo.getImageUuid())) {
                 whileCompletion.done();
                 return;
             }
@@ -205,13 +205,13 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
     }
 
     @Override
-    protected void doCleanup(String psUuid, NoErrorCompletion completion) {
+    protected void doCleanup(String psUuid, boolean needDestinationCheck, NoErrorCompletion completion) {
         SimpleFlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("do-clean-up-image-cache-on-local-storage-%s", psUuid));
         chain.then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                cleanUpVolumeCache(psUuid, new NoErrorCompletion() {
+                cleanUpVolumeCache(psUuid, needDestinationCheck, new NoErrorCompletion() {
                     @Override
                     public void done() {
                         trigger.next();
@@ -249,7 +249,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
     }
 
     @Override
-    public void cleanup(String psUuid) {
+    public void cleanup(String psUuid, boolean needDestinationCheck) {
         ImageCacheCleaner self = this;
         thdf.chainSubmit(new ChainTask(null) {
             @Override
@@ -260,7 +260,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
             @Override
             public void run(SyncTaskChain chain) {
                 logger.debug("start clean up cache");
-                doCleanup(psUuid, new NoErrorCompletion() {
+                doCleanup(psUuid, needDestinationCheck, new NoErrorCompletion() {
                     @Override
                     public void done() {
                         chain.next();
