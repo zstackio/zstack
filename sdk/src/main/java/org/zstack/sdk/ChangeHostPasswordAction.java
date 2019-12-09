@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CalculateAccountSpendingAction extends AbstractAction {
+public class ChangeHostPasswordAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CalculateAccountSpendingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CalculateAccountSpendingResult value;
+        public org.zstack.sdk.ChangeHostPasswordResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,20 +25,11 @@ public class CalculateAccountSpendingAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String accountUuid;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostUuid;
 
-    @Param(required = false, validValues = {"KVM","Simulator","ESX","xdragon"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hypervisorType;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long dateStart;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long dateEnd;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean simple = false;
+    @Param(required = true, maxLength = 255, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -58,6 +49,12 @@ public class CalculateAccountSpendingAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -66,8 +63,8 @@ public class CalculateAccountSpendingAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CalculateAccountSpendingResult value = res.getResult(org.zstack.sdk.CalculateAccountSpendingResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CalculateAccountSpendingResult() : value; 
+        org.zstack.sdk.ChangeHostPasswordResult value = res.getResult(org.zstack.sdk.ChangeHostPasswordResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeHostPasswordResult() : value; 
 
         return ret;
     }
@@ -97,10 +94,10 @@ public class CalculateAccountSpendingAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/billings/accounts/{accountUuid}/actions";
+        info.path = "/hosts/kvm/{hostUuid}/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "calculateAccountSpending";
+        info.needPoll = true;
+        info.parameterName = "changeHostPassword";
         return info;
     }
 
