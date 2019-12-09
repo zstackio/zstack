@@ -382,7 +382,11 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 try {
                     fis = new FileInputStream(f);
                     String md5 = DigestUtils.md5Hex(fis);
-                    srcMd5sum.put(f.getName(), md5);
+                    if (!srcMd5sum.containsKey(f.getName())) {
+                        srcMd5sum.put(f.getName(), md5);
+                    } else {
+                        srcMd5sum.put(String.format("%s:%s", f.getName(), f.length()), md5);
+                    }
                 } finally {
                     if (fis != null) {
                         try {
@@ -399,7 +403,11 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 try {
                     fis = new FileInputStream(f);
                     String md5 = DigestUtils.md5Hex(fis);
-                    destMd5sum.put(f.getName(), md5);
+                    if (!destMd5sum.containsKey(f.getName())) {
+                        destMd5sum.put(f.getName(), md5);
+                    } else {
+                        destMd5sum.put(String.format("%s:%s", f.getName(), f.length()), md5);
+                    }
                 } finally {
                     if (fis != null) {
                         try {
@@ -411,6 +419,9 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                 }
             }
             for (Map.Entry<String, String> srcEntry : srcMd5sum.entrySet()) {
+                if (srcEntry.getKey().contains(":")) {
+                    logger.debug(String.format("duplicate file name detected, combine name and length as a unique key: %s", srcEntry.getKey()));
+                }
                 String name = srcEntry.getKey();
                 String destMd5 = destMd5sum.get(name);
                 if (destMd5 == null) {
