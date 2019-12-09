@@ -14,4 +14,5 @@ public enum PciDeviceType {
 	PCI_Bridge,
 	Host_Bridge,
 	Generic,
+	Custom,
 }
