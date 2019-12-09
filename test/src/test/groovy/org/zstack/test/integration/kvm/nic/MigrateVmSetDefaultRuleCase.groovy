@@ -182,6 +182,13 @@ class MigrateVmSetDefaultRuleCase extends SubCase {
             return rsp
         }
 
+        def ccmd = null
+        env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_CLEANUP_UNUSED_RULE_ON_HOST_PATH) { rsp, HttpEntity<String> e ->
+            ccmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.CleanupUnusedRulesOnHostCmd.class)
+
+            return rsp
+        }
+
         migrateVm {
             vmInstanceUuid = vm.uuid
             hostUuid = host.uuid
@@ -189,6 +196,9 @@ class MigrateVmSetDefaultRuleCase extends SubCase {
 
         retryInSecs {
             assert cmd != null
+            assert cmd.skipIpv6 == false
+            assert ccmd != null
+            assert ccmd.skipIpv6 == false
         }
     }
 }
