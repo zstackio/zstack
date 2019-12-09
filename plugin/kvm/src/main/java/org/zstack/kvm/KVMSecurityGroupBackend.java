@@ -19,6 +19,7 @@ import org.zstack.kvm.KVMAgentCommands.CheckDefaultSecurityGroupResponse;
 import org.zstack.kvm.KVMAgentCommands.ApplySecurityGroupRuleResponse;
 import org.zstack.kvm.KVMAgentCommands.CleanupUnusedRulesOnHostResponse;
 import org.zstack.kvm.KVMAgentCommands.RefreshAllRulesOnHostCmd;
+import org.zstack.network.l3.NetworkGlobalProperty;
 import org.zstack.network.securitygroup.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -131,6 +132,7 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
     @Override
     public void checkDefaultRules(String hostUuid, Completion completion) {
         CheckDefaultSecurityGroupCmd cmd = new CheckDefaultSecurityGroupCmd();
+        cmd.skipIpv6 = NetworkGlobalProperty.SKIP_IPV6;
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
@@ -194,6 +196,7 @@ public class KVMSecurityGroupBackend implements SecurityGroupHypervisorBackend, 
     @Override
     public void cleanUpUnusedRuleOnHost(String hostUuid, final Completion completion) {
         KVMAgentCommands.CleanupUnusedRulesOnHostCmd cmd = new KVMAgentCommands.CleanupUnusedRulesOnHostCmd();
+        cmd.skipIpv6 = NetworkGlobalProperty.SKIP_IPV6;
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
         msg.setCommand(cmd);
