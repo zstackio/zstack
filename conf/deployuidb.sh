@@ -39,7 +39,18 @@ if [ -d $ui_schema_path ]; then
 fi
 
 hostname=`hostname`
-mysql --user=$user --password=$password --host=$host --port=$port << EOF
+db_version=`mysql --version | awk '/Distrib/{print $5}' |awk -F'.' '{print $1}'`
+if [ $db_version -ge 10 ];then
+    mysql --user=$user --password=$password --host=$host --port=$port << EOF
+drop user if exists zstack_ui;
+create user 'zstack_ui' identified by "$zstack_ui_db_password";
+grant all privileges on zstack_ui.* to zstack_ui@'localhost' identified by "$zstack_ui_db_password";
+grant all privileges on zstack_ui.* to zstack_ui@'%' identified by "$zstack_ui_db_password";
+grant all privileges on zstack_ui.* to zstack_ui@"$hostname" identified by "$zstack_ui_db_password";
+flush privileges;
+EOF
+else
+    mysql --user=$user --password=$password --host=$host --port=$port << EOF
 grant usage on *.* to 'zstack_ui'@'localhost';
 grant usage on *.* to 'zstack_ui'@'%';
 drop user zstack_ui;
@@ -49,3 +60,4 @@ grant all privileges on zstack_ui.* to zstack_ui@'%' identified by "$zstack_ui_d
 grant all privileges on zstack_ui.* to zstack_ui@"$hostname" identified by "$zstack_ui_db_password";
 flush privileges;
 EOF
+fi
