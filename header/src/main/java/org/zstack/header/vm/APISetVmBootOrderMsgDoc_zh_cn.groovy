@@ -34,7 +34,7 @@ doc {
 				column {
 					name "bootOrder"
 					enclosedIn "setVmBootOrder"
-					desc "启动设备。`CdRom`：光驱，`HardDisk`：云盘。若该字段不指定，则表示使用系统默认启动设备顺序(HardDisk, CdRom)"
+					desc "启动设备。`CdRom`：光驱，`HardDisk`：云盘，`Network`：网络。若该字段不指定，则表示使用系统默认启动设备顺序(HardDisk, CdRom, Network)"
 					location "body"
 					type "List"
 					optional true

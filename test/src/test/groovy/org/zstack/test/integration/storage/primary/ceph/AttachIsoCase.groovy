@@ -70,8 +70,9 @@ class AttachIsoCase extends SubCase {
             uuid = vmUuid
         }
 
-        assert res.orders.size() == 1
+        assert res.orders.size() == 2
         assert res.orders[0] == VmBootDevice.HardDisk.toString()
+        assert res.orders[1] == VmBootDevice.Network.toString()
 
         attachIsoToVmInstance {
             isoUuid = imageUuid
@@ -83,9 +84,10 @@ class AttachIsoCase extends SubCase {
             uuid = vmUuid
         }
 
-        assert res.orders.size() == 2
+        assert res.orders.size() == 3
         assert res.orders[0] == VmBootDevice.HardDisk.toString()
         assert res.orders[1] == VmBootDevice.CdRom.toString()
+        assert res.orders[2] == VmBootDevice.Network.toString()
 
         // attach the iso again and will be throw exception
         expect(AssertionError.class) {

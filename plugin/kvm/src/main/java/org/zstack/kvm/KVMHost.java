@@ -113,6 +113,8 @@ public class KVMHost extends HostBase implements Host {
     private AnsibleFacade asf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private DeviceBootOrderOperator deviceBootOrderOperator;
 
     private KVMHostContext context;
 
@@ -1785,6 +1787,8 @@ public class KVMHost extends HostBase implements Host {
                 ret.add(BootDev.hd.toString());
             } else if (VmBootDevice.CdRom.toString().equals(o)) {
                 ret.add(BootDev.cdrom.toString());
+            } else if (VmBootDevice.Network.toString().equals(o)) {
+                ret.add(BootDev.network.toString());
             } else {
                 throw new CloudRuntimeException(String.format("unknown boot device[%s]", o));
             }
@@ -2129,6 +2133,7 @@ public class KVMHost extends HostBase implements Host {
 
         String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.BOOT_MODE_TOKEN);
         cmd.setBootMode(bootMode == null ? ImageBootMode.Legacy.toString() : bootMode);
+        deviceBootOrderOperator.updateVmDeviceBootOrder(cmd, spec);
         cmd.setBootDev(toKvmBootDev(spec.getBootOrders()));
         cmd.setHostManagementIp(self.getManagementIp());
         cmd.setConsolePassword(spec.getConsolePassword());

@@ -118,4 +118,34 @@
             <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="DeviceBootOrderOperator" class="org.zstack.kvm.DeviceBootOrderOperator">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="HardDiskBootOrderAllocator" class="org.zstack.kvm.HardDiskBootOrderAllocator">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.BootOrderAllocator"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="CdRomBootOrderAllocator" class="org.zstack.kvm.CdRomBootOrderAllocator">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.BootOrderAllocator"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="NetworkBootOrderAllocator" class="org.zstack.kvm.NetworkBootOrderAllocator">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.BootOrderAllocator"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="BootOrderKvmStartVmExtension" class="org.zstack.kvm.BootOrderKvmStartVmExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMStartVmExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 </beans>

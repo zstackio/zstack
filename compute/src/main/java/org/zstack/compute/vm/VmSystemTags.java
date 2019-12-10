@@ -39,9 +39,12 @@ public class VmSystemTags {
     public static String BOOT_ORDER_TOKEN = "bootOrder";
     public static PatternedSystemTag BOOT_ORDER = new PatternedSystemTag(String.format("bootOrder::{%s}", BOOT_ORDER_TOKEN), VmInstanceVO.class);
 
-    // set cdromBootOnce::true to set vm boot from cdrom once only
+    //this tag is deprecated.
     public static String CDROM_BOOT_ONCE_TOKEN = "cdromBootOnce";
     public static PatternedSystemTag CDROM_BOOT_ONCE = new PatternedSystemTag(String.format("cdromBootOnce::{%s}", CDROM_BOOT_ONCE_TOKEN), VmInstanceVO.class);
+
+    public static String BOOT_ORDER_ONCE_TOKEN = "bootOrderOnce";
+    public static PatternedSystemTag BOOT_ORDER_ONCE = new PatternedSystemTag(String.format("bootOrderOnce::{%s}", BOOT_ORDER_ONCE_TOKEN), VmInstanceVO.class);
 
     public static String CONSOLE_PASSWORD_TOKEN = "consolePassword";
     public static PatternedSystemTag CONSOLE_PASSWORD = new PatternedSystemTag(String.format("consolePassword::{%s}",CONSOLE_PASSWORD_TOKEN),VmInstanceVO.class);

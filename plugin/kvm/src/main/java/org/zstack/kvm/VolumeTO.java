@@ -31,6 +31,7 @@ public class VolumeTO {
     private boolean shareable;
     private String cacheMode = "none";
     private String wwn;
+    private int bootOrder;
 
     public VolumeTO() {
     }
@@ -45,6 +46,7 @@ public class VolumeTO {
         this.cacheMode = other.cacheMode;
         this.wwn = other.wwn;
         this.shareable = other.shareable;
+        this.bootOrder = other.bootOrder;
     }
 
     public static List<VolumeTO> valueOf(List<VolumeInventory> vols, KVMHostInventory host) {
@@ -170,5 +172,13 @@ public class VolumeTO {
 
     public void setCacheMode(String cacheMode) {
         this.cacheMode = cacheMode;
+    }
+
+    public int getBootOrder() {
+        return bootOrder;
+    }
+
+    public void setBootOrder(int bootOrder) {
+        this.bootOrder = bootOrder;
     }
 }
