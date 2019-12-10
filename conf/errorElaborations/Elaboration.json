@@ -1320,6 +1320,14 @@
     "message_en": "Failed to start VM because the ceph file corresponding to the volume failed to be read."
   },
   {
+    "category": "VM",
+    "code": "1041",
+    "method": "regex",
+    "regex": "the vm.*, but the host is either not having enough CPU/memory/GPU or in the state\\[Enabled] or status\\[Connected] to start the vm",
+    "message_cn": "找不到合适的host来启动vm, 因为该主存储的vm只能启动在host[%2$s]上，但这个host没有足够的cpu/memory/gpu资源，或不处于Enabled/Connected 状态",
+    "message_en": "the vm can only be started on the host[%2$s] because of its primary storage, but the host is either not having enough cpu/memory/gpu, or in the Enabled/Connected status"
+  },
+  {
     "category": "VOLUME",
     "code": "1000",
     "method": "regex",
