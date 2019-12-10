@@ -817,7 +817,8 @@ public class Platform {
                         long end = System.currentTimeMillis();
                         result.setCost(String.valueOf(end-start) + "ms");
                         result.setElaboration(StringSimilarity.formatElaboration(ela, args));
-                        result.setMessages(new ErrorCodeElaboration(ela.getMessage_en(), ela.getMessage_cn(), args));
+                        result.setMessages(new ErrorCodeElaboration(ela.getCode(), ela.getMessage_en(), ela.getMessage_cn(),
+                                ela.getDistance(), ela.getMethod(), args));
                     }
                 }
             } catch (Throwable e) {

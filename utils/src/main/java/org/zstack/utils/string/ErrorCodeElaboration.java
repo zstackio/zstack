@@ -17,21 +17,24 @@ public class ErrorCodeElaboration {
     private String extension_en;
     private String source = "zstack";
     private double distance = 0;
-    private ElaborationSearchMethod method = ElaborationSearchMethod.distance;
+    private ElaborationSearchMethod method;
     private String formatSrcError;
     private String url;
 
     public ErrorCodeElaboration() {
     }
 
-    public ErrorCodeElaboration(String en, String cn, Object...args) {
+    public ErrorCodeElaboration(String code, String en, String cn, double distance, ElaborationSearchMethod method, Object...args) {
         if (args != null) {
-            message_en = String.format(en, args);
-            message_cn = String.format(cn, args);
+            this.message_en = String.format(en, args);
+            this.message_cn = String.format(cn, args);
         } else {
-            message_en = en;
-            message_cn = cn;
+            this.message_en = en;
+            this.message_cn = cn;
         }
+        this.distance = distance;
+        this.method = method;
+        this.code = code;
     }
 
     public ErrorCodeElaboration(ErrorCodeElaboration other) {
