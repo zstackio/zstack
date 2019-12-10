@@ -33,6 +33,14 @@
         <type>java.lang.Boolean</type>
     </config>
 
+    <config>
+        <name>primarystorage.auto.delete.trash.interval</name>
+        <description>Primary storage auto delete trash period</description>
+        <defaultValue>0</defaultValue>
+        <category>primaryStorage</category>
+        <type>java.lang.Long</type>
+    </config>
+
 	<config>
 		<name>reservedCapacity</name>
 		<description>The reserved capacity on all primary storage</description>
