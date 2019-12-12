@@ -5822,6 +5822,16 @@
     "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
   },
   {
+    "raw": "cannot attach guest-tools iso to vm[uuid:%s] because it has VirtioSCSI data volume attached",
+    "en_US": "cannot attach guest-tools iso to vm[uuid:{0}] because it has VirtioSCSI data volume attached",
+    "zh_CN": "无法为云主机[uuid:{0}挂载增强工具镜像，因为它挂载了VirtioSCSI云盘",
+    "arguments": [
+      "msg.getUuid()"
+    ],
+    "line": 98,
+    "fileName": "src/main/java/org/zstack/guesttools/GuestToolsApiInterceptor.java"
+  },
+  {
     "raw": "cannot get guest-tools info from vm[uuid:%s] because it\u0027s hypervisor type is not supported",
     "en_US": "cannot get guest-tools info from vm[uuid:{0}] because it\u0027s hypervisor type is not supported",
     "zh_CN": "无法从云主机[uuid:{0}]内部获取增强工具信息，因为其虚拟化层目前不支持增强工具",
