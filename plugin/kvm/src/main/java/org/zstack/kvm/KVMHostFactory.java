@@ -18,6 +18,7 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
@@ -53,6 +54,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
 
 public class KVMHostFactory extends AbstractService implements HypervisorFactory, Component,
@@ -325,6 +327,20 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                 }
 
                 throw new OperationFailureException(operr("there are still hosts not have the same cpu model, details: %s", str.toString()));
+            }
+        }));
+
+        KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.installValidator(((resourceUuid, resourceType, systemTag) -> {
+            String check = KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.getTokenByTag(systemTag, KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN);
+            Integer num;
+            try {
+                num = Integer.parseInt(check);
+            } catch (Exception e) {
+                throw new ApiMessageInterceptionException(argerr("%s must be a number", KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN));
+            }
+
+            if (num <= 0 || num > 31) {
+                throw new ApiMessageInterceptionException(argerr("pci bridge need a value greater than 0 and lower than 32", KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN));
             }
         }));
 

@@ -1054,6 +1054,7 @@ public class KVMAgentCommands {
         private boolean fromForeignHypervisor;
         private String machineType;
         private Integer pciePortNums;
+        private Integer predefinedPciBridgeNum;
         private boolean useHugePage;
         private String chassisAssetTag;
         private PriorityConfigStruct priorityConfigStruct;
@@ -1371,6 +1372,14 @@ public class KVMAgentCommands {
 
         public void setVmInternalId(long vmInternalId) {
             this.vmInternalId = vmInternalId;
+        }
+
+        public Integer getPredefinedPciBridgeNum() {
+            return predefinedPciBridgeNum;
+        }
+
+        public void setPredefinedPciBridgeNum(Integer predefinedPciBridgeNum) {
+            this.predefinedPciBridgeNum = predefinedPciBridgeNum;
         }
 
         @Override
