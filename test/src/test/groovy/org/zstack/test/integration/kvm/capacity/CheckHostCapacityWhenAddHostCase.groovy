@@ -7,9 +7,11 @@ import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.AddKVMHostAction
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.kvm.host.HostEnv
-import org.zstack.testlib.ClusterSpec
+import org.zstack.sdk.ClusterInventory
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.data.SizeUnit
+
 /**
  * Created by zouye on 2017/3/1.
  */
@@ -34,12 +36,12 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
     }
 
     void testCheckCapacityWhenAddHost() {
-        ClusterSpec clusterSpec = env.specByName("cluster")
+        ClusterInventory cluster = env.inventoryByName("cluster")
         KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.updateValue("1024G")
 
         env.afterSimulator(KVMConstant.KVM_HOST_CAPACITY_PATH) { rsp, HttpEntity<String> e ->
             rsp as KVMAgentCommands.HostCapacityResponse
-            rsp.setTotalMemory(1)
+            rsp.setTotalMemory(SizeUnit.GIGABYTE.toByte(10))
             return rsp
         }
 
@@ -48,11 +50,40 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
         action.password = "password"
         action.name = "addHost"
         action.managementIp = "localhost"
-        action.clusterUuid = clusterSpec.inventory.uuid
+        action.clusterUuid = cluster.uuid
         action.sessionId = adminSession()
 
         AddKVMHostAction.Result res = action.call()
         assert res.error != null
+
+        KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.updateValue("9G")
+
+        res = action.call()
+        assert res.error == null
+
+        deleteHost {
+            uuid = res.value.inventory.uuid
+        }
+
+        updateResourceConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.name
+            value = "11G"
+            resourceUuid = cluster.uuid
+        }
+
+        res = action.call()
+        assert res.error != null
+
+        KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.updateValue("1024G")
+        updateResourceConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.name
+            value = "9G"
+            resourceUuid = cluster.uuid
+        }
+        res = action.call()
+        assert res.error == null
     }
 
     @Override
