@@ -46,4 +46,9 @@ public class KVMSystemTags {
 
     public static final String VOLUME_WWN_TOKEN = "wwn";
     public static PatternedSystemTag VOLUME_WWN = new PatternedSystemTag(String.format("kvm::volume::{%s}", VOLUME_WWN_TOKEN), VolumeVO.class);
+
+    public static final String VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN = "number";
+    public static PatternedSystemTag VM_PREDEFINED_PCI_BRIDGE_NUM = new PatternedSystemTag(
+            String.format("vm::pci::bridge::num::{%s}",
+                    VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN), VmInstanceVO.class);
 }
