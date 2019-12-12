@@ -20,6 +20,7 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -238,6 +239,7 @@ public abstract class HostBase extends AbstractHost {
                         new While<>(vmUuids).step((vmUuid, compl) -> {
                             MigrateVmMsg msg = new MigrateVmMsg();
                             msg.setVmInstanceUuid(vmUuid);
+                            msg.setAllocationScene(AllocationScene.Auto);
                             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
                             bus.send(msg, new CloudBusCallBack(compl) {
                                 @Override

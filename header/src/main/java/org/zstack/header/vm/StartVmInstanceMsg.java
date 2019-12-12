@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.message.NeedReplyMessage;
 
@@ -16,6 +17,15 @@ public class StartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMe
     private String vmInstanceUuid;
     private String accountUuid;
     private List<String> softAvoidHostUuids;
+    private AllocationScene allocationScene;
+
+    public AllocationScene getAllocationScene() {
+        return allocationScene;
+    }
+
+    public void setAllocationScene(AllocationScene allocationScene) {
+        this.allocationScene = allocationScene;
+    }
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
