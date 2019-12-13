@@ -11,13 +11,12 @@ import org.zstack.header.cluster.APIUpdateClusterOSMsg;
 import org.zstack.header.cluster.ClusterConstant;
 import org.zstack.header.cluster.UpdateClusterOSMsg;
 import org.zstack.header.cluster.UpdateClusterOSReply;
-import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.longjob.LongJob;
 import org.zstack.header.longjob.LongJobFor;
 import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.longjob.LongJob;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 /**
@@ -38,8 +37,8 @@ public class UpdateClusterOSJob implements LongJob {
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
-                UpdateClusterOSReply rly = reply.castReply();
                 if (reply.isSuccess()) {
+                    UpdateClusterOSReply rly = reply.castReply();
                     job.setJobResult(JSONObjectUtil.toJsonString(rly.getResults()));
                     dbf.update(job);
                     completion.success(null);
