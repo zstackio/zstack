@@ -87,6 +87,10 @@ public interface KvmSetupSelfFencerExtensionPoint {
 
     String kvmSetupSelfFencerStorageType();
 
+    default boolean storageConsistencySupported() {
+        return false;
+    }
+
     void kvmSetupSelfFencer(KvmSetupSelfFencerParam param, Completion completion);
 
     void kvmCancelSelfFencer(KvmCancelSelfFencerParam param, Completion completion);
