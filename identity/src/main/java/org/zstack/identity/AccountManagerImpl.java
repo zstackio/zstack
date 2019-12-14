@@ -11,13 +11,19 @@ import org.zstack.core.config.*;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTask;
+import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.APIIsOpensourceVersionMsg;
 import org.zstack.header.APIIsOpensourceVersionReply;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
@@ -265,10 +271,88 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void handle(final APIChangeResourceOwnerMsg msg) {
-        APIChangeResourceOwnerEvent evt = new APIChangeResourceOwnerEvent(msg.getId());
-        evt.setInventory(changeResourceOwner(msg.getResourceUuid(), msg.getAccountUuid()));
-        bus.publish(evt);
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("change-resource-owner-to-account-%s", msg.getAccountUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doChangeResourceOwnerInQueue(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
     }
+
+    private void doChangeResourceOwnerInQueue(APIChangeResourceOwnerMsg msg, NoErrorCompletion completion) {
+        APIChangeResourceOwnerEvent evt = new APIChangeResourceOwnerEvent(msg.getId());
+
+        FlowChain chain = new SimpleFlowChain();
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String currentAccountUuid = msg.getSession().getAccountUuid();
+                String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
+                if (new QuotaUtil().isAdminAccount(resourceTargetOwnerAccountUuid)) {
+                    trigger.next();
+                    return;
+                }
+                // check if change resource owner to self
+                SimpleQuery<AccountResourceRefVO> queryAccResRefVO = dbf.createQuery(AccountResourceRefVO.class);
+                queryAccResRefVO.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
+                AccountResourceRefVO accResRefVO = queryAccResRefVO.find();
+                String resourceOriginalOwnerAccountUuid = accResRefVO.getOwnerAccountUuid();
+                if (resourceTargetOwnerAccountUuid.equals(resourceOriginalOwnerAccountUuid)) {
+                    trigger.fail(err(IdentityErrors.QUOTA_INVALID_OP,
+                            "Invalid ChangeResourceOwner operation." +
+                                    "Original owner is the same as target owner." +
+                                    "Current account is [uuid: %s]." +
+                                    "The resource target owner account[uuid: %s]." +
+                                    "The resource original owner account[uuid:%s].",
+                            currentAccountUuid, resourceTargetOwnerAccountUuid, resourceOriginalOwnerAccountUuid
+                    ));
+                    return;
+                }
+                // check quota
+                Map<String, QuotaPair> pairs = new QuotaUtil().makeQuotaPairs(resourceTargetOwnerAccountUuid);
+                for (Quota quota : messageQuotaMap.get(APIChangeResourceOwnerMsg.class)) {
+                    quota.getOperator().checkQuota(msg, pairs);
+                }
+
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                evt.setInventory(changeResourceOwner(msg.getResourceUuid(), msg.getAccountUuid()));
+                trigger.next();
+            }
+        }).done(new FlowDoneHandler(msg) {
+            @Override
+            public void handle(Map data) {
+                bus.publish(evt);
+                completion.done();
+            }
+        }).error(new FlowErrorHandler(msg) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                evt.setError(errCode);
+                bus.publish(evt);
+                completion.done();
+            }
+        }).start();
+    }
+
 
     @Transactional(readOnly = true)
     private void handle(APIGetResourceAccountMsg msg) {
@@ -1345,45 +1429,11 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
             validate((APILogInByUserMsg) msg);
         } else if (msg instanceof APIGetAccountQuotaUsageMsg) {
             validate((APIGetAccountQuotaUsageMsg) msg);
-        } else if (msg instanceof APIChangeResourceOwnerMsg) {
-            validate((APIChangeResourceOwnerMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
-    }
-
-    private void checkQuotaForChangeResourceOwner(APIChangeResourceOwnerMsg msg) {
-        String currentAccountUuid = msg.getSession().getAccountUuid();
-        String resourceTargetOwnerAccountUuid = msg.getAccountUuid();
-        if (new QuotaUtil().isAdminAccount(resourceTargetOwnerAccountUuid)) {
-            return;
-        }
-        // check if change resource owner to self
-        SimpleQuery<AccountResourceRefVO> queryAccResRefVO = dbf.createQuery(AccountResourceRefVO.class);
-        queryAccResRefVO.add(AccountResourceRefVO_.resourceUuid, Op.EQ, msg.getResourceUuid());
-        AccountResourceRefVO accResRefVO = queryAccResRefVO.find();
-        String resourceOriginalOwnerAccountUuid = accResRefVO.getOwnerAccountUuid();
-        if (resourceTargetOwnerAccountUuid.equals(resourceOriginalOwnerAccountUuid)) {
-            throw new ApiMessageInterceptionException(err(IdentityErrors.QUOTA_INVALID_OP,
-                    "Invalid ChangeResourceOwner operation." +
-                            "Original owner is the same as target owner." +
-                            "Current account is [uuid: %s]." +
-                            "The resource target owner account[uuid: %s]." +
-                            "The resource original owner account[uuid:%s].",
-                    currentAccountUuid, resourceTargetOwnerAccountUuid, resourceOriginalOwnerAccountUuid
-            ));
-        }
-        // check quota
-        Map<String, QuotaPair> pairs = new QuotaUtil().makeQuotaPairs(msg.getAccountUuid());
-        for (Quota quota : messageQuotaMap.get(APIChangeResourceOwnerMsg.class)) {
-            quota.getOperator().checkQuota(msg, pairs);
-        }
-    }
-
-    private void validate(APIChangeResourceOwnerMsg msg) {
-        checkQuotaForChangeResourceOwner(msg);
     }
 
     private void validate(APIGetAccountQuotaUsageMsg msg) {

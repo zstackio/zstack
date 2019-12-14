@@ -26,6 +26,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.APIChangeResourceOwnerMsg;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
@@ -392,6 +393,10 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                         check((APICreateVipMsg) msg, pairs);
                     }
                 }
+
+                if (msg instanceof APIChangeResourceOwnerMsg) {
+                    check((APIChangeResourceOwnerMsg) msg, pairs);
+                }
             }
 
             @Override
@@ -419,6 +424,16 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                 return vn;
             }
 
+            private void check(APIChangeResourceOwnerMsg msg, Map<String, QuotaPair> pairs) {
+                long vipNum = pairs.get(VipQuotaConstant.VIP_NUM).getValue();
+                long vn = getUsedVip(msg.getAccountUuid());
+
+                if (vn + 1 > vipNum) {
+                    throw new ApiMessageInterceptionException(new QuotaUtil().buildQuataExceedError(
+                            msg.getAccountUuid(), VipQuotaConstant.VIP_NUM, vipNum));
+                }
+            }
+
             private void check(APICreateVipMsg msg, Map<String, QuotaPair> pairs) {
                 long vipNum = pairs.get(VipQuotaConstant.VIP_NUM).getValue();
                 long vn = getUsedVip(msg.getSession().getAccountUuid());
@@ -432,6 +447,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
 
         Quota quota = new Quota();
         quota.addMessageNeedValidation(APICreateVipMsg.class);
+        quota.addMessageNeedValidation(APIChangeResourceOwnerMsg.class);
         quota.setOperator(checker);
 
         QuotaPair p = new QuotaPair();
