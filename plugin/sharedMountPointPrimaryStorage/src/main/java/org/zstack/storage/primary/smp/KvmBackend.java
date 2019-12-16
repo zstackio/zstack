@@ -52,6 +52,7 @@ import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
+import org.zstack.storage.primary.PrimaryStorageSystemTags;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -213,6 +214,22 @@ public class KvmBackend extends HypervisorBackend {
         public Long size;
     }
 
+    public static class DownloadBitsFromKVMHostCmd extends AgentCmd {
+        public String hostname;
+        public String username;
+        public String sshKey;
+        public int sshPort;
+        // it's file path on kvm host actually
+        public String backupStorageInstallPath;
+        public String primaryStorageInstallPath;
+        public Long bandWidth;
+        public String identificationCode;
+    }
+
+    public static class CancelDownloadBitsFromKVMHostCmd extends AgentCmd {
+        public String primaryStorageInstallPath;
+    }
+
     public static final String CONNECT_PATH = "/sharedmountpointprimarystorage/connect";
     public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/sharedmountpointprimarystorage/createrootvolume";
     public static final String DELETE_BITS_PATH = "/sharedmountpointprimarystorage/bits/delete";
@@ -226,6 +243,8 @@ public class KvmBackend extends HypervisorBackend {
     public static final String CREATE_EMPTY_VOLUME_PATH = "/sharedmountpointprimarystorage/volume/createempty";
     public static final String CHECK_BITS_PATH = "/sharedmountpointprimarystorage/bits/check";
     public static final String GET_VOLUME_SIZE_PATH = "/sharedmountpointprimarystorage/volume/getsize";
+    public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/sharedmountpointprimarystorage/kvmhost/download";
+    public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/sharedmountpointprimarystorage/kvmhost/download/cancel";
 
     public KvmBackend(PrimaryStorageVO self) {
         super(self);
@@ -1118,6 +1137,69 @@ public class KvmBackend extends HypervisorBackend {
                 }
             });
         }
+    }
+
+    @Override
+    void handle(DownloadBitsFromKVMHostToPrimaryStorageMsg msg, Completion completion) {
+        GetKVMHostDownloadCredentialMsg gmsg = new GetKVMHostDownloadCredentialMsg();
+        gmsg.setHostUuid(msg.getSrcHostUuid());
+
+        if (PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.hasTag(self.getUuid())) {
+            gmsg.setDataNetworkCidr(PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByResourceUuid(self.getUuid(), PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN));
+        }
+
+        bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, msg.getSrcHostUuid());
+        bus.send(gmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply rly) {
+                if (!rly.isSuccess()) {
+                    completion.fail(rly.getError());
+                    return;
+                }
+
+                GetKVMHostDownloadCredentialReply grly = rly.castReply();
+                DownloadBitsFromKVMHostCmd cmd = new DownloadBitsFromKVMHostCmd();
+                cmd.hostname = grly.getHostname();
+                cmd.username = grly.getUsername();
+                cmd.sshKey = grly.getSshKey();
+                cmd.sshPort = grly.getSshPort();
+                cmd.backupStorageInstallPath = msg.getHostInstallPath();
+                cmd.primaryStorageInstallPath = msg.getPrimaryStorageInstallPath();
+                cmd.bandWidth = msg.getBandWidth();
+                cmd.identificationCode = msg.getLongJobUuid() + msg.getPrimaryStorageInstallPath();
+
+                new Do(msg.getDestHostUuid()).go(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion) {
+                    @Override
+                    public void success(AgentRsp returnValue) {
+                        completion.success();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                    }
+                });
+            }
+        });
+
+    }
+
+    @Override
+    void handle(CancelDownloadBitsFromKVMHostToPrimaryStorageMsg msg, Completion completion) {
+        CancelDownloadBitsFromKVMHostCmd cmd = new CancelDownloadBitsFromKVMHostCmd();
+        cmd.primaryStorageInstallPath = msg.getPrimaryStorageInstallPath();
+
+        new Do(msg.getDestHostUuid()).go(CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion) {
+            @Override
+            public void success(AgentRsp returnValue) {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override

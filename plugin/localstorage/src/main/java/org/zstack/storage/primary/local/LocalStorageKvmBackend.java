@@ -2995,7 +2995,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
 
         bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, msg.getSrcHostUuid());
-        bus.send(gmsg, new CloudBusCallBack(reply) {
+        bus.send(gmsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply rly) {
                 if (!rly.isSuccess()) {

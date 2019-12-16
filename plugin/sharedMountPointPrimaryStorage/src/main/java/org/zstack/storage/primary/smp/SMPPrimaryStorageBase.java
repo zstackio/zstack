@@ -505,9 +505,49 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             handle((SMPRecalculatePrimaryStorageCapacityMsg) msg);
         } else if (msg instanceof DeleteImageCacheOnPrimaryStorageMsg) {
             handle((DeleteImageCacheOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof DownloadBitsFromKVMHostToPrimaryStorageMsg) {
+            handle((DownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
+        } else if (msg instanceof CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) {
+            handle((CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(final DownloadBitsFromKVMHostToPrimaryStorageMsg msg) {
+        DownloadBitsFromKVMHostToPrimaryStorageReply reply = new DownloadBitsFromKVMHostToPrimaryStorageReply();
+        HypervisorFactory f = getHypervisorFactoryByHostUuid(msg.getDestHostUuid());
+        HypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final CancelDownloadBitsFromKVMHostToPrimaryStorageMsg msg) {
+        CancelDownloadBitsFromKVMHostToPrimaryStorageReply reply = new CancelDownloadBitsFromKVMHostToPrimaryStorageReply();
+        HypervisorFactory f = getHypervisorFactoryByHostUuid(msg.getDestHostUuid());
+        HypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(final DeleteImageCacheOnPrimaryStorageMsg msg) {

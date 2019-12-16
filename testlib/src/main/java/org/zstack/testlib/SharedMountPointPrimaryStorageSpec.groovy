@@ -103,6 +103,14 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
                 rsp.existing = true
                 return rsp
             }
+
+            simulator(KvmBackend.DOWNLOAD_BITS_FROM_KVM_HOST_PATH) {
+                return new KvmBackend.AgentRsp()
+            }
+
+            simulator(KvmBackend.CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH) {
+                return new KvmBackend.AgentRsp()
+            }
         }
     }
 
