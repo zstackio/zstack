@@ -235,6 +235,18 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
+    public static class CreateFolderCmd extends NfsPrimaryStorageAgentCommand {
+        private String installUrl;
+
+        public String getInstallUrl() {
+            return installUrl;
+        }
+
+        public void setInstallUrl(String installUrl) {
+            this.installUrl = installUrl;
+        }
+    }
+
     public static class CreateRootVolumeFromTemplateCmd extends NfsPrimaryStorageAgentCommand {
         private String templatePathInCache;
         private long timeout;
@@ -291,6 +303,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
         private String hypervisorType;
         private String name;
         private String volumeUuid;
+        private boolean withoutVolume;
         
         public String getInstallUrl() {
             return installUrl;
@@ -328,6 +341,14 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
         public void setVolumeUuid(String uuid) {
             this.volumeUuid = uuid;
+        }
+
+        public boolean isWithoutVolume() {
+            return withoutVolume;
+        }
+
+        public void setWithoutVolume(boolean withoutVolume) {
+            this.withoutVolume = withoutVolume;
         }
     }
     public static class CreateEmptyVolumeResponse extends NfsPrimaryStorageAgentResponse {

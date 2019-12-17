@@ -13,8 +13,12 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -24,6 +28,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.snapshot.VolumeSnapshotMessageRouter.getResourceIdToRouteMsg;
 
 import javax.persistence.Tuple;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -57,14 +62,14 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             validate((APIRevertVolumeFromSnapshotMsg) msg);
         } else if (msg instanceof APIDeleteVolumeSnapshotFromBackupStorageMsg) {
             validate((APIDeleteVolumeSnapshotFromBackupStorageMsg) msg);
-        } else if (msg instanceof APICreateVolumeSnapshotMsg) {
-            validate((APICreateVolumeSnapshotMsg) msg);
 //        } else if (msg instanceof APIGetVolumeSnapshotTreeMsg) {
 //            validate((APIGetVolumeSnapshotTreeMsg) msg);
 //        } else if (msg instanceof APIBackupVolumeSnapshotMsg) {
 //            validate((APIBackupVolumeSnapshotMsg) msg);
         } else if (msg instanceof APIBatchDeleteVolumeSnapshotMsg) {
             validate((APIBatchDeleteVolumeSnapshotMsg) msg);
+        } else if (msg instanceof APIRevertVmFromSnapshotGroupMsg) {
+            validate((APIRevertVmFromSnapshotGroupMsg) msg);
         }
 
         setServiceId(msg);
@@ -72,6 +77,18 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
         return msg;
     }
 
+    private void validate(APIRevertVmFromSnapshotGroupMsg msg) {
+        VolumeSnapshotGroupVO group = dbf.findByUuid(msg.getUuid(), VolumeSnapshotGroupVO.class);
+
+        if (group.getVolumeSnapshotRefs().stream().anyMatch(ref -> ref.getVolumeType().equals(VolumeType.Memory.toString()))
+                && Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, group.getVmInstanceUuid())
+                .in(VmInstanceVO_.state, Arrays.asList(VmInstanceState.Running, VmInstanceState.Paused))
+                .isExists()) {
+            throw new ApiMessageInterceptionException(argerr("Can not take memory snapshot, expected vm states are [%s, %s]",
+                    VmInstanceState.Running.toString(), VmInstanceState.Paused.toString()));
+        }
+    }
 /*
     private void validate(APIBackupVolumeSnapshotMsg msg) {
         SimpleQuery<VolumeSnapshotVO> q = dbf.createQuery(VolumeSnapshotVO.class);
@@ -111,16 +128,6 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
         }
     }
 */
-
-    private void validate(APICreateVolumeSnapshotMsg msg) {
-        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
-        q.select(VolumeVO_.status);
-        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
-        VolumeStatus status = q.findValue();
-        if (status != VolumeStatus.Ready) {
-            throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is not in status Ready, current is %s, can't create snapshot", msg.getVolumeUuid(), status));
-        }
-    }
 
     private void validate(APIDeleteVolumeSnapshotFromBackupStorageMsg msg) {
         SimpleQuery<VolumeSnapshotBackupStorageRefVO> q = dbf.createQuery(VolumeSnapshotBackupStorageRefVO.class);

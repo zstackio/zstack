@@ -13,6 +13,7 @@ public class TakeSnapshotsOnKvmJobStruct implements Serializable {
     private String previousInstallPath;
     private String newVolumeInstallPath;
     private String snapshotUuid;
+    private boolean memory;
     private boolean live;
     private boolean full = false;
 
@@ -86,5 +87,13 @@ public class TakeSnapshotsOnKvmJobStruct implements Serializable {
 
     public void setFull(boolean full) {
         this.full = full;
+    }
+
+    public boolean isMemory() {
+        return memory;
+    }
+
+    public void setMemory(boolean memory) {
+        this.memory = memory;
     }
 }

@@ -27,6 +27,14 @@ public class PrimaryStoragePathMaker {
         return PathUtil.join("rootVolumes", "acct-" + getAccountUuidOfResource(vol.getUuid()), "vol-" + vol.getUuid(), vol.getUuid() + ".qcow2");
     }
 
+    public static String makeMemoryVolumeParentInstallPath(VolumeInventory vol) {
+        return PathUtil.join("memory", "acct-" + getAccountUuidOfResource(vol.getUuid()), "vol-" + vol.getUuid(), "");
+    }
+
+    public static String makeMemoryVolumeInstallPath(VolumeInventory vol) {
+        return PathUtil.join("memory", "acct-" + getAccountUuidOfResource(vol.getUuid()), "vol-" + vol.getUuid(), vol.getUuid() + ".qcow2");
+    }
+
     public static String makeTemporaryDataVolumeInstallPath(String volUuid, String originVolumeUuid) {
         return PathUtil.join("dataVolumes", "acct-" + getAccountUuidOfResource(volUuid), "vol-" + originVolumeUuid, volUuid + ".qcow2");
     }

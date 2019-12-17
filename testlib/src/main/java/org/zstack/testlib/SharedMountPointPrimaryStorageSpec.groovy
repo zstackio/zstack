@@ -98,6 +98,10 @@ class SharedMountPointPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new KvmBackend.AgentRsp()
             }
 
+            simulator(KvmBackend.CREATE_FOLDER_PATH) {
+                return new KvmBackend.AgentRsp()
+            }
+
             simulator(KvmBackend.CHECK_BITS_PATH){
                 def rsp = new KvmBackend.CheckBitsRsp()
                 rsp.existing = true

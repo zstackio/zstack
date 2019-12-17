@@ -29,6 +29,7 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.core.workflow.WhileCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
@@ -37,11 +38,14 @@ import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
@@ -69,7 +73,8 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.core.Platform.touterr;
 
 public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
-        KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
+        KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint,
+        KVMStartVmExtensionPoint {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryStorageKVMBackend.class);
 
     @Autowired
@@ -96,6 +101,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String MOUNT_PRIMARY_STORAGE_PATH = "/nfsprimarystorage/mount";
     public static final String UNMOUNT_PRIMARY_STORAGE_PATH = "/nfsprimarystorage/unmount";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/nfsprimarystorage/createemptyvolume";
+    public static final String CREATE_FOLDER_PATH = "/nfsprimarystorage/createfolder";
     public static final String GET_CAPACITY_PATH = "/nfsprimarystorage/getcapacity";
     public static final String DELETE_PATH = "/nfsprimarystorage/delete";
     public static final String CHECK_BITS_PATH = "/nfsprimarystorage/checkbits";
@@ -282,6 +288,42 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         for (String huuid : hostUuids) {
             unmount(inv, huuid);
         }
+    }
+
+    @Override
+    public void createMemoryVolume(PrimaryStorageInventory pinv, VolumeInventory volume, ReturnValueCompletion<String> completion) {
+        final CreateFolderCmd cmd = new CreateFolderCmd();
+        cmd.setUuid(pinv.getUuid());
+        cmd.setInstallUrl(NfsPrimaryStorageKvmHelper.makeVolumeInstallDir(pinv, volume));
+
+        final HostInventory host = nfsFactory.getConnectedHostForOperation(pinv).get(0);
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setCommand(cmd);
+        msg.setPath(CREATE_FOLDER_PATH);
+        msg.setHostUuid(host.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                NfsPrimaryStorageAgentResponse rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(NfsPrimaryStorageAgentResponse.class);
+                if (!rsp.isSuccess()) {
+                    ErrorCode err = operr("unable to create folder[installUrl:%s] on kvm host[uuid:%s, ip:%s], because %s",
+                            cmd.getInstallUrl(), host.getUuid(), host.getManagementIp(), rsp.getError());
+                    completion.fail(err);
+                    return;
+                }
+
+                nfsMgr.reportCapacityIfNeeded(pinv.getUuid(), rsp);
+                completion.success(cmd.getInstallUrl());
+            }
+        });
+
     }
 
     @Override
@@ -873,10 +915,16 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.setVolumeUuid(volume.getUuid());
         if (StringUtils.isNotEmpty(volume.getInstallPath())) {
             cmd.setInstallUrl(volume.getInstallPath());
-        } else if (volume.getRootImageUuid() != null) {
+        } else if (volume.getType().equals(VolumeType.Root.toString())) {
             cmd.setInstallUrl(NfsPrimaryStorageKvmHelper.makeRootVolumeInstallUrl(pinv, volume));
-        } else {
+        } else if (volume.getType().equals(VolumeType.Data.toString())) {
             cmd.setInstallUrl(NfsPrimaryStorageKvmHelper.makeDataVolumeInstallUrl(pinv, volume.getUuid()));
+        } else {
+            throw new CloudRuntimeException(String.format("unknown volume type %s", volume.getType()));
+        }
+
+        if (volume.getType().equals(VolumeType.Memory.toString())) {
+            cmd.setWithoutVolume(true);
         }
 
         final HostInventory host = nfsFactory.getConnectedHostForOperation(pinv).get(0);
@@ -1142,6 +1190,11 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     @Override
     public void mergeSnapshotToVolume(final PrimaryStorageInventory pinv, VolumeSnapshotInventory snapshot,
                                       VolumeInventory volume, boolean fullRebase, final Completion completion) {
+        if (volume.getType().equals(VolumeType.Memory.toString())) {
+            completion.success();
+            return;
+        }
+
         boolean offline = true;
         String hostUuid = null;
         if (volume.getVmInstanceUuid() != null) {
@@ -1460,5 +1513,31 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
         reply.setSnapshotInstallPath(NfsPrimaryStorageKvmHelper.makeKvmSnapshotInstallPath(psInventory, msg.getVolumeInventory(), msg.getSnapshotUuid()));
         completion.success(reply);
+    }
+
+    @Override
+    public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, KVMAgentCommands.StartVmCmd cmd) {
+        if (spec.getMemorySnapshotUuid() == null) {
+            return;
+        }
+
+        VolumeSnapshotVO vo = dbf.findByUuid(spec.getMemorySnapshotUuid(), VolumeSnapshotVO.class);
+        if (!Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.type, NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE)
+                .eq(PrimaryStorageVO_.uuid, vo.getPrimaryStorageUuid()).isExists()) {
+            return;
+        }
+
+        cmd.setMemorySnapshotPath(vo.getPrimaryStorageInstallPath());
+    }
+
+    @Override
+    public void startVmOnKvmSuccess(KVMHostInventory host, VmInstanceSpec spec) {
+
+    }
+
+    @Override
+    public void startVmOnKvmFailed(KVMHostInventory host, VmInstanceSpec spec, ErrorCode err) {
+
     }
 }

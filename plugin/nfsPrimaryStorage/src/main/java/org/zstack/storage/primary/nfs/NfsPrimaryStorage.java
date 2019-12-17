@@ -26,6 +26,7 @@ import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
@@ -754,6 +755,38 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
+    private void createMemoryVolume(InstantiateMemoryVolumeOnPrimaryStorageMsg msg) {
+        NfsPrimaryStorageBackend backend;
+        if (msg.getDestHost() != null) {
+            backend = getBackend(HypervisorType.valueOf(msg.getDestHost().getHypervisorType()));
+        } else {
+            backend = getUsableBackend();
+            if (backend == null) {
+                throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find any usable host to" +
+                                " create the data volume[uuid:%s, name:%s]", self.getUuid(), self.getName(),
+                        msg.getVolume().getUuid(), msg.getVolume().getName()));
+            }
+        }
+
+        VolumeInventory vol = msg.getVolume();
+        final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
+        backend.createMemoryVolume(PrimaryStorageInventory.valueOf(self), msg.getVolume(), new ReturnValueCompletion<String>(msg) {
+            @Override
+            public void success(String installUrl) {
+                vol.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+                vol.setInstallPath(installUrl);
+                reply.setVolume(vol);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     private void createTemporaryEmptyVolume(final InstantiateTemporaryVolumeOnPrimaryStorageMsg msg) {
         VolumeInventory volume = msg.getVolume();
         if (VolumeType.Root.toString().equals(volume.getType())) {
@@ -805,6 +838,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
         } else if (msg instanceof InstantiateTemporaryVolumeOnPrimaryStorageMsg) {
             createTemporaryEmptyVolume((InstantiateTemporaryVolumeOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof InstantiateMemoryVolumeOnPrimaryStorageMsg) {
+            createMemoryVolume((InstantiateMemoryVolumeOnPrimaryStorageMsg) msg);
         } else {
             createEmptyVolume(msg);
         }
@@ -1103,7 +1138,14 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         VolumeSnapshotCapability capability = new VolumeSnapshotCapability();
         HypervisorType hvType = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getVolume().getFormat());
         if (hvType.toString().equals(KVMConstant.KVM_HYPERVISOR_TYPE)) {
-            capability.setArrangementType(VolumeSnapshotArrangementType.CHAIN);
+            String volumeType = msg.getVolume().getType();
+            if (VolumeType.Data.toString().equals(volumeType) || VolumeType.Root.toString().equals(volumeType)) {
+                capability.setArrangementType(VolumeSnapshotArrangementType.CHAIN);
+            } else if (VolumeType.Memory.toString().equals(volumeType)) {
+                capability.setArrangementType(VolumeSnapshotArrangementType.INDIVIDUAL);
+            } else {
+                throw new CloudRuntimeException(String.format("unknown volume type %s", volumeType));
+            }
             capability.setSupport(true);
         } else {
             capability.setSupport(false);

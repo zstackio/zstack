@@ -32,6 +32,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.VolumeFormat;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.kvm.KVMConstant;
@@ -327,7 +328,16 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         AskVolumeSnapshotCapabilityReply reply = new AskVolumeSnapshotCapabilityReply();
         VolumeSnapshotCapability capability = new VolumeSnapshotCapability();
         capability.setSupport(true);
-        capability.setArrangementType(VolumeSnapshotArrangementType.CHAIN);
+
+        String volumeType = msg.getVolume().getType();
+        if (VolumeType.Data.toString().equals(volumeType) || VolumeType.Root.toString().equals(volumeType)) {
+            capability.setArrangementType(VolumeSnapshotArrangementType.CHAIN);
+        } else if (VolumeType.Memory.toString().equals(volumeType)) {
+            capability.setArrangementType(VolumeSnapshotArrangementType.INDIVIDUAL);
+        } else {
+            throw new CloudRuntimeException(String.format("unknown volume type %s", volumeType));
+        }
+
         reply.setCapability(capability);
         bus.reply(msg, reply);
     }

@@ -78,6 +78,10 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new NfsPrimaryStorageKVMBackendCommands.CreateRootVolumeFromTemplateResponse()
             }
 
+            simulator(NfsPrimaryStorageKVMBackend.CREATE_FOLDER_PATH) {
+                return new NfsPrimaryStorageKVMBackendCommands.NfsPrimaryStorageAgentResponse()
+            }
+
             simulator(NfsPrimaryToSftpBackupKVMBackend.DOWNLOAD_FROM_SFTP_PATH) {
                 return new NfsPrimaryStorageKVMBackendCommands.DownloadBitsFromSftpBackupStorageResponse()
             }
