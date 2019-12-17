@@ -1118,6 +1118,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 cmd.setInstallUrl(makeMemoryVolumeInstallUrl(volume));
             } else if (VolumeType.Cache.toString().equals(volume.getType())) {
                 cmd.setInstallUrl(makeDataVolumeInstallUrl(volume.getUuid()));
+            } else {
+                cmd.setInstallUrl(makeMemoryVolumeInstallUrl(volume));
             }
         }
         cmd.setName(volume.getName());

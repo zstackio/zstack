@@ -6164,7 +6164,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         List<VolumeInventory> dataVols = inv.getAllVolumes().stream()
                 .filter(it -> it.getType().equals(VolumeType.Data.toString()) && !it.isShareable())
                 .collect(Collectors.toList());
-
         List<BuildVolumeSpecExtensionPoint> exts = pluginRgty.getExtensionList(BuildVolumeSpecExtensionPoint.class);
         exts.forEach(e -> dataVols.addAll(e.supplyAdditionalVolumesForVmInstance(inv.getUuid())));
         return dataVols;
