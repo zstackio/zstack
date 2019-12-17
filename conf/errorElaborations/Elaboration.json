@@ -88,6 +88,14 @@
     "message_en": "Failed to download bits from the imagestore backup storage[hostname: %2$s, path: %3$s] to the local primary storage[uuid: %4$s, path: %5$s]."
   },
   {
+    "category": "BS",
+    "code": "1006",
+    "method": "regex",
+    "regex": ".*Quota exceeded.*",
+    "message_cn": "超出镜像仓库的容量限制。",
+    "message_en": "Out of imagestore capacity limit."
+  },
+  {
     "category": "CEPH",
     "code": "1000",
     "method": "regex",
