@@ -10,14 +10,17 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
-import org.zstack.kvm.KVMConstant;
-import org.zstack.kvm.KVMHostConnectExtensionPoint;
-import org.zstack.kvm.KVMHostConnectedContext;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.kvm.*;
+import org.zstack.storage.primary.PrimaryStoragePathMaker;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.TypedQuery;
 import java.util.Iterator;
@@ -30,7 +33,7 @@ import static org.zstack.core.Platform.operr;
  * Created by frank on 6/30/2015.
  */
 public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KVMHostConnectExtensionPoint,
-        FailToAddHostExtensionPoint {
+        FailToAddHostExtensionPoint, KVMStartVmExtensionPoint {
     private static final CLogger logger = Utils.getLogger(LocalStorageKvmFactory.class);
 
     @Autowired
@@ -129,5 +132,32 @@ public class LocalStorageKvmFactory implements LocalStorageHypervisorFactory, KV
                 }
             });
         }
+    }
+
+    @Override
+    public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, KVMAgentCommands.StartVmCmd cmd) {
+        if (spec.getMemorySnapshotUuid() == null) {
+            return;
+        }
+
+        VolumeSnapshotVO vo = dbf.findByUuid(spec.getMemorySnapshotUuid(), VolumeSnapshotVO.class);
+
+        if (!Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
+                .eq(PrimaryStorageVO_.uuid, vo.getPrimaryStorageUuid()).isExists()) {
+            return;
+        }
+
+        cmd.setMemorySnapshotPath(vo.getPrimaryStorageInstallPath());
+    }
+
+    @Override
+    public void startVmOnKvmSuccess(KVMHostInventory host, VmInstanceSpec spec) {
+
+    }
+
+    @Override
+    public void startVmOnKvmFailed(KVMHostInventory host, VmInstanceSpec spec, ErrorCode err) {
+
     }
 }

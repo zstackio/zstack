@@ -43,6 +43,8 @@ public interface NfsPrimaryStorageBackend {
 
     void detachFromCluster(PrimaryStorageInventory inv, String clusterUuid) throws NfsPrimaryStorageException;
 
+    void createMemoryVolume(PrimaryStorageInventory pinv, VolumeInventory volume, ReturnValueCompletion<String> completion);
+
     void instantiateVolume(PrimaryStorageInventory pinv, VolumeInventory volume, ReturnValueCompletion<VolumeInventory> complete);
 
     void deleteImageCache(ImageCacheInventory imageCache);

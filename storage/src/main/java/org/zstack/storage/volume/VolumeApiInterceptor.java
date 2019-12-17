@@ -20,14 +20,21 @@ import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
+import org.zstack.header.storage.snapshot.APIRevertVolumeFromSnapshotMsg;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
+import org.zstack.storage.snapshot.group.VolumeSnapshotGroup;
 
 import javax.persistence.Tuple;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,10 +90,28 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
             validate((APIRecoverDataVolumeMsg) msg);
         } else if (msg instanceof APICreateVolumeSnapshotGroupMsg) {
             validate((APICreateVolumeSnapshotGroupMsg) msg);
+        } else if (msg instanceof APICreateVolumeSnapshotMsg) {
+            validate((APICreateVolumeSnapshotMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APICreateVolumeSnapshotMsg msg) {
+        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+        q.select(VolumeVO_.status, VolumeVO_.type);
+        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
+        Tuple tuple = q.findTuple();
+        VolumeStatus status = (VolumeStatus) tuple.get(0);
+        if (status != VolumeStatus.Ready) {
+            throw new ApiMessageInterceptionException(operr("volume[uuid:%s] is not in status Ready, current is %s, can't create snapshot", msg.getVolumeUuid(), status));
+        }
+
+        VolumeType type = (VolumeType) tuple.get(1);
+        if (type != VolumeType.Root && type != VolumeType.Data) {
+            throw new ApiMessageInterceptionException(operr("volume[uuid:%s, type:%s], can't create snapshot", msg.getVolumeUuid(), type));
+        }
     }
 
     private void validate(APICreateVolumeSnapshotGroupMsg msg) {
@@ -100,6 +125,11 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
 
         if (vmvo == null) {
             throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] is root volume", msg.getRootVolumeUuid()));
+        }
+
+        if (msg.isWithMemory() && !(vmvo.getState().equals(VmInstanceState.Running) || (vmvo.getState().equals(VmInstanceState.Paused)))) {
+            throw new ApiMessageInterceptionException(argerr("Can not take memory snapshot, vm current state[%s], but expect state are [%s, %s]",
+                    vmvo.getState().toString(), VmInstanceState.Running.toString(), VmInstanceState.Paused.toString()));
         }
 
         for (VolumeVO vol : vmvo.getAllVolumes()) {
@@ -191,9 +221,9 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         }
 
 
-        if (vol.getType() == VolumeType.Root) {
-            throw new ApiMessageInterceptionException(operr("the volume[uuid:%s, name:%s] is Root Volume, can't detach it",
-                            vol.getUuid(), vol.getName()));
+        if (vol.getType() != VolumeType.Data) {
+            throw new ApiMessageInterceptionException(operr("the volume[uuid:%s, name:%s, type:%s] can't detach it",
+                            vol.getUuid(), vol.getName(), vol.getType()));
         }
     }
 
@@ -331,8 +361,8 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
         q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
         Tuple t = q.findTuple();
         VolumeType type = t.get(0, VolumeType.class);
-        if (type == VolumeType.Root) {
-            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] is Root volume, can't be deleted", msg.getVolumeUuid()));
+        if (type != VolumeType.Data) {
+            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s, type:%s] can't be deleted", msg.getVolumeUuid(), type));
         }
 
         VolumeStatus status = t.get(1, VolumeStatus.class);

@@ -4,6 +4,8 @@ import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.VmCapabilities;
+import org.zstack.compute.vm.VmCapabilitiesExtensionPoint;
 import org.zstack.configuration.DiskOfferingSystemTags;
 import org.zstack.configuration.InstanceOfferingSystemTags;
 import org.zstack.configuration.OfferingUserConfigUtils;
@@ -78,7 +80,8 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         KVMAttachVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint,
         KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component, PostMarkRootVolumeAsSnapshotExtension,
         BeforeTakeLiveSnapshotsOnVolumes, VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint,
-        InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator, MarkRootVolumeAsSnapshotExtension {
+        InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator, MarkRootVolumeAsSnapshotExtension,
+        VmCapabilitiesExtensionPoint {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -1151,5 +1154,10 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     @Override
     public String getExtensionPrimaryStorageType() {
         return CephConstants.CEPH_PRIMARY_STORAGE_TYPE;
+    }
+
+    @Override
+    public void checkVmCapability(VmInstanceInventory inv, VmCapabilities capabilities) {
+        capabilities.setSupportMemorySnapshot(false);
     }
 }

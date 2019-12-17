@@ -1058,6 +1058,7 @@ public class KVMAgentCommands {
         private boolean useHugePage;
         private String chassisAssetTag;
         private PriorityConfigStruct priorityConfigStruct;
+        private String memorySnapshotPath;
 
         public String getChassisAssetTag() {
             return chassisAssetTag;
@@ -1380,6 +1381,14 @@ public class KVMAgentCommands {
 
         public void setPredefinedPciBridgeNum(Integer predefinedPciBridgeNum) {
             this.predefinedPciBridgeNum = predefinedPciBridgeNum;
+        }
+
+        public String getMemorySnapshotPath() {
+            return memorySnapshotPath;
+        }
+
+        public void setMemorySnapshotPath(String memorySnapshotPath) {
+            this.memorySnapshotPath = memorySnapshotPath;
         }
 
         @Override
