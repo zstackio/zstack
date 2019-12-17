@@ -99,6 +99,7 @@
         <property name="expungeVmWorkFlowElements">
             <list>
                 <value>org.zstack.compute.vm.VmExpungeRootVolumeFlow</value>
+                <value>org.zstack.compute.vm.VmExpungeMemoryVolumeFlow</value>
             </list>
         </property>
         <property name="pauseVmWorkFlowElements">

@@ -2396,7 +2396,16 @@ public class LocalStorageBase extends PrimaryStorageBase {
         AskVolumeSnapshotCapabilityReply reply = new AskVolumeSnapshotCapabilityReply();
         VolumeSnapshotCapability capability = new VolumeSnapshotCapability();
         capability.setSupport(true);
-        capability.setArrangementType(VolumeSnapshotArrangementType.CHAIN);
+
+        String volumeType = msg.getVolume().getType();
+        if (VolumeType.Data.toString().equals(volumeType) || VolumeType.Root.toString().equals(volumeType)) {
+            capability.setArrangementType(VolumeSnapshotArrangementType.CHAIN);
+        } else if (VolumeType.Memory.toString().equals(volumeType)) {
+            capability.setArrangementType(VolumeSnapshotArrangementType.INDIVIDUAL);
+        } else {
+            throw new CloudRuntimeException(String.format("unknown volume type %s", volumeType));
+        }
+
         reply.setCapability(capability);
         bus.reply(msg, reply);
     }

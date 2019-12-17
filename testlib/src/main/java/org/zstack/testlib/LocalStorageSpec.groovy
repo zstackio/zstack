@@ -123,6 +123,10 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 return new LocalStorageKvmBackend.CreateEmptyVolumeRsp()
             }
 
+            simulator(LocalStorageKvmBackend.CREATE_FOLDER_PATH) {
+                return new LocalStorageKvmBackend.AgentResponse()
+            }
+
             simulator(LocalStorageKvmBackend.CREATE_VOLUME_FROM_CACHE_PATH) {
                 return new LocalStorageKvmBackend.CreateVolumeFromCacheRsp()
             }

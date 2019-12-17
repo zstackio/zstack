@@ -168,6 +168,18 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
+    public static class CreateFolderCmd extends AgentCommand {
+        private String installUrl;
+
+        public String getInstallUrl() {
+            return installUrl;
+        }
+
+        public void setInstallUrl(String installUrl) {
+            this.installUrl = installUrl;
+        }
+    }
+
     public static class CreateEmptyVolumeCmd extends AgentCommand {
         private String installUrl;
         private long size;
@@ -696,6 +708,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String INIT_PATH = "/localstorage/init";
     public static final String GET_PHYSICAL_CAPACITY_PATH = "/localstorage/getphysicalcapacity";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/localstorage/volume/createempty";
+    public static final String CREATE_FOLDER_PATH = "/localstorage/volume/createfolder";
     public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/localstorage/volume/createvolumefromcache";
     public static final String DELETE_BITS_PATH = "/localstorage/delete";
     public static final String DELETE_DIR_PATH = "/localstorage/deletedir";
@@ -736,6 +749,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         return PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeRootVolumeInstallPath(vol));
     }
 
+    public String makeMemoryVolumeInstallUrl(VolumeInventory vol) {
+        return PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeMemoryVolumeInstallPath(vol));
+    }
+
     public String makeDataVolumeInstallUrl(String volUuid) {
         return PathUtil.join(self.getUrl(), PrimaryStoragePathMaker.makeDataVolumeInstallPath(volUuid));
     }
@@ -761,12 +778,16 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     public String makeVolumeInstallDir(VolumeInventory vol) {
-        String volPath;
+        String volPath = null;
         if (VolumeType.Data.toString().equals(vol.getType())) {
             volPath = makeDataVolumeInstallUrl(vol.getUuid());
-        } else {
+        } else if (VolumeType.Root.toString().equals(vol.getType())) {
             volPath = makeRootVolumeInstallUrl(vol);
+        } else if (VolumeType.Memory.toString().equals(vol.getType())) {
+            volPath = makeMemoryVolumeInstallUrl(vol);
         }
+
+        DebugUtils.Assert(!StringUtils.isEmpty(volPath), "volPath should not be null");
         return new File(volPath).getParentFile().getAbsolutePath();
     }
 
@@ -921,10 +942,35 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         } else if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
             createRootVolume((InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg, completion);
         } else if (msg instanceof InstantiateTemporaryVolumeOnPrimaryStorageMsg) {
-            createTemporaryEmptyVolume((InstantiateTemporaryVolumeOnPrimaryStorageMsg)msg, completion);
+            createTemporaryEmptyVolume((InstantiateTemporaryVolumeOnPrimaryStorageMsg) msg, completion);
+        } else if (msg instanceof InstantiateMemoryVolumeOnPrimaryStorageMsg) {
+            createMemoryVolume((InstantiateMemoryVolumeOnPrimaryStorageMsg) msg, completion);
         } else {
             createEmptyVolume(msg, completion);
         }
+    }
+
+    private void createMemoryVolume(final InstantiateMemoryVolumeOnPrimaryStorageMsg msg, final ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply> completion) {
+        final CreateFolderCmd cmd = new CreateFolderCmd();
+        VolumeInventory volume = msg.getVolume();
+        cmd.setInstallUrl(makeVolumeInstallDir(volume));
+        httpCall(CREATE_FOLDER_PATH, msg.getDestHost().getUuid(), cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(completion) {
+            @Override
+            public void success(AgentResponse rsp) {
+                InstantiateVolumeOnPrimaryStorageReply r = new InstantiateVolumeOnPrimaryStorageReply();
+                VolumeInventory vol = msg.getVolume();
+                vol.setInstallPath(cmd.installUrl);
+                vol.setFormat(VolumeConstant.VOLUME_FORMAT_QCOW2);
+                r.setVolume(vol);
+                completion.success(r);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(operr("unable to create an empty volume[uuid:%s, name:%s] on the kvm host[uuid:%s]",
+                        volume.getUuid(), volume.getName(), msg.getDestHost().getUuid()).causedBy(errorCode));
+            }
+        });
     }
 
     @Override
@@ -1027,8 +1073,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         } else {
             if (VolumeType.Root.toString().equals(volume.getType())) {
                 cmd.setInstallUrl(makeRootVolumeInstallUrl(volume));
-            } else {
+            } else if (VolumeType.Data.toString().equals(volume.getType())) {
                 cmd.setInstallUrl(makeDataVolumeInstallUrl(volume.getUuid()));
+            } else {
+                cmd.setInstallUrl(makeMemoryVolumeInstallUrl(volume));
             }
         }
         cmd.setName(volume.getName());
@@ -1823,6 +1871,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply> completion) {
         boolean offline = true;
         VolumeInventory volume = msg.getTo();
+        if (volume.getType().equals(VolumeType.Memory.toString())) {
+            completion.success(new MergeVolumeSnapshotOnPrimaryStorageReply());
+            return;
+        }
+
         VolumeSnapshotInventory sp = msg.getFrom();
         if (volume.getVmInstanceUuid() != null) {
             SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);

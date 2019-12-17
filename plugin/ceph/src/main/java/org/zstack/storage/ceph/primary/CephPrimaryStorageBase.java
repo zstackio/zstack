@@ -2527,8 +2527,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     protected void handle(AskVolumeSnapshotCapabilityMsg msg) {
         AskVolumeSnapshotCapabilityReply reply = new AskVolumeSnapshotCapabilityReply();
         VolumeSnapshotCapability cap = new VolumeSnapshotCapability();
-        cap.setSupport(true);
-        cap.setArrangementType(VolumeSnapshotArrangementType.INDIVIDUAL);
+
+        String volumeType = msg.getVolume().getType();
+        if (VolumeType.Data.toString().equals(volumeType) || VolumeType.Root.toString().equals(volumeType)) {
+            cap.setSupport(true);
+            cap.setArrangementType(VolumeSnapshotArrangementType.INDIVIDUAL);
+        } else if (VolumeType.Memory.toString().equals(volumeType)) {
+            cap.setSupport(false);
+        } else {
+            throw new CloudRuntimeException(String.format("unknown volume type %s", volumeType));
+        }
+
         reply.setCapability(cap);
         bus.reply(msg, reply);
     }

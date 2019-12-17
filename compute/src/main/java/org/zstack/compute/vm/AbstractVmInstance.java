@@ -85,7 +85,8 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIGetVmStartingCandidateClustersHostsMsg.class.getName(),
                 GetVmStartingCandidateClustersHostsMsg.class.getName(),
                 DeleteVmCdRomMsg.class.getName(),
-                CreateVmCdRomMsg.class.getName()
+                CreateVmCdRomMsg.class.getName(),
+                RestoreVmInstanceMsg.class.getName()
         );
 
         allowedOperations.addState(VmInstanceState.Unknown,

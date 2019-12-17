@@ -41,6 +41,9 @@ public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements
     @APIParam(required = false, maxLength = 2048)
     private String description;
 
+    @APIParam(required = false)
+    private boolean withMemory = false;
+
     @APINoSee
     private VmInstanceInventory vmInstance;
 
@@ -83,6 +86,14 @@ public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements
 
     public void setVmInstance(VmInstanceInventory vmInstance) {
         this.vmInstance = vmInstance;
+    }
+
+    public boolean isWithMemory() {
+        return withMemory;
+    }
+
+    public void setWithMemory(boolean withMemory) {
+        this.withMemory = withMemory;
     }
 
     public static APICreateVolumeSnapshotGroupMsg __example__() {
