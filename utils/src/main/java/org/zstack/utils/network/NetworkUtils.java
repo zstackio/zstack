@@ -834,5 +834,17 @@ public class NetworkUtils {
             return isIpv4MulticastAddress(address);
         }
     }
+
+    public static boolean isHostReachable(String address, int port, int timeout) {
+        try {
+            try (Socket socket = new Socket()) {
+                socket.connect(new InetSocketAddress(address, port), timeout);
+            }
+
+            return true;
+        } catch (IOException exception) {
+            return false;
+        }
+    }
 }
 
