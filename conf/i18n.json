@@ -23141,7 +23141,7 @@
     "zh_CN": "存在多个名为[{0}]的事件族，你必须指定标签[{1}]",
     "arguments": [
       "name.getValue()",
-      "InfluxEventData.TAG_NAMESPACE"
+      "InfluxEventData.FIELD_NAMESPACE"
     ],
     "line": 539,
     "fileName": "src/main/java/org/zstack/zwatch/influxdb/InfluxDBEventDatabaseDriver.java"
