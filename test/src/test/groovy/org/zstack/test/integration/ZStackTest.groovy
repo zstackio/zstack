@@ -37,6 +37,7 @@ class ZStackTest extends Test {
         include("mediateApiValidator.xml")
         include("LongJobManager.xml")
         include("log.xml")
+        include("HostAllocateExtension.xml")
     }
 
     public static final String DOMAIN_DSN = "dc=example,dc=com"

@@ -23,6 +23,7 @@ class KvmTest extends Test {
         lb()
         portForwarding()
         include("LongJobManager.xml")
+        include("HostAllocateExtension.xml")
     }
 
     @Override

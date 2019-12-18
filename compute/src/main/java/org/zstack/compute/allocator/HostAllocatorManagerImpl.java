@@ -13,6 +13,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.*;
 import org.zstack.header.cluster.ClusterVO;
@@ -21,9 +22,7 @@ import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowRollback;
-import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
@@ -54,6 +53,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class HostAllocatorManagerImpl extends AbstractService implements HostAllocatorManager, VmAbnormalLifeCycleExtensionPoint {
@@ -426,37 +426,84 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             });
         } else {
             final AllocateHostReply reply = new AllocateHostReply();
-             strategy.allocate(spec, new ReturnValueCompletion<List<HostInventory>>(completion, msg) {
-                @Override
-                public void success(List<HostInventory> hosts) {
-                    sortors.sort(spec, hosts, new ReturnValueCompletion<HostInventory>(completion, msg) {
-                        @Override
-                        public void success(HostInventory returnValue) {
-                            for (HostAllocateExtensionPoint exp: pluginRgty.getExtensionList(HostAllocateExtensionPoint.class)) {
-                                exp.beforeAllocateHostSuccessReply(spec, returnValue.getUuid());
-                            }
+            FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
 
-                            reply.setHost(returnValue);
-                            bus.reply(msg, reply);
-                            completion.success();
+            String allocatedHosts = "HOST_CANDIDATES";
+            chain.setName("do-handle-allocate-host-flow");
+            chain.then(new NoRollbackFlow() {
+                String __name__ = "allocate-host-candidates";
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    strategy.allocate(spec, new ReturnValueCompletion<List<HostInventory>>(trigger) {
+                        @Override
+                        public void success(List<HostInventory> returnValue) {
+                            data.put(allocatedHosts, returnValue);
+                            trigger.next();
                         }
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            reply.setError(errorCode);
-                            bus.reply(msg, reply);
-                            completion.fail(errorCode);
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            }).then(new Flow() {
+                String __name__ = "sort-and-reserve-host-capacity";
+
+                @Override
+                public boolean skip(Map data) {
+                    return reply.getHost() != null;
+                }
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    sortors.sort(spec, (List<HostInventory>) data.get(allocatedHosts), new ReturnValueCompletion<HostInventory>(completion, msg) {
+                        @Override
+                        public void success(HostInventory returnValue) {
+                            reply.setHost(returnValue);
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
                         }
                     });
                 }
 
                 @Override
-                public void fail(ErrorCode errorCode) {
-                    reply.setError(errorCode);
-                    bus.reply(msg, reply);
-                    completion.fail(errorCode);
+                public void rollback(FlowRollback trigger, Map data) {
+                    ReturnHostCapacityMsg rmsg = new ReturnHostCapacityMsg();
+                    rmsg.setHostUuid(reply.getHost().getUuid());
+                    rmsg.setMemoryCapacity(spec.getMemoryCapacity());
+                    rmsg.setCpuCapacity(spec.getCpuCapacity());
+                    bus.makeTargetServiceIdByResourceUuid(rmsg, HostAllocatorConstant.SERVICE_ID, rmsg.getHostUuid());
+                    bus.send(rmsg);
+                    trigger.rollback();
                 }
-            });
+            }).then(new NoRollbackFlow() {
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    for (HostAllocateExtensionPoint exp: pluginRgty.getExtensionList(HostAllocateExtensionPoint.class)) {
+                        exp.beforeAllocateHostSuccessReply(spec, reply.getHost().getUuid());
+                    }
+                    trigger.next();
+                }
+            }).done(new FlowDoneHandler(completion, msg) {
+                @Override
+                public void handle(Map data) {
+                    bus.reply(msg, reply);
+                    completion.success();
+                }
+            }).error(new FlowErrorHandler(completion, msg) {
+                @Override
+                public void handle(ErrorCode errCode, Map data) {
+                    reply.setError(errCode);
+                    bus.reply(msg, reply);
+                    completion.fail(errCode);
+                }
+            }).start();
         }
     }
 
