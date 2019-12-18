@@ -5,7 +5,7 @@ mkdir -p $OUTDIR
 
 # DO NOT overwrite the generated certificates.
 test -s $OUTDIR/privkey.pem && \
-    ( echo "certificates already generated"; exit 0 )
+    { echo "certificates already generated"; exit 0; }
 
 openssl genrsa -out $OUTDIR/privkey.pem 2048
 chmod 400 $OUTDIR/privkey.pem
