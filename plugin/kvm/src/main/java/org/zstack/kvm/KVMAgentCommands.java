@@ -481,6 +481,7 @@ public class KVMAgentCommands {
         private String physicalInterfaceName;
         private String bridgeName;
         private String l2NetworkUuid;
+        private Boolean disableIptables;
 
         public String getL2NetworkUuid() {
             return l2NetworkUuid;
@@ -504,6 +505,14 @@ public class KVMAgentCommands {
 
         public void setBridgeName(String bridgeName) {
             this.bridgeName = bridgeName;
+        }
+
+        public Boolean getDisableIptables() {
+            return disableIptables;
+        }
+
+        public void setDisableIptables(Boolean disableIptables) {
+            this.disableIptables = disableIptables;
         }
     }
 
