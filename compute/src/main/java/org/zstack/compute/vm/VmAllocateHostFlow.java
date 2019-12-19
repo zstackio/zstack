@@ -3,11 +3,9 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.allocator.*;
@@ -23,7 +21,6 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.utils.CollectionUtils;
@@ -32,8 +29,6 @@ import org.zstack.utils.function.Function;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
@@ -128,6 +123,7 @@ public class VmAllocateHostFlow implements Flow {
                 if (reply.isSuccess()) {
                     AllocateHostReply areply = (AllocateHostReply) reply;
                     spec.setDestHost(areply.getHost());
+                    spec.getVmInventory().setClusterUuid(areply.getHost().getClusterUuid());
 
                     // the vm instance will still be stopped after ChangeImage
                     if (spec.getCurrentVmOperation() == VmOperation.ChangeImage) {
