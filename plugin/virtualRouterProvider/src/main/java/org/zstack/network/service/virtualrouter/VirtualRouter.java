@@ -5,8 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.*;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
@@ -19,6 +21,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
@@ -34,6 +37,7 @@ import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPo
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.*;
+import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
@@ -41,8 +45,8 @@ import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 
 import java.util.*;
 
-import static org.zstack.core.Platform.operr;
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.core.Platform.operr;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.ADDITIONAL_PUBLIC_NIC_MASK;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.GUEST_NIC_MASK;
 
@@ -616,6 +620,97 @@ public class VirtualRouter extends ApplianceVmBase {
                 nicInventory.getL3NetworkUuid(), isRollback, completion);
     }
 
+    @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
+    private class virtualRouterReleaseVipbeforeDetachNic extends NoRollbackFlow {
+        @Autowired
+        private VipManager vipMgr;
+        String __name__ = "virtualRouter-beforeDetachNic";
+
+        private void virtualRouterReleaseVipServices(Iterator<String> it, VipInventory vip, Completion completion) {
+            if (!it.hasNext()) {
+                completion.success();
+                return;
+            }
+            String service = it.next();
+            VipReleaseExtensionPoint ext = vipMgr.getVipReleaseExtensionPoint(service);
+            ext.releaseServicesOnVip(vip, new Completion(completion) {
+                @Override
+                public void success() {
+                    virtualRouterReleaseVipServices(it, vip, completion);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    completion.fail(errorCode);
+                }
+            });
+        }
+
+        @Override
+        public void run(FlowTrigger trigger, Map data) {
+            VmNicInventory nic = (VmNicInventory) data.get(Param.VR_NIC);
+            if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
+                trigger.next();
+                return;
+            }
+
+            if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(nic.getVmInstanceUuid())) {
+                trigger.next();
+                return;
+            }
+
+            VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf((VirtualRouterVmVO)
+                    Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find());
+
+            /*
+            * fixme: to be done, the active will not done in standby vpc router because
+            * VipPeerL3NetworkRefVO record has been deleted during that of master router
+            * this will result the vip delete action will not done in agent before detach nic and
+            * not delete some configure such as vip QoS, ifbx.
+            */
+            List<VipVO> vips = SQL.New("select distinct vip from VipVO vip, VipPeerL3NetworkRefVO ref " +
+                    "where ref.vipUuid = vip.uuid and ref.l3NetworkUuid in (:routerNetworks) " +
+                    "and vip.l3NetworkUuid = :l3Uuid")
+                                  .param("l3Uuid", nic.getL3NetworkUuid())
+                                  .param("routerNetworks", vr.getAllL3Networks())
+                                  .list();
+
+            if (vips.isEmpty()) {
+                trigger.next();
+                return;
+            }
+            ErrorCodeList errList = new ErrorCodeList();
+            new While<>(vips).all((vip, completion) -> {
+                Set<String> services = vip.getServicesTypes();
+                if (services == null || services.isEmpty()) {
+                    completion.done();
+                    return;
+                }
+                virtualRouterReleaseVipServices(services.iterator(), VipInventory.valueOf(vip), new Completion(completion) {
+                    @Override
+                    public void success() {
+                        completion.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        errList.getCauses().add(errorCode);
+                        completion.done();
+                    }
+                });
+            }).run(new NoErrorCompletion() {
+                @Override
+                public void done() {
+                    if (errList.getCauses().size() > 0) {
+                        trigger.fail(errList.getCauses().get(0));
+                    } else {
+                        trigger.next();
+                    }
+                }
+            });
+        }
+    }
+
     private class virtualRouterbeforeDetachNic extends NoRollbackFlow {
         String __name__ = "virtualRouter-beforeDetachNic";
         @Override
@@ -752,6 +847,7 @@ public class VirtualRouter extends ApplianceVmBase {
         chain.setName(String.format("release-services-before-detach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
         chain.setData(data);
         chain.insert(new virtualRouterReleaseServicesbeforeDetachNicFlow());
+        chain.then(new virtualRouterReleaseVipbeforeDetachNic());
         chain.then(new virtualRouterbeforeDetachNic());
         chain.done(new FlowDoneHandler(completion) {
             @Override

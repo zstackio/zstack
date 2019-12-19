@@ -1473,10 +1473,21 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 }
 
                 //2.check the l3 of vm nic is peer l3 of the loadbalancer
-                List<Tuple> tuples = sql("select vm.managementNetworkUuid, vm.defaultRouteL3NetworkUuid from VipVO vip, ApplianceVmVO vm" +
-                        " where vip.uuid = (select vipUuid from LoadBalancerVO where uuid = :lbUuid)" +
-                        " and vm.defaultRouteL3NetworkUuid = vip.l3NetworkUuid", Tuple.class)
-                        .param("lbUuid",msg.getLoadBalancerUuid()).list();
+                L3NetworkVO vipNetwork = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, lbVipVO.getL3NetworkUuid()).find();
+                List<Tuple> tuples;
+                if (L3NetworkCategory.Public.equals(vipNetwork.getCategory())) {
+                    tuples = sql("select vm.managementNetworkUuid, vm.defaultRouteL3NetworkUuid from VipVO vip, ApplianceVmVO vm" +
+                            " where vip.uuid = (select vipUuid from LoadBalancerVO where uuid = :lbUuid)" +
+                            " and vm.defaultRouteL3NetworkUuid = vip.l3NetworkUuid", Tuple.class)
+                            .param("lbUuid", msg.getLoadBalancerUuid()).list();
+                } else {
+                    //private vip
+                    tuples = sql("select vm.managementNetworkUuid, vm.defaultRouteL3NetworkUuid from ApplianceVmVO vm, VmNicVO nic" +
+                            " where nic.vmInstanceUuid = vm.uuid and nic.metaData = :metaData" +
+                            " and nic.l3NetworkUuid = :vipNetworkUuid", Tuple.class)
+                            .param("vipNetworkUuid", lbVipVO.getL3NetworkUuid())
+                            .param("metaData", VirtualRouterNicMetaData.GUEST_NIC_MASK.toString()).list();
+                }
                 if(tuples.size() == 0){
                     return new ArrayList<VmNicInventory>();
                 }
@@ -1488,14 +1499,23 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     managements.add((String) tuple.get(0));
                 }
 
-                List<String> peerL3Uuids = sql("select l3NetworkUuid from VmNicVO"  +
-                        " where vmInstanceUuid in (select uuid from ApplianceVmVO where defaultRouteL3NetworkUuid in (:publics))" +
-                        " and l3NetworkUuid not in (:publics)" +
-                        " and l3NetworkUuid not in (:managements)")
-                        .param("publics",publics)
-                        .param("managements",managements).list();
-
-
+                List<String> peerL3Uuids;
+                if (L3NetworkCategory.Public.equals(vipNetwork.getCategory())) {
+                    peerL3Uuids = sql("select l3NetworkUuid from VmNicVO" +
+                            " where vmInstanceUuid in (select uuid from ApplianceVmVO where defaultRouteL3NetworkUuid in (:publics))" +
+                            " and l3NetworkUuid not in (:publics)" +
+                            " and l3NetworkUuid not in (:managements)")
+                            .param("publics", publics)
+                            .param("managements", managements).list();
+                } else {
+                    peerL3Uuids = sql("select l3NetworkUuid from VmNicVO" +
+                            " where vmInstanceUuid in (select vm.uuid from ApplianceVmVO vm, VmNicVO nic where vm.defaultRouteL3NetworkUuid in (:publics) and nic.vmInstanceUuid = vm.uuid and nic.l3NetworkUuid = (:vipNetwork))" +
+                            " and l3NetworkUuid not in (:publics)" +
+                            " and l3NetworkUuid not in (:managements)")
+                            .param("publics", publics)
+                            .param("vipNetwork", vipNetwork.getUuid())
+                            .param("managements", managements).list();
+                }
                 return ret.stream().filter(nic -> peerL3Uuids.contains(nic.getL3NetworkUuid())).collect(Collectors.toList());
 
             }

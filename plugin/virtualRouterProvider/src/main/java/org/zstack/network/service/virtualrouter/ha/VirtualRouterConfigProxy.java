@@ -44,7 +44,7 @@ public abstract class VirtualRouterConfigProxy {
 
     final public List<String> getVrUuidsByNetworkService(String type, String serviceUuid) {
         List<String> vrUuids = getVrUuidsByNetworkService(serviceUuid);
-        if (vrUuids != null && !vrUuids.isEmpty()) {
+        if (vrUuids != null && !vrUuids.isEmpty() && vrUuids.size() <= 1) {
             return vrUuids;
         }
 

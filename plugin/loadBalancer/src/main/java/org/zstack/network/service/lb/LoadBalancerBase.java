@@ -32,7 +32,6 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
-import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.vip.ModifyVipAttributesStruct;
@@ -145,6 +144,12 @@ public class LoadBalancerBase {
 
             @Override
             public void run(SyncTaskChain chain) {
+                if (dbf.reload(self) == null) {
+                    /*the lb has been deleted by  the previous task*/
+                    chain.next();
+                    return;
+                }
+
                 if (self.getProviderType() == null) {
                     // not initialized yet
                     deleteListenersForLoadBalancer(msg.getLoadBalancerUuid());
@@ -201,6 +206,12 @@ public class LoadBalancerBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
+                if (dbf.reload(self) == null) {
+                    /*the lb has been deleted by  the previous task*/
+                    chain.next();
+                    return;
+                }
+
                 delete(new Completion(msg, chain) {
                     @Override
                     public void success() {

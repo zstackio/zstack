@@ -7,7 +7,10 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -34,13 +37,11 @@ import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.lb.*;
-import org.zstack.network.service.portforwarding.PortForwardingConstant;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentResponse;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
-import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -1854,36 +1855,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     @Override
     public void beforeDetachNic(VmNicInventory nic, Completion completion) {
-        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
-            completion.success();
-            return;
-        }
-
-        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(nic.getVmInstanceUuid())) {
-            completion.success();
-            return;
-        }
-
-        try {
-            nwServiceMgr.getTypeOfNetworkServiceProviderForService(nic.getL3NetworkUuid(), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
-        } catch (OperationFailureException e) {
-            completion.success();
-            return;
-        }
-
-        VirtualRouterVmVO vrVO = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find();
-        DebugUtils.Assert(vrVO != null,
-                String.format("can not find virtual router[uuid: %s] for nic[uuid: %s, ip: %s, l3NetworkUuid: %s]",
-                        nic.getVmInstanceUuid(), nic.getUuid(), nic.getIp(), nic.getL3NetworkUuid()));
-        VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
-
-        List<LoadBalancerStruct> lbs = getLoadBalancersByL3Networks(nic.getL3NetworkUuid(), true);
-        if (lbs == null || lbs.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        syncOnStart(vr, lbs, completion);
+       /* ZSTAC-24726 for lb, it's not necessary to implement this interface
+       * delete network/detach user vm nic, under these cases, the removeVmNics extend point will be triggered
+       * that will remove the lb reference with nic first, and refresh lb to agent.
+       * */
+       completion.success();
     }
 
     @Override

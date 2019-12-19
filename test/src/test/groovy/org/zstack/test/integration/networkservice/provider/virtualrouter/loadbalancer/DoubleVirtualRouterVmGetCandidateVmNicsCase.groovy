@@ -1,27 +1,17 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.loadbalancer
 
 import org.zstack.header.network.service.NetworkServiceType
-import org.zstack.header.vm.VmInstanceEO
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.vip.VipVO
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
-import org.zstack.sdk.HostInventory
-import org.zstack.sdk.ImageInventory
-import org.zstack.sdk.InstanceOfferingInventory
-import org.zstack.sdk.L3NetworkInventory
-import org.zstack.sdk.LoadBalancerInventory
-import org.zstack.sdk.LoadBalancerListenerInventory
-import org.zstack.sdk.VmInstanceInventory
-import org.zstack.sdk.VmNicInventory
-import org.zstack.tag.SystemTag
+import org.zstack.sdk.*
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by heathhose on 17-5-10.
  */
@@ -130,6 +120,7 @@ class DoubleVirtualRouterVmGetCandidateVmNicsCase extends SubCase{
 
                     l3Network {
                         name = "pubL3-1"
+                        category = "Public"
 
                         ip {
                             startIp = "11.168.100.10"
