@@ -33,7 +33,6 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
-import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
@@ -53,8 +52,8 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.err;
 import static java.util.Arrays.asList;
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
@@ -279,7 +278,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 String rulePublicL3Uuid = sql("select l3NetworkUuid from VipVO where uuid = (select vipUuid from PortForwardingRuleVO where uuid = :ruleUuid)", String.class)
                         .param("ruleUuid", ruleUuid).find();
 
-                List<String> vrouterUuids = sql("select uuid from VirtualRouterVmVO where publicNetworkUuid = :publicNetworkUuid",String.class)
+                /*fix ZSTAC-24893 publicL3 maybe default pulbic network or additional public network*/
+                List<String> vrouterUuids = sql("select distinct vr.uuid from VirtualRouterVmVO vr, VmNicVO nic where nic.vmInstanceUuid = vr.uuid and nic.l3NetworkUuid = :publicNetworkUuid",String.class)
                         .param("publicNetworkUuid", rulePublicL3Uuid).list();
                 if(vrouterUuids.isEmpty()){
                     return new ArrayList<>();
