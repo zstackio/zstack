@@ -1004,6 +1004,8 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg irmsg = new InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg();
             irmsg.setTemplateSpec(((InstantiateRootVolumeMsg) msg).getTemplateSpec());
             imsg = irmsg;
+        } else if (msg instanceof InstantiateMemoryVolumeMsg) {
+            imsg = new InstantiateMemoryVolumeOnPrimaryStorageMsg();
         } else {
             imsg = new InstantiateVolumeOnPrimaryStorageMsg();
         }

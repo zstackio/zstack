@@ -12,6 +12,7 @@ public class VmCapabilities {
     private boolean supportLiveMigration = true;
     private boolean supportVolumeMigration = true;
     private boolean supportReimage= true;
+    private boolean supportMemorySnapshot = true;
 
     public boolean isSupportLiveMigration() {
         return supportLiveMigration;
@@ -33,6 +34,14 @@ public class VmCapabilities {
         return supportReimage;
     }
 
+    public boolean isSupportMemorySnapshot() {
+        return supportMemorySnapshot;
+    }
+
+    public void setSupportMemorySnapshot(boolean supportMemorySnapshot) {
+        this.supportMemorySnapshot = supportMemorySnapshot;
+    }
+
     public void setSupportReimage(boolean supportReimage) {
         this.supportReimage = supportReimage;
     }
@@ -42,6 +51,7 @@ public class VmCapabilities {
         map.put(VmInstanceConstant.Capability.LiveMigration.toString(), isSupportLiveMigration());
         map.put(VmInstanceConstant.Capability.VolumeMigration.toString(), isSupportVolumeMigration());
         map.put(VmInstanceConstant.Capability.Reimage.toString(), isSupportReimage());
+        map.put(VmInstanceConstant.Capability.MemorySnapshot.toString(), isSupportMemorySnapshot());
 
         return map;
     }

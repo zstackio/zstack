@@ -418,6 +418,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((DeleteVmCdRomMsg) msg);
         } else if (msg instanceof CreateVmCdRomMsg) {
             handle((CreateVmCdRomMsg) msg);
+        } else if (msg instanceof RestoreVmInstanceMsg) {
+            handle((RestoreVmInstanceMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -427,6 +429,41 @@ public class VmInstanceBase extends AbstractVmInstance {
                 bus.dealWithUnknownMessage(msg);
             }
         }
+    }
+
+    private void handle(RestoreVmInstanceMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                StartVmInstanceReply reply = new StartVmInstanceReply();
+                refreshVO();
+                startVm(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        reply.setInventory(getSelfInventory());
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "restore-vm";
+            }
+        });
     }
 
     private void handle(CreateVmCdRomMsg msg) {
@@ -889,7 +926,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             throw new OperationFailureException(error);
         }
 
-        if (inv.getAllVolumes().size() > 1) {
+        if (inv.getAllVolumes().stream().anyMatch(v -> v.getType().equals(VolumeType.Data.toString()))) {
             throw new CloudRuntimeException(String.format("why the deleted vm[uuid:%s] has data volumes??? %s",
                     self.getUuid(), JSONObjectUtil.toJsonString(inv.getAllVolumes())));
         }
@@ -5097,6 +5134,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setSoftAvoidHostUuids(((HaStartVmInstanceMsg) msg).getSoftAvoidHostUuids());
         } else if (msg instanceof StartVmInstanceMsg) {
             spec.setSoftAvoidHostUuids(((StartVmInstanceMsg) msg).getSoftAvoidHostUuids());
+        } else if (msg instanceof RestoreVmInstanceMsg) {
+            spec.setMemorySnapshotUuid(((RestoreVmInstanceMsg) msg).getMemorySnapshotUuid());
         }
 
         if (spec.getDestNics().isEmpty()) {
@@ -5716,7 +5755,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private List<VolumeInventory> getAllDataVolumes(VmInstanceInventory inv) {
         List<VolumeInventory> dataVols = inv.getAllVolumes().stream()
-                .filter(it -> !it.getUuid().equals(inv.getRootVolumeUuid()))
+                .filter(it -> it.getType().equals(VolumeType.Data.toString()))
                 .collect(Collectors.toList());
 
         List<BuildVolumeSpecExtensionPoint> exts = pluginRgty.getExtensionList(BuildVolumeSpecExtensionPoint.class);

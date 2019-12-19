@@ -13,14 +13,19 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.workflow.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
+import org.zstack.header.vm.RestoreVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig;
@@ -28,9 +33,7 @@ import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.inerr;
@@ -243,28 +246,84 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
         });
     }
 
-    private void handleRevert(APIRevertVmFromSnapshotGroupMsg msg, NoErrorCompletion completion) {
+    private void
+    handleRevert(APIRevertVmFromSnapshotGroupMsg msg, NoErrorCompletion completion) {
         APIRevertVmFromSnapshotGroupEvent event = new APIRevertVmFromSnapshotGroupEvent(msg.getId());
 
-        RevertVmFromSnapshotGroupInnerMsg imsg = new RevertVmFromSnapshotGroupInnerMsg();
-        imsg.setUuid(msg.getUuid());
-        imsg.setSession(msg.getSession());
-        bus.makeTargetServiceIdByResourceUuid(imsg, VolumeSnapshotConstant.SERVICE_ID, msg.getUuid());
-        overlaySend(imsg, new CloudBusCallBack(msg) {
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName(String.format("revert-vm-%s-from-snapshot-group-%s", self.getVmInstanceUuid(), msg.getGroupUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "revert-volume-snapshots";
+
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    event.setError(reply.getError());
+            public void run(FlowTrigger trigger, Map data) {
+                RevertVmFromSnapshotGroupInnerMsg imsg = new RevertVmFromSnapshotGroupInnerMsg();
+                imsg.setUuid(msg.getUuid());
+                imsg.setSession(msg.getSession());
+                bus.makeTargetServiceIdByResourceUuid(imsg, VolumeSnapshotConstant.SERVICE_ID, msg.getUuid());
+                overlaySend(imsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            event.setError(reply.getError());
+                        }
+
+                        if (reply instanceof RevertVmFromSnapshotGroupInnerReply) {
+                            event.setResults(((RevertVmFromSnapshotGroupInnerReply) reply).getResults());
+                        }
+
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.vmInstanceUuid, self.getVmInstanceUuid()).eq(VolumeVO_.type, VolumeType.Memory).find();
+                if (volume == null) {
+                    trigger.next();
+                    return;
                 }
 
-                if (reply instanceof RevertVmFromSnapshotGroupInnerReply) {
-                    event.setResults(((RevertVmFromSnapshotGroupInnerReply) reply).getResults());
+                Optional opt = self.getVolumeSnapshotRefs().stream().filter(sp -> sp.getVolumeUuid().equals(volume.getUuid())).findFirst();
+                if (!opt.isPresent()) {
+                    trigger.next();
+                    return;
                 }
 
+                VolumeSnapshotGroupRefVO ref = (VolumeSnapshotGroupRefVO) opt.get();
+
+                RestoreVmInstanceMsg rmsg = new RestoreVmInstanceMsg();
+                rmsg.setVmInstanceUuid(self.getVmInstanceUuid());
+                rmsg.setMemorySnapshotUuid(ref.getVolumeSnapshotUuid());
+                bus.makeTargetServiceIdByResourceUuid(rmsg, VmInstanceConstant.SERVICE_ID, rmsg.getVmInstanceUuid());
+                bus.send(rmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        trigger.next();
+                    }
+                });
+
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                event.setError(errCode);
                 bus.publish(event);
                 completion.done();
             }
-        });
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                bus.publish(event);
+                completion.done();
+            }
+        }).start();
     }
 
     private void handle(RevertVmFromSnapshotGroupInnerMsg msg) {
@@ -293,6 +352,11 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
 
         final String finalNewGroupUuid = newGroup == null ? null : newGroup.getUuid();
         new While<>(snapshots).each((snapshot, compl) -> {
+            if (Q.New(VolumeVO.class).eq(VolumeVO_.uuid, snapshot.getVolumeUuid()).eq(VolumeVO_.type, VolumeType.Memory).isExists()) {
+                compl.done();
+                return;
+            }
+
             RevertVolumeFromSnapshotGroupMsg rmsg = new RevertVolumeFromSnapshotGroupMsg();
             rmsg.setSnapshotUuid(snapshot.getUuid());
             rmsg.setVolumeUuid(snapshot.getVolumeUuid());

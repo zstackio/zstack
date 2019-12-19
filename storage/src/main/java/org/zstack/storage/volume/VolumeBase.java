@@ -29,6 +29,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.identity.APICreateUserGroupEvent;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
@@ -60,7 +61,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -471,10 +472,18 @@ public class VolumeBase implements Volume {
                                 instantiateTemporaryRootVolume((InstantiateTemporaryRootVolumeMsg) msg , trigger);
                             } else if (msg instanceof InstantiateRootVolumeMsg) {
                                 instantiateRootVolume((InstantiateRootVolumeMsg) msg, trigger);
+                            } else if (msg instanceof InstantiateMemoryVolumeMsg) {
+                                instantiateMemoryVolume(msg, trigger);
                             } else {
                                 instantiateDataVolume(msg, trigger);
                             }
                         }
+                    }
+
+                    private void instantiateMemoryVolume(InstantiateVolumeMsg msg, FlowTrigger trigger) {
+                        InstantiateMemoryVolumeOnPrimaryStorageMsg imsg = new InstantiateMemoryVolumeOnPrimaryStorageMsg();
+                        prepareMsg(msg, imsg);
+                        doInstantiateVolume(imsg, trigger);
                     }
 
                     private void instantiateTemporaryRootVolume(InstantiateTemporaryRootVolumeMsg msg , FlowTrigger trigger) {
@@ -2050,48 +2059,213 @@ public class VolumeBase implements Volume {
         });
     }
 
-
     private void handle(APICreateVolumeSnapshotGroupMsg msg) {
-        Map<String, List<String>> psVolumeRef = msg.getVmInstance().getAllVolumes().stream()
-                .collect(Collectors.groupingBy(VolumeInventory::getPrimaryStorageUuid,
-                Collectors.mapping(VolumeInventory::getUuid, Collectors.toList())));
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("create-volume-%s-snapshot-group", msg.getVolumeUuid());
+            }
 
-        final ErrorCode[] err = new ErrorCode[1];
-        new While<>(psVolumeRef.entrySet()).each((e, completion) -> {
-            CheckVolumeSnapshotOperationOnPrimaryStorageMsg cmsg = new CheckVolumeSnapshotOperationOnPrimaryStorageMsg();
-            cmsg.setPrimaryStorageUuid(e.getKey());
-            cmsg.setVolumeUuids(e.getValue());
-            cmsg.setVmInstanceUuid(msg.getVmInstance().getUuid());
-            cmsg.setOperation(msg.getBackendOperation());
-            bus.makeLocalServiceId(cmsg, PrimaryStorageConstant.SERVICE_ID);
-            bus.send(cmsg, new CloudBusCallBack(completion) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        err[0] = reply.getError();
-                        completion.allDone();
-                        return;
+            @Override
+            public void run(SyncTaskChain chain) {
+                APICreateVolumeSnapshotGroupEvent evt = new APICreateVolumeSnapshotGroupEvent(msg.getId());
+                doCreateVolumeSnapshotGroup(msg, new ReturnValueCompletion<VolumeSnapshotGroupInventory>(chain) {
+                    @Override
+                    public void success(VolumeSnapshotGroupInventory inv) {
+                        evt.setInventory(inv);
+                        bus.publish(evt);
+                        chain.next();
                     }
 
-                    completion.done();
-                }
-            });
-        }).run(new NoErrorCompletion(msg) {
-            @Override
-            public void done() {
-                if (err[0] == null) {
-                    createSnapshotGroup(msg);
-                    return;
-                }
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
 
-                APIEvent event = new APIEvent(msg.getId());
-                event.setError(err[0]);
-                bus.publish(event);
+            @Override
+            public String getName() {
+                return getSyncSignature();
             }
         });
     }
 
-    private void createSnapshotGroup(APICreateVolumeSnapshotGroupMsg msg) {
+    private void doCreateVolumeSnapshotGroup(APICreateVolumeSnapshotGroupMsg msg, ReturnValueCompletion<VolumeSnapshotGroupInventory> completion) {
+        final String SNAPSHOT_GROUP_INV = "SNAPSHOT_GROUP_INV";
+
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName(String.format("create-volume-%s-snapshot-group", msg.getVolumeUuid()));
+        chain.then(new Flow() {
+            String __name__ = "create-memory-volume";
+
+            VolumeInventory memoryVolume = null;
+
+            @Override
+            public boolean skip(Map data) {
+                if (!msg.isWithMemory()) {
+                    return true;
+                }
+
+                return Q.New(VolumeVO.class)
+                        .eq(VolumeVO_.vmInstanceUuid, msg.getVmInstance().getUuid())
+                        .eq(VolumeVO_.type, VolumeType.Memory)
+                        .isExists();
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                CreateVolumeMsg cmsg = new CreateVolumeMsg();
+                cmsg.setAccountUuid(msg.getSession().getAccountUuid());
+                cmsg.setSize(0);
+                cmsg.setVmInstanceUuid(msg.getVmInstance().getUuid());
+                cmsg.setPrimaryStorageUuid(msg.getVmInstance().getRootVolume().getPrimaryStorageUuid());
+                cmsg.setName(String.format("memory-volume-of-vm-%s", msg.getVmInstance().getUuid()));
+                cmsg.setVolumeType(VolumeType.Memory.toString());
+                cmsg.setFormat(msg.getVmInstance().getRootVolume().getFormat());
+
+                bus.makeLocalServiceId(cmsg, VolumeConstant.SERVICE_ID);
+                bus.send(cmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        CreateVolumeReply r = reply.castReply();
+                        memoryVolume = r.getInventory();
+                        trigger.next();
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                if (memoryVolume == null) {
+                    trigger.rollback();
+                    return;
+                }
+
+                DeleteVolumeMsg dmsg = new DeleteVolumeMsg();
+                dmsg.setDetachBeforeDeleting(false);
+                dmsg.setUuid(memoryVolume.getUuid());
+                dmsg.setDeletionPolicy(VolumeDeletionPolicyManager.VolumeDeletionPolicy.Direct.toString());
+                bus.makeTargetServiceIdByResourceUuid(dmsg, VolumeConstant.SERVICE_ID, memoryVolume.getUuid());
+                bus.send(dmsg);
+
+                trigger.rollback();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "instantiate-memory-volume";
+
+            @Override
+            public boolean skip(Map data) {
+                return !msg.isWithMemory();
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                VolumeVO volume = Q.New(VolumeVO.class)
+                        .eq(VolumeVO_.vmInstanceUuid, msg.getVmInstance().getUuid())
+                        .eq(VolumeVO_.type, VolumeType.Memory).find();
+
+                if (volume == null || volume.getStatus().equals(VolumeStatus.Ready)) {
+                    trigger.next();
+                    return;
+                }
+
+                InstantiateMemoryVolumeMsg imsg = new InstantiateMemoryVolumeMsg();
+                imsg.setHostUuid(msg.getVmInstance().getHostUuid());
+                imsg.setPrimaryStorageUuid(msg.getVmInstance().getRootVolume().getPrimaryStorageUuid());
+                imsg.setVolumeUuid(volume.getUuid());
+                bus.makeTargetServiceIdByResourceUuid(imsg, VolumeConstant.SERVICE_ID, imsg.getVolumeUuid());
+                bus.send(imsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                            return;
+                        }
+
+                        volume.setInstallPath(((InstantiateVolumeReply) reply).getVolume().getInstallPath());
+                        volume.setDeviceId(Integer.MAX_VALUE);
+                        volume.setStatus(VolumeStatus.Ready);
+                        dbf.updateAndRefresh(volume);
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "take-snapshots";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                msg.setVmInstance(VmInstanceInventory.valueOf(dbf.findByUuid(msg.getVmInstance().getUuid(), VmInstanceVO.class)));
+
+                Map<String, List<String>> psVolumeRef = msg.getVmInstance().getAllVolumes().stream()
+                        .collect(Collectors.groupingBy(VolumeInventory::getPrimaryStorageUuid,
+                                Collectors.mapping(VolumeInventory::getUuid, Collectors.toList())));
+
+                final ErrorCode[] err = new ErrorCode[1];
+                new While<>(psVolumeRef.entrySet()).each((e, c) -> {
+                    CheckVolumeSnapshotOperationOnPrimaryStorageMsg cmsg = new CheckVolumeSnapshotOperationOnPrimaryStorageMsg();
+                    cmsg.setPrimaryStorageUuid(e.getKey());
+                    cmsg.setVolumeUuids(e.getValue());
+                    cmsg.setVmInstanceUuid(msg.getVmInstance().getUuid());
+                    cmsg.setOperation(msg.getBackendOperation());
+                    bus.makeLocalServiceId(cmsg, PrimaryStorageConstant.SERVICE_ID);
+                    bus.send(cmsg, new CloudBusCallBack(c) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                err[0] = reply.getError();
+                                c.allDone();
+                                return;
+                            }
+
+                            c.done();
+                        }
+                    });
+                }).run(new NoErrorCompletion(msg) {
+                    @Override
+                    public void done() {
+                        if (err[0] == null) {
+                            createSnapshotGroup(msg, new ReturnValueCompletion<VolumeSnapshotGroupInventory>(trigger) {
+                                @Override
+                                public void success(VolumeSnapshotGroupInventory returnValue) {
+                                    data.put("SNAPSHOT_GROUP_INV", returnValue);
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                            return;
+                        }
+
+                        trigger.fail(err[0]);
+                    }
+                });
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success((VolumeSnapshotGroupInventory) data.get(SNAPSHOT_GROUP_INV));
+            }
+        }).start();
+    }
+
+    private void createSnapshotGroup(APICreateVolumeSnapshotGroupMsg msg, ReturnValueCompletion<VolumeSnapshotGroupInventory> completion) {
         APICreateVolumeSnapshotGroupEvent evt = new APICreateVolumeSnapshotGroupEvent(msg.getId());
 
         VolumeSnapshotGroupCreationValidator.validate(msg.getVmInstance().getUuid());
@@ -2119,8 +2293,7 @@ public class VolumeBase implements Volume {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    evt.setError(reply.getError());
-                    bus.publish(evt);
+                    completion.fail(reply.getError());
                     return;
                 }
 
@@ -2129,8 +2302,7 @@ public class VolumeBase implements Volume {
                 VolumeSnapshotGroupVO group = createGroup(r);
                 logger.debug(String.format("created volume snapshot group[uuid:%s] for vm[uuid:%s]",
                         group.getUuid(), vm.getUuid()));
-                evt.setInventory(VolumeSnapshotGroupInventory.valueOf(dbf.reload(group)));
-                bus.publish(evt);
+                completion.success(VolumeSnapshotGroupInventory.valueOf(dbf.reload(group)));
             }
 
             private VolumeSnapshotGroupVO createGroup(CreateVolumesSnapshotReply r) {

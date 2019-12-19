@@ -243,6 +243,7 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
     private String requiredClusterUuid;
     private String requiredHostUuid;
     private List<String> softAvoidHostUuids;
+    private String memorySnapshotUuid;
     private String requiredPrimaryStorageUuidForRootVolume;
     private String requiredPrimaryStorageUuidForDataVolume;
 
@@ -534,6 +535,13 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
         this.dataIsoPath = dataIsoPath;
     }
 
+    public String getMemorySnapshotUuid() {
+        return memorySnapshotUuid;
+    }
+
+    public void setMemorySnapshotUuid(String memorySnapshotUuid) {
+        this.memorySnapshotUuid = memorySnapshotUuid;
+    }
 
     public List<String> getRequiredNetworkServiceTypes() {
         List<String> nsTypes = new ArrayList<>();
