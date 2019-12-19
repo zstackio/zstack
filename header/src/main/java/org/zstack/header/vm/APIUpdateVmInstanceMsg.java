@@ -36,6 +36,9 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
     @APIParam(required = false, numberRange = {1, Long.MAX_VALUE})
     private Long memorySize;
 
+    @APIParam(required = false)
+    private String allocatorStrategy;
+
     public String getDefaultL3NetworkUuid() {
         return defaultL3NetworkUuid;
     }
@@ -110,5 +113,13 @@ public class APIUpdateVmInstanceMsg extends APIMessage implements VmInstanceMess
         msg.uuid = uuid();
         msg.name = "new vm name";
         return msg;
+    }
+
+    public String getAllocatorStrategy() {
+        return allocatorStrategy;
+    }
+
+    public void setAllocatorStrategy(String allocatorStrategy) {
+        this.allocatorStrategy = allocatorStrategy;
     }
 }
