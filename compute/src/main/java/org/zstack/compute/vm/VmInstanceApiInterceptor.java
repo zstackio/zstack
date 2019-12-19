@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.allocator.HostAllocatorStrategyType;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
@@ -191,6 +192,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
 
     private void validate(APIUpdateVmInstanceMsg msg) {
+        if (msg.getAllocatorStrategy() != null && !HostAllocatorStrategyType.hasType(msg.getAllocatorStrategy())) {
+            throw new ApiMessageInterceptionException(argerr("unsupported host allocation strategy[%s]", msg.getAllocatorStrategy()));
+        }
+
         new SQLBatch() {
             @Override
             protected void scripts() {
