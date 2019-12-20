@@ -51,7 +51,7 @@ class VirtualRouterLoadBalancerAndPortforwardingOnAdditionPublicCase extends Sub
             delegate.name = "pubL3-2"
         }
 
-        IpRangeInventory iprInv = addIpRange {
+        addIpRange {
             delegate.name = "TestIpRange"
             delegate.l3NetworkUuid = l3_1.uuid
             delegate.startIp = "11.168.200.10"
@@ -114,8 +114,6 @@ class VirtualRouterLoadBalancerAndPortforwardingOnAdditionPublicCase extends Sub
     }
 
     void testGetCandidateVmNicsForPortforwding(VipInventory vip) {
-        def vm = env.inventoryByName("vm") as VmInstanceInventory
-
         /* create portforwarding on this vip */
         PortForwardingRuleInventory pf =  createPortForwardingRule {
             vipUuid = vip.uuid

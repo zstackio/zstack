@@ -450,7 +450,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         });
     }
 
-    private void refreshCertificate(VirtualRouterVmInventory vr, List<LoadBalancerStruct> struct, final Completion completion){
+    private void refreshCertificate(VirtualRouterVmInventory vr, boolean checkVrState, List<LoadBalancerStruct> struct, final Completion completion){
         Set<String> certificateUuids = getCertificates(struct);
 
         List<ErrorCode> errors = new ArrayList<>();
@@ -458,6 +458,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
             msg.setVmInstanceUuid(vr.getUuid());
             msg.setPath(CREATE_CERTIFICATE_PATH);
+            msg.setCheckStatus(checkVrState);
 
             CertificateCmd cmd = new CertificateCmd();
             CertificateVO vo = dbf.findByUuid(uuid, CertificateVO.class);
@@ -495,13 +496,14 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         });
     }
 
-    private void rollbackCertificate(VirtualRouterVmInventory vr, List<LoadBalancerStruct> struct, final NoErrorCompletion completion){
+    private void rollbackCertificate(VirtualRouterVmInventory vr, boolean checkVrState, List<LoadBalancerStruct> struct, final NoErrorCompletion completion){
         Set<String> certificateUuids = getCertificates(struct);
 
         new While<>(certificateUuids).each((uuid, wcmpl) -> {
             VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
             msg.setVmInstanceUuid(vr.getUuid());
             msg.setPath(DELETE_CERTIFICATE_PATH);
+            msg.setCheckStatus(checkVrState);
 
             CertificateCmd cmd = new CertificateCmd();
             cmd.setUuid(uuid);
@@ -526,6 +528,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setVmInstanceUuid(vr.getUuid());
         msg.setPath(REFRESH_LB_PATH);
+        msg.setCheckStatus(true);
 
         RefreshLbCmd cmd = new RefreshLbCmd();
         cmd.lbs = makeLbTOs(struct, vr);
@@ -559,7 +562,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     String __name__ = "refresh-lb-ceriticae-to-virtualRouter";
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        refreshCertificate(vr, Collections.singletonList(struct), new Completion(trigger) {
+                        refreshCertificate(vr, true, Collections.singletonList(struct), new Completion(trigger) {
                             @Override
                             public void success() {
                                 refreshCertificateOnHaRouter(vr.getUuid(), Collections.singletonList(struct), new Completion(trigger) {
@@ -584,7 +587,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        rollbackCertificate(vr, Collections.singletonList(struct), new NoErrorCompletion(trigger) {
+                        rollbackCertificate(vr, true, Collections.singletonList(struct), new NoErrorCompletion(trigger) {
                             @Override
                             public void done() {
                                 rollbackCertificateOnHaRouter(vr.getUuid(), Collections.singletonList(struct), new Completion(trigger) {
@@ -1533,7 +1536,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     String __name__ = "lb-sync-certificate-on-start";
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        refreshCertificate(vr, structs, new Completion(trigger) {
+                        refreshCertificate(vr, false, structs, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -1548,7 +1551,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        rollbackCertificate(vr, structs, new NoErrorCompletion(trigger) {
+                        rollbackCertificate(vr, false, structs, new NoErrorCompletion(trigger) {
                             @Override
                             public void done() {
                                 trigger.rollback();
@@ -1678,7 +1681,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 }
 
                 List<LoadBalancerStruct> s = (List<LoadBalancerStruct>)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                refreshCertificate(VirtualRouterVmInventory.valueOf(vrVO), s, compl);
+                refreshCertificate(VirtualRouterVmInventory.valueOf(vrVO), false, s, compl);
             }
         }, data, completion);
     }
@@ -1700,7 +1703,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 }
 
                 List<LoadBalancerStruct> s = (List<LoadBalancerStruct>)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                rollbackCertificate(VirtualRouterVmInventory.valueOf(vrVO), s, new NoErrorCompletion(compl) {
+                rollbackCertificate(VirtualRouterVmInventory.valueOf(vrVO), false, s, new NoErrorCompletion(compl) {
                     @Override
                     public void done() {
                         compl.success();
