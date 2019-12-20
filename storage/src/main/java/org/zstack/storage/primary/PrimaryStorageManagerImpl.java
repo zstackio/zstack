@@ -8,22 +8,16 @@ import org.zstack.configuration.DiskOfferingSystemTags;
 import org.zstack.configuration.InstanceOfferingSystemTags;
 import org.zstack.configuration.OfferingUserConfigUtils;
 import org.zstack.core.Platform;
-import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.DbEntityLister;
-import org.zstack.core.db.SQL;
-import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.*;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -31,7 +25,6 @@ import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.trash.InstallPathRecycleVO;
 import org.zstack.header.core.trash.InstallPathRecycleVO_;
 import org.zstack.header.errorcode.ErrorCode;
@@ -105,7 +98,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     private Map<String, PrimaryStorageFactory> primaryStorageFactories = Collections.synchronizedMap(new HashMap<>());
     private Map<String, PrimaryStorageAllocatorStrategyFactory> allocatorFactories = Collections.synchronizedMap(new HashMap<>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
-    private Map<String, Future<Void>> primaryStorageAutoDeleteTrashTask = new HashMap<>();
+    private final Map<String, AutoDeleteTrashTask> autoDeleteTrashTask = new HashMap<>();
+    private AutoDeleteTrashTask globalTrashTask;
 
     static {
         allowedMessageAfterSoftDeletion.add(PrimaryStorageDeletionMsg.class);
@@ -576,7 +570,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     private void installResourceConfigValidator(){
         ResourceConfig resourceConfig = rcf.getResourceConfig(PrimaryStorageGlobalConfig.PRIMARY_STORAGE_AUTO_DELETE_TRASH.getIdentity());
-        resourceConfig.installUpdateExtension( new ResourceConfigUpdateExtensionPoint(){
+        resourceConfig.installUpdateExtension(new ResourceConfigUpdateExtensionPoint() {
             @Override
             public void updateResourceConfig(ResourceConfig config, String resourceUuid, String resourceType, String oldValue, String newValue){
                 startPrimaryStorageAutoDeleteTrashTask(resourceUuid, newValue);
@@ -626,102 +620,43 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     private void startPrimaryStorageAutoDeleteTrashTask(String resourceUuid, String newValue){
-        thdf.chainSubmit(new ChainTask(null) {
-            @Override
-            public String getSyncSignature() {
-                return getName();
-            }
-
-            @Override
-            public void run(SyncTaskChain chain) {
-                primaryStorageAutoDeleteTrashTask(resourceUuid, newValue, chain);
-            }
-
-            @Override
-            public String getName() {
-                return String.format("primary-storage-auto-delete-trash-for-PS[%s]", resourceUuid);
-            }
-        });
+        primaryStorageAutoDeleteTrashTask(resourceUuid, newValue);
     }
 
-    private void primaryStorageAutoDeleteTrashTask(String primaryStorageUuid, String newValue, SyncTaskChain chain){
-        String newPrimaryStorageUuid;
-        if(primaryStorageUuid == null){
-            newPrimaryStorageUuid = PrimaryStorageGlobalConfig.PRIMARY_STORAGE_AUTO_DELETE_TRASH.getName();
-        }else{
-            newPrimaryStorageUuid = primaryStorageUuid;
+    class AutoDeleteTrashTask {
+        Future<Void> runnable;
+        PeriodicTask task;
+
+        public AutoDeleteTrashTask(PeriodicTask task) {
+            this.runnable = thdf.submitPeriodicTask(task);
+            this.task = task;
         }
 
-        if(primaryStorageAutoDeleteTrashTask.containsKey(newPrimaryStorageUuid)){
-            primaryStorageAutoDeleteTrashTask.get(newPrimaryStorageUuid).cancel(true);
+        public long getPeriod() {
+            return task.getInterval();
         }
 
-        if(Long.valueOf(newValue) <= 0){
-            chain.next();
-            return;
+        public void cancle() {
+            runnable.cancel(true);
         }
+    }
 
-        Future<Void> task = thdf.submitPeriodicTask(new PeriodicTask() {
-            @Override
-            public void run() {
-                List<Tuple> tuples;
-                if(newPrimaryStorageUuid.equals(PrimaryStorageGlobalConfig.PRIMARY_STORAGE_AUTO_DELETE_TRASH.getName())){
-                    List<String> resourceConfigPSUuids = Q.New(ResourceConfigVO.class)
-                            .select(ResourceConfigVO_.resourceUuid)
-                            .eq(ResourceConfigVO_.name, PrimaryStorageGlobalConfig.PRIMARY_STORAGE_AUTO_DELETE_TRASH.getName())
-                            .listValues();
+    private List<InstallPathRecycleVO> findRecycle(String psUuid) {
+        if (psUuid != null) {
+            return Q.New(InstallPathRecycleVO.class)
+                    .eq(InstallPathRecycleVO_.storageUuid, psUuid).list();
+        } else {
+            List<String> resourceConfigPSUuids = Q.New(ResourceConfigVO.class)
+                    .select(ResourceConfigVO_.resourceUuid)
+                    .eq(ResourceConfigVO_.name, PrimaryStorageGlobalConfig.PRIMARY_STORAGE_AUTO_DELETE_TRASH.getName())
+                    .listValues();
+            return Q.New(InstallPathRecycleVO.class).notIn(InstallPathRecycleVO_.storageUuid, resourceConfigPSUuids).list();
+        }
+    }
 
-                    if( resourceConfigPSUuids.isEmpty()){
-                        tuples = Q.New(InstallPathRecycleVO.class)
-                                .select(InstallPathRecycleVO_.trashId, InstallPathRecycleVO_.storageUuid)
-                                .listTuple();
-                    }else{
-                        tuples = Q.New(InstallPathRecycleVO.class)
-                                .select(InstallPathRecycleVO_.trashId, InstallPathRecycleVO_.storageUuid)
-                                .notIn(InstallPathRecycleVO_.storageUuid, resourceConfigPSUuids)
-                                .listTuple();
-                    }
-                }else{
-                    tuples = Q.New(InstallPathRecycleVO.class)
-                            .select(InstallPathRecycleVO_.trashId, InstallPathRecycleVO_.storageUuid)
-                            .eq(InstallPathRecycleVO_.storageUuid, newPrimaryStorageUuid)
-                            .listTuple();
-                }
-
-                if(tuples.isEmpty()){
-                    logger.debug(String.format("No trash in primaryStorage[%s]", newPrimaryStorageUuid));
-                    chain.next();
-                    return;
-                }
-                new While<>(tuples).each((tuple, completion) -> {
-                    Long trashId = tuple.get(0, Long.class);
-                    String primaryStorageUuid = tuple.get(1, String.class);
-                    CleanUpTrashOnPrimaryStroageMsg pmsg = new CleanUpTrashOnPrimaryStroageMsg();
-                    pmsg.setPrimaryStorageUuid(primaryStorageUuid);
-                    pmsg.setTrashId(trashId);
-                    bus.makeTargetServiceIdByResourceUuid(pmsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
-                    bus.send(pmsg, new CloudBusCallBack(completion) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (reply.isSuccess()) {
-                                logger.debug(String.format("Delete trash [%s] on primary storage [%s] successfully in periodic task",
-                                        trashId, primaryStorageUuid));
-                            }else{
-                                logger.warn(String.format("Delete trash [%s] on primary storage [%s] failed in periodic task, because: %s",
-                                        pmsg.getTrashId(), primaryStorageUuid, reply.getError().getDetails()));
-                            }
-
-                            completion.done();
-                        }
-                    });
-                }).run(new NoErrorCompletion() {
-                    @Override
-                    public void done(){
-                        chain.next();
-                    }
-                });
-            }
-
+    private PeriodicTask getTrashPeriodicTask(String psUuid, long period) {
+        DebugUtils.Assert(period > 0, String.format("cannot submit a trash task which period[%d] <= 0", period));
+        return new PeriodicTask() {
             @Override
             public TimeUnit getTimeUnit() {
                 return TimeUnit.SECONDS;
@@ -729,17 +664,76 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
             @Override
             public long getInterval() {
-                return Long.valueOf(newValue);
+                return period;
             }
 
             @Override
             public String getName() {
-                return "Auto clean primary storage trash";
+                return "auto clean primary storage trash";
             }
-        });
 
-        primaryStorageAutoDeleteTrashTask.put(newPrimaryStorageUuid, task);
-        logger.debug(String.format("Submit auto delete trash task for primary storage[%s]", newPrimaryStorageUuid));
+            @Override
+            public void run() {
+                List<InstallPathRecycleVO> vos = findRecycle(psUuid);
+
+                if(vos.isEmpty()){
+                    return;
+                }
+                for (InstallPathRecycleVO vo: vos) {
+                    CleanUpTrashOnPrimaryStroageMsg pmsg = new CleanUpTrashOnPrimaryStroageMsg();
+                    pmsg.setPrimaryStorageUuid(vo.getStorageUuid());
+                    pmsg.setTrashId(vo.getTrashId());
+                    bus.makeTargetServiceIdByResourceUuid(pmsg, PrimaryStorageConstant.SERVICE_ID, vo.getStorageUuid());
+                    bus.send(pmsg, new CloudBusCallBack(pmsg) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                logger.debug(String.format("Delete trash [%s] on primary storage [%s] successfully in periodic task",
+                                        vo.getTrashId(), vo.getStorageUuid()));
+                            }else{
+                                logger.warn(String.format("Delete trash [%s] on primary storage [%s] failed in periodic task, because: %s",
+                                        vo.getTrashId(), vo.getStorageUuid(), reply.getError().getDetails()));
+                            }
+                        }
+                    });
+                }
+            }
+        };
+    }
+
+    private void primaryStorageAutoDeleteTrashTask(String primaryStorageUuid, String newValue){
+        logger.debug(String.format("start submit auto delete trash task for primary storage[%s]", primaryStorageUuid != null ? primaryStorageUuid : "globalTrashTask"));
+        try {
+            Long.valueOf(newValue);
+        } catch (NumberFormatException e) {
+            logger.error(e.getLocalizedMessage());
+            return;
+        }
+        long period = Long.valueOf(newValue);
+        if(Long.valueOf(newValue) <= 0){
+            return;
+        }
+
+        if (primaryStorageUuid == null) {
+            if (globalTrashTask != null) {
+                globalTrashTask.cancle();
+            }
+            globalTrashTask = new AutoDeleteTrashTask(getTrashPeriodicTask(null, period));
+            logger.debug(String.format("submit new globalTrashTask, period: %d", period));
+        } else {
+            synchronized (autoDeleteTrashTask) {
+                if(autoDeleteTrashTask.containsKey(primaryStorageUuid)) {
+                    if (autoDeleteTrashTask.get(primaryStorageUuid).getPeriod() != period) {
+                        autoDeleteTrashTask.get(primaryStorageUuid).cancle();
+                        logger.debug(String.format("cancle trash task for %s, period: %d", primaryStorageUuid, autoDeleteTrashTask.get(primaryStorageUuid).getPeriod()));
+                    } else {
+                        return;
+                    }
+                }
+                autoDeleteTrashTask.put(primaryStorageUuid, new AutoDeleteTrashTask(getTrashPeriodicTask(primaryStorageUuid, period)));
+                logger.debug(String.format("submit clean trash task for %s, period: %d", primaryStorageUuid, period));
+            }
+        }
     }
 
     @Override
