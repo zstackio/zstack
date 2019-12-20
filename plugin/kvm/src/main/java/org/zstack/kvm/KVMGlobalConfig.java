@@ -1,12 +1,13 @@
 package org.zstack.kvm;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
-import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.resourceconfig.BindResourceConfig;
 
 /**
  */
@@ -55,4 +56,8 @@ public class KVMGlobalConfig {
     public static GlobalConfig TEST_SSH_PORT_ON_CONNECT_TIMEOUT = new GlobalConfig(CATEGORY, "testSshPortOnConnectTimeout");
     @GlobalConfigValidation
     public static GlobalConfig RESTART_AGENT_IF_FAKE_DEAD = new GlobalConfig(CATEGORY, "restartagentwhenfakedead");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "enable QEMU native TLS")
+    public static GlobalConfig ENABLE_QEMU_NATIVE_TLS = new GlobalConfig(CATEGORY, "enableQemuNativeTLS");
 }

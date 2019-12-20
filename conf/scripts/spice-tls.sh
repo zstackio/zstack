@@ -6,7 +6,7 @@ CA_KEY=ca-key.pem
 SERVER_KEY=server-key.pem
 
 # creating a key for our ca
-test -s $OUTDIR/$CA_KEY && test -s $OUTDIR/SERVER_KEY && ( echo "spice certificates already generated"; exit 0 )
+test -s $OUTDIR/$CA_KEY && test -s $OUTDIR/SERVER_KEY && { echo "spice certificates already generated"; exit 0; }
 
 openssl genrsa -out $OUTDIR/$CA_KEY 2048
 chmod 400 $OUTDIR/$CA_KEY

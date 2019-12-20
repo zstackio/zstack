@@ -316,6 +316,7 @@ public class KVMAgentCommands {
         private String cpuModelName;
         private String cpuGHz;
         private String hostCpuModelName;
+        private String hostname;
         private String systemProductName;
         private String systemSerialNumber;
         private List<String> ipAddresses;
@@ -398,6 +399,14 @@ public class KVMAgentCommands {
 
         public String getHostCpuModelName() {
             return hostCpuModelName;
+        }
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
         }
 
         public String getSystemProductName() {
@@ -1805,6 +1814,7 @@ public class KVMAgentCommands {
         private String storageMigrationPolicy;
         private String srcHostIp;
         private boolean useNuma;
+        private boolean useTls;
         private boolean migrateFromDestination;
         private boolean autoConverge;
         private Long timeout; // in seconds
@@ -1863,6 +1873,14 @@ public class KVMAgentCommands {
 
         public void setMigrateFromDestination(boolean migrateFromDestination) {
             this.migrateFromDestination = migrateFromDestination;
+        }
+
+        public boolean isUseTls() {
+            return useTls;
+        }
+
+        public void setUseTls(boolean useTls) {
+            this.useTls = useTls;
         }
 
         public Long getTimeout() {
