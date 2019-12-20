@@ -2162,6 +2162,8 @@ public class KVMHost extends HostBase implements Host {
                             }.execute();
                             cmd.setDisks(diskMigrationMap);
                         }
+                        cmd.setUseTls(KVMGlobalConfig.ENABLE_QEMU_NATIVE_TLS.value(Boolean.class));
+                        cmd.setTimeout(timeoutManager.getTimeout());
 
                         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(migrateVmPath);
                         ub.host(migrateFromDestination ? dstHostMnIp : srcHostMnIp);
@@ -4538,12 +4540,11 @@ public class KVMHost extends HostBase implements Host {
                                     createTagWithoutNonValue(HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY, HostSystemTags.POWER_SUPPLY_MAX_POWER_CAPACITY_TOKEN, ret.getPowerSupplyMaxPowerCapacity(), true);
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), true);
+                                    createTagWithoutNonValue(HostSystemTags.HOSTNAME, HostSystemTags.HOSTNAME_TOKEN, ret.getHostname(), true);
 
                                     if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
                                         recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
                                     }
-
-
 
                                     List<String> ips = ret.getIpAddresses();
                                     if (ips != null) {

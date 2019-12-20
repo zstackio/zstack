@@ -10,6 +10,7 @@ import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.resourceconfig.BindResourceConfig;
 
 /**
  */
@@ -99,4 +100,8 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable install host shutdown hook")
     public static GlobalConfig INSTALL_HOST_SHUTDOWN_HOOK = new GlobalConfig(CATEGORY, "install.host.shutdown.hook");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "enable QEMU native TLS")
+    public static GlobalConfig ENABLE_QEMU_NATIVE_TLS = new GlobalConfig(CATEGORY, "enableQemuNativeTLS");
 }
