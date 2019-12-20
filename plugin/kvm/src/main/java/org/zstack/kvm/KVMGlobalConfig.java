@@ -1,6 +1,7 @@
 package org.zstack.kvm;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.vm.VmInstanceVO;
@@ -8,6 +9,7 @@ import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.resourceconfig.BindResourceConfig;
 
 /**
  */
@@ -72,4 +74,7 @@ public class KVMGlobalConfig {
     public static GlobalConfig HOST_CONNECTION_CHECK_INTERVAL = new GlobalConfig(CATEGORY, "host.connection.check.interval");
     @GlobalConfigValidation
     public static GlobalConfig CONNECTION_SERVER_UPDATE_INTERVAL = new GlobalConfig(CATEGORY, "connection.server.update.interval");
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "enable QEMU native TLS")
+    public static GlobalConfig ENABLE_QEMU_NATIVE_TLS = new GlobalConfig(CATEGORY, "enableQemuNativeTLS");
 }
