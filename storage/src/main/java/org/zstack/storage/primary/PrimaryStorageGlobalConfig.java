@@ -3,6 +3,8 @@ package org.zstack.storage.primary;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.resourceconfig.BindResourceConfig;
 
 /**
  */
@@ -26,4 +28,7 @@ public class PrimaryStorageGlobalConfig {
     public static GlobalConfig PING_INTERVAL = new GlobalConfig(CATEGORY, "ping.interval");
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig PING_PARALLELISM_DEGREE = new GlobalConfig(CATEGORY, "ping.parallelismDegree");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    @BindResourceConfig({PrimaryStorageVO.class})
+    public static GlobalConfig PRIMARY_STORAGE_AUTO_DELETE_TRASH = new GlobalConfig(CATEGORY, "primarystorage.auto.delete.trash.interval");
 }
