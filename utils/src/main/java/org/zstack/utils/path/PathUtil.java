@@ -253,4 +253,13 @@ public class PathUtil {
             throw new RuntimeException(e.getMessage());
         }
     }
+
+    public static boolean isDir(String path) {
+        File file = new File(path);
+        if (file.exists()) {
+            return file.isDirectory();
+        } else {
+            return false;
+        }
+    }
 }
