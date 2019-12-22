@@ -218,17 +218,26 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
     }
 
     private void checkLocalFiles(List<FileVerificationVO> fvs){
-        for (FileVerificationVO fv: fvs){
-
-            String digest = getLocalFileDigest(fv.toFile());
-            if (! digest.equals(fv.getDigest())){
+        for (FileVerificationVO fv : fvs) {
+            boolean needRestore = false;
+            if (PathUtil.isDir(fv.getPath())) {
+                logger.warn(String.format("Filed to restore [%s.%s], it's a directory now.", fv.getNode(), fv.getPath()));
+                sendChanged(fv.getNode(), fv.getPath(), fv.getCategory(), FileRestoreState.False.toString());
+                continue;
+            }
+            if (PathUtil.exists(fv.getPath())) {
+                needRestore = !getLocalFileDigest(fv.toFile()).equals(fv.getDigest());
+            } else {
+                needRestore = true;
+            }
+            if (needRestore) {
                 try {
                     logger.info(String.format("Will restore local file from [%s] to [%s]", PathUtil.join(LOCAL_BACKUP_DIR, fv.getUuid()), fv.getPath()));
                     backupRestoreLocalFile(PathUtil.join(LOCAL_BACKUP_DIR, fv.getUuid()), fv.getPath());
-                }catch (Exception e){
+                } catch (Exception e) {
                     logger.warn(String.format("The file[%s.%s] was modified and restore failed.", fv.getNode(), fv.getPath()));
                     sendChanged(fv.getNode(), fv.getPath(), fv.getCategory(), FileRestoreState.False.toString());
-                }finally {
+                } finally {
                     logger.info(String.format("The file[%s.%s] was modified but successfully restored.", fv.getNode(), fv.getPath()));
                     sendChanged(fv.getNode(), fv.getPath(), fv.getCategory(), FileRestoreState.True.toString());
                 }
