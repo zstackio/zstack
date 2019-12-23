@@ -10,17 +10,11 @@ import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.lb.LoadBalancerVO
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.vip.VipVO
-import org.zstack.network.service.vip.VipVO_
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
-import org.zstack.sdk.L3NetworkInventory
-import org.zstack.sdk.LoadBalancerInventory
-import org.zstack.sdk.LoadBalancerListenerInventory
-import org.zstack.sdk.VirtualRouterVmInventory
-import org.zstack.sdk.VmInstanceInventory
-import org.zstack.sdk.VmNicInventory
+import org.zstack.sdk.*
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -28,7 +22,6 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.stream.Collectors
-
 /**
  * Created by heathhose on 17-5-5.
  */
@@ -195,7 +188,6 @@ class VirtualRouterLoadBalancerUDPCase extends SubCase{
         L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
         VmInstanceInventory vm = env.inventoryByName("vm")
         LoadBalancerInventory lb = env.inventoryByName("lb")
-        VipVO vip = dbFindByUuid(lb.getVipUuid(),VipVO.class)
 
         expect (AssertionError.class) {
             createLoadBalancerListener {
