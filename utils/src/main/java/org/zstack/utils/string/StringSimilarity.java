@@ -193,6 +193,7 @@ public class StringSimilarity {
         if (sub == null || sub.isEmpty() || isRedundance(sub)) {
             return null;
         }
+
         String formatSub = formatSrc(sub);
         if (errors.get(formatSub) != null) {
             return errors.get(formatSub);
@@ -201,10 +202,12 @@ public class StringSimilarity {
         ErrorCodeElaboration err = null;
         long start = System.currentTimeMillis();
         try {
+            logger.debug(String.format("start to find similary from: %s", String.format(formatSub, args)));
             err = findMostSimilaryRegex(String.format(formatSub, args));
         } catch (Exception e) {
             logger.warn("exception happened when format error message");
             logger.warn(e.getMessage());
+            logger.debug(String.format("start to find similary from: %s", formatSub));
             err = findMostSimilaryRegex(formatSub);
         }
 
@@ -299,7 +302,8 @@ public class StringSimilarity {
     }
 
     private static boolean isRegexMatched(String regex, String sub) {
-        return Pattern.matches(regex, sub);
+        return Pattern.compile(regex, Pattern.DOTALL).matcher(sub).find();
+
     }
 
     private static double getSimilary(String str, String sub) {
