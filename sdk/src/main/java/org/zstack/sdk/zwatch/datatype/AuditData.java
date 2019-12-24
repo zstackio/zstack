@@ -28,28 +28,28 @@ public class AuditData  {
         return this.TAG_RESOURCE_UUID;
     }
 
-    public java.lang.String TAG_RESOURCE_TYPE;
-    public void setTAG_RESOURCE_TYPE(java.lang.String TAG_RESOURCE_TYPE) {
-        this.TAG_RESOURCE_TYPE = TAG_RESOURCE_TYPE;
+    public java.lang.String FIELD_RESOURCE_TYPE;
+    public void setFIELD_RESOURCE_TYPE(java.lang.String FIELD_RESOURCE_TYPE) {
+        this.FIELD_RESOURCE_TYPE = FIELD_RESOURCE_TYPE;
     }
-    public java.lang.String getTAG_RESOURCE_TYPE() {
-        return this.TAG_RESOURCE_TYPE;
-    }
-
-    public java.lang.String TAG_API_NAME;
-    public void setTAG_API_NAME(java.lang.String TAG_API_NAME) {
-        this.TAG_API_NAME = TAG_API_NAME;
-    }
-    public java.lang.String getTAG_API_NAME() {
-        return this.TAG_API_NAME;
+    public java.lang.String getFIELD_RESOURCE_TYPE() {
+        return this.FIELD_RESOURCE_TYPE;
     }
 
-    public java.lang.String TAG_API_ERROR;
-    public void setTAG_API_ERROR(java.lang.String TAG_API_ERROR) {
-        this.TAG_API_ERROR = TAG_API_ERROR;
+    public java.lang.String FIELD_API_NAME;
+    public void setFIELD_API_NAME(java.lang.String FIELD_API_NAME) {
+        this.FIELD_API_NAME = FIELD_API_NAME;
     }
-    public java.lang.String getTAG_API_ERROR() {
-        return this.TAG_API_ERROR;
+    public java.lang.String getFIELD_API_NAME() {
+        return this.FIELD_API_NAME;
+    }
+
+    public java.lang.String FIELD_API_ERROR;
+    public void setFIELD_API_ERROR(java.lang.String FIELD_API_ERROR) {
+        this.FIELD_API_ERROR = FIELD_API_ERROR;
+    }
+    public java.lang.String getFIELD_API_ERROR() {
+        return this.FIELD_API_ERROR;
     }
 
     public java.lang.String TAG_API_OPERATOR_ACCOUNT_UUID;
@@ -60,20 +60,20 @@ public class AuditData  {
         return this.TAG_API_OPERATOR_ACCOUNT_UUID;
     }
 
-    public java.lang.String TAG_API_CLIENTIP;
-    public void setTAG_API_CLIENTIP(java.lang.String TAG_API_CLIENTIP) {
-        this.TAG_API_CLIENTIP = TAG_API_CLIENTIP;
+    public java.lang.String FIELD_API_CLIENTIP;
+    public void setFIELD_API_CLIENTIP(java.lang.String FIELD_API_CLIENTIP) {
+        this.FIELD_API_CLIENTIP = FIELD_API_CLIENTIP;
     }
-    public java.lang.String getTAG_API_CLIENTIP() {
-        return this.TAG_API_CLIENTIP;
+    public java.lang.String getFIELD_API_CLIENTIP() {
+        return this.FIELD_API_CLIENTIP;
     }
 
-    public java.lang.String TAG_API_CLIENTBROWSER;
-    public void setTAG_API_CLIENTBROWSER(java.lang.String TAG_API_CLIENTBROWSER) {
-        this.TAG_API_CLIENTBROWSER = TAG_API_CLIENTBROWSER;
+    public java.lang.String FIELD_API_CLIENTBROWSER;
+    public void setFIELD_API_CLIENTBROWSER(java.lang.String FIELD_API_CLIENTBROWSER) {
+        this.FIELD_API_CLIENTBROWSER = FIELD_API_CLIENTBROWSER;
     }
-    public java.lang.String getTAG_API_CLIENTBROWSER() {
-        return this.TAG_API_CLIENTBROWSER;
+    public java.lang.String getFIELD_API_CLIENTBROWSER() {
+        return this.FIELD_API_CLIENTBROWSER;
     }
 
     public java.lang.String resourceUuid;
@@ -196,4 +196,13 @@ public class AuditData  {
         return this.time;
     }
 
+    public java.lang.String getSuccess() {
+        return success;
+    }
+
+    public void setSuccess(java.lang.String success) {
+        this.success = success;
+    }
+
+    public java.lang.String success;
 }
