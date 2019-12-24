@@ -1461,7 +1461,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             @Override
                                 public void run(MessageReply reply) {
                                     if (reply.isSuccess()) {
-                                trigger.next();
+                                        trigger.next();
                                     } else {
                                         trigger.fail(reply.getError());
                             }
@@ -1474,6 +1474,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                     destroyLoadBalancerOnHaRouter(vr.getUuid(), struct, new Completion(trigger) {
                                         @Override
                                         public void success() {
+                                            proxy.detachNetworkService(vr.getUuid(), LoadBalancerVO.class.getSimpleName(), asList(struct.getLb().getUuid()));
                                             trigger.next();
                                         }
 
