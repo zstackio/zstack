@@ -697,8 +697,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     @Override
                     public void run() {
                         long cpu = struct.getVmInstance().getCpuNum();
-                        new HostAllocatorChain().reserveCapacity(
-                                struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
+                        reserveMgr.reserveCapacity(struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
                     }
                 };
                 trigger.next();
@@ -724,7 +723,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 // return the capacity to the original host
                 try {
                     final long cpu = struct.getVmInstance().getCpuNum();
-                    new HostAllocatorChain().reserveCapacity(
+                    reserveMgr.reserveCapacity(
                             struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
                     returnComputeCapacity(struct.getOriginalHostUuid());
 
@@ -732,7 +731,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                         @Override
                         public void run() {
                             returnComputeCapacity(struct.getCurrentHostUuid());
-                            new HostAllocatorChain().reserveCapacity(
+                            reserveMgr.reserveCapacity(
                                     struct.getOriginalHostUuid(), cpu, struct.getVmInstance().getMemorySize());
                         }
                     };
@@ -747,7 +746,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 // allocate capacity on the current host
                 try {
                     long cpu = struct.getVmInstance().getCpuNum();
-                    new HostAllocatorChain().reserveCapacity(
+                    reserveMgr.reserveCapacity(
                             struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
 
                     rollback = new Runnable() {

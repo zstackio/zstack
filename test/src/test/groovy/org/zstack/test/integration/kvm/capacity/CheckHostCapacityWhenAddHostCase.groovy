@@ -30,6 +30,39 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
     void test() {
         env.create {
             testCheckCapacityWhenAddHost()
+            testCreateVmWithReserveCapacity()
+        }
+    }
+
+    void testCreateVmWithReserveCapacity() {
+        def image = env.inventoryByName("image1")
+        def l3 = env.inventoryByName("l3")
+        def instanceOffering = env.inventoryByName("instanceOffering")
+        def cluster = env.inventoryByName("cluster")
+
+        expect(AssertionError.class) {
+            createVmInstance {
+                name = "vm"
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                instanceOfferingUuid = instanceOffering.uuid
+                clusterUuid = cluster.uuid
+            }
+        }
+
+        updateResourceConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.name
+            value = "1G"
+            resourceUuid = cluster.uuid
+        }
+
+        createVmInstance {
+            name = "vm"
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            instanceOfferingUuid = instanceOffering.uuid
+            clusterUuid = cluster.uuid
         }
     }
 

@@ -37,6 +37,8 @@ public class HostSortorChain implements HostSortorStrategy {
     private PluginRegistry pluginRgty;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    private HostCapacityReserveManager reserveMgr;
 
     private HostAllocatorSpec allocationSpec;
 
@@ -199,14 +201,14 @@ public class HostSortorChain implements HostSortorStrategy {
     }
 
     private void reserveCapacity(final HostInventory host) {
-        new HostAllocatorChain().reserveCapacity(host.getUuid(), allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity());
+        reserveMgr.reserveCapacity(host.getUuid(), allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity());
         logger.debug(String.format("[Host Allocation]: successfully reserved cpu[%s], memory[%s bytes] on host[uuid:%s] for vm[uuid:%s]",
                 allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity(), host.getUuid(),
                 allocationSpec.getVmInstance().getUuid()));
     }
 
     private void rollbackCapacity(final HostInventory host) {
-        new HostAllocatorChain().reserveCapacity(host.getUuid(), 0L - allocationSpec.getCpuCapacity(),0L - allocationSpec.getMemoryCapacity());
+        reserveMgr.reserveCapacity(host.getUuid(), 0L - allocationSpec.getCpuCapacity(),0L - allocationSpec.getMemoryCapacity());
         logger.debug(String.format("[Host Allocation]: successfully rollback cpu[%s], memory[%s bytes] on host[uuid:%s] for vm[uuid:%s]",
                 allocationSpec.getCpuCapacity(), allocationSpec.getMemoryCapacity(), host.getUuid(),
                 allocationSpec.getVmInstance().getUuid()));
