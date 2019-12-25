@@ -5,13 +5,14 @@ import org.zstack.compute.cluster.ClusterSystemTags;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.compute.zone.ZoneSystemTags;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigVO;
+import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.Component;
-import org.zstack.header.allocator.HostCapacityOverProvisioningManager;
-import org.zstack.header.allocator.HostReservedCapacityExtensionPoint;
-import org.zstack.header.allocator.ReservedHostCapacity;
+import org.zstack.header.allocator.*;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
@@ -224,5 +225,42 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
         ReservedCapacityFinder finder = new ReservedCapacityFinder();
         finder.hostUuids = hostUuids;
         return finder.find().values().iterator().next();
+    }
+
+    @Override
+    public void reserveCapacity(final String hostUuid, final long requestCpu, final long requestMemory) {
+        HostCapacityUpdater updater = new HostCapacityUpdater(hostUuid);
+        HostVO host = dbf.findByUuid(hostUuid, HostVO.class);
+        HostReservedCapacityExtensionPoint ext = exts.get(host.getHypervisorType());
+
+        ReservedHostCapacity ret = new ReservedHostCapacity();
+        if (ext != null) {
+            ReservedHostCapacity extHc = ext.getReservedHostCapacity(host.getUuid());
+            ret.setReservedMemoryCapacity(extHc.getReservedMemoryCapacity());
+            ret.setReservedCpuCapacity(extHc.getReservedCpuCapacity());
+        } else {
+            ret.setReservedCpuCapacity(0);
+            ret.setReservedMemoryCapacity(0);
+        }
+
+        updater.run(cap -> {
+            long availCpu = cap.getAvailableCpu() - requestCpu;
+            if (requestCpu != 0 && availCpu - ret.getReservedCpuCapacity() < 0) {
+                throw new UnableToReserveHostCapacityException(
+                        String.format("no enough CPU[%s] on the host[uuid:%s]", requestCpu, hostUuid));
+            }
+
+            cap.setAvailableCpu(availCpu);
+
+            long availMemory = cap.getAvailableMemory() - ratioMgr.calculateMemoryByRatio(hostUuid, requestMemory);
+            if (requestMemory != 0 && availMemory - ret.getReservedMemoryCapacity() < 0) {
+                throw new UnableToReserveHostCapacityException(
+                        String.format("no enough memory[%s] on the host[uuid:%s]", requestMemory, hostUuid));
+            }
+
+            cap.setAvailableMemory(availMemory);
+
+            return cap;
+        });
     }
 }
