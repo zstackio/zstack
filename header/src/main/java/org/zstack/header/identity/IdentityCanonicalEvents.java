@@ -11,6 +11,47 @@ public class IdentityCanonicalEvents {
     public static final String ACCOUNT_DELETED_PATH = "/account/delete";
     public static final String USER_DELETED_PATH = "/user/delete";
     public static final String ACCOUNT_LOGIN_PATH = "/account/login";
+    public static final String SESSION_FORCE_LOGOUT_PATH = "/session/logout";
+
+    @NeedJsonSchema
+    public static class SessionForceLogoutData {
+        private String sessionUuid;
+        private String accountUuid;
+        private String userUuid;
+        private Date date = new Date();
+
+        public Date getDate() {
+            return date;
+        }
+
+        public void setDate(Date date) {
+            this.date = date;
+        }
+
+        public String getSessionUuid() {
+            return sessionUuid;
+        }
+
+        public void setSessionUuid(String sessionUuid) {
+            this.sessionUuid = sessionUuid;
+        }
+
+        public String getAccountUuid() {
+            return accountUuid;
+        }
+
+        public void setAccountUuid(String accountUuid) {
+            this.accountUuid = accountUuid;
+        }
+
+        public String getUserUuid() {
+            return userUuid;
+        }
+
+        public void setUserUuid(String userUuid) {
+            this.userUuid = userUuid;
+        }
+    }
 
     @NeedJsonSchema
     public static class AccountDeletedData {
