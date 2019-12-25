@@ -13,11 +13,14 @@ public class IdentityCanonicalEvents {
     public static final String ACCOUNT_LOGIN_PATH = "/account/login";
     public static final String SESSION_FORCE_LOGOUT_PATH = "/session/logout";
 
+    public static final String SESSION_FORCE_LOGOUT = "SessionForceLogout";
+
     @NeedJsonSchema
     public static class SessionForceLogoutData {
         private String sessionUuid;
         private String accountUuid;
         private String userUuid;
+        private String name = SESSION_FORCE_LOGOUT;
         private Date date = new Date();
 
         public Date getDate() {
@@ -50,6 +53,14 @@ public class IdentityCanonicalEvents {
 
         public void setUserUuid(String userUuid) {
             this.userUuid = userUuid;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
         }
     }
 
