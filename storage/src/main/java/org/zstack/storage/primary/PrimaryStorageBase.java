@@ -1384,6 +1384,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
             @Override
             public void run(SyncTaskChain chain) {
+                self = dbf.reload(self);
+
                 PrimaryStorageState currState = self.getState();
                 PrimaryStorageStateEvent event = PrimaryStorageStateEvent.valueOf(msg.getStateEvent());
                 PrimaryStorageState nextState = AbstractPrimaryStorage.getNextState(currState, event);
