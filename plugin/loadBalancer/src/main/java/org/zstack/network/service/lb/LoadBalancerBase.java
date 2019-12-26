@@ -30,6 +30,7 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.vm.*;
@@ -128,6 +129,8 @@ public class LoadBalancerBase {
             handle((LoadBalancerChangeCertificateMsg) msg);
         } else if (msg instanceof AddVmNicToLoadBalancerMsg) {
             handle((AddVmNicToLoadBalancerMsg) msg);
+        } else if (msg instanceof LoadBalancerGetPeerL3NetworksMsg) {
+            handle((LoadBalancerGetPeerL3NetworksMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -566,6 +569,32 @@ public class LoadBalancerBase {
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    @Transactional(readOnly = true)
+    private void handle(final LoadBalancerGetPeerL3NetworksMsg msg) {
+        LoadBalancerGetPeerL3NetworksReply reply = new LoadBalancerGetPeerL3NetworksReply();
+        new SQLBatch(){
+            @Override
+            protected void scripts() {
+                List<L3NetworkVO> guestNetworks = sql("select l3" +
+                        " from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref" +
+                        " where l3.uuid = ref.l3NetworkUuid" +
+                        " and ref.networkServiceType = :type")
+                        .param("type", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)
+                        .list();
+
+                List<L3NetworkInventory> ret = L3NetworkInventory.valueOf(guestNetworks);
+                if (ret != null && !ret.isEmpty()) {
+                    for (GetPeerL3NetworksForLoadBalancerExtensionPoint extp : pluginRgty.getExtensionList(GetPeerL3NetworksForLoadBalancerExtensionPoint.class)) {
+                        ret = extp.getPeerL3NetworksForLoadBalancer(self.getUuid(), ret);
+                    }
+                }
+                reply.setInventories(ret);
+            }
+        }.execute();
+
+        bus.reply(msg, reply);
     }
 
     @Transactional(readOnly = true)

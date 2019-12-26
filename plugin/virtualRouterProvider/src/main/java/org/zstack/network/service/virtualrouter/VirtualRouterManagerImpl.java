@@ -102,7 +102,7 @@ import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
 public class VirtualRouterManagerImpl extends AbstractService implements VirtualRouterManager,
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
         GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint,
-        FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint, ManagementNodeReadyExtensionPoint,
+        GetPeerL3NetworksForLoadBalancerExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint, ManagementNodeReadyExtensionPoint,
         VipCleanupExtensionPoint {
 	private final static CLogger logger = Utils.getLogger(VirtualRouterManagerImpl.class);
 	
@@ -1393,14 +1393,144 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
     }
 
+    private String getVirtualRouterVmAttachedLoadBalancer(String lbUuid) {
+        List<String> vrUuids = lbProxy.getVrUuidsByNetworkService(LoadBalancerVO.class.getSimpleName(), lbUuid);
+        String vrUuid = getDedicatedRoleVrUuidFromVrUuids(vrUuids, lbUuid);
+
+        if (vrUuid != null) {
+            return vrUuid;
+        }
+
+        final List<String> peerL3NetworkUuids = SQL.New("select peer.l3NetworkUuid " +
+                "from LoadBalancerVO lb, VipVO vip, VipPeerL3NetworkRefVO peer " +
+                "where lb.vipUuid = vip.uuid " +
+                "and vip.uuid = peer.vipUuid " +
+                "and lb.uuid = :lbUuid").param("lbUuid", lbUuid).list();
+
+        if (peerL3NetworkUuids != null && !peerL3NetworkUuids.isEmpty()) {
+            vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
+                       .in(VmNicVO_.l3NetworkUuid, peerL3NetworkUuids)
+                       .eq(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK)
+                       .listValues();
+            if (vrUuids != null && !vrUuids.isEmpty()) {
+                /* filter backup router */
+                vrUuids = Q.New(ApplianceVmVO.class).select(ApplianceVmVO_.uuid).in(ApplianceVmVO_.uuid, vrUuids)
+                           .notEq(ApplianceVmVO_.haStatus, ApplianceVmHaStatus.Backup).listValues();
+            }
+
+            vrUuid = getDedicatedRoleVrUuidFromVrUuids(vrUuids, lbUuid);
+
+            if (vrUuid != null) {
+                return vrUuid;
+            }
+        }
+
+        VipVO lbVipVO = SQL.New("select vip from LoadBalancerVO lb, VipVO vip " +
+                "where lb.vipUuid = vip.uuid " +
+                "and lb.uuid = :lbUuid")
+                           .param("lbUuid", lbUuid).find();
+
+        if (lbVipVO != null) {
+            List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, lbVipVO.getUuid()).listValues();
+            if(useFor != null && useFor.contains(SNAT_NETWORK_SERVICE_TYPE)) {
+                vrUuids = vipProxy.getVrUuidsByNetworkService(VipVO.class.getSimpleName(), lbVipVO.getUuid());
+                return vrUuids.get(0);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<L3NetworkInventory> getPeerL3NetworksForLoadBalancer(String lbUuid, List<L3NetworkInventory> candidates) {
+        if(candidates == null || candidates.isEmpty()){
+            return candidates;
+        }
+
+        /*get vr*/
+        String vrUuid = getVirtualRouterVmAttachedLoadBalancer(lbUuid);
+
+        if (vrUuid != null) {
+            return new SQLBatchWithReturn<List<L3NetworkInventory>>(){
+                @Override
+                protected List<L3NetworkInventory> scripts() {
+                    List<String> guestL3Uuids = Q.New(VmNicVO.class)
+                                                 .select(VmNicVO_.l3NetworkUuid)
+                                                 .eq(VmNicVO_.vmInstanceUuid, vrUuid)
+                                                 .eq(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK)
+                                                 .listValues();
+
+                    if (guestL3Uuids == null || guestL3Uuids.isEmpty()) {
+                        return new ArrayList<>();
+                    }
+                    return candidates.stream().filter(l3 -> guestL3Uuids.contains(l3.getUuid())).collect(Collectors.toList());
+                }
+            }.execute();
+        }
+
+        /*get peer network of vip, vr has been deleted, so just return these peer networks*/
+        final List<String> peerL3NetworkUuids = SQL.New("select peer.l3NetworkUuid " +
+                "from LoadBalancerVO lb, VipVO vip, VipPeerL3NetworkRefVO peer " +
+                "where lb.vipUuid = vip.uuid " +
+                "and vip.uuid = peer.vipUuid " +
+                "and lb.uuid = :lbUuid").param("lbUuid", lbUuid).list();
+
+        if (peerL3NetworkUuids != null && !peerL3NetworkUuids.isEmpty()) {
+            return candidates.stream().filter(n -> peerL3NetworkUuids.contains(n.getUuid()))
+                             .collect(Collectors.toList());
+        }
+
+        return new SQLBatchWithReturn<List<L3NetworkInventory>>(){
+
+            @Override
+            protected List<L3NetworkInventory> scripts() {
+
+                //1.get the l3 which are managed by vrouter or virtual router.
+                List<String>  inners = sql("select l3.uuid from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO pro" +
+                        " where l3.uuid = ref.l3NetworkUuid and ref.networkServiceProviderUuid = pro.uuid and l3.uuid in (:l3Uuids)" +
+                        " and pro.type in (:providerType)", String.class)
+                        .param("l3Uuids", candidates.stream().map(L3NetworkInventory::getUuid).collect(Collectors.toList()))
+                        .param("providerType", Arrays.asList(VyosConstants.PROVIDER_TYPE.toString(),VirtualRouterConstant.PROVIDER_TYPE.toString()))
+                        .list();
+
+                List<L3NetworkInventory> ret = candidates.stream().filter(l3 -> inners.contains(l3.getUuid())).collect(Collectors.toList());
+                if(ret.size() == 0){
+                    return new ArrayList<>();
+                }
+
+                VipVO lbVipVO = SQL.New("select vip from LoadBalancerVO lb, VipVO vip " +
+                        "where lb.vipUuid = vip.uuid " +
+                        "and lb.uuid = :lbUuid")
+                                   .param("lbUuid", lbUuid).find();
+
+                //2.check the l3 is peer l3 of the loadbalancer
+                L3NetworkVO vipNetwork = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, lbVipVO.getL3NetworkUuid()).find();
+                List<String> peerL3Uuids = SQL.New("select l3.uuid" +
+                        " from VmNicVO nic, L3NetworkVO l3"  +
+                        " where nic.vmInstanceUuid in " +
+                        " (" +
+                        " select vm.uuid" +
+                        " from VmNicVO nic, ApplianceVmVO vm" +
+                        " where nic.l3NetworkUuid = :l3NetworkUuid" +
+                        " and nic.vmInstanceUuid = vm.uuid" +
+                        " )"+
+                        " and l3.uuid = nic.l3NetworkUuid" +
+                        " and l3.system = :isSystem")
+                                              .param("l3NetworkUuid", vipNetwork.getUuid())
+                                              .param("isSystem", false)
+                                              .list();
+
+                return ret.stream().filter(l3 -> peerL3Uuids.contains(l3.getUuid())).collect(Collectors.toList());
+            }
+        }.execute();
+    }
+
     @Override
     public List<VmNicInventory> getCandidateVmNicsForLoadBalancerInVirtualRouter(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates) {
         if(candidates == null || candidates.isEmpty()){
             return candidates;
         }
 
-        List<String> vrUuids = lbProxy.getVrUuidsByNetworkService(LoadBalancerVO.class.getSimpleName(), msg.getLoadBalancerUuid());
-        String vrUuid = getDedicatedRoleVrUuidFromVrUuids(vrUuids, msg.getLoadBalancerUuid());
+        String vrUuid = getVirtualRouterVmAttachedLoadBalancer( msg.getLoadBalancerUuid());
 
         if (vrUuid != null) {
             return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
@@ -1415,48 +1545,19 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 .list();
 
         if (peerL3NetworkUuids != null && !peerL3NetworkUuids.isEmpty()) {
-            vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
-                    .in(VmNicVO_.l3NetworkUuid, peerL3NetworkUuids)
-                    .eq(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK)
-                    .listValues();
-            if (vrUuids != null && !vrUuids.isEmpty()) {
-                /* filter backup router */
-                vrUuids = Q.New(ApplianceVmVO.class).select(ApplianceVmVO_.uuid).in(ApplianceVmVO_.uuid, vrUuids)
-                        .notEq(ApplianceVmVO_.haStatus, ApplianceVmHaStatus.Backup).listValues();
-            }
-
-            vrUuid = getDedicatedRoleVrUuidFromVrUuids(vrUuids, msg.getLoadBalancerUuid());
-
-            if (vrUuid == null) {
-                return getCandidateVmNicsIfPeerL3NetworkExists(msg, candidates.stream()
+            return getCandidateVmNicsIfPeerL3NetworkExists(msg, candidates.stream()
                         .filter(n -> peerL3NetworkUuids.contains(n.getL3NetworkUuid()))
                         .collect(Collectors.toList()), peerL3NetworkUuids);
-            }
-
-            return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
-        }
-
-        VipVO lbVipVO = SQL.New("select vip from LoadBalancerVO lb, VipVO vip " +
-                "where lb.vipUuid = vip.uuid " +
-                "and lb.uuid = :lbUuid")
-                .param("lbUuid", msg.getLoadBalancerUuid()).find();
-
-        if (lbVipVO != null) {
-            List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, lbVipVO.getUuid()).listValues();
-            if(useFor != null && useFor.contains(SNAT_NETWORK_SERVICE_TYPE)) {
-                vrUuids = vipProxy.getVrUuidsByNetworkService(VipVO.class.getSimpleName(), lbVipVO.getUuid());
-                return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuids.get(0));
-            }
-        }
-
-        if (vrUuid != null) {
-            return getCandidateVmNicsIfLoadBalancerBound(msg, candidates, vrUuid);
         }
 
         return new SQLBatchWithReturn<List<VmNicInventory>>(){
 
             @Override
             protected List<VmNicInventory> scripts() {
+                VipVO lbVipVO = SQL.New("select vip from LoadBalancerVO lb, VipVO vip " +
+                        "where lb.vipUuid = vip.uuid " +
+                        "and lb.uuid = :lbUuid")
+                                   .param("lbUuid", msg.getLoadBalancerUuid()).find();
 
                 //1.get the vm nics which are managed by vrouter or virtual router.
                 List<String>  inners = sql("select l3.uuid from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO pro" +
