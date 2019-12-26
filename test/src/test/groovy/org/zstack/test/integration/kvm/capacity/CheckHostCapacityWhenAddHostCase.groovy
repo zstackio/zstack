@@ -5,6 +5,7 @@ import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.AddKVMHostAction
+import org.zstack.sdk.GetCpuMemoryCapacityResult
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.kvm.host.HostEnv
 import org.zstack.testlib.ClusterSpec
@@ -56,6 +57,12 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
             value = "1G"
             resourceUuid = cluster.uuid
         }
+
+        GetCpuMemoryCapacityResult result = getCpuMemoryCapacity {
+            clusterUuids = [cluster.uuid]
+        }
+
+        KVMGlobalConfig.RESERVED_CPU_CAPACITY.updateValue(result.availableCpu)
 
         createVmInstance {
             name = "vm"
