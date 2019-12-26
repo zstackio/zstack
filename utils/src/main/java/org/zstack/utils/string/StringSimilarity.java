@@ -12,6 +12,7 @@ import org.zstack.utils.path.PathUtil;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
@@ -36,6 +37,19 @@ public class StringSimilarity {
         }
     };
 
+    // missed errors
+    private static Map<String, Boolean> missed = new LinkedHashMap<String, Boolean>(mapLength, 0.9f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry eldest) {
+            if (this.size() > mapLength) {
+                return true;
+            }
+            return false;
+        }
+    };
+
+    private static Map<String, Pattern> patterns = new ConcurrentHashMap<>();
+
     // initial errors from json files
     private static List<ErrorCodeElaboration> elaborations = initialElaborations();
 
@@ -58,6 +72,7 @@ public class StringSimilarity {
 
     public static void resetCachedErrors() {
         errors.clear();
+        missed.clear();
     }
 
     public static void refreshErrorTemplates() {
@@ -68,6 +83,16 @@ public class StringSimilarity {
         for (ErrorCodeElaboration e: els) {
             DebugUtils.Assert(e.getCategory() != null, String.format("category is null for elaboration: %s", e.getRegex()));
             DebugUtils.Assert(e.getMessage_cn() != null, String.format("message_cn is null for elaboration: %s", e.getRegex()));
+        }
+    }
+
+    private static void pattern(List<ErrorCodeElaboration> els) {
+        patterns.clear();
+        for (ErrorCodeElaboration e: els) {
+            if (ElaborationSearchMethod.distance == e.getMethod()) {
+                continue;
+            }
+            patterns.put(e.getRegex(), Pattern.compile(e.getRegex(), Pattern.DOTALL));
         }
     }
 
@@ -105,6 +130,7 @@ public class StringSimilarity {
         }
 
         validate(els);
+        pattern(els);
         logger.info(String.format("finish initializing system elaborations, got %s elaborations", els.size()));
         return els;
     }
@@ -199,6 +225,10 @@ public class StringSimilarity {
             return errors.get(formatSub);
         }
 
+        if (missed.get(formatSub) != null) {
+            return null;
+        }
+
         ErrorCodeElaboration err = null;
         long start = System.currentTimeMillis();
         try {
@@ -218,6 +248,8 @@ public class StringSimilarity {
         if (err != null) {
             err.setFormatSrcError(formatSub);
             errors.put(formatSub, err);
+        } else {
+            missed.put(formatSub, true);
         }
 
         long end = System.currentTimeMillis();
@@ -302,8 +334,10 @@ public class StringSimilarity {
     }
 
     private static boolean isRegexMatched(String regex, String sub) {
-        return Pattern.compile(regex, Pattern.DOTALL).matcher(sub).find();
-
+        if (patterns.get(regex) == null) {
+            return false;
+        }
+        return patterns.get(regex).matcher(sub).find();
     }
 
     private static double getSimilary(String str, String sub) {
