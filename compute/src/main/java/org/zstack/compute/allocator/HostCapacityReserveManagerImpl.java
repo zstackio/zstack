@@ -245,7 +245,7 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
 
         updater.run(cap -> {
             long availCpu = cap.getAvailableCpu() - requestCpu;
-            if (requestCpu != 0 && availCpu - ret.getReservedCpuCapacity() < 0) {
+            if (requestCpu != 0 && availCpu < 0) {
                 throw new UnableToReserveHostCapacityException(
                         String.format("no enough CPU[%s] on the host[uuid:%s]", requestCpu, hostUuid));
             }
