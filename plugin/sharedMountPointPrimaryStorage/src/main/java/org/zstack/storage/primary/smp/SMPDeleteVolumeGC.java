@@ -9,6 +9,7 @@ import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
 
 /**
  * Created by AlanJager on 2017/3/14.
@@ -32,6 +33,8 @@ public class SMPDeleteVolumeGC extends TimeBasedGarbageCollector {
         msg.setInstallPath(volume.getInstallPath());
         msg.setPrimaryStorageUuid(primaryStorageUuid);
         msg.setHypervisorType(hypervisorType);
+        msg.setFolder(volume.getType().equals(VolumeType.Memory.toString()));
+
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
