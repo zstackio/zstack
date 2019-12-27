@@ -26,7 +26,7 @@ public class LbConfigProxy extends VirtualRouterConfigProxy implements Appliance
     }
 
     @Override
-    protected void attachNetworkServiceToVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
+    protected void attachNetworkServiceToNoHaVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
         List<VirtualRouterLoadBalancerRefVO> refs = new ArrayList<>();
         for (String uuid : serviceUuids) {
             if (!Q.New(VirtualRouterLoadBalancerRefVO.class)
@@ -45,20 +45,20 @@ public class LbConfigProxy extends VirtualRouterConfigProxy implements Appliance
     }
 
     @Override
-    protected void detachNetworkServiceFromVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
+    protected void detachNetworkServiceFromNoHaVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
         SQL.New(VirtualRouterLoadBalancerRefVO.class)
                 .in(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, serviceUuids)
                 .eq(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, vrUuid).delete();
     }
 
     @Override
-    protected List<String> getVrUuidsByNetworkService(String serviceUuid) {
+    protected List<String> getNoHaVirtualRouterUuidsByNetworkService(String serviceUuid) {
         return Q.New(VirtualRouterLoadBalancerRefVO.class).eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, serviceUuid)
                 .select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid).listValues();
     }
 
     @Override
-    protected List<String> getServiceUuidsByVRouter(String vrUuid) {
+    protected List<String> getServiceUuidsByNoHaVirtualRouter(String vrUuid) {
         return Q.New(VirtualRouterLoadBalancerRefVO.class).eq(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, vrUuid)
                 .select(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid).listValues();
     }
