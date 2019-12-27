@@ -11,6 +11,7 @@ doc {
 
     rest {
         request {
+			url "GET /v1/l3-networks/ip/free"
 			url "GET /v1/l3-networks/{l3NetworkUuid}/ip/free"
 			url "GET /v1/l3-networks/ip-ranges/{ipRangeUuid}/ip/free"
 
@@ -25,7 +26,7 @@ doc {
 				column {
 					name "l3NetworkUuid"
 					enclosedIn ""
-					desc "三层网络UUID"
+					desc "三层网络UUID，注意：l3NetworkUuid 和 ipRangeUuid 二选一"
 					location "query"
 					type "String"
 					optional true
@@ -35,7 +36,7 @@ doc {
 				column {
 					name "ipRangeUuid"
 					enclosedIn ""
-					desc "IP段UUID"
+					desc "IP段UUID，注意：l3NetworkUuid 和 ipRangeUuid 二选一"
 					location "query"
 					type "String"
 					optional true

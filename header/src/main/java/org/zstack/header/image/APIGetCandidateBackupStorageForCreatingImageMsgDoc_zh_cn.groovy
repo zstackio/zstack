@@ -11,6 +11,7 @@ doc {
 
     rest {
         request {
+			url "GET /v1/images/candidate-backup-storage"
 			url "GET /v1/images/volumes/{volumeUuid}/candidate-backup-storage"
 			url "GET /v1/images/volume-snapshots/{volumeSnapshotUuid}/candidate-backup-storage"
 
@@ -25,7 +26,7 @@ doc {
 				column {
 					name "volumeUuid"
 					enclosedIn ""
-					desc "云盘UUID"
+					desc "云盘UUID，注意：volumeUuid 和 volumeSnapshotUuid 二选一"
 					location "query"
 					type "String"
 					optional true
@@ -35,7 +36,7 @@ doc {
 				column {
 					name "volumeSnapshotUuid"
 					enclosedIn ""
-					desc "云盘快照UUID"
+					desc "云盘快照UUID，注意：volumeUuid 和 volumeSnapshotUuid 二选一"
 					location "query"
 					type "String"
 					optional true

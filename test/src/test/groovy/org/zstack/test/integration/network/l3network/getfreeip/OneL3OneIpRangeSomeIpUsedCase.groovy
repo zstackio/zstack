@@ -78,12 +78,30 @@ class OneL3OneIpRangeSomeIpUsedCase extends SubCase {
         assert freeIps.size() == NetworkUtils.ipRangeLength(ipr.inventory.startIp, ipr.inventory.endIp) - 4
     }
 
+    def testGetFreeIpAction() {
+        L3NetworkSpec l3 = env.specByName("l3")
+        IpRangeSpec ipr = env.specByName("ipr")
+
+        List<FreeIpInventory> freeIps = getFreeIp {
+            l3NetworkUuid = l3.inventory.uuid
+        }
+
+        assert freeIps.size() == NetworkUtils.ipRangeLength(ipr.inventory.startIp, ipr.inventory.endIp) - 4
+
+        freeIps = getFreeIp {
+            ipRangeUuid = ipr.inventory.uuid
+        }
+
+        assert freeIps.size() == NetworkUtils.ipRangeLength(ipr.inventory.startIp, ipr.inventory.endIp) - 4
+    }
+
     @Override
     void test() {
         env.create {
             occupyFourIPs()
             useL3NetworkUuidGetFreeIPsAfterOccupyFourIPs()
             useIpRangeUuidGetFreeIPsAfterOccupyFourIPs()
+            testGetFreeIpAction()
         }
     }
 
