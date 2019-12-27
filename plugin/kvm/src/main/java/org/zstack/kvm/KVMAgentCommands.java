@@ -18,7 +18,8 @@ public class KVMAgentCommands {
 
     public enum BootDev {
         hd(VmBootDevice.HardDisk),
-        cdrom(VmBootDevice.CdRom);
+        cdrom(VmBootDevice.CdRom),
+        network(VmBootDevice.Network);
 
         private VmBootDevice device;
 
@@ -608,6 +609,7 @@ public class KVMAgentCommands {
         private int deviceId;
         private String metaData;
         private Boolean useVirtio;
+        private int bootOrder;
 
         public List<String> getIps() {
             return ips;
@@ -673,6 +675,13 @@ public class KVMAgentCommands {
             this.nicInternalName = nicInternalName;
         }
 
+        public int getBootOrder() {
+            return bootOrder;
+        }
+
+        public void setBootOrder(int bootOrder) {
+            this.bootOrder = bootOrder;
+        }
     }
 
     public static class VolumeSnapshotJobTO {
@@ -841,6 +850,7 @@ public class KVMAgentCommands {
         private int deviceId;
         // unmounted iso
         private boolean isEmpty;
+        private int bootOrder;
 
         public CdRomTO() {
         }
@@ -850,6 +860,7 @@ public class KVMAgentCommands {
             this.path = other.path;
             this.imageUuid = other.imageUuid;
             this.deviceId = other.deviceId;
+            this.bootOrder = other.bootOrder;
         }
 
 
@@ -883,6 +894,14 @@ public class KVMAgentCommands {
 
         public void setEmpty(boolean empty) {
             this.isEmpty = empty;
+        }
+
+        public int getBootOrder() {
+            return bootOrder;
+        }
+
+        public void setBootOrder(int bootOrder) {
+            this.bootOrder = bootOrder;
         }
     }
 

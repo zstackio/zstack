@@ -5,5 +5,6 @@ package org.zstack.header.vm;
  */
 public enum VmBootDevice {
     HardDisk,
-    CdRom
+    CdRom,
+    Network
 }

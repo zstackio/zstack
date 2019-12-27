@@ -2596,11 +2596,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 spec.setBootOrders(list(VmBootDevice.HardDisk.toString()));
             } else {
                 spec.setBootOrders(list(order.split(",")));
-                // set vm to boot from cdrom once only
-                if (VmSystemTags.CDROM_BOOT_ONCE.hasTag(self.getUuid(), VmInstanceVO.class)) {
-                    VmSystemTags.BOOT_ORDER.deleteInherentTag(self.getUuid());
-                    VmSystemTags.CDROM_BOOT_ONCE.deleteInherentTag(self.getUuid());
-                }
             }
         }
     }
@@ -3051,9 +3046,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         if (order != null) {
             reply.setOrder(list(order.split(",")));
         } else if (order == null && !IsoOperator.isIsoAttachedToVm(msg.getUuid())) {
-            reply.setOrder(list(VmBootDevice.HardDisk.toString()));
+            reply.setOrder(list(VmBootDevice.HardDisk.toString(), VmBootDevice.Network.toString()));
         } else {
-            reply.setOrder(list(VmBootDevice.HardDisk.toString(), VmBootDevice.CdRom.toString()));
+            reply.setOrder(list(VmBootDevice.HardDisk.toString(), VmBootDevice.CdRom.toString(), VmBootDevice.Network.toString()));
         }
 
         bus.reply(msg, reply);
@@ -3065,28 +3060,32 @@ public class VmInstanceBase extends AbstractVmInstance {
             SystemTagCreator creator = VmSystemTags.BOOT_ORDER.newSystemTagCreator(self.getUuid());
             creator.inherent = true;
             creator.recreate = true;
-            creator.setTagByTokens(map(e(VmSystemTags.BOOT_ORDER_TOKEN, StringUtils.join(msg.getBootOrder(), ","))));
+            creator.setTagByTokens(map(e(VmSystemTags.BOOT_ORDER_TOKEN, StringUtils.join(msg.getBootOrder().stream().distinct().collect(Collectors.toList()), ","))));
             creator.create();
         } else {
             VmSystemTags.BOOT_ORDER.deleteInherentTag(self.getUuid());
         }
 
-        boolean cdromBootOnce = false;
+        boolean bootOrderOnce = false;
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
-            Optional<String> opt = msg.getSystemTags().stream().filter(s -> VmSystemTags.CDROM_BOOT_ONCE.isMatch(s)).findAny();
+            Optional<String> opt = msg.getSystemTags().stream().filter(s -> VmSystemTags.BOOT_ORDER_ONCE.isMatch(s)).findAny();
             if (opt.isPresent()) {
-                cdromBootOnce = Boolean.parseBoolean(
-                        VmSystemTags.CDROM_BOOT_ONCE.getTokenByTag(opt.get(), VmSystemTags.CDROM_BOOT_ONCE_TOKEN)
+                bootOrderOnce = Boolean.parseBoolean(
+                        VmSystemTags.BOOT_ORDER_ONCE.getTokenByTag(opt.get(), VmSystemTags.BOOT_ORDER_ONCE_TOKEN)
                 );
             }
         }
-        if (cdromBootOnce) {
-            SystemTagCreator creator = VmSystemTags.CDROM_BOOT_ONCE.newSystemTagCreator(self.getUuid());
+        if (bootOrderOnce) {
+            SystemTagCreator creator = VmSystemTags.BOOT_ORDER_ONCE.newSystemTagCreator(self.getUuid());
             creator.inherent = true;
             creator.recreate = true;
-            creator.setTagByTokens(map(e(VmSystemTags.CDROM_BOOT_ONCE_TOKEN, String.valueOf(true))));
+            creator.setTagByTokens(map(e(VmSystemTags.BOOT_ORDER_ONCE_TOKEN, String.valueOf(true))));
             creator.create();
         } else {
+            VmSystemTags.BOOT_ORDER_ONCE.deleteInherentTag(self.getUuid());
+        }
+        //No need to use this tag: cdromBootOnce
+        if (VmSystemTags.CDROM_BOOT_ONCE.hasTag(self.getUuid(), VmInstanceVO.class)) {
             VmSystemTags.CDROM_BOOT_ONCE.deleteInherentTag(self.getUuid());
         }
         evt.setInventory(getSelfInventory());
