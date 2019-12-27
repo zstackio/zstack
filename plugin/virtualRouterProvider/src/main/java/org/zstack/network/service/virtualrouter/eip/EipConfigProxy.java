@@ -12,7 +12,7 @@ import java.util.List;
 
 public class EipConfigProxy extends VirtualRouterConfigProxy implements ApplianceVmSyncConfigToHaGroupExtensionPoint {
     @Override
-    protected void attachNetworkServiceToVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
+    protected void attachNetworkServiceToNoHaVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
         List<VirtualRouterEipRefVO> refs = new ArrayList<>();
         for (String uuid : serviceUuids) {
             if (Q.New(VirtualRouterEipRefVO.class).eq(VirtualRouterEipRefVO_.eipUuid, uuid).isExists()) {
@@ -31,18 +31,18 @@ public class EipConfigProxy extends VirtualRouterConfigProxy implements Applianc
     }
 
     @Override
-    protected void detachNetworkServiceFromVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
+    protected void detachNetworkServiceFromNoHaVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
         SQL.New(VirtualRouterEipRefVO.class).in(VirtualRouterEipRefVO_.eipUuid, serviceUuids).delete();
     }
 
     @Override
-    protected List<String> getVrUuidsByNetworkService(String serviceUuid) {
+    protected List<String> getNoHaVirtualRouterUuidsByNetworkService(String serviceUuid) {
         return Q.New(VirtualRouterEipRefVO.class).eq(VirtualRouterEipRefVO_.eipUuid, serviceUuid)
                 .select(VirtualRouterEipRefVO_.virtualRouterVmUuid).listValues();
     }
 
     @Override
-    protected List<String> getServiceUuidsByVRouter(String vrUuid) {
+    protected List<String> getServiceUuidsByNoHaVirtualRouter(String vrUuid) {
         return Q.New(VirtualRouterEipRefVO.class).eq(VirtualRouterEipRefVO_.virtualRouterVmUuid, vrUuid)
                 .select(VirtualRouterEipRefVO_.eipUuid).listValues();
     }

@@ -1841,7 +1841,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             @Override
             public void success() {
                 List<String> lbUuids = lbs.stream().map(s -> s.getLb().getUuid()).collect(Collectors.toList());
-                proxy.attachNetworkServiceToVirtualRouter(vr.getUuid(), LoadBalancerVO.class.getSimpleName(), lbUuids);
+                proxy.attachNetworkService(vr.getUuid(), LoadBalancerVO.class.getSimpleName(), lbUuids);
                 completion.success();
             }
 

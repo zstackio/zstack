@@ -13,7 +13,7 @@ import java.util.List;
 
 public class PortForwardingConfigProxy extends VirtualRouterConfigProxy implements ApplianceVmSyncConfigToHaGroupExtensionPoint {
     @Override
-    protected void attachNetworkServiceToVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
+    protected void attachNetworkServiceToNoHaVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
         List<VirtualRouterPortForwardingRuleRefVO> refs = new ArrayList<VirtualRouterPortForwardingRuleRefVO>();
         for (String uuid : serviceUuids) {
             if (!Q.New(VirtualRouterPortForwardingRuleRefVO.class)
@@ -34,18 +34,18 @@ public class PortForwardingConfigProxy extends VirtualRouterConfigProxy implemen
     }
 
     @Override
-    protected void detachNetworkServiceFromVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
+    protected void detachNetworkServiceFromNoHaVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
         SQL.New(VirtualRouterPortForwardingRuleRefVO.class).in(VirtualRouterPortForwardingRuleRefVO_.uuid, serviceUuids).delete();
     }
 
     @Override
-    protected List<String> getVrUuidsByNetworkService(String serviceUuid) {
+    protected List<String> getNoHaVirtualRouterUuidsByNetworkService(String serviceUuid) {
         return Q.New(VirtualRouterPortForwardingRuleRefVO.class).select(VirtualRouterPortForwardingRuleRefVO_.virtualRouterVmUuid)
                 .eq(VirtualRouterPortForwardingRuleRefVO_.uuid, serviceUuid).listValues();
     }
 
     @Override
-    protected List<String> getServiceUuidsByVRouter(String vrUuid) {
+    protected List<String> getServiceUuidsByNoHaVirtualRouter(String vrUuid) {
         return Q.New(VirtualRouterPortForwardingRuleRefVO.class).eq(VirtualRouterPortForwardingRuleRefVO_.virtualRouterVmUuid, vrUuid)
                 .select(VirtualRouterPortForwardingRuleRefVO_.uuid).listValues();
     }
