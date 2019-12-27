@@ -1532,7 +1532,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     void handle(final DeleteVolumeOnPrimaryStorageMsg msg, final ReturnValueCompletion<DeleteVolumeOnPrimaryStorageReply> completion) {
         final DeleteVolumeOnPrimaryStorageReply dreply = new DeleteVolumeOnPrimaryStorageReply();
         final String hostUuid = getHostUuidByResourceUuid(msg.getVolume().getUuid(), VolumeVO.class.getSimpleName());
-        deleteBits(msg.getVolume().getInstallPath(), hostUuid, new Completion(completion) {
+
+        boolean dir = msg.getVolume().getType().equals(VolumeType.Memory.toString());
+
+        deleteBits(msg.getVolume().getInstallPath(), hostUuid, dir, new Completion(completion) {
             @Override
             public void success() {
                 completion.success(dreply);

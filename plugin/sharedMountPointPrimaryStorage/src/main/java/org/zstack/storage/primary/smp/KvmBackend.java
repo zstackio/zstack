@@ -838,7 +838,9 @@ public class KvmBackend extends HypervisorBackend {
 
     @Override
     void handle(DeleteVolumeOnPrimaryStorageMsg msg, final ReturnValueCompletion<DeleteVolumeOnPrimaryStorageReply> completion) {
-        deleteBits(msg.getVolume().getInstallPath(), new Completion(completion) {
+        boolean dir = msg.getVolume().getType().equals(VolumeType.Memory.toString());
+
+        deleteBits(msg.getVolume().getInstallPath(), dir, new Completion(completion) {
             @Override
             public void success() {
                 DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();

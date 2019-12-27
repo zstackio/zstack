@@ -850,7 +850,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         final DeleteVolumeOnPrimaryStorageReply reply = new DeleteVolumeOnPrimaryStorageReply();
         final VolumeInventory vol = msg.getVolume();
         final NfsPrimaryStorageBackend backend = getBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(vol.getFormat(), self.getUuid()));
-        backend.delete(getSelfInventory(), vol.getInstallPath(), new Completion(msg) {
+
+        Completion completion = new Completion(msg) {
             @Override
             public void success() {
                 logger.debug(String.format("successfully delete volume[uuid:%s, installPath:%s] on nfs primary storage[uuid:%s]", vol.getUuid(),
@@ -869,7 +870,13 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
 
                 bus.reply(msg, reply);
             }
-        });
+        };
+
+        if (vol.getType().equals(VolumeType.Memory.toString())) {
+            backend.deleteFolder(getSelfInventory(), vol.getInstallPath(), completion);
+        } else {
+            backend.delete(getSelfInventory(), vol.getInstallPath(), completion);
+        }
     }
 
     @Override
