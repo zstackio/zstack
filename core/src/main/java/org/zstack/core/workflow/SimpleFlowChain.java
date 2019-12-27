@@ -336,7 +336,12 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                     return;
                 }
             }
-            toRun.run(this, data);
+
+            if (isSkipFlow(toRun)) {
+                this.next();
+            } else {
+                toRun.run(this, data);
+            }
         } catch (OperationFailureException oe) {
             String errInfo = oe.getErrorCode() != null ? oe.getErrorCode().toString() : "";
             logger.warn(errInfo, oe);
@@ -551,17 +556,16 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         return skip;
     }
 
-    private Flow getFirstNotSkippedFlow() {
-        Flow flow = null;
-        while (it.hasNext()) {
-            Flow tempflow = it.next();
-            if (!isSkipFlow(tempflow)) {
-                flow = tempflow;
-                break;
+    private void runFlowOrComplete() {
+        if (it.hasNext()) {
+            runFlow(it.next());
+        } else {
+            if (getErrorCode() == null) {
+                callDoneHandler();
+            } else {
+                callErrorHandler(false);
             }
         }
-
-        return flow;
     }
 
     @Override
@@ -581,17 +585,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
         logger.debug(String.format("[FlowChain(%s): %s] successfully executed flow[%s]", id, name, getFlowName(currentFlow)));
 
-        Flow flow = getFirstNotSkippedFlow();
-        if (flow == null) {
-            // no flows, or all flows are skipped
-            if (errorCode == null) {
-                callDoneHandler();
-            } else {
-                callErrorHandler(false);
-            }
-        } else {
-            runFlow(flow);
-        }
+        runFlowOrComplete();
     }
 
     @Override
@@ -633,13 +627,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         }
 
         it = flows.iterator();
-        Flow flow = getFirstNotSkippedFlow();
-        if (flow == null) {
-            // all flows are skipped
-            callDoneHandler();
-        } else {
-            runFlow(flow);
-        }
+        runFlowOrComplete();
     }
 
     @Override
