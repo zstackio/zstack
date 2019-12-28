@@ -5,10 +5,10 @@ import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.network.NetworkTest
+import org.zstack.testlib.ClusterSpec
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.ZoneSpec
-import org.zstack.utils.data.SizeUnit
 
 /**
  * @author: kefeng.wang
@@ -33,6 +33,13 @@ class UpdateVniRangeCase extends SubCase {
                     name = "cluster1"
                     hypervisorType = "KVM"
 
+                    kvm {
+                        name = "kvm1"
+                        managementIp = "127.0.0.1"
+                        username = "root"
+                        password = "password"
+                    }
+
                     attachL2Network("l2")
                 }
 
@@ -53,16 +60,24 @@ class UpdateVniRangeCase extends SubCase {
 
     void testUpdateVniRange() {
         ZoneSpec zone = env.specByName("zone")
+        ClusterSpec cluster = env.specByName("cluster1")
 
-        L2VxlanNetworkPoolInventory vxlanPool = createL2VxlanNetworkPool {
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            VxlanKvmAgentCommands.CheckVxlanCidrResponse resp = new VxlanKvmAgentCommands.CheckVxlanCidrResponse()
+            resp.vtepIp = "127.0.0.1"
+            resp.setSuccess(true)
+            return resp
+        }
+
+        L2VxlanNetworkPoolInventory pool1 = createL2VxlanNetworkPool {
             name = "POOL-1"
             zoneUuid = zone.inventory.getUuid()
         }
 
         VniRangeInventory vniRangeOld = createVniRange {
             startVni = 100
-            endVni = 10000
-            l2NetworkUuid = vxlanPool.getUuid()
+            endVni = 200
+            l2NetworkUuid = pool1.getUuid()
             name = "RANGE-OLD"
         }
         assert vniRangeOld.name == "RANGE-OLD"
@@ -72,6 +87,39 @@ class UpdateVniRangeCase extends SubCase {
             name = "RANGE-NEW"
         }
         assert vniRangeNew.name == "RANGE-NEW"
+
+        attachL2NetworkToCluster {
+            l2NetworkUuid = pool1.uuid
+            clusterUuid = cluster.inventory.uuid
+            systemTags = ["l2NetworkUuid::${pool1.getUuid()}::clusterUuid::${cluster.inventory.uuid}::cidr::{127.0.0.1/8}".toString()]
+        }
+
+        L2VxlanNetworkPoolInventory pool2 = createL2VxlanNetworkPool {
+            name = "POOL-2"
+            zoneUuid = zone.inventory.getUuid()
+        }
+
+        VniRangeInventory vniRange2 = createVniRange {
+            startVni = 300
+            endVni = 400
+            l2NetworkUuid = pool2.getUuid()
+            name = "RANGE-2"
+        }
+
+        VniRangeInventory vniRange3 = createVniRange {
+            startVni = 100
+            endVni = 200
+            l2NetworkUuid = pool2.getUuid()
+            name = "RANGE-3"
+        }
+
+        expect(AssertionError.class) {
+            attachL2NetworkToCluster {
+                l2NetworkUuid = pool2.uuid
+                clusterUuid = cluster.inventory.uuid
+                systemTags = ["l2NetworkUuid::${pool1.getUuid()}::clusterUuid::${cluster.inventory.uuid}::cidr::{127.0.0.1/8}".toString()]
+            }
+        }
     }
 
     @Override

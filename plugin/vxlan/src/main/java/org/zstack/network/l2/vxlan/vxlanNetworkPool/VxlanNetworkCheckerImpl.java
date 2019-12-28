@@ -77,7 +77,8 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
 
     public String getOverlapVniRangePool(L2NetworkInventory inv, String clusterUuid) {
         List<VniRangeVO> checkRanges = Q.New(VniRangeVO.class).eq(VniRangeVO_.l2NetworkUuid, inv.getUuid()).list();
-        List<String> l2Uuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.l2NetworkUuid).eq(L2NetworkClusterRefVO_.clusterUuid, clusterUuid).listValues();
+        List<String> l2Uuids = Q.New(L2NetworkClusterRefVO.class).select(L2NetworkClusterRefVO_.l2NetworkUuid)
+                .eq(L2NetworkClusterRefVO_.clusterUuid, clusterUuid).notEq(L2NetworkClusterRefVO_.l2NetworkUuid, inv.getUuid()).listValues();
 
         for (String l2Uuid : l2Uuids) {
             L2NetworkVO l2 = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l2Uuid).find();
@@ -87,11 +88,10 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
 
             List<VniRangeVO> ranges = Q.New(VniRangeVO.class).eq(VniRangeVO_.l2NetworkUuid, l2Uuid).list();
             for (VniRangeVO range : ranges) {
-                Boolean result = checkRanges.stream()
-                        .map(r -> isVniRangeOverlap(r.getStartVni(), r.getEndVni(), range.getStartVni(), range.getEndVni()))
-                        .reduce(true, (l, r) -> l && r);
-                if (result.equals(true)) {
-                    return l2Uuid;
+                for (VniRangeVO crange: checkRanges) {
+                    if (isVniRangeOverlap(range.getStartVni(), range.getEndVni(), crange.getStartVni(), crange.getEndVni())) {
+                        return l2Uuid;
+                    }
                 }
             }
         }
