@@ -28,4 +28,12 @@ public class MetricStruct  {
         return this.labelNames;
     }
 
+    public java.lang.String driver;
+    public void setDriver(java.lang.String driver) {
+        this.driver = driver;
+    }
+    public java.lang.String getDriver() {
+        return this.driver;
+    }
+
 }

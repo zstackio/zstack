@@ -60,6 +60,14 @@ public class GuestToolsInventory  {
         return this.version;
     }
 
+    public java.lang.String agentType;
+    public void setAgentType(java.lang.String agentType) {
+        this.agentType = agentType;
+    }
+    public java.lang.String getAgentType() {
+        return this.agentType;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
