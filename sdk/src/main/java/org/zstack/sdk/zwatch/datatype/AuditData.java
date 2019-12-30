@@ -28,20 +28,20 @@ public class AuditData  {
         return this.TAG_RESOURCE_UUID;
     }
 
-    public java.lang.String FIELD_RESOURCE_TYPE;
-    public void setFIELD_RESOURCE_TYPE(java.lang.String FIELD_RESOURCE_TYPE) {
-        this.FIELD_RESOURCE_TYPE = FIELD_RESOURCE_TYPE;
+    public java.lang.String TAG_API_OPERATOR_ACCOUNT_UUID;
+    public void setTAG_API_OPERATOR_ACCOUNT_UUID(java.lang.String TAG_API_OPERATOR_ACCOUNT_UUID) {
+        this.TAG_API_OPERATOR_ACCOUNT_UUID = TAG_API_OPERATOR_ACCOUNT_UUID;
     }
-    public java.lang.String getFIELD_RESOURCE_TYPE() {
-        return this.FIELD_RESOURCE_TYPE;
+    public java.lang.String getTAG_API_OPERATOR_ACCOUNT_UUID() {
+        return this.TAG_API_OPERATOR_ACCOUNT_UUID;
     }
 
-    public java.lang.String FIELD_API_NAME;
-    public void setFIELD_API_NAME(java.lang.String FIELD_API_NAME) {
-        this.FIELD_API_NAME = FIELD_API_NAME;
+    public java.lang.String TAG_SUCCESS;
+    public void setTAG_SUCCESS(java.lang.String TAG_SUCCESS) {
+        this.TAG_SUCCESS = TAG_SUCCESS;
     }
-    public java.lang.String getFIELD_API_NAME() {
-        return this.FIELD_API_NAME;
+    public java.lang.String getTAG_SUCCESS() {
+        return this.TAG_SUCCESS;
     }
 
     public java.lang.String FIELD_API_ERROR;
@@ -50,14 +50,6 @@ public class AuditData  {
     }
     public java.lang.String getFIELD_API_ERROR() {
         return this.FIELD_API_ERROR;
-    }
-
-    public java.lang.String TAG_API_OPERATOR_ACCOUNT_UUID;
-    public void setTAG_API_OPERATOR_ACCOUNT_UUID(java.lang.String TAG_API_OPERATOR_ACCOUNT_UUID) {
-        this.TAG_API_OPERATOR_ACCOUNT_UUID = TAG_API_OPERATOR_ACCOUNT_UUID;
-    }
-    public java.lang.String getTAG_API_OPERATOR_ACCOUNT_UUID() {
-        return this.TAG_API_OPERATOR_ACCOUNT_UUID;
     }
 
     public java.lang.String FIELD_API_CLIENTIP;
@@ -74,6 +66,22 @@ public class AuditData  {
     }
     public java.lang.String getFIELD_API_CLIENTBROWSER() {
         return this.FIELD_API_CLIENTBROWSER;
+    }
+
+    public java.lang.String FIELD_RESOURCE_TYPE;
+    public void setFIELD_RESOURCE_TYPE(java.lang.String FIELD_RESOURCE_TYPE) {
+        this.FIELD_RESOURCE_TYPE = FIELD_RESOURCE_TYPE;
+    }
+    public java.lang.String getFIELD_RESOURCE_TYPE() {
+        return this.FIELD_RESOURCE_TYPE;
+    }
+
+    public java.lang.String FIELD_API_NAME;
+    public void setFIELD_API_NAME(java.lang.String FIELD_API_NAME) {
+        this.FIELD_API_NAME = FIELD_API_NAME;
+    }
+    public java.lang.String getFIELD_API_NAME() {
+        return this.FIELD_API_NAME;
     }
 
     public java.lang.String resourceUuid;
@@ -122,6 +130,14 @@ public class AuditData  {
     }
     public java.lang.String getError() {
         return this.error;
+    }
+
+    public java.lang.String success;
+    public void setSuccess(java.lang.String success) {
+        this.success = success;
+    }
+    public java.lang.String getSuccess() {
+        return this.success;
     }
 
     public java.lang.String operatorAccountUuid;
@@ -196,13 +212,4 @@ public class AuditData  {
         return this.time;
     }
 
-    public java.lang.String getSuccess() {
-        return success;
-    }
-
-    public void setSuccess(java.lang.String success) {
-        this.success = success;
-    }
-
-    public java.lang.String success;
 }

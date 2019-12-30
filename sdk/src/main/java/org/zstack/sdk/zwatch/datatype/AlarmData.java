@@ -60,22 +60,6 @@ public class AlarmData  {
         return this.alarmStatus;
     }
 
-    public java.lang.String dataUuid;
-    public void setDataUuid(java.lang.String dataUuid) {
-        this.dataUuid = dataUuid;
-    }
-    public java.lang.String getDataUuid() {
-        return this.dataUuid;
-    }
-
-    public java.lang.String context;
-    public void setContext(java.lang.String context) {
-        this.context = context;
-    }
-    public java.lang.String getContext() {
-        return this.context;
-    }
-
     public java.util.Set queryableLabels;
     public void setQueryableLabels(java.util.Set queryableLabels) {
         this.queryableLabels = queryableLabels;
@@ -92,22 +76,6 @@ public class AlarmData  {
         return this.TAG_ALARM_UUID;
     }
 
-    public java.lang.String FIELD_RESOURCE_UUID;
-    public void setFIELD_RESOURCE_UUID(java.lang.String FIELD_RESOURCE_UUID) {
-        this.FIELD_RESOURCE_UUID = FIELD_RESOURCE_UUID;
-    }
-    public java.lang.String getFIELD_RESOURCE_UUID() {
-        return this.FIELD_RESOURCE_UUID;
-    }
-
-    public java.lang.String FIELD_RESOURCE_TYPE;
-    public void setFIELD_RESOURCE_TYPE(java.lang.String FIELD_RESOURCE_TYPE) {
-        this.FIELD_RESOURCE_TYPE = FIELD_RESOURCE_TYPE;
-    }
-    public java.lang.String getFIELD_RESOURCE_TYPE() {
-        return this.FIELD_RESOURCE_TYPE;
-    }
-
     public java.lang.String TAG_ACCOUNT_UUID;
     public void setTAG_ACCOUNT_UUID(java.lang.String TAG_ACCOUNT_UUID) {
         this.TAG_ACCOUNT_UUID = TAG_ACCOUNT_UUID;
@@ -116,36 +84,12 @@ public class AlarmData  {
         return this.TAG_ACCOUNT_UUID;
     }
 
-    public java.lang.String FIELD_METRIC_NAME;
-    public void setFIELD_METRIC_NAME(java.lang.String FIELD_METRIC_NAME) {
-        this.FIELD_METRIC_NAME = FIELD_METRIC_NAME;
+    public java.lang.String TAG_READ_STATUS;
+    public void setTAG_READ_STATUS(java.lang.String TAG_READ_STATUS) {
+        this.TAG_READ_STATUS = TAG_READ_STATUS;
     }
-    public java.lang.String getFIELD_METRIC_NAME() {
-        return this.FIELD_METRIC_NAME;
-    }
-
-    public java.lang.String FIELD_NAMESPACE;
-    public void setFIELD_NAMESPACE(java.lang.String FIELD_NAMESPACE) {
-        this.FIELD_NAMESPACE = FIELD_NAMESPACE;
-    }
-    public java.lang.String getFIELD_NAMESPACE() {
-        return this.FIELD_NAMESPACE;
-    }
-
-    public java.lang.String FIELD_ALARM_STATUS;
-    public void setFIELD_ALARM_STATUS(java.lang.String FIELD_ALARM_STATUS) {
-        this.FIELD_ALARM_STATUS = FIELD_ALARM_STATUS;
-    }
-    public java.lang.String getFIELD_ALARM_STATUS() {
-        return this.FIELD_ALARM_STATUS;
-    }
-
-    public java.lang.String FIELD_DATA_UUID;
-    public void setFIELD_DATA_UUID(java.lang.String FIELD_DATA_UUID) {
-        this.FIELD_DATA_UUID = FIELD_DATA_UUID;
-    }
-    public java.lang.String getFIELD_DATA_UUID() {
-        return this.FIELD_DATA_UUID;
+    public java.lang.String getTAG_READ_STATUS() {
+        return this.TAG_READ_STATUS;
     }
 
     public java.lang.String FIELD_CONTEXT;
@@ -156,12 +100,52 @@ public class AlarmData  {
         return this.FIELD_CONTEXT;
     }
 
-    public java.lang.String TAG_READ_STATUS;
-    public void setTAG_READ_STATUS(java.lang.String TAG_READ_STATUS) {
-        this.TAG_READ_STATUS = TAG_READ_STATUS;
+    public java.lang.String FIELD_DATAUUID;
+    public void setFIELD_DATAUUID(java.lang.String FIELD_DATAUUID) {
+        this.FIELD_DATAUUID = FIELD_DATAUUID;
     }
-    public java.lang.String getTAG_READ_STATUS() {
-        return this.TAG_READ_STATUS;
+    public java.lang.String getFIELD_DATAUUID() {
+        return this.FIELD_DATAUUID;
+    }
+
+    public java.lang.String FIELD_RESOURCE_TYPE;
+    public void setFIELD_RESOURCE_TYPE(java.lang.String FIELD_RESOURCE_TYPE) {
+        this.FIELD_RESOURCE_TYPE = FIELD_RESOURCE_TYPE;
+    }
+    public java.lang.String getFIELD_RESOURCE_TYPE() {
+        return this.FIELD_RESOURCE_TYPE;
+    }
+
+    public java.lang.String FIELD_ALARM_STATUS;
+    public void setFIELD_ALARM_STATUS(java.lang.String FIELD_ALARM_STATUS) {
+        this.FIELD_ALARM_STATUS = FIELD_ALARM_STATUS;
+    }
+    public java.lang.String getFIELD_ALARM_STATUS() {
+        return this.FIELD_ALARM_STATUS;
+    }
+
+    public java.lang.String FIELD_NAMESPACE;
+    public void setFIELD_NAMESPACE(java.lang.String FIELD_NAMESPACE) {
+        this.FIELD_NAMESPACE = FIELD_NAMESPACE;
+    }
+    public java.lang.String getFIELD_NAMESPACE() {
+        return this.FIELD_NAMESPACE;
+    }
+
+    public java.lang.String FIELD_METRIC_NAME;
+    public void setFIELD_METRIC_NAME(java.lang.String FIELD_METRIC_NAME) {
+        this.FIELD_METRIC_NAME = FIELD_METRIC_NAME;
+    }
+    public java.lang.String getFIELD_METRIC_NAME() {
+        return this.FIELD_METRIC_NAME;
+    }
+
+    public java.lang.String FIELD_RESOURCE_UUID;
+    public void setFIELD_RESOURCE_UUID(java.lang.String FIELD_RESOURCE_UUID) {
+        this.FIELD_RESOURCE_UUID = FIELD_RESOURCE_UUID;
+    }
+    public java.lang.String getFIELD_RESOURCE_UUID() {
+        return this.FIELD_RESOURCE_UUID;
     }
 
     public java.lang.String alarmName;
@@ -218,6 +202,22 @@ public class AlarmData  {
     }
     public java.lang.String getReadStatus() {
         return this.readStatus;
+    }
+
+    public java.lang.String dataUuid;
+    public void setDataUuid(java.lang.String dataUuid) {
+        this.dataUuid = dataUuid;
+    }
+    public java.lang.String getDataUuid() {
+        return this.dataUuid;
+    }
+
+    public java.lang.String context;
+    public void setContext(java.lang.String context) {
+        this.context = context;
+    }
+    public java.lang.String getContext() {
+        return this.context;
     }
 
     public long time;
