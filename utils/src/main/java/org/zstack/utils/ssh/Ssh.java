@@ -2,9 +2,7 @@ package org.zstack.utils.ssh;
 
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.common.IOUtils;
-import net.schmizz.sshj.connection.ConnectionException;
 import net.schmizz.sshj.connection.channel.direct.Session;
-import net.schmizz.sshj.transport.TransportException;
 import net.schmizz.sshj.transport.verification.HostKeyVerifier;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -51,6 +49,7 @@ public class Ssh {
     private interface SshRunner {
         SshResult run();
         String getCommand();
+        String getCommandWithoutPassword();
     }
 
     private class ScriptRunner {
@@ -202,7 +201,8 @@ public class Ssh {
            @Override
            public SshResult run() {
                SshResult ret = new SshResult();
-               ret.setCommandToExecute(cmd);
+               String cmdWithoutPassword = getCommandWithoutPassword();
+               ret.setCommandToExecute(cmdWithoutPassword);
 
                Session.Command sshCmd = null;
                try {
@@ -211,7 +211,7 @@ public class Ssh {
                        session = ssh.startSession();
                        session.allocateDefaultPTY();
                        if (logger.isTraceEnabled()) {
-                           logger.trace(String.format("[start SSH] %s", cmd));
+                           logger.trace(String.format("[start SSH] %s", cmdWithoutPassword));
                        }
                        sshCmd = session.exec(cmd);
                        sshCmd.join(timeout, TimeUnit.SECONDS);
@@ -221,7 +221,7 @@ public class Ssh {
                        ret.setStderr(stderr);
                        ret.setStdout(output);
                        if (logger.isTraceEnabled()) {
-                           logger.trace(String.format("[end SSH] %s", cmd));
+                           logger.trace(String.format("[end SSH] %s, return code: %d", cmdWithoutPassword, ret.getReturnCode()));
                        }
                    } finally {
                        if (session != null) {
@@ -233,7 +233,7 @@ public class Ssh {
                        ret.setSshFailure(true);
                    }
 
-                   StringBuilder sb = new StringBuilder(String.format("exec ssh command: %s, exception\n", cmd));
+                   StringBuilder sb = new StringBuilder(String.format("exec ssh command: %s, exception\n", cmdWithoutPassword));
                    sb.append(String.format("[host:%s, port:%s, user:%s, timeout:%s]\n", hostname, port, username, timeout));
                    if (!suppressException) {
                        logger.warn(sb.toString(), e);
@@ -245,7 +245,7 @@ public class Ssh {
                        try {
                            sshCmd.close();
                        } catch (Exception e) {
-                           logger.warn(String.format("failed close ssh channel for command[%s, host:%s, port:%s]", cmd, hostname, port), e);
+                           logger.warn(String.format("failed close ssh channel for command[%s, host:%s, port:%s]", cmdWithoutPassword, hostname, port), e);
                        }
                    }
                }
@@ -256,6 +256,11 @@ public class Ssh {
            @Override
            public String getCommand() {
                return cmd;
+           }
+
+           @Override
+           public String getCommandWithoutPassword() {
+               return cmd.replaceAll("echo .*?\\s*\\|\\s*sudo -S", "echo ****** | sudo -S");
            }
        };
     }
@@ -307,6 +312,11 @@ public class Ssh {
                 } else {
                     return String.format("scp -P %d %s %s@%s:%s", port, src, username, hostname, dst);
                 }
+            }
+
+            @Override
+            public String getCommandWithoutPassword() {
+                return getCommand();
             }
         };
     }
@@ -454,7 +464,7 @@ public class Ssh {
                     String cmd = StringUtils.join(CollectionUtils.transformToList(commands, new Function<String, SshRunner>() {
                         @Override
                         public String call(SshRunner arg) {
-                            return arg.getCommand();
+                            return arg.getCommandWithoutPassword();
                         }
                     }), ",");
                     String info = s(
