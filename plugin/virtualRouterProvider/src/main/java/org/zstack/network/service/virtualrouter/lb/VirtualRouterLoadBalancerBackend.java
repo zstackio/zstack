@@ -44,10 +44,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentRespo
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.Utils;
-import org.zstack.utils.VipUseForList;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
@@ -425,7 +422,22 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 q.add(SystemTagVO_.resourceUuid, Op.EQ, l.getUuid());
                 q.add(SystemTagVO_.resourceType, Op.EQ, LoadBalancerListenerVO.class.getSimpleName());
                 List<String> tags = q.listValue();
-                to.setParameters(tags);
+                to.setParameters(CollectionUtils.transformToList(tags, new Function<String, String>() {
+                    // vnicUuid::weight
+                    @Override
+                    public String call(String arg) {
+                        if(LoadBalancerSystemTags.BALANCER_WEIGHT.isMatch(arg)) {
+                            Map<String, String> token = TagUtils.parse(LoadBalancerSystemTags.BALANCER_WEIGHT.getTagFormat(), arg);
+                            String nicUuid = token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN);
+                            VmNicInventory nic = struct.getVmNics().get(nicUuid);
+                            if (nic == null || !to.getNicIps().contains(nic.getIp())) {
+                                return null;
+                            }
+                            arg = arg.replace(nicUuid, nic.getIp());
+                        }
+                        return arg;
+                    }
+                }));
                 return to;
             }
         });
@@ -437,15 +449,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             listeners.addAll(struct.getListeners());
         }
 
-        return  CollectionUtils.transformToSet(listeners, new Function<String, LoadBalancerListenerInventory>() {
-            @Override
-            public String call(LoadBalancerListenerInventory arg) {
-                if (arg.getVmNicRefs() != null && !arg.getVmNicRefs().isEmpty()
-                        && arg.getCertificateRefs() != null && !arg.getCertificateRefs().isEmpty()) {
-                    return arg.getCertificateRefs().get(0).getCertificateUuid();
-                } else {
-                    return null;
-                }
+        return  CollectionUtils.transformToSet(listeners, (Function<String, LoadBalancerListenerInventory>) arg -> {
+            if (arg.getVmNicRefs() != null && !arg.getVmNicRefs().isEmpty()
+                    && arg.getCertificateRefs() != null && !arg.getCertificateRefs().isEmpty()) {
+                return arg.getCertificateRefs().get(0).getCertificateUuid();
+            } else {
+                return null;
             }
         });
     }
