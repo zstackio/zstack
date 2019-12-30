@@ -30,5 +30,10 @@
         <id>1005</id>
         <description>The user has to change initial password</description>
     </code>
+
+    <code>
+        <id>1006</id>
+        <description>Max number of active sessions exceeded</description>
+    </code>
 </error>
 
