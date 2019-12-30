@@ -58,8 +58,16 @@
     <config>
         <category>loadBalancer</category>
         <name>balancerAlgorithm</name>
-        <description>The number of max concurrent connections. Options are roundrobin, leastconn and source</description>
+        <description>The algorithm used to select a server when doing load balancing. Options are roundrobin, weightroundrobin, leastconn and source</description>
         <defaultValue>roundrobin</defaultValue>
+    </config>
+
+    <config>
+        <category>loadBalancer</category>
+        <name>balancerWeight</name>
+        <description>Each server is used in turns according to the weight while the algorithm is weightroundrobin</description>
+        <defaultValue>100</defaultValue>
+        <type>java.lang.Long</type>
     </config>
 
     <config>
