@@ -14,6 +14,7 @@ import org.zstack.header.rest.SDK;
 @RestRequest(
         path = "null",
         optionalPaths = {
+                "/l3-networks/ip/free",
                 "/l3-networks/{l3NetworkUuid}/ip/free",
                 "/l3-networks/ip-ranges/{ipRangeUuid}/ip/free",
         },
@@ -22,6 +23,7 @@ import org.zstack.header.rest.SDK;
 )
 @SDK(
         actionsMapping = {
+                "GetFreeIp=/l3-networks/ip/free",
                 "GetFreeIpOfL3Network=/l3-networks/{l3NetworkUuid}/ip/free",
                 "GetFreeIpOfIpRange=/l3-networks/ip-ranges/{ipRangeUuid}/ip/free"
         }

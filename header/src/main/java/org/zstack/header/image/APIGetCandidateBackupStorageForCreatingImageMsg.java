@@ -16,6 +16,7 @@ import org.zstack.header.volume.VolumeVO;
 @RestRequest(
         path = "null",
         optionalPaths = {
+                "/images/candidate-backup-storage",
                 "/images/volumes/{volumeUuid}/candidate-backup-storage",
                 "/images/volume-snapshots/{volumeSnapshotUuid}/candidate-backup-storage",
         },
@@ -24,6 +25,7 @@ import org.zstack.header.volume.VolumeVO;
 )
 @SDK(
         actionsMapping = {
+                "GetCandidateBackupStorageForCreatingImage=/images/candidate-backup-storage",
                 "GetBackupStorageForCreatingImageFromVolume=/images/volumes/{volumeUuid}/candidate-backup-storage",
                 "GetBackupStorageForCreatingImageFromVolumeSnapshot=/images/volume-snapshots/{volumeSnapshotUuid}/candidate-backup-storage",
         }
