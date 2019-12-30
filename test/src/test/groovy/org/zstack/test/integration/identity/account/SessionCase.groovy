@@ -4,12 +4,15 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.DatabaseFacadeImpl
 import org.zstack.header.identity.AccountConstant
 import org.zstack.identity.AccountManagerImpl
+import org.zstack.identity.IdentityGlobalConfig
 import org.zstack.identity.Session
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.SessionInventory
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.sdk.LogInByAccountAction
+import org.zstack.header.identity.IdentityErrors
 
 import javax.persistence.Query
 import java.sql.Timestamp
@@ -51,7 +54,33 @@ class SessionCase extends SubCase {
             testRenewSessionFail()
             testInvalidSession()
             testValidateSessionApi()
+            testMaxCurrentSessionExceeded()
         }
+    }
+
+    void testMaxCurrentSessionExceeded() {
+        IdentityGlobalConfig.MAX_CONCURRENT_SESSION.updateValue(1)
+
+        def account = createAccount {
+            name = "exceed"
+            password = "password"
+        } as AccountInventory
+
+        logInByAccount {
+            accountName = "exceed"
+            password = "password"
+        }
+
+        logInByAccount {
+            accountName = "exceed"
+            password = "password"
+        }
+
+        LogInByAccountAction action = new LogInByAccountAction()
+        action.accountName = "exceed"
+        action.password = "password"
+        LogInByAccountAction.Result result = action.call()
+        assert result.error.details.contains(IdentityErrors.MAX_CONCURRENT_SESSION_EXCEEDED.toString())
     }
 
     void testValidateSessionApi() {
