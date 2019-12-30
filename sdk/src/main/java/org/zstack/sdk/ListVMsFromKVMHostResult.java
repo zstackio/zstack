@@ -27,4 +27,11 @@ public class ListVMsFromKVMHostResult {
         return this.qemuVersion;
     }
 
+    public java.util.Map v2vCaps;
+    public void setV2vCaps(java.util.Map v2vCaps) {
+        this.v2vCaps = v2vCaps;
+    }
+    public java.util.Map getV2vCaps() {
+        return v2vCaps;
+    }
 }
