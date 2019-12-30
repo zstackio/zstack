@@ -27,6 +27,8 @@ public class GLock {
 
     private static final Map<String, ReentrantLock> memLocks = new HashMap<String, ReentrantLock>();
 
+    private static long defaultWaitTimeout = DatabaseGlobalProperty.GLockWaitTimeout;
+
     private DataSource dataSource;
     private Connection conn;
     private final String name;
@@ -74,6 +76,10 @@ public class GLock {
     }
 
     public void lock() {
+        lock(defaultWaitTimeout);
+    }
+
+    public void lock(long waitTimeout) {
         if (alsoUseMemoryLock) {
             checkInThread();
         }
@@ -110,6 +116,9 @@ public class GLock {
                 conn = dataSource.getConnection();
                 conn.setAutoCommit(true);
                 pstmt = conn.prepareStatement(String.format("select get_lock('%s', %s)", name, timeout));
+                if (waitTimeout > 0) {
+                    pstmt.execute(String.format("set wait_timeout=%d", waitTimeout));
+                }
                 ResultSet rs = pstmt.executeQuery();
                 if (rs == null) {
                     String err = "Unable to get DB lock: " + name + ", internal database error happened";

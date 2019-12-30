@@ -312,7 +312,7 @@ public class Platform {
         if (DatabaseGlobalProperty.DbUser != null) {
             if (getGlobalProperty("DbFacadeDataSource.user") == null) {
                 System.setProperty("DbFacadeDataSource.user", DatabaseGlobalProperty.DbUser);
-                logger.debug(String.format("default RESTApiDataSource.user to DB.user [%s]", DatabaseGlobalProperty.DbUser));
+                logger.debug(String.format("default DbFacadeDataSource.user to DB.user [%s]", DatabaseGlobalProperty.DbUser));
             }
             if (getGlobalProperty("RESTApiDataSource.user") == null) {
                 System.setProperty("RESTApiDataSource.user", DatabaseGlobalProperty.DbUser);

@@ -46,12 +46,12 @@
         <property name="user" value="${DbFacadeDataSource.user:root}"/>
         <property name="password" value="${DbFacadeDataSource.password:}"/>
         <property name="maxPoolSize" value="5"/>
-        <property name="idleConnectionTestPeriod" value="${DbFacadeDataSource.idleConnectionTestPeriod:3000}"/>
+        <property name="idleConnectionTestPeriod" value="${ExtraDataSource.idleConnectionTestPeriod:3000}"/>
         <property name="loginTimeout" value="${DbFacadeDataSource.loginTimeout:300}"/>
         <property name="connectionCustomizerClassName" value="org.zstack.core.db.TransactionIsolationLevelSetter"/>
         <property name="testConnectionOnCheckout" value="${DbFacadeDataSource.testConnectionOnCheckout:true}"/>
         <property name="connectionTesterClassName" value="${DbFacadeDataSource.connectionTesterClassName:org.zstack.core.db.C3p0ConnectionTester}"/>
-        <property name="maxIdleTime" value="${DbFacadeDataSource.maxIdleTime:3600}"/>
+        <property name="maxIdleTime" value="${ExtraDataSource.maxIdleTime:3600}"/>
     </bean>
 
     <bean id="entityManagerFactory"
