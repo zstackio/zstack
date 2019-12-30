@@ -40,4 +40,11 @@ public class LoadBalancerSystemTags {
 
     public static final String BALANCER_ALGORITHM_TOKEN = "balancerAlgorithm";
     public static PatternedSystemTag BALANCER_ALGORITHM = new PatternedSystemTag(String.format("balancerAlgorithm::{%s}", BALANCER_ALGORITHM_TOKEN), LoadBalancerListenerVO.class);
+
+    public static final String BALANCER_WEIGHT_TOKEN = "balancerWeight";
+    public static final String BALANCER_NIC_TOKEN = "balancerNic";
+    public static PatternedSystemTag BALANCER_WEIGHT = new PatternedSystemTag(String.format("balancerWeight::{%s}::{%s}", BALANCER_NIC_TOKEN, BALANCER_WEIGHT_TOKEN), LoadBalancerListenerVO.class);
+
+    public static final String HEALTH_PARAMETER_TOKEN = "healthCheckParameter";
+    public static PatternedSystemTag HEALTH_PARAMETER = new PatternedSystemTag(String.format("healthCheckParameter::{%s}", HEALTH_PARAMETER_TOKEN), LoadBalancerListenerVO.class);
 }

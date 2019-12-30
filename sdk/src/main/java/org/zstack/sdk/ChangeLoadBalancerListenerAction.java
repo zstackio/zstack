@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class ChangeLoadBalancerListenerAction extends AbstractAction {
 
@@ -34,7 +33,7 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,100000L}, noTrim = false)
     public java.lang.Integer maxConnection;
 
-    @Param(required = false, validValues = {"roundrobin","leastconn","source"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"weightroundrobin","roundrobin","leastconn","source"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String balancerAlgorithm;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -48,6 +47,18 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
     public java.lang.Integer healthCheckInterval;
+
+    @Param(required = false, validValues = {"tcp","udp","http"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String healthCheckProtocol;
+
+    @Param(required = false, validValues = {"GET","HEAD"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String healthCheckMethod;
+
+    @Param(required = false, validRegexValues = "^/[A-Za-z0-9-/.%?#&]+", maxLength = 80, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String healthCheckURI;
+
+    @Param(required = false, maxLength = 80, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String healthCheckHttpCode;
 
     @Param(required = false)
     public java.util.List systemTags;
