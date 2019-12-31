@@ -1360,6 +1360,22 @@
     "message_en": "Failed to create data volume template from volume [uuid:%1$s] on any backup storage."
   },
   {
+    "category": "VOLUME",
+    "code": "1004",
+    "method": "regex",
+    "regex": "failed to attach data volume\\[.*] on kvm host\\[.*], because failed to execute shell command:.*: No such file or directory.*",
+    "message_cn": "将云盘[%1$s, %2$s]挂载到云主机[uuid:%3$s, name:%4$s]失败，因为云盘路径[%2$s]不存在",
+    "message_en": "failed to attach data volume[uuid:%1$s, name:%2$s] on vm[uuid:%3$s, name:%4$s], because data volume path[%2$s] not found"
+  },
+  {
+    "category": "VOLUME",
+    "code": "1005",
+    "method": "regex",
+    "regex": "shareable volume\\(s\\)\\[.*] attached, not support to group snapshot.",
+    "message_cn": "共享云盘[%1$s]已经被挂载，不支持快照组",
+    "message_en": "shareable volume(s)[%1$s] attached, not support to group snapshot."
+  },
+  {
     "category": "VPC",
     "code": "1000",
     "method": "regex",
