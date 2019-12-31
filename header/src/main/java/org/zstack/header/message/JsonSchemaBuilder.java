@@ -2,8 +2,6 @@ package org.zstack.header.message;
 
 import org.apache.commons.lang.StringUtils;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.message.GsonTransient;
-import org.zstack.header.message.NoJsonSchema;
 import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -12,8 +10,6 @@ import org.zstack.utils.logging.CLogger;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
-
-import static java.util.Arrays.asList;
 
 /**
  * Created by xing5 on 2016/12/12.
@@ -50,7 +46,12 @@ public class JsonSchemaBuilder {
                     continue;
                 }
 
-                if (value.getClass().getCanonicalName().startsWith("java.")) {
+                final String valueClassCanonicalName = value.getClass().getCanonicalName();
+                if (valueClassCanonicalName == null) {
+                    continue;
+                }
+
+                if (valueClassCanonicalName.startsWith("java.")) {
                     // for JRE classes, only deal with Collection and Map
                     if (value instanceof Collection) {
                         Collection c = (Collection) value;
@@ -81,7 +82,7 @@ public class JsonSchemaBuilder {
 
                     // don't record standard JRE classes
 
-                } else if (value.getClass().getCanonicalName().startsWith("org.zstack")) {
+                } else if (valueClassCanonicalName.startsWith("org.zstack")) {
                     paths.push(f.getName());
                     build(value, paths);
                     paths.pop();
