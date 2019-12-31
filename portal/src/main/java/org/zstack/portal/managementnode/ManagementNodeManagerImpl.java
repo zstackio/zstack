@@ -915,7 +915,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
     @Override
     @Deferred
-    public boolean stop() {
+    public synchronized boolean stop() {
         Platform.IS_RUNNING = false;
 
         if (stopped) {
