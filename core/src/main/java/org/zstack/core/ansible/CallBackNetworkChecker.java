@@ -30,11 +30,11 @@ public class CallBackNetworkChecker implements AnsibleChecker {
     private int callBackPort = 8080;
 
     private static StringDSL.StringWrapper ncScript = ln(
-            "echo | sudo nc {0} {1}"
+            "nc -z {0} {1}"
     );
 
     private static StringDSL.StringWrapper script = ln(
-            "sudo nmap -sS -P0 -n -p {0} {1}|grep \"1 host up\""
+            "echo {0} | sudo -S nmap -sS -P0 -n -p {1} {2} 2>/dev/null | grep \"1 host up\""
     );
 
     @Override
@@ -59,7 +59,7 @@ public class CallBackNetworkChecker implements AnsibleChecker {
     }
 
     private ErrorCode useNmapToTestConnection(Ssh ssh) {
-        String srcScript = script.format(callBackPort, callbackIp);
+        String srcScript = script.format(password, callBackPort, callbackIp);
 
         SshResult ret = ssh.shell(srcScript).setTimeout(5).runAndClose();
         ret.raiseExceptionIfFailed();

@@ -1,9 +1,9 @@
 package org.zstack.core.ansible;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -27,17 +27,20 @@ public class SshYumRepoChecker implements AnsibleChecker {
 
     @Override
     public boolean needDeploy() {
+        if (StringUtils.isEmpty(password)) {
+            return true;
+        }
+
         Ssh ssh = new Ssh();
         ssh.setUsername(username).setPrivateKey(privateKey)
                 .setPassword(password).setPort(sshPort)
                 .setHostname(targetIp);
         try {
-
             ssh.command(String.format(
-                    "sed -i '/baseurl/s/\\([0-9]\\{1,3\\}\\.\\)\\{3\\}[0-9]\\{1,3\\}:\\([0-9]\\+\\)/%s/g' /etc/yum.repos.d/{zstack,qemu-kvm-ev}-mn.repo",
-                    restf.getHostName() + ":" + restf.getPort()
+                    "echo %s | sudo -S sed -i '/baseurl/s/\\([0-9]\\{1,3\\}\\.\\)\\{3\\}[0-9]\\{1,3\\}:\\([0-9]\\+\\)/%s/g' /etc/yum.repos.d/{zstack,qemu-kvm-ev}-mn.repo",
+                    password, restf.getHostName() + ":" + restf.getPort()
             ));
-            SshResult ret = ssh.run();
+            SshResult ret = ssh.setTimeout(5).runAndClose();
             if (ret.getReturnCode() != 0) {
                 return true;
             }

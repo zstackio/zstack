@@ -14,11 +14,10 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.StringDSL.ln;
 
 /**
@@ -46,7 +45,7 @@ public class SshFolderMd5Checker implements AnsibleChecker {
             "files=`find {0} -type f`",
             "for f in $files",
             "do",
-            "md5sum $f",
+            "echo {1} | sudo -S md5sum $f 2>/dev/null",
             "done",
             "exit 0"
     );
@@ -108,7 +107,7 @@ public class SshFolderMd5Checker implements AnsibleChecker {
                             srcRes.getStdout(), srcRes.getStderr()));
         }
 
-        String dstScript = script.format(dstFolder);
+        String dstScript = script.format(dstFolder, password);
         SshShell ssh = new SshShell();
         ssh.setHostname(hostname);
         ssh.setUsername(username);
