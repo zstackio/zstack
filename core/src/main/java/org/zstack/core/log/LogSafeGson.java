@@ -6,6 +6,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.springframework.security.access.method.P;
 import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
+import org.zstack.header.message.Event;
 import org.zstack.header.message.GsonTransient;
 import org.zstack.header.message.Message;
 import org.zstack.utils.BeanUtils;

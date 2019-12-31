@@ -1,5 +1,6 @@
 package org.zstack.core.cloudbus;
 
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.LocalEvent;
 import org.zstack.utils.JsonWrapper;
 
@@ -14,6 +15,7 @@ import java.util.Map;
  */
 public class CanonicalEvent extends LocalEvent {
     private String path;
+    @NoLogging(behavior = NoLogging.Behavior.Auto)
     private Object content;
     private String managementNodeId;
 

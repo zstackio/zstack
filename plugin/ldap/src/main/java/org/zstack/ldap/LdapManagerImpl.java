@@ -482,7 +482,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             // return accounts of which ldap bindings had been removed
             SimpleQuery<AccountVO> sq1 = dbf.createQuery(AccountVO.class);
             sq1.add(AccountVO_.uuid, SimpleQuery.Op.IN, accountUuidList);
-            evt.setInventories(sq1.list());
+            evt.setInventories(AccountInventory.valueOf(sq1.list()));
         }
 
         bus.publish(evt);

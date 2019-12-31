@@ -17,7 +17,7 @@ import java.util.List;
 @PythonClassInventory
 @Inventory(mappingVOClass = KVMHostVO.class, collectionValueOfMethod = "valueOf1",
         parent = {@Parent(inventoryClass = HostInventory.class, type = KVMConstant.KVM_HYPERVISOR_TYPE)})
-public class KVMHostInventory extends HostInventory implements HasSensitiveInfo {
+public class KVMHostInventory extends HostInventory {
     /**
      * @ignore
      */
