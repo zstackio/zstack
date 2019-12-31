@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.debug.DebugManager;
 import org.zstack.core.debug.DebugSignalHandler;
 import org.zstack.header.core.ExceptionSafe;
@@ -18,6 +19,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
@@ -198,7 +200,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                 }
 
                 @Override
-                public Void call() throws Exception {
+                public Void call() {
                     run();
                     return null;
                 }
@@ -312,12 +314,47 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     private class ChainTaskQueueWrapper {
         LinkedList pendingQueue = new LinkedList();
+        final Map<String, AtomicInteger> subPendingMap = new HashMap<>();
         final LinkedList runningQueue = new LinkedList();
         AtomicInteger counter = new AtomicInteger(0);
         int maxThreadNum = -1;
         String syncSignature;
 
-        void addTask(ChainFuture task) {
+        int addSubPending(String deduplicateStr) {
+            AtomicInteger currentCount = subPendingMap.get(deduplicateStr);
+            if (currentCount == null) {
+                subPendingMap.put(deduplicateStr, new AtomicInteger(1));
+                return 1;
+            } else {
+                return currentCount.incrementAndGet();
+            }
+        }
+
+        void removeSubPending(String deduplicateStr) {
+            AtomicInteger currentCount = subPendingMap.get(deduplicateStr);
+            if (currentCount == null) {
+                // do nothing
+            } else if (currentCount.intValue() == 1) {
+                subPendingMap.remove(deduplicateStr);
+            } else {
+                currentCount.decrementAndGet();
+            }
+        }
+
+        boolean addTask(ChainFuture task, int length) {
+            if (length != -1 && CoreGlobalProperty.CHAIN_TASK_QOS) {
+                DebugUtils.Assert(task.getTask().getDeduplicateString() != null, "deduplicate String must be set if max pending string has been set!");
+                int queueLength = addSubPending(task.getTask().getDeduplicateString());
+                if (queueLength > length) {
+                    synchronized (runningQueue) {
+                        if (length != 0 || queueLength != 1 || runningQueue.size() != 0) {
+                            logger.warn(String.format("[%s] max pending size: %d, pending now: %d, throw the task: %s!", task.getTask().getDeduplicateString(), length, queueLength, task.getTask().getName()));
+                            removeSubPending(task.getTask().getDeduplicateString());
+                            return false;
+                        }
+                    }
+                }
+            }
             pendingQueue.offer(task);
 
             if (maxThreadNum == -1) {
@@ -330,6 +367,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             if (syncSignature == null) {
                 syncSignature = task.getSyncSignature();
             }
+            return true;
         }
 
         void startThreadIfNeeded() {
@@ -358,6 +396,11 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                             }
 
                             return;
+                        }
+                        if (subPendingMap.get(cf.getTask().getDeduplicateString()) != null) {
+                            if (subPendingMap.get(cf.getTask().getDeduplicateString()).decrementAndGet() == 0) {
+                                subPendingMap.remove(cf.getTask().getDeduplicateString());
+                            }
                         }
                     }
 
@@ -429,7 +472,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     private <T> Future<T> doChainSyncSubmit(final ChainTask task) {
         assert task.getSyncSignature() != null : "How can you submit a chain task without sync signature ???";
-        DebugUtils.Assert(task.getSyncLevel() >= 1, String.format("getSyncLevel() must return 1 at least "));
+        DebugUtils.Assert(task.getSyncLevel() >= 1, "getSyncLevel() must return 1 at least ");
 
         synchronized (chainTasks) {
             final String signature = task.getSyncSignature();
@@ -440,8 +483,14 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             }
 
             ChainFuture cf = new ChainFuture(task);
-            wrapper.addTask(cf);
-            wrapper.startThreadIfNeeded();
+            boolean succeed = wrapper.addTask(cf, task.getMaxPendingTasks());
+            if (!succeed) {
+                cf.cancel();
+                logger.debug(String.format("Pending queue[%s] exceed max size, task name: %s, start execute callback", task.getSyncSignature(), task.getName()));
+                task.exceedMaxPendingCallback();
+            } else {
+                wrapper.startThreadIfNeeded();
+            }
             return cf;
         }
     }

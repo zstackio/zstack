@@ -734,6 +734,8 @@ public abstract class HostBase extends AbstractHost {
                         ReconnectHostReply r = new ReconnectHostReply();
                         if (reply.isSuccess()) {
                             logger.debug(String.format("Successfully reconnect host[uuid:%s]", self.getUuid()));
+                        } else if (reply.isCanceled()) {
+                            logger.warn(String.format("Canceled reconnect host[uuid:%s]", self.getUuid()));
                         } else {
                             r.setError(err(HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError(), reply.getError().getDetails()));
                             logger.debug(String.format("Failed to reconnect host[uuid:%s] because %s",
@@ -1026,6 +1028,22 @@ public abstract class HostBase extends AbstractHost {
             @Override
             public String getName() {
                 return "connect-host";
+            }
+
+            @Override
+            protected int getMaxPendingTasks() {
+                return 0;
+            }
+
+            @Override
+            protected String getDeduplicateString() {
+                return String.format("connect-host-%s", self.getUuid());
+            }
+
+            protected void exceedMaxPendingCallback() {
+                ConnectHostReply reply = new ConnectHostReply();
+                reply.setCanceled(operr("an other connect host task is running, cancel the new task and wait return"));
+                bus.reply(msg, reply);
             }
         });
     }
