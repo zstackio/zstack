@@ -541,6 +541,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 if (reply.isSuccess()) {
                     RefreshLbRsp rsp = ((VirtualRouterAsyncHttpCallReply) reply).toResponse(RefreshLbRsp.class);
                     if (rsp.isSuccess()) {
+                        new VirtualRouterRoleManager().makeLoadBalancerRole(vr.getUuid());
                         completion.success();
                     } else {
                         completion.fail(operr("operation error, because:%s", rsp.getError()));
@@ -1603,6 +1604,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
+                        new VirtualRouterRoleManager().makeLoadBalancerRole(vr.getUuid());
                         completion.success();
                     }
                 });
