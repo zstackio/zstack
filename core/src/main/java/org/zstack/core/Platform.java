@@ -506,6 +506,16 @@ public class Platform {
         return System.getProperty(name);
     }
 
+    public static String getGlobalPropertyAnnotationName(Class clz, String fieldName) {
+        try {
+            String name = clz.getDeclaredField(fieldName).getAnnotation(GlobalProperty.class).name().trim();
+            /* remove the last character '.' */
+            return name.substring(0, name.length() - 1);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     public static Map<String, String> getGlobalPropertiesStartWith(String prefix) {
         Properties props = System.getProperties();
         Enumeration e = props.propertyNames();

@@ -3,6 +3,8 @@ package org.zstack.storage.ceph;
 import org.zstack.core.GlobalProperty;
 import org.zstack.core.GlobalPropertyDefinition;
 
+import java.util.List;
+
 /**
  * Created by frank on 7/29/2015.
  */
@@ -30,4 +32,8 @@ public class CephGlobalProperty {
     public static String PRIMARY_STORAGE_MODULE_PATH;
     @GlobalProperty(name="Ceph.vendor.getXskyLicense.Port", defaultValue = "8051")
     public static String GET_XSKY_LICENSE_PORT;
+    @GlobalProperty(name="Ceph.backupStorage.iptables.rule.", defaultValue = "")
+    public static List<String> CEPH_BACKUP_STORAGE_IPTABLES_RULES;
+    @GlobalProperty(name="Ceph.primaryStorage.iptables.rule.", defaultValue = "")
+    public static List<String> CEPH_PRIMARY_STORAGE_IPTABLES_RULES;
 }
