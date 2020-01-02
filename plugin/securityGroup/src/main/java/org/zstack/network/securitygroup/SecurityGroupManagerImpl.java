@@ -35,6 +35,9 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
+import org.zstack.header.network.l3.L3Network;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
@@ -378,6 +381,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
 
         private List<String> getVmIpsBySecurityGroup(String sgUuid){
+            List<String> ret = new ArrayList<>();
             // TODO: if two L3 network which have same ip segment attached same sg, it might has a problem
             String sql = "select ip.ip" +
                     " from VmNicVO nic, VmNicSecurityGroupRefVO ref, SecurityGroupVO sg, UsedIpVO ip" +
@@ -387,7 +391,22 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             TypedQuery<String> internalIpQuery = dbf.getEntityManager().createQuery(sql, String.class);
             internalIpQuery.setParameter("sgUuid", sgUuid);
 
-            return internalIpQuery.getResultList();
+            List<String> ips = internalIpQuery.getResultList();
+            if (ips != null) {
+                ret.addAll(ips);
+            }
+
+            /* add gateway address to group list */
+            List<String> l3Uuids = Q.New(SecurityGroupL3NetworkRefVO.class).select(SecurityGroupL3NetworkRefVO_.l3NetworkUuid)
+                    .eq(SecurityGroupL3NetworkRefVO_.securityGroupUuid, sgUuid).listValues();
+            for (String uuid: l3Uuids) {
+                L3NetworkInventory inv = L3NetworkInventory.valueOf(dbf.findByUuid(uuid, L3NetworkVO.class));
+                if (!inv.getIpRanges().isEmpty()) {
+                    ret.add(inv.getIpRanges().get(0).getGateway());
+                }
+            }
+
+            return ret;
         }
 
         @Transactional(readOnly = true)

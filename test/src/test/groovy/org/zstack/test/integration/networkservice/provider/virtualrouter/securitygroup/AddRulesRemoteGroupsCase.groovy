@@ -4,10 +4,15 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.Constants
+import org.zstack.header.network.l3.L3NetworkInventory
+import org.zstack.header.network.l3.L3NetworkVO
+import org.zstack.header.network.l3.L3NetworkVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg
 import org.zstack.network.securitygroup.APIChangeSecurityGroupStateMsg
+import org.zstack.network.securitygroup.SecurityGroupL3NetworkRefVO
+import org.zstack.network.securitygroup.SecurityGroupL3NetworkRefVO_
 import org.zstack.network.securitygroup.SecurityGroupMembersTO
 import org.zstack.network.securitygroup.SecurityGroupRuleProtocolType
 import org.zstack.network.securitygroup.SecurityGroupRuleState
@@ -21,8 +26,10 @@ import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO_
 import org.zstack.sdk.AddSecurityGroupRuleAction
 import org.zstack.sdk.ChangeSecurityGroupStateAction
 import org.zstack.sdk.HostInventory
+import org.zstack.sdk.IpRangeInventory
 import org.zstack.sdk.SecurityGroupInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.test.integration.networkservice.provider.virtualrouter.VirtualRouterNetworkServiceEnv
 import org.zstack.testlib.EnvSpec
@@ -136,8 +143,15 @@ class AddRulesRemoteGroupsCase extends SubCase{
         List<String> nicUuids = new ArrayList<>()
         List<String> vmIps = new ArrayList<>()
         for(VmInstanceInventory vm : vms){
-            nicUuids.add(vm.getVmNics().get(0).getUuid())
-            vmIps.add(vm.getVmNics().get(0).getIp())
+            VmNicInventory nic = vm.getVmNics().get(0)
+            nicUuids.add(nic.getUuid())
+            vmIps.add(nic.getIp())
+
+            org.zstack.sdk.L3NetworkInventory l3 = queryL3Network {conditions=["uuid=${nic.getL3NetworkUuid()}"]} [0]
+            IpRangeInventory ipr = l3.getIpRanges().get(0)
+            if (!vmIps.contains(ipr.gateway)) {
+                vmIps.add(ipr.gateway)
+            }
         }
 
         // action
@@ -318,11 +332,23 @@ class AddRulesRemoteGroupsCase extends SubCase{
     }
 
     private static List<String> getVmIpsInSecurityGroup(String sgUuid){
-        return SQL.New("select nic.ip" +
+        List<String> ret = SQL.New("select nic.ip" +
                 " from VmNicVO nic, VmNicSecurityGroupRefVO ref" +
                 " where ref.vmNicUuid = nic.uuid" +
                 " and ref.securityGroupUuid = :sgUuid" +
                 " and nic.ip is not null", String).param("sgUuid", sgUuid).list()
+
+        /* add gateway address to group list */
+        List<String> l3Uuids = Q.New(SecurityGroupL3NetworkRefVO.class).select(SecurityGroupL3NetworkRefVO_.l3NetworkUuid)
+                .eq(SecurityGroupL3NetworkRefVO_.securityGroupUuid, sgUuid).listValues()
+        for (String uuid: l3Uuids) {
+            L3NetworkVO vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, uuid).find()
+            L3NetworkInventory inv = L3NetworkInventory.valueOf(vo)
+            if (!inv.getIpRanges().isEmpty()) {
+                ret.add(inv.getIpRanges().get(0).getGateway())
+            }
+        }
+        return ret
     }
 
     void testCreateSecurityGroup(){
@@ -377,7 +403,8 @@ class AddRulesRemoteGroupsCase extends SubCase{
         }
         List<String> expectTransportVmIps = getVmIpsInSecurityGroup(sgUuid)
         List<String> actuallyTransportVmIps = ucmd.updateGroupTOs.get(0).securityGroupVmIps
-        int IpsCount = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, sgUuid).count()
+        /* IpsCount include vmnic ips + gateway ip  */
+        int IpsCount = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, sgUuid).count() + 1
 
         assert actuallyHostUuids.containsAll(expectHostUuids)
         assert ucmd.updateGroupTOs.size() == 1
@@ -426,7 +453,8 @@ class AddRulesRemoteGroupsCase extends SubCase{
         }
         List<String> expectTransportVmIps = getVmIpsInSecurityGroup(sgUuid)
         List<String> actuallyTransportVmIps = ucmd.updateGroupTOs.get(0).securityGroupVmIps
-        int IpsCount = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, sgUuid).count()
+        /* IpsCount include vmnic ips + gateway ip  */
+        int IpsCount = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, sgUuid).count() + 1
 
         assert actuallyHostUuids.containsAll(expectHostUuids)
         assert ucmd.updateGroupTOs.size() == 1
