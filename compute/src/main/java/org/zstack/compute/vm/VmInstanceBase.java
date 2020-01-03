@@ -310,6 +310,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                         self.setLastHostUuid(self.getHostUuid());
                     }
                     self.setHostUuid(null);
+                } else if (state == VmInstanceState.Destroyed) {
+                    // when destroying vm,vmState does not be changed to Stopped in db
+                    // change LastHostUuid as hostUuid if the VM is Destroyed
+                    // cleanup the HostUuid if the VM is Destroyed
+                    if (self.getHostUuid() != null) {
+                        self.setLastHostUuid(self.getHostUuid());
+                    }
+                    self.setHostUuid(null);
                 }
 
                 self.setState(state);
@@ -2193,11 +2201,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }.execute();
                     callVmJustAfterDeleteFromDbExtensionPoint(inv, accountUuid);
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.Delay) {
-                    changeVmStateInDb(VmInstanceStateEvent.destroyed, ()-> self.setHostUuid(null));
+                    changeVmStateInDb(VmInstanceStateEvent.destroyed);
                 } else if (deletionPolicy == VmInstanceDeletionPolicy.Never) {
                     logger.warn(String.format("the vm[uuid:%s] is deleted, but by it's deletion policy[Never]," +
                             " the root volume is not deleted on the primary storage", self.getUuid()));
-                    changeVmStateInDb(VmInstanceStateEvent.destroyed, ()-> self.setHostUuid(null));
+                    changeVmStateInDb(VmInstanceStateEvent.destroyed);
                 }
 
                 completion.success();
