@@ -1,8 +1,12 @@
 package org.zstack.storage.volume;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.resourceconfig.BindResourceConfig;
 
 /**
  */
@@ -24,4 +28,9 @@ public class VolumeGlobalConfig {
 
     @GlobalConfigValidation(numberGreaterThan = 600)
     public static GlobalConfig REFRESH_VOLUME_SIZE_INTERVAL = new GlobalConfig(CATEGORY, "refreshVolumeSizeInterval");
+
+    @GlobalConfigValidation(validValues = {"0", "512", "4096"})
+    @GlobalConfigDef(defaultValue = "0", type = Integer.class, description = "physical block size of the underlying storage")
+    @BindResourceConfig({VolumeVO.class, PrimaryStorageVO.class})
+    public static GlobalConfig VOLUME_PHYSICAL_BLOCK_SIZE = new GlobalConfig(CATEGORY, "physical.block.size");
 }
