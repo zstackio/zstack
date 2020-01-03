@@ -32,6 +32,7 @@ public class VolumeTO {
     private String cacheMode = "none";
     private String wwn;
     private int bootOrder;
+    private int physicalBlockSize;
 
     public VolumeTO() {
     }
@@ -47,6 +48,7 @@ public class VolumeTO {
         this.wwn = other.wwn;
         this.shareable = other.shareable;
         this.bootOrder = other.bootOrder;
+        this.physicalBlockSize = other.physicalBlockSize;
     }
 
     public static List<VolumeTO> valueOf(List<VolumeInventory> vols, KVMHostInventory host) {
@@ -180,5 +182,13 @@ public class VolumeTO {
 
     public void setBootOrder(int bootOrder) {
         this.bootOrder = bootOrder;
+    }
+
+    public int getPhysicalBlockSize() {
+        return physicalBlockSize;
+    }
+
+    public void setPhysicalBlockSize(int physicalBlockSize) {
+        this.physicalBlockSize = physicalBlockSize;
     }
 }
