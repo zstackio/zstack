@@ -1,12 +1,16 @@
 package org.zstack.test.integration.longjob
 
 import com.google.gson.Gson
+import org.springframework.http.HttpEntity
+import org.zstack.core.agent.AgentConstant
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.SQL
 import org.zstack.header.longjob.LongJobVO
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.APIMigrateVmMsg
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
@@ -15,6 +19,7 @@ import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * Created by camile on 18-3-7.
@@ -29,6 +34,7 @@ class LiveMigrateVmJobCase extends SubCase {
 
     @Override
     void clean() {
+        SQL.New(LongJobVO.class).delete()
         env.delete()
     }
 
@@ -170,6 +176,7 @@ class LiveMigrateVmJobCase extends SubCase {
         env.create {
             testLiveMigrateVmLongJobFailure()
             testLiveMigrateVmLongJobSuccess()
+            testLiveMigrateVmLongJobCancel()
         }
     }
 
@@ -220,5 +227,57 @@ class LiveMigrateVmJobCase extends SubCase {
             assert job.state.toString() == LongJobState.Succeeded.toString()
         }
 
+    }
+
+    void testLiveMigrateVmLongJobCancel() {
+        APIMigrateVmMsg msg = new APIMigrateVmMsg()
+        msg.hostUuid = host1.uuid
+        msg.vmInstanceUuid = vm1.uuid
+        def canceled = false
+        def migrating = false
+
+        env.simulator(KVMConstant.KVM_MIGRATE_VM_PATH) { HttpEntity<String> e ->
+            migrating = true
+            while (!canceled) {
+                sleep(500)
+            }
+            def rsp = new KVMAgentCommands.MigrateVmResponse()
+            rsp.setError("canceled")
+            return rsp
+        }
+
+        env.simulator(AgentConstant.CANCEL_JOB) {
+            canceled = true
+            return new KVMAgentCommands.CancelRsp()
+        }
+
+        env.simulator(KVMConstant.KVM_VM_CHECK_STATE) {
+            KVMAgentCommands.CheckVmStateRsp rsp = new KVMAgentCommands.CheckVmStateRsp()
+            rsp.states = [:]
+            rsp.states.put(vm1.uuid, KVMConstant.KvmVmState.Running.toString())
+            return rsp
+        }
+
+        LongJobInventory jobInv = submitLongJob {
+            jobName = msg.getClass().getSimpleName()
+            jobData = gson.toJson(msg)
+        } as LongJobInventory
+
+        assert jobInv.jobName == msg.getClass().getSimpleName()
+        assert jobInv.state == LongJobState.Running
+
+        while (!migrating) {
+            sleep(500)
+        }
+        cancelLongJob {
+            uuid = jobInv.uuid
+        }
+
+        retryInSecs() {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state.toString() == LongJobState.Canceled.toString()
+        }
+        assert host2.uuid == dbf.findByUuid(vm1.uuid, VmInstanceVO.class).hostUuid
+        assert canceled
     }
 }

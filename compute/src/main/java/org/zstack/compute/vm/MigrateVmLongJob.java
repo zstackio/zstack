@@ -36,7 +36,7 @@ public class MigrateVmLongJob implements LongJob {
     @Override
     public void start(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
         MigrateVmInnerMsg msg = JSONObjectUtil.toObject(job.getJobData(), MigrateVmInnerMsg.class);
-        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, msg.getVmUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, msg.getVmInstanceUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
@@ -57,8 +57,21 @@ public class MigrateVmLongJob implements LongJob {
 
     @Override
     public void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {
-        // TODO
-        completion.fail(Platform.operr("not supported"));
+        MigrateVmInnerMsg msg = JSONObjectUtil.toObject(job.getJobData(), MigrateVmInnerMsg.class);
+        CancelMigrateVmMsg cmsg = new CancelMigrateVmMsg();
+        cmsg.setCancellationApiId(job.getApiId());
+        cmsg.setUuid(msg.getVmInstanceUuid());
+        bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, cmsg.getVmInstanceUuid());
+        bus.send(cmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    completion.success(false);
+                } else {
+                    completion.fail(reply.getError());
+                }
+            }
+        });
     }
 
     @Override
