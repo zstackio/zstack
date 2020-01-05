@@ -5,7 +5,9 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.NoJsonSchema;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -53,6 +55,8 @@ public enum LongJobState {
                 new Transaction(LongJobStateEvent.succeed, LongJobState.Succeeded)
         );
     }
+
+    public static List<LongJobState> finalStates = Arrays.asList(Succeeded, Failed, Canceled);
 
     private static class Transaction {
         LongJobStateEvent event;

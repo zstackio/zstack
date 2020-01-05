@@ -19,7 +19,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.PUT,
         responseClass = APIUpdateLongJobEvent.class
 )
-public class APIUpdateLongJobMsg extends APIMessage {
+public class APIUpdateLongJobMsg extends APIMessage implements LongJobMessage {
     @APIParam(resourceType = LongJobVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
 
@@ -59,6 +59,11 @@ public class APIUpdateLongJobMsg extends APIMessage {
         msg.setName("new-name");
         msg.setDescription("new-description");
         return msg;
+    }
+
+    @Override
+    public String getLongJobUuid() {
+        return uuid;
     }
 }
 

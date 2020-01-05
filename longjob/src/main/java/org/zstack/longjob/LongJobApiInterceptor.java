@@ -13,6 +13,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.longjob.*;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
 import org.zstack.identity.AccountManager;
 import org.zstack.portal.apimediator.ApiMediator;
 import org.zstack.tag.TagManager;
@@ -52,6 +53,10 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
+        if (msg instanceof LongJobMessage) {
+            routeMsg((LongJobMessage) msg);
+        }
+
         if (msg instanceof APISubmitLongJobMsg) {
             validate((APISubmitLongJobMsg) msg);
         } else if (msg instanceof APICancelLongJobMsg) {
@@ -65,6 +70,18 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
         }
 
         return msg;
+    }
+
+    private void routeMsg(LongJobMessage msg) {
+        String mnId = Q.New(LongJobVO.class).select(LongJobVO_.managementNodeUuid)
+                .eq(LongJobVO_.uuid, msg.getLongJobUuid())
+                .findValue();
+
+        if (mnId == null) {
+            bus.makeTargetServiceIdByResourceUuid((Message) msg, LongJobConstants.SERVICE_ID, msg.getLongJobUuid());
+        } else {
+            bus.makeServiceIdByManagementNodeId((Message) msg, LongJobConstants.SERVICE_ID, mnId);
+        }
     }
 
     private void validate(APISubmitLongJobMsg msg) {
@@ -90,6 +107,10 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
         }
 
         msg.setJobData(JSONObjectUtil.toJsonString(jobMsg));    // msg may be changed during validation
+
+        if (msg.getResourceUuid() != null) {
+            bus.makeTargetServiceIdByResourceUuid(msg, LongJobConstants.SERVICE_ID, msg.getResourceUuid());
+        }
     }
 
     private LongJobVO createSuccessLongJob(APISubmitLongJobMsg msg) {

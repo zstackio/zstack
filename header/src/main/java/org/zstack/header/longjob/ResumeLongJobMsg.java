@@ -5,7 +5,7 @@ import org.zstack.header.message.NeedReplyMessage;
 /**
  * Created by MaJin on 2020/4/23.
  */
-public class ResumeLongJobMsg extends NeedReplyMessage {
+public class ResumeLongJobMsg extends NeedReplyMessage implements LongJobMessage {
     private String uuid;
 
     public String getUuid() {
@@ -14,5 +14,10 @@ public class ResumeLongJobMsg extends NeedReplyMessage {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public String getLongJobUuid() {
+        return uuid;
     }
 }
