@@ -429,6 +429,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((CreateVmCdRomMsg) msg);
         } else if (msg instanceof RestoreVmInstanceMsg) {
             handle((RestoreVmInstanceMsg) msg);
+        } else if (msg instanceof CancelMigrateVmMsg) {
+            handle((CancelMigrateVmMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -5064,6 +5066,23 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
             }
         }).start();
+    }
+
+    protected void handle(CancelMigrateVmMsg msg) {
+        CancelMigrateVmReply reply = new CancelMigrateVmReply();
+
+        CancelHostTasksMsg cmsg = new CancelHostTasksMsg();
+        cmsg.setCancellationApiId(msg.getCancellationApiId());
+        bus.makeLocalServiceId(cmsg, HostConstant.SERVICE_ID);
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                }
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     protected void handle(final APIMigrateVmMsg msg) {

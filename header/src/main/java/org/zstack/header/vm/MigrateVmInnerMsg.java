@@ -23,14 +23,6 @@ public class MigrateVmInnerMsg extends NeedReplyMessage implements VmInstanceMes
         return vmInstanceUuid;
     }
 
-    public String getVmUuid() {
-        return vmInstanceUuid;
-    }
-
-    public void setVmUuid(String vmInstanceUuid) {
-        this.vmInstanceUuid = vmInstanceUuid;
-    }
-
     @Override
     public String getHostUuid() {
         return hostUuid;
