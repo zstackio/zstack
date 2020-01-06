@@ -1671,7 +1671,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
         Map<String, Object> data = new HashMap<>();
         data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "refreshCertificate");
-        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
         haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
             @Override
@@ -1693,7 +1693,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
         Map<String, Object> data = new HashMap<>();
         data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "deleteCertificate");
-        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
         haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
             @Override
@@ -1719,7 +1719,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     protected void refreshLbToVirtualRouterHa(VirtualRouterVmInventory vrInv, LoadBalancerStruct struct, Completion completion) {
         Map<String, Object> data = new HashMap<>();
         data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "refreshLb");
-        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
         haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
             @Override
@@ -1741,7 +1741,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
         Map<String, Object> data = new HashMap<>();
         data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "destroyLb");
-        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
         haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
             @Override

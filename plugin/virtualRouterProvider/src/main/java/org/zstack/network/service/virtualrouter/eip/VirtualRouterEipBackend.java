@@ -192,7 +192,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
         Map<String, Object> data = new HashMap<>();
         data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "applyEip");
-        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
         haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
             @Override
@@ -215,7 +215,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
         VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
         Map<String, Object> data = new HashMap<>();
         data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "revokeEip");
-        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
         haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
             @Override
