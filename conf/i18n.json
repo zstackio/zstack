@@ -23162,6 +23162,30 @@
     "fileName": "src/main/java/org/zstack/zwatch/api/ZWatchApiInterceptor.java"
   },
   {
+    "raw": "Normal",
+    "en_US": "Info",
+    "zh_CN": "提示",
+    "arguments": [],
+    "line": 19,
+    "fileName": "src/main/java/org/zstack/zwatch/datatype/EmergencyLevel.java"
+  },
+  {
+    "raw": "Important",
+    "en_US": "Major",
+    "zh_CN": "严重",
+    "arguments": [],
+    "line": 17,
+    "fileName": "src/main/java/org/zstack/zwatch/datatype/EmergencyLevel.java"
+  },
+  {
+    "raw": "Emergent",
+    "en_US": "Emergent",
+    "zh_CN": "紧急",
+    "arguments": [],
+    "line": 15,
+    "fileName": "src/main/java/org/zstack/zwatch/datatype/EmergencyLevel.java"
+  },
+  {
     "raw": "invalid function: %s, %s",
     "en_US": "invalid function: {0}, {1}",
     "zh_CN": "无效的方法: {0}, {1}",

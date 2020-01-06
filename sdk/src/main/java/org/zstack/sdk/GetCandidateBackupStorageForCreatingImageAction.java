@@ -12,7 +12,7 @@ public class GetCandidateBackupStorageForCreatingImageAction extends AbstractAct
 
     public static class Result {
         public ErrorCode error;
-        public GetCandidateBackupStorageForCreatingImageResult value;
+        public org.zstack.sdk.GetCandidateBackupStorageForCreatingImageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,10 @@ public class GetCandidateBackupStorageForCreatingImageAction extends AbstractAct
     }
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String volumeUuid;
+    public java.lang.String volumeUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String volumeSnapshotUuid;
+    public java.lang.String volumeSnapshotUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +57,8 @@ public class GetCandidateBackupStorageForCreatingImageAction extends AbstractAct
             return ret;
         }
         
-        GetCandidateBackupStorageForCreatingImageResult value = res.getResult(GetCandidateBackupStorageForCreatingImageResult.class);
-        ret.value = value == null ? new GetCandidateBackupStorageForCreatingImageResult() : value;
+        org.zstack.sdk.GetCandidateBackupStorageForCreatingImageResult value = res.getResult(org.zstack.sdk.GetCandidateBackupStorageForCreatingImageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCandidateBackupStorageForCreatingImageResult() : value; 
 
         return ret;
     }

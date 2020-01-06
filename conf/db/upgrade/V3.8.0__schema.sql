@@ -58,3 +58,14 @@ CREATE TABLE IF NOT EXISTS `zstack`.`DRSVmMigrationActivityVO` (
     KEY `adviceUuid` (`adviceUuid`),
     CONSTRAINT `fkDRSVmMigrationActivityVOClusterDRSVO` FOREIGN KEY (`drsUuid`) REFERENCES `ClusterDRSVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELETE FROM AlarmVO WHERE uuid="e47db726090c47de84521bebc640cfc2";
+DELETE FROM ResourceVO WHERE uuid="e47db726090c47de84521bebc640cfc2";
+
+ALTER TABLE `zstack`.`AlarmVO` ADD COLUMN `emergencyLevel` varchar(64) DEFAULT NULL;
+ALTER TABLE `zstack`.`EventSubscriptionVO` ADD COLUMN `emergencyLevel` varchar(64) DEFAULT NULL;
+UPDATE `zstack`.`AlarmVO` SET emergencyLevel = "Emergent" where uuid in ("065f9609dce141bb952c80f729f58af4","44e6f054a59a451fb1b535accff64fc2","5d3bb9d271a349b283893317f531f723","65e8f1a4892231b692cc7a881581f3da","66dfdee6fd314aac96ca3779774ad977","712c3dec6aa94ed2b3bcd32192c22f69","b632652cc16044cdb6b4f516ed93a118","bf7359930ee444d286fb88d2e51acf51","ded02f9786444c6296e9bc3efb8eb484","e47db726090c47de84521bebc640cfc2");
+UPDATE `zstack`.`AlarmVO` SET emergencyLevel = "Important" where uuid not in ("065f9609dce141bb952c80f729f58af4","44e6f054a59a451fb1b535accff64fc2","5d3bb9d271a349b283893317f531f723","65e8f1a4892231b692cc7a881581f3da","66dfdee6fd314aac96ca3779774ad977","712c3dec6aa94ed2b3bcd32192c22f69","b632652cc16044cdb6b4f516ed93a118","bf7359930ee444d286fb88d2e51acf51","ded02f9786444c6296e9bc3efb8eb484","e47db726090c47de84521bebc640cfc2");
+UPDATE `zstack`.`EventSubscriptionVO` SET emergencyLevel = "Emergent" where uuid in ("14a991d4d7d54a66b14e398ffc510bd6","4a3cb114b10d41e19545ab693222c134","5e75230bd2ea4f47abf6ff92fa816a20","8eca1096feb34419913087d2b281ecec","98f9c802604e4852bd84716f66cf4f73","d59397479d2548d7abfe4ad31a575390");
+UPDATE `zstack`.`EventSubscriptionVO` SET emergencyLevel = "Normal" where uuid in ("10d9c4e69fc2456bb8c6c6d456bb5038","1a7a3eb433904df89f5c42a1fa4e0716","39d2b6689efa4e4a96c239716cb6f3ea","55365763fed244c39b4642bef6c5daf9","f56795b8c34b452f84bcf25cb89bded2");
+UPDATE `zstack`.`EventSubscriptionVO` SET emergencyLevel = "Important" where uuid not in ("10d9c4e69fc2456bb8c6c6d456bb5038","14a991d4d7d54a66b14e398ffc510bd6","1a7a3eb433904df89f5c42a1fa4e0716","39d2b6689efa4e4a96c239716cb6f3ea","4a3cb114b10d41e19545ab693222c134","55365763fed244c39b4642bef6c5daf9","5e75230bd2ea4f47abf6ff92fa816a20","8eca1096feb34419913087d2b281ecec","98f9c802604e4852bd84716f66cf4f73","d59397479d2548d7abfe4ad31a575390","f56795b8c34b452f84bcf25cb89bded2");

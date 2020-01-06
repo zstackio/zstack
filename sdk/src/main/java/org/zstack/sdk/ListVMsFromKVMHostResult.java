@@ -32,6 +32,7 @@ public class ListVMsFromKVMHostResult {
         this.v2vCaps = v2vCaps;
     }
     public java.util.Map getV2vCaps() {
-        return v2vCaps;
+        return this.v2vCaps;
     }
+
 }

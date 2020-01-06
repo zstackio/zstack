@@ -84,14 +84,6 @@ public class AlarmData  {
         return this.TAG_ACCOUNT_UUID;
     }
 
-    public java.lang.String TAG_READ_STATUS;
-    public void setTAG_READ_STATUS(java.lang.String TAG_READ_STATUS) {
-        this.TAG_READ_STATUS = TAG_READ_STATUS;
-    }
-    public java.lang.String getTAG_READ_STATUS() {
-        return this.TAG_READ_STATUS;
-    }
-
     public java.lang.String FIELD_CONTEXT;
     public void setFIELD_CONTEXT(java.lang.String FIELD_CONTEXT) {
         this.FIELD_CONTEXT = FIELD_CONTEXT;
@@ -146,6 +138,22 @@ public class AlarmData  {
     }
     public java.lang.String getFIELD_RESOURCE_UUID() {
         return this.FIELD_RESOURCE_UUID;
+    }
+
+    public java.lang.String FIELD_EMERGENCY_LEVEL;
+    public void setFIELD_EMERGENCY_LEVEL(java.lang.String FIELD_EMERGENCY_LEVEL) {
+        this.FIELD_EMERGENCY_LEVEL = FIELD_EMERGENCY_LEVEL;
+    }
+    public java.lang.String getFIELD_EMERGENCY_LEVEL() {
+        return this.FIELD_EMERGENCY_LEVEL;
+    }
+
+    public java.lang.String FIELD_READ_STATUS;
+    public void setFIELD_READ_STATUS(java.lang.String FIELD_READ_STATUS) {
+        this.FIELD_READ_STATUS = FIELD_READ_STATUS;
+    }
+    public java.lang.String getFIELD_READ_STATUS() {
+        return this.FIELD_READ_STATUS;
     }
 
     public java.lang.String alarmName;
@@ -218,6 +226,14 @@ public class AlarmData  {
     }
     public java.lang.String getContext() {
         return this.context;
+    }
+
+    public java.lang.String emergencyLevel;
+    public void setEmergencyLevel(java.lang.String emergencyLevel) {
+        this.emergencyLevel = emergencyLevel;
+    }
+    public java.lang.String getEmergencyLevel() {
+        return this.emergencyLevel;
     }
 
     public long time;
