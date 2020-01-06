@@ -3,14 +3,10 @@ package org.zstack.network.service.virtualrouter.ha;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.network.l3.IpRangeAO;
-import org.zstack.header.network.l3.IpRangeVO;
-import org.zstack.header.network.l3.IpRangeVO_;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
 import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
@@ -20,7 +16,6 @@ import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -68,7 +63,8 @@ public class VirtualRouterHaBackend {
     }
 
     public void submitVirutalRouterHaTask(VirtualRouterHaCallbackInterface callback, Map<String, Object> data, Completion completion) {
-        VirtualRouterVmInventory vrInv = (VirtualRouterVmInventory)data.get(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString());
+        String vrUuid = (String)data.get(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString());
+        VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
         if (!vrInv.isHaEnabled()) {
             completion.success();
             return;
@@ -80,7 +76,7 @@ public class VirtualRouterHaBackend {
             return;
         }
 
-        String peerUuid = exps.get(0).getPeerUuid(vrInv.getUuid());
+        String peerUuid = exps.get(0).getPeerUuid(vrUuid);
         if (peerUuid == null) {
             completion.success();
             return;

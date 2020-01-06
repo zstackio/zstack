@@ -503,7 +503,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
     protected void revokeRuleOnHaVirtualRouter(final PortForwardingStruct struct, VirtualRouterVmInventory vrInv, Completion completion)  {
         Map<String, Object> data = new HashMap<>();
         data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "revokePF");
-        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
         haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
             @Override
@@ -525,7 +525,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
     protected void applyRuleOnHaVirtualRouter(final PortForwardingStruct struct, VirtualRouterVmInventory vrInv, Completion completion)  {
         Map<String, Object> data = new HashMap<>();
         data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "applyPF");
-        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
         haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
             @Override

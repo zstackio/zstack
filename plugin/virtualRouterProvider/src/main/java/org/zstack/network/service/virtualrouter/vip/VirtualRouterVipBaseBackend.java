@@ -64,7 +64,7 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
     protected void releaseVipOnHaHaRouter(VirtualRouterVmInventory vrInv, Completion completion) {
         Map<String, Object> data = new HashMap<>();
         data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "releaseVip");
-        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), asList(getSelfInventory()));
         haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
             @Override
@@ -86,7 +86,7 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
     protected void acquireVipOnHaBackend(VirtualRouterVmInventory vrInv, Completion completion) {
         Map<String, Object> data = new HashMap<>();
         data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "applyVip");
-        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouter.toString(), vrInv);
+        data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), asList(getSelfInventory()));
         haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
             @Override

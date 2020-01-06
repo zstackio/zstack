@@ -7,7 +7,7 @@ import java.util.Map;
 public interface VirtualRouterHaCallbackInterface {
     enum Params{
         TaskName,
-        OriginRouter,
+        OriginRouterUuid,
         PeerRouterUuid,
         Struct,
         Struct1,
