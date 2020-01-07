@@ -1310,12 +1310,14 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 if (success.get()) {
                     final ImageInventory einv = ImageInventory.valueOf(vo);
 
-                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), new ForEachFunction<AddImageExtensionPoint>() {
-                        @Override
-                        public void run(AddImageExtensionPoint ext) {
-                            ext.afterAddImage(einv);
-                        }
-                    });
+                    if (vo.getStatus() == ImageStatus.Ready) {
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class), new ForEachFunction<AddImageExtensionPoint>() {
+                            @Override
+                            public void run(AddImageExtensionPoint ext) {
+                                ext.afterAddImage(einv);
+                            }
+                        });
+                    }
 
                     event.inv = einv;
                 } else {
