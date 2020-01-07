@@ -70,8 +70,10 @@ class UpgradeOldVersionTrashCase extends SubCase {
     }
 
     void testDatabase() {
-        sleep 200
-        assert count == Q.New(JsonLabelVO.class).count()
+        sleep 20
+        retryInSecs {
+            assert count == Q.New(JsonLabelVO.class).count()
+        }
         List<InstallPathRecycleVO> vos = Q.New(InstallPathRecycleVO.class).list()
         assert vos.size() == 2
         vos.each {
