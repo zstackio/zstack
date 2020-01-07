@@ -60,7 +60,6 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     private List<Class<? extends Message>> skipVmTracerMessages = new ArrayList<>();
     private List<Class> skipVmTracerReplies = new ArrayList<>();
     private Map<String, Integer> vmInShutdownMap = new ConcurrentHashMap<>();
-    private static Integer vmInShutdownMaxnum = 10;
 
     {
         getReflections().getTypesAnnotatedWith(SkipVmTracer.class).forEach(clz -> {
@@ -167,14 +166,12 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         });
     }
 
-    private void checkVmInShutdown(List<String> vmInShutdowns, Map<String, VmInstanceState> states) {
-        if (vmInShutdowns == null) {
-            vmInShutdowns = new ArrayList<>();
-        }
-
-        if ((vmInShutdowns == null || vmInShutdowns.isEmpty()) && vmInShutdownMap.isEmpty()) {
+    private void checkVmInShutdown(final List<String> vmInShutdowns, final Map<String, VmInstanceState> states) {
+        if (vmInShutdowns.isEmpty() && vmInShutdownMap.isEmpty()) {
             return;
         }
+
+        final int vmInShutdownMaxnum = 10;
         for (String vmUuid : states.keySet()) {
             if (!vmInShutdowns.contains(vmUuid)) {
                 vmInShutdownMap.remove(vmUuid);
