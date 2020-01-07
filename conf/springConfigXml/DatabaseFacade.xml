@@ -69,6 +69,7 @@
             <props>
                 <prop key="hibernate.dialect">org.hibernate.dialect.MySQLInnoDBDialect</prop>
                 <prop key="hibernate.temp.use_jdbc_metadata_defaults">false</prop>
+                <prop key="hibernate.connection.show_sql">false</prop>
             </props>
         </property>
     </bean>
