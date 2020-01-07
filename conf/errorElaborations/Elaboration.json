@@ -89,6 +89,14 @@
   },
   {
     "category": "BS",
+    "code": "1016",
+    "method": "regex",
+    "regex": ".*Quota exceeded.*",
+    "message_cn": "超出镜像仓库的容量限制。",
+    "message_en": "Out of imagestore capacity limit."
+  },
+  {
+    "category": "BS",
     "code": "1006",
     "method": "regex",
     "regex": ".*, because:can not find lv .* after create, lvcreate return: .*, , WARNING: Not using lvmetad because config setting use_lvmetad=0.*",
@@ -872,20 +880,20 @@
     "message_en": "quota exceeding.The resource owner(or target resource owner) account[uuid:%1$s ] exceeds a quota[name: %2$s , value: %3$s]. Please contact the administrator."
   },
   {
-    "category": "QUOTA",
-    "code": "1001",
-    "method": "regex",
-    "regex": "quota exceeding. The account\\[uuid: .*] exceeds a quota\\[name: .*, value: .*], Current used:.*, Request:.*. Please contact the administrator.",
-    "message_cn": "帐户[%1$s]的配额超出限制[名称: %2$s, 配额: $3$s]",
-    "message_en": "The account[uuid:%1$s]'s quota exceeds the limit, name: %2$s, value:%3$s."
-  },
-  {
     "category": "SHAREDBLOCK",
     "code": "1000",
     "method": "regex",
     "regex": "Cannot shrink .* volume\\[uuid:.*]'s size",
     "message_cn": "不能缩小卷[uuid:%2$s]的大小",
     "message_en": "Cannot shrink volume[uuid:%2$s]'s size"
+  },
+  {
+    "category": "QUOTA",
+    "code": "1001",
+    "method": "regex",
+    "regex": "quota exceeding. The account\\[uuid: .*] exceeds a quota\\[name: .*, value: .*], Current used:.*, Request:.*. Please contact the administrator.",
+    "message_cn": "帐户[%1$s]的配额超出限制[名称: %2$s, 配额: $3$s]",
+    "message_en": "The account[uuid:%1$s]'s quota exceeds the limit, name: %2$s, value:%3$s."
   },
   {
     "category": "SNS",
