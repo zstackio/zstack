@@ -1775,7 +1775,7 @@ public class KVMAgentCommands {
         }
 
         public List<String> getVmInShutdowns() {
-            return vmInShutdowns;
+            return vmInShutdowns == null ? Collections.emptyList() : vmInShutdowns;
         }
 
         public void setVmInShutdowns(List<String> vmInShutdowns) {
