@@ -1,12 +1,11 @@
 package org.zstack.test.integration.kvm.hostallocator
 
-import org.zstack.core.thread.SyncTask
+
 import org.zstack.core.thread.ThreadFacadeImpl
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 class ConcurrentVmCreationCase extends SubCase {
@@ -38,30 +37,7 @@ class ConcurrentVmCreationCase extends SubCase {
         ThreadFacadeImpl thdf = bean(ThreadFacadeImpl.class)
         AtomicInteger counter = new AtomicInteger(10)
 
-        def task = new SyncTask<Void>() {
-            @Override
-            String getSyncSignature() {
-                return "sync-task-test"
-            }
-
-            @Override
-            int getSyncLevel() {
-                return 2
-            }
-
-            @Override
-            String getName() {
-                return "demo task"
-            }
-
-            @Override
-            Void call() throws Exception {
-                logger.info("task running")
-                TimeUnit.SECONDS.sleep(1)
-                counter.decrementAndGet()
-                return null
-            }
-        }
+        MySyncTask task = new MySyncTask(counter)
 
         1.upto(10) {
             thdf.syncSubmit(task)

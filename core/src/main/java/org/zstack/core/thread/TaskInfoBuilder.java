@@ -39,7 +39,7 @@ public class TaskInfoBuilder {
         info.setName(cf.getTask().getName());
         info.setClassName(cf.getTask().getClass().getSimpleName());
         info.setIndex(index);
-        Map<String, String> tc = cf.getTask().threadContext;
+        Map<String, String> tc = cf.getTask().getThreadContext();
         if (tc != null) {
             info.setApiName(tc.get(Constants.THREAD_CONTEXT_TASK_NAME));
             info.setApiId(tc.get(Constants.THREAD_CONTEXT_API));
