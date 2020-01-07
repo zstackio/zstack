@@ -20812,7 +20812,7 @@
   {
     "raw": "You can attach at most %s USB 1.0 devices to one vm instance.",
     "en_US": "You can attach at most {0} USB 1.0 devices to one vm instance.",
-    "zh_CN": "可以绑定超过{0}个USB 1.0设备到一个虚拟机上",
+    "zh_CN": "最多可以绑定{0}个USB 1.0设备到一个虚拟机上",
     "arguments": [
       "UsbDeviceConstants.MAX_USB_1_DEVICE_PER_VM"
     ],
@@ -20822,7 +20822,7 @@
   {
     "raw": "You can attach at most %s USB 2.0 devices to one vm instance.",
     "en_US": "You can attach at most {0} USB 2.0 devices to one vm instance.",
-    "zh_CN": "可以绑定超过{0}个USB 2.0设备到一个虚拟机上",
+    "zh_CN": "最多可以绑定{0}个USB 2.0设备到一个虚拟机上",
     "arguments": [
       "UsbDeviceConstants.MAX_USB_2_DEVICE_PER_VM"
     ],
@@ -20832,7 +20832,7 @@
   {
     "raw": "You can attach at most %s USB 3.0 devices to one vm instance.",
     "en_US": "You can attach at most {0} USB 3.0 devices to one vm instance.",
-    "zh_CN": "可以绑定超过{0}个USB 3.0设备到一个虚拟机上",
+    "zh_CN": "最多可以绑定{0}个USB 3.0设备到一个虚拟机上",
     "arguments": [
       "UsbDeviceConstants.MAX_USB_3_DEVICE_PER_VM"
     ],
