@@ -13,6 +13,10 @@ public aspect HasThreadContextAspect {
         setThreadContext(obj);
     }
 
+    Map<String, String> around(HasThreadContext context) : target(context) && execution(Map<String, String> HasThreadContext+.getThreadContext()) {
+        return context.threadContext;
+    }
+
     public static void setThreadContext(HasThreadContext obj) {
         obj.threadContext = ThreadContext.getContext();
         obj.threadContextStack = ThreadContext.getImmutableStack().asList();

@@ -432,7 +432,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
 
                 private String getApiId(DispatchQueueImpl.ChainFuture cf) {
-                    Map<String, String> tc = cf.getTask().threadContext;
+                    Map<String, String> tc = cf.getTask().getThreadContext();
                     if (tc != null) {
                         return tc.get(Constants.THREAD_CONTEXT_API);
                     } else {
