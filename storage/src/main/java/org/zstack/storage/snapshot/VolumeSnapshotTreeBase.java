@@ -1443,6 +1443,7 @@ public class VolumeSnapshotTreeBase {
             String newVolumeInstallPath;
             Long trashId;
             long newSize;
+            long actualSize;
             VolumeVO volume = dbf.findByUuid(currentRoot.getVolumeUuid(), VolumeVO.class);
             VolumeInventory volumeInventory = VolumeInventory.valueOf(volume);
             String oldVolumeInstallPath = volume.getInstallPath();
@@ -1561,6 +1562,41 @@ public class VolumeSnapshotTreeBase {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "get-volume-old-install-path-size";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        if (!oldVolumeInstallPath.equals(newVolumeInstallPath)) {
+                            SyncVolumeSizeOnPrimaryStorageMsg smsg = new SyncVolumeSizeOnPrimaryStorageMsg();
+                            smsg.setPrimaryStorageUuid(volume.getPrimaryStorageUuid());
+                            smsg.setVolumeUuid(volume.getUuid());
+                            smsg.setInstallPath(oldVolumeInstallPath);
+                            bus.makeTargetServiceIdByResourceUuid(smsg, PrimaryStorageConstant.SERVICE_ID, volume.getPrimaryStorageUuid());
+                            bus.send(smsg, new CloudBusCallBack(completion) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        logger.warn(String.format("failed to get volume[%s] old install path[%s] actualSize, because:%s", volume.getUuid(), oldVolumeInstallPath, reply.getError()));
+                                    } else {
+                                        SyncVolumeSizeOnPrimaryStorageReply r = reply.castReply();
+                                        actualSize = r.getActualSize();
+                                        if (actualSize > 0) {
+                                            PrimaryStorageCapacityUpdater updater =
+                                                    new PrimaryStorageCapacityUpdater(volume.getPrimaryStorageUuid());
+                                            updater.reserve(actualSize);
+                                        }
+                                    }
+                                    trigger.next();
+                                }
+                            });
+                        } else {
+                            logger.info(String.format("skip get volume old install path size, because volume installPath has not changed"));
+                            trigger.next();
+                        }
+                    }
+                });
+
                 flow(new Flow() {
                     String __name__ = "move old install path to trash if no snapshots";
 
@@ -1576,6 +1612,7 @@ public class VolumeSnapshotTreeBase {
                     public void run(FlowTrigger trigger, Map data) {
                         if (!VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {
                             VolumeInventory vol = VolumeInventory.valueOf(volume);
+                            vol.setSize(actualSize);
                             vol.setInstallPath(oldVolumeInstallPath);
                             vol.setPrimaryStorageUuid(getSelfInventory().getPrimaryStorageUuid());
                             trashId = trash.createTrash(TrashType.RevertVolume, false, vol).getTrashId();
