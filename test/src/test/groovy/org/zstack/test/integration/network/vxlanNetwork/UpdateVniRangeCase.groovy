@@ -120,6 +120,24 @@ class UpdateVniRangeCase extends SubCase {
                 systemTags = ["l2NetworkUuid::${pool1.getUuid()}::clusterUuid::${cluster.inventory.uuid}::cidr::{127.0.0.1/8}".toString()]
             }
         }
+
+        deleteVniRange {
+            uuid = vniRange3.uuid
+        }
+
+        attachL2NetworkToCluster {
+            l2NetworkUuid = pool2.uuid
+            clusterUuid = cluster.inventory.uuid
+            systemTags = ["l2NetworkUuid::${pool1.getUuid()}::clusterUuid::${cluster.inventory.uuid}::cidr::{127.0.0.1/8}".toString()]
+        }
+        expect(AssertionError.class) {
+            createVniRange {
+                startVni = 100
+                endVni = 200
+                l2NetworkUuid = pool2.getUuid()
+                name = "RANGE-3"
+            }
+        }
     }
 
     @Override

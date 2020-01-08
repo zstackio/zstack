@@ -1,22 +1,27 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
-import org.apache.commons.lang.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.network.l2.vxlan.vtep.APICreateVxlanVtepMsg;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
 import org.zstack.network.l2.vxlan.vtep.VtepVO_;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 
@@ -83,15 +88,58 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
             ));
         }
 
-        List<VniRangeVO> exists = Q.New(VniRangeVO.class).eq(VniRangeVO_.l2NetworkUuid, msg.getL2NetworkUuid()).list();
-        for (VniRangeVO e : exists) {
-            if (checkOverlap(msg.getStartVni(), msg.getEndVni(), e.getStartVni(), e.getEndVni()) == true) {
-                throw new ApiMessageInterceptionException(Platform.err(SysErrors.INVALID_ARGUMENT_ERROR,
-                        String.format("this vni range[start:%s, end:%s] has overlapped with vni range [%s], which start vni is [%s], end vni is [%s]",
-                                msg.getStartVni(), msg.getEndVni(), e.getUuid(), e.getStartVni(), e.getEndVni())
-                ));
+        VxlanNetworkPoolVO pool = dbf.findByUuid(msg.getL2NetworkUuid(), VxlanNetworkPoolVO.class);
+
+        List<Map<String, String>> tokenList = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokensOfTagsByResourceUuid(msg.getL2NetworkUuid());
+        Map<String, String> attachedClusters = new HashMap<>();
+        for (Map<String, String> tokens : tokenList) {
+            attachedClusters.put(tokens.get(VxlanSystemTags.CLUSTER_UUID_TOKEN),
+                    tokens.get(VxlanSystemTags.VTEP_CIDR_TOKEN).split("[{}]")[1]);
+        }
+
+        if (pool.getAttachedClusterRefs() != null && !pool.getAttachedClusterRefs().isEmpty()) {
+            List<VxlanNetworkPoolVO> pools = SQL.New("select pool from VxlanNetworkPoolVO pool where uuid in " +
+                    "(select l2NetworkUuid from L2NetworkClusterRefVO ref where ref.clusterUuid in (:clusterUuids))", VxlanNetworkPoolVO.class)
+                    .param("clusterUuids", pool.getAttachedClusterRefs().stream().map(L2NetworkClusterRefVO::getClusterUuid)
+                            .collect(Collectors.toList())).list();
+
+            for (VxlanNetworkPoolVO p : pools) {
+
+                boolean sameCidr = false;
+                List<Map<String, String>> list = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokensOfTagsByResourceUuid(p.getUuid());
+                for (Map<String, String> tokens : list) {
+                    String clusterUuid = tokens.get(VxlanSystemTags.CLUSTER_UUID_TOKEN);
+                    String cidr = tokens.get(VxlanSystemTags.VTEP_CIDR_TOKEN).split("[{}]")[1];
+                    if (NetworkUtils.isSameCidr(cidr, attachedClusters.get(clusterUuid))) {
+                        sameCidr = true;
+                        break;
+                    }
+                }
+
+                if (!sameCidr) {
+                    continue;
+                }
+
+                for (VniRangeVO e : p.getAttachedVniRanges()) {
+                    if (checkOverlap(msg.getStartVni(), msg.getEndVni(), e.getStartVni(), e.getEndVni()) == true) {
+                        throw new ApiMessageInterceptionException(Platform.err(SysErrors.INVALID_ARGUMENT_ERROR,
+                                String.format("this vni range[start:%s, end:%s] has overlapped with vni range [%s], which start vni is [%s], end vni is [%s]",
+                                        msg.getStartVni(), msg.getEndVni(), e.getUuid(), e.getStartVni(), e.getEndVni())
+                        ));
+                    }
+                }
+            }
+        } else if (pool.getAttachedVniRanges() != null && !pool.getAttachedVniRanges().isEmpty()) {
+            for (VniRangeVO e : pool.getAttachedVniRanges()) {
+                if (checkOverlap(msg.getStartVni(), msg.getEndVni(), e.getStartVni(), e.getEndVni()) == true) {
+                    throw new ApiMessageInterceptionException(Platform.err(SysErrors.INVALID_ARGUMENT_ERROR,
+                            String.format("this vni range[start:%s, end:%s] has overlapped with vni range [%s], which start vni is [%s], end vni is [%s]",
+                                    msg.getStartVni(), msg.getEndVni(), e.getUuid(), e.getStartVni(), e.getEndVni())
+                    ));
+                }
             }
         }
+
     }
 
     private boolean checkOverlap(Integer checktart, Integer checkEnd, Integer existStart, Integer existEnd){
