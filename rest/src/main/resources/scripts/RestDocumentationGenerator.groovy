@@ -730,7 +730,7 @@ ${cols.join("\n")}
             paths.addAll(at.optionalPaths())
 
             List<String> examples = paths.collect {
-                def curl = ["curl -H \"Content-Type: application/json\""]
+                def curl = ["curl -H \"Content-Type: application/json;charset=UTF-8\""]
                 curl.add("-H \"Authorization: ${RestConstants.HEADER_OAUTH} b86c9016b4f24953a9edefb53ca0678c\"")
 
                 curl.add("-X ${at.method()}")
@@ -985,7 +985,7 @@ ${table.join("\n")}
             paths.addAll(at.optionalPaths())
 
             List<String> examples = paths.collect {
-                def curl = ["curl -H \"Content-Type: application/json\""]
+                def curl = ["curl -H \"Content-Type: application/json;charset=UTF-8\""]
                 if (!clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
                     curl.add("-H \"Authorization: ${RestConstants.HEADER_OAUTH} b86c9016b4f24953a9edefb53ca0678c\"")
                 }
