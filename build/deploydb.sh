@@ -4,10 +4,17 @@ set -e
 
 user="$1"
 password="$2"
+host="$3"
+port="$4"
 
 base=`dirname $0`
 
-mysql --user=${user} --password=${password} << EOF
+if [[ ! -n $host ]] || [[ ! -n $port ]];then
+  loginCmd="--user=$user --password=$password"
+else
+  loginCmd="--user=$user --password=$password --host=$host --port=$port"
+fi
+mysql ${loginCmd} << EOF
 set global log_bin_trust_function_creators=1;
 DROP DATABASE IF EXISTS zstack;
 CREATE DATABASE zstack;
@@ -28,7 +35,11 @@ eval "rm -f ${flyway_sql}/*"
 cp ${base}/../conf/db/V0.6__schema.sql ${flyway_sql}
 cp ${base}/../conf/db/upgrade/* ${flyway_sql}
 
-url="jdbc:mysql://localhost:3306/zstack"
+if [[ ! -n $host ]] || [[ ! -n $port ]];then
+  url="jdbc:mysql://localhost:3306/zstack"
+else
+  url="jdbc:mysql://$host:$port/zstack"
+fi
 ${flyway} -user=${user} -password=${password} -url=${url} clean
 ${flyway} -outOfOrder=true -user=${user} -password=${password} -url=${url} migrate
 
@@ -36,7 +47,11 @@ eval "rm -f ${flyway_sql}/*"
 
 cp ${base}/../conf/db/V0.6__schema_buildin_httpserver.sql ${flyway_sql}
 
-url="jdbc:mysql://localhost:3306/zstack_rest"
+if [[ ! -n $host ]] || [[ ! -n $port ]];then
+  url="jdbc:mysql://localhost:3306/zstack_rest"
+else
+  url="jdbc:mysql://$host:$port/zstack_rest"
+fi
 ${flyway} -user=${user} -password=${password} -url=${url} clean
 ${flyway} -outOfOrder=true -user=${user} -password=${password} -url=${url} migrate
 
