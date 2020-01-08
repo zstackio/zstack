@@ -17165,6 +17165,14 @@
     "fileName": "src/main/java/org/zstack/storage/fusionstor/primary/FusionstorPrimaryStorageFactory.java"
   },
   {
+    "raw": "No host available for block live migration",
+    "en_US": "No host available for block live migration",
+    "zh_CN": "",
+    "arguments": [],
+    "line": 256,
+    "fileName": "src/main/java/org/zstack/storage/migration/KvmStorageLiveMigrationFlowChain.java"
+  },
+  {
     "raw": "live block migration failed: %s",
     "en_US": "live block migration failed: {0}",
     "zh_CN": "",
