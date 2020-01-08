@@ -3,9 +3,18 @@ package org.zstack.test.integration.longjob
 import com.google.gson.Gson
 import org.springframework.http.HttpEntity
 import org.zstack.core.agent.AgentConstant
+import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
+import org.zstack.header.allocator.AllocateHostMsg
+import org.zstack.header.allocator.AllocateHostReply
+import org.zstack.header.allocator.HostCapacityVO
+import org.zstack.header.allocator.HostCapacityVO_
+import org.zstack.header.host.HostVO
+import org.zstack.header.host.HostVO_
 import org.zstack.header.longjob.LongJobVO
+import org.zstack.header.longjob.LongJobVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.APIMigrateVmMsg
 import org.zstack.header.vm.VmInstanceVO
@@ -31,6 +40,7 @@ class LiveMigrateVmJobCase extends SubCase {
     VmInstanceInventory vm1
     KVMHostInventory host1
     KVMHostInventory host2
+    InstanceOfferingInventory instance
 
     @Override
     void clean() {
@@ -174,9 +184,12 @@ class LiveMigrateVmJobCase extends SubCase {
     @Override
     void test() {
         env.create {
+            instance = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
             testLiveMigrateVmLongJobFailure()
             testLiveMigrateVmLongJobSuccess()
             testLiveMigrateVmLongJobCancel()
+            testLiveMigrateVmLongJobCancelFail()
+            testLiveMigrateVmLongJobCancelBeforeMigrate()
         }
     }
 
@@ -279,5 +292,123 @@ class LiveMigrateVmJobCase extends SubCase {
         }
         assert host2.uuid == dbf.findByUuid(vm1.uuid, VmInstanceVO.class).hostUuid
         assert canceled
+    }
+
+    void testLiveMigrateVmLongJobCancelFail() {
+        APIMigrateVmMsg msg = new APIMigrateVmMsg()
+        msg.hostUuid = host1.uuid
+        msg.vmInstanceUuid = vm1.uuid
+        def canceled = false
+        def migrating = false
+
+        LongJobInventory jobInv
+        env.simulator(KVMConstant.KVM_MIGRATE_VM_PATH) { HttpEntity<String> e ->
+            migrating = true
+            while (!canceled) {
+                sleep(500)
+            }
+            assert Q.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid).select(LongJobVO_.state)
+                    .findValue().toString() == LongJobState.Canceling.toString()
+            return new KVMAgentCommands.MigrateVmResponse()
+        }
+
+        env.simulator(AgentConstant.CANCEL_JOB) {
+            canceled = true
+            def rsp = new KVMAgentCommands.CancelRsp()
+            rsp.setError("on purpose")
+            return rsp
+        }
+
+        jobInv = submitLongJob {
+            jobName = msg.getClass().getSimpleName()
+            jobData = gson.toJson(msg)
+        } as LongJobInventory
+
+        assert jobInv.jobName == msg.getClass().getSimpleName()
+        assert jobInv.state == LongJobState.Running
+
+        while (!migrating) {
+            sleep(500)
+        }
+
+        expectError {
+            cancelLongJob {
+                uuid = jobInv.uuid
+            }
+        }
+
+        retryInSecs() {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state.toString() == LongJobState.Succeeded.toString()
+        }
+        assert host1.uuid == dbf.findByUuid(vm1.uuid, VmInstanceVO.class).hostUuid
+        assert canceled
+    }
+
+    void testLiveMigrateVmLongJobCancelBeforeMigrate() {
+        env.cleanSimulatorHandlers()
+
+        APIMigrateVmMsg msg = new APIMigrateVmMsg()
+        msg.hostUuid = host2.uuid
+        msg.vmInstanceUuid = vm1.uuid
+        def canceled = false
+        def migrating = false
+
+        env.simulator(KVMConstant.KVM_MIGRATE_VM_PATH) { HttpEntity<String> e ->
+            migrating = true
+            return new KVMAgentCommands.MigrateVmResponse()
+        }
+
+        env.message(AllocateHostMsg.class){ AllocateHostMsg amsg, CloudBus bus ->
+            while (!canceled) {
+                sleep(500)
+            }
+
+            long mem = Q.New(HostCapacityVO.class).eq(HostCapacityVO_.uuid, host2.uuid).select(HostCapacityVO_.availableMemory).findValue()
+            long cpu = Q.New(HostCapacityVO.class).eq(HostCapacityVO_.uuid, host2.uuid).select(HostCapacityVO_.availableCpu).findValue()
+            long afterAllocateMemInByte = mem - instance.memorySize
+            long afterAllocateCpuCount = cpu - instance.cpuNum
+
+            SQL.New(HostCapacityVO.class).eq(HostCapacityVO_.uuid,  host2.uuid)
+                    .set(HostCapacityVO_.availableMemory, afterAllocateMemInByte)
+                    .set(HostCapacityVO_.availableCpu, afterAllocateCpuCount)
+                    .update()
+
+            AllocateHostReply r = new AllocateHostReply()
+            r.setHost(org.zstack.header.host.HostInventory.valueOf(Q.New(HostVO.class).eq(HostVO_.uuid, host2.uuid).find() as HostVO))
+            bus.reply(amsg, r)
+        }
+
+        LongJobInventory jobInv = submitLongJob {
+            jobName = msg.getClass().getSimpleName()
+            jobData = gson.toJson(msg)
+        } as LongJobInventory
+
+        canceled = false
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            void run() {
+                expectError {
+                    cancelLongJob {
+                        uuid = jobInv.uuid
+                    }
+                }
+                canceled = true
+            }
+        })
+
+        thread.start()
+        thread.join()
+
+        assert canceled
+        assert jobInv.jobName == msg.getClass().getSimpleName()
+        assert jobInv.state == LongJobState.Running
+
+        retryInSecs() {
+            LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
+            assert job.state.toString() == LongJobState.Canceled.toString()
+        }
+        assert host1.uuid == dbf.findByUuid(vm1.uuid, VmInstanceVO.class).hostUuid
+        assert !migrating
     }
 }

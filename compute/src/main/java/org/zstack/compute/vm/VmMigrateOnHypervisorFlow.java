@@ -9,10 +9,12 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg;
 import org.zstack.header.vm.*;
+import org.zstack.longjob.LongJobUtils;
 
 import java.util.Map;
 
@@ -26,6 +28,13 @@ public class VmMigrateOnHypervisorFlow implements Flow {
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+
+        ErrorCode err = LongJobUtils.buildErrIfCanceled();
+        if (err != null) {
+            chain.fail(err);
+            return;
+        }
+
 
         boolean migrateFromDest = false;
         String strategy = null;
