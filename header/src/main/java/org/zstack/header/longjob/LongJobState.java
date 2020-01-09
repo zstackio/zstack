@@ -49,7 +49,7 @@ public enum LongJobState {
                 new Transaction(LongJobStateEvent.canceled, LongJobState.Canceled),
                 new Transaction(LongJobStateEvent.suspend, LongJobState.Canceling),
                 new Transaction(LongJobStateEvent.fail, LongJobState.Canceled),
-                new Transaction(LongJobStateEvent.succeed, LongJobState.Canceled)
+                new Transaction(LongJobStateEvent.succeed, LongJobState.Succeeded)
         );
     }
 
