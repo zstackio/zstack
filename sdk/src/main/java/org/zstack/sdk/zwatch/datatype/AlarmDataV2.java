@@ -2,7 +2,7 @@ package org.zstack.sdk.zwatch.datatype;
 
 
 
-public class AlarmData  {
+public class AlarmDataV2 {
 
     public java.lang.String alarmUuid;
     public void setAlarmUuid(java.lang.String alarmUuid) {
