@@ -263,7 +263,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 return;
             }
 
-            stop();
+            stop(true);
         }));
     }
 
@@ -913,14 +913,13 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         logger.debug(String.format("started heartbeat thread for management node[uuid:%s]", Platform.getManagementServerId()));
     }
 
-    @Override
     @Deferred
-    public synchronized boolean stop() {
+    public boolean stop(boolean skipExit) {
         Platform.IS_RUNNING = false;
 
         if (stopped) {
-	        /* avoid repeated call from JVM shutdown hook, if process is exited from a former stop() call
-	         */
+            /* avoid repeated call from JVM shutdown hook, if process is exited from a former stop() call
+             */
             return true;
         }
 
@@ -934,6 +933,10 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                         logger.info("exitJVMOnStop is set to true, exit the JVM");
                     }
                 }.run();
+
+                if (skipExit) {
+                    return;
+                }
 
                 System.exit(0);
             }
@@ -1012,6 +1015,11 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         logger.info("Management node: " + getId() + " exits successfully");
 
         return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return stop(false);
     }
 
     @AsyncThread
