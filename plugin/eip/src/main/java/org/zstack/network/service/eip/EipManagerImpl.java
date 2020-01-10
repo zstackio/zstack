@@ -26,7 +26,6 @@ import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.NetworkServiceProviderType;
-import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
@@ -855,6 +854,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                         mstruct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
                         mstruct.setServiceUuid(struct.getEip().getUuid());
                         mstruct.setPeerL3NetworkUuid(nic.getL3NetworkUuid());
+                        mstruct.setServiceProvider(providerType);
                         Vip vip = new Vip(struct.getVip().getUuid());
                         vip.setStruct(mstruct);
                         vip.stop(new Completion(trigger) {

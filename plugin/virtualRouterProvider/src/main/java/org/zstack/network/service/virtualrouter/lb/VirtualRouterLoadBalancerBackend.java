@@ -678,7 +678,9 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             return;
         }
         vipStruct.setPeerL3NetworkUuids(new ArrayList<>(guestL3NetworkUuids));
-
+        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
+                vipStruct.getPeerL3NetworkUuids().get(0), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
+        vipStruct.setServiceProvider(providerType.toString());
         Vip v = new Vip(struct.getLb().getVipUuid());
         v.setStruct(vipStruct);
         v.stop(completion);
@@ -940,10 +942,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
                             vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
                             vipStruct.setServiceUuid(struct.getLb().getUuid());
-                            NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vr.getGuestL3Networks().get(0),
-                                    LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
-                            vipStruct.setServiceProvider(providerType.toString());
                             vipStruct.setPeerL3NetworkUuids(new ArrayList<>(guestL3NetworkUuids));
+                            NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
+                                    vr.getGuestL3Networks().get(0), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
+                            vipStruct.setServiceProvider(providerType.toString());
                             Vip v = new Vip(vip.getUuid());
                             v.setStruct(vipStruct);
                             v.stop(new Completion(trigger) {
@@ -1397,7 +1399,9 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         }
 
                         vipStruct.setPeerL3NetworkUuids(new ArrayList<>(guestL3NetworkUuids));
-
+                        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
+                                vipStruct.getPeerL3NetworkUuids().get(0), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
+                        vipStruct.setServiceProvider(providerType.toString());
                         Vip v = new Vip(struct.getLb().getVipUuid());
                         v.setStruct(vipStruct);
                         v.stop(new Completion(trigger) {
