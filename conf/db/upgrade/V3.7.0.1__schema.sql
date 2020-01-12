@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ClusterDRSVO` (
     `name` varchar(256) NOT NULL,
     `clusterUuid` varchar(32) not null,
     `state`  varchar(255) not null,
+    `balancedState` varchar(255) not null,
     `automationLevel`  varchar(255) not null,
     `thresholds`  text not null,
     `thresholdDuration`  varchar(255) not null,
