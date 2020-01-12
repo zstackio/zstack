@@ -1,7 +1,6 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.DRSState;
-import org.zstack.sdk.DRSAutomationLevel;
+
 
 public class ClusterDRSInventory  {
 
@@ -13,19 +12,27 @@ public class ClusterDRSInventory  {
         return this.clusterUuid;
     }
 
-    public DRSState state;
-    public void setState(DRSState state) {
+    public java.lang.String state;
+    public void setState(java.lang.String state) {
         this.state = state;
     }
-    public DRSState getState() {
+    public java.lang.String getState() {
         return this.state;
     }
 
-    public DRSAutomationLevel automationLevel;
-    public void setAutomationLevel(DRSAutomationLevel automationLevel) {
+    public java.lang.String balancedState;
+    public void setBalancedState(java.lang.String balancedState) {
+        this.balancedState = balancedState;
+    }
+    public java.lang.String getBalancedState() {
+        return this.balancedState;
+    }
+
+    public java.lang.String automationLevel;
+    public void setAutomationLevel(java.lang.String automationLevel) {
         this.automationLevel = automationLevel;
     }
-    public DRSAutomationLevel getAutomationLevel() {
+    public java.lang.String getAutomationLevel() {
         return this.automationLevel;
     }
 
