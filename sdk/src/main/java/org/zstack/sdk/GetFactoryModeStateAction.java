@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetCandidateMiniHostsAction extends AbstractAction {
+public class GetFactoryModeStateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetCandidateMiniHostsResult value;
+        public org.zstack.sdk.GetFactoryModeStateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,12 +24,6 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
             return this;
         }
     }
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean local = false;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean configure = false;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -57,8 +51,8 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetCandidateMiniHostsResult value = res.getResult(org.zstack.sdk.GetCandidateMiniHostsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetCandidateMiniHostsResult() : value; 
+        org.zstack.sdk.GetFactoryModeStateResult value = res.getResult(org.zstack.sdk.GetFactoryModeStateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetFactoryModeStateResult() : value; 
 
         return ret;
     }
@@ -88,7 +82,7 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/mini-clusters/candidate-hosts";
+        info.path = "/management-nodes/factory-mode-state";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
