@@ -1532,7 +1532,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     /* this api is called from VirtualRouterSyncLbOnStartFlow which is specified to a individual router */
-    public void syncOnStart(VirtualRouterVmInventory vr, List<LoadBalancerStruct> structs, final Completion completion) {
+    public void syncOnStart(VirtualRouterVmInventory vr, boolean checkStatus, List<LoadBalancerStruct> structs, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName("lb-sync-on-Start");
         chain.then(new ShareFlow() {
@@ -1542,7 +1542,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     String __name__ = "lb-sync-certificate-on-start";
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        refreshCertificate(vr, false, structs, new Completion(trigger) {
+                        refreshCertificate(vr, checkStatus, structs, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -1583,7 +1583,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         msg.setCommand(cmd);
                         msg.setPath(REFRESH_LB_PATH);
                         msg.setVmInstanceUuid(vr.getUuid());
-                        msg.setCheckStatus(false);
+                        msg.setCheckStatus(checkStatus);
                         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
 
                         bus.send(msg, new CloudBusCallBack(trigger) {
@@ -1843,7 +1843,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             return;
         }
 
-        syncOnStart(vr, lbs, new Completion(completion) {
+        syncOnStart(vr, true, lbs, new Completion(completion) {
             @Override
             public void success() {
                 List<String> lbUuids = lbs.stream().map(s -> s.getLb().getUuid()).collect(Collectors.toList());
