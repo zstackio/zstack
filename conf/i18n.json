@@ -21405,10 +21405,11 @@
     "fileName": "src/main/java/org/zstack/vmware/VCenterApiInterceptor.java"
   },
   {
-    "raw": "vSwitch/dvSwitch not found: %s",
-    "en_US": "vSwitch/dvSwitch not found: {0}",
-    "zh_CN": "vSwitch/dvSwitch未找到: {0}",
+    "raw": "vSwitch/dvSwitch not found: %s, or vSwitch: %s on different ESX host doesn't has same portgroup",
+    "en_US": "vSwitch/dvSwitch not found: {0}, or vSwitch: {1} on different ESX host doesn't has same portgroup",
+    "zh_CN": "vSwitch/dvSwitch未找到: {0}, 或者vSwitch: {1}在不同的ESX Host上的portgroup配置不同",
     "arguments": [
+      "phyinf",
       "phyinf"
     ],
     "line": 139,
