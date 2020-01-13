@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class ExportImageFromBackupStorageAction extends AbstractAction {
 
@@ -30,6 +29,9 @@ public class ExportImageFromBackupStorageAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String imageUuid;
+
+    @Param(required = false, validValues = {"raw","qcow2"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String exportFormat;
 
     @Param(required = false)
     public java.util.List systemTags;
