@@ -356,7 +356,7 @@ public class VipBase {
                 if (s.getUseFor() != null && releaseServices) {
                     delServicesRef(s.getServiceUuid(),s.getUseFor());
                 }
-                if (s.isPeerL3NetworkUuid() && s.isServiceProvider()) {
+                if (s.isPeerL3NetworkUuid() && s.isServiceProvider() && !services.contains(NetworkServiceType.SNAT.toString())) {
                     s.getPeerL3NetworkUuids().forEach(peer -> deletePeerL3Network(peer));
                 }
             } catch (CloudRuntimeException e) {

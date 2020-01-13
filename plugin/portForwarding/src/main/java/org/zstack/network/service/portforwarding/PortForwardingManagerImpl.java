@@ -541,11 +541,18 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
 
-                        ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-                        struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
-                        struct.setServiceUuid(vo.getUuid());
+                        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+                        vipStruct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+                        vipStruct.setServiceUuid(vo.getUuid());
+                        if (struct.getGuestL3Network() != null) {
+                            final NetworkServiceProviderType providerType =
+                                    nwServiceMgr.getTypeOfNetworkServiceProviderForService(
+                                            struct.getGuestL3Network().getUuid(), NetworkServiceType.PortForwarding);
+                            vipStruct.setServiceProvider(providerType.toString());
+                            vipStruct.setPeerL3NetworkUuid(struct.getGuestL3Network().getUuid());
+                        }
                         Vip v = new Vip(inv.getVipUuid());
-                        v.setStruct(struct);
+                        v.setStruct(vipStruct);
                         v.release(new Completion(trigger){
                             @Override
                             public void success() {
@@ -793,6 +800,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                                 ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
                                 vipStruct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
                                 vipStruct.setServiceUuid(struct.getRule().getUuid());
+
                                 Vip v = new Vip(struct.getVip().getUuid());
                                 v.setStruct(vipStruct);
                                 v.release(new NopeCompletion());

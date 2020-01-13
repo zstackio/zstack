@@ -800,12 +800,39 @@ public class LoadBalancerBase {
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "release-vip";
+                    @Transactional(readOnly = true)
+                    private List<String> getGuestNetworkUuids() {
+                        if (self.getListeners().isEmpty()) {
+                            return new ArrayList<>();
+                        }
+
+                        return new SQLBatchWithReturn<List<String>>() {
+                            @Override
+                            protected List<String> scripts() {
+                                List<String> guestNetworkUuids = sql("select distinct ip.l3NetworkUuid" +
+                                        " from UsedIpVO ip, VmNicVO nic, LoadBalancerListenerVO listener," +
+                                        " LoadBalancerListenerVmNicRefVO nicRef where" +
+                                        " ip.vmNicUuid = nic.uuid and listener.uuid = nicRef.listenerUuid and nicRef.vmNicUuid = nic.uuid" +
+                                        " and listener.loadBalancerUuid = :lb")
+                                        .param("lb", self.getUuid()).list();
+                                return guestNetworkUuids;
+                            }
+                        }.execute();
+                    }
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                         struct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
                         struct.setServiceUuid(self.getUuid());
+                        if (self.getProviderType() != null) {
+                            /*release vip peer networks*/
+                            struct.setServiceProvider(self.getProviderType());
+                            List<String> guestNetworkUuids = getGuestNetworkUuids();
+                            if (!guestNetworkUuids.isEmpty()) {
+                                struct.setPeerL3NetworkUuids(guestNetworkUuids);
+                            }
+                        }
                         Vip v = new Vip(self.getVipUuid());
                         v.setStruct(struct);
                         v.release(new Completion(trigger) {
