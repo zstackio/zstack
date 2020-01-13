@@ -24,6 +24,7 @@ import org.zstack.storage.ceph.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
+import org.zstack.utils.ssh.Ssh;
 
 import java.util.List;
 import java.util.Map;
@@ -153,6 +154,28 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                         public void run(FlowTrigger trigger, Map data) {
                             checkTools();
                             checkHealth();
+                            trigger.next();
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "configure-iptables";
+
+                        @Autowired
+                        public void run(FlowTrigger trigger, Map data) {
+                            StringBuilder builder = new StringBuilder();
+                            builder.append(String.format("sudo iptables-save | grep '%s' | while read LINE; do echo $LINE | sed -e \"s/-A/-D/\" | xargs sudo iptables ; done",
+                                    Platform.getGlobalPropertyAnnotationName(CephGlobalProperty.class, "CEPH_PRIMARY_STORAGE_IPTABLES_RULES")));
+                            for (String rule : CephGlobalProperty.CEPH_PRIMARY_STORAGE_IPTABLES_RULES) {
+                                builder.append(String.format(";sudo iptables %s", rule));
+                            }
+
+                            new Ssh().shell(builder.toString())
+                                    .setUsername(self.getSshUsername())
+                                    .setPassword(self.getSshPassword())
+                                    .setHostname(self.getHostname())
+                                    .setPort(self.getSshPort()).runErrorByExceptionAndClose();
+
                             trigger.next();
                         }
                     });

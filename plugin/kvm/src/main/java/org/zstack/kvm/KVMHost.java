@@ -15,6 +15,7 @@ import org.zstack.compute.vm.IsoOperator;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmPriorityOperator;
 import org.zstack.compute.vm.VmSystemTags;
+import org.zstack.console.ConsoleGlobalProperty;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
@@ -2715,6 +2716,28 @@ public class KVMHost extends HostBase implements Host {
                 boolean deployed = false;
                 @Override
                 public void setup() {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "configure-iptables";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            StringBuilder builder = new StringBuilder();
+                            builder.append(String.format("sudo iptables-save | grep '%s' | while read LINE; do echo $LINE | sed -e \"s/-A/-D/\" | xargs sudo iptables ; done",
+                                    Platform.getGlobalPropertyAnnotationName(KVMGlobalProperty.class, "IPTABLES_RULES")));
+                            for (String rule : KVMGlobalProperty.IPTABLES_RULES) {
+                                builder.append(String.format(";sudo iptables %s", rule));
+                            }
+
+                            new Ssh().shell(builder.toString())
+                                    .setUsername(getSelf().getUsername())
+                                    .setPassword(getSelf().getPassword())
+                                    .setHostname(getSelf().getManagementIp())
+                                    .setPort(getSelf().getPort()).runErrorByExceptionAndClose();
+
+                            trigger.next();
+                        }
+                    });
+
                     flow(new NoRollbackFlow() {
                         String __name__ = "test-if-ssh-port-open";
 

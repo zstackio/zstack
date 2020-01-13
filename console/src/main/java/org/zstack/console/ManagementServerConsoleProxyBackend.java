@@ -139,6 +139,13 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
 
                 try {
                     ShellUtils.run("rm -rf /var/lib/zstack/consoleProxy/ && mkdir -p /var/lib/zstack/consoleProxy/");
+                    StringBuilder builder = new StringBuilder();
+                    builder.append(String.format("sudo iptables-save | grep '%s' | while read LINE; do echo $LINE | sed -e \"s/-A/-D/\" | xargs sudo iptables ; done",
+                            Platform.getGlobalPropertyAnnotationName(ConsoleGlobalProperty.class, "IPTABLES_RULES")));
+                    for (String rule : ConsoleGlobalProperty.IPTABLES_RULES) {
+                        builder.append(String.format(";sudo iptables %s", rule));
+                    }
+                    ShellUtils.run(builder.toString());
 
                     setupPublicKey();
                     File privKeyFile = PathUtil.findFileOnClassPath("ansible/rsaKeys/id_rsa");
