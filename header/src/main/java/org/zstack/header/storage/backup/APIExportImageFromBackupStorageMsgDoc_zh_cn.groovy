@@ -42,6 +42,16 @@ doc {
 					
 				}
 				column {
+					name "exportFormat"
+					enclosedIn "exportImageFromBackupStorage"
+					desc "导出镜像的保存格式"
+					location "body"
+					type "String"
+					optional true
+					since "3.9.0"
+
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

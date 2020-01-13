@@ -28,6 +28,9 @@ public class APIExportImageFromBackupStorageMsg extends APIMessage implements Ba
     @APIParam(resourceType = ImageVO.class)
     private String imageUuid;
 
+    @APIParam(validValues = {"raw", "qcow2"}, required = false)
+    private String exportFormat;
+
     @Override
     public String getBackupStorageUuid() {
         return backupStorageUuid;
@@ -44,7 +47,15 @@ public class APIExportImageFromBackupStorageMsg extends APIMessage implements Ba
     public void setImageUuid(String imageUuid) {
         this.imageUuid = imageUuid;
     }
- 
+
+    public String getExportFormat() {
+        return exportFormat;
+    }
+
+    public void setExportFormat(String exportFormat) {
+        this.exportFormat = exportFormat;
+    }
+
     public static APIExportImageFromBackupStorageMsg __example__() {
         APIExportImageFromBackupStorageMsg msg = new APIExportImageFromBackupStorageMsg();
 
