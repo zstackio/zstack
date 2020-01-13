@@ -76,8 +76,6 @@ public class SourceClassMap {
 			put("org.zstack.core.jsonlabel.JsonLabelInventory", "org.zstack.sdk.JsonLabelInventory");
 			put("org.zstack.drs.api.HostLoad", "org.zstack.sdk.HostLoad");
 			put("org.zstack.drs.api.Threshold", "org.zstack.sdk.Threshold");
-			put("org.zstack.drs.data.DRSAutomationLevel", "org.zstack.sdk.DRSAutomationLevel");
-			put("org.zstack.drs.data.DRSState", "org.zstack.sdk.DRSState");
 			put("org.zstack.drs.entity.ClusterDRSInventory", "org.zstack.sdk.ClusterDRSInventory");
 			put("org.zstack.drs.entity.DRSAdviceInventory", "org.zstack.sdk.DRSAdviceInventory");
 			put("org.zstack.drs.entity.DRSVmMigrationActivityInventory", "org.zstack.sdk.DRSVmMigrationActivityInventory");
@@ -495,8 +493,12 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory", "org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory");
 			put("org.zstack.zwatch.api.APIGetAllEventMetadataReply$EventStruct", "org.zstack.sdk.zwatch.api.EventStruct");
 			put("org.zstack.zwatch.api.APIGetAllMetricMetadataReply$MetricStruct", "org.zstack.sdk.zwatch.api.MetricStruct");
+			put("org.zstack.zwatch.datatype.AlarmData", "org.zstack.sdk.zwatch.datatype.AlarmData");
+			put("org.zstack.zwatch.datatype.AlarmDataV1", "org.zstack.sdk.zwatch.datatype.AlarmDataV1");
 			put("org.zstack.zwatch.datatype.AlarmDataV2", "org.zstack.sdk.zwatch.datatype.AlarmDataV2");
 			put("org.zstack.zwatch.datatype.AuditData", "org.zstack.sdk.zwatch.datatype.AuditData");
+			put("org.zstack.zwatch.datatype.AuditDataV1", "org.zstack.sdk.zwatch.datatype.AuditDataV1");
+			put("org.zstack.zwatch.datatype.AuditDataV2", "org.zstack.sdk.zwatch.datatype.AuditDataV2");
 			put("org.zstack.zwatch.datatype.AuditType", "org.zstack.sdk.zwatch.datatype.AuditType");
 			put("org.zstack.zwatch.datatype.Datapoint", "org.zstack.sdk.zwatch.datatype.Datapoint");
 			put("org.zstack.zwatch.datatype.EventData", "org.zstack.sdk.zwatch.datatype.EventData");
@@ -504,6 +506,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.datatype.Label", "org.zstack.sdk.zwatch.datatype.Label");
 			put("org.zstack.zwatch.datatype.Label$Operator", "org.zstack.sdk.zwatch.datatype.Operator");
 			put("org.zstack.zwatch.datatype.MetricDatum", "org.zstack.sdk.zwatch.datatype.MetricDatum");
+			put("org.zstack.zwatch.influxdb.InfluxEventData", "org.zstack.sdk.zwatch.influxdb.InfluxEventData");
 			put("org.zstack.zwatch.ruleengine.ComparisonOperator", "org.zstack.sdk.zwatch.ruleengine.ComparisonOperator");
         }
     };
@@ -586,8 +589,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CreateDataVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeSnapshotEvent$Failure");
 			put("org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure");
 			put("org.zstack.sdk.DRSAdviceInventory", "org.zstack.drs.entity.DRSAdviceInventory");
-			put("org.zstack.sdk.DRSAutomationLevel", "org.zstack.drs.data.DRSAutomationLevel");
-			put("org.zstack.sdk.DRSState", "org.zstack.drs.data.DRSState");
 			put("org.zstack.sdk.DRSVmMigrationActivityInventory", "org.zstack.drs.entity.DRSVmMigrationActivityInventory");
 			put("org.zstack.sdk.DahoCloudConnectionInventory", "org.zstack.header.daho.process.DahoCloudConnectionInventory");
 			put("org.zstack.sdk.DahoConnectionInventory", "org.zstack.header.daho.process.DahoConnectionInventory");
@@ -1000,8 +1001,12 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory", "org.zstack.zwatch.alarm.sns.template.aliyunsms.AliyunSmsSNSTextTemplateInventory");
 			put("org.zstack.sdk.zwatch.api.EventStruct", "org.zstack.zwatch.api.APIGetAllEventMetadataReply$EventStruct");
 			put("org.zstack.sdk.zwatch.api.MetricStruct", "org.zstack.zwatch.api.APIGetAllMetricMetadataReply$MetricStruct");
+			put("org.zstack.sdk.zwatch.datatype.AlarmData", "org.zstack.zwatch.datatype.AlarmData");
+			put("org.zstack.sdk.zwatch.datatype.AlarmDataV1", "org.zstack.zwatch.datatype.AlarmDataV1");
 			put("org.zstack.sdk.zwatch.datatype.AlarmDataV2", "org.zstack.zwatch.datatype.AlarmDataV2");
 			put("org.zstack.sdk.zwatch.datatype.AuditData", "org.zstack.zwatch.datatype.AuditData");
+			put("org.zstack.sdk.zwatch.datatype.AuditDataV1", "org.zstack.zwatch.datatype.AuditDataV1");
+			put("org.zstack.sdk.zwatch.datatype.AuditDataV2", "org.zstack.zwatch.datatype.AuditDataV2");
 			put("org.zstack.sdk.zwatch.datatype.AuditType", "org.zstack.zwatch.datatype.AuditType");
 			put("org.zstack.sdk.zwatch.datatype.Datapoint", "org.zstack.zwatch.datatype.Datapoint");
 			put("org.zstack.sdk.zwatch.datatype.EmergencyLevel", "org.zstack.zwatch.datatype.EventFamily$EmergencyLevel");
@@ -1009,6 +1014,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.datatype.Label", "org.zstack.zwatch.datatype.Label");
 			put("org.zstack.sdk.zwatch.datatype.MetricDatum", "org.zstack.zwatch.datatype.MetricDatum");
 			put("org.zstack.sdk.zwatch.datatype.Operator", "org.zstack.zwatch.datatype.Label$Operator");
+			put("org.zstack.sdk.zwatch.influxdb.InfluxEventData", "org.zstack.zwatch.influxdb.InfluxEventData");
 			put("org.zstack.sdk.zwatch.ruleengine.ComparisonOperator", "org.zstack.zwatch.ruleengine.ComparisonOperator");
         }
     };
