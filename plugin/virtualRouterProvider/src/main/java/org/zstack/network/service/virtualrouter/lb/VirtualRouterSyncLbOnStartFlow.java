@@ -195,7 +195,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                             structs.add(makeStruct(vo));
                         }
 
-                        bkd.syncOnStart(vr, structs, new Completion(trigger) {
+                        bkd.syncOnStart(vr, false, structs, new Completion(trigger) {
                             @Override
                             public void success() {
                                 List<String> lbUuids = finalLbs.stream().map(LoadBalancerVO::getUuid).collect(Collectors.toList());
