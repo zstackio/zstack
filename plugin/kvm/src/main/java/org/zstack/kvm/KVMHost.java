@@ -1174,6 +1174,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVolumeInstallPath(msg.getVolume().getInstallPath());
         cmd.setInstallPath(msg.getInstallPath());
         cmd.setFullSnapshot(msg.isFullSnapshot());
+        cmd.setVolumeUuid(msg.getVolume().getUuid());
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("before-take-snapshot-%s-for-volume-%s", msg.getSnapshotName(), msg.getVolume().getUuid()));
