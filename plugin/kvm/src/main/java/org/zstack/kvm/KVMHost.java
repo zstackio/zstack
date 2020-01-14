@@ -25,10 +25,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.CancelablePeriodicTask;
-import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -833,15 +830,46 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void handle(final KVMHostSyncHttpCallMsg msg) {
+    private void doHandleKvmSyncMsg(final KVMHostSyncHttpCallMsg msg, SyncTaskChain outter) {
         inQueue().name(String.format("execute-sync-http-call-on-kvm-host-%s", self.getUuid()))
                 .asyncBackup(msg)
-                .run(chain -> executeSyncHttpCall(msg, new NoErrorCompletion(chain) {
+                .run(chain -> executeSyncHttpCall(msg, new NoErrorCompletion(chain, outter) {
                     @Override
                     public void done() {
                         chain.next();
+                        outter.next();
                     }
                 }));
+    }
+
+    private static int getHostMaxThreadsNum() {
+        int n = (int)(KVMGlobalProperty.KVM_HOST_MAX_THREDS_RATIO * ThreadGlobalProperty.MAX_THREAD_NUM);
+        int m = ThreadGlobalProperty.MAX_THREAD_NUM / 5;
+        return Math.max(n, m);
+    }
+
+    private void handle(final KVMHostSyncHttpCallMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "host-sync-control";
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doHandleKvmSyncMsg(msg, chain);
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return getHostMaxThreadsNum();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("sync-call-on-kvm-%s", self.getUuid());
+            }
+        });
     }
 
     private void executeSyncHttpCall(KVMHostSyncHttpCallMsg msg, NoErrorCompletion completion) {
@@ -859,15 +887,40 @@ public class KVMHost extends HostBase implements Host {
         completion.done();
     }
 
-    private void handle(final KVMHostAsyncHttpCallMsg msg) {
+    private void doHandleKvmAsyncMsg(final KVMHostAsyncHttpCallMsg msg, SyncTaskChain outter) {
         inQueue().name(String.format("execute-async-http-call-on-kvm-host-%s", self.getUuid()))
                 .asyncBackup(msg)
-                .run(chain -> executeAsyncHttpCall(msg, new NoErrorCompletion(chain) {
+                .run(chain -> executeAsyncHttpCall(msg, new NoErrorCompletion(chain, outter) {
                     @Override
                     public void done() {
                         chain.next();
+                        outter.next();
                     }
                 }));
+    }
+
+    private void handle(final KVMHostAsyncHttpCallMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "host-sync-control";
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doHandleKvmAsyncMsg(msg, chain);
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return getHostMaxThreadsNum();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("async-call-on-kvm-%s", self.getUuid());
+            }
+        });
     }
 
     private String buildUrl(String path) {
