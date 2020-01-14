@@ -21,4 +21,6 @@ public class KVMGlobalProperty {
     public static int AGENT_SERVER_PORT;
     @GlobalProperty(name="KvmHost.iptables.rule.", defaultValue = "")
     public static List<String> IPTABLES_RULES;
+    @GlobalProperty(name="KvmHost.maxThreads.ratio", defaultValue = "0.6")
+    public static double KVM_HOST_MAX_THREDS_RATIO;
 }
