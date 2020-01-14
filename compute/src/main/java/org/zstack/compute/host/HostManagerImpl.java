@@ -9,9 +9,6 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.resourceconfig.ResourceConfig;
-import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
@@ -24,6 +21,7 @@ import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -43,11 +41,14 @@ import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Bucket;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.data.Pair;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
@@ -91,6 +92,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
     private Map<Class, HostBaseExtensionFactory> hostBaseExtensionFactories = new HashMap<>();
     private List<HostExtensionManager> hostExtensionManagers = new ArrayList<>();
+    private List<HostPriorityCaculator> hostPriorityCaculators = new ArrayList<>();
 
     private Map<String, HypervisorFactory> hypervisorFactories = Collections.synchronizedMap(new HashMap<String, HypervisorFactory>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
@@ -528,7 +530,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }
 
         hostExtensionManagers.addAll(pluginRgty.getExtensionList(HostExtensionManager.class));
-
+        hostPriorityCaculators.addAll(pluginRgty.getExtensionList(HostPriorityCaculator.class));
     }
 
     @Override
@@ -663,6 +665,37 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         return Bucket.newBucket(connected, disconnected);
     }
 
+    private int getHostConnectPriority(String hostUuid) {
+        int priority = 0;
+
+        for (HostPriorityCaculator c : hostPriorityCaculators) {
+            int p = c.getHostConnectPriority(hostUuid);
+            if (p > priority) {
+                priority = p;
+            }
+        }
+
+        return priority;
+    }
+
+    private List<String> sortWithPriority(final List<String> hosts) {
+        if (hostPriorityCaculators.isEmpty()) {
+            return hosts;
+        }
+
+        List<Pair<String, Integer>> pairs = new ArrayList<>(hosts.size());
+        for (String hostUuid: hosts) {
+            pairs.add(new Pair<>(hostUuid, getHostConnectPriority(hostUuid)));
+        }
+
+        pairs.sort((p1, p2) -> {
+            return p2.second() - p1.second(); // descend
+        });
+
+        return pairs.stream()
+                .map(p -> p.first())
+                .collect(Collectors.toList());
+    }
 
     private void loadHost(boolean skipConnected) {
         Bucket hosts = getHostManagedByUs();
@@ -691,9 +724,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             hostsToLoad.removeAll(connected);
         }
 
+        final List<String> hostsToLoadSorted = sortWithPriority(hostsToLoad);
         String serviceId = bus.makeLocalServiceId(HostConstant.SERVICE_ID);
         final List<ConnectHostMsg> msgs = new ArrayList<ConnectHostMsg>(hostsToLoad.size());
-        for (String uuid : hostsToLoad) {
+        for (String uuid : hostsToLoadSorted) {
             ConnectHostMsg connectMsg = new ConnectHostMsg(uuid);
             connectMsg.setNewAdd(false);
             connectMsg.setServiceId(serviceId);
