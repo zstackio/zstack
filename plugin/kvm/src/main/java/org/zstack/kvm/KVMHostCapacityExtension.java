@@ -19,6 +19,7 @@ import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.kvm.KVMAgentCommands.HostCapacityCmd;
 import org.zstack.kvm.KVMAgentCommands.HostCapacityResponse;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.SizeUtils;
 
 import java.util.Map;
@@ -32,6 +33,8 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
     private ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager timeoutMgr;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     private void reportCapacity(HostInventory host, Completion completion) {
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -49,9 +52,10 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
                     throw new OperationFailureException(operr("operation error, because:%s", rsp.getError()));
                 }
 
-                if (rsp.getTotalMemory() < SizeUtils.sizeStringToBytes(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value())) {
+                long reservedSize = SizeUtils.sizeStringToBytes(rcf.getResourceConfigValue(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY, host.getUuid(), String.class));
+                if (rsp.getTotalMemory() < reservedSize) {
                     throw new OperationFailureException(operr("The host[uuid:%s]'s available memory capacity[%s] is lower than the reserved capacity[%s]",
-                        host.getUuid(), rsp.getTotalMemory(), SizeUtils.sizeStringToBytes(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY.value())));
+                        host.getUuid(), rsp.getTotalMemory(), reservedSize));
                 }
 
                 ReportHostCapacityMessage rmsg = new ReportHostCapacityMessage();

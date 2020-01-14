@@ -15,4 +15,6 @@ public interface HostCapacityReserveManager {
     ReservedHostCapacity getReservedHostCapacityByClusters(List<String> clusterUuids);
 
     ReservedHostCapacity getReservedHostCapacityByHosts(List<String> hostUuids);
+
+    void reserveCapacity(String hostUuid, long requiredCpu, long requiredMemory);
 }
