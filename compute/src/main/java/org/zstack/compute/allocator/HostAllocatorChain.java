@@ -84,33 +84,6 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         this.flows = flows;
     }
 
-    void reserveCapacity(final String hostUuid, final long requestCpu, final long requestMemory) {
-        HostCapacityUpdater updater = new HostCapacityUpdater(hostUuid);
-        String reservedMemoryOfGlobalConfig = Q.New(GlobalConfigVO.class).select(GlobalConfigVO_.value).eq(GlobalConfigVO_.name,"reservedMemory").findValue();
-        updater.run(new HostCapacityUpdaterRunnable() {
-            @Override
-            public HostCapacityVO call(HostCapacityVO cap) {
-                long availCpu = cap.getAvailableCpu() - requestCpu;
-                if (requestCpu != 0 && availCpu < 0) {
-                    throw new UnableToReserveHostCapacityException(
-                            String.format("no enough CPU[%s] on the host[uuid:%s]", requestCpu, hostUuid));
-                }
-
-                cap.setAvailableCpu(availCpu);
-
-                long availMemory = cap.getAvailableMemory() - ratioMgr.calculateMemoryByRatio(hostUuid, requestMemory);
-                if (requestMemory != 0 && availMemory - SizeUtils.sizeStringToBytes(reservedMemoryOfGlobalConfig) < 0) {
-                    throw new UnableToReserveHostCapacityException(
-                            String.format("no enough memory[%s] on the host[uuid:%s]", requestMemory, hostUuid));
-                }
-
-                cap.setAvailableMemory(availMemory);
-
-                return cap;
-            }
-        });
-    }
-
     private void done() {
         if (result == null) {
             if (isDryRun) {
