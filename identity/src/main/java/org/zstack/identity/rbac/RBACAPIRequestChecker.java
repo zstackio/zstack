@@ -1,7 +1,7 @@
 package org.zstack.identity.rbac;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
 import org.zstack.core.cloudbus.CloudBusGson;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
@@ -56,6 +56,15 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
      * 5. then deny by default
      */
     protected void check() {
+        ErrorCode errorCode = checkPermission();
+
+        if (errorCode != null) {
+            // no polices applied to the operation, deny by default
+            throw new OperationFailureException(errorCode);
+        }
+    }
+
+    protected ErrorCode checkPermission() {
         List<PolicyInventory> polices = getPoliciesForAPI();
         Map<PolicyInventory, List<PolicyStatement>> denyStatements = RBACManager.collectDenyStatements(polices);
         Map<PolicyInventory, List<PolicyStatement>> allowStatements = RBACManager.collectAllowedStatements(polices);
@@ -64,15 +73,14 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
 
         if (evalAllowStatements(allowStatements)) {
             // allowed
-            return;
+            return null;
         }
 
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("[RBAC]operation is denied by default, API:\n%s", jsonMessage()));
         }
 
-        // no polices applied to the operation, deny by default
-        throw new OperationFailureException(operr("operation[API:%s] is denied by default, please contact admin to correct it", rbacEntity.getApiMessage().getClass().getName()));
+        return operr("operation[API:%s] is denied by default, please contact admin to correct it", rbacEntity.getApiMessage().getClass().getName());
     }
 
     private String jsonMessage() {
