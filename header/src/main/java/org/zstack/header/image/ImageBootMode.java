@@ -5,5 +5,6 @@ package org.zstack.header.image;
  */
 public enum ImageBootMode {
     Legacy,
-    UEFI
+    UEFI,
+    UEFI_WITH_CSM
 }
