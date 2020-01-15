@@ -2,7 +2,11 @@ package org.zstack.test.integration.networkservice.provider
 
 import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.appliancevm.ApplianceVmVO_
+import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
+import org.zstack.header.network.l2.L2NetworkClusterRefVO
+import org.zstack.header.network.l2.L2NetworkClusterRefVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
@@ -34,6 +38,7 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
 """
     
     EnvSpec env
+    DatabaseFacade dbf
     @Override
     void setup() {
         useSpring(NetworkServiceProviderTest.springSpec)
@@ -274,6 +279,7 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
     @Override
     void test() {
         env.create {
+            dbf = bean(DatabaseFacade.class)
             testGetCandidateVmNicsForEipInVirtualRouter()
         }
     }
@@ -285,7 +291,9 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
         def pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory
         def fakePubL3 = env.inventoryByName("fakePubL3") as L3NetworkInventory
         def l2Flat = env.inventoryByName("l2-flat") as L2NetworkInventory
+        def l2vlan_100 = env.inventoryByName("l2-vlan-100") as L2NetworkInventory
         def cluster_1 = env.inventoryByName("cluster-1") as ClusterInventory
+        def cluster = env.inventoryByName("cluster") as ClusterInventory
 
         //vmInVirtualRouter vmInFlat should be listed.
         def nics = getEipAttachableVmNics {
@@ -340,6 +348,26 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
         assert nics5.get(0).uuid == vm.getVmNics().get(0).uuid || nics5.get(0).uuid == vm_flat.getVmNics().get(0).uuid
         assert nics5.get(1).uuid == vm.getVmNics().get(0).uuid || nics5.get(1).uuid == vm_flat.getVmNics().get(0).uuid
         assert nics5.get(0).uuid != nics5.get(1).uuid
+
+        SQL.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2vlan_100.uuid)
+                .eq(L2NetworkClusterRefVO_.clusterUuid, cluster.uuid).delete()
+        SQL.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, l2vlan_100.uuid)
+                .eq(L2NetworkClusterRefVO_.clusterUuid, cluster_1.uuid).delete()
+        def nics6 = getEipAttachableVmNics {
+            eipUuid = eip3.uuid
+        } as List<VmNicInventory>
+        assert nics6.size() == 0
+
+        /* add ref back to make env clean happy */
+        L2NetworkClusterRefVO ref = new L2NetworkClusterRefVO()
+        ref.l2NetworkUuid = l2vlan_100.uuid
+        ref.clusterUuid = cluster.uuid
+        dbf.persist(ref)
+
+        ref = new L2NetworkClusterRefVO()
+        ref.l2NetworkUuid = l2vlan_100.uuid
+        ref.clusterUuid = cluster_1.uuid
+        dbf.persist(ref)
     }
 
     @Override
