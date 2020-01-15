@@ -1,5 +1,6 @@
 package org.zstack.storage.backup.sftp;
 
+import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
 import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
@@ -61,6 +62,7 @@ public class SftpBackupStorageCommands {
     
     public static class ConnectCmd extends AgentCommand {
         private String storagePath;
+        private String sendCommandUrl;
 
         public String getUuid() {
             return uuid;
@@ -76,11 +78,19 @@ public class SftpBackupStorageCommands {
         public void setStoragePath(String storagePath) {
             this.storagePath = storagePath;
         }
+
+        public void setSendCommandUrl(String sendCommandUrl) {
+            this.sendCommandUrl = sendCommandUrl;
+        }
+
+        public String getSendCommandUrl() {
+            return sendCommandUrl;
+        }
     }
     public static class ConnectResponse extends AgentResponse {
     }
 
-    public static class DownloadCmd extends AgentCommand implements HasSensitiveInfo {
+    public static class DownloadCmd extends AgentCommand implements HasSensitiveInfo, HasThreadContext {
         private String imageUuid;
         private String installPath;
         @NoLogging(type = NoLogging.Type.Uri)

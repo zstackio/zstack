@@ -331,6 +331,7 @@ public class SftpBackupStorage extends BackupStorageBase {
                 ConnectCmd cmd = new ConnectCmd();
                 cmd.setUuid(self.getUuid());
                 cmd.setStoragePath(getSelf().getUrl());
+                cmd.setSendCommandUrl(restf.getSendCommandUrl());
                 ConnectResponse rsp = restf.syncJsonPost(url, cmd, ConnectResponse.class);
                 if (!rsp.isSuccess()) {
                     ErrorCode err = operr("unable to connect to SimpleHttpBackupStorage[url:%s], because %s", url, rsp.getError());
