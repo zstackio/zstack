@@ -108,16 +108,21 @@ class BootModeCase extends SubCase {
     void testBootModeSystemTag() {
         // create bootMode tag for exiting image
         def img = env.inventoryByName("image1") as ImageInventory
-        createSystemTag {
+        def _tag = createSystemTag {
             resourceUuid = img.uuid
             resourceType = ImageVO.getSimpleName()
             tag = "bootMode::UEFI"
+        } as SystemTagInventory
+
+        updateSystemTag {
+            uuid = _tag.uuid
+            tag = "bootMode::UEFI_WITH_CSM"
         }
 
         def tags = querySystemTag {
             conditions = [
                     "resourceUuid=${img.uuid}".toString(),
-                    "tag=bootMode::UEFI"
+                    "tag=bootMode::UEFI_WITH_CSM"
             ]
         } as List<SystemTagInventory>
         assert tags.size() == 1
@@ -144,26 +149,37 @@ class BootModeCase extends SubCase {
             uuid = tags.get(0).getUuid()
             tag = "bootMode::Legacy"
         }
+
+        updateSystemTag {
+            uuid = tags.get(0).getUuid()
+            tag = "bootMode::UEFI_WITH_CSM"
+        }
+
         tags = querySystemTag {
             conditions = [
                     "resourceUuid=${img.uuid}".toString(),
-                    "tag~=bootMode::Legacy"
+                    "tag~=bootMode::UEFI_WITH_CSM"
             ]
         } as List<SystemTagInventory>
         assert tags.size() == 1
 
         // create bootMode tag for exiting vm instance
         def vm = env.inventoryByName("vm") as VmInstanceInventory
-        createSystemTag {
+        _tag = createSystemTag {
             resourceUuid = vm.uuid
             resourceType = VmInstanceVO.getSimpleName()
             tag = "bootMode::UEFI"
+        } as SystemTagInventory
+
+        updateSystemTag {
+            uuid = _tag.uuid
+            tag = "bootMode::UEFI_WITH_CSM"
         }
 
         tags = querySystemTag {
             conditions = [
                     "resourceUuid=${vm.uuid}".toString(),
-                    "tag=bootMode::UEFI"
+                    "tag=bootMode::UEFI_WITH_CSM"
             ]
         } as List<SystemTagInventory>
         assert tags.size() == 1
@@ -180,7 +196,7 @@ class BootModeCase extends SubCase {
         tags = querySystemTag {
             conditions = [
                     "resourceUuid=${vm.uuid}".toString(),
-                    "tag=bootMode::Legacy"
+                    "tag=bootMode::UEFI_WITH_CSM"
             ]
         } as List<SystemTagInventory>
         assert tags.size() == 1
