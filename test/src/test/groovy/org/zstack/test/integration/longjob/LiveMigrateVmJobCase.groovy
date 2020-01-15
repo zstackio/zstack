@@ -354,6 +354,13 @@ class LiveMigrateVmJobCase extends SubCase {
         def canceled = false
         def migrating = false
 
+        env.simulator(AgentConstant.CANCEL_JOB) {
+            canceled = true
+            def rsp = new KVMAgentCommands.CancelRsp()
+            rsp.setError("on purpose")
+            return rsp
+        }
+
         env.simulator(KVMConstant.KVM_MIGRATE_VM_PATH) { HttpEntity<String> e ->
             migrating = true
             return new KVMAgentCommands.MigrateVmResponse()
