@@ -34,4 +34,10 @@
 		<defaultValue>org.zstack.header.storage.backup.APIQueryBackupStorageMsg, org.zstack.storage.backup.sftp.APIQuerySftpBackupStorageMsg, org.zstack.header.image.APIAddImageMsg, org.zstack.header.host.APIQueryHostMsg</defaultValue>
 		<category>identity</category>
 	</config>
+	<config>
+		<name>enable.unique.session</name>
+		<description>Force logout session before current login, and only one session exists</description>
+		<defaultValue>false</defaultValue>
+		<category>identity</category>
+	</config>
 </globalConfig>
