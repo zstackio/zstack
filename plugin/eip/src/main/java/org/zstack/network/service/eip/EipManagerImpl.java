@@ -154,6 +154,9 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, vip.getL3NetworkUuid()).find();
         List<String> clusterUuids = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.l2NetworkUuid, l3Vo.getL2NetworkUuid())
                 .select(L2NetworkClusterRefVO_.clusterUuid).listValues();
+        if (clusterUuids == null || clusterUuids.isEmpty()) {
+            return new ArrayList<>();
+        }
 
         List<String> l3Uuids;
 
