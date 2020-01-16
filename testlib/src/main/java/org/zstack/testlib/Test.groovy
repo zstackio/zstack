@@ -20,19 +20,16 @@ import org.zstack.sdk.ZSClient
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategy
 import org.zstack.testlib.collectstrategy.SubCaseCollectionStrategyFactory
 import org.zstack.testlib.util.Retry
-import org.zstack.utils.Linux
 import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 import org.zstack.utils.path.PathUtil
-import org.zstack.utils.tester.ZTester
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
 import java.util.logging.Level
 import java.util.logging.Logger
 /**
@@ -185,6 +182,28 @@ abstract class Test implements ApiHelper, Retry {
         return  [home, "../"].join("/")
     }
 
+    private Map<String, String> getHostAndPort(String jdbcUrl) {
+        def result = new HashMap()
+        if (jdbcUrl == null) {
+            return null
+        }
+        if (!jdbcUrl.trim().startsWith("jdbc:mysql://")) {
+            return null
+        }
+        String sub = jdbcUrl.trim().substring(13)
+        def pair = sub.split(":") as List<String>
+        if (pair == null || pair.size() < 2) {
+            return null
+        }
+        result.put("host", pair[0])
+        if (pair[1].indexOf("/") == -1) {
+            result.put("port", pair[1])
+        } else {
+            result.put("port", pair[1].substring(0, pair[1].indexOf("/")))
+        }
+        return result
+    }
+
     private void deployDB() {
         logger.info("Deploying database ...")
         String baseDir = getDeployDBScriptBaseDir()
@@ -215,7 +234,26 @@ abstract class Test implements ApiHelper, Retry {
                 }
             }
 
-            ShellUtils.run("build/deploydb.sh $user $password", baseDir, false)
+            Map<String, String> hostAndPort = getHostAndPort(System.getProperty("DB.url"))
+            if (hostAndPort == null) {
+                hostAndPort = getHostAndPort(prop.getProperty("DB.url"))
+                if (hostAndPort == null) {
+                    hostAndPort = getHostAndPort(prop.getProperty("DbFacadeDataSource.jdbcUrl"))
+                }
+            }
+
+            logger.debug("host, port: ${hostAndPort.toString()}")
+
+            if (hostAndPort == null || (hostAndPort["host"] == "localhost" && hostAndPort["port"] == "3306")) {
+                ShellUtils.run("build/deploydb.sh $user $password", baseDir, false)
+            } else {
+                def host = hostAndPort["host"]
+                if (host == "localhost" && hostAndPort["port"] != "3306") {
+                    host = "127.0.0.1"
+                }
+                ShellUtils.run("build/deploydb.sh $user $password $host ${hostAndPort["port"]}", baseDir, false)
+            }
+
             logger.info("Deploying database successfully")
         } catch (Exception e) {
             throw new CloudRuntimeException("Unable to deploy zstack database for testing", e)
