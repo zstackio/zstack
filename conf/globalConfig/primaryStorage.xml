@@ -35,7 +35,7 @@
 
     <config>
         <name>primarystorage.auto.delete.trash.interval</name>
-        <description>Primary storage auto delete trash period</description>
+        <description>Primary storage auto delete trash period, in seconds</description>
         <defaultValue>0</defaultValue>
         <category>primaryStorage</category>
         <type>java.lang.Long</type>
