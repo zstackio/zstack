@@ -76,7 +76,7 @@ public class Session implements Component {
             @Override
             protected SessionInventory scripts() {
                 if (q(SessionVO.class).eq(SessionVO_.accountUuid, accountUuid)
-                        .eq(SessionVO_.userUuid, userUuid).count() > IdentityGlobalConfig.MAX_CONCURRENT_SESSION.value(Integer.class)) {
+                        .eq(SessionVO_.userUuid, userUuid).count() >= IdentityGlobalConfig.MAX_CONCURRENT_SESSION.value(Integer.class)) {
                     throw new OperationFailureException(err(IdentityErrors.MAX_CONCURRENT_SESSION_EXCEEDED, "Login sessions hit limit of max allowed concurrent login sessions"));
                 }
 
