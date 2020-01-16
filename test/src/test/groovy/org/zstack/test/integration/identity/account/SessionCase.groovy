@@ -61,15 +61,10 @@ class SessionCase extends SubCase {
     void testMaxCurrentSessionExceeded() {
         IdentityGlobalConfig.MAX_CONCURRENT_SESSION.updateValue(1)
 
-        def account = createAccount {
+        createAccount {
             name = "exceed"
             password = "password"
         } as AccountInventory
-
-        logInByAccount {
-            accountName = "exceed"
-            password = "password"
-        }
 
         logInByAccount {
             accountName = "exceed"
@@ -81,6 +76,8 @@ class SessionCase extends SubCase {
         action.password = "password"
         LogInByAccountAction.Result result = action.call()
         assert result.error.details.contains(IdentityErrors.MAX_CONCURRENT_SESSION_EXCEEDED.toString())
+
+        IdentityGlobalConfig.MAX_CONCURRENT_SESSION.resetValue()
     }
 
     void testValidateSessionApi() {
