@@ -699,7 +699,7 @@ public class VolumeBase implements Volume {
             bus.send(dmsg, new CloudBusCallBack(completion) {
                 @Override
                 public void run(MessageReply r) {
-                    if (!r.isSuccess()) {
+                    if (!r.isSuccess() && dbf.isExist(dmsg.getPrimaryStorageUuid(), PrimaryStorageVO.class)) {
                         completion.fail(r.getError());
                     } else {
                         IncreasePrimaryStorageCapacityMsg msg = new IncreasePrimaryStorageCapacityMsg();
