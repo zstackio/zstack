@@ -725,6 +725,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         }
 
         final List<String> hostsToLoadSorted = sortWithPriority(hostsToLoad);
+        logger.info("first host to load: " + hostsToLoadSorted.get(0));
+
         String serviceId = bus.makeLocalServiceId(HostConstant.SERVICE_ID);
         final List<ConnectHostMsg> msgs = new ArrayList<ConnectHostMsg>(hostsToLoad.size());
         for (String uuid : hostsToLoadSorted) {

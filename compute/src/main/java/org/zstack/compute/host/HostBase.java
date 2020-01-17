@@ -24,6 +24,7 @@ import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -601,11 +602,10 @@ public abstract class HostBase extends AbstractHost {
         });
     }
 
-    private void handle(final PingHostMsg msg) {
+    private void doPingHost(PingHostMsg msg, ReturnValueCompletion<PingHostReply> completion) {
         final PingHostReply reply = new PingHostReply();
         if (self.getStatus() == HostStatus.Connecting) {
-            reply.setError(operr("host is connecting, ping failed"));
-            bus.reply(msg, reply);
+            completion.fail(operr("host is connecting, ping failed"));
             return;
         }
 
@@ -654,7 +654,7 @@ public abstract class HostBase extends AbstractHost {
 
                     if(!Q.New(HostVO.class).eq(HostVO_.uuid, msg.getHostUuid()).isExists()){
                         reply.setNoReconnect(true);
-                        bus.reply(msg, reply);
+                        completion.success(reply);
                         return;
                     }
 
@@ -664,14 +664,52 @@ public abstract class HostBase extends AbstractHost {
 
                     changeConnectionState(HostStatusEvent.disconnected);
 
-                    bus.reply(msg, reply);
+                    completion.success(reply);
                 } else {
                     reply.setConnected(true);
                     reply.setCurrentHostStatus(self.getStatus().toString());
-                    bus.reply(msg, reply);
+                    completion.success(reply);
 
                     extpEmitter.hostPingTask(HypervisorType.valueOf(self.getHypervisorType()), getSelfInventory());
                 }
+            }
+        });
+    }
+
+    private void handle(final PingHostMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "do-ping-host";
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doPingHost(msg, new ReturnValueCompletion<PingHostReply>(msg, chain) {
+                    @Override
+                    public void success(PingHostReply reply) {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        PingHostReply reply = new PingHostReply();
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("do-ping-host-%s", msg.getHostUuid());
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return HostGlobalConfig.HOST_TRACK_PARALLELISM_DEGREE.value(Integer.class);
             }
         });
     }
