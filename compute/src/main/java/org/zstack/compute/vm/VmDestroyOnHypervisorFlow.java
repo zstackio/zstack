@@ -6,6 +6,10 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.gc.GCStatus;
+import org.zstack.core.gc.GarbageCollectorVO;
+import org.zstack.core.gc.GarbageCollectorVO_;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
@@ -111,8 +115,19 @@ public class VmDestroyOnHypervisorFlow extends NoRollbackFlow {
                     return;
                 }
 
+                String gcName = String.format("gc-vm-%s-on-host-%s", spec.getVmInventory().getUuid(), hostUuid);
+                if (Q.New(GarbageCollectorVO.class)
+                        .eq(GarbageCollectorVO_.name, gcName)
+                        .notEq(GarbageCollectorVO_.status, GCStatus.Done)
+                        .isExists()) {
+                    logger.debug(String.format("There is already a DeleteVmGC of vm[uuid:%s] " +
+                            "on host[uuid:%s], skip.", spec.getVmInventory().getUuid(), hostUuid));
+                    chain.next();
+                    return;
+                }
+
                 DeleteVmGC gc = new DeleteVmGC();
-                gc.NAME = String.format("gc-vm-%s-on-host-%s", spec.getVmInventory().getUuid(), hostUuid);
+                gc.NAME = gcName;
                 gc.hostUuid = hostUuid;
                 gc.inventory = spec.getVmInventory();
                 gc.submit();
