@@ -5,21 +5,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
+import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceSpec.CdRomSpec;
 import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.identity.Account;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.zstack.header.vm.VmInstanceSpec.CdRomSpec;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -78,14 +80,10 @@ public class VmAllocateCdRomFlow implements Flow {
     public void rollback(final FlowRollback chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        List<String> cdRomUuids = Q.New(VmCdRomVO.class)
-                .select(VmCdRomVO_.uuid)
+        UpdateQuery.New(VmCdRomVO.class)
                 .eq(VmCdRomVO_.vmInstanceUuid, spec.getVmInventory().getUuid())
-                .listValues();
+                .hardDelete();
 
-        if (!cdRomUuids.isEmpty()) {
-            dbf.removeByPrimaryKeys(cdRomUuids, VmCdRomVO.class);
-        }
         chain.rollback();
     }
 }

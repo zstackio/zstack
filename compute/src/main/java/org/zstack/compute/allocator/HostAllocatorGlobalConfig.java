@@ -1,6 +1,7 @@
 package org.zstack.compute.allocator;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 
@@ -22,6 +23,9 @@ public class HostAllocatorGlobalConfig {
     public static GlobalConfig PAGINATION_LIMIT = new GlobalConfig(CATEGORY, "paginationLimit");
     @GlobalConfigValidation
     public static GlobalConfig HOST_ALLOCATOR_ALLOW_CONCURRENT = new GlobalConfig(CATEGORY, "hostAllocator.concurrent");
+    @GlobalConfigValidation(inNumberRange = {1, 50})
+    @GlobalConfigDef(defaultValue = "2", type = Integer.class,  description = "allocator concurrency level, if enabled.")
+    public static GlobalConfig HOST_ALLOCATOR_CONCURRENT_LEVEL = new GlobalConfig(CATEGORY, "hostAllocator.concurrent.level");
     @GlobalConfigValidation
     public static GlobalConfig HOST_ALLOCATOR_MAX_MEMORY = new GlobalConfig(CATEGORY, "hostAllocator.checkHostMem");
 }

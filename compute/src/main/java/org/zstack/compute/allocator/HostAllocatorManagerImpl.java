@@ -19,7 +19,6 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -314,7 +313,38 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
     private void handle(final AllocateHostMsg msg) {
         if (HostAllocatorGlobalConfig.HOST_ALLOCATOR_ALLOW_CONCURRENT.value(Boolean.class)) {
-            doHandleAllocateHost(msg, new NopeCompletion());
+            thdf.chainSubmit(new ChainTask(msg) {
+                @Override
+                public String getSyncSignature() {
+                    return "host-allocator";
+                }
+
+                @Override
+                public void run(SyncTaskChain chain) {
+                    doHandleAllocateHost(msg, new Completion(chain) {
+                        @Override
+                        public void success() {
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            chain.next();
+                        }
+                    });
+                }
+
+                @Override
+                public String getName() {
+                    return "allocate-host-for-vm-" + msg.getVmInstance().getUuid();
+                }
+
+                @Override
+                protected int getSyncLevel() {
+                    return HostAllocatorGlobalConfig.HOST_ALLOCATOR_CONCURRENT_LEVEL.value(Integer.class);
+                }
+            });
+
             return;
         }
 
