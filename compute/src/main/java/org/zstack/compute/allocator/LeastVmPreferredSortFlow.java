@@ -71,7 +71,6 @@ public class LeastVmPreferredSortFlow extends AbstractHostSortorFlow {
 
         candidates.clear();
         sortedHostUuids.forEach(huuid -> candidates.add(hosts.get(huuid)));
-        logger.debug(String.format("Sorted by LeastVmPreferred the hosts %s", candidates.stream().map(c -> c.getUuid()).collect(Collectors.toList())));
     }
 
     @Override
