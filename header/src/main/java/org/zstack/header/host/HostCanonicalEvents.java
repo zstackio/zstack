@@ -12,6 +12,38 @@ public class HostCanonicalEvents {
     public static final String HOST_DISCONNECTED_PATH = "/host/disconnected";
     public static final String HOST_CHECK_MOUNT_FAULT = "/host/mount/path/fault";
     public static final String HOST_CHECK_INITIALIZED_FAILED = "/host/check/initialized/falied";
+    public static final String HOST_USB_STORAGE_DEVICE_DETECTED = "/host/usb_storage/detected";
+
+    @NeedJsonSchema
+    public static class HostUsbStorageDeviceData {
+        public String hostUuid;
+        public String manufacturer;
+        public String product;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getManufacturer() {
+            return manufacturer;
+        }
+
+        public void setManufacturer(String manufacturer) {
+            this.manufacturer = manufacturer;
+        }
+
+        public String getProduct() {
+            return product;
+        }
+
+        public void setProduct(String product) {
+            this.product = product;
+        }
+    }
 
     public static class HostDisconnectedData {
         public String hostUuid;

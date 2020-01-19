@@ -9,11 +9,6 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.managementnode.*;
-import org.zstack.resourceconfig.ResourceConfig;
-import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
@@ -26,22 +21,28 @@ import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.managementnode.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Bucket;
 import org.zstack.utils.CollectionUtils;
@@ -54,9 +55,7 @@ import javax.persistence.Tuple;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.i18n;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.longjob.LongJobUtils.noncancelableErr;
 
 public class HostManagerImpl extends AbstractService implements HostManager, ManagementNodeChangeListener,
@@ -87,6 +86,8 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private HostCpuOverProvisioningManager cpuRatioMgr;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private RESTFacade restf;
     @Autowired
     private ResourceConfigFacade rcf;
 
@@ -626,6 +627,14 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 }
             }
         });
+
+        // listen to the kvm agent and fire usb storage device detection event
+        restf.registerSyncHttpCallHandler(HostCanonicalEvents.HOST_USB_STORAGE_DEVICE_DETECTED,
+                HostCanonicalEvents.HostUsbStorageDeviceData.class,
+                data -> {
+                    new HostUsbStorageDeviceDetectedCanonicalEvent(data).fire();
+                    return null;
+                });
     }
 
     @Transactional(readOnly = true)
@@ -806,5 +815,17 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     @Override
     public HostBaseExtensionFactory getHostBaseExtensionFactory(Message msg) {
         return hostBaseExtensionFactories.get(msg.getClass());
+    }
+
+    public static class HostUsbStorageDeviceDetectedCanonicalEvent extends CanonicalEventEmitter {
+        HostCanonicalEvents.HostUsbStorageDeviceData data;
+
+        public HostUsbStorageDeviceDetectedCanonicalEvent(HostCanonicalEvents.HostUsbStorageDeviceData data) {
+            this.data = data;
+        }
+
+        public void fire() {
+            fire(HostCanonicalEvents.HOST_USB_STORAGE_DEVICE_DETECTED, data);
+        }
     }
 }
