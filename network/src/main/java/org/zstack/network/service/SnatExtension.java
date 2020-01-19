@@ -103,17 +103,6 @@ public class SnatExtension extends AbstractNetworkServiceExtension implements Co
         return struct;
     }
 
-    private boolean isVirtualRouterCreated(L3NetworkInventory l3) {
-        /* this case should not happen */
-        if (l3.getIpRanges() == null || l3.getIpRanges().isEmpty()) {
-            return false;
-        }
-
-        String gateway = l3.getIpRanges().get(0).getGateway();
-        return Q.New(VmNicVO.class).eq(VmNicVO_.l3NetworkUuid, l3.getUuid())
-                .eq(VmNicVO_.ip, gateway).isExists();
-    }
-
     private Map<NetworkServiceSnatBackend, List<SnatStruct>> workoutSnat(VmInstanceSpec spec) {
         Map<NetworkServiceSnatBackend, List<SnatStruct>> map = new HashMap<NetworkServiceSnatBackend, List<SnatStruct>>();
         Map<NetworkServiceProviderType, List<L3NetworkInventory>> providerMap = getNetworkServiceProviderMap(NetworkServiceType.SNAT,
@@ -124,10 +113,6 @@ public class SnatExtension extends AbstractNetworkServiceExtension implements Co
             List<SnatStruct> lst = new ArrayList<SnatStruct>();
 
             for (L3NetworkInventory l3 : e.getValue()) {
-                if (isVirtualRouterCreated(l3)) {
-                    /* when the router is already created, don't apply snat again.*/
-                    continue;
-                }
                 lst.add(makeSnatStruct(spec, l3));
             }
 
