@@ -22712,6 +22712,14 @@
     "fileName": "src/main/java/org/zstack/zwatch/ZWatchManagerImpl.java"
   },
   {
+    "raw": "Some messages have expired. The expired messages are not allowed to be modified. The system will automatically clean up the expired messages. Please operate later",
+    "en_US": "Some messages have expired. The expired messages are not allowed to be modified. The system will automatically clean up the expired messages. Please operate later",
+    "zh_CN": "部分消息已过期，过期消息不允许修改。系统会自动清理过期消息，请稍后再操作",
+    "arguments": [],
+    "line": 707,
+    "fileName": "src/main/java/org/zstack/zwatch/ZWatchManagerImpl.java"
+  },
+  {
     "raw": "the action[uuid:%s] already attached to the event subscription[uuid:%s]",
     "en_US": "the action[uuid:{0}] already attached to the event subscription[uuid:{1}]",
     "zh_CN": "报警动作[uuid:{0}]已经被加载到报警时间订阅[uuid:{1}]",
