@@ -1,5 +1,6 @@
 package org.zstack.storage.ceph;
 
+import org.zstack.configuration.BusinessProperties;
 import org.zstack.core.GlobalProperty;
 import org.zstack.core.GlobalPropertyDefinition;
 
@@ -32,8 +33,7 @@ public class CephGlobalProperty {
     public static String PRIMARY_STORAGE_MODULE_PATH;
     @GlobalProperty(name="Ceph.vendor.getXskyLicense.Port", defaultValue = "8051")
     public static String GET_XSKY_LICENSE_PORT;
-    @GlobalProperty(name="Ceph.backupStorage.iptables.rule.", defaultValue = "")
-    public static List<String> CEPH_BACKUP_STORAGE_IPTABLES_RULES;
-    @GlobalProperty(name="Ceph.primaryStorage.iptables.rule.", defaultValue = "")
-    public static List<String> CEPH_PRIMARY_STORAGE_IPTABLES_RULES;
+
+    public static List<String> CEPH_BACKUP_STORAGE_IPTABLES_RULES = BusinessProperties.getPropertiesAsList("Ceph.backupStorage.iptables.rule");
+    public static List<String> CEPH_PRIMARY_STORAGE_IPTABLES_RULES = BusinessProperties.getPropertiesAsList("Ceph.primaryStorage.iptables.rule");
 }
