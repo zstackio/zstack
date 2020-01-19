@@ -1,5 +1,6 @@
 package org.zstack.storage.backup.sftp;
 
+import org.zstack.configuration.BusinessProperties;
 import org.zstack.core.GlobalProperty;
 import org.zstack.core.GlobalPropertyDefinition;
 
@@ -20,6 +21,6 @@ public class SftpBackupStorageGlobalProperty {
     public static String AGENT_URL_ROOT_PATH;
     @GlobalProperty(name="SftpBackupStorage.DownloadCmd.timeout", defaultValue = "7200")
     public static int DOWNLOAD_CMD_TIMEOUT;
-    @GlobalProperty(name="SftpBackupStorage.iptables.rule.", defaultValue = "")
-    public static List<String> IPTABLES_RULES;
+
+    public static List<String> IPTABLES_RULES = BusinessProperties.getPropertiesAsList("SftpBackupStorage.iptables.rule");
 }
