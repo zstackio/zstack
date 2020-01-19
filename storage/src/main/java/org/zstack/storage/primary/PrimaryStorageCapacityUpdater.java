@@ -17,12 +17,12 @@ import org.zstack.header.storage.primary.RecalculatePrimaryStorageCapacityMsg;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import java.util.List;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by frank on 10/19/2015.
@@ -245,7 +245,7 @@ public class PrimaryStorageCapacityUpdater {
     }
 
     @Transactional
-    private boolean _run(PrimaryStorageCapacityUpdaterRunnable runnable) {
+    private synchronized boolean _run(PrimaryStorageCapacityUpdaterRunnable runnable) {
         if (!lockCapacity()) {
             logDeletedPrimaryStorage();
             return false;
