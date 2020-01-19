@@ -963,7 +963,7 @@ public class VolumeBase implements Volume {
                     public void handle(Map data) {
                         ErrorCodeList errList = new ErrorCodeList();
                         new While<>(pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class)).
-                                all((ext, c) -> ext.afterDeleteVolume(getSelfInventory(), new Completion(c) {
+                                each((ext, c) -> ext.afterDeleteVolume(getSelfInventory(), new Completion(c) {
                                     @Override
                                     public void success() {
                                         c.done();

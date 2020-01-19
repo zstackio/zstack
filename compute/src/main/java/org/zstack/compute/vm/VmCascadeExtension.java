@@ -414,7 +414,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             ).contains(action.getParentIssuer());
 
 
-            int parallelism = 20;
+            int parallelism = 10;
             new While<>(vminvs).step((inv, noErrorCompletion) -> {
                 VmInstanceDeletionMsg msg = new VmInstanceDeletionMsg();
                 if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer()) ||
