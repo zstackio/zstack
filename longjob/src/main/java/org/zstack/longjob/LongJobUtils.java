@@ -75,6 +75,21 @@ public class LongJobUtils {
         return canceledStates.contains(state);
     }
 
+    public static boolean jobCanceled(LongJobVO vo) {
+        return canceledStates.contains(vo.getState());
+    }
+
+    public static String wrapDefaultReuslt(LongJobVO job, ErrorCode err) {
+        if (err == null) {
+            return "Succeeded";
+        } else if (jobCanceled(job) && !err.isError(LongJobErrors.CANCELED)) {
+            return "Failed : " + cancelErr(job.getUuid(), err).toString();
+        } else {
+            return "Failed : " + err.toString();
+        }
+    }
+
+
     public static boolean jobCompleted(LongJobVO vo) {
         return completedStates.contains(vo.getState());
     }

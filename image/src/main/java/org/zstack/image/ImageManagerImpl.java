@@ -106,7 +106,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     @Autowired
     private ImageDeletionPolicyManager deletionPolicyMgr;
     @Autowired
+    private EventFacade evtf;
+    @Autowired
     protected RESTFacade restf;
+
 
     private Map<String, ImageFactory> imageFactories = Collections.synchronizedMap(new HashMap<>());
     private static final Set<Class> allowedMessageAfterDeletion = new HashSet<>();
@@ -987,6 +990,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 logger.debug(String.format("added image [name: %s, uuid: %s]", name, imageUuid));
 
                 final ImageInventory einv = ImageInventory.valueOf(ivo);
+                fireEvent(einv, null);
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class),
                         ext -> ext.afterAddImage(einv));
             }
@@ -994,6 +998,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             private void markFailure(ErrorCode reason) {
                 logger.error(String.format("upload image [name: %s, uuid: %s] failed: %s",
                         name, imageUuid, reason.toString()));
+
+                fireEvent(null, reason);
 
                 // Note, the handler of ImageDeletionMsg will deal with storage capacity.
                 ImageDeletionMsg msg = new ImageDeletionMsg();
@@ -1003,6 +1009,14 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 msg.setForceDelete(true);
                 bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, imageUuid);
                 bus.send(msg);
+            }
+
+            private void fireEvent(ImageInventory img, ErrorCode error) {
+                ImageCanonicalEvents.ImageTrackData data = new ImageCanonicalEvents.ImageTrackData();
+                data.setUuid(imageUuid);
+                data.setError(error);
+                data.setInventory(img);
+                evtf.fire(ImageCanonicalEvents.IMAGE_TRACK_RESULT_PATH, data);
             }
 
             @Override

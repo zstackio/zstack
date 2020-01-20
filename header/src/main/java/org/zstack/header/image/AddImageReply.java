@@ -15,4 +15,8 @@ public class AddImageReply extends MessageReply {
     public void setInventory(ImageInventory inventory) {
         this.inventory = inventory;
     }
+
+    public boolean needTrack() {
+        return inventory != null && ImageStatus.Downloading.toString().equals(inventory.getStatus());
+    }
 }
