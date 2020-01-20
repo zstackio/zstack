@@ -164,7 +164,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
                         public void run(FlowTrigger trigger, Map data) {
                             StringBuilder builder = new StringBuilder();
                             builder.append(String.format("sudo iptables-save | grep '%s' | while read LINE; do echo $LINE | sed -e \"s/-A/-D/\" | xargs sudo iptables ; done",
-                                    Platform.getGlobalPropertyAnnotationName(CephGlobalProperty.class, "CEPH_BACKUP_STORAGE_IPTABLES_RULES")));
+                                    CephGlobalProperty.CEPH_BACKUP_STORAGE_IPTABLES_KEY));
                             for (String rule : CephGlobalProperty.CEPH_BACKUP_STORAGE_IPTABLES_RULES) {
                                 builder.append(String.format(";sudo iptables %s", rule));
                             }

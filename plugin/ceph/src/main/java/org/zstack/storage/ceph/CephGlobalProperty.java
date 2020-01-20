@@ -34,6 +34,9 @@ public class CephGlobalProperty {
     @GlobalProperty(name="Ceph.vendor.getXskyLicense.Port", defaultValue = "8051")
     public static String GET_XSKY_LICENSE_PORT;
 
-    public static List<String> CEPH_BACKUP_STORAGE_IPTABLES_RULES = BusinessProperties.getPropertiesAsList("Ceph.backupStorage.iptables.rule");
-    public static List<String> CEPH_PRIMARY_STORAGE_IPTABLES_RULES = BusinessProperties.getPropertiesAsList("Ceph.primaryStorage.iptables.rule");
+    public static String CEPH_BACKUP_STORAGE_IPTABLES_KEY = "Ceph.backupStorage.iptables.rule";
+    public static String CEPH_PRIMARY_STORAGE_IPTABLES_KEY = "Ceph.primaryStorage.iptables.rule";
+
+    public static List<String> CEPH_BACKUP_STORAGE_IPTABLES_RULES = BusinessProperties.getPropertiesAsList(CEPH_BACKUP_STORAGE_IPTABLES_KEY);
+    public static List<String> CEPH_PRIMARY_STORAGE_IPTABLES_RULES = BusinessProperties.getPropertiesAsList(CEPH_PRIMARY_STORAGE_IPTABLES_KEY);
 }
