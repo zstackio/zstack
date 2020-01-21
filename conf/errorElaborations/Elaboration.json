@@ -739,9 +739,9 @@
     "category": "PS",
     "code": "1003",
     "method": "regex",
-    "regex": "the required host.* or doesn't belong to a local primary storage satisfying conditions.* or its cluster doesn't attach to any local primary storage",
-    "message_cn": "所需要的物理机属于以下情况: 1 状态不为Enabled/Connected, 2 所属于的localstorage状态不为enabled/Connected, 3 所属的cluster没有挂载到任何localstorage上",
-    "message_en": "the required host belong to the bellow conditions: 1 status/state not Enabled/Connected, 2 the localstorages which belong to are not Enabled/Connected, 3 the cluster does not attached to any localstorage"
+    "regex": "the required host.*, size \u003e .* or doesn't belong to a local primary storage satisfying conditions.* or its cluster doesn't attach to any local primary storage",
+    "message_cn": "所需要的物理机属于以下情况: 1 状态不为Enabled/Connected,并且存储容量 \u003e %4$s字节 2 所属于的localstorage状态不为enabled/Connected, 3 所属的cluster没有挂载到任何localstorage上",
+    "message_en": "the required host belong to the bellow conditions: 1 status/state not Enabled/Connected, size \u003e %4$s bytes 2 the localstorages which belong to are not Enabled/Connected, 3 the cluster does not attached to any localstorage"
   },
   {
     "category": "PS",
