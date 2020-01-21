@@ -17,7 +17,6 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.AccountConstant;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -362,24 +361,11 @@ public class LdapUtil {
         return LdapConstant.WindowsAD.GLOBAL_UUID_KEY;
     }
 
-    public List<Object> searchLdapEntry(String filter, Integer count, String[] returningAttributes, ResultFilter resultFilter, boolean searchAllAttributes) {
-        List<Object> result = new ArrayList<>();
-
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
-        LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
-        ldapTemplate.setContextSource(new SingleContextSource(ldapTemplateContextSource.getLdapContextSource().getReadOnlyContext()));
-
-        SearchControls searchCtls = new SearchControls();
-        searchCtls.setSearchScope(SearchControls.SUBTREE_SCOPE);
-
-        if (searchAllAttributes) {
-            searchCtls.setReturningAttributes(null);
-        } else {
-            searchCtls.setReturningAttributes(returningAttributes == null ? getReturningAttributes() : returningAttributes);
-        }
+    private LdapSearchedResult pagedSearch(LdapTemplate ldapTemplate, String filter, SearchControls searchCtls, ResultFilter resultFilter, Integer count) {
+        LdapSearchedResult ldapSearchedResult = new LdapSearchedResult();
+        ldapSearchedResult.setResult(new ArrayList<>());
 
         PagedResultsDirContextProcessor processor = new PagedResultsDirContextProcessor(1000);
-
         try {
             do {
                 List<Object> subResult = ldapTemplate.search("", filter, searchCtls, new AbstractContextMapper<Object>() {
@@ -411,24 +397,63 @@ public class LdapUtil {
                 }, processor);
 
                 subResult.removeIf(Objects::isNull);
-                result.addAll(subResult);
+                ldapSearchedResult.getResult().addAll(subResult);
 
-            } while (processor.hasMore() && (count == null || count > result.size()));
+            } while (processor.hasMore() && (count == null || count > ldapSearchedResult.getResult().size()));
 
-            if (count == null){
-                return result;
+            if (count != null && ldapSearchedResult.getResult().size() > count){
+                ldapSearchedResult.setResult(ldapSearchedResult.getResult().subList(0, count));
             }
-
-            if (result.size() <= count){
-                return result;
-            }
-
-            return result.subList(0, count);
-
-        } catch (Exception e){
-            logger.error("query ldap entry fail", e);
-            throw new OperationFailureException(operr("query ldap entry[filter: %s] fail, %s", filter, e.toString()));
+        } catch (Exception e) {
+            logger.error("query ldap entry with paged processor fail", e);
+            ldapSearchedResult.setSuccess(false);
+            ldapSearchedResult.setResult(null);
+            ldapSearchedResult.setError(e.getMessage());
         }
+
+        return ldapSearchedResult;
+    }
+
+    public List<Object> searchLdapEntry(String filter, Integer count, String[] returningAttributes, ResultFilter resultFilter, boolean searchAllAttributes) {
+        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
+        LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
+        ldapTemplate.setContextSource(new SingleContextSource(ldapTemplateContextSource.getLdapContextSource().getReadOnlyContext()));
+
+        SearchControls searchCtls = new SearchControls();
+        searchCtls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+
+        if (searchAllAttributes) {
+            searchCtls.setReturningAttributes(null);
+        } else {
+            searchCtls.setReturningAttributes(returningAttributes == null ? getReturningAttributes() : returningAttributes);
+        }
+
+        String errorMessage = "";
+        LdapSearchedResult ldapSearchedResult = pagedSearch(ldapTemplate, filter, searchCtls, resultFilter, count);
+        if (ldapSearchedResult.isSuccess()) {
+            return ldapSearchedResult.getResult();
+        }
+
+        if (ldapSearchedResult.getError() != null) {
+            errorMessage += String.format("\n paged query ldap entry failed, because %s", ldapSearchedResult.getError());
+        }
+
+        // Paged search may not supported by some ldap server
+        // Add external search for compatibility
+        List<LdapExternalSearchExtensionPoint> exts = Platform.getComponentLoader().getPluginRegistry().getExtensionList(LdapExternalSearchExtensionPoint.class);
+        for (LdapExternalSearchExtensionPoint ext : exts) {
+            ldapSearchedResult = ext.trySearch(ldapTemplate, filter, searchCtls, resultFilter, count);
+
+            if (ldapSearchedResult.isSuccess()) {
+                return ldapSearchedResult.getResult();
+            }
+
+            if (ldapSearchedResult.getError() != null) {
+                errorMessage += String.format("\n external query ldap entry failed, because %s", ldapSearchedResult.getError());
+            }
+        }
+
+        throw new OperationFailureException(operr("query ldap entry[filter: %s] fail, because %s", filter, errorMessage));
     }
 
     /**
