@@ -21,5 +21,6 @@ public class KVMGlobalProperty {
     @GlobalProperty(name="KvmAgentServer.port", defaultValue = "10001")
     public static int AGENT_SERVER_PORT;
 
-    public static List<String> IPTABLES_RULES = BusinessProperties.getPropertiesAsList("KvmHost.iptables.rule");
+    public static String IPTABLES_KEY = "KvmHost.iptables.rule";
+    public static List<String> IPTABLES_RULES = BusinessProperties.getPropertiesAsList(IPTABLES_KEY);
 }

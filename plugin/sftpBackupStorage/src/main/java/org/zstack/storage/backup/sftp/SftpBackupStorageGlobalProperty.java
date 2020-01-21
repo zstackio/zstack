@@ -22,5 +22,6 @@ public class SftpBackupStorageGlobalProperty {
     @GlobalProperty(name="SftpBackupStorage.DownloadCmd.timeout", defaultValue = "7200")
     public static int DOWNLOAD_CMD_TIMEOUT;
 
-    public static List<String> IPTABLES_RULES = BusinessProperties.getPropertiesAsList("SftpBackupStorage.iptables.rule");
+    public static String IPTABLES_KEY = "SftpBackupStorage.iptables.rule";
+    public static List<String> IPTABLES_RULES = BusinessProperties.getPropertiesAsList(IPTABLES_KEY);
 }
