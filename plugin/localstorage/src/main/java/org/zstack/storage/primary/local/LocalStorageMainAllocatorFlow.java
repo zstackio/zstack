@@ -261,10 +261,10 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
     private Collection<? extends String> considerImageCache(PrimaryStorageAllocationSpec spec, List<LocalStorageHostRefVO> candidateHosts) {
         List<String> ret = new ArrayList<>();
 
-        String sql = "select i.size from ImageVO i where i.uuid = :uuid";
+        String sql = "select i.actualSize from ImageVO i where i.uuid = :uuid";
         TypedQuery<Long> sq = dbf.getEntityManager().createQuery(sql, Long.class);
         sq.setParameter("uuid", spec.getImageUuid());
-        long imageSize = sq.getSingleResult();
+        long imageActualSize = sq.getSingleResult();
 
         for (LocalStorageHostRefVO ref : candidateHosts) {
             sql = "select count(i) from ImageCacheVO i where i.installUrl like :mark and i.primaryStorageUuid in (:psUuids)";
@@ -281,11 +281,11 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
                 // the host doesn't has the image in cache
                 // we need to add the image size;
                 if (spec.isNoOverProvisioning()) {
-                    if (ref.getAvailableCapacity() > spec.getSize() + imageSize) {
+                    if (ref.getAvailableCapacity() > spec.getSize() + imageActualSize) {
                         ret.add(ref.getPrimaryStorageUuid());
                     }
                 } else {
-                    if (ref.getAvailableCapacity() > ratioMgr.calculateByRatio(ref.getPrimaryStorageUuid(), spec.getSize()) + imageSize) {
+                    if (ref.getAvailableCapacity() > ratioMgr.calculateByRatio(ref.getPrimaryStorageUuid(), spec.getSize()) + imageActualSize) {
                         ret.add(ref.getPrimaryStorageUuid());
                     }
                 }
