@@ -181,8 +181,13 @@ public class UpdateQueryImpl implements UpdateQuery {
     }
 
     @Override
-    @Transactional
+    @DeadlockAutoRestart
     public int hardDelete() {
+        return _hardDelete();
+    }
+
+    @Transactional
+    private int _hardDelete() {
         DebugUtils.Assert(entityClass!=null, "entity class cannot be null");
 
         StringBuilder sb = new StringBuilder(String.format("DELETE FROM %s vo", entityClass.getSimpleName()));
@@ -209,8 +214,13 @@ public class UpdateQueryImpl implements UpdateQuery {
     }
 
     @Override
-    @Transactional
+    @DeadlockAutoRestart
     public void delete() {
+        _delete();
+    }
+
+    @Transactional
+    private void _delete() {
         DebugUtils.Assert(entityClass!=null, "entity class cannot be null");
 
         EntityInfo info = dbf.getEntityInfo(entityClass);
@@ -244,8 +254,13 @@ public class UpdateQueryImpl implements UpdateQuery {
     }
 
     @Override
-    @Transactional
+    @DeadlockAutoRestart
     public void update() {
+        _update();
+    }
+
+    @Transactional
+    private void _update() {
         DebugUtils.Assert(entityClass!=null, "entity class cannot be null");
 
         StringBuilder sb = new StringBuilder(String.format("UPDATE %s vo", entityClass.getSimpleName()));
