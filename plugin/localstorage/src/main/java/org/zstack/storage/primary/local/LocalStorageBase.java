@@ -1699,6 +1699,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     hostUuid, self.getUuid());
             if (ignoreError) {
                 logger.error(errInfo);
+                return;
             } else {
                 throw new CloudRuntimeException(errInfo);
             }
@@ -1855,7 +1856,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        bkd.handle(msg, new ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply>(msg) {
+                        bkd.handle(msg, new ReturnValueCompletion<InstantiateVolumeOnPrimaryStorageReply>(trigger) {
                             @Override
                             public void success(InstantiateVolumeOnPrimaryStorageReply returnValue) {
                                 reply = returnValue;
@@ -2592,7 +2593,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     private void checkLocalStoragePrimaryStorageInitilized(List<HostInventory> hosts, boolean initialized, Completion completion) {
-        new While<>(hosts).all((host, com) -> {
+        new While<>(hosts).each((host, com) -> {
             if (hostHasInitializedTag(host.getUuid())) {
                 LocalStorageHypervisorFactory f = getHypervisorBackendFactory(host.getHypervisorType());
                 LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
