@@ -15,7 +15,6 @@ import org.zstack.compute.vm.IsoOperator;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmPriorityOperator;
 import org.zstack.compute.vm.VmSystemTags;
-import org.zstack.console.ConsoleGlobalProperty;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
@@ -2069,7 +2068,7 @@ public class KVMHost extends HostBase implements Host {
             cmd.setSoundType(VmSystemTags.SOUND_TYPE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class, VmSystemTags.SOUND_TYPE_TOKEN));
         }
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
-        cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getVmInventory().getClusterUuid(), Boolean.class));
+        cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getDestHost().getClusterUuid(), Boolean.class));
         cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
         cmd.setEmulateHyperV(rcf.getResourceConfigValue(VmGlobalConfig.EMULATE_HYPERV, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setAdditionalQmp(VmGlobalConfig.ADDITIONAL_QMP.value(Boolean.class));
