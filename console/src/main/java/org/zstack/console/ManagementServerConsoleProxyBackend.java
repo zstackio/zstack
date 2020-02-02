@@ -140,7 +140,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                 try {
                     ShellUtils.run("rm -rf /var/lib/zstack/consoleProxy/ && mkdir -p /var/lib/zstack/consoleProxy/");
                     StringBuilder builder = new StringBuilder();
-                    builder.append(String.format("sudo iptables-save | grep '%s' | while read LINE; do echo $LINE | sed -e \"s/-A/-D/\" | xargs sudo iptables ; done",
+                    builder.append(String.format("iptables-save | grep '%s' | while read LINE; do echo $LINE | sed -e \"s/-A/-D/\" | xargs sudo iptables ; done",
                             ConsoleGlobalProperty.IPTABLES_KEY));
                     for (String rule : ConsoleGlobalProperty.IPTABLES_RULES) {
                         builder.append(String.format(";sudo iptables %s", rule));
