@@ -385,7 +385,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 reportProgress("100");
                 changeState(longJobUuid, LongJobStateEvent.succeed, it -> {
                     if (Strings.isEmpty(it.getJobResult())) {
-                        it.setJobResult("Succeeded");
+                        it.setJobResult(wrapDefaultReuslt(it, null));
                     }
                 });
 
@@ -401,7 +401,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             public void fail(ErrorCode errorCode) {
                 LongJobVO vo = changeState(longJobUuid, getEventOnError(errorCode), it -> {
                     if (Strings.isEmpty(it.getJobResult())) {
-                        it.setJobResult("Failed : " + wrapErrorCode(it, errorCode).toString());
+                        it.setJobResult(wrapDefaultReuslt(it, errorCode));
                     }
                 });
 
@@ -412,14 +412,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> it.apply(evt));
 
                 logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
-            }
-
-            private ErrorCode wrapErrorCode(LongJobVO job, ErrorCode err) {
-                if (Arrays.asList(LongJobState.Canceling, LongJobState.Canceled).contains(vo.getState()) && !err.isError(LongJobErrors.CANCELED)) {
-                    return cancelErr(job.getUuid(), err);
-                } else {
-                    return err;
-                }
             }
         });
     }

@@ -1,33 +1,31 @@
 package org.zstack.image;
 
-import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
-import org.zstack.core.asyncbatch.While;
+import org.zstack.core.cloudbus.AutoOffEventCallback;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.header.Constants;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.*;
 import org.zstack.header.longjob.*;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
+import org.zstack.longjob.LongJobGlobalConfig;
 import org.zstack.longjob.LongJobUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.zstack.longjob.LongJobUtils.cancelErr;
-import static org.zstack.longjob.LongJobUtils.jobCanceled;
+import static org.zstack.longjob.LongJobUtils.*;
 
 
 /**
@@ -42,16 +40,90 @@ public class AddImageLongJob implements LongJob {
     protected CloudBus bus;
     @Autowired
     protected DatabaseFacade dbf;
+    @Autowired
+    protected EventFacade evtf;
 
     protected String auditResourceUuid;
 
+    class AddImageCompletion<T extends ImageInventory> extends ReturnValueCompletion<T> {
+        APIAddImageEvent event;
+        LongJobVO job;
+        ReturnValueCompletion<APIEvent> completion;
+        AtomicBoolean done = new AtomicBoolean(false);
+
+        AddImageCompletion(APIAddImageEvent event, LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
+            super(completion);
+            this.job = job;
+            this.event = event;
+            this. completion = completion;
+        }
+
+        @Override
+        public void success(ImageInventory image) {
+            if (done.compareAndSet(false, true)) {
+                event.setInventory(image);
+                job = updateByUuid(job.getUuid(), vo -> vo.setJobResult(JSONObjectUtil.toJsonString(event)));
+                completion.success(event);
+            }
+        }
+
+        @Override
+        public void fail(ErrorCode err) {
+            if (done.compareAndSet(false, true)) {
+                job = updateByUuid(job.getUuid(), vo -> vo.setJobResult(wrapDefaultReuslt(vo, err)));
+                completion.fail(err);
+            }
+        }
+
+        public void track(ImageInventory inv) {
+            if (!done.get()) {
+                event.setInventory(inv);
+                job = updateByUuid(job.getUuid(), vo -> vo.setJobResult(JSONObjectUtil.toJsonString(event)));
+            }
+        }
+
+        void startTrack() {
+            long offTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.value(Long.class));
+            evtf.on(ImageCanonicalEvents.IMAGE_TRACK_RESULT_PATH, new AutoOffEventCallback() {
+                @Override
+                protected boolean run(Map tokens, Object d) {
+                    ImageCanonicalEvents.ImageTrackData data = (ImageCanonicalEvents.ImageTrackData) d;
+                    if (data.getUuid().equals(job.getTargetResourceUuid())) {
+                        handleResult(data);
+                        return true;
+                    } else if (offTime > System.currentTimeMillis()) {
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                private void handleResult(ImageCanonicalEvents.ImageTrackData data) {
+                    if (data.isSuccess()) {
+                        success(data.getInventory());
+                    } else {
+                        fail(data.getError());
+                    }
+                }
+            });
+        }
+    }
+
     @Override
-    public void start(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
+    public void start(LongJobVO job, ReturnValueCompletion<APIEvent> compl) {
         AddImageMsg msg = JSONObjectUtil.toObject(job.getJobData(), AddImageMsg.class);
         if (msg.getResourceUuid() == null) {
             msg.setResourceUuid(Platform.getUuid());
             job.setJobData(JSONObjectUtil.toJsonString(msg));
-            dbf.update(job);
+            job.setTargetResourceUuid(msg.getResourceUuid());
+            dbf.updateAndRefresh(job);
+        }
+
+        APIAddImageEvent evt = new APIAddImageEvent(job.getApiId());
+
+        AddImageCompletion completion = new AddImageCompletion(evt, job, compl);
+        if (msg.needTrack()) {
+            completion.startTrack();
         }
 
         bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, msg.getResourceUuid());
@@ -68,14 +140,14 @@ public class AddImageLongJob implements LongJob {
 
             private void handleSuccess(MessageReply reply) {
                 AddImageReply r = reply.castReply();
-                APIAddImageEvent evt = new APIAddImageEvent(job.getApiId());
 
                 auditResourceUuid = r.getInventory().getUuid();
-                evt.setInventory(r.getInventory());
                 if (jobCanceled(job.getUuid())) {
                     cleanImage(msg, completion, cancelErr(job.getUuid()));
+                } else if (msg.needTrack()) {
+                    completion.track(r.getInventory());
                 } else {
-                    completion.success(evt);
+                    completion.success(r.getInventory());
                 }
             }
         });
@@ -98,7 +170,7 @@ public class AddImageLongJob implements LongJob {
         });
     }
 
-    private void cleanImage(AddImageMsg msg, ReturnValueCompletion<APIEvent> completion, ErrorCode err) {
+    private void cleanImage(AddImageMsg msg, AddImageCompletion completion, ErrorCode err) {
         ImageDeletionMsg dmsg = buildDeletionMsg(msg);
         bus.send(dmsg, new CloudBusCallBack(completion) {
             @Override

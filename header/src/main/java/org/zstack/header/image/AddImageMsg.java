@@ -26,6 +26,10 @@ public class AddImageMsg extends NeedReplyMessage {
     private SessionInventory session;
     private String resourceUuid;
 
+    public boolean needTrack() {
+        return url != null && url.startsWith("upload://");
+    }
+
     public String getFormat() {
         return format;
     }
