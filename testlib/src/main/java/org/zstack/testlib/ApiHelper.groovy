@@ -29621,6 +29621,33 @@ trait ApiHelper {
     }
 
 
+    def updateVmOS(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateVmOSAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateVmOSAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def updateVmPriority(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateVmPriorityAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateVmPriorityAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid

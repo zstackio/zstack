@@ -187,4 +187,7 @@
     <message>
         <name>org.zstack.header.vm.APIGetSpiceCertificatesMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APIUpdateVmOSMsg</name>
+    </message>
 </service>

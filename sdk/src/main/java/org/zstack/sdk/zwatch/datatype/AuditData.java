@@ -76,6 +76,14 @@ public class AuditData  {
         return this.TAG_API_CLIENTBROWSER;
     }
 
+    public java.lang.String TAG_LEVEL;
+    public void setTAG_LEVEL(java.lang.String TAG_LEVEL) {
+        this.TAG_LEVEL = TAG_LEVEL;
+    }
+    public java.lang.String getTAG_LEVEL() {
+        return this.TAG_LEVEL;
+    }
+
     public java.lang.String resourceUuid;
     public void setResourceUuid(java.lang.String resourceUuid) {
         this.resourceUuid = resourceUuid;
@@ -106,6 +114,14 @@ public class AuditData  {
     }
     public java.lang.String getClientBrowser() {
         return this.clientBrowser;
+    }
+
+    public java.lang.String level;
+    public void setLevel(java.lang.String level) {
+        this.level = level;
+    }
+    public java.lang.String getLevel() {
+        return this.level;
     }
 
     public java.lang.String apiName;
