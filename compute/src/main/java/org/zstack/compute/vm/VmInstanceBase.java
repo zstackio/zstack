@@ -58,12 +58,16 @@ import org.zstack.header.vm.VmInstanceSpec.HostName;
 import org.zstack.header.vm.VmInstanceSpec.IsoSpec;
 import org.zstack.header.vm.cdrom.*;
 import org.zstack.header.volume.*;
+import org.zstack.header.longjob.SubmitLongJobMsg;
+import org.zstack.header.longjob.LongJobConstants;
+import org.zstack.header.longjob.SubmitLongJobReply;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Linux;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
@@ -80,8 +84,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.*;
 
@@ -445,7 +448,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((CancelMigrateVmMsg) msg);
         } else if (msg instanceof AttachIsoToVmInstanceMsg) {
             handle((AttachIsoToVmInstanceMsg) msg);
-        } else {
+        } else if (msg instanceof UpdateVmOSMsg) {
+            handle((UpdateVmOSMsg) msg);
+        }else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
                 VmInstance v = ext.getVmInstance(self);
@@ -489,6 +494,63 @@ public class VmInstanceBase extends AbstractVmInstance {
                 return "restore-vm";
             }
         });
+    }
+
+    private void handle(UpdateVmOSMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getName() {
+                return String.format("update-vm-os-%s", self.getUuid());
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                UpdateVmOSReply reply = new UpdateVmOSReply();
+                doUpdateVmOS(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        reply.setInventory(getSelfInventory());
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+        });
+    }
+
+    protected void doUpdateVmOS(final UpdateVmOSMsg msg, final Completion completion) {
+        String vmIp = msg.getVmIp();
+        String vmPassword = msg.getPassword();
+        String yumUpdateCmd = "yum --disablerepo=* --enablerepo=zstack-mn -y update";
+        String aptUpdateCmd = "DEBIAN_FRONTEND=noninteractive apt-get -u -y dist-upgrade";
+        if (vmIp != null ){
+            String updateVmCmd = String.format("sshpass -p %s ssh -o StrictHostKeyChecking=no root@%s %s", vmPassword, vmIp, yumUpdateCmd);
+            String cmd = String.format("sshpass -p %s ssh -o StrictHostKeyChecking=no root@%s [ -f /usr/bin/yum ]", vmPassword, vmIp);
+            Linux.ShellResult ret = Linux.shell(cmd);
+            if (ret.getExitCode() != 0){
+                updateVmCmd = String.format("sshpass -p %s ssh -o StrictHostKeyChecking=no root@%s %s", vmPassword, vmIp, aptUpdateCmd);
+            }
+            logger.debug(String.format("begin to run shellCmd `%s`", updateVmCmd));
+            Linux.ShellResult updateRet = Linux.shell(updateVmCmd);
+            if (updateRet.getExitCode() == 0){
+                completion.success();
+            }else{
+                ErrorCode err = argerr("Failed to apply the available patch to vm:%s", msg.getVmInstanceUuid());
+                completion.fail(err);
+            }
+        }
     }
 
     private void handle(CreateVmCdRomMsg msg) {
@@ -2951,6 +3013,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmInstanceDefaultCdRomMsg) msg);
         } else if (msg instanceof APIUpdateVmNicDriverMsg) {
             handle((APIUpdateVmNicDriverMsg) msg);
+        } else if (msg instanceof APIUpdateVmOSMsg) {
+            handle((APIUpdateVmOSMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -6829,6 +6893,32 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public String getName() {
                 return String.format("change-vm-%s-priority", self.getUuid());
+            }
+        });
+    }
+
+    private void handle(APIUpdateVmOSMsg msg) {
+        APIUpdateVmOSEvent event = new APIUpdateVmOSEvent(msg.getId());
+        String jobData;
+        String vmPassword = msg.getPassword() == null ? "password" : msg.getPassword();
+        String vmIp = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getUuid())
+                .select(VmNicVO_.ip).findValue();
+        jobData = String.format("{'vmInstanceUuid':'%s', 'vmIp':'%s', 'vmPassword':'%s'}",
+                msg.getUuid(), vmIp, vmPassword);
+
+        SubmitLongJobMsg smsg = new SubmitLongJobMsg();
+        smsg.setJobName(APIUpdateVmOSMsg.class.getSimpleName());
+        smsg.setJobData(jobData);
+        smsg.setSystemTags(msg.getSystemTags());
+        smsg.setUserTags(msg.getUserTags());
+        smsg.setAccountUuid(msg.getSession().getAccountUuid());
+        bus.makeLocalServiceId(smsg, LongJobConstants.SERVICE_ID);
+        bus.send(smsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply rly) {
+                SubmitLongJobReply reply = rly.castReply();
+                event.setInventory(reply.getInventory());
+                bus.publish(event);
             }
         });
     }
