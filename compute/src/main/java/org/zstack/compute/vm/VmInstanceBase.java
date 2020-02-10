@@ -531,7 +531,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void doUpdateVmOS(final UpdateVmOSMsg msg, final Completion completion) {
-        String vmIp = msg.getVmIp();
+        String vmIp = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid())
+                .select(VmNicVO_.ip).findValue();
         String vmPassword = msg.getPassword();
         String yumUpdateCmd = "yum --disablerepo=* --enablerepo=zstack-mn -y update";
         String aptUpdateCmd = "DEBIAN_FRONTEND=noninteractive apt-get -u -y dist-upgrade";
@@ -6901,10 +6902,8 @@ public class VmInstanceBase extends AbstractVmInstance {
         APIUpdateVmOSEvent event = new APIUpdateVmOSEvent(msg.getId());
         String jobData;
         String vmPassword = msg.getPassword() == null ? "password" : msg.getPassword();
-        String vmIp = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getUuid())
-                .select(VmNicVO_.ip).findValue();
-        jobData = String.format("{'vmInstanceUuid':'%s', 'vmIp':'%s', 'vmPassword':'%s'}",
-                msg.getUuid(), vmIp, vmPassword);
+        jobData = String.format("{'uuid':'%s', 'password':'%s'}",
+                msg.getUuid(), vmPassword);
 
         SubmitLongJobMsg smsg = new SubmitLongJobMsg();
         smsg.setJobName(APIUpdateVmOSMsg.class.getSimpleName());

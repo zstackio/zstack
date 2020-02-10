@@ -5,32 +5,31 @@ import org.zstack.header.message.NeedReplyMessage;
 
 public class UpdateVmOSMsg extends NeedReplyMessage implements VmInstanceMessage{
 
-    private String vmInstanceUuid;
-    private String vmIp;
+    private String uuid;
     @NoLogging
-    private String vmPassword;
+    private String password;
     @Override
     public String getVmInstanceUuid() {
-        return vmInstanceUuid;
+        return uuid;
     }
 
-    public void setVmInstanceUuid(String vmInstanceUuid) {
-        this.vmInstanceUuid = vmInstanceUuid;
+    public void setVmInstanceUuid(String uuid) {
+        this.uuid = uuid;
     }
 
-    public String getVmIp() {
-        return vmIp;
+    public String getUuid() {
+        return uuid;
     }
 
-    public void setVmIp(String vmIp) {
-        this.vmIp = vmIp;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     public String getPassword() {
-        return vmPassword;
+        return password;
     }
 
     public void setPassword(String password) {
-        this.vmPassword = password;
+        this.password = password;
     }
 }
