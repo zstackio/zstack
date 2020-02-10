@@ -3,9 +3,8 @@ package org.zstack.network.service.eip;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.message.APIGetMessage;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.rest.RestResponse;
 import org.zstack.network.service.vip.VipVO;
 
 /**
@@ -16,11 +15,15 @@ import org.zstack.network.service.vip.VipVO;
         method = HttpMethod.GET,
         responseClass = APIGetEipAttachableVmNicsReply.class
 )
-public class APIGetEipAttachableVmNicsMsg extends APISyncCallMessage {
+public class APIGetEipAttachableVmNicsMsg extends APIGetMessage {
     @APIParam(required = false, resourceType = EipVO.class)
     private String eipUuid;
     @APIParam(required = false, resourceType = VipVO.class)
     private String vipUuid;
+    @APIParam(required = false)
+    private String vmUuid;
+    @APIParam(required = false)
+    private String vmName;
 
     public String getEipUuid() {
         return eipUuid;
@@ -37,7 +40,23 @@ public class APIGetEipAttachableVmNicsMsg extends APISyncCallMessage {
     public void setVipUuid(String vipUuid) {
         this.vipUuid = vipUuid;
     }
- 
+
+    public String getVmUuid() {
+        return vmUuid;
+    }
+
+    public void setVmUuid(String vmUuid) {
+        this.vmUuid = vmUuid;
+    }
+
+    public String getVmName() {
+        return vmName;
+    }
+
+    public void setVmName(String vmName) {
+        this.vmName = vmName;
+    }
+
     public static APIGetEipAttachableVmNicsMsg __example__() {
         APIGetEipAttachableVmNicsMsg msg = new APIGetEipAttachableVmNicsMsg();
         msg.setEipUuid(uuid());

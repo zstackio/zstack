@@ -31,6 +31,18 @@ public class GetEipAttachableVmNicsAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vipUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmName;
+
+    @Param(required = false)
+    public java.lang.Integer limit = 1000;
+
+    @Param(required = false)
+    public java.lang.Integer start = 0;
+
     @Param(required = false)
     public java.util.List systemTags;
 

@@ -2,6 +2,9 @@ package org.zstack.network.service.eip
 
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.vm.VmNicInventory
+import java.lang.Integer
+import java.lang.Boolean
+import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
@@ -22,5 +25,23 @@ doc {
 		type "List"
 		since "0.6"
 		clz VmNicInventory.class
+	}
+	field {
+		name "start"
+		desc ""
+		type "Integer"
+		since "3.8"
+	}
+	field {
+		name "more"
+		desc ""
+		type "Boolean"
+		since "3.8"
+	}
+	field {
+		name "success"
+		desc ""
+		type "boolean"
+		since "3.8"
 	}
 }
