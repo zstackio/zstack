@@ -42,6 +42,46 @@ doc {
 					
 				}
 				column {
+					name "vmUuid"
+					enclosedIn ""
+					desc ""
+					location "query"
+					type "String"
+					optional true
+					since "3.8"
+					
+				}
+				column {
+					name "vmName"
+					enclosedIn ""
+					desc ""
+					location "query"
+					type "String"
+					optional true
+					since "3.8"
+					
+				}
+				column {
+					name "limit"
+					enclosedIn ""
+					desc ""
+					location "query"
+					type "Integer"
+					optional true
+					since "3.8"
+					
+				}
+				column {
+					name "offset"
+					enclosedIn ""
+					desc ""
+					location "query"
+					type "Integer"
+					optional true
+					since "3.8"
+					
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
