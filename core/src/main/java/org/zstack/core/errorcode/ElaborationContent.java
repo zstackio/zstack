@@ -1,6 +1,7 @@
 package org.zstack.core.errorcode;
 
 import org.zstack.header.rest.SDK;
+import org.zstack.utils.string.ElaborationSearchMethod;
 import org.zstack.utils.string.ErrorCodeElaboration;
 
 /**
@@ -26,7 +27,11 @@ public class ElaborationContent implements Comparable<ElaborationContent> {
         regex = error.getRegex();
         message_cn = error.getMessage_cn();
         message_en = error.getMessage_en();
-        method = error.getMethod().toString();
+        if (error.getMethod() == null) {
+            method = ElaborationSearchMethod.regex.toString();
+        } else {
+            method = error.getMethod().toString();
+        }
         distance = error.getDistance();
         source = error.getSource();
     }
