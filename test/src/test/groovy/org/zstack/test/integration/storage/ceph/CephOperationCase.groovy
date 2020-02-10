@@ -1,9 +1,15 @@
 package org.zstack.test.integration.storage.ceph
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.header.storage.primary.PrimaryStorageVO
+import org.zstack.header.storage.primary.PrimaryStorageVO_
+import org.zstack.header.storage.primary.PrimaryStorageState
+import org.zstack.header.storage.primary.PrimaryStorageStatus
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_
 import org.zstack.sdk.*
+import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -122,7 +128,44 @@ class CephOperationCase extends SubCase {
             testAddBackupSameMon()
 
             testCephSnapshotTree()
+
+            testConcurrentChangeStateAndReconnect()
         }
+    }
+
+    void testConcurrentChangeStateAndReconnect() {
+        def cephMonConnectCalled = false
+        env.afterSimulator(CephPrimaryStorageMonBase.ECHO_PATH) { rsp, HttpEntity<String> e ->
+            cephMonConnectCalled = true
+            return rsp
+        }
+
+
+        def changeStateThread = Thread.start {
+            changePrimaryStorageState {
+                uuid = ps.uuid
+                stateEvent = "maintain"
+            }
+        }
+
+        CephPrimaryStorageInventory cephPS
+        def reconnectPrimaryStorageThread = Thread.start {
+            cephPS = reconnectPrimaryStorage {
+                uuid = ps.uuid
+            }
+        }
+
+        changeStateThread.join()
+        reconnectPrimaryStorageThread.join()
+
+        assert Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.state, PrimaryStorageState.Maintenance)
+                .eq(PrimaryStorageVO_.status, PrimaryStorageStatus.Connected)
+                .eq(PrimaryStorageVO_.uuid, ps.uuid)
+                .isExists()
+
+        assert !cephPS.mons.isEmpty()
+        assert cephMonConnectCalled
     }
 
     void prepare() {

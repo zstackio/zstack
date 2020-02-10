@@ -3195,32 +3195,19 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     protected void handle(APIReconnectPrimaryStorageMsg msg) {
         final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
 
-        // fire disconnected canonical event only if the current status is connected
-        boolean fireEvent = self.getStatus() == PrimaryStorageStatus.Connected;
-
-        self.setStatus(PrimaryStorageStatus.Connecting);
-        dbf.update(self);
-        connect(false, new Completion(msg) {
+        ReconnectPrimaryStorageMsg rmsg = new ReconnectPrimaryStorageMsg();
+        rmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, rmsg.getPrimaryStorageUuid());
+        bus.send(rmsg, new CloudBusCallBack(msg) {
             @Override
-            public void success() {
-                self = dbf.reload(self);
-                self.setStatus(PrimaryStorageStatus.Connected);
-                self = dbf.updateAndRefresh(self);
-                evt.setInventory(getSelfInventory());
-                bus.publish(evt);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                self = dbf.reload(self);
-                self.setStatus(PrimaryStorageStatus.Disconnected);
-                self = dbf.updateAndRefresh(self);
-
-                if (fireEvent) {
-                    fireDisconnectedCanonicalEvent(errorCode);
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setError(reply.getError());
+                } else {
+                    self = dbf.reload(self);
+                    evt.setInventory(getSelfInventory());
                 }
 
-                evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
