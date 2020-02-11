@@ -98,72 +98,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
             @Override
             public void success(final VirtualRouterVmInventory vr) {
-                /*
-                 * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
-                 */
-                if (haBackend.isSnatDisabledOnRouter(vr.getUuid())) {
-                    completion.success();
-                    return;
-                }
-
-                final VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
-                VmNicInventory privateNic = CollectionUtils.find(vr.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-                    @Override
-                    public VmNicInventory call(VmNicInventory arg) {
-                        if (arg.getL3NetworkUuid().equals(struct.getL3Network().getUuid())) {
-                            return arg;
-                        }
-                        return null;
-                    }
-                });
-                DebugUtils.Assert(privateNic!=null, String.format("cannot find private nic[ip:%s] on virtual router[uuid:%s, name:%s]",
-                        struct.getGuestGateway(), vr.getUuid(), vr.getName()));
-
-                String publicIp = null;
-                for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-                    publicIp = ext.getPublicIp(vr.getUuid(), vr.getPublicNic().getL3NetworkUuid());
-                }
-                if (publicIp == null) {
-                    publicIp = vr.getPublicNic().getIp();
-                }
-
-                info.setPrivateNicIp(privateNic.getIp());
-                info.setPrivateNicMac(privateNic.getMac());
-                info.setPublicNicMac(vr.getPublicNic().getMac());
-                info.setPublicIp(publicIp);
-                info.setSnatNetmask(struct.getGuestNetmask());
-
-                VirtualRouterCommands.SetSNATCmd cmd = new VirtualRouterCommands.SetSNATCmd();
-                cmd.setSnat(info);
-
-                VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
-                msg.setVmInstanceUuid(vr.getUuid());
-                msg.setPath(VirtualRouterConstant.VR_SET_SNAT_PATH);
-                msg.setCommand(cmd);
-                msg.setCheckStatus(true);
-                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
-                bus.send(msg, new CloudBusCallBack(completion) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            completion.fail(reply.getError());
-                            return;
-                        }
-
-                        VirtualRouterAsyncHttpCallReply re = reply.castReply();
-                        SetSNATRsp ret = re.toResponse(SetSNATRsp.class);
-                        if (!ret.isSuccess()) {
-                            new VirtualRouterRoleManager().makeSnatRole(vr.getUuid());
-
-                            ErrorCode err = operr("virtual router[uuid:%s, ip:%s] failed to apply snat[%s] for vm[uuid:%s, name:%s] on L3Network[uuid:%s, name:%s], because %s",
-                                    vr.getUuid(), vr.getManagementNic().getIp(), JSONObjectUtil.toJsonString(info), spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
-                                    struct.getL3Network().getUuid(), struct.getL3Network().getName(), ret.getError());
-                            completion.fail(err);
-                        } else {
-                            applySnat(it, spec, completion);
-                        }
-                    }
-                });
+                completion.success();
             }
 
             @Override
@@ -274,18 +209,9 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         });
     }
 
-    private void releaseSnat(final Iterator<SnatStruct> it, final VmInstanceSpec spec, final NoErrorCompletion completion) {
-        releaseSnat(it, spec.getVmInventory(), completion);
-    }
-
     @Override
     public void releaseSnatService(List<SnatStruct> snatStructList, VmInstanceSpec spec, NoErrorCompletion completion) {
-        if (snatStructList.isEmpty()) {
-            completion.done();
-            return;
-        }
-
-        releaseSnat(snatStructList.iterator(), spec, completion);
+        completion.done();
     }
 
     @Override
