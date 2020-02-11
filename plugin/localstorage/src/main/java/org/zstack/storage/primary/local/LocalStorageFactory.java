@@ -41,6 +41,7 @@ import org.zstack.header.volume.*;
 import org.zstack.header.storage.snapshot.AfterTakeLiveSnapshotsOnVolumes;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.header.storage.snapshot.TakeVolumesSnapshotOnKvmReply;
+import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -371,6 +372,63 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
     @Override
     public void preDeleteHost(HostInventory inventory) throws HostException {
+        if (PrimaryStorageGlobalConfig.DELETION_POLICY.value().equals("Force")) {
+            return;
+        }
+
+        SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
+        q.select(LocalStorageHostRefVO_.primaryStorageUuid);
+        q.add(LocalStorageHostRefVO_.hostUuid, Op.EQ, inventory.getUuid());
+        List<String> psUuids = q.listValue();
+        if(psUuids == null){
+            psUuids = new ArrayList<>();
+        }
+
+        List<String> psListForLocalStorageResource = Q.New(LocalStorageResourceRefVO.class)
+                .select(LocalStorageResourceRefVO_.primaryStorageUuid)
+                .eq(LocalStorageResourceRefVO_.hostUuid, inventory.getUuid())
+                .listValues();
+        if(psListForLocalStorageResource == null){
+            psListForLocalStorageResource = new ArrayList<>();
+        }
+
+        if (psUuids.isEmpty() && psListForLocalStorageResource.isEmpty()){
+            return;
+        }
+
+        psUuids.addAll(psListForLocalStorageResource);
+        Set<String> psUuidSet = new HashSet<>(psUuids);
+        psUuids.clear();
+        psUuids.addAll(psUuidSet);
+
+        logger.debug(String.format("the host[uuid:%s] belongs to the local storage[uuid:%s], starts to delete vms and" +
+                " volumes on the host", inventory.getUuid(), String.join(",", psUuids)));
+
+        List<String> finalPsUuids = psUuids;
+        final List<String> vmUuids = new Callable<List<String>>() {
+            @Override
+            @Transactional(readOnly = true)
+            public List<String> call() {
+                String sql = "select vm.uuid" +
+                        " from VolumeVO vol, LocalStorageResourceRefVO ref, VmInstanceVO vm" +
+                        " where ref.primaryStorageUuid in :psUuids" +
+                        " and vol.type = :vtype" +
+                        " and ref.resourceUuid = vol.uuid" +
+                        " and ref.resourceType = :rtype" +
+                        " and ref.hostUuid = :huuid" +
+                        " and vm.uuid = vol.vmInstanceUuid";
+                TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+                q.setParameter("vtype", VolumeType.Root);
+                q.setParameter("rtype", VolumeVO.class.getSimpleName());
+                q.setParameter("huuid", inventory.getUuid());
+                q.setParameter("psUuids", finalPsUuids);
+                return q.getResultList();
+            }
+        }.call();
+
+        if (!vmUuids.isEmpty()) {
+            throw new OperationFailureException(operr("There are still vm on local storage host[uuid:%s], can not delete it", inventory.getUuid()));
+        }
     }
 
     @Override

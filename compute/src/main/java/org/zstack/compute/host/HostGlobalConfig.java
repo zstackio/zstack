@@ -1,6 +1,7 @@
 package org.zstack.compute.host;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.resourceconfig.BindResourceConfig;
@@ -45,5 +46,7 @@ public class HostGlobalConfig {
     public static GlobalConfig HOST_MAINTENANCE_POLICY = new GlobalConfig(CATEGORY, "host.maintenance.policy");
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig AUTO_RECONNECT_ON_ERROR_MAX_ATTEMPT_NUM = new GlobalConfig(CATEGORY, "connection.autoReconnectOnError.maxAttemptsNum");
-
+    @GlobalConfigValidation(validValues = {"Force", "Permissive"})
+    @GlobalConfigDef(defaultValue = "Force", description = "Deletion policy for host")
+    public static GlobalConfig DELETION_POLICY = new GlobalConfig(CATEGORY, "deletion.policy");
 }
