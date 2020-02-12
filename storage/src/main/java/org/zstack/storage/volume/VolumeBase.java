@@ -736,7 +736,7 @@ public class VolumeBase implements Volume {
                             bus.send(dmsg, new CloudBusCallBack(trigger) {
                                 @Override
                                 public void run(MessageReply r) {
-                                    if (!r.isSuccess()) {
+                                    if (!r.isSuccess() && dbf.isExist(dmsg.getPrimaryStorageUuid(), PrimaryStorageVO.class)) {
                                         trigger.fail(r.getError());
                                         return;
                                     }
