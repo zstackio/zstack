@@ -18,6 +18,8 @@ import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.EipInventory
+import org.zstack.sdk.GetEipAttachableVmNicsAction
+import org.zstack.sdk.GetEipAttachableVmNicsResult
 import org.zstack.sdk.L2NetworkInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -303,6 +305,47 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
         def cluster_1 = env.inventoryByName("cluster-1") as ClusterInventory
         def vmInFlat_1 = env.inventoryByName("vmInFlat-1") as VmInstanceInventory
         def cluster = env.inventoryByName("cluster") as ClusterInventory
+
+        GetEipAttachableVmNicsAction action = new GetEipAttachableVmNicsAction()
+        action.eipUuid = eip.uuid
+        action.limit = 2
+        action.start = 0
+        action.sessionId = adminSession()
+        GetEipAttachableVmNicsAction.Result res = action.call()
+        assert res.error == null
+        assert res.value.start == 2
+        assert res.value.more
+        assert res.value.inventories.size() == 2
+
+        action = new GetEipAttachableVmNicsAction()
+        action.eipUuid = eip.uuid
+        action.limit = 2
+        action.start = 2
+        action.sessionId = adminSession()
+        res = action.call()
+        assert res.error == null
+        assert !res.value.more
+        assert res.value.inventories.size() == 1
+
+        action = new GetEipAttachableVmNicsAction()
+        action.eipUuid = eip.uuid
+        action.vmName = "vmInFlat"
+        action.limit = 100
+        action.start = 0
+        action.sessionId = adminSession()
+        res = action.call()
+        assert res.error == null
+        assert res.value.inventories.size() == 2
+
+        action = new GetEipAttachableVmNicsAction()
+        action.eipUuid = eip.uuid
+        action.vmUuid = vmInFlat_1.uuid
+        action.limit = 100
+        action.start = 0
+        action.sessionId = adminSession()
+        res = action.call()
+        assert res.error == null
+        assert res.value.inventories.size() == 1
 
         stopVmInstance {
             uuid = vmInFlat_1.uuid
