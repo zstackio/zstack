@@ -1003,7 +1003,7 @@ public class VolumeBase implements Volume {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         ErrorCodeList errList = new ErrorCodeList();
-                        new While<>(pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class)).all((ext, c) -> {
+                        new While<>(pluginRgty.getExtensionList(VolumeDeletionExtensionPoint.class)).each((ext, c) -> {
                             ext.afterDeleteVolume(getSelfInventory(), new Completion(c) {
                                 @Override
                                 public void success() {
@@ -1031,7 +1031,7 @@ public class VolumeBase implements Volume {
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-
+                        trigger.rollback();
                     }
                 });
 
