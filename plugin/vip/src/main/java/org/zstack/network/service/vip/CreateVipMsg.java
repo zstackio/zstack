@@ -14,6 +14,7 @@ public class CreateVipMsg extends NeedReplyMessage {
     private String allocatorStrategy;
     private String requiredIp;
     private SessionInventory session;
+    private boolean system;
 
     public String getName() {
         return name;
@@ -61,5 +62,13 @@ public class CreateVipMsg extends NeedReplyMessage {
 
     public void setSession(SessionInventory session) {
         this.session = session;
+    }
+
+    public boolean isSystem() {
+        return system;
+    }
+
+    public void setSystem(boolean system) {
+        this.system = system;
     }
 }

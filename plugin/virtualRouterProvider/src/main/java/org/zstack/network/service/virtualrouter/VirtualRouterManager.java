@@ -7,12 +7,12 @@ import org.zstack.header.host.HypervisorType;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.service.NetworkServiceProviderInventory;
 import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.vip.VipVO;
 
 import java.util.List;
 
 public interface VirtualRouterManager {
-	String getVirtualRouterServiceProviderType(String vrUuid, NetworkServiceType nwType);
 
 	VirtualRouterHypervisorBackend getHypervisorBackend(HypervisorType hypervisorType);
 	
@@ -49,4 +49,6 @@ public interface VirtualRouterManager {
     FlowChain getReconnectFlowChain();
 
     int getParallelismDegree(String vrUuid);
+
+    VmNicInventory getSnatPubicInventory(VirtualRouterVmInventory vrInv);
 }

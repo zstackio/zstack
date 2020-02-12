@@ -22,6 +22,8 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
+import org.zstack.header.vm.VmNicHelper;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
@@ -51,9 +53,36 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateVirtualRouterOfferingMsg) msg);
         } else if (msg instanceof APIUpdateVirtualRouterOfferingMsg) {
             validate((APIUpdateVirtualRouterOfferingMsg) msg);
+        } else if (msg instanceof APIUpdateVirtualRouterMsg) {
+            validate((APIUpdateVirtualRouterMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APIUpdateVirtualRouterMsg msg) {
+        VirtualRouterVmVO vrVO = dbf.findByUuid(msg.getVmInstanceUuid(), VirtualRouterVmVO.class);
+
+        if (msg.getDefaultRouteL3NetworkUuid().equals(vrVO.getDefaultRouteL3NetworkUuid())) {
+            throw new ApiMessageInterceptionException(argerr("l3 uuid[:%s] is same to default network of virtual router [uuid:%s]",
+                    msg.getDefaultRouteL3NetworkUuid(), msg.getVmInstanceUuid()));
+        }
+
+        VmNicVO target = null;
+        for (VmNicVO nic : vrVO.getVmNics()) {
+            if (VmNicHelper.getL3Uuids(nic).contains(msg.getDefaultRouteL3NetworkUuid())) {
+                target = nic;
+                break;
+            }
+        }
+
+        if (target == null) {
+            throw new ApiMessageInterceptionException(argerr("l3 uuid[:%s] is not attached to virtual router [uuid:%s]", msg.getDefaultRouteL3NetworkUuid(), msg.getVmInstanceUuid()));
+        }
+
+        if (!VirtualRouterNicMetaData.isPublicNic(target) && !VirtualRouterNicMetaData.isAddinitionalPublicNic(target)) {
+            throw new ApiMessageInterceptionException(argerr("l3 uuid[:%s] is not public network, can not be default network", msg.getDefaultRouteL3NetworkUuid()));
+        }
     }
 
     private void validate(APIUpdateVirtualRouterOfferingMsg msg) {

@@ -30,7 +30,7 @@ public class VirtualRouterHaBackend {
         return new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                VmNicInventory nic = (VmNicInventory) data.get(VirtualRouterConstant.Param.VR_NIC);
+                VmNicInventory nic = (VmNicInventory) data.get(VirtualRouterConstant.Param.VR_NIC.toString());
                 List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
                 if (exps.isEmpty()) {
                     trigger.next();

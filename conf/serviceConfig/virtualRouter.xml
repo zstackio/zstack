@@ -40,4 +40,9 @@
         <name>org.zstack.network.service.virtualrouter.APIReconnectVirtualRouterMsg</name>
         <serviceId>vmInstance</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.network.service.virtualrouter.APIUpdateVirtualRouterMsg</name>
+        <serviceId>vmInstance</serviceId>
+    </message>
 </service>

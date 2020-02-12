@@ -1,6 +1,7 @@
 package org.zstack.network.service.virtualrouter.vip;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -18,9 +19,7 @@ import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoi
 import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.vip.VipBackend;
-import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
 import org.zstack.utils.Utils;
@@ -35,7 +34,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implements
-        VipBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint {
+        VipBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint, PreVipReleaseExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VirtualRouterVipBackend.class);
 
     @Autowired
@@ -214,7 +213,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
 
     private List<VipTO> findVipsOnVirtualRouter(VmNicInventory nic) {
         List<VipVO> vips = SQL.New("select vip from VipVO vip, VipPeerL3NetworkRefVO ref " +
-                "where ref.vipUuid = vip.uuid " +
+                "where ref.vipUuid = vip.uuid and vip.system = false " +
                 "and ref.l3NetworkUuid = :l3Uuid")
                 .param("l3Uuid", nic.getL3NetworkUuid())
                 .list();
@@ -259,27 +258,16 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         return VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
     }
 
-    @Override
-    public void beforeDetachNic(VmNicInventory nic, Completion completion) {
-        if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
-            completion.success();
-            return;
-        }
-
-        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(nic.getVmInstanceUuid())) {
-            completion.success();
-            return;
-        }
-
+    private void detachVipForPrivateL3(VmNicInventory nic, Completion completion) {
         VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf((VirtualRouterVmVO)
                 Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find());
 
         List<VipVO> vips = SQL.New("select vip from VipVO vip, VipPeerL3NetworkRefVO ref " +
                 "where ref.vipUuid = vip.uuid and ref.l3NetworkUuid in (:routerNetworks) " +
-                "and vip.l3NetworkUuid = :l3Uuid")
-                              .param("l3Uuid", nic.getL3NetworkUuid())
-                              .param("routerNetworks", vr.getAllL3Networks())
-                              .list();
+                "and vip.l3NetworkUuid = :l3Uuid and vip.system=false")
+                .param("l3Uuid", nic.getL3NetworkUuid())
+                .param("routerNetworks", vr.getAllL3Networks())
+                .list();
 
         if (vips.isEmpty()) {
             completion.success();
@@ -289,8 +277,63 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         releaseVipOnVirtualRouterVm(vr, VipInventory.valueOf(vips), completion);
     }
 
+    private void detachVipForPublicL3(VmNicInventory nic, Completion completion) {
+        List<String> vipUuids = proxy.getServiceUuidsByRouterUuid(nic.getVmInstanceUuid(), VipVO.class.getTypeName());
+        if (vipUuids.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        vipUuids = Q.New(VipVO.class).in(VipVO_.uuid, vipUuids).eq(VipVO_.l3NetworkUuid, nic.getL3NetworkUuid())
+                .select(VipVO_.uuid).listValues();
+        if (vipUuids.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        new While<>(vipUuids).each((uuid, compl) -> {
+            VipDeletionMsg dmsg = new VipDeletionMsg();
+            dmsg.setVipUuid(uuid);
+            bus.makeTargetServiceIdByResourceUuid(dmsg, VipConstant.SERVICE_ID, uuid);
+            bus.send(dmsg, new CloudBusCallBack(compl) {
+                @Override
+                public void run(MessageReply reply) {
+                    compl.done();
+                }
+            });
+        }).run(new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                completion.success();
+            }
+        });
+    }
+
+    @Override
+    public void beforeDetachNic(VmNicInventory nic, Completion completion) {
+        if (VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(nic.getVmInstanceUuid())) {
+            completion.success();
+            return;
+        }
+
+        if (VirtualRouterNicMetaData.isGuestNic(nic)) {
+            detachVipForPrivateL3(nic, completion);
+        } else if (VirtualRouterNicMetaData.isAddinitionalPublicNic(nic)) {
+            detachVipForPublicL3(nic, completion);
+        } else {
+            completion.success();
+        }
+    }
+
     @Override
     public void beforeDetachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
         completion.done();
+    }
+
+    @Override
+    public void preReleaseServicesOnVip(VipInventory vip, Completion completion) {
+        /* this ugly */
+        SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, vip.getUuid()).delete();
+        completion.success();
     }
 }

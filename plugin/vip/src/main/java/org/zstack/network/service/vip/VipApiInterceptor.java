@@ -28,6 +28,8 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private VipManager vipMgr;
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
@@ -41,7 +43,10 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIDeleteVipMsg msg) {
-
+        VipVO vipVO = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
+        if (vipMgr.isSystemVip(vipVO)) {
+            throw new ApiMessageInterceptionException(argerr("system vip can not be deleted by API message"));
+        }
     }
 
     private void validate(APICreateVipMsg msg) {
