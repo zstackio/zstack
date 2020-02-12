@@ -252,7 +252,7 @@ class UpdateClusterOSJobCase extends SubCase {
         assert result.value == 'false'
 
         // update os of cluster1
-        cmdList = []
+        cmdList.clear()
         updateClusterOS {
             uuid = cls1.uuid
         }
