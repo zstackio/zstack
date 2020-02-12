@@ -44,6 +44,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
@@ -201,7 +202,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     public Class<PingRsp> getReturnClass() {
                         return PingRsp.class;
                     }
-                });
+                }, TimeUnit.MINUTES, 1);
             }
 
             @Override
