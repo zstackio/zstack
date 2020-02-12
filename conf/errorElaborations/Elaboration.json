@@ -89,14 +89,6 @@
   },
   {
     "category": "BS",
-    "code": "1016",
-    "method": "regex",
-    "regex": ".*Quota exceeded.*",
-    "message_cn": "超出镜像仓库的容量限制。",
-    "message_en": "Out of imagestore capacity limit."
-  },
-  {
-    "category": "BS",
     "code": "1006",
     "method": "regex",
     "regex": ".*, because:can not find lv .* after create, lvcreate return: .*, , WARNING: Not using lvmetad because config setting use_lvmetad=0.*",
@@ -118,6 +110,22 @@
     "regex": ".*, because:cannot find pool\\[.*] in the ceph cluster, you must create it manually",
     "message_cn": "未能在ceph集群中找到存储池[%1$s],您需要先手动创建",
     "message_en": "Cann't find pool[%1$s] in the ceph cluster, you need to create it manually"
+  },
+  {
+    "category": "BS",
+    "code": "1009",
+    "method": "regex",
+    "regex": ".*Quota exceeded.*",
+    "message_cn": "超出镜像仓库的容量限制",
+    "message_en": "Out of imagestore capacity limit"
+  },
+  {
+    "category": "BS",
+    "code": "1010",
+    "method": "regex",
+    "regex": ".*disk quota exceeded.*",
+    "message_cn": "超出容量限制",
+    "message_en": "disk quota exceeded"
   },
   {
     "category": "CEPH",
@@ -494,6 +502,14 @@
     "regex": ".*all backup storage that image\\[uuid:.*] is on can not satisfy conditions\\[status = Connected].*",
     "message_cn": "镜像所在的备份服务器均未连接，请检查备份服务器状态",
     "message_en": "The backup storage where the image is located is not connected. Please check the status of the backup storage"
+  },
+  {
+    "category": "IMAGE",
+    "code": "1003",
+    "method": "regex",
+    "regex": ".*Partial download not supported for.*",
+    "message_cn": "从指定的链接下载失败",
+    "message_en": "download from the url failed"
   },
   {
     "category": "ISCSI",
