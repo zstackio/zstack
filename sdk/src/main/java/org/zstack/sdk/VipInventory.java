@@ -108,6 +108,14 @@ public class VipInventory  {
         return this.useFor;
     }
 
+    public boolean system;
+    public void setSystem(boolean system) {
+        this.system = system;
+    }
+    public boolean getSystem() {
+        return this.system;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

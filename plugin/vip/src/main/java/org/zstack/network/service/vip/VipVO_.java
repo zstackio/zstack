@@ -20,6 +20,7 @@ public class VipVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VipVO, String> netmask;
     public static volatile SingularAttribute<VipVO, Integer> prefixLen;
     public static volatile SingularAttribute<VipVO, VipState> state;
+    public static volatile SingularAttribute<VipVO, Boolean> system;
     public static volatile SingularAttribute<VipVO, Timestamp> createDate;
     public static volatile SingularAttribute<VipVO, Timestamp> lastOpDate;
 }

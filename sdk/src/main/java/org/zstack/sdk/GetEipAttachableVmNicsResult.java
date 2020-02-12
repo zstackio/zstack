@@ -12,8 +12,8 @@ public class GetEipAttachableVmNicsResult {
     }
 
     public java.lang.Integer start;
-    public void setStart(java.lang.Integer offset) {
-        this.start = offset;
+    public void setStart(java.lang.Integer start) {
+        this.start = start;
     }
     public java.lang.Integer getStart() {
         return this.start;

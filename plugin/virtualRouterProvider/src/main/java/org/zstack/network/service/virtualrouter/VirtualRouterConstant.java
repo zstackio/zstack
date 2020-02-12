@@ -40,6 +40,7 @@ public interface VirtualRouterConstant {
     public static final String VR_SYNC_EIP = "/synceip";
     public static final String VR_INIT = "/init";
 	public static final String VR_PING = "/ping";
+	public static final String VR_CHANGE_DEFAULT_ROUTE_NETWORK = "/changeDefaultNic";
 
 	public static final String VR_CREATE_VIP = "/createvip";
 	public static final String VR_REMOVE_VIP = "/removevip";
@@ -54,6 +55,9 @@ public interface VirtualRouterConstant {
     public static final String ANSIBLE_MODULE_PATH = "ansible/virtualrouter";
     public static final String SNAT_NETWORK_SERVICE_TYPE = "SNAT";
 
+	public static final String VR_CHANGE_DEFAULT_ROUTE_JOB = "changeDefaultNic";
+	public static final String VR_DEFAULT_ROUTE_NETWORK = "defaultNetwork";
+
 	public static enum Param {
         VR,
         VR_UUID,
@@ -62,7 +66,9 @@ public interface VirtualRouterConstant {
         VIPS,
         PUB_VIP_UUID,
         VR_NIC,
-	SERVICE_PROVIDER_TYPE,
-	BACKEND,
+		SERVICE_PROVIDER_TYPE,
+		BACKEND,
+		SNAT,
+		IS_HA_ROUTER
     }
 }
