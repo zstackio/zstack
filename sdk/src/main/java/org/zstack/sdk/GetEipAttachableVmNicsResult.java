@@ -11,12 +11,12 @@ public class GetEipAttachableVmNicsResult {
         return this.inventories;
     }
 
-    public java.lang.Integer offset;
-    public void setOffset(java.lang.Integer offset) {
-        this.offset = offset;
+    public java.lang.Integer start;
+    public void setStart(java.lang.Integer offset) {
+        this.start = offset;
     }
-    public java.lang.Integer getOffset() {
-        return this.offset;
+    public java.lang.Integer getStart() {
+        return this.start;
     }
 
     public java.lang.Boolean more;

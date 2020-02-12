@@ -41,7 +41,7 @@ public class GetEipAttachableVmNicsAction extends AbstractAction {
     public java.lang.Integer limit = 1000;
 
     @Param(required = false)
-    public java.lang.Integer offset = 0;
+    public java.lang.Integer start = 0;
 
     @Param(required = false)
     public java.util.List systemTags;

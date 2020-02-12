@@ -310,18 +310,18 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
         GetEipAttachableVmNicsAction action = new GetEipAttachableVmNicsAction()
         action.eipUuid = eip.uuid
         action.limit = 2
-        action.offset = 0
+        action.start = 0
         action.sessionId = adminSession()
         GetEipAttachableVmNicsAction.Result res = action.call()
         assert res.error == null
-        assert res.value.offset == 2
+        assert res.value.start == 2
         assert res.value.more
         assert res.value.inventories.size() == 2
 
         action = new GetEipAttachableVmNicsAction()
         action.eipUuid = eip.uuid
         action.limit = 2
-        action.offset = 2
+        action.start = 2
         action.sessionId = adminSession()
         res = action.call()
         assert res.error == null
@@ -332,7 +332,7 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
         action.eipUuid = eip.uuid
         action.vmName = "vmInFlat"
         action.limit = 100
-        action.offset = 0
+        action.start = 0
         action.sessionId = adminSession()
         res = action.call()
         assert res.error == null
@@ -342,7 +342,7 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
         action.eipUuid = eip.uuid
         action.vmUuid = vmInFlat_1.uuid
         action.limit = 100
-        action.offset = 0
+        action.start = 0
         action.sessionId = adminSession()
         res = action.call()
         assert res.error == null

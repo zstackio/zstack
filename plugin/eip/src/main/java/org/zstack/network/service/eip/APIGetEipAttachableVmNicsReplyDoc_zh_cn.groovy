@@ -27,7 +27,7 @@ doc {
 		clz VmNicInventory.class
 	}
 	field {
-		name "offset"
+		name "start"
 		desc ""
 		type "Integer"
 		since "3.8"
