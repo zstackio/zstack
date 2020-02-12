@@ -76,12 +76,12 @@ public class AlarmDataV2 extends org.zstack.sdk.zwatch.datatype.AlarmData {
         return this.FIELD_RESOURCE_UUID;
     }
 
-    public java.lang.String FIELD_EMERGENCY_LEVEL;
-    public void setFIELD_EMERGENCY_LEVEL(java.lang.String FIELD_EMERGENCY_LEVEL) {
-        this.FIELD_EMERGENCY_LEVEL = FIELD_EMERGENCY_LEVEL;
+    public java.lang.String TAG_EMERGENCY_LEVEL;
+    public void setTAG_EMERGENCY_LEVEL(java.lang.String TAG_EMERGENCY_LEVEL) {
+        this.TAG_EMERGENCY_LEVEL = TAG_EMERGENCY_LEVEL;
     }
-    public java.lang.String getFIELD_EMERGENCY_LEVEL() {
-        return this.FIELD_EMERGENCY_LEVEL;
+    public java.lang.String getTAG_EMERGENCY_LEVEL() {
+        return this.TAG_EMERGENCY_LEVEL;
     }
 
     public java.lang.String FIELD_READ_STATUS;
