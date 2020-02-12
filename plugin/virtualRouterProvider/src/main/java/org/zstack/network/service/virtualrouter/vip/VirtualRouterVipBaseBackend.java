@@ -21,10 +21,7 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
 import org.zstack.header.vm.*;
-import org.zstack.network.service.vip.AfterAcquireVipExtensionPoint;
-import org.zstack.network.service.vip.VipBaseBackend;
-import org.zstack.network.service.vip.VipInventory;
-import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
@@ -120,8 +117,6 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
             // vr will sync when becomes Running
             proxy.detachNetworkService(vrUuid, VipVO.class.getSimpleName(), asList(self.getUuid()));
             releaseVipOnHaHaRouter(vrInv, completion);
-
-            completion.success();
             return;
         }
 

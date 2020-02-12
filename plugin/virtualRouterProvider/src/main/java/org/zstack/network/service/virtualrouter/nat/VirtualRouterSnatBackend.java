@@ -154,19 +154,13 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         DebugUtils.Assert(privateNic!=null, String.format("cannot find private nic[ip:%s] on virtual router[uuid:%s, name:%s]",
                 struct.getGuestGateway(), vr.getUuid(), vr.getName()));
 
-        String publicIp = null;
-        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-            publicIp = ext.getPublicIp(vr.getUuid(), vrInv.getPublicNic().getL3NetworkUuid());
-        }
-        if (publicIp == null) {
-            publicIp = vr.getPublicNic().getIp();
-        }
+        VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vr);
 
         final VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
         info.setPrivateNicIp(privateNic.getIp());
         info.setPrivateNicMac(privateNic.getMac());
-        info.setPublicNicMac(vr.getPublicNic().getMac());
-        info.setPublicIp(publicIp);
+        info.setPublicNicMac(publicNic.getMac());
+        info.setPublicIp(publicNic.getIp());
         info.setSnatNetmask(struct.getGuestNetmask());
 
         VirtualRouterCommands.RemoveSNATCmd cmd = new VirtualRouterCommands.RemoveSNATCmd();
@@ -289,22 +283,15 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
 
         new VirtualRouterRoleManager().makeSnatRole(vr.getUuid());
 
-        String publicIp = null;
-        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-            publicIp = ext.getPublicIp(vr.getUuid(), vr.getPublicNic().getL3NetworkUuid());
-        }
-        if (publicIp == null) {
-            publicIp = vr.getPublicNic().getIp();
-        }
-
+        VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vr);
         final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<VirtualRouterCommands.SNATInfo>();
         for (VmNicInventory vnic : vr.getVmNics()) {
             if (nwServed.contains(vnic.getL3NetworkUuid())) {
                 VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
                 info.setPrivateNicIp(vnic.getIp());
                 info.setPrivateNicMac(vnic.getMac());
-                info.setPublicIp(publicIp);
-                info.setPublicNicMac(vr.getPublicNic().getMac());
+                info.setPublicIp(publicNic.getIp());
+                info.setPublicNicMac(publicNic.getMac());
                 info.setSnatNetmask(vnic.getNetmask());
                 snatInfo.add(info);
             }
@@ -357,11 +344,12 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
     private Vip getVipWithSnatService(VirtualRouterVmInventory vr, VmNicInventory nic){
         String vipUuid = null;
         for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-            vipUuid = ext.getPublicIpUuid(vr.getUuid(), vr.getPublicNic().getL3NetworkUuid());
+            vipUuid = ext.getPublicIpUuid(vr.getUuid(), vr.getDefaultRouteL3NetworkUuid());
         }
 
         if (vipUuid == null) {
-            vipUuid = Q.New(VipVO.class).eq(VipVO_.usedIpUuid, vr.getPublicNic().getUsedIpUuid()).select(VipVO_.uuid).findValue();
+            VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vr);
+            vipUuid = Q.New(VipVO.class).eq(VipVO_.ip, publicNic.getIp()).select(VipVO_.uuid).findValue();
         }
         if (vipUuid == null){
             return null;

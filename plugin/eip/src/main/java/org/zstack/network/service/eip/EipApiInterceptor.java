@@ -242,6 +242,10 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
+        if (vip.isSystem()) {
+            throw new ApiMessageInterceptionException(operr("eip can not be created on system vip"));
+        }
+
         if (vip.getState() != VipState.Enabled) {
             throw new ApiMessageInterceptionException(operr("vip[uuid:%s] is not in state[%s], current state is %s", msg.getVipUuid(), VipState.Enabled, vip.getState()));
         }

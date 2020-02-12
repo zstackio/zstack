@@ -13,13 +13,17 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.virtualrouter.VirtualRouter;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
+import org.zstack.network.service.virtualrouter.vip.VipConfigProxy;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,6 +32,8 @@ import java.util.Map;
 public class VirtualRouterAssembleDecoratorFlow extends NoRollbackFlow {
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private VipConfigProxy vipConfigProxy;
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -50,12 +56,13 @@ public class VirtualRouterAssembleDecoratorFlow extends NoRollbackFlow {
             info = (ApplianceVmPostLifeCycleInfo) data.get(ApplianceVmConstant.Params.applianceVmInfoForPostLifeCycle.toString());
         }
 
+        VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(spec.getVmInventory().getUuid(), VirtualRouterVmVO.class));
         if (spec.getCurrentVmOperation() == VmOperation.Destroy) {
-            // for destroy, the VR information may not be complete(e.g mgmt node crash when VR is starting)
-            // only need uuid for cleanup
             data.put(Param.VR_UUID.toString(), spec.getVmInventory().getUuid());
+            data.put(Param.IS_HA_ROUTER.toString(), vrInv.isHaEnabled());
         } else {
-            data.put(VirtualRouterConstant.Param.VR.toString(), VirtualRouterVmInventory.valueOf(dbf.findByUuid(spec.getVmInventory().getUuid(), VirtualRouterVmVO.class)));
+            data.put(VirtualRouterConstant.Param.VR.toString(), vrInv);
+            data.put(VirtualRouterConstant.Param.VR_NIC.toString(), vrInv.getPublicNic());
         }
 
         trigger.next();

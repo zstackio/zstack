@@ -20,7 +20,7 @@ public abstract class VirtualRouterConfigProxy {
     protected abstract List<String> getNoHaVirtualRouterUuidsByNetworkService(String serviceUuid);
     protected abstract List<String> getServiceUuidsByNoHaVirtualRouter(String vrUuid);
 
-    final public void attachNetworkService(String vrUuid, String type, List<String> serviceUuids) {
+    public void attachNetworkService(String vrUuid, String type, List<String> serviceUuids) {
         VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
         if (!vrVo.isHaEnabled()) {
             attachNetworkServiceToNoHaVirtualRouter(vrUuid, type, serviceUuids);

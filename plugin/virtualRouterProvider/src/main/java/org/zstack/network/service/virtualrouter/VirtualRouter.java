@@ -3,6 +3,7 @@ package org.zstack.network.service.virtualrouter;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.appliancevm.*;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
 import org.zstack.core.asyncbatch.While;
@@ -31,9 +32,7 @@ import org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
-import org.zstack.header.network.service.VirtualRouterAfterDetachNicExtensionPoint;
-import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
+import org.zstack.header.network.service.*;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.*;
@@ -42,12 +41,15 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
+import org.zstack.network.service.virtualrouter.vip.VirtualRouterCreatePublicVipFlow;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.function.Function;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static org.zstack.core.Platform.inerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.ADDITIONAL_PUBLIC_NIC_MASK;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.GUEST_NIC_MASK;
 
@@ -58,6 +60,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
     static {
         allowedOperations.addState(VmInstanceState.Running, APIReconnectVirtualRouterMsg.class.getName());
+        allowedOperations.addState(VmInstanceState.Running, APIUpdateVirtualRouterMsg.class.getName());
         allowedOperations.addState(VmInstanceState.Running, ReconnectVirtualRouterVmMsg.class.getName());
     }
 
@@ -71,6 +74,8 @@ public class VirtualRouter extends ApplianceVmBase {
     protected ApiTimeoutManager apiTimeoutManager;
     @Autowired
     protected VirtualRouterHaBackend haBackend;
+    @Autowired
+    protected VirutalRouterDefaultL3ConfigProxy defaultL3ConfigProxy;
 
     protected VirtualRouterVmInventory vr;
 
@@ -126,6 +131,8 @@ public class VirtualRouter extends ApplianceVmBase {
     protected void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIReconnectVirtualRouterMsg) {
             handle((APIReconnectVirtualRouterMsg) msg);
+        } else if (msg instanceof APIUpdateVirtualRouterMsg) {
+            handle((APIUpdateVirtualRouterMsg) msg);
         } else {
             super.handleApiMessage(msg);
         }
@@ -321,6 +328,376 @@ public class VirtualRouter extends ApplianceVmBase {
             }
         });
     }
+    
+    private void handle(final APIUpdateVirtualRouterMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                final APIUpdateVirtualRouterEvent evt = new APIUpdateVirtualRouterEvent(msg.getId());
+
+                refreshVO();
+                ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                if (allowed != null) {
+                    evt.setError(allowed);
+                    bus.publish(evt);
+                    chain.next();
+                    return;
+                }
+
+                updateVirutalRouter(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        VirtualRouterVmVO vrVO = dbf.findByUuid(msg.getVmInstanceUuid(), VirtualRouterVmVO.class);
+                        evt.setInventory((VirtualRouterVmInventory.valueOf(vrVO)));
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("update-virtual-router-%s", self.getUuid());
+            }
+        });
+    }
+
+    private List<VirtualRouterCommands.SNATInfo> getSnatInfo(VirtualRouterVmInventory vrInv) {
+        boolean snatDisable = haBackend.isSnatDisabledOnRouter(vrInv.getUuid());
+        if (snatDisable) {
+            return null;
+        }
+
+        List<String> nwServed = vrInv.getAllL3Networks();
+        nwServed = vrMgr.selectL3NetworksNeedingSpecificNetworkService(nwServed, NetworkServiceType.SNAT);
+        if (nwServed.isEmpty()) {
+            return null;
+        }
+
+        VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vrInv);
+
+        final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<>();
+        for (VmNicInventory vnic : vrInv.getVmNics()) {
+            if (nwServed.contains(vnic.getL3NetworkUuid())) {
+                VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
+                info.setPrivateNicIp(vnic.getIp());
+                info.setPrivateNicMac(vnic.getMac());
+                info.setPublicIp(publicNic.getIp());
+                info.setPublicNicMac(publicNic.getMac());
+                info.setSnatNetmask(vnic.getNetmask());
+                snatInfo.add(info);
+            }
+        }
+
+        return snatInfo;
+    }
+
+    @Transactional
+    protected void changeVirtualRouterNicMetaData(String vrUuid, String newL3Uuid, String oldL3Uuid) {
+        VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+        for (VmNicVO nic : vrVo.getVmNics()) {
+            if (nic.getL3NetworkUuid().equals(oldL3Uuid)) {
+                VirtualRouterNicMetaData.removePublicToNic(nic);
+                VirtualRouterNicMetaData.addAdditionalPublicToNic(nic);
+                dbf.update(nic);
+            } else if (nic.getL3NetworkUuid().equals(newL3Uuid)) {
+                VirtualRouterNicMetaData.removeAdditionalPublicToNic(nic);
+                VirtualRouterNicMetaData.addPublicToNic(nic);
+                dbf.update(nic);
+            }
+        }
+    }
+
+    private void changeVirutalRouterDefaultL3Network(String vrUuid, String newL3Uuid, String oldL3Uuid, Completion completion) {
+        VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+        VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVo);
+
+        VmNicVO newNic = CollectionUtils.find(vrVo.getVmNics(), new Function<VmNicVO, VmNicVO>() {
+            @Override
+            public VmNicVO call(VmNicVO arg) {
+                if (arg.getL3NetworkUuid().equals(newL3Uuid)) {
+                    return arg;
+                }
+                return null;
+            }
+        });
+        DebugUtils.Assert(newNic != null, String.format("cannot find nic for old default network[uuid:%s]", newL3Uuid));
+
+        VirtualRouterCommands.NicInfo newNicInfo  = new VirtualRouterCommands.NicInfo();
+        newNicInfo.setMac(newNic.getMac());
+        newNicInfo.setGateway(newNic.getGateway());
+
+        VirtualRouterCommands.ChangeDefaultNicCmd cmd = new VirtualRouterCommands.ChangeDefaultNicCmd();
+        cmd.setNewNic(newNicInfo);
+
+        List<VirtualRouterCommands.SNATInfo> snatInfos = getSnatInfo(vrInv);
+        if (snatInfos != null) {
+            cmd.setSnats(snatInfos);
+        }
+
+        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+        msg.setVmInstanceUuid(vrUuid);
+        msg.setPath(VirtualRouterConstant.VR_CHANGE_DEFAULT_ROUTE_NETWORK);
+        msg.setCommand(cmd);
+        msg.setCheckStatus(true);
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                VirtualRouterAsyncHttpCallReply re = reply.castReply();
+                VirtualRouterCommands.SetSNATRsp ret = re.toResponse(VirtualRouterCommands.SetSNATRsp.class);
+                if (!ret.isSuccess()) {
+                    ErrorCode err = operr("update virtual router [uuid:%s] default network failed, because %s",
+                            vr.getUuid(), ret.getError());
+                    completion.fail(err);
+                } else {
+                    changeVirtualRouterNicMetaData(vrUuid, newL3Uuid, oldL3Uuid);
+                    completion.success();
+                }
+            }
+        });
+    }
+
+    @Transactional
+    protected void replaceVirtualRouterDefaultNetwork(String vrUuid, String oldL3Uuid, String newL3Uuud) {
+        defaultL3ConfigProxy.detachNetworkService(vrUuid, VirtualRouterConstant.VR_DEFAULT_ROUTE_NETWORK,
+                Collections.singletonList(oldL3Uuid));
+        defaultL3ConfigProxy.attachNetworkService(vrUuid, VirtualRouterConstant.VR_DEFAULT_ROUTE_NETWORK,
+                Collections.singletonList(newL3Uuud));
+    }
+
+    private void updateVirutalRouter(APIUpdateVirtualRouterMsg msg, final Completion completion) {
+        VirtualRouterVmVO vrVO = dbf.findByUuid(msg.getVmInstanceUuid(), VirtualRouterVmVO.class);
+        FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
+        fchain.setName(String.format("update-virtual-router-%s", msg.getVmInstanceUuid()));
+        fchain.then(new Flow() {
+            String __name__ = "update-virtual-router-db";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                replaceVirtualRouterDefaultNetwork(msg.getVmInstanceUuid(), vrVO.getDefaultRouteL3NetworkUuid(),
+                        msg.getDefaultRouteL3NetworkUuid());
+                trigger.next();
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                replaceVirtualRouterDefaultNetwork(msg.getVmInstanceUuid(), msg.getDefaultRouteL3NetworkUuid(),
+                        vrVO.getDefaultRouteL3NetworkUuid());
+                trigger.rollback();
+            }
+        }).then(new Flow() {
+            String __name__ = "release-old-snat-of-vip";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                VmNicVO oldNic = null;
+                for (VmNicVO nic: vrVO.getVmNics()) {
+                    if (nic.getL3NetworkUuid().equals(vrVO.getDefaultRouteL3NetworkUuid())) {
+                        oldNic = nic;
+                        break;
+                    }
+                }
+
+                if (oldNic == null) {
+                    trigger.next();
+                    return;
+                }
+
+                String vipIp = oldNic.getIp();
+                if (vrVO.getDefaultRouteL3NetworkUuid().equals(vrVO.getManagementNetworkUuid())) {
+                    VmNicInventory publicNic = vrMgr.getSnatPubicInventory(VirtualRouterVmInventory.valueOf(vrVO));
+                    vipIp = publicNic.getIp();
+                }
+
+                VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.ip, vipIp)
+                        .eq(VipVO_.l3NetworkUuid, oldNic.getL3NetworkUuid()).find();
+                if (vipVO == null) {
+                    trigger.next();
+                    return;
+                }
+
+                data.put("oldVip", vipVO);
+                ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                struct.setUseFor(NetworkServiceType.SNAT.toString());
+                struct.setServiceUuid(vipVO.getUuid());
+                Vip vip = new Vip(vipVO.getUuid());
+                vip.setStruct(struct);
+                vip.release(new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                VipVO vipVO = (VipVO) data.get("oldVip");
+                if (vipVO == null) {
+                    trigger.rollback();
+                    return;
+                }
+
+                ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                struct.setUseFor(NetworkServiceType.SNAT.toString());
+                struct.setServiceUuid(vipVO.getUuid());
+                Vip vip = new Vip(vipVO.getUuid());
+                vip.setStruct(struct);
+                vip.acquire(new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.rollback();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.rollback();
+                    }
+                });
+            }
+        }).then(new Flow() {
+            String __name__ = "apply-new-snat-of-vip";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                VmNicVO newNic = null;
+                for (VmNicVO nic: vrVO.getVmNics()) {
+                    if (nic.getL3NetworkUuid().equals(msg.getDefaultRouteL3NetworkUuid())) {
+                        newNic = nic;
+                        break;
+                    }
+                }
+
+                if (newNic == null) {
+                    trigger.fail(argerr("virtual router [uuid:%s] does not has nic in l3 network [uuid:s]", vrVO.getUuid(),
+                            msg.getDefaultRouteL3NetworkUuid()));
+                    return;
+                }
+
+                String vipIp = newNic.getIp();
+                if (msg.getDefaultRouteL3NetworkUuid().equals(vrVO.getManagementNetworkUuid())) {
+                    VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
+                    vrInv.setDefaultRouteL3NetworkUuid(msg.getDefaultRouteL3NetworkUuid());
+                    VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vrInv);
+                    vipIp = publicNic.getIp();
+                }
+
+                VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.ip, vipIp)
+                        .eq(VipVO_.l3NetworkUuid, newNic.getL3NetworkUuid()).find();
+                if (vipVO == null) {
+                    trigger.fail(argerr("there is no vip [ip:%s] in l3 network [uuid:%s]", vipIp,
+                            msg.getDefaultRouteL3NetworkUuid()));
+                    return;
+                }
+
+                data.put("newVip", vipVO);
+                ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                struct.setUseFor(NetworkServiceType.SNAT.toString());
+                struct.setServiceUuid(vipVO.getUuid());
+                Vip vip = new Vip(vipVO.getUuid());
+                vip.setStruct(struct);
+                vip.acquire(new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                VipVO vipVO = (VipVO) data.get("newVip");
+                if (vipVO == null) {
+                    trigger.rollback();
+                    return;
+                }
+
+                ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
+                struct.setUseFor(NetworkServiceType.SNAT.toString());
+                struct.setServiceUuid(vipVO.getUuid());
+                Vip vip = new Vip(vipVO.getUuid());
+                vip.setStruct(struct);
+                vip.release(new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.rollback();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.rollback();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "update-virtual-router-backend";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                changeVirutalRouterDefaultL3Network(msg.getVmInstanceUuid(), msg.getDefaultRouteL3NetworkUuid(), vrVO.getDefaultRouteL3NetworkUuid(), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                Map<String, Object> haData = new HashMap<>();
+                haData.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), VirtualRouterConstant.VR_CHANGE_DEFAULT_ROUTE_JOB);
+                haData.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), msg.getVmInstanceUuid());
+                haData.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), msg.getDefaultRouteL3NetworkUuid());
+                haData.put(VirtualRouterHaCallbackInterface.Params.Struct1.toString(), vrVO.getDefaultRouteL3NetworkUuid());
+                haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
+                    @Override
+                    public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
+                        String newL3Uuid =  (String) data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                        String oldL3Uuid =  (String) data.get(VirtualRouterHaCallbackInterface.Params.Struct1.toString());
+                        changeVirutalRouterDefaultL3Network(vrUuid, newL3Uuid, oldL3Uuid, compl);
+                    }
+                }, haData, completion);
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
+    }
 
     private void handle(final APIReconnectVirtualRouterMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
@@ -427,7 +804,7 @@ public class VirtualRouter extends ApplianceVmBase {
     private class virtualRouterAfterAttachNicFlow extends NoRollbackFlow {
         @Override
         public void run(FlowTrigger trigger, Map data) {
-            VmNicInventory nicInventory = (VmNicInventory) data.get(Param.VR_NIC);
+            VmNicInventory nicInventory = (VmNicInventory) data.get(Param.VR_NIC.toString());
             L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, nicInventory.getL3NetworkUuid()).find();
 
             VirtualRouterCommands.ConfigureNicCmd cmd = new VirtualRouterCommands.ConfigureNicCmd();
@@ -489,6 +866,7 @@ public class VirtualRouter extends ApplianceVmBase {
             }
 
             VirtualRouterAfterAttachNicExtensionPoint ext = it.next();
+            logger.debug(String.format("apply network service [%s] after attach Nic", ext.getClass()));
             ext.afterAttachNic(nicInv, new Completion(completion) {
                 @Override
                 public void success() {
@@ -504,7 +882,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
         @Override
         public void run(FlowTrigger trigger, Map data) {
-            VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC);
+            VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC.toString());
 
             Iterator<VirtualRouterAfterAttachNicExtensionPoint> it = pluginRgty.getExtensionList(VirtualRouterAfterAttachNicExtensionPoint.class).iterator();
             virtualRouterApplyServicesAfterAttachNic(it, nicInv,  new Completion(trigger) {
@@ -537,7 +915,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
         @Override
         public void rollback(FlowRollback trigger, Map data) {
-            VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC);
+            VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC.toString());
             Iterator<VirtualRouterAfterAttachNicExtensionPoint> it = pluginRgty.getExtensionList(VirtualRouterAfterAttachNicExtensionPoint.class).iterator();
             virtualRouterApplyServicesAfterAttachNicRollback(it, nicInv, new NoErrorCompletion() {
                 @Override
@@ -575,13 +953,17 @@ public class VirtualRouter extends ApplianceVmBase {
                 vo = dbf.updateAndRefresh(vo);
                 logger.debug(String.format("updated metadata of vmnic[uuid: %s]", vo.getUuid()));
 
-                Map data = new HashMap();
-                data.put(Param.VR_NIC, VmNicInventory.valueOf(vo));
+                VirtualRouterVmVO vrVo = dbf.findByUuid(self.getUuid(), VirtualRouterVmVO.class);
+                Map<String, Object> data = new HashMap();
+                data.put(Param.VR_NIC.toString(), VmNicInventory.valueOf(vo));
+                data.put(Param.SNAT.toString(), Boolean.FALSE);
+                data.put(Param.VR.toString(), VirtualRouterVmInventory.valueOf(vrVo));
 
                 FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
                 chain.setName(String.format("apply-services-after-attach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
                 chain.setData(data);
-                chain.insert(new virtualRouterAfterAttachNicFlow());
+                chain.then(new virtualRouterAfterAttachNicFlow());
+                chain.then(new VirtualRouterCreatePublicVipFlow());
                 chain.then(new virtualRouterApplyServicesAfterAttachNicFlow());
                 chain.then(haBackend.getAttachL3NetworkFlow());
                 chain.done(new FlowDoneHandler(completion) {
@@ -649,7 +1031,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
         @Override
         public void run(FlowTrigger trigger, Map data) {
-            VmNicInventory nic = (VmNicInventory) data.get(Param.VR_NIC);
+            VmNicInventory nic = (VmNicInventory) data.get(Param.VR_NIC.toString());
             if (!VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST.contains(nic.getMetaData())) {
                 trigger.next();
                 return;
@@ -716,7 +1098,7 @@ public class VirtualRouter extends ApplianceVmBase {
         String __name__ = "virtualRouter-beforeDetachNic";
         @Override
         public void run(FlowTrigger trigger, Map data) {
-            VmNicInventory nicInventory = (VmNicInventory) data.get(Param.VR_NIC);
+            VmNicInventory nicInventory = (VmNicInventory) data.get(Param.VR_NIC.toString());
             VirtualRouterCommands.RemoveNicCmd cmd = new VirtualRouterCommands.RemoveNicCmd();
             VirtualRouterCommands.NicInfo info = new VirtualRouterCommands.NicInfo();
             info.setIp(nicInventory.getIp());
@@ -766,6 +1148,7 @@ public class VirtualRouter extends ApplianceVmBase {
             }
 
             VirtualRouterBeforeDetachNicExtensionPoint ext = it.next();
+            logger.debug(String.format("virtual router release service before detach l3 network for %s", ext.getClass().getSimpleName()));
             ext.beforeDetachNic(nicInv, new Completion(completion) {
                 @Override
                 public void success() {
@@ -781,7 +1164,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
         @Override
         public void run(FlowTrigger trigger, Map data) {
-            VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC);
+            VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC.toString());
             Iterator<VirtualRouterBeforeDetachNicExtensionPoint> it = pluginRgty.getExtensionList(VirtualRouterBeforeDetachNicExtensionPoint.class).iterator();
             virtualRouterReleaseServices(it, nicInv, new Completion(trigger) {
                 @Override
@@ -813,7 +1196,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
         @Override
         public void rollback(FlowRollback trigger, Map data) {
-            VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC);
+            VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC.toString());
             Iterator<VirtualRouterBeforeDetachNicExtensionPoint> it = pluginRgty.getExtensionList(VirtualRouterBeforeDetachNicExtensionPoint.class).iterator();
             virtualRouterReleaseServicesRollback(it, nicInv, new NoErrorCompletion(trigger) {
                 @Override
@@ -827,7 +1210,8 @@ public class VirtualRouter extends ApplianceVmBase {
     @Override
     protected void beforeDetachNic(VmNicInventory nicInventory, Completion completion) {
         Map data = new HashMap();
-        data.put(Param.VR_NIC, nicInventory);
+        data.put(Param.VR_NIC.toString(), nicInventory);
+        data.put(Param.VR.toString(), vr);
         ApplianceVmVO appvm = Q.New(ApplianceVmVO.class)
                 .eq(ApplianceVmVO_.uuid, nicInventory.getVmInstanceUuid()).find();
         if (appvm.getStatus().equals(ApplianceVmStatus.Disconnected)) {

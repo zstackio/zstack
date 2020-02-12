@@ -86,6 +86,9 @@ public class VipVO extends ResourceVO implements OwnedByAccount {
     private Set<VipNetworkServicesRefVO> servicesRefs = new HashSet<VipNetworkServicesRefVO>();
 
     @Column
+    private boolean system;
+
+    @Column
     private Timestamp createDate;
     
     @Column
@@ -158,7 +161,7 @@ public class VipVO extends ResourceVO implements OwnedByAccount {
                                          .collect(Collectors.toSet());
         }
 
-        return null;
+        return new HashSet<>();
     }
 
     public String getServiceProvider() {
@@ -255,5 +258,13 @@ public class VipVO extends ResourceVO implements OwnedByAccount {
 
     public void setPrefixLen(Integer prefixLen) {
         this.prefixLen = prefixLen;
+    }
+
+    public boolean isSystem() {
+        return system;
+    }
+
+    public void setSystem(boolean system) {
+        this.system = system;
     }
 }

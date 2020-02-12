@@ -10,6 +10,7 @@ import org.zstack.header.network.l3.IpAllocateMessage;
 import org.zstack.header.network.l3.L3NetworkMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.other.APIAuditor;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
 /**
@@ -83,6 +84,9 @@ public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessag
     @APIParam(required = false)
     private String requiredIp;
 
+    @APINoSee
+    private boolean system;
+
     public String getRequiredIp() {
         return requiredIp;
     }
@@ -124,7 +128,15 @@ public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessag
     public void setDescription(String description) {
         this.description = description;
     }
- 
+
+    public boolean isSystem() {
+        return system;
+    }
+
+    public void setSystem(boolean system) {
+        this.system = system;
+    }
+
     public static APICreateVipMsg __example__() {
         APICreateVipMsg msg = new APICreateVipMsg();
         msg.setName("vip1");

@@ -81,22 +81,15 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
 
         new VirtualRouterRoleManager().makeSnatRole(vr.getUuid());
 
-        String publicIp = null;
-        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-            publicIp = ext.getPublicIp(vr.getUuid(), vr.getPublicNic().getL3NetworkUuid());
-        }
-        if (publicIp == null) {
-            publicIp = vr.getPublicNic().getIp();
-        }
-
+        VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vr);
         final List<SNATInfo> snatInfo = new ArrayList<SNATInfo>();
         for (VmNicInventory nic : vr.getVmNics()) {
             if (nwServed.contains(nic.getL3NetworkUuid())) {
                 SNATInfo info = new SNATInfo();
                 info.setPrivateNicIp(nic.getIp());
                 info.setPrivateNicMac(nic.getMac());
-                info.setPublicIp(publicIp);
-                info.setPublicNicMac(vr.getPublicNic().getMac());
+                info.setPublicIp(publicNic.getIp());
+                info.setPublicNicMac(publicNic.getMac());
                 info.setSnatNetmask(nic.getNetmask());
                 snatInfo.add(info);
             }
