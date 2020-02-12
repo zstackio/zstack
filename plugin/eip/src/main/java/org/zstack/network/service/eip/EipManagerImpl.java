@@ -1,5 +1,6 @@
 package org.zstack.network.service.eip;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -39,6 +40,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -142,8 +144,23 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         bus.publish(evt);
     }
 
+    private String sqlStringJoin(List<String> elements) {
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("(");
+        int count = 1;
+        for (String e : elements) {
+            if (count > 1) {
+                sqlBuilder.append(",");
+            }
+            sqlBuilder.append("'").append(e).append("'");
+            count ++;
+        }
+        sqlBuilder.append(")");
+        return sqlBuilder.toString();
+    }
+
     @Transactional(readOnly = true)
-    private List<VmNicInventory> getAttachableVmNicForEip(VipInventory vip) {
+    private List<VmNicInventory> getAttachableVmNicForEip(VipInventory vip, APIGetEipAttachableVmNicsReply reply, APIGetEipAttachableVmNicsMsg msg) {
         String providerType = vip.getServiceProvider();
         List<String> peerL3NetworkUuids = vip.getPeerL3NetworkUuids();
         String zoneUuid = Q.New(L3NetworkVO.class)
@@ -215,41 +232,49 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             return new ArrayList<>();
         }
 
-        /* get all vm which has nic in vip public l3 */
+        /*vm has both private l3 and public l3, can not be attachable */
         List<String> vmInPublicL3s = SQL.New("select distinct nic.vmInstanceUuid from UsedIpVO ip, VmNicVO nic" +
                 " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = :pubL3")
                 .param("pubL3", vip.getL3NetworkUuid()).list();
         vmInPublicL3s = vmInPublicL3s.stream().distinct().filter(Objects::nonNull).collect(Collectors.toList());
 
-        List<VmNicVO> nics;
+        List<String> attachableVmStates = EipConstant.attachableVmStates.stream().map(VmInstanceState::toString).collect(Collectors.toList());
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("select distinct nic.uuid from VmNicVO nic, VmInstanceVO vm, UsedIpVO ip where nic.uuid = ip.vmNicUuid")
+                .append(" and ip.l3NetworkUuid in ").append(sqlStringJoin(l3Uuids))
+                .append(" and nic.vmInstanceUuid = vm.uuid and ip.ipVersion = ").append(l3Vo.getIpVersion())
+                .append(" and vm.type = '").append(VmInstanceConstant.USER_VM_TYPE).append("'")
+                .append(" and vm.state in ").append(sqlStringJoin(attachableVmStates))
+                .append(" and nic.ip is not null and vm.clusterUuid is not null");
         if (!vmInPublicL3s.isEmpty()) {
-            nics = SQL.New("select distinct nic" +
-                    " from VmNicVO nic, VmInstanceVO vm, UsedIpVO ip" +
-                    " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid in (:l3Uuids)" +
-                    " and nic.vmInstanceUuid = vm.uuid and ip.ipVersion = :ipVersion" +
-                    " and vm.type = :vmType and vm.state in (:vmStates) " +
-                    // IP = null means the VM is just recovered without any IP allocated
-                    " and nic.ip is not null and vm.uuid not in (:vmInPublicL3s) and vm.clusterUuid is not null")
-                    .param("l3Uuids", l3Uuids)
-                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
-                    .param("vmStates", EipConstant.attachableVmStates)
-                    .param("ipVersion", l3Vo.getIpVersion())
-                    .param("vmInPublicL3s", vmInPublicL3s)
-                    .list();
-        } else {
-            nics = SQL.New("select distinct nic" +
-                    " from VmNicVO nic, VmInstanceVO vm, UsedIpVO ip" +
-                    " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid in (:l3Uuids)" +
-                    " and nic.vmInstanceUuid = vm.uuid and ip.ipVersion = :ipVersion" +
-                    " and vm.type = :vmType and vm.state in (:vmStates) and vm.clusterUuid is not null" +
-                    // IP = null means the VM is just recovered without any IP allocated
-                    " and nic.ip is not null")
-                    .param("l3Uuids", l3Uuids)
-                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
-                    .param("vmStates", EipConstant.attachableVmStates)
-                    .param("ipVersion", l3Vo.getIpVersion())
-                    .list();
+            sqlBuilder.append(" and vm.uuid not in ").append(sqlStringJoin(vmInPublicL3s));
         }
+        if (!StringUtils.isEmpty(msg.getVmName())) {
+            sqlBuilder.append(" and vm.name like '%").append(msg.getVmName()).append("%\'");
+        }
+        if (!StringUtils.isEmpty(msg.getVmUuid())) {
+            sqlBuilder.append(" and vm.uuid like '%").append(msg.getVmUuid()).append("%\'");
+        }
+        sqlBuilder.append(" order by nic.vmInstanceUuid")
+                .append(" limit ").append(msg.getLimit()).append(" offset ").append(msg.getOffset());
+
+        Query q = dbf.getEntityManager().createNativeQuery(sqlBuilder.toString());
+        List<String> nicUuids = q.getResultList();
+
+        if (nicUuids.isEmpty()) {
+            reply.setMore(false);
+            return new ArrayList<>();
+        }
+
+        if (nicUuids.size() >= msg.getLimit()) {
+            reply.setOffset(msg.getOffset() + nicUuids.size());
+            reply.setMore(true);
+        } else {
+            reply.setOffset(msg.getOffset() + msg.getLimit());
+            reply.setMore(false);
+        }
+
+        List<VmNicVO> nics = Q.New(VmNicVO.class).in(VmNicVO_.uuid, nicUuids).list();
         return VmNicInventory.valueOf(nics);
     }
 
@@ -266,7 +291,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     }
 
     @Transactional(readOnly = true)
-    private List<VmNicInventory> getEipAttachableVmNics(APIGetEipAttachableVmNicsMsg msg){
+    private List<VmNicInventory> getEipAttachableVmNics(APIGetEipAttachableVmNicsMsg msg, APIGetEipAttachableVmNicsReply reply){
         VipVO vipvo = msg.getEipUuid() == null ?
                 Q.New(VipVO.class).eq(VipVO_.uuid, msg.getVipUuid()).find() :
                 SQL.New("select vip" +
@@ -276,7 +301,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                         .param("eipUuid", msg.getEipUuid())
                         .find();
         VipInventory vipInv = VipInventory.valueOf(vipvo);
-        List<VmNicInventory> nics = getAttachableVmNicForEip(vipInv);
+        List<VmNicInventory> nics = getAttachableVmNicForEip(vipInv, reply, msg);
         if (nics == null || nics.isEmpty()) {
             return nics;
         }
@@ -295,7 +320,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     private void handle(APIGetEipAttachableVmNicsMsg msg) {
         APIGetEipAttachableVmNicsReply reply = new APIGetEipAttachableVmNicsReply();
         boolean isAttached = Q.New(EipVO.class).eq(EipVO_.uuid, msg.getEipUuid()).notNull(EipVO_.vmNicUuid).isExists();
-        reply.setInventories(isAttached ? new ArrayList<>() : getEipAttachableVmNics(msg));
+        reply.setInventories(isAttached ? new ArrayList<>() : getEipAttachableVmNics(msg, reply));
         bus.reply(msg, reply);
     }
 

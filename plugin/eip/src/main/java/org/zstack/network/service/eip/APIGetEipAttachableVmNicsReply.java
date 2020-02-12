@@ -11,9 +11,28 @@ import static java.util.Arrays.asList;
 
 /**
  */
-@RestResponse(allTo = "inventories")
+@RestResponse(fieldsTo = "all")
 public class APIGetEipAttachableVmNicsReply extends APIReply {
     private List<VmNicInventory> inventories;
+
+    private Integer offset = 0;
+    private Boolean more = false;
+
+    public Integer getOffset() {
+        return offset;
+    }
+
+    public void setOffset(Integer offset) {
+        this.offset = offset;
+    }
+
+    public Boolean getMore() {
+        return more;
+    }
+
+    public void setMore(Boolean more) {
+        this.more = more;
+    }
 
     public List<VmNicInventory> getInventories() {
         return inventories;
