@@ -55,7 +55,10 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
             return;
         }
 
-        logger.debug(String.format("before PrimaryStoragePrioritySortFlow adjustCandidates: %s", candidates.stream().map(HostInventory::getName).collect(Collectors.toList())));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("before PrimaryStoragePrioritySortFlow adjustCandidates: %s", candidates.stream().map(HostInventory::getName).collect(Collectors.toList())));
+        }
+
         String psPriorityCondition = String.join(" ", priMap.stream()
                 .map(it -> String.format("when '%s' then %d", it.PS, it.priority))
                 .collect(Collectors.toList()));
@@ -91,8 +94,10 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
         sorted.removeIf(it -> hostPriority.get(it.getUuid()) > topPriority);
         prepareForNext(sorted);
 
-        logger.debug(String.format("subCandidates: %s",subCandidates.stream().map(HostInventory::getName).collect(Collectors.toList())));
-        logger.debug(String.format("after PrimaryStoragePrioritySortFlow adjustCandidates: %s", candidates.stream().map(HostInventory::getName).collect(Collectors.toList())));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("subCandidates: %s",subCandidates.stream().map(HostInventory::getName).collect(Collectors.toList())));
+            logger.trace(String.format("after PrimaryStoragePrioritySortFlow adjustCandidates: %s", candidates.stream().map(HostInventory::getName).collect(Collectors.toList())));
+        }
     }
 
     private void prepareForNext(List<HostInventory> hosts) {
