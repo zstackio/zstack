@@ -256,7 +256,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             sqlBuilder.append(" and vm.uuid like '%").append(msg.getVmUuid()).append("%\'");
         }
         sqlBuilder.append(" order by nic.vmInstanceUuid")
-                .append(" limit ").append(msg.getLimit()).append(" offset ").append(msg.getOffset());
+                .append(" limit ").append(msg.getLimit()).append(" offset ").append(msg.getStart());
 
         Query q = dbf.getEntityManager().createNativeQuery(sqlBuilder.toString());
         List<String> nicUuids = q.getResultList();
@@ -267,10 +267,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         }
 
         if (nicUuids.size() >= msg.getLimit()) {
-            reply.setOffset(msg.getOffset() + nicUuids.size());
+            reply.setStart(msg.getStart() + msg.getLimit());
             reply.setMore(true);
         } else {
-            reply.setOffset(msg.getOffset() + msg.getLimit());
+            reply.setStart(msg.getStart() + nicUuids.size());
             reply.setMore(false);
         }
 

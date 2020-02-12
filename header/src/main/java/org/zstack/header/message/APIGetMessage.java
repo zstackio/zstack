@@ -2,7 +2,7 @@ package org.zstack.header.message;
 
 public abstract class APIGetMessage extends APISyncCallMessage {
     private Integer limit = 1000;
-    private Integer offset = 0;
+    private Integer start = 0;
 
     public Integer getLimit() {
         return limit;
@@ -12,11 +12,11 @@ public abstract class APIGetMessage extends APISyncCallMessage {
         this.limit = limit;
     }
 
-    public Integer getOffset() {
-        return offset;
+    public Integer getStart() {
+        return start;
     }
 
-    public void setOffset(Integer offset) {
-        this.offset = offset;
+    public void setStart(Integer start) {
+        this.start = start;
     }
 }

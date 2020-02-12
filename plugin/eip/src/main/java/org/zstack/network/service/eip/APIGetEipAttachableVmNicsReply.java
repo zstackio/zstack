@@ -15,15 +15,15 @@ import static java.util.Arrays.asList;
 public class APIGetEipAttachableVmNicsReply extends APIReply {
     private List<VmNicInventory> inventories;
 
-    private Integer offset = 0;
+    private Integer start = 0;
     private Boolean more = false;
 
-    public Integer getOffset() {
-        return offset;
+    public Integer getStart() {
+        return start;
     }
 
-    public void setOffset(Integer offset) {
-        this.offset = offset;
+    public void setStart(Integer start) {
+        this.start = start;
     }
 
     public Boolean getMore() {
