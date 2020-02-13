@@ -844,6 +844,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                             vo.setVolumeUuid(vol.getUuid());
                             vo.setFormat(vol.getFormat());
                             vo.setVolumeType(vol.getType());
+                            if (vo.getType() == null) {
+                                vo.setType(VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString());
+                            }
                             vo.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
                             vo.setSize(vol.getSize());
                             vo.setState(VolumeSnapshotState.Enabled);

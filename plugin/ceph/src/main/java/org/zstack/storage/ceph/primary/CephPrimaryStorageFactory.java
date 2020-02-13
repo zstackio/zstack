@@ -1143,6 +1143,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
                         CreateVolumeSnapshotReply r = (CreateVolumeSnapshotReply)reply;
                         vo.setUuid(r.getInventory().getUuid());
+                        vo.setType(VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString());
                         trigger.next();
                     }
                 });
