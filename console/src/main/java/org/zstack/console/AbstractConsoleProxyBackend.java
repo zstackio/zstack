@@ -98,8 +98,8 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
     @Override
     public void grantConsoleAccess(final SessionInventory session, final VmInstanceInventory vm, final ReturnValueCompletion<ConsoleInventory> complete) {
         if (!isAgentConnected()) {
-            complete.fail(operr(
-                    "the console agent is not connected; it's mostly like the management node just starts, please wait for the console agent connected."
+            complete.fail(operr("the console agent is not connected; it's mostly like the management node just starts, " +
+                    "please wait for the console agent connected, or you can reconnect it manually if disconnected for a long time."
             ));
             return;
         }

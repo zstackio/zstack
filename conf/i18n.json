@@ -5370,9 +5370,9 @@
     "fileName": "src/main/java/org/zstack/configuration/ConfigurationApiInterceptor.java"
   },
   {
-    "raw": "the console agent is not connected; it\u0027s mostly like the management node just starts, please wait for the console agent connected.",
-    "en_US": "the console agent is not connected; it\u0027s mostly like the management node just starts, please wait for the console agent connected.",
-    "zh_CN": "控制台代理失联，很有可能管理节点刚刚启动，请等待控制台代理的连接",
+    "raw": "the console agent is not connected; it\u0027s mostly like the management node just starts, please wait for the console agent connected, or you can reconnect it manually if disconnected for a long time.",
+    "en_US": "the console agent is not connected; it\u0027s mostly like the management node just starts, please wait for the console agent connected, or you can reconnect it manually if disconnected for a long time.",
+    "zh_CN": "控制台代理失联，很有可能管理节点刚刚启动，请等待控制台代理的连接，如果长时间没有连上可以尝试手动重连控制台代理。",
     "arguments": [],
     "line": 101,
     "fileName": "src/main/java/org/zstack/console/AbstractConsoleProxyBackend.java"
