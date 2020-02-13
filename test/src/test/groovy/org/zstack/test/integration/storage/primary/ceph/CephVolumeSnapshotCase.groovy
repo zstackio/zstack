@@ -3,6 +3,7 @@ package org.zstack.test.integration.storage.primary.ceph
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.trash.StorageTrash
+import org.zstack.header.storage.snapshot.VolumeSnapshotConstant
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_
@@ -179,6 +180,7 @@ class CephVolumeSnapshotCase extends SubCase {
         assert snapshot.volumeUuid == vm.rootVolumeUuid
         assert snapshot.primaryStorageInstallPath == root.installPath + "@" + snapshot.uuid // save old install path
         assert snapshot.treeUuid != rootSnapshot.treeUuid
+        assert snapshot.type == VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString()
     }
 
     void testRollbackVolumeFromRootSnapshotAfterReImage() {
