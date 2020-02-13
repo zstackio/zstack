@@ -23,4 +23,6 @@ public class KVMGlobalProperty {
 
     public static String IPTABLES_KEY = "KvmHost.iptables.rule";
     public static List<String> IPTABLES_RULES = BusinessProperties.getPropertiesAsList(IPTABLES_KEY);
+    @GlobalProperty(name="KvmHost.maxThreads.ratio", defaultValue = "0.6")
+    public static double KVM_HOST_MAX_THREDS_RATIO;
 }
