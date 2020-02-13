@@ -19108,7 +19108,7 @@
   {
     "raw": "shared volume[uuid: %s] on shared block group primary storage can not resize",
     "en_US": "shared volume[uuid: {0}] on shared block group primary storage can not resize",
-    "zh_CN": "SharedBlock主存储上的共享云盘[uuid: {1}]暂时不支持扩容",
+    "zh_CN": "SharedBlock主存储上的共享云盘[uuid: {0}]暂时不支持扩容",
     "arguments": [
       "msg.getUuid()"
     ],
