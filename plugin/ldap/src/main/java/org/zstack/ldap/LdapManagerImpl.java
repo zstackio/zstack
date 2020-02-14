@@ -37,6 +37,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.IdentityGlobalConfig;
+import org.zstack.identity.Session;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
@@ -132,29 +133,6 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
         return bus.makeLocalServiceId(LdapConstant.SERVICE_ID);
     }
 
-    private SessionInventory getSession(String accountUuid, String userUuid) {
-        int maxLoginTimes = org.zstack.identity.IdentityGlobalConfig.MAX_CONCURRENT_SESSION.value(Integer.class);
-        SimpleQuery<SessionVO> query = dbf.createQuery(SessionVO.class);
-        query.add(SessionVO_.accountUuid, SimpleQuery.Op.EQ, accountUuid);
-        query.add(SessionVO_.userUuid, SimpleQuery.Op.EQ, userUuid);
-        long count = query.count();
-        if (count >= maxLoginTimes) {
-            String err = String.format("Login sessions hit limit of max allowed concurrent login sessions, max allowed: %s", maxLoginTimes);
-            throw new BadCredentialsException(err);
-        }
-
-        int sessionTimeout = IdentityGlobalConfig.SESSION_TIMEOUT.value(Integer.class);
-        SessionVO svo = new SessionVO();
-        svo.setUuid(Platform.getUuid());
-        svo.setAccountUuid(accountUuid);
-        svo.setUserUuid(userUuid);
-        long expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(sessionTimeout);
-        svo.setExpiredDate(new Timestamp(expiredTime));
-        svo = dbf.persistAndRefresh(svo);
-        SessionInventory session = SessionInventory.valueOf(svo);
-        return session;
-    }
-
     @Transactional(readOnly = true)
     private Timestamp getCurrentSqlDate() {
         Query query = dbf.getEntityManager().createNativeQuery("select current_timestamp()");
@@ -206,7 +184,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
             return;
         }
 
-        SessionInventory inv = getSession(vo.getAccountUuid(), vo.getAccountUuid());
+        SessionInventory inv = Session.login(vo.getAccountUuid(), vo.getAccountUuid());
         msg.setSession(inv);
         reply.setInventory(inv);
         reply.setAccountInventory(AccountInventory.valueOf(avo));
