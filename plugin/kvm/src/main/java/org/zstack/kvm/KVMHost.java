@@ -327,7 +327,11 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void success(T ret) {
-                        completion.success(ret);
+                        if (dbf.isExist(self.getUuid(), HostVO.class)) {
+                            completion.success(ret);
+                        } else {
+                            completion.fail(operr("host[uuid:%s] has been deleted", self.getUuid()));
+                        }
                     }
 
                     @Override
@@ -344,7 +348,11 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void success(T ret) {
-                        completion.success(ret);
+                        if (dbf.isExist(self.getUuid(), HostVO.class)) {
+                            completion.success(ret);
+                        } else {
+                            completion.fail(operr("host[uuid:%s] has been deleted", self.getUuid()));
+                        }
                     }
 
                     @Override
