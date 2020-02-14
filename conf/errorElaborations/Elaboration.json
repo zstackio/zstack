@@ -36,8 +36,8 @@
     "code": "1000",
     "method": "regex",
     "regex": "the SSH port is not open after.*Failed to login the vyos router.*",
-    "message_cn": "启动虚拟路由器超时,经过 %2$s 秒等待，虚拟路由器的SSH端口仍未开放。",
-    "message_en": "Start virtual router timeout, the SSH port of the virtual router is not open after %2$s seconds"
+    "message_cn": "启动虚拟路由器超时,经过 %1$s 秒等待，虚拟路由器的SSH端口仍未开放。",
+    "message_en": "Start virtual router timeout, the SSH port of the virtual router is not open after %1$s seconds"
   },
   {
     "category": "BS",
