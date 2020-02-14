@@ -9,6 +9,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -44,15 +45,17 @@ public class VmPriorityUpgradeExtension implements Component {
         return true;
     }
 
-    private void updateVmPriorityOnHost(HostInventory inv) {
-        List<VmInstanceVO> vos = Q.New(VmInstanceVO.class)
+    public void updateVmPriorityOnHost(HostInventory inv) {
+        List<String> vmUuids = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.uuid)
                 .eq(VmInstanceVO_.hostUuid, inv.getUuid())
+                .eq(VmInstanceVO_.state, VmInstanceState.Running)
                 .eq(VmInstanceVO_.type, VmInstanceConstant.USER_VM_TYPE)
-                .list();
+                .listValues();
 
-        List<String> vmUuids = vos.stream().filter(v -> v.getState().equals(VmInstanceState.Running))
-                .map(VmInstanceVO::getUuid)
-                .collect(Collectors.toList());
+        if (vmUuids.isEmpty()) {
+            return;
+        }
 
         List<String> updatedVms = Q.New(SystemTagVO.class)
                 .select(SystemTagVO_.resourceUuid)

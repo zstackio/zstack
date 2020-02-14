@@ -57,6 +57,15 @@ class DatabaseWrapperCase extends SubCase {
                 .listTuple()
         assert offerings != null : "listTuples should always return non-null"
         assert offerings.isEmpty() : "expect no tuples found"
+
+        List<String> offeringUuids = Collections.emptyList()
+        try {
+            Q.New(InstanceOfferingVO.class)
+                    .in(InstanceOfferingVO_.uuid, offeringUuids)
+                    .list();
+        } catch (RuntimeException e) {
+            assert e.getMessage() == "Op.IN value cannot be null or empty"
+        }
     }
 
     void testSQLBatch() {
