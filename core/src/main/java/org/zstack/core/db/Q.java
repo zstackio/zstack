@@ -1,6 +1,8 @@
 package org.zstack.core.db;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.utils.DebugUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.metamodel.SingularAttribute;
@@ -109,6 +111,7 @@ public class Q {
     }
 
     public Q in(SingularAttribute attr, Collection val) {
+        DebugUtils.Assert(CollectionUtils.isNotEmpty(val), "Op.IN value cannot be null or empty");
         q.add(attr, SimpleQuery.Op.IN, val);
         return this;
     }

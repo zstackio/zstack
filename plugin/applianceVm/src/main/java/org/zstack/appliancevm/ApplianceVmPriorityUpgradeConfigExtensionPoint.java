@@ -60,6 +60,10 @@ public class ApplianceVmPriorityUpgradeConfigExtensionPoint implements Component
                 .eq(VmInstanceVO_.state, VmInstanceState.Running)
                 .listValues();
 
+        if (vmUuids.isEmpty()) {
+            return;
+        }
+
         //Avoid appliancevm repeat setting priority
         List<String> updatedVms = Q.New(SystemTagVO.class)
                 .select(SystemTagVO_.resourceUuid)
@@ -69,6 +73,7 @@ public class ApplianceVmPriorityUpgradeConfigExtensionPoint implements Component
 
         vmUuids.removeAll(updatedVms);
         vmUuids.removeIf(v -> !destinationMaker.isManagedByUs(v));
+
         if (vmUuids.isEmpty()) {
             return;
         }
