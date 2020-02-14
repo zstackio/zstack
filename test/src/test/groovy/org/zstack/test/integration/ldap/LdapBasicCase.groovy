@@ -7,7 +7,9 @@ import org.junit.Rule
 import org.zapodot.junit.ldap.EmbeddedLdapRule
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
 import org.zstack.core.db.Q
+import org.zstack.header.identity.IdentityErrors
 import org.zstack.identity.Account
+import org.zstack.identity.IdentityGlobalConfig
 import org.zstack.ldap.LdapAccountRefVO
 import org.zstack.ldap.LdapConstant
 import org.zstack.ldap.LdapSystemTags
@@ -122,6 +124,15 @@ class LdapBasicCase extends SubCase {
         )
         assert null != action.call().error
 
+        IdentityGlobalConfig.MAX_CONCURRENT_SESSION.updateValue(1)
+
+        action = new LogInByLdapAction()
+        action.uid = cn
+        action.password = rightPassword
+        LogInByLdapAction.Result result = action.call()
+        assert result.error.details.contains(IdentityErrors.MAX_CONCURRENT_SESSION_EXCEEDED.toString())
+
+        IdentityGlobalConfig.MAX_CONCURRENT_SESSION.resetValue()
 
         logInByLdap {
             uid = cn
