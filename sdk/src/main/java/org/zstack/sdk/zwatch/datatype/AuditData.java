@@ -36,14 +36,6 @@ public class AuditData  {
         return this.clientBrowser;
     }
 
-    public java.lang.String level;
-    public void setLevel(java.lang.String level) {
-        this.level = level;
-    }
-    public java.lang.String getLevel() {
-        return this.level;
-    }
-
     public java.lang.String apiName;
     public void setApiName(java.lang.String apiName) {
         this.apiName = apiName;
@@ -116,14 +108,6 @@ public class AuditData  {
         return this.responseDump;
     }
 
-    public java.lang.String resourceBefore;
-    public void setResourceBefore(java.lang.String resourceBefore) {
-        this.resourceBefore = resourceBefore;
-    }
-    public java.lang.String getResourceBefore() {
-        return this.resourceBefore;
-    }
-
     public java.lang.String operator;
     public void setOperator(java.lang.String operator) {
         this.operator = operator;
@@ -138,6 +122,22 @@ public class AuditData  {
     }
     public long getTime() {
         return this.time;
+    }
+
+    public java.lang.String resourceBefore;
+    public void setResourceBefore(java.lang.String resourceBefore) {
+        this.resourceBefore = resourceBefore;
+    }
+    public java.lang.String getResourceBefore() {
+        return this.resourceBefore;
+    }
+
+    public java.lang.String level;
+    public void setLevel(java.lang.String level) {
+        this.level = level;
+    }
+    public java.lang.String getLevel() {
+        return this.level;
     }
 
 }

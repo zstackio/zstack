@@ -28,6 +28,14 @@ public class AuditDataV2 extends org.zstack.sdk.zwatch.datatype.AuditData {
         return this.TAG_SUCCESS;
     }
 
+    public java.lang.String TAG_LEVEL;
+    public void setTAG_LEVEL(java.lang.String TAG_LEVEL) {
+        this.TAG_LEVEL = TAG_LEVEL;
+    }
+    public java.lang.String getTAG_LEVEL() {
+        return this.TAG_LEVEL;
+    }
+
     public java.lang.String FIELD_API_ERROR;
     public void setFIELD_API_ERROR(java.lang.String FIELD_API_ERROR) {
         this.FIELD_API_ERROR = FIELD_API_ERROR;
