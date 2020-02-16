@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetCandidateMiniHostsAction extends AbstractAction {
+public class DeleteClusterDRSAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetCandidateMiniHostsResult value;
+        public org.zstack.sdk.DeleteClusterDRSResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,11 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean local = false;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean configure = false;
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -49,6 +49,12 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -57,8 +63,8 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetCandidateMiniHostsResult value = res.getResult(org.zstack.sdk.GetCandidateMiniHostsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetCandidateMiniHostsResult() : value; 
+        org.zstack.sdk.DeleteClusterDRSResult value = res.getResult(org.zstack.sdk.DeleteClusterDRSResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteClusterDRSResult() : value; 
 
         return ret;
     }
@@ -87,10 +93,10 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/mini-clusters/candidate-hosts";
+        info.httpMethod = "DELETE";
+        info.path = "/clusters/drs/{uuid}";
         info.needSession = true;
-        info.needPoll = false;
+        info.needPoll = true;
         info.parameterName = "";
         return info;
     }

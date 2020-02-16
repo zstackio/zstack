@@ -36,6 +36,8 @@
 
         <Logger name="org.hibernate" level="WARN" />
 
+        <Logger name="org.zstack.drs" level="TRACE" />
+
         <Root level="WARN" additivity="false">
             <AppenderRef ref="Async"/>
             <AppenderRef ref="Console"/>

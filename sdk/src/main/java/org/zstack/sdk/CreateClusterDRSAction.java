@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetCandidateMiniHostsAction extends AbstractAction {
+public class CreateClusterDRSAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetCandidateMiniHostsResult value;
+        public org.zstack.sdk.CreateClusterDRSResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,32 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean local = false;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String clusterUuid;
+
+    @Param(required = true, validValues = {"Automatic","Manual"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String automationLevel;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List thresholds;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Integer thresholdDuration;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean configure = false;
+    public boolean defaultEnable = false;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -49,6 +70,12 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -57,8 +84,8 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetCandidateMiniHostsResult value = res.getResult(org.zstack.sdk.GetCandidateMiniHostsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetCandidateMiniHostsResult() : value; 
+        org.zstack.sdk.CreateClusterDRSResult value = res.getResult(org.zstack.sdk.CreateClusterDRSResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateClusterDRSResult() : value; 
 
         return ret;
     }
@@ -87,11 +114,11 @@ public class GetCandidateMiniHostsAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/mini-clusters/candidate-hosts";
+        info.httpMethod = "POST";
+        info.path = "/clusters/{clusterUuid}/drs";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 
