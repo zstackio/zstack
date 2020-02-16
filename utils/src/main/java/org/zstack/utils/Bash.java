@@ -59,6 +59,23 @@ public abstract class Bash {
         }
     }
 
+    /**
+     * @return return true if @content is equal to @filePath's content
+     */
+    protected boolean compareWithFile(String filePath, String content) {
+        File f = new File(filePath);
+        if (!f.exists() || f.isDirectory()) {
+            return false;
+        }
+        try {
+            String fileContent = FileUtils.readFileToString(f);
+            return fileContent.trim().equals(content.trim());
+        } catch (IOException e) {
+            logger.warn(e.getLocalizedMessage());
+            return false;
+        }
+    }
+
     protected void mkdirs(String path) {
         File f = new File(path);
         if (!f.exists()) {
