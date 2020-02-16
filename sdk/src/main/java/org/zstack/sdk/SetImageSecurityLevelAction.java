@@ -12,7 +12,7 @@ public class SetImageSecurityLevelAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetImageQgaResult value;
+        public org.zstack.sdk.SetImageSecurityLevelResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -63,8 +63,8 @@ public class SetImageSecurityLevelAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetImageQgaResult value = res.getResult(org.zstack.sdk.SetImageQgaResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetImageQgaResult() : value; 
+        org.zstack.sdk.SetImageSecurityLevelResult value = res.getResult(org.zstack.sdk.SetImageSecurityLevelResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetImageSecurityLevelResult() : value; 
 
         return ret;
     }

@@ -76,4 +76,12 @@ public class EventSubscriptionInventory  {
         return this.createDate;
     }
 
+    public java.lang.String emergencyLevel;
+    public void setEmergencyLevel(java.lang.String emergencyLevel) {
+        this.emergencyLevel = emergencyLevel;
+    }
+    public java.lang.String getEmergencyLevel() {
+        return this.emergencyLevel;
+    }
+
 }
