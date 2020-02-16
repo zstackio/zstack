@@ -910,7 +910,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 return false;
             }
-        });
+        }, false);
 
         logger.debug(String.format("started heartbeat thread for management node[uuid:%s]", Platform.getManagementServerId()));
     }
