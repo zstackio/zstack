@@ -108,6 +108,7 @@
             <zstack:extension interface="org.zstack.appliancevm.ApvmCascadeFilterExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
             <zstack:extension interface="org.zstack.network.service.vip.VipCleanupExtensionPoint" />
+            <zstack:extension interface="org.zstack.network.service.eip.GetL3NetworkForEipInVirtualRouterExtensionPoint" />
         </zstack:plugin>
     </bean>
 
