@@ -62,6 +62,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.eip.EipConstant;
+import org.zstack.network.service.eip.GetL3NetworkForEipInVirtualRouterExtensionPoint;
 import org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtensionPoint;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
@@ -103,7 +104,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
         GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint,
         GetPeerL3NetworksForLoadBalancerExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint, ManagementNodeReadyExtensionPoint,
-        VipCleanupExtensionPoint {
+        VipCleanupExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint {
 	private final static CLogger logger = Utils.getLogger(VirtualRouterManagerImpl.class);
 	
 	private final static List<String> supportedL2NetworkTypes = new ArrayList<String>();
@@ -1826,5 +1827,22 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     @Override
     public void cleanupVip(String uuid) {
         SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, uuid).delete();
+    }
+
+    @Override
+    public List<String> getL3NetworkForEipInVirtualRouter(String networkServiceProviderType, VipInventory vip) {
+	    if (networkServiceProviderType.equals(VYOS_ROUTER_PROVIDER_TYPE)) {
+            L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, vip.getL3NetworkUuid()).find();
+            /* get vpc network or vrouter network */
+            return SQL.New("select distinct l3.uuid" +
+                    " from  L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider" +
+                    " where l3.uuid = ref.l3NetworkUuid and ref.networkServiceProviderUuid = provider.uuid" +
+                    " and provider.type = :providerType" +
+                    " and l3.ipVersion = :ipVersion")
+                    .param("providerType", VYOS_ROUTER_PROVIDER_TYPE)
+                    .param("ipVersion", l3Vo.getIpVersion())
+                    .list();
+        }
+	    return new ArrayList<>();
     }
 }

@@ -24,6 +24,10 @@ public class APIGetEipAttachableVmNicsMsg extends APIGetMessage {
     private String vmUuid;
     @APIParam(required = false)
     private String vmName;
+    @APIParam(required = false)
+    private String networkServiceProvider;
+    @APIParam(required = false)
+    private boolean attachedToVm = true;
 
     public String getEipUuid() {
         return eipUuid;
@@ -56,6 +60,14 @@ public class APIGetEipAttachableVmNicsMsg extends APIGetMessage {
     public void setVmName(String vmName) {
         this.vmName = vmName;
     }
+
+    public String getNetworkServiceProvider() { return networkServiceProvider; }
+
+    public void setNetworkServiceProvider(String networkServiceProvider) { this.networkServiceProvider = networkServiceProvider; }
+
+    public boolean isAttachedToVm() { return attachedToVm; }
+
+    public void setAttachedToVm(boolean attachedToVm) { this.attachedToVm = attachedToVm; }
 
     public static APIGetEipAttachableVmNicsMsg __example__() {
         APIGetEipAttachableVmNicsMsg msg = new APIGetEipAttachableVmNicsMsg();

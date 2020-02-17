@@ -1096,33 +1096,69 @@ public class VmInstanceManagerImpl extends AbstractService implements
             @Override
             public void run(SyncTaskChain chain) {
                 if (nic.getVmInstanceUuid() == null) {
-                    List<ReturnIpMsg> msgs = new ArrayList<>();
-                    for (UsedIpInventory ip : nic.getUsedIps()) {
-                        ReturnIpMsg returnIpMsg = new ReturnIpMsg();
-                        returnIpMsg.setUsedIpUuid(ip.getUuid());
-                        returnIpMsg.setL3NetworkUuid(ip.getL3NetworkUuid());
-                        bus.makeTargetServiceIdByResourceUuid(returnIpMsg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
-                        msgs.add(returnIpMsg);
-                    }
-                    new While<>(msgs).all((msg, com) -> bus.send(msg, new CloudBusCallBack(com) {
+                    FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
+                    fchain.setName(String.format("detach-eip-from-vmnic-%s", nic.getUuid()));
+                    fchain.then(new NoRollbackFlow() {
                         @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                logger.warn(String.format("failed to return ip address[uuid: %s]", msg.getUsedIpUuid()));
+                        public void run(FlowTrigger trigger, Map data) {
+                            for (ReleaseNetworkServiceOnDeletingNicExtensionPoint extp : pluginRgty.getExtensionList(ReleaseNetworkServiceOnDeletingNicExtensionPoint.class)) {
+                                extp.releaseNetworkServiceOnDeletingNic(nic, new Completion(trigger) {
+                                    @Override
+                                    public void success() {
+                                        logger.debug(String.format("release eip from vmnic[%s]",nic.getUuid()));
+                                        trigger.next();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                });
                             }
-                            com.done();
-                        }
-                    })).run(new NopeNoErrorCompletion() {
-                        @Override
-                        public void done() {
-                            dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
-                            completion.success();
                         }
                     });
+                    fchain.then(new NoRollbackFlow() {
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            List<ReturnIpMsg> msgs = new ArrayList<>();
+                            for (UsedIpInventory ip : nic.getUsedIps()) {
+                                ReturnIpMsg returnIpMsg = new ReturnIpMsg();
+                                returnIpMsg.setUsedIpUuid(ip.getUuid());
+                                returnIpMsg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                                bus.makeTargetServiceIdByResourceUuid(returnIpMsg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+                                msgs.add(returnIpMsg);
+                            }
+                            new While<>(msgs).all((msg, com) -> bus.send(msg, new CloudBusCallBack(com) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        logger.warn(String.format("failed to return ip address[uuid: %s]", msg.getUsedIpUuid()));
+                                    }
+                                    com.done();
+                                }
+                            })).run(new NoErrorCompletion(trigger) {
+                                @Override
+                                public void done() {
+                                    dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
+                                    trigger.next();
+                                }
+                            });
+                        }
+                    });
+                    fchain.done(new FlowDoneHandler(completion) {
+                        @Override
+                        public void handle(Map data) {
+                            completion.success();
+                        }
+                    }).error(new FlowErrorHandler(completion) {
+                        @Override
+                        public void handle(ErrorCode errCode, Map data) {
+                            completion.fail(errCode);
+                        }
+                    }).start();
 
                     return;
                 }
-
                 DetachNicFromVmMsg detachNicFromVmMsg = new DetachNicFromVmMsg();
                 detachNicFromVmMsg.setVmInstanceUuid(nic.getVmInstanceUuid());
                 detachNicFromVmMsg.setVmNicUuid(nic.getUuid());
@@ -1138,7 +1174,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     }
                 });
             }
-
             @Override
             public String getName() {
                 return String.format("delete-vmNic-%s", nic.getUuid());

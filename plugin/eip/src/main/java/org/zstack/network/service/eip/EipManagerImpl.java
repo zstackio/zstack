@@ -261,6 +261,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         Query q = dbf.getEntityManager().createNativeQuery(sqlBuilder.toString());
         List<String> nicUuids = q.getResultList();
 
+        List<String> unusedVmNicUuids = Q.New(VmNicVO.class).select(VmNicVO_.uuid).in(VmNicVO_.l3NetworkUuid, l3Uuids).isNull(VmNicVO_.vmInstanceUuid).listValues();
+        nicUuids.addAll(unusedVmNicUuids);
         if (nicUuids.isEmpty()) {
             reply.setMore(false);
             return new ArrayList<>();
@@ -290,6 +292,22 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         return ret;
     }
 
+    private List<VmNicInventory> filterVmNicsOnFlatNetworkForEip(final String networkProviderType, VipInventory vip, List<VmNicInventory> vmNics) {
+        if (vmNics.isEmpty()){
+            return vmNics;
+        }
+        List<String> l3 = new ArrayList<>();
+        for (GetL3NetworkForEipInVirtualRouterExtensionPoint extp : pluginRgty.getExtensionList(GetL3NetworkForEipInVirtualRouterExtensionPoint.class)) {
+            l3.addAll(extp.getL3NetworkForEipInVirtualRouter(networkProviderType, vip));
+        }
+
+        if (l3.size() > 0) {
+            return vmNics.stream().filter(nic -> l3.contains(nic.getL3NetworkUuid())).collect(Collectors.toList());
+        }
+
+        return vmNics;
+    }
+
     @Transactional(readOnly = true)
     private List<VmNicInventory> getEipAttachableVmNics(APIGetEipAttachableVmNicsMsg msg, APIGetEipAttachableVmNicsReply reply){
         VipVO vipvo = msg.getEipUuid() == null ?
@@ -313,6 +331,14 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         if (nics != null && !nics.isEmpty()) {
             logger.debug(String.format("get eip[uuid:%s] attachable vm nics[%s] after filter extension point",
                     msg.getEipUuid(), nics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList())));
+        }
+
+        if (nics != null && !msg.isAttachedToVm()) {
+            nics = nics.stream().filter(nic -> nic.getVmInstanceUuid() == null).collect(Collectors.toList());
+        }
+
+        if (nics != null && msg.getNetworkServiceProvider() != null) {
+            nics = filterVmNicsOnFlatNetworkForEip(msg.getNetworkServiceProvider(), vipInv, nics);
         }
         return nics;
     }
