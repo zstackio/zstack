@@ -7,8 +7,6 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.debug.DebugManager;
 import org.zstack.core.debug.DebugSignalHandler;
 import org.zstack.header.core.progress.ChainInfo;
-import org.zstack.header.core.progress.PendingTaskInfo;
-import org.zstack.header.core.progress.RunningTaskInfo;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -19,7 +17,6 @@ import org.zstack.utils.logging.CLoggerImpl;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -195,7 +192,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                     run();
                     return null;
                 }
-            });
+            }, true);
         }
     }
 
@@ -220,7 +217,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     @Override
     public <T> Future<T> syncSubmit(SyncTask<T> task) {
         if (task.getSyncLevel() <= 0) {
-            return _threadFacade.submit(task);
+            return _threadFacade.submit(task, true);
         } else {
             return doSyncSubmit(task);
         }
@@ -376,7 +373,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                     runQueue();
                     return null;
                 }
-            });
+            }, false);
         }
     }
 

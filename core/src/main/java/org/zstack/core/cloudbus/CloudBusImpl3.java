@@ -723,7 +723,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                     };
 
                     if (syncLevel == 0) {
-                        thdf.submit(task);
+                        thdf.submit(task, false);
                     } else {
                         thdf.syncSubmit(task);
                     }
