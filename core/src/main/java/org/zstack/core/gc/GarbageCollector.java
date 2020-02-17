@@ -9,7 +9,7 @@ import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.SyncThread;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.FieldUtils;
@@ -169,7 +169,7 @@ public abstract class GarbageCollector {
         gcMgr.registerGC(this);
     }
 
-    @AsyncThread
+    @SyncThread(level = 50)
     void runTrigger() {
         GarbageCollector self = this;
         EXECUTED_TIMES++;
