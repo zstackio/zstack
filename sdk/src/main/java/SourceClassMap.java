@@ -474,6 +474,10 @@ public class SourceClassMap {
 			put("org.zstack.vrouterRoute.VRouterRouteTableInventory", "org.zstack.sdk.VRouterRouteTableInventory");
 			put("org.zstack.vrouterRoute.VirtualRouterVRouterRouteTableRefInventory", "org.zstack.sdk.VirtualRouterVRouterRouteTableRefInventory");
 			put("org.zstack.xdragon.XDragonHostInventory", "org.zstack.sdk.XDragonHostInventory");
+			put("org.zstack.zbox.ZBoxInventory", "org.zstack.sdk.ZBoxInventory");
+			put("org.zstack.zbox.ZBoxLocationRefInventory", "org.zstack.sdk.ZBoxLocationRefInventory");
+			put("org.zstack.zbox.ZBoxState", "org.zstack.sdk.ZBoxState");
+			put("org.zstack.zbox.ZBoxStatus", "org.zstack.sdk.ZBoxStatus");
 			put("org.zstack.zql.ZQLQueryReturn", "org.zstack.sdk.ZQLQueryReturn");
 			put("org.zstack.zwatch.alarm.APICreateAlarmMsg$ActionParam", "org.zstack.sdk.zwatch.alarm.ActionParam");
 			put("org.zstack.zwatch.alarm.AlarmActionInventory", "org.zstack.sdk.zwatch.alarm.AlarmActionInventory");
@@ -920,6 +924,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VtepInventory", "org.zstack.network.l2.vxlan.vtep.VtepInventory");
 			put("org.zstack.sdk.WebhookInventory", "org.zstack.header.core.webhooks.WebhookInventory");
 			put("org.zstack.sdk.XDragonHostInventory", "org.zstack.xdragon.XDragonHostInventory");
+			put("org.zstack.sdk.ZBoxInventory", "org.zstack.zbox.ZBoxInventory");
+			put("org.zstack.sdk.ZBoxLocationRefInventory", "org.zstack.zbox.ZBoxLocationRefInventory");
+			put("org.zstack.sdk.ZBoxState", "org.zstack.zbox.ZBoxState");
+			put("org.zstack.sdk.ZBoxStatus", "org.zstack.zbox.ZBoxStatus");
 			put("org.zstack.sdk.ZQLQueryReturn", "org.zstack.zql.ZQLQueryReturn");
 			put("org.zstack.sdk.ZoneInventory", "org.zstack.header.zone.ZoneInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupInventory", "org.zstack.header.storage.database.backup.DatabaseBackupInventory");
