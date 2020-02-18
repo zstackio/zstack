@@ -1,0 +1,8 @@
+<error>
+    <prefix>zbox</prefix>
+
+    <code>
+        <id>1000</id>
+        <description>wait to attach zbox</description>
+    </code>
+</error>
