@@ -476,8 +476,8 @@
     "code": "1028",
     "method": "regex",
     "regex": "operation error, because:\\[Errno 28] No space left on device",
-    "message_cn": "物理机存储空间不足",
-    "message_en": "No space left on Kvm host"
+    "message_cn": "磁盘空间不足",
+    "message_en": "No space left on device"
   },
   {
     "category": "IAM2",
