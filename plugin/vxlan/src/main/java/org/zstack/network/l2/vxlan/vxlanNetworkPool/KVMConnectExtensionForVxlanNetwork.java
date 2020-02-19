@@ -36,6 +36,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Created by weiwang on 10/05/2017.
@@ -79,17 +80,17 @@ public class KVMConnectExtensionForVxlanNetwork implements KVMHostConnectExtensi
         return types;
     }
 
-    private void prepareNetwork(final Iterator<L2NetworkInventory> it, final String hostUuid, final Completion completion) {
+    private void prepareNetwork(final Iterator<String> it, final String hostUuid, final Completion completion) {
         if (!it.hasNext()) {
             completion.success();
             return;
         }
 
-        final L2NetworkInventory l2 = it.next();
+        final String l2Uuid = it.next();
         CheckL2NetworkOnHostMsg cmsg = new CheckL2NetworkOnHostMsg();
         cmsg.setHostUuid(hostUuid);
-        cmsg.setL2NetworkUuid(l2.getUuid());
-        bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, l2.getUuid());
+        cmsg.setL2NetworkUuid(l2Uuid);
+        bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, l2Uuid);
         bus.send(cmsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
@@ -106,7 +107,7 @@ public class KVMConnectExtensionForVxlanNetwork implements KVMHostConnectExtensi
     @Override
     public void connectionReestablished(HostInventory inv) throws HostException {
         //TODO: make connect async
-        List<L2NetworkInventory> l2s = getL2Networks(inv.getClusterUuid());
+        List<String> l2s = getL2Networks(inv.getClusterUuid()).stream().map(L2NetworkInventory::getUuid).collect(Collectors.toList());
         if (l2s.isEmpty()) {
             return;
         }
@@ -131,7 +132,7 @@ public class KVMConnectExtensionForVxlanNetwork implements KVMHostConnectExtensi
 
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                List<L2NetworkInventory> l2s = getL2Networks(context.getInventory().getClusterUuid());
+                List<String> l2s = getL2Networks(context.getInventory().getClusterUuid()).stream().map(L2NetworkInventory::getUuid).collect(Collectors.toList());
                 if (l2s.isEmpty()) {
                     trigger.next();
                     return;
