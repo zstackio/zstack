@@ -45,6 +45,10 @@ public class ImageBackupStorageRefVO implements Serializable {
     @Column
     private String installPath;
     @Column
+    private String exportMd5Sum;
+    @Column
+    private String exportUrl;
+    @Column
     private Timestamp createDate;
     @Column
     private Timestamp lastOpDate;
@@ -87,6 +91,22 @@ public class ImageBackupStorageRefVO implements Serializable {
 
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
+    }
+
+    public String getExportMd5Sum() {
+        return exportMd5Sum;
+    }
+
+    public void setExportMd5Sum(String exportMd5Sum) {
+        this.exportMd5Sum = exportMd5Sum;
+    }
+
+    public String getExportUrl() {
+        return exportUrl;
+    }
+
+    public void setExportUrl(String exportUrl) {
+        this.exportUrl = exportUrl;
     }
 
     public Timestamp getCreateDate() {

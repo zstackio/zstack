@@ -36,6 +36,22 @@ public class ImageBackupStorageRefInventory  {
         return this.status;
     }
 
+    public java.lang.String exportUrl;
+    public void setExportUrl(java.lang.String exportUrl) {
+        this.exportUrl = exportUrl;
+    }
+    public java.lang.String getExportUrl() {
+        return this.exportUrl;
+    }
+
+    public java.lang.String exportMd5Sum;
+    public void setExportMd5Sum(java.lang.String exportMd5Sum) {
+        this.exportMd5Sum = exportMd5Sum;
+    }
+    public java.lang.String getExportMd5Sum() {
+        return this.exportMd5Sum;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

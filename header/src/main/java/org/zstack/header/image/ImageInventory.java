@@ -28,8 +28,6 @@ public class ImageInventory implements Serializable {
     private String uuid;
     private String name;
     private String description;
-    private String exportUrl;
-    private String exportMd5Sum;
     private String state;
     private String status;
     private Long size;
@@ -53,8 +51,6 @@ public class ImageInventory implements Serializable {
         ImageInventory inv = new ImageInventory();
         inv.setCreateDate(vo.getCreateDate());
         inv.setDescription(vo.getDescription());
-        inv.setExportUrl(vo.getExportUrl());
-        inv.setExportMd5Sum(vo.getExportMd5Sum());
         inv.setMediaType(vo.getMediaType().toString());
         inv.setFormat(vo.getFormat());
         inv.setGuestOsType(vo.getGuestOsType());
@@ -78,8 +74,6 @@ public class ImageInventory implements Serializable {
         ImageInventory inv = new ImageInventory();
         inv.setCreateDate(vo.getCreateDate());
         inv.setDescription(vo.getDescription());
-        inv.setExportUrl(vo.getExportUrl());
-        inv.setExportMd5Sum(vo.getExportMd5Sum());
         inv.setMediaType(vo.getMediaType().toString());
         inv.setPlatform(vo.getPlatform().toString());
         inv.setFormat(vo.getFormat());
@@ -176,22 +170,6 @@ public class ImageInventory implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getExportUrl() {
-        return exportUrl;
-    }
-
-    public void setExportUrl(String exportUrl) {
-        this.exportUrl = exportUrl;
-    }
-
-    public String getExportMd5Sum() {
-        return exportMd5Sum;
-    }
-
-    public void setExportMd5Sum(String exportMd5Sum) {
-        this.exportMd5Sum = exportMd5Sum;
     }
 
     public String getState() {

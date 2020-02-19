@@ -18,9 +18,6 @@ public class ImageAO extends ResourceVO implements ShadowEntity {
     private String description;
 
     @Column
-    private String exportUrl;
-
-    @Column
     @Enumerated(EnumType.STRING)
     private ImageStatus status;
 
@@ -38,9 +35,6 @@ public class ImageAO extends ResourceVO implements ShadowEntity {
 
     @Column
     private String md5Sum;
-
-    @Column
-    private String exportMd5Sum;
 
     @Column
     @Enumerated(EnumType.STRING)
@@ -119,14 +113,6 @@ public class ImageAO extends ResourceVO implements ShadowEntity {
         return description;
     }
 
-    public String getExportUrl() {
-        return exportUrl;
-    }
-
-    public void setExportUrl(String exportUrl) {
-        this.exportUrl = exportUrl;
-    }
-
     public void setDescription(String description) {
         this.description = description;
     }
@@ -153,14 +139,6 @@ public class ImageAO extends ResourceVO implements ShadowEntity {
 
     public void setMd5Sum(String md5Sum) {
         this.md5Sum = md5Sum;
-    }
-
-    public String getExportMd5Sum() {
-        return exportMd5Sum;
-    }
-
-    public void setExportMd5Sum(String exportMd5Sum) {
-        this.exportMd5Sum = exportMd5Sum;
     }
 
     public String getUrl() {

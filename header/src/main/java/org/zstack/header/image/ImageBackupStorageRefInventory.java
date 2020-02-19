@@ -28,6 +28,8 @@ public class ImageBackupStorageRefInventory implements Serializable {
     private String backupStorageUuid;
     private String installPath;
     private String status;
+    private String exportMd5Sum;
+    private String exportUrl;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -40,6 +42,8 @@ public class ImageBackupStorageRefInventory implements Serializable {
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setId(vo.getId());
         inv.setStatus(vo.getStatus().toString());
+        inv.setExportMd5Sum(vo.getExportMd5Sum());
+        inv.setExportUrl(vo.getExportUrl());
         return inv;
     }
 
@@ -89,6 +93,22 @@ public class ImageBackupStorageRefInventory implements Serializable {
 
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
+    }
+
+    public String getExportMd5Sum() {
+        return exportMd5Sum;
+    }
+
+    public void setExportMd5Sum(String exportMd5Sum) {
+        this.exportMd5Sum = exportMd5Sum;
+    }
+
+    public String getExportUrl() {
+        return exportUrl;
+    }
+
+    public void setExportUrl(String exportUrl) {
+        this.exportUrl = exportUrl;
     }
 
     public Timestamp getCreateDate() {

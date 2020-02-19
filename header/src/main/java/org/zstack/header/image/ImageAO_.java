@@ -16,7 +16,6 @@ public class ImageAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<ImageAO, Long> size;
     public static volatile SingularAttribute<ImageAO, Long> actualSize;
     public static volatile SingularAttribute<ImageAO, String> md5Sum;
-    public static volatile SingularAttribute<ImageAO, String> exportMd5Sum;
     public static volatile SingularAttribute<ImageAO, String> type;
     public static volatile SingularAttribute<ImageAO, String> url;
     public static volatile SingularAttribute<ImageAO, Boolean> system;
@@ -27,6 +26,5 @@ public class ImageAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<ImageAO, String> hypervisorType;
     public static volatile SingularAttribute<ImageAO, String> format;
     public static volatile SingularAttribute<ImageAO, String> guestOsType;
-    public static volatile SingularAttribute<ImageAO, String> exportUrl;
     public static volatile SingularAttribute<ImageAO, String> backupStorageUuid;
 }
