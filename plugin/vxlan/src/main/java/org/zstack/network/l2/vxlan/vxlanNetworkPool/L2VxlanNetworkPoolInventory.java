@@ -1,8 +1,11 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
+import org.zstack.core.db.Q;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.query.Queryable;
@@ -12,6 +15,7 @@ import org.zstack.network.l2.vxlan.vtep.VtepInventory;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
+import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
 
 import javax.persistence.JoinColumn;
 import java.util.*;
@@ -61,7 +65,8 @@ public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
         setAttachedCidrs(attachedCidrs);
         setAttachedVniRanges(VniRangeInventory.valueOf(vo.getAttachedVniRanges()));
         setAttachedVtepRefs(VtepInventory.valueOf(vo.getAttachedVtepRefs()));
-        setAttachedVxlanNetworkRefs(L2VxlanNetworkInventory.valueOf1(vo.getAttachedVxlanNetworkRefs()));
+        List<VxlanNetworkVO> networkVOS = Q.New(VxlanNetworkVO.class).eq(VxlanNetworkVO_.poolUuid, vo.getUuid()).list();
+        setAttachedVxlanNetworkRefs(L2VxlanNetworkInventory.valueOf1(networkVOS));
     }
 
     public static L2VxlanNetworkPoolInventory valueOf(VxlanNetworkPoolVO vo) {

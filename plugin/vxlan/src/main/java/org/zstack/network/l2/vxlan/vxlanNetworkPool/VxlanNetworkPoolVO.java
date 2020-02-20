@@ -28,11 +28,6 @@ public class VxlanNetworkPoolVO extends L2NetworkVO {
     private Set<VtepVO> attachedVtepRefs = new HashSet<VtepVO>();
 
     @OneToMany(fetch = FetchType.EAGER)
-    @JoinColumn(name = "poolUuid", insertable = false, updatable = false)
-    @NoView
-    private Set<VxlanNetworkVO> attachedVxlanNetworkRefs = new HashSet<VxlanNetworkVO>();
-
-    @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "l2NetworkUuid", insertable = false, updatable = false)
     @NoView
     private Set<VniRangeVO> attachedVniRanges = new HashSet<>();
@@ -50,14 +45,6 @@ public class VxlanNetworkPoolVO extends L2NetworkVO {
 
     public void setAttachedVtepRefs(Set<VtepVO> attachedVtepRefs) {
         this.attachedVtepRefs = attachedVtepRefs;
-    }
-
-    public Set<VxlanNetworkVO> getAttachedVxlanNetworkRefs() {
-        return attachedVxlanNetworkRefs;
-    }
-
-    public void setAttachedVxlanNetworkRefs(Set<VxlanNetworkVO> attachedVxlanNetworkRefs) {
-        this.attachedVxlanNetworkRefs = attachedVxlanNetworkRefs;
     }
 
     public Set<VniRangeVO> getAttachedVniRanges() {
