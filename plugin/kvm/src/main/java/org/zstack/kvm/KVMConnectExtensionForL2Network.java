@@ -36,7 +36,7 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
     @Autowired
     private CloudBus bus;
 
-    @Transactional
+    @Transactional(readOnly = true)
     private List<L2NetworkInventory> getL2Networks(String clusterUuid) {
         String sql = "select l2 from L2NetworkVO l2, L2NetworkClusterRefVO ref where l2.uuid = ref.l2NetworkUuid and ref.clusterUuid = :clusterUuid and l2.type in (:supportTypes)";
         TypedQuery<L2NetworkVO> q = dbf.getEntityManager().createQuery(sql, L2NetworkVO.class);
