@@ -1777,6 +1777,24 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             return;
         }
 
+        if (vrVo.getStatus() == ApplianceVmStatus.Connecting) {
+            ReconnectVirtualRouterVmMsg msg = new ReconnectVirtualRouterVmMsg();
+            msg.setVirtualRouterVmUuid(inv.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getUuid());
+            bus.send(msg, new CloudBusCallBack(msg) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(String.format("virtual router[uuid:%s] reconnection failed, because %s", inv.getUuid(), reply.getError()));
+                    } else {
+                        logger.debug(String.format("virtual router[uuid:%s] reconnect successfully", inv.getUuid()));
+                    }
+                }
+            });
+
+            return;
+        }
+
         vyosVersionManager.vyosRouterVersionCheck(inv.getUuid(), new Completion(cmsg) {
             @Override
             public void success() {
