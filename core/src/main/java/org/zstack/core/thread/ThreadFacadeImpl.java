@@ -20,7 +20,7 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
     private Map<CancelablePeriodicTask, ScheduledFuture<?>> cancelablePeriodicTasks = new ConcurrentHashMap<CancelablePeriodicTask, ScheduledFuture<?>>();
     private static AtomicInteger seqNum = new AtomicInteger(0);
     private ScheduledThreadPoolExecutorExt _pool;
-    //private ScheduledThreadPoolExecutorExt _syncpool;  // for sync tasks
+    private ScheduledThreadPoolExecutorExt _syncpool;  // for sync tasks
     private DispatchQueue dpq;
     private TimerPool timerPool = new TimerPool(5);
 
@@ -128,7 +128,7 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
             totalThreadNum = 10;
         }
         _pool = new ScheduledThreadPoolExecutorExt(totalThreadNum, this, this);
-        //_syncpool = new ScheduledThreadPoolExecutorExt(totalThreadNum/3, this, this);
+        _syncpool = new ScheduledThreadPoolExecutorExt(totalThreadNum/3, this, this);
         _logger.debug(String.format("create ThreadFacade with max thread number:%s", totalThreadNum));
         dpq = new DispatchQueueImpl();
 
@@ -137,13 +137,17 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
 
     public void destroy() {
         _pool.shutdownNow();
-        //_syncpool.shutdown();
+        _syncpool.shutdown();
     }
 
     @Override
-    public <T> Future<T> submit(Task<T> task, boolean sync) {
-        //ScheduledThreadPoolExecutorExt p = sync ? _syncpool : _pool;
+    public <T> Future<T> submit(Task<T> task) {
         return _pool.submit(new Worker<T>(task));
+    }
+
+    @Override
+    public <T> Future<T> submitSyncPool(Task<T> task) {
+        return _syncpool.submit(new Worker<T>(task));
     }
 
     @Override
