@@ -47,7 +47,7 @@ public class TestThreadFacadeReturnValue {
     @Test
     public void test() throws InterruptedException, ExecutionException {
         Tester worker = new Tester(100);
-        Future<Integer> f = thdf.submit(worker, false);
+        Future<Integer> f = thdf.submit(worker);
         Integer ret = f.get();
         logger.info("Return: " + ret);
         Assert.assertEquals(100, ret.intValue());

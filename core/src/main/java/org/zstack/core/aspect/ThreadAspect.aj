@@ -135,7 +135,7 @@ public aspect ThreadAspect {
                 info.append(thisJoinPoint.getSignature());
                 return info.toString();
             }
-        }, false);
+        });
     }
     
     void around() : asyncThread() {
@@ -153,7 +153,7 @@ public aspect ThreadAspect {
                 info.append(thisJoinPoint.getSignature());
                 return info.toString();
             }
-        }, false);
+        });
     }
     
     Future<Void> around() : scheduledThreadFuture() {
