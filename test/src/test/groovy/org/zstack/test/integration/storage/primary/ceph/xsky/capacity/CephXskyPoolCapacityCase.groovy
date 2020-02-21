@@ -88,7 +88,7 @@ class CephXskyPoolCapacityCase extends SubCase {
                             usedCapacity: 11
                     )
             ]
-            rsp.xsky = true
+            rsp.type = "xsky"
             return rsp
         }
 
