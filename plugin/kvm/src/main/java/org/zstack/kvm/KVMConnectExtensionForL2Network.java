@@ -5,7 +5,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
@@ -31,8 +30,6 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
     private KVMRealizeL2NoVlanNetworkBackend noVlanNetworkBackend;
     @Autowired
     private KVMRealizeL2VlanNetworkBackend vlanNetworkBackend;
-    @Autowired
-    private ErrorFacade errf;
     @Autowired
     private CloudBus bus;
 
