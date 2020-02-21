@@ -108,4 +108,20 @@ public class EventData  {
         return this.accountUuid;
     }
 
+    public java.lang.String subscriptionUuid;
+    public void setSubscriptionUuid(java.lang.String subscriptionUuid) {
+        this.subscriptionUuid = subscriptionUuid;
+    }
+    public java.lang.String getSubscriptionUuid() {
+        return this.subscriptionUuid;
+    }
+
+    public java.lang.String readStatus;
+    public void setReadStatus(java.lang.String readStatus) {
+        this.readStatus = readStatus;
+    }
+    public java.lang.String getReadStatus() {
+        return this.readStatus;
+    }
+
 }

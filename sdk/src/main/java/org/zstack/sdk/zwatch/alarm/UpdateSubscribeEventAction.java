@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateAlarmAction extends AbstractAction {
+public class UpdateSubscribeEventAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateAlarmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.zwatch.alarm.UpdateAlarmResult value;
+        public org.zstack.sdk.zwatch.alarm.UpdateSubscribeEventResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -27,30 +27,6 @@ public class UpdateAlarmAction extends AbstractAction {
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2047, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, validValues = {"GreaterThanOrEqualTo","GreaterThan","LessThan","LessThanOrEqualTo"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String comparisonOperator;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
-    public java.lang.Integer period;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Double threshold;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer repeatInterval;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {-1L,2147483647L}, noTrim = false)
-    public java.lang.Integer repeatCount;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean enableRecovery;
 
     @Param(required = false, validValues = {"Emergent","Important","Normal"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String emergencyLevel;
@@ -87,8 +63,8 @@ public class UpdateAlarmAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.zwatch.alarm.UpdateAlarmResult value = res.getResult(org.zstack.sdk.zwatch.alarm.UpdateAlarmResult.class);
-        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.UpdateAlarmResult() : value; 
+        org.zstack.sdk.zwatch.alarm.UpdateSubscribeEventResult value = res.getResult(org.zstack.sdk.zwatch.alarm.UpdateSubscribeEventResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.UpdateSubscribeEventResult() : value; 
 
         return ret;
     }
@@ -118,10 +94,10 @@ public class UpdateAlarmAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/zwatch/alarms/{uuid}/actions";
+        info.path = "/zwatch/events/subscriptions/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateAlarm";
+        info.parameterName = "updateSubscribeEvent";
         return info;
     }
 

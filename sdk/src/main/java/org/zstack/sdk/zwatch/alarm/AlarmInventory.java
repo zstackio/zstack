@@ -142,4 +142,12 @@ public class AlarmInventory  {
         return this.actions;
     }
 
+    public java.lang.String emergencyLevel;
+    public void setEmergencyLevel(java.lang.String emergencyLevel) {
+        this.emergencyLevel = emergencyLevel;
+    }
+    public java.lang.String getEmergencyLevel() {
+        return this.emergencyLevel;
+    }
+
 }
