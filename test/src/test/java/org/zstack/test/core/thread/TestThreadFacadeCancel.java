@@ -59,7 +59,7 @@ public class TestThreadFacadeCancel {
     public void test() throws InterruptedException {
         for (int i = 0; i < threadNum; i++) {
             Tester worker = new Tester(i);
-            Future<Void> f = thdf.submit(worker, false);
+            Future<Void> f = thdf.submit(worker);
             if (i == threadNum - 1) {
                 f.cancel(true);
             }
