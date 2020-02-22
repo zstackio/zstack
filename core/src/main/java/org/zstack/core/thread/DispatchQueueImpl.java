@@ -161,7 +161,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             }
 
             counter.incrementAndGet();
-            _threadFacade.submit(new Task<Void>() {
+            _threadFacade.submitSyncPool(new Task<Void>() {
                 @Override
                 public String getName() {
                     return syncSignature;
@@ -192,7 +192,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                     run();
                     return null;
                 }
-            }, true);
+            });
         }
     }
 
@@ -217,7 +217,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     @Override
     public <T> Future<T> syncSubmit(SyncTask<T> task) {
         if (task.getSyncLevel() <= 0) {
-            return _threadFacade.submit(task, true);
+            return _threadFacade.submitSyncPool(task);
         } else {
             return doSyncSubmit(task);
         }
@@ -373,7 +373,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                     runQueue();
                     return null;
                 }
-            }, false);
+            });
         }
     }
 

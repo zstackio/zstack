@@ -53,7 +53,7 @@ public class TestThreadFacadeReturnValueException {
     public void test() throws InterruptedException, ExecutionException {
         thrown.expect(ExecutionException.class);
         Tester worker = new Tester(100);
-        Future<Integer> f = thdf.submit(worker, false);
+        Future<Integer> f = thdf.submit(worker);
         Integer ret = f.get();
     }
 }

@@ -7,8 +7,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public interface ThreadFacade extends Component {
-    <T> Future<T> submit(Task<T> task, boolean sync);
-    
+    <T> Future<T> submit(Task<T> task);
+
+    <T> Future<T> submitSyncPool(Task<T> task);
+
     <T> Future<T> syncSubmit(SyncTask<T> task);
     
     Future<Void> chainSubmit(ChainTask task);
