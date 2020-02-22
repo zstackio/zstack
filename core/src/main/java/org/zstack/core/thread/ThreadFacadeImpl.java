@@ -144,9 +144,13 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
     }
 
     @Override
-    public <T> Future<T> submit(Task<T> task, boolean sync) {
-        ScheduledThreadPoolExecutorExt p = sync ? _syncpool : _pool;
-        return p.submit(new Worker<T>(task));
+    public <T> Future<T> submit(Task<T> task) {
+        return _pool.submit(new Worker<T>(task));
+    }
+
+    @Override
+    public <T> Future<T> submitSyncPool(Task<T> task) {
+        return _syncpool.submit(new Worker<T>(task));
     }
 
     @Override
