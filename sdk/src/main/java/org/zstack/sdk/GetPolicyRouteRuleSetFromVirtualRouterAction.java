@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreatePolicyRouteRuleSetAction extends AbstractAction {
+public class GetPolicyRouteRuleSetFromVirtualRouterAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreatePolicyRouteRuleSetAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreatePolicyRouteRuleSetResult value;
+        public org.zstack.sdk.GetPolicyRouteRuleSetFromVirtualRouterResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,8 @@ public class CreatePolicyRouteRuleSetAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 16, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vRouterUuid;
-
-    @Param(required = false, validValues = {"User","EgressWhereComeFrom"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmInstanceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -61,12 +46,6 @@ public class CreatePolicyRouteRuleSetAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -75,8 +54,8 @@ public class CreatePolicyRouteRuleSetAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreatePolicyRouteRuleSetResult value = res.getResult(org.zstack.sdk.CreatePolicyRouteRuleSetResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreatePolicyRouteRuleSetResult() : value; 
+        org.zstack.sdk.GetPolicyRouteRuleSetFromVirtualRouterResult value = res.getResult(org.zstack.sdk.GetPolicyRouteRuleSetFromVirtualRouterResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetPolicyRouteRuleSetFromVirtualRouterResult() : value; 
 
         return ret;
     }
@@ -105,11 +84,11 @@ public class CreatePolicyRouteRuleSetAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/policy-routes/rulesets";
+        info.httpMethod = "GET";
+        info.path = "/policy-routes/rulesets/virtualrouter/{vmInstanceUuid}";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
