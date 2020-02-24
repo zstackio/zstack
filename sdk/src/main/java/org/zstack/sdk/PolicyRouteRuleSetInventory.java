@@ -28,6 +28,14 @@ public class PolicyRouteRuleSetInventory  {
         return this.description;
     }
 
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
@@ -50,6 +58,14 @@ public class PolicyRouteRuleSetInventory  {
     }
     public java.util.List getRules() {
         return this.rules;
+    }
+
+    public java.util.List l3Refs;
+    public void setL3Refs(java.util.List l3Refs) {
+        this.l3Refs = l3Refs;
+    }
+    public java.util.List getL3Refs() {
+        return this.l3Refs;
     }
 
 }

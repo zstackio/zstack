@@ -110,10 +110,10 @@ public class VirtualRouterVmInventory extends ApplianceVmInventory {
     }
 
     public List<VmNicInventory> getGuestNics() {
-        if (getVmNics() == null) {
-            return null;
-        }
         List<VmNicInventory> guestNics = new ArrayList<>();
+        if (getVmNics() == null) {
+            return guestNics;
+        }
 
         for (VmNicInventory n : getVmNics()) {
             if (VirtualRouterNicMetaData.isGuestNic(n)) {
@@ -125,10 +125,10 @@ public class VirtualRouterVmInventory extends ApplianceVmInventory {
     }
 
     public List<VmNicInventory> getAdditionalPublicNics() {
-        if (getVmNics() == null) {
-            return null;
-        }
         List<VmNicInventory> nics = new ArrayList<>();
+        if (getVmNics() == null) {
+            return nics;
+        }
 
         for (VmNicInventory n : getVmNics()) {
             if (VirtualRouterNicMetaData.isAddinitionalPublicNic(n)) {
