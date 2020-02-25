@@ -5639,6 +5639,7 @@ trait ApiHelper {
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
+        
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
@@ -18884,7 +18885,7 @@ trait ApiHelper {
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
+        
             return out
         } else {
             return errorOut(a.call())
@@ -27406,6 +27407,33 @@ trait ApiHelper {
     }
 
 
+    def updateAutoScalingVmTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateAutoScalingVmTemplateAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateAutoScalingVmTemplateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def updateBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateBackupStorageAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateBackupStorageAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -28052,6 +28080,8 @@ trait ApiHelper {
             return errorOut(a.call())
         }
     }
+
+
     def updateFirewallRule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateFirewallRuleAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateFirewallRuleAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
