@@ -5,18 +5,30 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VmNicSpec implements Serializable {
     public List<L3NetworkInventory> l3Invs;
+    public String nicDriverType;
 
     public VmNicSpec(List<L3NetworkInventory> l3Invs) {
         this.l3Invs = l3Invs;
     }
 
+    public VmNicSpec(List<L3NetworkInventory> l3Invs, String nicDriverType) {
+        this.l3Invs = l3Invs;
+        this.nicDriverType = nicDriverType;
+    }
+
     public VmNicSpec(L3NetworkInventory l3) {
         this.l3Invs = list(l3);
+    }
+
+    public VmNicSpec(L3NetworkInventory l3, String nicDriverType) {
+        this.l3Invs = list(l3);
+        this.nicDriverType = nicDriverType;
     }
 
     public List<L3NetworkInventory> getL3Invs() {
@@ -27,6 +39,14 @@ public class VmNicSpec implements Serializable {
         this.l3Invs = l3Invs;
     }
 
+    public String getNicDriverType() {
+        return nicDriverType;
+    }
+
+    public void setNicDriverType(String nicDriverType) {
+        this.nicDriverType = nicDriverType;
+    }
+
     public static List<L3NetworkInventory> getL3NetworkInventoryOfSpec(List<VmNicSpec> specs) {
         List<L3NetworkInventory> res = new ArrayList<>();
         for (VmNicSpec spec: specs) {
@@ -35,14 +55,14 @@ public class VmNicSpec implements Serializable {
         return res;
     }
 
-    public static List<L3NetworkInventory> getFirstL3NetworkInventoryOfSpec(List<VmNicSpec> specs) {
-        List<L3NetworkInventory> res = new ArrayList<>();
+    public static List<VmNicSpec> getFirstL3NetworkInventoryOfSpec(List<VmNicSpec> specs) {
+        List<VmNicSpec> nicSpecs =  new ArrayList<>();
         for (VmNicSpec spec: specs) {
             if (spec.l3Invs != null && !spec.l3Invs.isEmpty()) {
-                res.add(spec.l3Invs.get(0));
+                nicSpecs.add(new VmNicSpec(spec.l3Invs.get(0), spec.getNicDriverType()));
             }
         }
-        return res;
+        return nicSpecs;
     }
 
     public static List<String> getL3UuidsOfSpec(List<VmNicSpec> specs) {

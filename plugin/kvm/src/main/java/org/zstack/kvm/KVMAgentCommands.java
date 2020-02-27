@@ -610,6 +610,7 @@ public class KVMAgentCommands {
         private String metaData;
         private Boolean useVirtio;
         private int bootOrder;
+        private String driverType;
 
         public List<String> getIps() {
             return ips;
@@ -681,6 +682,14 @@ public class KVMAgentCommands {
 
         public void setBootOrder(int bootOrder) {
             this.bootOrder = bootOrder;
+        }
+
+        public String getDriverType() {
+            return driverType;
+        }
+
+        public void setDriverType(String driverType) {
+            this.driverType = driverType;
         }
     }
 
