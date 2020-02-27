@@ -277,7 +277,7 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
                         " and vm.uuid = nic.vmInstanceUuid",
                 VmInstanceState.class)
                 .param("vmNicUuid", vmNicUuid).find();
-        if (!EipConstant.attachableVmStates.contains(state)){
+        if (state != null && !EipConstant.attachableVmStates.contains(state)){
             throw new ApiMessageInterceptionException(operr(
                     "vm state[%s] is not allowed to operate eip, maybe you should wait the vm process complete",
                     state.toString()));
