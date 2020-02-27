@@ -179,6 +179,9 @@
         <name>org.zstack.header.vm.APIUpdatePriorityConfigMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APIUpdateVmNicDriverMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APISetVmSoundTypeMsg</name>
     </message>
     <message>

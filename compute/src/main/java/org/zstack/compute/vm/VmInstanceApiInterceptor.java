@@ -18,11 +18,8 @@ import org.zstack.header.host.HostState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
+import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.image.ImageState;
-import org.zstack.header.image.ImageStatus;
-import org.zstack.header.image.ImageVO;
-import org.zstack.header.image.ImageVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
@@ -63,6 +60,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     private DatabaseFacade dbf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private VmNicManager nicManager;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof VmInstanceMessage) {
@@ -121,6 +120,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APISetVmInstanceDefaultCdRomMsg) msg);
         } else if (msg instanceof APICreateVmCdRomMsg) {
             validate((APICreateVmCdRomMsg) msg);
+        } else if (msg instanceof APIUpdateVmNicDriverMsg) {
+            validate((APIUpdateVmNicDriverMsg) msg);
         }
 
         setServiceId(msg);
@@ -132,6 +133,21 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         if (!vo.getState().equals(VmInstanceState.Stopped)) {
             throw new ApiMessageInterceptionException(argerr(
                     "Can not create CD-ROM for vm[uuid:%s] which is in state[%s] ", msg.getVmInstanceUuid(), vo.getState().toString()));
+        }
+    }
+
+    private void validate(final APIUpdateVmNicDriverMsg msg) {
+        VmInstanceVO vo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+        if (!vo.getPlatform().equals(ImagePlatform.Linux.toString()) &&
+            !vo.getPlatform().equals(ImagePlatform.Paravirtualization.toString())) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "Current platform %s not support update nic driver yet", vo.getPlatform()));
+        }
+
+        List<String> supportNicDriverTypes = nicManager.getSupportNicDriverTypes();
+        if (!supportNicDriverTypes.contains(msg.getDriverType())) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "Nic driver %s not support yet", msg.getDriverType()));
         }
     }
 

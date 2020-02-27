@@ -67,6 +67,9 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
     private String internalName;
 
     @Column
+    private String driverType;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -230,5 +233,13 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
 
     public void setUsedIps(Set<UsedIpVO> usedIps) {
         this.usedIps = usedIps;
+    }
+
+    public String getDriverType() {
+        return driverType;
+    }
+
+    public void setDriverType(String driverType) {
+        this.driverType = driverType;
     }
 }

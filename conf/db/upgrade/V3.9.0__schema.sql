@@ -20,3 +20,5 @@ ALTER TABLE ImageEO DROP exportMd5Sum, DROP exportUrl;
 
 ALTER TABLE `zstack`.`PolicyRouteRuleSetVO` ADD COLUMN type VARCHAR(64) DEFAULT "User" NOT NULL;
 ALTER TABLE `zstack`.`PolicyRouteTableVO` ADD COLUMN type VARCHAR(64) DEFAULT "User" NOT NULL;
+
+ALTER TABLE `zstack`.`VmNicVO` ADD COLUMN `driverType` varchar(64) DEFAULT NULL;
