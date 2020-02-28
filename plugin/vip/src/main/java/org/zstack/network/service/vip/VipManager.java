@@ -13,4 +13,6 @@ public interface VipManager extends Service {
     FlowChain getReleaseVipChain();
 
     VipFactory getVipFactory(String networkServiceProviderType);
+
+    boolean isSystemVip(VipVO vip);
 }

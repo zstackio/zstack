@@ -18,6 +18,7 @@ import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoi
 import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.vip.PreVipReleaseExtensionPoint;
 import org.zstack.network.service.vip.VipBackend;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
@@ -35,7 +36,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implements
-        VipBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint {
+        VipBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint, PreVipReleaseExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VirtualRouterVipBackend.class);
 
     @Autowired
@@ -292,5 +293,12 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     @Override
     public void beforeDetachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
         completion.done();
+    }
+
+    @Override
+    public void preReleaseServicesOnVip(VipInventory vip, Completion completion) {
+        /* this ugly */
+        SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, vip.getUuid()).delete();
+        completion.success();
     }
 }

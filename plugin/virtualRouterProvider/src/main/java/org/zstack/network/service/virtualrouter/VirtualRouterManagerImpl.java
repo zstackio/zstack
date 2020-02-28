@@ -58,6 +58,7 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
+import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.NetworkServiceManager;
@@ -66,7 +67,6 @@ import org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtension
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
-import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaConstant;
 import org.zstack.network.service.virtualrouter.lb.LbConfigProxy;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
 import org.zstack.network.service.virtualrouter.vip.VipConfigProxy;
@@ -162,6 +162,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private LbConfigProxy lbProxy;
     @Autowired
     private VipConfigProxy vipProxy;
+    @Autowired
+    protected VirutalRouterDefaultL3ConfigProxy defaultL3ConfigProxy;
 
 	@Override
     @MessageSafe
@@ -340,11 +342,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     aspec.getAdditionalNics().add(pnicSpec);
                     pnwUuid = pnicSpec.getL3NetworkUuid();
                     aspec.setDefaultRouteL3Network(pnw);
+                    aspec.setDefaultL3Network(pnw);
                 } else {
                     // use management nic for both management and public
                     mgmtNicSpec.setMetaData(VirtualRouterNicMetaData.PUBLIC_AND_MANAGEMENT_NIC_MASK.toString());
                     pnwUuid = mgmtNwUuid;
                     aspec.setDefaultRouteL3Network(mgmtNw);
+                    aspec.setDefaultL3Network(mgmtNw);
                 }
 
 
@@ -633,6 +637,74 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 		vo.setType(VIRTUAL_ROUTER_PROVIDER_TYPE);
 		vo = dbf.persistAndRefresh(vo);
 		virtualRouterProvider = NetworkServiceProviderInventory.valueOf(vo);
+
+		/* apply to ha router */
+        List<VipVO> vips = new ArrayList<>();
+        List<VirtualRouterVipVO> vvips = new ArrayList<>();
+        List<VirtualRouterVmVO> vrVos = Q.New(VirtualRouterVmVO.class).list();
+        for (VirtualRouterVmVO vr : vrVos) {
+            if (vr.getDefaultL3NetworkUuid() == null) {
+                SQL.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vr.getUuid())
+                        .set(VirtualRouterVmVO_.defaultL3NetworkUuid, vr.getDefaultRouteL3NetworkUuid()).update();
+            }
+
+            if (vr.isHaEnabled()) {
+                continue;
+            }
+
+            /* create public vip for additional public nic */
+            VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vr);
+            for (VmNicInventory nic : vrInv.getAdditionalPublicNics()) {
+                if (Q.New(VipVO.class).eq(VipVO_.ip, nic.getIp()).eq(VipVO_.l3NetworkUuid, nic.getL3NetworkUuid()).isExists()) {
+                    continue;
+                }
+
+                L3NetworkInventory vipL3 = L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class));
+                IpRangeInventory ipRange = null;
+                for (IpRangeInventory ipr : vipL3.getIpRanges()) {
+                    if (NetworkUtils.isIpv4InRange(nic.getIp(), ipr.getStartIp(), ipr.getEndIp())) {
+                        ipRange = ipr;
+                        break;
+                    }
+                }
+
+                if (ipRange == null){
+                    logger.debug(String.format("can not find ip range ip address[ip:%s, l3 network: Uuid]",
+                            nic.getIp(), nic.getL3NetworkUuid()));
+                    continue;
+                }
+
+                VipVO vipvo = new VipVO();
+                vipvo.setUuid(Platform.getUuid());
+                vipvo.setName(String.format("vip-", vr.getName()));
+                vipvo.setDescription(String.format("system vip for ", vr.getName()));
+                vipvo.setState(VipState.Enabled);
+                vipvo.setGateway(nic.getGateway());
+                vipvo.setIp(nic.getIp());
+                vipvo.setIpRangeUuid(ipRange.getUuid());
+                vipvo.setL3NetworkUuid(nic.getL3NetworkUuid());
+                vipvo.setNetmask(nic.getNetmask());
+                vipvo.setUsedIpUuid(nic.getUsedIpUuid());
+                vipvo.setAccountUuid(Account.getAccountUuidOfResource(vr.getUuid()));
+                vipvo.setSystem(true);
+                vipvo.setPrefixLen(ipRange.getPrefixLen());
+
+                vips.add(vipvo);
+
+                VirtualRouterVipVO vvip = new VirtualRouterVipVO();
+                vvip.setVirtualRouterVmUuid(vrInv.getUuid());
+                vvip.setUuid(vipvo.getUuid());
+                vvips.add(vvip);
+            }
+        }
+
+        if (!vips.isEmpty()) {
+            dbf.persistCollection(vips);
+        }
+
+        if (!vvips.isEmpty()) {
+            dbf.persistCollection(vvips);
+        }
 	}
 	
 	private void populateExtensions() {
@@ -689,27 +761,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 		logger.debug(info);
 	}
 
-	@Override
-	public String getVirtualRouterServiceProviderType(String vrUuid, NetworkServiceType nwType) {
-	    VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-	    if (vrVO.isHaEnabled()) {
-	        return VirtualRouterHaConstant.VIRTUAL_ROUTER_HA_PROVIDER_TYPE_NAME;
-        }
 
-	    if (nwType != null) {
-            for (VmNicVO nic : vrVO.getVmNics()) {
-                if (VirtualRouterNicMetaData.isGuestNic(nic)) {
-                    NetworkServiceProviderType providerType =
-                            nwServiceMgr.getTypeOfNetworkServiceProviderForService(
-                                    nic.getL3NetworkUuid(), nwType);
-                    return providerType.toString();
-                }
-            }
-        }
-
-	    /* when vpc is just created, there is no guest nic */
-	    return VYOS_ROUTER_PROVIDER_TYPE;
-	}
 
     private void deployAnsible() {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
@@ -1844,5 +1896,37 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     @Override
     public void cleanupVip(String uuid) {
         SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, uuid).delete();
+    }
+
+    @Override
+    public VmNicInventory getSnatPubicInventory(VirtualRouterVmInventory vrInv) {
+        VmNicInventory publicNic = new VmNicInventory();
+
+        for (VmNicInventory vnic : vrInv.getVmNics()) {
+            if (VmNicHelper.getL3Uuids(vnic).contains(vrInv.getDefaultRouteL3NetworkUuid())) {
+                publicNic.setDeviceId(vnic.getDeviceId());
+                publicNic.setGateway(vnic.getGateway());
+                publicNic.setHypervisorType(vnic.getHypervisorType());
+                publicNic.setInternalName(vnic.getInternalName());
+                publicNic.setIp(vnic.getIp());
+                publicNic.setIpVersion(vnic.getIpVersion());
+                publicNic.setL3NetworkUuid(vnic.getL3NetworkUuid());
+                publicNic.setMac(vnic.getMac());
+                publicNic.setMetaData(vnic.getMetaData());
+                publicNic.setNetmask(vnic.getNetmask());
+                publicNic.setUuid(vnic.getUuid());
+                publicNic.setVmInstanceUuid(vnic.getVmInstanceUuid());
+            }
+        }
+
+        String publicIp = null;
+        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            publicIp = ext.getPublicIp(vrInv.getUuid(), vrInv.getDefaultRouteL3NetworkUuid());
+        }
+        if (publicIp != null) {
+            publicNic.setIp(publicIp);
+        }
+
+        return publicNic;
     }
 }

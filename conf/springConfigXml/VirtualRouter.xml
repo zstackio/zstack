@@ -29,7 +29,7 @@
             <list>
                 <value>org.zstack.network.service.virtualrouter.lifecycle.VirtualRouterAssembleDecoratorFlow</value>
                 <value>org.zstack.network.service.virtualrouter.lifecycle.VirtualRouterDeployAgentFlow</value>
-                <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterCreateVipForPublicIpFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterCreatePublicVipFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>
@@ -142,6 +142,7 @@
             <zstack:extension interface="org.zstack.network.service.vip.VipBackend" />
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint" order="999"/>
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint" order="-1"/>
+            <zstack:extension interface="org.zstack.network.service.vip.PreVipReleaseExtensionPoint" order="-1"/>
         </zstack:plugin>
     </bean>
 
@@ -250,6 +251,12 @@
     </bean>
 
     <bean id="EipConfigProxy" class="org.zstack.network.service.virtualrouter.eip.EipConfigProxy">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.appliancevm.ApplianceVmSyncConfigToHaGroupExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VirutalRouterDefaultL3ConfigProxy" class="org.zstack.network.service.virtualrouter.VirutalRouterDefaultL3ConfigProxy">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.appliancevm.ApplianceVmSyncConfigToHaGroupExtensionPoint" />
         </zstack:plugin>
