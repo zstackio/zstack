@@ -37,6 +37,7 @@ import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.vip.ModifyVipAttributesStruct;
 import org.zstack.network.service.vip.Vip;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -49,8 +50,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.err;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -1003,7 +1003,7 @@ public class LoadBalancerBase {
                         .condAnd(LoadBalancerListenerVmNicRefVO_.vmNicUuid, Op.IN, vmNicUuids)
                         .condAnd(LoadBalancerListenerVmNicRefVO_.listenerUuid, Op.IN, listenerUuids)
                         .delete();
-
+                new LoadBalancerWeightOperator().deleteWeight(vmNicUuids);
                 completion.success();
             }
 
@@ -1020,6 +1020,7 @@ public class LoadBalancerBase {
         removeNics(Arrays.asList(msg.getListenerUuid()), msg.getVmNicUuids(), new Completion(msg, completion) {
             @Override
             public void success() {
+                new LoadBalancerWeightOperator().deleteWeight(msg.getVmNicUuids());
                 evt.setInventory(reloadAndGetInventory());
                 bus.publish(evt);
                 completion.done();
@@ -1059,6 +1060,7 @@ public class LoadBalancerBase {
         addVmNicToLoadBalancerMsg.setLoadBalancerUuid(msg.getLoadBalancerUuid());
         addVmNicToLoadBalancerMsg.setListenerUuid(msg.getListenerUuid());
         addVmNicToLoadBalancerMsg.setVmNicUuids(msg.getVmNicUuids());
+        addVmNicToLoadBalancerMsg.setSystemTags(msg.getSystemTags());
         bus.makeLocalServiceId(addVmNicToLoadBalancerMsg, LoadBalancerConstants.SERVICE_ID);
 
         bus.send(addVmNicToLoadBalancerMsg, new CloudBusCallBack(msg) {
@@ -1170,6 +1172,9 @@ public class LoadBalancerBase {
 
                         dbf.persistCollection(refs);
                         s = true;
+                        if (msg.getSystemTags() != null) {
+                            new LoadBalancerWeightOperator().setWeight(msg.getSystemTags(), msg.getListenerUuid());
+                        }
                         trigger.next();
                     }
 
@@ -1418,6 +1423,18 @@ public class LoadBalancerBase {
         });
     }
 
+    private String[] getHeathCheckTarget(String ListenerUuid) {
+        String target = LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(ListenerUuid,
+                LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);
+        DebugUtils.Assert(target != null, String.format("the health target not exist, please check if the listener[%s] exist", ListenerUuid));
+
+        String[] ts = target.split(":");
+        if (ts.length != 2) {
+            throw new OperationFailureException(argerr("invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", target));
+        }
+        return ts;
+    }
+
     private void handle(APIChangeLoadBalancerListenerMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -1452,17 +1469,10 @@ public class LoadBalancerBase {
                 }
 
                 if (msg.getHealthCheckTarget() != null) {
-                    String target = msg.getHealthCheckTarget();
-
-                    if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(lblVo.getProtocol())) {
-                        target = String.format("udp:%s", target);
-                    } else {
-                        target = String.format("tcp:%s", target);
-                    }
-
+                    String[] ts = getHeathCheckTarget(msg.getLoadBalancerListenerUuid());
                     LoadBalancerSystemTags.HEALTH_TARGET.update(msg.getUuid(),
                             LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(map(
-                                    e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, target))
+                                    e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, String.format("%s:%s", ts[0], msg.getHealthCheckTarget())))
                             ));
                 }
 
@@ -1485,6 +1495,67 @@ public class LoadBalancerBase {
                             LoadBalancerSystemTags.MAX_CONNECTION.instantiateTag(map(
                                     e(LoadBalancerSystemTags.MAX_CONNECTION_TOKEN, msg.getMaxConnection())
                             )));
+                }
+
+                if (msg.getHealthCheckProtocol() != null) {
+                    String[] ts = getHeathCheckTarget(msg.getUuid());
+                    if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(ts[0]) &&
+                            LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+                        DebugUtils.Assert(msg.getHealthCheckMethod() != null && msg.getHealthCheckURI() != null,
+                            String.format("the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI"));
+                        String code = LoadBalancerConstants.HealthCheckStatusCode.http_2xx.toString();
+                        if (msg.getHealthCheckHttpCode() != null) {
+                            code = msg.getHealthCheckHttpCode();
+                        }
+                        SystemTagCreator creator = LoadBalancerSystemTags.HEALTH_PARAMETER.newSystemTagCreator(msg.getUuid());
+                        creator.setTagByTokens(map(e(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN,
+                                String.format("%s:%s:%s", msg.getHealthCheckMethod(), msg.getHealthCheckURI(), code))
+                            ));
+                        creator.create();
+                    }
+
+                    if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(ts[0]) &&
+                            LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(msg.getHealthCheckProtocol())) {
+                        LoadBalancerSystemTags.HEALTH_PARAMETER.deleteInherentTag(msg.getHealthCheckMethod(),
+                                LoadBalancerSystemTags.HEALTH_PARAMETER.instantiateTag(map(
+                                        e(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN, "%"))));
+                    }
+
+                    if ( !msg.getHealthCheckProtocol().equals(ts[0])) {
+                        LoadBalancerSystemTags.HEALTH_TARGET.update(msg.getUuid(),
+                                LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(map(
+                                        e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, String.format("%s:%s", msg.getHealthCheckProtocol(), ts[0])))
+                                ));
+                    }
+                } else if (msg.getHealthCheckHttpCode() != null || msg.getHealthCheckMethod() != null || msg.getHealthCheckURI() != null) {
+                    String[] ts = getHeathCheckTarget(msg.getUuid());
+
+                    if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(ts[0])) {
+                        String param = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokenByResourceUuid(msg.getLoadBalancerListenerUuid(),
+                                LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN);
+                        String[] pm = param.split(":");
+                        if (pm.length != 3) {
+                            throw new OperationFailureException(argerr("invalid health checking parameters[%s], the format is method:URI:code, for example, GET:/index.html:http_2xx", param));
+                        }
+
+                        if (msg.getHealthCheckMethod() != null) {
+                            pm[0] = msg.getHealthCheckMethod();
+                        }
+                        if (msg.getHealthCheckURI() != null) {
+                            pm[1] = msg.getHealthCheckURI();
+                        }
+                        if (msg.getHealthCheckHttpCode() != null) {
+                             pm[2] = msg.getHealthCheckHttpCode();
+                        }
+                        LoadBalancerSystemTags.HEALTH_PARAMETER.update(msg.getUuid(),
+                                LoadBalancerSystemTags.HEALTH_PARAMETER.instantiateTag(
+                                        map(e(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN, String.format("%s:%s:%s", pm[0], pm[1], pm[2]))
+                                        )));
+                    }
+                }
+
+                if (msg.getSystemTags() != null) {
+                    new LoadBalancerWeightOperator().setWeight(msg.getSystemTags(), msg.getLoadBalancerListenerUuid());
                 }
 
                 RefreshLoadBalancerMsg msg = new RefreshLoadBalancerMsg();
