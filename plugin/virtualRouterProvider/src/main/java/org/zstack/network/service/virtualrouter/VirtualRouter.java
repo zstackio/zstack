@@ -576,7 +576,7 @@ public class VirtualRouter extends ApplianceVmBase {
                 }
 
                 String vipIp = newNic.getIp();
-                if (vrVO.getDefaultRouteL3NetworkUuid().equals(vrVO.getManagementNetworkUuid())) {
+                if (msg.getDefaultRouteL3NetworkUuid().equals(vrVO.getManagementNetworkUuid())) {
                     VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
                     vrInv.setDefaultRouteL3NetworkUuid(msg.getDefaultRouteL3NetworkUuid());
                     VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vrInv);
