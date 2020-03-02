@@ -370,7 +370,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     bq.setParameter("types", hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType()));
                     lst.addAll(bq.getResultList());
                 } else if (!bsUuids.isEmpty()) {
-                    // the primary storage has bound backup storage, e.g. ceph, fusionstor
+                    // the primary storage has bound backup storage, e.g. ceph
                     sql = "select bs from BackupStorageVO bs where bs.uuid in (:uuids)";
                     TypedQuery<BackupStorageVO> bq = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
                     bq.setParameter("uuids", bsUuids);
@@ -457,7 +457,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 l3q.setParameter("zoneUuid", msg.getZoneUuid());
                 l3s.addAll(l3q.getResultList());
             } else if (!relatedPrimaryStorageUuids.isEmpty()) {
-                // the backup storage has strongly-bound primary storage, e.g. ceph, fusionstor
+                // the backup storage has strongly-bound primary storage, e.g. ceph
                 sql = "select l3" +
                         " from L3NetworkVO l3, L2NetworkClusterRefVO l2ref," +
                         " PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
