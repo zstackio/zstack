@@ -15,7 +15,6 @@ public class VolumeTO {
     public static final String FILE = "file";
     public static final String ISCSI = "iscsi";
     public static final String CEPH = "ceph";
-    public static final String FUSIONSTOR = "fusionstor";
     public static final String SHAREDBLOCK = "sharedblock";
     public static final String SCSILUN = "scsilun";
     public static final String BLOCK = "block";

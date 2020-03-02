@@ -2905,30 +2905,6 @@ class SyncEcsImageFromRemoteAction(AbstractAction):
         self.sessionId = None
 
 
-class RemoveMonFromFusionstorPrimaryStorageAction(AbstractAction):
-    HTTP_METHOD = 'DELETE'
-    PATH = '/primary-storage/fusionstor/{uuid}/mons'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'params'
-
-    PARAMS = {
-        'uuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'monHostnames': ParamAnnotation(required=True,non_empty=True,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(RemoveMonFromFusionstorPrimaryStorageAction, self).__init__()
-        self.uuid = None
-        self.monHostnames = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class CreateDataVolumeAction(AbstractAction):
     HTTP_METHOD = 'POST'
     PATH = '/volumes/data'
@@ -3908,41 +3884,6 @@ class AddIdentityZoneFromRemoteAction(AbstractAction):
         self.userTags = None
         self.sessionId = None
 
-
-class AddFusionstorBackupStorageAction(AbstractAction):
-    HTTP_METHOD = 'POST'
-    PATH = '/backup-storage/fusionstor'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'params'
-
-    PARAMS = {
-        'monUrls': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=False,no_trim=False),
-        'poolName': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'url': ParamAnnotation(required=False,max_length=2048,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'name': ParamAnnotation(required=True,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'description': ParamAnnotation(required=False,max_length=2048,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'type': ParamAnnotation(),
-        'importImages': ParamAnnotation(required=False,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'resourceUuid': ParamAnnotation(),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(AddFusionstorBackupStorageAction, self).__init__()
-        self.monUrls = None
-        self.poolName = None
-        self.url = None
-        self.name = None
-        self.description = None
-        self.type = None
-        self.importImages = None
-        self.resourceUuid = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
 
 
 class AddKVMHostAction(AbstractAction):
@@ -5711,46 +5652,6 @@ class RemoveMonFromCephBackupStorageAction(AbstractAction):
         self.sessionId = None
 
 
-class AddFusionstorPrimaryStorageAction(AbstractAction):
-    HTTP_METHOD = 'POST'
-    PATH = '/primary-storage/fusionstor'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'params'
-
-    PARAMS = {
-        'monUrls': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=False,no_trim=False),
-        'rootVolumePoolName': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'dataVolumePoolName': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'imageCachePoolName': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'url': ParamAnnotation(required=False,max_length=2048,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'name': ParamAnnotation(required=True,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'description': ParamAnnotation(required=False,max_length=2048,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'type': ParamAnnotation(),
-        'zoneUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'resourceUuid': ParamAnnotation(),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(AddFusionstorPrimaryStorageAction, self).__init__()
-        self.monUrls = None
-        self.rootVolumePoolName = None
-        self.dataVolumePoolName = None
-        self.imageCachePoolName = None
-        self.url = None
-        self.name = None
-        self.description = None
-        self.type = None
-        self.zoneUuid = None
-        self.resourceUuid = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class GetCurrentTimeAction(AbstractAction):
     HTTP_METHOD = 'PUT'
     PATH = '/management-nodes/actions'
@@ -6161,44 +6062,6 @@ class CreateEcsInstanceFromLocalImageAction(AbstractAction):
         self.sessionId = None
 
 
-class QueryFusionstorBackupStorageAction(QueryAction):
-    HTTP_METHOD = 'GET'
-    PATH = '/backup-storage/fusionstor'
-    NEED_SESSION = True
-    NEED_POLL = False
-    PARAM_NAME = ''
-
-    PARAMS = {
-        'conditions': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'limit': ParamAnnotation(),
-        'start': ParamAnnotation(),
-        'count': ParamAnnotation(),
-        'groupBy': ParamAnnotation(),
-        'replyWithCount': ParamAnnotation(),
-        'sortBy': ParamAnnotation(),
-        'sortDirection': ParamAnnotation(required=False,valid_values=['asc','desc'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'fields': ParamAnnotation(),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(QueryFusionstorBackupStorageAction, self).__init__()
-        self.conditions = None
-        self.limit = None
-        self.start = None
-        self.count = None
-        self.groupBy = None
-        self.replyWithCount = None
-        self.sortBy = None
-        self.sortDirection = None
-        self.fields = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class CreateBaremetalPxeServerAction(AbstractAction):
     HTTP_METHOD = 'POST'
     PATH = '/baremetal/pxeserver'
@@ -6542,30 +6405,6 @@ class QueryAccountResourceRefAction(QueryAction):
         self.sortBy = None
         self.sortDirection = None
         self.fields = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
-class AddMonToFusionstorPrimaryStorageAction(AbstractAction):
-    HTTP_METHOD = 'POST'
-    PATH = '/primary-storage/fusionstor/{uuid}/mons'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'params'
-
-    PARAMS = {
-        'uuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'monUrls': ParamAnnotation(required=True,non_empty=True,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(AddMonToFusionstorPrimaryStorageAction, self).__init__()
-        self.uuid = None
-        self.monUrls = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
@@ -7116,30 +6955,6 @@ class DeletePortForwardingRuleAction(AbstractAction):
         super(DeletePortForwardingRuleAction, self).__init__()
         self.uuid = None
         self.deleteMode = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
-class AddMonToFusionstorBackupStorageAction(AbstractAction):
-    HTTP_METHOD = 'POST'
-    PATH = '/backup-storage/fusionstor/{uuid}/mons'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'params'
-
-    PARAMS = {
-        'uuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'monUrls': ParamAnnotation(required=True,non_empty=True,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(AddMonToFusionstorBackupStorageAction, self).__init__()
-        self.uuid = None
-        self.monUrls = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
@@ -10242,30 +10057,6 @@ class GetL3NetworkTypesAction(AbstractAction):
         self.sessionId = None
 
 
-class RemoveMonFromFusionstorBackupStorageAction(AbstractAction):
-    HTTP_METHOD = 'DELETE'
-    PATH = '/backup-storage/fusionstor/{uuid}/mons'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'params'
-
-    PARAMS = {
-        'uuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'monHostnames': ParamAnnotation(required=True,non_empty=True,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(RemoveMonFromFusionstorBackupStorageAction, self).__init__()
-        self.uuid = None
-        self.monHostnames = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class CreateUserTagAction(AbstractAction):
     HTTP_METHOD = 'POST'
     PATH = '/user-tags'
@@ -11390,38 +11181,6 @@ class DeleteVmSshKeyAction(AbstractAction):
         self.sessionId = None
 
 
-class UpdateFusionstorBackupStorageMonAction(AbstractAction):
-    HTTP_METHOD = 'PUT'
-    PATH = '/backup-storage/fusionstor/mons/{monUuid}/actions'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'updateFusionstorBackupStorageMon'
-
-    PARAMS = {
-        'monUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=False,no_trim=False),
-        'hostname': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'sshUsername': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'sshPassword': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'sshPort': ParamAnnotation(required=False,number_range=[1, 65535],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'monPort': ParamAnnotation(required=False,number_range=[1, 65535],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(UpdateFusionstorBackupStorageMonAction, self).__init__()
-        self.monUuid = None
-        self.hostname = None
-        self.sshUsername = None
-        self.sshPassword = None
-        self.sshPort = None
-        self.monPort = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class UpdateBaremetalPxeServerAction(AbstractAction):
     HTTP_METHOD = 'PUT'
     PATH = '/baremetal/pxeserver/{uuid}/actions'
@@ -11851,44 +11610,6 @@ class UpdateEipAction(AbstractAction):
         self.uuid = None
         self.name = None
         self.description = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
-class QueryFusionstorPrimaryStorageAction(QueryAction):
-    HTTP_METHOD = 'GET'
-    PATH = '/primary-storage/fusionstor'
-    NEED_SESSION = True
-    NEED_POLL = False
-    PARAM_NAME = ''
-
-    PARAMS = {
-        'conditions': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'limit': ParamAnnotation(),
-        'start': ParamAnnotation(),
-        'count': ParamAnnotation(),
-        'groupBy': ParamAnnotation(),
-        'replyWithCount': ParamAnnotation(),
-        'sortBy': ParamAnnotation(),
-        'sortDirection': ParamAnnotation(required=False,valid_values=['asc','desc'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'fields': ParamAnnotation(),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(QueryFusionstorPrimaryStorageAction, self).__init__()
-        self.conditions = None
-        self.limit = None
-        self.start = None
-        self.count = None
-        self.groupBy = None
-        self.replyWithCount = None
-        self.sortBy = None
-        self.sortDirection = None
-        self.fields = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
@@ -12758,38 +12479,6 @@ class GetFreeIpAction(AbstractAction):
         self.ipRangeUuid = None
         self.start = None
         self.limit = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
-class UpdateFusionstorPrimaryStorageMonAction(AbstractAction):
-    HTTP_METHOD = 'PUT'
-    PATH = '/primary-storage/fusionstor/mons/{monUuid}/actions'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'updateFusionstorPrimaryStorageMon'
-
-    PARAMS = {
-        'monUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=False,no_trim=False),
-        'hostname': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'sshUsername': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'sshPassword': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'sshPort': ParamAnnotation(required=False,number_range=[1, 65535],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'monPort': ParamAnnotation(required=False,number_range=[1, 65535],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(UpdateFusionstorPrimaryStorageMonAction, self).__init__()
-        self.monUuid = None
-        self.hostname = None
-        self.sshUsername = None
-        self.sshPassword = None
-        self.sshPort = None
-        self.monPort = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
@@ -17351,38 +17040,6 @@ class QueryPortForwardingRuleAction(QueryAction):
         self.sessionId = None
 
 
-class UpdateFusionstorBackupStorageMonAction(AbstractAction):
-    HTTP_METHOD = 'PUT'
-    PATH = '/backup-storage/fusionstor/mons/{monUuid}/actions'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'updateFusionstorBackupStorageMon'
-
-    PARAMS = {
-        'monUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=False,no_trim=False),
-        'hostname': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'sshUsername': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'sshPassword': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'sshPort': ParamAnnotation(required=False,number_range=[1, 65535],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'monPort': ParamAnnotation(required=False,number_range=[1, 65535],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(UpdateFusionstorBackupStorageMonAction, self).__init__()
-        self.monUuid = None
-        self.hostname = None
-        self.sshUsername = None
-        self.sshPassword = None
-        self.sshPort = None
-        self.monPort = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class CheckIpAvailabilityAction(AbstractAction):
     HTTP_METHOD = 'GET'
     PATH = '/l3-networks/{l3NetworkUuid}/ip/{ip}/availability'
@@ -21255,30 +20912,6 @@ class CalculateAccountSpendingAction(AbstractAction):
         self.sessionId = None
 
 
-class AddMonToFusionstorBackupStorageAction(AbstractAction):
-    HTTP_METHOD = 'POST'
-    PATH = '/backup-storage/fusionstor/{uuid}/mons'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'params'
-
-    PARAMS = {
-        'uuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'monUrls': ParamAnnotation(required=True,non_empty=True,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(AddMonToFusionstorBackupStorageAction, self).__init__()
-        self.uuid = None
-        self.monUrls = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class DeleteVpcVpnConnectionLocalAction(AbstractAction):
     HTTP_METHOD = 'DELETE'
     PATH = '/hybrid/vpn-connection/{uuid}'
@@ -21298,42 +20931,6 @@ class DeleteVpcVpnConnectionLocalAction(AbstractAction):
         super(DeleteVpcVpnConnectionLocalAction, self).__init__()
         self.uuid = None
         self.deleteMode = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
-class AddFusionstorBackupStorageAction(AbstractAction):
-    HTTP_METHOD = 'POST'
-    PATH = '/backup-storage/fusionstor'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'params'
-
-    PARAMS = {
-        'monUrls': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=False,no_trim=False),
-        'poolName': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'url': ParamAnnotation(required=False,max_length=2048,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'name': ParamAnnotation(required=True,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'description': ParamAnnotation(required=False,max_length=2048,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'type': ParamAnnotation(),
-        'importImages': ParamAnnotation(required=False,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'resourceUuid': ParamAnnotation(),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(AddFusionstorBackupStorageAction, self).__init__()
-        self.monUrls = None
-        self.poolName = None
-        self.url = None
-        self.name = None
-        self.description = None
-        self.type = None
-        self.importImages = None
-        self.resourceUuid = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
@@ -21982,30 +21579,6 @@ class CreateVniRangeAction(AbstractAction):
         self.endVni = None
         self.l2NetworkUuid = None
         self.resourceUuid = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
-class RemoveMonFromFusionstorPrimaryStorageAction(AbstractAction):
-    HTTP_METHOD = 'DELETE'
-    PATH = '/primary-storage/fusionstor/{uuid}/mons'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = ''
-
-    PARAMS = {
-        'uuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'monHostnames': ParamAnnotation(required=True,non_empty=True,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(RemoveMonFromFusionstorPrimaryStorageAction, self).__init__()
-        self.uuid = None
-        self.monHostnames = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
@@ -23141,44 +22714,6 @@ class IsOpensourceVersionAction(AbstractAction):
         self.userTags = None
 
 
-class QueryFusionstorBackupStorageAction(QueryAction):
-    HTTP_METHOD = 'GET'
-    PATH = '/backup-storage/fusionstor'
-    NEED_SESSION = True
-    NEED_POLL = False
-    PARAM_NAME = ''
-
-    PARAMS = {
-        'conditions': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'limit': ParamAnnotation(),
-        'start': ParamAnnotation(),
-        'count': ParamAnnotation(),
-        'groupBy': ParamAnnotation(),
-        'replyWithCount': ParamAnnotation(),
-        'sortBy': ParamAnnotation(),
-        'sortDirection': ParamAnnotation(required=False,valid_values=['asc','desc'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'fields': ParamAnnotation(),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(QueryFusionstorBackupStorageAction, self).__init__()
-        self.conditions = None
-        self.limit = None
-        self.start = None
-        self.count = None
-        self.groupBy = None
-        self.replyWithCount = None
-        self.sortBy = None
-        self.sortDirection = None
-        self.fields = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class PrometheusQueryVmMonitoringDataAction(AbstractAction):
     HTTP_METHOD = 'GET'
     PATH = '/prometheus/vm-instances'
@@ -23806,30 +23341,6 @@ class AddSimulatorHostAction(AbstractAction):
         self.managementIp = None
         self.clusterUuid = None
         self.resourceUuid = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
-class RemoveMonFromFusionstorBackupStorageAction(AbstractAction):
-    HTTP_METHOD = 'DELETE'
-    PATH = '/backup-storage/fusionstor/{uuid}/mons'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = ''
-
-    PARAMS = {
-        'uuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'monHostnames': ParamAnnotation(required=True,non_empty=True,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(RemoveMonFromFusionstorBackupStorageAction, self).__init__()
-        self.uuid = None
-        self.monHostnames = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
@@ -27169,38 +26680,6 @@ class DeleteVmStaticIpAction(AbstractAction):
         self.sessionId = None
 
 
-class UpdateFusionstorPrimaryStorageMonAction(AbstractAction):
-    HTTP_METHOD = 'PUT'
-    PATH = '/primary-storage/fusionstor/mons/{monUuid}/actions'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'updateFusionstorPrimaryStorageMon'
-
-    PARAMS = {
-        'monUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=False,no_trim=False),
-        'hostname': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'sshUsername': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'sshPassword': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'sshPort': ParamAnnotation(required=False,number_range=[1, 65535],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'monPort': ParamAnnotation(required=False,number_range=[1, 65535],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(UpdateFusionstorPrimaryStorageMonAction, self).__init__()
-        self.monUuid = None
-        self.hostname = None
-        self.sshUsername = None
-        self.sshPassword = None
-        self.sshPort = None
-        self.monPort = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class DeleteZoneAction(AbstractAction):
     HTTP_METHOD = 'DELETE'
     PATH = '/zones/{uuid}'
@@ -27591,46 +27070,6 @@ class QueryEcsVpcFromLocalAction(QueryAction):
         self.sessionId = None
 
 
-class AddFusionstorPrimaryStorageAction(AbstractAction):
-    HTTP_METHOD = 'POST'
-    PATH = '/primary-storage/fusionstor'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'params'
-
-    PARAMS = {
-        'monUrls': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=False,no_trim=False),
-        'rootVolumePoolName': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'dataVolumePoolName': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'imageCachePoolName': ParamAnnotation(required=False,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'url': ParamAnnotation(required=False,max_length=2048,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'name': ParamAnnotation(required=True,max_length=255,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'description': ParamAnnotation(required=False,max_length=2048,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'type': ParamAnnotation(),
-        'zoneUuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'resourceUuid': ParamAnnotation(),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(AddFusionstorPrimaryStorageAction, self).__init__()
-        self.monUrls = None
-        self.rootVolumePoolName = None
-        self.dataVolumePoolName = None
-        self.imageCachePoolName = None
-        self.url = None
-        self.name = None
-        self.description = None
-        self.type = None
-        self.zoneUuid = None
-        self.resourceUuid = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class AddIdentityZoneFromRemoteAction(AbstractAction):
     HTTP_METHOD = 'POST'
     PATH = '/hybrid/identity-zone'
@@ -28009,30 +27448,6 @@ class AttachL2NetworkToClusterAction(AbstractAction):
         self.sessionId = None
 
 
-class AddMonToFusionstorPrimaryStorageAction(AbstractAction):
-    HTTP_METHOD = 'POST'
-    PATH = '/primary-storage/fusionstor/{uuid}/mons'
-    NEED_SESSION = True
-    NEED_POLL = True
-    PARAM_NAME = 'params'
-
-    PARAMS = {
-        'uuid': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'monUrls': ParamAnnotation(required=True,non_empty=True,null_elements=False,empty_string=True,no_trim=False),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(AddMonToFusionstorPrimaryStorageAction, self).__init__()
-        self.uuid = None
-        self.monUrls = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
 class SetVipQosAction(AbstractAction):
     HTTP_METHOD = 'PUT'
     PATH = '/vips/{uuid}/actions'
@@ -28312,44 +27727,6 @@ class CreateUserGroupAction(AbstractAction):
         self.name = None
         self.description = None
         self.resourceUuid = None
-        self.systemTags = None
-        self.userTags = None
-        self.sessionId = None
-
-
-class QueryFusionstorPrimaryStorageAction(QueryAction):
-    HTTP_METHOD = 'GET'
-    PATH = '/primary-storage/fusionstor'
-    NEED_SESSION = True
-    NEED_POLL = False
-    PARAM_NAME = ''
-
-    PARAMS = {
-        'conditions': ParamAnnotation(required=True,non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'limit': ParamAnnotation(),
-        'start': ParamAnnotation(),
-        'count': ParamAnnotation(),
-        'groupBy': ParamAnnotation(),
-        'replyWithCount': ParamAnnotation(),
-        'sortBy': ParamAnnotation(),
-        'sortDirection': ParamAnnotation(required=False,valid_values=['asc','desc'],non_empty=False,null_elements=False,empty_string=True,no_trim=False),
-        'fields': ParamAnnotation(),
-        'systemTags': ParamAnnotation(),
-        'userTags': ParamAnnotation(),
-        'sessionId': ParamAnnotation(required=True)
-    }
-
-    def __init__(self):
-        super(QueryFusionstorPrimaryStorageAction, self).__init__()
-        self.conditions = None
-        self.limit = None
-        self.start = None
-        self.count = None
-        self.groupBy = None
-        self.replyWithCount = None
-        self.sortBy = None
-        self.sortDirection = None
-        self.fields = None
         self.systemTags = None
         self.userTags = None
         self.sessionId = None
