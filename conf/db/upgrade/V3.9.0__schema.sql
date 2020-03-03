@@ -1,1 +1,5 @@
 ALTER TABLE JsonLabelVO MODIFY COLUMN labelValue MEDIUMTEXT;
+
+ALTER TABLE `zstack`.`PolicyRouteRuleSetVO` ADD COLUMN type VARCHAR(64) DEFAULT "User" NOT NULL;
+ALTER TABLE `zstack`.`PolicyRouteTableVO` ADD COLUMN type VARCHAR(64) DEFAULT "User" NOT NULL;
+

@@ -489,6 +489,7 @@ public class VirtualRouter extends ApplianceVmBase {
             }
 
             VirtualRouterAfterAttachNicExtensionPoint ext = it.next();
+            logger.debug(String.format("execute afterAttachNic extension %s", ext.getClass().getSimpleName()));
             ext.afterAttachNic(nicInv, new Completion(completion) {
                 @Override
                 public void success() {
