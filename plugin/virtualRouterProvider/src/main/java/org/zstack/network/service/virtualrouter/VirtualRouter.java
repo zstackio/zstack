@@ -459,7 +459,7 @@ public class VirtualRouter extends ApplianceVmBase {
     }
 
     @Transactional
-    private void replaceVirtualRouterDefaultNetwork(String vrUuid, String oldL3Uuid, String newL3Uuud) {
+    protected void replaceVirtualRouterDefaultNetwork(String vrUuid, String oldL3Uuid, String newL3Uuud) {
         defaultL3ConfigProxy.detachNetworkService(vrUuid, VirtualRouterConstant.VR_DEFAULT_ROUTE_NETWORK,
                 Collections.singletonList(oldL3Uuid));
         defaultL3ConfigProxy.attachNetworkService(vrUuid, VirtualRouterConstant.VR_DEFAULT_ROUTE_NETWORK,
@@ -517,7 +517,9 @@ public class VirtualRouter extends ApplianceVmBase {
                     return;
                 }
 
+                final VmNicVO fNic = oldNic;
                 data.put("oldVip", vipVO);
+                data.put("oldNic", oldNic);
                 ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                 struct.setUseFor(NetworkServiceType.SNAT.toString());
                 struct.setServiceUuid(vipVO.getUuid());
@@ -526,6 +528,9 @@ public class VirtualRouter extends ApplianceVmBase {
                 vip.release(new Completion(trigger) {
                     @Override
                     public void success() {
+                        VirtualRouterNicMetaData.removePublicToNic(fNic);
+                        VirtualRouterNicMetaData.addAdditionalPublicToNic(fNic);
+                        dbf.update(fNic);
                         trigger.next();
                     }
 
@@ -539,6 +544,12 @@ public class VirtualRouter extends ApplianceVmBase {
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 VipVO vipVO = (VipVO) data.get("oldVip");
+                if (vipVO == null) {
+                    trigger.rollback();
+                    return;
+                }
+
+                VmNicVO fNic = (VmNicVO) data.get("oldNic");
                 ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                 struct.setUseFor(NetworkServiceType.SNAT.toString());
                 struct.setServiceUuid(vipVO.getUuid());
@@ -547,6 +558,9 @@ public class VirtualRouter extends ApplianceVmBase {
                 vip.acquire(new Completion(trigger) {
                     @Override
                     public void success() {
+                        VirtualRouterNicMetaData.addPublicToNic(fNic);
+                        VirtualRouterNicMetaData.removeAdditionalPublicToNic(fNic);
+                        dbf.update(fNic);
                         trigger.rollback();
                     }
 
@@ -592,6 +606,8 @@ public class VirtualRouter extends ApplianceVmBase {
                 }
 
                 data.put("newVip", vipVO);
+                data.put("newNic", newNic);
+                final VmNicVO fNic = newNic;
                 ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                 struct.setUseFor(NetworkServiceType.SNAT.toString());
                 struct.setServiceUuid(vipVO.getUuid());
@@ -600,6 +616,9 @@ public class VirtualRouter extends ApplianceVmBase {
                 vip.acquire(new Completion(trigger) {
                     @Override
                     public void success() {
+                        VirtualRouterNicMetaData.addPublicToNic(fNic);
+                        VirtualRouterNicMetaData.removeAdditionalPublicToNic(fNic);
+                        dbf.update(fNic);
                         trigger.next();
                     }
 
@@ -613,6 +632,12 @@ public class VirtualRouter extends ApplianceVmBase {
             @Override
             public void rollback(FlowRollback trigger, Map data) {
                 VipVO vipVO = (VipVO) data.get("newVip");
+                if (vipVO == null) {
+                    trigger.rollback();
+                    return;
+                }
+
+                VmNicVO fNic = (VmNicVO) data.get("newNic");
                 ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                 struct.setUseFor(NetworkServiceType.SNAT.toString());
                 struct.setServiceUuid(vipVO.getUuid());
@@ -621,6 +646,9 @@ public class VirtualRouter extends ApplianceVmBase {
                 vip.release(new Completion(trigger) {
                     @Override
                     public void success() {
+                        VirtualRouterNicMetaData.addAdditionalPublicToNic(fNic);
+                        VirtualRouterNicMetaData.removePublicToNic(fNic);
+                        dbf.update(fNic);
                         trigger.rollback();
                     }
 
