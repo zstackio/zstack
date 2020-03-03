@@ -110,6 +110,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected HostAllocatorManager hostAllocatorMgr;
     @Autowired
     private VmPriorityOperator priorityOperator;
+    @Autowired
+    private VmNicManager nicManager;
 
     protected VmInstanceVO self;
     protected VmInstanceVO originalCopy;
@@ -2028,6 +2030,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                         vmNicVO.setDeviceId(deviceId);
                         vmNicVO.setInternalName(internalName);
                         vmNicVO.setHypervisorType(spec.getVmInventory().getHypervisorType());
+                        vmNicVO.setDriverType(ImagePlatform.valueOf(vm.getPlatform()).isParaVirtualization() ?
+                                nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
                         spec.getDestNics().add(0, VmNicInventory.valueOf(vmNicVO));
 
                         trigger.next();
@@ -2804,8 +2808,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APIUpdateVmCdRomMsg) msg);
         } else if (msg instanceof APIUpdateVmPriorityMsg) {
             handle((APIUpdateVmPriorityMsg) msg);
-        } else if (msg instanceof  APISetVmInstanceDefaultCdRomMsg) {
+        } else if (msg instanceof APISetVmInstanceDefaultCdRomMsg) {
             handle((APISetVmInstanceDefaultCdRomMsg) msg);
+        } else if (msg instanceof APIUpdateVmNicDriverMsg) {
+            handle((APIUpdateVmNicDriverMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -4384,6 +4390,17 @@ public class VmInstanceBase extends AbstractVmInstance {
                 if (msg.getPlatform() != null) {
                     self.setPlatform(msg.getPlatform());
                     update = true;
+                    if (!msg.getPlatform().equals(vm.getPlatform())) {
+                        extensions.add(new Runnable() {
+                            @Override
+                            public void run() {
+                                for (VmPlatformChangedExtensionPoint ext :
+                                        pluginRgty.getExtensionList(VmPlatformChangedExtensionPoint.class)) {
+                                    ext.vmPlatformChange(vm, vm.getPlatform(), msg.getPlatform());
+                                }
+                            }
+                        });
+                    }
                 }
 
                 if (update) {
@@ -5287,7 +5304,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                     l3s.add(l3);
                 }
                 if (!l3s.isEmpty()) {
-                    nicSpecs.add(new VmNicSpec(l3s));
+                    VmNicSpec nicSpec1 = new VmNicSpec(l3s);
+                    nicSpec1.setNicDriverType(nicSpec.getNicDriverType());
+                    nicSpecs.add(nicSpec1);
                 }
             }
 
@@ -6435,6 +6454,24 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         event.setInventory(VmCdRomInventory.valueOf(vmCdRomVO));
+        bus.publish(event);
+    }
+
+    private void handle(final APIUpdateVmNicDriverMsg msg) {
+        APIUpdateVmNicDriverEvent event = new APIUpdateVmNicDriverEvent(msg.getId());
+        VmNicVO nicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+        boolean update = false;
+
+        if (!msg.getDriverType().equals(nicVO.getDriverType())) {
+            nicVO.setDriverType(msg.getDriverType());
+            update = true;
+        }
+
+        if (update) {
+            nicVO = dbf.updateAndRefresh(nicVO);
+        }
+
+        event.setInventory(VmNicInventory.valueOf(nicVO));
         bus.publish(event);
     }
 

@@ -22,6 +22,7 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
@@ -52,6 +53,8 @@ public class VmAllocateNicFlow implements Flow {
     protected ErrorFacade errf;
     @Autowired
     protected L3NetworkManager l3nm;
+    @Autowired
+    private VmNicManager nicManager;
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
@@ -72,17 +75,18 @@ public class VmAllocateNicFlow implements Flow {
         data.put(VmInstanceConstant.Params.VmAllocateNicFlow_nics.toString(), nics);
         List<ErrorCode> errs = new ArrayList<>();
         Map<String, String> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(spec.getVmInventory().getUuid());
-        List<L3NetworkInventory> firstL3s = VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks())
+        List<VmNicSpec> firstL3s = VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks())
                 .stream()
                 .peek(v -> {
                     if (!Q.New(IpRangeVO.class)
-                            .eq(IpRangeVO_.l3NetworkUuid, v.getUuid())
+                            .eq(IpRangeVO_.l3NetworkUuid, v.getL3Invs().get(0).getUuid())
                             .isExists()) {
-                        throw new OperationFailureException(Platform.operr("there is no available ipRange on L3 network [%s]", v.getUuid()));
+                        throw new OperationFailureException(Platform.operr("there is no available ipRange on L3 network [%s]", v.getL3Invs().get(0).getUuid()));
                     }
                 })
                 .collect(Collectors.toList());
-        new While<>(firstL3s).each((nw, wcomp) -> {
+        new While<>(firstL3s).each((nicSpec, wcomp) -> {
+            L3NetworkInventory nw = nicSpec.getL3Invs().get(0);
             int deviceId = deviceIdBitmap.nextClearBit(0);
             deviceIdBitmap.set(deviceId);
             MacOperator mo = new MacOperator();
@@ -175,6 +179,12 @@ public class VmAllocateNicFlow implements Flow {
                                 vo.setGateway(nic.getGateway());
                                 vo.setIpVersion(nic.getIpVersion());
                                 vo.setInternalName(nic.getInternalName());
+                                if (nicSpec.getNicDriverType() != null) {
+                                    vo.setDriverType(nicSpec.getNicDriverType());
+                                } else {
+                                    vo.setDriverType(ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization() ?
+                                            nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
+                                }
                                 vo.setAccountUuid(acntUuid);
                                 vo = persistAndRetryIfMacCollision(vo);
                                 if (vo == null) {

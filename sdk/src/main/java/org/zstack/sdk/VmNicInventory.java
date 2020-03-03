@@ -84,6 +84,14 @@ public class VmNicInventory  {
         return this.ipVersion;
     }
 
+    public java.lang.String driverType;
+    public void setDriverType(java.lang.String driverType) {
+        this.driverType = driverType;
+    }
+    public java.lang.String getDriverType() {
+        return this.driverType;
+    }
+
     public java.util.List usedIps;
     public void setUsedIps(java.util.List usedIps) {
         this.usedIps = usedIps;

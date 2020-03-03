@@ -35,6 +35,7 @@ public class VmNicInventory implements Serializable {
     private String gateway;
     private String metaData;
     private Integer ipVersion;
+    private String driverType;
     private List<UsedIpInventory> usedIps;
     @APINoSee
     private String internalName;
@@ -60,6 +61,7 @@ public class VmNicInventory implements Serializable {
         inv.setGateway(vo.getGateway());
         inv.setIpVersion(vo.getIpVersion());
         inv.setUsedIps(UsedIpInventory.valueOf(vo.getUsedIps()));
+        inv.setDriverType(vo.getDriverType());
 
         return inv;
     }
@@ -198,5 +200,13 @@ public class VmNicInventory implements Serializable {
 
     public void setUsedIps(List<UsedIpInventory> usedIps) {
         this.usedIps = usedIps;
+    }
+
+    public String getDriverType() {
+        return driverType;
+    }
+
+    public void setDriverType(String driverType) {
+        this.driverType = driverType;
     }
 }
