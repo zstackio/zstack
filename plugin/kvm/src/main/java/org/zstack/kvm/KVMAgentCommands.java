@@ -643,6 +643,8 @@ public class KVMAgentCommands {
         private String mac;
         private List<String> ips;
         private String bridgeName;
+        // run `bridge fdb add NicTO.mac dev NicTO.physicalInterface` on vnics to allow vf <-> vnic communication
+        private String physicalInterface;
         private String uuid;
         private String nicInternalName;
         private int deviceId;
@@ -652,6 +654,10 @@ public class KVMAgentCommands {
         private Integer mtu;
         private String driverType;
         private VHostAddOn vHostAddOn;
+
+        // only for vf nic
+        private String vlanId;
+        private String pciDeviceAddress;
 
         public List<String> getIps() {
             return ips;
@@ -693,6 +699,14 @@ public class KVMAgentCommands {
             this.bridgeName = bridgeName;
         }
 
+        public String getPhysicalInterface() {
+            return physicalInterface;
+        }
+
+        public void setPhysicalInterface(String physicalInterface) {
+            this.physicalInterface = physicalInterface;
+        }
+
         public int getDeviceId() {
             return deviceId;
         }
@@ -723,6 +737,22 @@ public class KVMAgentCommands {
 
         public void setBootOrder(int bootOrder) {
             this.bootOrder = bootOrder;
+		}
+
+        public String getVlanId() {
+            return vlanId;
+        }
+
+        public void setVlanId(String vlanId) {
+            this.vlanId = vlanId;
+        }
+
+        public String getPciDeviceAddress() {
+            return pciDeviceAddress;
+        }
+
+        public void setPciDeviceAddress(String pciDeviceAddress) {
+            this.pciDeviceAddress = pciDeviceAddress;
         }
 
         public Integer getMtu() {

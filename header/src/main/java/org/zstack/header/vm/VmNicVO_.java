@@ -21,6 +21,7 @@ public class VmNicVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<VmNicVO, String> metaData;
     public static volatile SingularAttribute<VmNicVO, Integer> deviceId;
     public static volatile SingularAttribute<VmNicVO, String> driverType;
+    public static volatile SingularAttribute<VmNicVO, String> type;
     public static volatile SingularAttribute<VmNicVO, Timestamp> createDate;
     public static volatile SingularAttribute<VmNicVO, Timestamp> lastOpDate;
 }
