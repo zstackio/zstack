@@ -471,7 +471,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                           return;
                       }
                       nicUuids.stream().forEach(nicUuid -> {
-                          new LoadBalancerWeightOperator().setWeight(newTag.getResourceUuid(), nicUuid, LoadBalancerGlobalConfig.BALANCER_WEIGHT.value(Long.class));
+                          new LoadBalancerWeightOperator().setWeight(newTag.getResourceUuid(), nicUuid, LoadBalancerConstants.BALANCER_WEIGHT_default);
                       });
                 }
                 if (LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(oldValue) && !LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(newValue)) {

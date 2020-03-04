@@ -1171,10 +1171,10 @@ public class LoadBalancerBase {
                         }
 
                         dbf.persistCollection(refs);
-                        s = true;
                         if (msg.getSystemTags() != null) {
                             new LoadBalancerWeightOperator().setWeight(msg.getSystemTags(), msg.getListenerUuid());
                         }
+                        s = true;
                         trigger.next();
                     }
 
@@ -1182,6 +1182,9 @@ public class LoadBalancerBase {
                     public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
                             dbf.removeCollection(refs, LoadBalancerListenerVmNicRefVO.class);
+                            if (msg.getSystemTags() != null) {
+                                new LoadBalancerWeightOperator().deleteWeight(msg.getSystemTags(), msg.getListenerUuid());
+                            }
                         }
                         trigger.rollback();
                     }
@@ -1497,8 +1500,8 @@ public class LoadBalancerBase {
                             )));
                 }
 
-                if (msg.getHealthCheckProtocol() != null) {
-                    String[] ts = getHeathCheckTarget(msg.getUuid());
+                String[] ts = getHeathCheckTarget(msg.getUuid());
+                if (msg.getHealthCheckProtocol() != null && !msg.getHealthCheckProtocol().equals(ts[0])) {
                     if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(ts[0]) &&
                             LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
                         DebugUtils.Assert(msg.getHealthCheckMethod() != null && msg.getHealthCheckURI() != null,
@@ -1516,20 +1519,17 @@ public class LoadBalancerBase {
 
                     if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(ts[0]) &&
                             LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(msg.getHealthCheckProtocol())) {
-                        LoadBalancerSystemTags.HEALTH_PARAMETER.deleteInherentTag(msg.getHealthCheckMethod(),
-                                LoadBalancerSystemTags.HEALTH_PARAMETER.instantiateTag(map(
-                                        e(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN, "%"))));
+                        LoadBalancerSystemTags.HEALTH_PARAMETER.delete(msg.getUuid());
                     }
 
-                    if ( !msg.getHealthCheckProtocol().equals(ts[0])) {
-                        LoadBalancerSystemTags.HEALTH_TARGET.update(msg.getUuid(),
+                    LoadBalancerSystemTags.HEALTH_TARGET.update(msg.getUuid(),
                                 LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(map(
-                                        e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, String.format("%s:%s", msg.getHealthCheckProtocol(), ts[0])))
+                                        e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, String.format("%s:%s", msg.getHealthCheckProtocol(), ts[1])))
                                 ));
-                    }
-                } else if (msg.getHealthCheckHttpCode() != null || msg.getHealthCheckMethod() != null || msg.getHealthCheckURI() != null) {
-                    String[] ts = getHeathCheckTarget(msg.getUuid());
+                    ts = getHeathCheckTarget(msg.getUuid());
+                }
 
+                if (msg.getHealthCheckHttpCode() != null || msg.getHealthCheckMethod() != null || msg.getHealthCheckURI() != null) {
                     if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(ts[0])) {
                         String param = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokenByResourceUuid(msg.getLoadBalancerListenerUuid(),
                                 LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN);
