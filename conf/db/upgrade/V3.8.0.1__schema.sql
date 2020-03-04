@@ -121,3 +121,5 @@ CREATE TABLE  IF NOT EXISTS `ResourceStackVmPortRefVO` (
     CONSTRAINT `fkResourceStackVmPortRefVOVmInstanceVO` FOREIGN KEY (`vmInstanceUuid`) REFERENCES VmInstanceEO (`uuid`) ON DELETE CASCADE,
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE ResourceStackVO ADD COLUMN outputs text DEFAULT NULL;
