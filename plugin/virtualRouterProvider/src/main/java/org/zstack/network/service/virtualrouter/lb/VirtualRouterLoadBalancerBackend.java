@@ -430,12 +430,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             Map<String, String> token = TagUtils.parse(LoadBalancerSystemTags.BALANCER_WEIGHT.getTagFormat(), arg);
                             String nicUuid = token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN);
                             VmNicInventory nic = struct.getVmNics().get(nicUuid);
-                            if (nic != null) {
-                                if (!to.getNicIps().contains(nic.getIp())) {
-                                    return null;
-                                }
-                                arg = arg.replace(nicUuid, nic.getIp());
+                            if (nic == null || !to.getNicIps().contains(nic.getIp())) {
+                                return null;
                             }
+                            arg = arg.replace(nicUuid, nic.getIp());
                         }
                         return arg;
                     }
