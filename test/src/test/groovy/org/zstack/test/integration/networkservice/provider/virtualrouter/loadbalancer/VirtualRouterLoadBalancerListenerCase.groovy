@@ -4,15 +4,10 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
-import org.zstack.network.service.lb.LoadBalancerGlobalConfig
 import org.zstack.network.service.lb.LoadBalancerSystemTags
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
-import org.zstack.sdk.ChangeLoadBalancerListenerAction
-import org.zstack.sdk.CreateLoadBalancerListenerAction
-import org.zstack.sdk.L3NetworkInventory
-import org.zstack.sdk.LoadBalancerInventory
-import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.*
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -180,36 +175,63 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         listenerAction.instancePort = 55
         listenerAction.protocol = "tcp"
         listenerAction.healthCheckProtocol = "http"
-        listenerAction.healthCheckMethod = "GET"
-        listenerAction.healthCheckURI = "/health.html"
         listenerAction.sessionId = adminSession()
 
         CreateLoadBalancerListenerAction.Result lblRes = listenerAction.call()
+        assert lblRes.error != null
+
+        listenerAction.healthCheckURI = "/health.html"
+        lblRes = listenerAction.call()
         assert lblRes.error == null
 
         List<Map<String, String>> tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
 
         for (Map<String, String>  token: tokens) {
-            assert token.get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "GET:/health.html:http_2xx"
+            assert token.get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "HEAD:/health.html:http_2xx"
         }
 
         ChangeLoadBalancerListenerAction action = new ChangeLoadBalancerListenerAction()
         action.uuid  = lblRes.value.inventory.uuid
-        action.healthCheckURI = "/abc.html"
+        action.healthCheckURI = "/abcd.html"
+        action.healthCheckMethod = "GET"
+        action.healthCheckProtocol = "http"
         action.sessionId = adminSession()
         ChangeLoadBalancerListenerAction.Result res = action.call()
         assert res.error == null
         tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
 
         for (Map<String, String>  token: tokens) {
-            assert token.get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "GET:/abc.html:http_2xx"
+            assert token.get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "GET:/abcd.html:http_2xx"
         }
 
         action.healthCheckProtocol = "tcp"
         res = action.call()
         assert res.error == null
-        //tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
-        //assert tokens == null || tokens.isEmpty()
+        tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
+        assert tokens == null || tokens.isEmpty()
+
+        action.healthCheckProtocol = "http"
+        action.healthCheckMethod = null
+        action.healthCheckURI = null
+        res = action.call()
+        assert res.error != null
+
+        action.healthCheckURI = "/abc.html"
+        action.healthCheckProtocol = "http"
+        res = action.call()
+        assert res.error == null
+        tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
+
+        for (Map<String, String>  token: tokens) {
+            assert token.get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "HEAD:/abc.html:http_2xx"
+        }
+
+        deleteLoadBalancerListener {
+            uuid = lblRes.value.inventory.uuid
+        }
+
+        tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
+        assert tokens == null || tokens.isEmpty()
     }
 
 
@@ -242,7 +264,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             if (!vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid.equals(token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN))) {
                 continue
             }
-            assert token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN) == LoadBalancerGlobalConfig.BALANCER_WEIGHT.value(String.class)
+            assert token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN) == LoadBalancerConstants.BALANCER_WEIGHT_default.toString()
         }
 
         String weight = "balancerWeight::" + vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid + "::120"
@@ -260,6 +282,14 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             }
             assert token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN) == "120"
         }
+
+        removeVmNicFromLoadBalancer {
+            vmNicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
+            listenerUuid = lblRes.value.inventory.uuid
+        }
+
+        tokens = LoadBalancerSystemTags.BALANCER_WEIGHT.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
+        assert tokens == null || tokens.isEmpty()
 
     }
 
