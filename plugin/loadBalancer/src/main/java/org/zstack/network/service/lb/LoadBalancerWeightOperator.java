@@ -41,7 +41,7 @@ public class LoadBalancerWeightOperator {
             String weight = token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN);
             return Long.valueOf(weight);
         }
-        return LoadBalancerGlobalConfig.BALANCER_WEIGHT.value(Long.class);
+        return LoadBalancerConstants.BALANCER_WEIGHT_default;
     }
 
     public Map<String, Long> getWeight(List<String> systemTags) {

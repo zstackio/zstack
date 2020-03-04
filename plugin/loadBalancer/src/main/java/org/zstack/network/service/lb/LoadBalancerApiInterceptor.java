@@ -156,7 +156,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
                             msg, LoadBalancerSystemTags.BALANCER_WEIGHT,
                             LoadBalancerSystemTags.BALANCER_WEIGHT.instantiateTag(
                                     map(e(LoadBalancerSystemTags.BALANCER_NIC_TOKEN, arg),
-                                        e(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN,LoadBalancerGlobalConfig.BALANCER_WEIGHT.value(Long.class)))
+                                        e(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN, LoadBalancerConstants.BALANCER_WEIGHT_default))
                             )
                     );
                 }
@@ -220,9 +220,15 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
                         operr("the listener with protocol [%s] doesn't support this health check:[%s]",
                                 msg.getProtocol(), msg.getHealthCheckProtocol()));
             }
-            if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol()) && (msg.getHealthCheckMethod() == null || msg.getHealthCheckURI() == null)) {
-                throw new ApiMessageInterceptionException(
-                        operr("the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI"));
+            if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+                if (msg.getHealthCheckURI() == null) {
+                    throw new ApiMessageInterceptionException(
+                            operr("the http health check protocol must be specified its healthy checking parameter healthCheckURI"));
+                }
+
+                if (msg.getHealthCheckMethod() == null) {
+                    msg.setHealthCheckMethod(LoadBalancerConstants.HealthCheckMothod.HEAD.toString());
+                }
             }
             if (msg.getHealthCheckHttpCode() != null && !verifyHttpCode(msg.getHealthCheckHttpCode())) {
                 throw new ApiMessageInterceptionException(
@@ -412,6 +418,19 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr("healthCheck target [%s] error, it must be 'default' or number between[1~65535] ",
                             target));
                 }
+            }
+        }
+
+        if (msg.getHealthCheckProtocol() != null && LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+            if (msg.getHealthCheckMethod() == null) {
+                msg.setHealthCheckMethod(LoadBalancerConstants.HealthCheckMothod.HEAD.toString());
+            }
+            String tg = LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(msg.getUuid(),
+                    LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);
+            String[] ts = tg.split(":");
+            if (!msg.getHealthCheckProtocol().equals(ts[0]) && msg.getHealthCheckURI() == null) {
+                throw new ApiMessageInterceptionException(
+                        operr("the http health check protocol must be specified its healthy checking parameter healthCheckURI"));
             }
         }
 
