@@ -63,14 +63,6 @@
     </config>
 
     <config>
-        <category>loadBalancer</category>
-        <name>balancerWeight</name>
-        <description>Each server is used in turns according to the weight while the algorithm is weightroundrobin</description>
-        <defaultValue>100</defaultValue>
-        <type>java.lang.Long</type>
-    </config>
-
-    <config>
         <name>loadBalancer.num</name>
         <description>default quota for loadBalancer.num</description>
         <defaultValue>20</defaultValue>
