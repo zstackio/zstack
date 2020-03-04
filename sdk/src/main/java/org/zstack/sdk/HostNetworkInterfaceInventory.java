@@ -60,4 +60,12 @@ public class HostNetworkInterfaceInventory  {
         return this.mac;
     }
 
+    public java.lang.String pciDeviceAddress;
+    public void setPciDeviceAddress(java.lang.String pciDeviceAddress) {
+        this.pciDeviceAddress = pciDeviceAddress;
+    }
+    public java.lang.String getPciDeviceAddress() {
+        return this.pciDeviceAddress;
+    }
+
 }

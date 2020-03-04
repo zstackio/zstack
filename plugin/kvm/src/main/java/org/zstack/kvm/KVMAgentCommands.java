@@ -611,6 +611,9 @@ public class KVMAgentCommands {
         private Boolean useVirtio;
         private int bootOrder;
 
+        // only for vf nic
+        private String pciDeviceAddress;
+
         public List<String> getIps() {
             return ips;
         }
@@ -681,6 +684,14 @@ public class KVMAgentCommands {
 
         public void setBootOrder(int bootOrder) {
             this.bootOrder = bootOrder;
+		}
+
+        public String getPciDeviceAddress() {
+            return pciDeviceAddress;
+        }
+
+        public void setPciDeviceAddress(String pciDeviceAddress) {
+            this.pciDeviceAddress = pciDeviceAddress;
         }
     }
 

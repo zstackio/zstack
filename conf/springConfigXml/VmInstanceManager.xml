@@ -166,6 +166,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="VmNicFactory" class="org.zstack.compute.vm.VmNicFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceNicFactory" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="VmCdRomUpgradeExtension" class="org.zstack.compute.vm.VmCdRomUpgradeExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>

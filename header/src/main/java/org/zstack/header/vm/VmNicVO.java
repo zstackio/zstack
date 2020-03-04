@@ -67,6 +67,9 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
     private String internalName;
 
     @Column
+    private String type;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -230,5 +233,13 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
 
     public void setUsedIps(Set<UsedIpVO> usedIps) {
         this.usedIps = usedIps;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

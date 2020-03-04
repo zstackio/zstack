@@ -12,12 +12,10 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowException;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
@@ -25,7 +23,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
-import org.zstack.identity.Account;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -37,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
@@ -52,6 +48,8 @@ public class VmAllocateNicFlow implements Flow {
     protected ErrorFacade errf;
     @Autowired
     protected L3NetworkManager l3nm;
+    @Autowired
+    protected VmInstanceManager vmMgr;
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
@@ -94,6 +92,14 @@ public class VmAllocateNicFlow implements Flow {
                 customMac = NetworkUtils.generateMacWithDeviceId((short) deviceId);
             }
             final String mac = customMac;
+
+            VmInstanceNicFactory vnicFactory;
+            if (spec.getSystemTags() != null &&
+                    spec.getSystemTags().contains(String.format("enableSRIOV::%s", nw.getUuid()))) {
+                vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("VF"));
+            } else {
+                vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("VNIC"));
+            }
 
             AllocateIpMsg msg = new AllocateIpMsg();
             msg.setL3NetworkUuid(nw.getUuid());
@@ -160,31 +166,7 @@ public class VmAllocateNicFlow implements Flow {
 
                             @Override
                             protected void scripts() {
-                                String acntUuid = Account.getAccountUuidOfResource(spec.getVmInventory().getUuid());
-
-                                VmNicVO vo = new VmNicVO();
-                                vo.setUuid(nic.getUuid());
-                                vo.setIp(nic.getIp());
-                                vo.setL3NetworkUuid(nic.getL3NetworkUuid());
-                                vo.setUsedIpUuid(nic.getUsedIpUuid());
-                                vo.setVmInstanceUuid(nic.getVmInstanceUuid());
-                                vo.setDeviceId(nic.getDeviceId());
-                                vo.setMac(nic.getMac());
-                                vo.setHypervisorType(nic.getHypervisorType());
-                                vo.setNetmask(nic.getNetmask());
-                                vo.setGateway(nic.getGateway());
-                                vo.setIpVersion(nic.getIpVersion());
-                                vo.setInternalName(nic.getInternalName());
-                                vo.setAccountUuid(acntUuid);
-                                vo = persistAndRetryIfMacCollision(vo);
-                                if (vo == null) {
-                                    throw new FlowException(err(VmErrors.ALLOCATE_MAC_ERROR, "unable to find an available mac address after re-try 5 times, too many collisions"));
-                                }
-                                /* update usedIpVo */
-                                SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, vo.getUsedIpUuid()).set(UsedIpVO_.vmNicUuid, nic.getUuid()).update();
-
-                                vo = reload(vo);
-                                spec.getDestNics().add(VmNicInventory.valueOf(vo));
+                                vnicFactory.createVmNic(nic, spec);
                                 nics.add(nic);
                             }
                         }.execute();
