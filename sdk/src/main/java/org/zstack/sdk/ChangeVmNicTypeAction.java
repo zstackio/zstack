@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AttachL3NetworkToVmAction extends AbstractAction {
+public class ChangeVmNicTypeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AttachL3NetworkToVmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AttachL3NetworkToVmResult value;
+        public org.zstack.sdk.ChangeVmNicTypeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,16 +26,10 @@ public class AttachL3NetworkToVmAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
+    public java.lang.String vmNicUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String l3NetworkUuid;
-
-    @Param(required = false, validValues = {"VNIC","VF"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vnicType;
-
-    @Param(required = false)
-    public java.lang.String staticIp;
+    @Param(required = true, validValues = {"VNIC","VF"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmNicType;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -69,8 +63,8 @@ public class AttachL3NetworkToVmAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AttachL3NetworkToVmResult value = res.getResult(org.zstack.sdk.AttachL3NetworkToVmResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AttachL3NetworkToVmResult() : value; 
+        org.zstack.sdk.ChangeVmNicTypeResult value = res.getResult(org.zstack.sdk.ChangeVmNicTypeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeVmNicTypeResult() : value; 
 
         return ret;
     }
@@ -99,11 +93,11 @@ public class AttachL3NetworkToVmAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/vm-instances/{vmInstanceUuid}/l3-networks/{l3NetworkUuid}";
+        info.httpMethod = "PUT";
+        info.path = "/vm-instances/nics/{vmNicUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "changeVmNicType";
         return info;
     }
 

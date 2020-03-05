@@ -66,7 +66,10 @@ import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.TagUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
@@ -124,6 +127,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
     private Future<Void> expungeVmTask;
     private Map<Class, VmInstanceBaseExtensionFactory> vmInstanceBaseExtensionFactories = new HashMap<>();
+    private Map<String, VmInstanceNicFactory> vmInstanceNicFactories = new HashMap<>();
 
     static {
         allowedMessageAfterSoftDeletion.add(VmInstanceDeletionMsg.class);
@@ -921,6 +925,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         smsg.setTimeout(msg.getTimeout());
         smsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         smsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
+        smsg.setSystemTags(msg.getSystemTags());
         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vo.getUuid());
         bus.send(smsg, new CloudBusCallBack(smsg) {
             @Override
@@ -1042,7 +1047,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         cmsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         cmsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
-
         cmsg.setClusterUuid(msg.getClusterUuid());
         cmsg.setHostUuid(msg.getHostUuid());
         cmsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
@@ -1052,6 +1056,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setDescription(msg.getDescription());
         cmsg.setResourceUuid(msg.getResourceUuid());
         cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
+        cmsg.setSystemTags(msg.getSystemTags());
         cmsg.setStrategy(msg.getStrategy());
         cmsg.setServiceId(msg.getServiceId());
         cmsg.setHeaders(msg.getHeaders());
@@ -1412,6 +1417,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                 vmInstanceBaseExtensionFactories.put(clz, ext);
             }
+        }
+
+        for (VmInstanceNicFactory ext : pluginRgty.getExtensionList(VmInstanceNicFactory.class)) {
+            VmInstanceNicFactory old = vmInstanceNicFactories.get(ext.getType().toString());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate VmInstanceNicFactory[%s, %s] for type[%s]",
+                        old.getClass().getName(), ext.getClass().getName(), ext.getType()));
+            }
+            vmInstanceNicFactories.put(ext.getType().toString(), ext);
         }
     }
 
@@ -1894,7 +1908,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
         return vmInstanceBaseExtensionFactories.get(msg.getClass());
     }
 
-
+    @Override
+    public VmInstanceNicFactory getVmInstanceNicFactory(VmNicType type) {
+        VmInstanceNicFactory factory = vmInstanceNicFactories.get(type.toString());
+        if (factory == null) {
+            throw new CloudRuntimeException(String.format("No VmInstanceNicFactory of type[%s] found", type));
+        }
+        return factory;
+    }
 
     @Override
     public FlowChain getCreateVmWorkFlowChain(VmInstanceInventory inv) {

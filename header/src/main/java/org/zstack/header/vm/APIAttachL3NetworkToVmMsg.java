@@ -2,7 +2,6 @@ package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -59,6 +58,9 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
     @APIParam(resourceType = L3NetworkVO.class, checkAccount = true)
     private String l3NetworkUuid;
 
+    @APIParam(required = false, validValues = {"VNIC", "VF"})
+    private String vnicType;
+
     private String staticIp;
 
     @APINoSee
@@ -66,6 +68,14 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
 
     @APINoSee
     private Map<String, String> staticIpMap;
+
+    public String getVnicType() {
+        return vnicType;
+    }
+
+    public void setVnicType(String vnicType) {
+        this.vnicType = vnicType;
+    }
 
     public String getStaticIp() {
         return staticIp;

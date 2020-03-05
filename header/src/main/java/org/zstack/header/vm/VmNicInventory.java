@@ -39,6 +39,7 @@ public class VmNicInventory implements Serializable {
     @APINoSee
     private String internalName;
     private Integer deviceId;
+    private String type;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -60,6 +61,7 @@ public class VmNicInventory implements Serializable {
         inv.setGateway(vo.getGateway());
         inv.setIpVersion(vo.getIpVersion());
         inv.setUsedIps(UsedIpInventory.valueOf(vo.getUsedIps()));
+        inv.setType(vo.getType());
 
         return inv;
     }
@@ -198,5 +200,13 @@ public class VmNicInventory implements Serializable {
 
     public void setUsedIps(List<UsedIpInventory> usedIps) {
         this.usedIps = usedIps;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

@@ -5260,6 +5260,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setRequiredPrimaryStorageUuidForDataVolume(struct.getPrimaryStorageUuidForDataVolume());
         spec.setDataVolumeSystemTags(struct.getDataVolumeSystemTags());
         spec.setRootVolumeSystemTags(struct.getRootVolumeSystemTags());
+        spec.setSystemTags(struct.getSystemTags());
         spec.setRequiredHostUuid(struct.getRequiredHostUuid());
 
         spec.setVmInventory(getSelfInventory());
