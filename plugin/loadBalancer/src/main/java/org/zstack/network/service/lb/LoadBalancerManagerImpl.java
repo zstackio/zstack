@@ -35,8 +35,10 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.tag.AbstractSystemTagOperationJudger;
 import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagLifeCycleListener;
 import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.vip.*;
@@ -388,6 +390,29 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         LoadBalancerSystemTags.HEALTH_TIMEOUT.installJudger(judger);
         LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.installJudger(judger);
 
+        LoadBalancerSystemTags.BALANCER_WEIGHT.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                Map<String, String> tokens = LoadBalancerSystemTags.BALANCER_WEIGHT.getTokensByTag(systemTag);
+                String nicUuid = tokens.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN);
+                if (!dbf.isExist(nicUuid, VmNicVO.class)) {
+                    throw new ApiMessageInterceptionException(argerr("nic[uuid:%s] not found. Please correct your system tag[%s] of loadbalancer",
+                            nicUuid, systemTag));
+                }
+
+                String s = tokens.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN);
+                try {
+                    Long weight = Long.valueOf(s);
+                    if (weight < LoadBalancerConstants.BALANCER_WEIGHT_MIN || weight > LoadBalancerConstants.BALANCER_WEIGHT_MAX) {
+                        throw new OperationFailureException(argerr("invalid balancer weight[%s], %s is not in the range [%l, %l]",
+                                systemTag, s, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
+                    }
+                } catch (NumberFormatException e) {
+                    throw new OperationFailureException(argerr("invalid balancer weight[%s], %s is not a number", systemTag, s));
+                }
+            }
+        });
+
         LoadBalancerSystemTags.BALANCER_ALGORITHM.installValidator(new SystemTagValidator() {
             @Override
             public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
@@ -396,6 +421,66 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
                 if (!LoadBalancerConstants.BALANCE_ALGORITHMS.contains(algorithm)) {
                     throw new OperationFailureException(argerr("invalid balance algorithm[%s], valid algorithms are %s", algorithm, LoadBalancerConstants.BALANCE_ALGORITHMS));
+                }
+            }
+        });
+
+        LoadBalancerSystemTags.HEALTH_PARAMETER.installLifeCycleListener(new SystemTagLifeCycleListener() {
+            @Override
+            public void tagCreated(SystemTagInventory tag) {
+                /*miaozhanyong to be done*/
+            }
+
+            @Override
+            public void tagDeleted(SystemTagInventory tag) {
+
+            }
+
+            @Override
+            public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+                if (!LoadBalancerSystemTags.HEALTH_PARAMETER.isMatch(newTag.getTag())) {
+                    return;
+                }
+                /*miaozhanyong to be done*/
+            }
+        });
+
+        LoadBalancerSystemTags.BALANCER_ALGORITHM.installLifeCycleListener(new SystemTagLifeCycleListener() {
+            @Override
+            public void tagCreated(SystemTagInventory tag) {
+
+            }
+
+            @Override
+            public void tagDeleted(SystemTagInventory tag) {
+
+            }
+
+            @Override
+            public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+                if (!LoadBalancerSystemTags.BALANCER_ALGORITHM.isMatch(newTag.getTag())) {
+                    return;
+                }
+
+                String oldValue = LoadBalancerSystemTags.BALANCER_ALGORITHM.getTokenByTag(old.getTag(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN);
+                String newValue = LoadBalancerSystemTags.BALANCER_ALGORITHM.getTokenByTag(newTag.getTag(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN);
+                if (!LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(oldValue) && LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(newValue)) {
+                      List<String> nicUuids = Q.New(LoadBalancerListenerVmNicRefVO.class).select(LoadBalancerListenerVmNicRefVO_.vmNicUuid)
+                                               .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, newTag.getResourceUuid()).listValues();
+                      if (nicUuids.isEmpty()) {
+                          return;
+                      }
+                      nicUuids.stream().forEach(nicUuid -> {
+                          new LoadBalancerWeightOperator().setWeight(newTag.getResourceUuid(), nicUuid, LoadBalancerConstants.BALANCER_WEIGHT_default);
+                      });
+                }
+                if (LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(oldValue) && !LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(newValue)) {
+                    List<String> nicUuids = Q.New(LoadBalancerListenerVmNicRefVO.class).select(LoadBalancerListenerVmNicRefVO_.vmNicUuid)
+                                             .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, newTag.getResourceUuid()).listValues();
+                    if (nicUuids.isEmpty()) {
+                        return;
+                    }
+                    new LoadBalancerWeightOperator().deleteWeight(nicUuids);
                 }
             }
         });

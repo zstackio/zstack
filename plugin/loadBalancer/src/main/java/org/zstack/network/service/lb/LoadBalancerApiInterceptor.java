@@ -13,7 +13,6 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
@@ -21,8 +20,10 @@ import org.zstack.network.service.vip.VipNetworkServicesRefVO;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO_;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.VipUseForList;
+import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
@@ -145,13 +146,30 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr("the vm nics[uuid:%s] are already on the load balancer listener[uuid:%s]", existingNics, msg.getListenerUuid()));
         }
 
+        if (LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(
+                LoadBalancerSystemTags.BALANCER_ALGORITHM.getTokenByResourceUuid(
+                        msg.getListenerUuid(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN))) {
+            CollectionUtils.forEach(msg.getVmNicUuids(), new ForEachFunction<String>() {
+                @Override
+                public void run(String arg) {
+                    insertTagIfNotExisting(
+                            msg, LoadBalancerSystemTags.BALANCER_WEIGHT,
+                            LoadBalancerSystemTags.BALANCER_WEIGHT.instantiateTag(
+                                    map(e(LoadBalancerSystemTags.BALANCER_NIC_TOKEN, arg),
+                                        e(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN, LoadBalancerConstants.BALANCER_WEIGHT_default))
+                            )
+                    );
+                }
+            });
+        }
+
         sql = "select l.loadBalancerUuid from LoadBalancerListenerVO l where l.uuid = :uuid";
         q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuid", msg.getListenerUuid());
         msg.setLoadBalancerUuid(q.getSingleResult());
     }
 
-    private boolean hasTag(APICreateMessage msg, PatternedSystemTag tag) {
+    private boolean hasTag(APIMessage msg, PatternedSystemTag tag) {
         if (msg.getSystemTags() == null) {
             return false;
         }
@@ -164,10 +182,22 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
         return false;
     }
 
-    private void insertTagIfNotExisting(APICreateMessage msg, PatternedSystemTag tag, String value) {
+    private void insertTagIfNotExisting(APIMessage msg, PatternedSystemTag tag, String value) {
         if (!hasTag(msg, tag)) {
             msg.addSystemTag(value);
         }
+    }
+
+    private Boolean verifyHttpCode(String httpCode) {
+        List<String> codes = Arrays.asList(httpCode.split(","));
+        return codes.stream().allMatch(code -> {
+            try {
+                LoadBalancerConstants.HealthCheckStatusCode.valueOf(code);
+                return true;
+            } catch (IllegalArgumentException ec) {
+                return false;
+            }
+        });
     }
 
     private void validate(APICreateLoadBalancerListenerMsg msg) {
@@ -177,7 +207,47 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
         if (msg.getProtocol() == null) {
             msg.setProtocol(LoadBalancerConstants.LB_PROTOCOL_TCP);
         }
+        if (msg.getHealthCheckProtocol() == null) {
+            if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol())) {
+                msg.setHealthCheckProtocol(LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP);
+            } else {
+                msg.setHealthCheckProtocol(LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP);
+            }
+        } else {
+            if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol()) && !LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(msg.getHealthCheckProtocol()) ||
+                    !LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol()) && LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(msg.getHealthCheckProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        operr("the listener with protocol [%s] doesn't support this health check:[%s]",
+                                msg.getProtocol(), msg.getHealthCheckProtocol()));
+            }
+            if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+                if (msg.getHealthCheckURI() == null) {
+                    throw new ApiMessageInterceptionException(
+                            operr("the http health check protocol must be specified its healthy checking parameter healthCheckURI"));
+                }
 
+                if (msg.getHealthCheckMethod() == null) {
+                    msg.setHealthCheckMethod(LoadBalancerConstants.HealthCheckMothod.HEAD.toString());
+                }
+            }
+            if (msg.getHealthCheckHttpCode() != null && !verifyHttpCode(msg.getHealthCheckHttpCode())) {
+                throw new ApiMessageInterceptionException(
+                        operr("the http health check protocol's expecting code [%s] is invalidate", msg.getHealthCheckHttpCode()));
+            }
+        }
+
+        if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+            String expectResult = LoadBalancerConstants.HealthCheckStatusCode.http_2xx.toString();
+            if (msg.getHealthCheckHttpCode() != null) {
+                expectResult = msg.getHealthCheckHttpCode();
+            }
+            insertTagIfNotExisting(
+                    msg, LoadBalancerSystemTags.HEALTH_PARAMETER,
+                    LoadBalancerSystemTags.HEALTH_PARAMETER.instantiateTag(
+                            map(e(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN, String.format("%s:%s:%s", msg.getHealthCheckMethod(), msg.getHealthCheckURI(), expectResult)))
+                    )
+            );
+        }
         insertTagIfNotExisting(
                 msg, LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT,
                 LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.instantiateTag(
@@ -199,21 +269,12 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
                 )
         );
 
-        if(LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol())) {
-            insertTagIfNotExisting(
-                    msg, LoadBalancerSystemTags.HEALTH_TARGET,
-                    LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(
-                            map(e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP+":default"))
-                    )
-            );
-        } else {
-            insertTagIfNotExisting(
-                    msg, LoadBalancerSystemTags.HEALTH_TARGET,
-                    LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(
-                            map(e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, LoadBalancerGlobalConfig.HEALTH_TARGET.value()))
-                    )
-            );
-        }
+        insertTagIfNotExisting(
+                msg, LoadBalancerSystemTags.HEALTH_TARGET,
+                LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(
+                        map(e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, msg.getHealthCheckProtocol()+":default"))
+                )
+        );
 
         insertTagIfNotExisting(
                 msg, LoadBalancerSystemTags.HEALTH_TIMEOUT,
@@ -360,10 +421,51 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
-        String loadBalancerUuid = Q.New(LoadBalancerListenerVO.class).
-                select(LoadBalancerListenerVO_.loadBalancerUuid).
-                eq(LoadBalancerListenerVO_.uuid,msg.getLoadBalancerListenerUuid()).findValue();
-        msg.setLoadBalancerUuid(loadBalancerUuid);
-        bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, loadBalancerUuid);
+        if (msg.getHealthCheckProtocol() != null && LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+            if (msg.getHealthCheckMethod() == null) {
+                msg.setHealthCheckMethod(LoadBalancerConstants.HealthCheckMothod.HEAD.toString());
+            }
+            String tg = LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(msg.getUuid(),
+                    LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);
+            String[] ts = tg.split(":");
+            if (!msg.getHealthCheckProtocol().equals(ts[0]) && msg.getHealthCheckURI() == null) {
+                throw new ApiMessageInterceptionException(
+                        operr("the http health check protocol must be specified its healthy checking parameter healthCheckURI"));
+            }
+        }
+
+        if (msg.getHealthCheckHttpCode() != null) {
+            if (!verifyHttpCode(msg.getHealthCheckHttpCode())) {
+                throw new ApiMessageInterceptionException(
+                        operr("the http health check protocol's expecting code [%s] is invalidate", msg.getHealthCheckHttpCode()));
+            }
+        }
+
+        LoadBalancerListenerVO listenerVO = Q.New(LoadBalancerListenerVO.class).
+                                           eq(LoadBalancerListenerVO_.uuid,msg.getLoadBalancerListenerUuid()).find();
+
+        if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+            String healthTarget = LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(msg.getLoadBalancerListenerUuid(),
+                    LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);
+
+            String[] ts = healthTarget.split(":");
+            if (ts.length != 2) {
+                throw new OperationFailureException(argerr("invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", target));
+            }
+
+            if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listenerVO.getProtocol()) && !LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(msg.getHealthCheckProtocol()) ||
+                    !LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listenerVO.getProtocol()) && LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(msg.getHealthCheckProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        operr("the listener with protocol [%s] doesn't support this health check:[%s]",
+                                listenerVO.getProtocol(), msg.getHealthCheckProtocol()));
+            }
+            if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(ts[0]) && (msg.getHealthCheckMethod() == null || msg.getHealthCheckURI() == null)) {
+                throw new ApiMessageInterceptionException(
+                        operr("the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI"));
+            }
+        }
+
+        msg.setLoadBalancerUuid(listenerVO.getLoadBalancerUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, listenerVO.getLoadBalancerUuid());
     }
 }

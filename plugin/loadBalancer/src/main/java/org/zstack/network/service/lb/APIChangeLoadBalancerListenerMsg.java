@@ -27,7 +27,7 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     @APIParam(numberRange = {LoadBalancerConstants.MAXIMUM_CONNECTION_MIN, LoadBalancerConstants.MAXIMUM_CONNECTION_MAX}, required = false)
     private Integer maxConnection;
 
-    @APIParam(validValues = {"roundrobin", "leastconn", "source"}, required = false)
+    @APIParam(validValues = {LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN, LoadBalancerConstants.BALANCE_ALGORITHM_ROUND_ROBIN, LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN, LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_SOURCE}, required = false)
     private String balancerAlgorithm;
 
     @APIParam(required = false)
@@ -42,6 +42,14 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     @APIParam(numberRange = {LoadBalancerConstants.HEALTH_CHECK_INTERVAL_MIN, LoadBalancerConstants.HEALTH_CHECK_INTERVAL_MAX}, required = false)
     private Integer healthCheckInterval;
 
+    @APIParam(validValues = {LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP}, required = false)
+    private String healthCheckProtocol;
+    @APIParam(validValues = {"GET", "HEAD"}, required = false)
+    private String healthCheckMethod;
+    @APIParam(validRegexValues = LoadBalancerConstants.HEALTH_CHECK_URI_REGEX, maxLength = 80, required = false)
+    private String healthCheckURI;
+    @APIParam(maxLength = 80, required = false)
+    private String healthCheckHttpCode;
     @APINoSee
     private String loadBalancerUuid;
 
@@ -115,6 +123,38 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
 
     public void setLoadBalancerUuid(String loadBalancerUuid) {
         this.loadBalancerUuid = loadBalancerUuid;
+    }
+
+    public String getHealthCheckProtocol() {
+        return healthCheckProtocol;
+    }
+
+    public void setHealthCheckProtocol(String healthCheckProtocol) {
+        this.healthCheckProtocol = healthCheckProtocol;
+    }
+
+    public String getHealthCheckMethod() {
+        return healthCheckMethod;
+    }
+
+    public void setHealthCheckMethod(String healthCheckMethod) {
+        this.healthCheckMethod = healthCheckMethod;
+    }
+
+    public String getHealthCheckURI() {
+        return healthCheckURI;
+    }
+
+    public void setHealthCheckURI(String healthCheckURI) {
+        this.healthCheckURI = healthCheckURI;
+    }
+
+    public String getHealthCheckHttpCode() {
+        return healthCheckHttpCode;
+    }
+
+    public void setHealthCheckHttpCode(String healthCheckHttpCode) {
+        this.healthCheckHttpCode = healthCheckHttpCode;
     }
 
     @Override
