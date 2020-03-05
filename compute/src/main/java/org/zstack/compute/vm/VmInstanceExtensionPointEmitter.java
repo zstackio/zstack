@@ -40,6 +40,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
     private List<VmAttachVolumeExtensionPoint> attachVolumeExtensions;
     private List<VmDetachVolumeExtensionPoint> detachVolumeExtensions;
     private List<VmCapabilitiesExtensionPoint> capabilitiesExtensionPoints;
+    private List<CleanUpAfterVmFailedToStartExtensionPoint> cleanUpAfterVmFailedToStartExtensionPoints;
 
     public void handleSystemTag(String vmUuid, List<String> tags){
         CollectionUtils.safeForEach(VmInstanceBeforeStartExtensions, new ForEachFunction<VmInstanceBeforeStartExtensionPoint>() {
@@ -420,6 +421,10 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
+    public void cleanUpAfterVmFailedToStart(final VmInstanceInventory vm) {
+        CollectionUtils.safeForEach(cleanUpAfterVmFailedToStartExtensionPoints, arg -> arg.cleanUpAfterVmFailedToStart(vm));
+    }
+
     private void populateExtensions() {
         VmInstanceBeforeStartExtensions = pluginRgty.getExtensionList(VmInstanceBeforeStartExtensionPoint.class);
         startNewCreatedVmExtensions = pluginRgty.getExtensionList(VmInstanceStartNewCreatedVmExtensionPoint.class);
@@ -432,6 +437,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         attachVolumeExtensions = pluginRgty.getExtensionList(VmAttachVolumeExtensionPoint.class);
         detachVolumeExtensions = pluginRgty.getExtensionList(VmDetachVolumeExtensionPoint.class);
         capabilitiesExtensionPoints = pluginRgty.getExtensionList(VmCapabilitiesExtensionPoint.class);
+        cleanUpAfterVmFailedToStartExtensionPoints = pluginRgty.getExtensionList(CleanUpAfterVmFailedToStartExtensionPoint.class);
     }
 
     @Override

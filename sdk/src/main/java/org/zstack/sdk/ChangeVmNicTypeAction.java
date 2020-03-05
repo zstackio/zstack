@@ -28,7 +28,7 @@ public class ChangeVmNicTypeAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vmNicUuid;
 
-    @Param(required = true, validValues = {"VNIC","VF"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"VNIC"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String vmNicType;
 
     @Param(required = false)

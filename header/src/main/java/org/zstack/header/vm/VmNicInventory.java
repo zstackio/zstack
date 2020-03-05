@@ -43,27 +43,31 @@ public class VmNicInventory implements Serializable {
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
-    public static VmNicInventory valueOf(VmNicVO vo) {
-        VmNicInventory inv = new VmNicInventory();
-        inv.setUuid(vo.getUuid());
-        inv.setVmInstanceUuid(vo.getVmInstanceUuid());
-        inv.setUsedIpUuid(vo.getUsedIpUuid());
-        inv.setL3NetworkUuid(vo.getL3NetworkUuid());
-        inv.setInternalName(vo.getInternalName());
-        inv.setIp(vo.getIp());
-        inv.setMac(vo.getMac());
-        inv.setHypervisorType(vo.getHypervisorType());
-        inv.setDeviceId(vo.getDeviceId());
-        inv.setCreateDate(vo.getCreateDate());
-        inv.setLastOpDate(vo.getLastOpDate());
-        inv.setMetaData(vo.getMetaData());
-        inv.setNetmask(vo.getNetmask());
-        inv.setGateway(vo.getGateway());
-        inv.setIpVersion(vo.getIpVersion());
-        inv.setUsedIps(UsedIpInventory.valueOf(vo.getUsedIps()));
-        inv.setType(vo.getType());
+    public VmNicInventory() {
+    }
 
-        return inv;
+    public VmNicInventory(VmNicVO vo) {
+        this.setUuid(vo.getUuid());
+        this.setVmInstanceUuid(vo.getVmInstanceUuid());
+        this.setUsedIpUuid(vo.getUsedIpUuid());
+        this.setL3NetworkUuid(vo.getL3NetworkUuid());
+        this.setInternalName(vo.getInternalName());
+        this.setIp(vo.getIp());
+        this.setMac(vo.getMac());
+        this.setHypervisorType(vo.getHypervisorType());
+        this.setDeviceId(vo.getDeviceId());
+        this.setCreateDate(vo.getCreateDate());
+        this.setLastOpDate(vo.getLastOpDate());
+        this.setMetaData(vo.getMetaData());
+        this.setNetmask(vo.getNetmask());
+        this.setGateway(vo.getGateway());
+        this.setIpVersion(vo.getIpVersion());
+        this.setUsedIps(UsedIpInventory.valueOf(vo.getUsedIps()));
+        this.setType(vo.getType());
+    }
+
+    public static VmNicInventory valueOf(VmNicVO vo) {
+        return new VmNicInventory(vo);
     }
 
     public static List<VmNicInventory> valueOf(Collection<VmNicVO> vos) {

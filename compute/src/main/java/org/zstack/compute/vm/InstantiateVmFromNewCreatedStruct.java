@@ -18,16 +18,6 @@ public class InstantiateVmFromNewCreatedStruct {
     private List<String> dataVolumeSystemTags;
     private String requiredHostUuid;
 
-    private List<String> systemTags;
-
-    public List<String> getSystemTags() {
-        return systemTags;
-    }
-
-    public void setSystemTags(List<String> systemTags) {
-        this.systemTags = systemTags;
-    }
-
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
     }
@@ -90,7 +80,6 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.strategy = VmCreationStrategy.valueOf(msg.getStrategy());
         struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
-        struct.setSystemTags(msg.getSystemTags());
         struct.setRequiredHostUuid(msg.getHostUuid());
         return struct;
     }
