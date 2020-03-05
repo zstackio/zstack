@@ -5,18 +5,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.*;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowException;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.network.IPv6Constants;
@@ -26,6 +26,7 @@ import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created with IntelliJ IDEA.
@@ -101,16 +102,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
 
     @Transactional
     private void removeNicFromDb(List<VmNicInventory> nics) {
-        dbf.entityForTranscationCallback(TransactionalCallback.Operation.REMOVE, VmNicVO.class);
-        List<String> uuids = new ArrayList<String>(nics.size());
-        for (VmNicInventory nic : nics) {
-            uuids.add(nic.getUuid());
-        }
-
-        String sql = "delete from VmNicVO v where v.uuid in (:uuids)";
-        Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("uuids", uuids);
-        q.executeUpdate();
+        SQL.New(VmNicVO.class).in(VmNicVO_.uuid, nics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList())).delete();
     }
 
     @Override
@@ -166,7 +158,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                 return;
             }
 
-            removeNicFromDb(nics);
+            List<ReturnIpMsg> rmsgs = new ArrayList<>();
             for (VmNicInventory nic : nics) {
                 if (nic.getUsedIpUuid() == null) {
                     continue;
@@ -176,7 +168,25 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                 msg.setL3NetworkUuid(nic.getL3NetworkUuid());
                 msg.setUsedIpUuid(nic.getUsedIpUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
-                bus.send(msg);
+                rmsgs.add(msg);
+            }
+
+            if (!rmsgs.isEmpty()) {
+                new While<>(rmsgs).each((msg, compl) -> {
+                    bus.send(msg, new CloudBusCallBack(compl) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            compl.done();
+                        }
+                    });
+                }).run(new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        removeNicFromDb(nics);
+                    }
+                });
+            } else {
+                removeNicFromDb(nics);
             }
         } finally {
             chain.rollback();
