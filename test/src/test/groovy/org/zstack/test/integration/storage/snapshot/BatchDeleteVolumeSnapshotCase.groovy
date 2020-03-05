@@ -8,6 +8,7 @@ import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.BatchDeleteVolumeSnapshotAction
 import org.zstack.sdk.BatchDeleteVolumeSnapshotResult
+import org.zstack.sdk.CreateVolumeSnapshotResult
 import org.zstack.sdk.DestroyVmInstanceResult
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeSnapshotInventory
@@ -27,6 +28,7 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
     EnvSpec env
     VmInstanceInventory cephVm
     VmInstanceInventory localVm
+    VmInstanceInventory localVm2
 
     @Override
     void clean() {
@@ -164,6 +166,14 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
                 useInstanceOffering("instanceOffering")
                 useImage("sftp-image1")
             }
+
+            vm {
+                name = "localVm2"
+                useCluster("local-cluster")
+                useL3Networks("l3")
+                useInstanceOffering("instanceOffering")
+                useImage("sftp-image1")
+            }
         }
     }
 
@@ -172,6 +182,7 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
         env.create {
             cephVm = env.inventoryByName("cephVm") as VmInstanceInventory
             localVm = env.inventoryByName("localVm") as VmInstanceInventory
+            localVm2 = env.inventoryByName("localVm2") as VmInstanceInventory
 
             updateGlobalConfig {
                 category= VolumeSnapshotGlobalConfig.CATEGORY
@@ -183,6 +194,7 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
             testBatchDeleteVolumeSnapshotOnCeph()
             testBatchDeleteVolumeSnapshotOnLocalWhenVmDestroyed()
             testBatchDeleteVolumeSnapshotOnCephWhenVmDestroyed()
+            testBatchDeleteVolumeSnapshotTimeout()
         }
     }
 
@@ -394,5 +406,27 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
         assert result.results.error.toSet() == [null].toSet()
         // delete error will not return error, check org.zstack.storage.snapshot.VolumeSnapshotBase.handle(org.zstack.header.storage.snapshot.VolumeSnapshotPrimaryStorageDeletionMsg)
 
+    }
+
+    void testBatchDeleteVolumeSnapshotTimeout(){
+        def snapTestDeleteTimeout = createVolumeSnapshot {
+            volumeUuid = localVm2.rootVolumeUuid
+            name = "snapTestDeleteTimeOut"
+        } as VolumeSnapshotInventory
+
+        assert snapTestDeleteTimeout.uuid != null
+
+        env.simulator(KVMConstant.KVM_MERGE_SNAPSHOT_PATH) { HttpEntity<String> e ->
+            def rsp = new KVMAgentCommands.MergeSnapshotRsp()
+            rsp.success = false
+            rsp.error = "error wanted"
+            return rsp
+        }
+
+        def result = batchDeleteVolumeSnapshot {
+            uuids = [snapTestDeleteTimeout.uuid]
+        } as BatchDeleteVolumeSnapshotResult
+
+        result.results.error != null
     }
 }
