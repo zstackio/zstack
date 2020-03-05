@@ -645,7 +645,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         for (VirtualRouterVmVO vr : vrVos) {
             if (vr.getDefaultL3NetworkUuid() == null) {
                 SQL.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vr.getUuid())
-                        .set(VirtualRouterVmVO_.defaultL3NetworkUuid, vr.getDefaultRouteL3NetworkUuid()).update();
+                        .set(VirtualRouterVmVO_.defaultL3NetworkUuid, vr.getPublicNetworkUuid()).update();
             }
 
             if (vr.isHaEnabled()) {
@@ -1778,6 +1778,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         for (ApplianceVmVO vo : applianceVmVOS) {
             VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vo.getUuid(), VirtualRouterVmVO.class));
             for (VmNicInventory nic : vrInv.getAdditionalPublicNics()) {
+                /* skip default router nic */
+                if (nic.getL3NetworkUuid().equals(vrInv.getDefaultRouteL3NetworkUuid())) {
+                    continue;
+                }
+
                 if (parentIssuerUuids.contains(nic.getL3NetworkUuid())) {
                     toDeleteNics.add(nic);
                 }
