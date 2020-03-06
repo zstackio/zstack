@@ -380,6 +380,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
                     event.setSuccess(false);
+                    event.setError(reply.getError());
                     bus.publish(event);
                     return;
                 }
