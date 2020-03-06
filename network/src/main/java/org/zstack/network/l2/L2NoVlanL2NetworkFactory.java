@@ -9,6 +9,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.network.l2.*;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.FieldPrinter;
 import org.zstack.utils.logging.CLogger;
@@ -22,6 +23,8 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ResourceConfigFacade rcf;
     
     @Override
     public L2NetworkType getType() {
@@ -70,5 +73,10 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
     @Override
     public String getL2NetworkVniType() {
         return type.toString();
+    }
+
+    @Override
+    public int getMtu(L2NetworkInventory inv) {
+        return rcf.getResourceConfigValue(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN, inv.getUuid(), Integer.class);
     }
 }

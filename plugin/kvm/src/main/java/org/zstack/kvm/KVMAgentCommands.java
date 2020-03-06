@@ -483,6 +483,7 @@ public class KVMAgentCommands {
         private String bridgeName;
         private String l2NetworkUuid;
         private Boolean disableIptables;
+        private Integer mtu;
 
         public String getL2NetworkUuid() {
             return l2NetworkUuid;
@@ -514,6 +515,14 @@ public class KVMAgentCommands {
 
         public void setDisableIptables(Boolean disableIptables) {
             this.disableIptables = disableIptables;
+        }
+
+        public Integer getMtu() {
+            return mtu;
+        }
+
+        public void setMtu(Integer mtu) {
+            this.mtu = mtu;
         }
     }
 
@@ -610,6 +619,7 @@ public class KVMAgentCommands {
         private String metaData;
         private Boolean useVirtio;
         private int bootOrder;
+        private Integer mtu;
 
         public List<String> getIps() {
             return ips;
@@ -681,6 +691,14 @@ public class KVMAgentCommands {
 
         public void setBootOrder(int bootOrder) {
             this.bootOrder = bootOrder;
+        }
+
+        public Integer getMtu() {
+            return mtu;
+        }
+
+        public void setMtu(Integer mtu) {
+            this.mtu = mtu;
         }
     }
 
