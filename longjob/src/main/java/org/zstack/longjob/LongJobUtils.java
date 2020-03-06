@@ -57,6 +57,11 @@ public class LongJobUtils {
         return err;
     }
 
+    public static ErrorCode interruptedErr(String longJobUuid, ErrorCode cause) {
+        return err(LongJobErrors.INTERRUPTED, cause, "some error interrupt long job[uuid:%s]," +
+                " analysis the cause to fix it and resume long job if you want to continue.", longJobUuid);
+    }
+
     public static ErrorCode buildErrIfCanceled() {
         Tuple t = Q.New(LongJobVO.class).select(LongJobVO_.state, LongJobVO_.uuid)
                 .eq(LongJobVO_.apiId, ThreadContext.get(Constants.THREAD_CONTEXT_API))
@@ -131,7 +136,7 @@ public class LongJobUtils {
     }
 
     public static LongJobStateEvent getEventOnError(ErrorCode errorCode) {
-        if (errorCode.isError(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR)) {
+        if (errorCode.isError(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR, LongJobErrors.INTERRUPTED)) {
             return LongJobStateEvent.suspend;
         } else if (errorCode.isError(LongJobErrors.CANCELED)) {
             return LongJobStateEvent.canceled;

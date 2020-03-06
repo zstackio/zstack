@@ -464,6 +464,16 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>externalbackup</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
+                    <artifactId>zboxbackup</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>log4j2</artifactId>
                     <version>${project.version}</version>
                 </dependency>

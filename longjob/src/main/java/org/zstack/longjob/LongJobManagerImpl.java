@@ -444,6 +444,11 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                     }
                 });
 
+                if (vo.getState() == LongJobState.Suspended) {
+                    logger.info(String.format("longjob [uuid:%s, name:%s] suspended for some reason. wait to resume.", vo.getUuid(), vo.getName()));
+                    return;
+                }
+
                 APIEvent evt = new APIEvent(ThreadContext.get(Constants.THREAD_CONTEXT_API));
                 evt.setError(errorCode);
 
