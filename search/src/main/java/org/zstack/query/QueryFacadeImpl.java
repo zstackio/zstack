@@ -44,6 +44,7 @@ import static org.zstack.core.Platform.inerr;
 public class QueryFacadeImpl extends AbstractService implements QueryFacade, GlobalApiMessageInterceptor {
     private static CLogger logger = Utils.getLogger(QueryFacadeImpl.class);
     private Map<String, QueryBuilderFactory> builerFactories = new HashMap<>();
+    private Map<String, QueryBelongFilter> belongfilters = new HashMap<>();
     private String queryBuilderType = MysqlQueryBuilderFactory.type.toString();
 
     @Autowired
@@ -88,6 +89,15 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             }
             builerFactories.put(extp.getQueryBuilderType().toString(), extp);
         }
+
+        for (QueryBelongFilter extp : pluginRgty.getExtensionList(QueryBelongFilter.class)) {
+            QueryBelongFilter old = belongfilters.get(extp.filterName());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate QueryBelongFilter[%s, %s] for type[%s]",
+                        extp.getClass().getName(), old.getClass().getName(), extp.filterName()));
+            }
+            belongfilters.put(extp.filterName(), extp);
+        }
     }
 
     private QueryBuilderFactory getFactory(String type) {
@@ -96,6 +106,14 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             throw new CloudRuntimeException(String.format("unable to find QueryBuilderFactory with type[%s]", type));
         }
         return factory;
+    }
+
+    private QueryBelongFilter getBelongFilter(String type) {
+        QueryBelongFilter filter = belongfilters.get(type.split(":")[0]);
+        if (filter == null) {
+            throw new CloudRuntimeException(String.format("unable to find QueryBelongFilter with type[%s]", type));
+        }
+        return filter;
     }
 
     private void checkBoxTypeInInventory() {
@@ -301,6 +319,14 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
     }
 
+    private void filter(List inventories, String filterType) {
+        if (filterType.split(":").length < 2) {
+            throw new OperationFailureException(argerr("filterName must be formatted as [filterType:condition(s)]"));
+        }
+        QueryBelongFilter filter = getBelongFilter(filterType);
+        filter.filter(inventories, filterType.split(":")[1]);
+    }
+
     private void handle(APIQueryMessage msg) {
         AutoQuery at = autoQueryMap.get(msg.getClass());
         if (at == null) {
@@ -324,6 +350,9 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                 reply.setTotal(result.total);
             }
             if (result.inventories != null) {
+                if (msg.getFilterName() != null) {
+                    filter(result.inventories, msg.getFilterName());
+                }
                 replySetter.invoke(reply, result.inventories);
             }
             bus.reply(msg, reply);

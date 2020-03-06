@@ -44,4 +44,7 @@ public abstract class QueryAction extends AbstractAction {
 
     @Param(required = false)
     public String requestIp;
+
+    @Param(required = false)
+    public String filterName;
 }

@@ -336,6 +336,9 @@ public class ZSClient {
             if (qaction.replyWithCount != null) {
                 urlBuilder.addQueryParameter("replyWithCount", String.format("%s", qaction.replyWithCount));
             }
+            if (qaction.filterName != null) {
+                urlBuilder.addQueryParameter("filterName", String.format("%s", qaction.filterName));
+            }
             if (qaction.sortBy != null) {
                 if (qaction.sortDirection == null) {
                     urlBuilder.addQueryParameter("sort", String.format("%s", qaction.sortBy));
