@@ -150,4 +150,8 @@ public class VmSystemTags {
     public static String VM_RESOURCE_BINGDING_TOKEN = "resourceUUids";
     public static PatternedSystemTag VM_RESOURCE_BINGDING =
             new PatternedSystemTag(String.format("resourceBindings::{%s}", VM_RESOURCE_BINGDING_TOKEN), VmInstanceVO.class);
+
+    public static String RX_SIZE_TOKEN = "rxBufferSize";
+    public static String TX_SIZE_TOKEN = "txBufferSize";
+    public static PatternedSystemTag VM_VRING_BUFFER_SIZE = new PatternedSystemTag(String.format("vRingBufferSize::{%s}::{%s}", RX_SIZE_TOKEN, TX_SIZE_TOKEN), VmInstanceVO.class);
 }
