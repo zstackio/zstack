@@ -5,13 +5,16 @@ import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 import org.zstack.network.securitygroup.SecurityGroupConstant
+import org.zstack.network.service.NetworkServiceGlobalConfig
 import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.*
+import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.*
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 import static java.util.Arrays.asList
 
@@ -256,7 +259,10 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
 
         List<String> record = new ArrayList<>()
 
+        NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.updateValue(9600)
+        VxlanKvmAgentCommands.CreateVxlanBridgeCmd vxlanCmd = null
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            vxlanCmd = JSONObjectUtil.toObject(entity.getBody(), VxlanKvmAgentCommands.CreateVxlanBridgeCmd.class)
             record.add(entity.body)
             return new VxlanKvmAgentCommands.CreateVxlanBridgeResponse()
         }
@@ -279,6 +285,7 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
         }
 
         assert record.get(0).contains("vtep")
+        assert vxlanCmd.mtu == 9600
 
         createVmInstance {
             delegate.name = "TestVm3"

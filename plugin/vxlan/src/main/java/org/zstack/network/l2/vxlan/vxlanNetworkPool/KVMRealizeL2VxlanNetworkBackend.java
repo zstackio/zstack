@@ -26,6 +26,7 @@ import org.zstack.header.vm.InstantiateResourceOnAttachingNicExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.*;
+import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.vxlan.vtep.CreateVtepMsg;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
 import org.zstack.network.l2.vxlan.vtep.VtepVO_;
@@ -59,6 +60,8 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     private CloudBus bus;
     @Autowired
     private ApiTimeoutManager timeoutMgr;
+    @Autowired
+    private L2NetworkManager l2Mgr;
 
     private static String VTEP_IP = "vtepIp";
     private static String NEED_POPULATE = "needPopulate";
@@ -92,12 +95,14 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 vtepIp, l2Network.getUuid(), l2Network.getType(), l2vxlan.getVni(), hostUuid);
         logger.debug(info);
 
+        L2NetworkFactory factory = l2Mgr.getL2NetworkFactory(L2NetworkType.valueOf(l2Network.getType()));
         final VxlanKvmAgentCommands.CreateVxlanBridgeCmd cmd = new VxlanKvmAgentCommands.CreateVxlanBridgeCmd();
         cmd.setVtepIp(vtepIp);
         cmd.setBridgeName(makeBridgeName(l2vxlan.getVni()));
         cmd.setVni(l2vxlan.getVni());
         cmd.setL2NetworkUuid(l2Network.getUuid());
         cmd.setPeers(peers);
+        cmd.setMtu(factory.getMtu(l2Network));
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
@@ -340,6 +345,8 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         to.setDeviceId(nic.getDeviceId());
         to.setNicInternalName(nic.getInternalName());
         to.setMetaData(String.valueOf(vo.getVni()));
+        L2NetworkFactory factory = l2Mgr.getL2NetworkFactory(L2NetworkType.valueOf(l2Network.getType()));
+        to.setMtu(factory.getMtu(l2Network));
         return to;
     }
 

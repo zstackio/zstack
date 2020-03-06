@@ -463,6 +463,7 @@ public class KVMAgentCommands {
         private String physicalInterfaceName;
         private String bridgeName;
         private String l2NetworkUuid;
+        private Integer mtu;
 
         public String getL2NetworkUuid() {
             return l2NetworkUuid;
@@ -486,6 +487,14 @@ public class KVMAgentCommands {
 
         public void setBridgeName(String bridgeName) {
             this.bridgeName = bridgeName;
+        }
+
+        public Integer getMtu() {
+            return mtu;
+        }
+
+        public void setMtu(Integer mtu) {
+            this.mtu = mtu;
         }
     }
 
@@ -581,6 +590,7 @@ public class KVMAgentCommands {
         private int deviceId;
         private String metaData;
         private Boolean useVirtio;
+        private Integer mtu;
 
         public List<String> getIps() {
             return ips;
@@ -646,6 +656,13 @@ public class KVMAgentCommands {
             this.nicInternalName = nicInternalName;
         }
 
+        public Integer getMtu() {
+            return mtu;
+        }
+
+        public void setMtu(Integer mtu) {
+            this.mtu = mtu;
+        }
     }
 
     public static class VolumeSnapshotJobTO {

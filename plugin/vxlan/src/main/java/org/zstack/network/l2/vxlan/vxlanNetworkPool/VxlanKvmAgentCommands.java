@@ -47,6 +47,7 @@ public class VxlanKvmAgentCommands {
         private Integer vni;
         private String l2NetworkUuid;
         private List<String> peers;
+        private Integer mtu;
 
         public String getL2NetworkUuid() {
             return l2NetworkUuid;
@@ -86,6 +87,14 @@ public class VxlanKvmAgentCommands {
 
         public void setPeers(List<String> peers) {
             this.peers = peers;
+        }
+
+        public Integer getMtu() {
+            return mtu;
+        }
+
+        public void setMtu(Integer mtu) {
+            this.mtu = mtu;
         }
     }
 
