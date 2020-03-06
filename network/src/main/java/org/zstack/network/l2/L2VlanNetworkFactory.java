@@ -11,6 +11,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.*;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.query.QueryFacade;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -27,7 +28,8 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
     private CloudBus bus;
     @Autowired
     private QueryFacade qf;
-
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     @Override
     public L2NetworkType getType() {
@@ -104,5 +106,10 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
     @Override
     public String getL2NetworkVniType() {
         return type.toString();
+    }
+
+    @Override
+    public int getMtu(L2NetworkInventory inv) {
+        return rcf.getResourceConfigValue(NetworkServiceGlobalConfig.DHCP_MTU_VLAN, inv.getUuid(), Integer.class);
     }
 }

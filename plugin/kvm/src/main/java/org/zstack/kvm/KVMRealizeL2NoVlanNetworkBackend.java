@@ -10,15 +10,13 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
-import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.KVMAgentCommands.CheckBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.CreateBridgeCmd;
 import org.zstack.kvm.KVMAgentCommands.CreateBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
+import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -36,16 +34,21 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     private CloudBus bus;
     @Autowired
     private ApiTimeoutManager timeoutMgr;
+    @Autowired
+    private L2NetworkManager l2Mgr;
 
     private static String makeBridgeName(String physicalInterfaceName) {
         return "br_" + physicalInterfaceName;
     }
 
     public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
+        L2NetworkFactory factory = l2Mgr.getL2NetworkFactory(L2NetworkType.valueOf(l2Network.getType()));
+
         final CreateBridgeCmd cmd = new CreateBridgeCmd();
         cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
         cmd.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface()));
         cmd.setL2NetworkUuid(l2Network.getUuid());
+        cmd.setMtu(factory.getMtu(l2Network));
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -156,6 +159,10 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
         to.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface()));
         to.setDeviceId(nic.getDeviceId());
         to.setNicInternalName(nic.getInternalName());
+
+        L2NetworkFactory factory = l2Mgr.getL2NetworkFactory(L2NetworkType.valueOf(l2Network.getType()));
+        to.setMtu(factory.getMtu(l2Network));
+
         return to;
     }
 }

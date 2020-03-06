@@ -15,6 +15,7 @@ import org.zstack.kvm.KVMAgentCommands.CheckVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeCmd;
 import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
+import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -30,6 +31,8 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private L2NetworkManager l2Mgr;
 
     private static String makeBridgeName(String physicalInterfaceName, int vlan) {
         physicalInterfaceName = physicalInterfaceName.substring(0, Math.min(physicalInterfaceName.length(), 7));
@@ -38,11 +41,13 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
 
     public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
         final L2VlanNetworkInventory l2vlan = (L2VlanNetworkInventory) l2Network;
+        L2NetworkFactory factory = l2Mgr.getL2NetworkFactory(L2NetworkType.valueOf(l2Network.getType()));
         final CreateVlanBridgeCmd cmd = new CreateVlanBridgeCmd();
         cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
         cmd.setBridgeName(makeBridgeName(l2vlan.getPhysicalInterface(), l2vlan.getVlan()));
         cmd.setVlan(l2vlan.getVlan());
         cmd.setL2NetworkUuid(l2Network.getUuid());
+        cmd.setMtu(factory.getMtu(l2Network));
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
@@ -156,6 +161,10 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
 		to.setDeviceId(nic.getDeviceId());
 		to.setNicInternalName(nic.getInternalName());
 		to.setMetaData(String.valueOf(vo.getVlan()));
+
+        L2NetworkFactory factory = l2Mgr.getL2NetworkFactory(L2NetworkType.valueOf(l2Network.getType()));
+        to.setMtu(factory.getMtu(l2Network));
+
 		return to;
 	}
 
