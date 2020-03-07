@@ -1762,6 +1762,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             l3Uuids.addAll(vrInv.getGuestL3Networks());
             l3Uuids.add(vrInv.getPublicNetworkUuid());
             l3Uuids.add(vrInv.getManagementNetworkUuid());
+            l3Uuids.add(vrInv.getDefaultRouteL3NetworkUuid());
             for(String uuid: l3Uuids) {
                 if (deletedUuids.contains(uuid)) {
                     vos.add(vo);
