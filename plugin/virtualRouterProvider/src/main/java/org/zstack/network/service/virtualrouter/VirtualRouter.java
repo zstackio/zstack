@@ -42,7 +42,6 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterCreatePublicVipFlow;
-import org.zstack.network.service.virtualrouter.vip.VirtualRouterDeletePublicVipFlow;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
@@ -1147,6 +1146,7 @@ public class VirtualRouter extends ApplianceVmBase {
             }
 
             VirtualRouterBeforeDetachNicExtensionPoint ext = it.next();
+            logger.debug(String.format("virtual router release service before detach l3 network for %s", ext.getClass().getSimpleName()));
             ext.beforeDetachNic(nicInv, new Completion(completion) {
                 @Override
                 public void success() {
@@ -1232,7 +1232,6 @@ public class VirtualRouter extends ApplianceVmBase {
         chain.insert(new virtualRouterReleaseServicesbeforeDetachNicFlow());
         chain.then(new virtualRouterReleaseVipbeforeDetachNic());
         chain.then(new virtualRouterbeforeDetachNic());
-        chain.then(new VirtualRouterDeletePublicVipFlow());
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
