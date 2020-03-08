@@ -24,9 +24,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l2.L2NetworkVO_;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
 import org.zstack.header.network.service.VirtualRouterAfterDetachNicExtensionPoint;
@@ -34,6 +32,7 @@ import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPo
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.*;
+import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
@@ -65,6 +64,8 @@ public class VirtualRouter extends ApplianceVmBase {
     protected ApiTimeoutManager apiTimeoutManager;
     @Autowired
     protected VirtualRouterHaBackend haBackend;
+    @Autowired
+    protected L2NetworkManager l2Mgr;
 
     protected VirtualRouterVmInventory vr;
 
@@ -428,6 +429,7 @@ public class VirtualRouter extends ApplianceVmBase {
             info.setNetmask(nicInventory.getNetmask());
 
             L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
+            L2NetworkFactory factory = l2Mgr.getL2NetworkFactory(L2NetworkType.valueOf(l2NetworkVO.getType()));
             info.setCategory(l3NetworkVO.getCategory().toString());
             info.setL2type(l2NetworkVO.getType());
             info.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
@@ -436,6 +438,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     info.setVni(ext.getL2NetworkVni(l2NetworkVO.getUuid()));
                 }
             }
+            info.setMtu(factory.getMtu(L2NetworkInventory.valueOf(l2NetworkVO)));
             cmd.setNics(Arrays.asList(info));
 
             VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();

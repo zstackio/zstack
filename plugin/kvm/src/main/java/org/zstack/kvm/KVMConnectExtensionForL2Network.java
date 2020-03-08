@@ -2,6 +2,7 @@ package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.VmInstanceBase;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -15,6 +16,9 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -35,6 +39,7 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
     private ErrorFacade errf;
     @Autowired
     private CloudBus bus;
+    protected static final CLogger logger = Utils.getLogger(KVMConnectExtensionForL2Network.class);
 
     @Transactional
     private List<L2NetworkInventory> getL2Networks(String clusterUuid) {
@@ -44,15 +49,26 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
         q.setParameter("supportTypes", getSupportTypes());
         List<L2NetworkVO> vos = q.getResultList();
         List<L2NetworkInventory> ret = new ArrayList<L2NetworkInventory>(vos.size());
+        List<L2NetworkInventory> noVlanL2Networks = new ArrayList<>();
         for (L2NetworkVO vo : vos) {
-            if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(vo.getType())) {
+            if (L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(vo.getType())) {
+                noVlanL2Networks.add(L2NetworkInventory.valueOf(vo));
+            } else if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(vo.getType())) {
                 L2VlanNetworkVO vlanvo = dbf.getEntityManager().find(L2VlanNetworkVO.class, vo.getUuid());
                 ret.add(L2VlanNetworkInventory.valueOf(vlanvo));
             } else {
                 ret.add(L2NetworkInventory.valueOf(vo));
             }
         }
-        return ret;
+
+        /* when prepare l2 network, first prepare no vlan network, because mtu of vlan network must less than
+        * no vlan network */
+        if (!noVlanL2Networks.isEmpty()) {
+            noVlanL2Networks.addAll(ret);
+            return noVlanL2Networks;
+        } else {
+            return ret;
+        }
     }
 
     private List<String> getSupportTypes() {
@@ -70,6 +86,8 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-l2-%s-for-kvm-%s-connect", l2.getUuid(), hostUuid));
         chain.then(new NoRollbackFlow() {
+            String __name__ = "check-network-physical-interface";
+
             @Override
             public void run(final FlowTrigger trigger, Map data) {
                 CheckNetworkPhysicalInterfaceMsg cmsg = new CheckNetworkPhysicalInterfaceMsg();
@@ -91,6 +109,8 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
 
         if (l2.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
             chain.then(new NoRollbackFlow() {
+                String __name__ = "realize_no_vlan";
+
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     noVlanNetworkBackend.realize(l2, hostUuid, true, new Completion(trigger) {
@@ -108,6 +128,7 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
             });
         } else if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(l2.getType())) {
             chain.then(new NoRollbackFlow() {
+                String __name__ = "realize_vlan";
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     vlanNetworkBackend.realize(l2, hostUuid, true, new Completion(trigger) {

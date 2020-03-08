@@ -30,12 +30,11 @@ import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l2.L2NetworkVO_;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.*;
+import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -70,6 +69,8 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     private GlobalConfigFacade gcf;
     @Autowired
     private AnsibleFacade asf;
+    @Autowired
+    private L2NetworkManager l2Mgr;
 
     private List<String> createApplianceVmWorkFlow;
     private FlowChainBuilder createApplianceVmWorkFlowBuilder;
@@ -288,6 +289,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
         mto.setCategory(l3NetworkVO.getCategory().toString());
         mto.setL2type(l2NetworkVO.getType());
+        L2NetworkFactory factory = l2Mgr.getL2NetworkFactory(L2NetworkType.valueOf(l2NetworkVO.getType()));
         mto.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
         if (l2NetworkGetVniExtensionPointMap == null || l2NetworkGetVniExtensionPointMap.isEmpty() ||
                 l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()) == null) {
@@ -297,6 +299,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
                     .get(l2NetworkVO.getType())
                     .getL2NetworkVni(l2NetworkVO.getUuid()));
         }
+        mto.setMtu(factory.getMtu(L2NetworkInventory.valueOf(l2NetworkVO)));
 
         ret.put(ApplianceVmConstant.BootstrapParams.managementNic.toString(), mto);
 
@@ -321,11 +324,13 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
 
             l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, defaultRouteNic.getL3NetworkUuid()).find();
             l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
+            factory = l2Mgr.getL2NetworkFactory(L2NetworkType.valueOf(l2NetworkVO.getType()));
 
             t.setCategory(l3NetworkVO.getCategory().toString());
             t.setL2type(l2NetworkVO.getType());
             t.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid()));
             t.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
+            t.setMtu(factory.getMtu(L2NetworkInventory.valueOf(l2NetworkVO)));
             deviceId ++;
             extraTos.add(t);
             additionalNics = reduceNic(additionalNics, defaultRouteNic);
@@ -336,11 +341,13 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             nto.setDeviceName(String.format("eth%s", deviceId));
             l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, nic.getL3NetworkUuid()).find();
             l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
+            factory = l2Mgr.getL2NetworkFactory(L2NetworkType.valueOf(l2NetworkVO.getType()));
 
             nto.setCategory(l3NetworkVO.getCategory().toString());
             nto.setL2type(l2NetworkVO.getType());
             nto.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid()));
             nto.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
+            nto.setMtu(factory.getMtu(L2NetworkInventory.valueOf(l2NetworkVO)));
             extraTos.add(nto);
             deviceId ++;
         }
