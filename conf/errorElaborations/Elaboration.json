@@ -976,6 +976,14 @@
     "message_en": "The state and the status of the conversion host should be Enabled and Connected while v2v is working."
   },
   {
+    "category": "V2V",
+    "code": "1002",
+    "method": "regex",
+    "regex": "Detected .*MAC address conflict.*",
+    "message_cn": "迁移环境内存在重复的MAC地址，请先解决该问题再继续",
+    "message_en": "There are duplicate MAC addresses in the migration environment, please resolve the problem and continue"
+  },
+  {
     "category": "VCENTER",
     "code": "1000",
     "method": "regex",
