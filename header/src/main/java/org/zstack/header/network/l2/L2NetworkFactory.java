@@ -8,4 +8,6 @@ public interface L2NetworkFactory {
     void createL2Network(L2NetworkVO vo, APICreateL2NetworkMsg msg, ReturnValueCompletion completion);
 
     L2Network getL2Network(L2NetworkVO vo);
+
+    int getMtu(L2NetworkInventory inv);
 }
