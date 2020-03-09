@@ -1,3 +1,12 @@
 ALTER TABLE JsonLabelVO MODIFY COLUMN labelValue MEDIUMTEXT;
 
 CREATE INDEX idxTaskProgressVOapiId ON TaskProgressVO(apiId);
+
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE DahoVllVbrRefVO;
+DROP TABLE DahoCloudConnectionVO;
+DROP TABLE DahoVllsVO;
+DROP TABLE DahoConnectionVO;
+DROP TABLE DahoDCAccessVO;
+
+SET FOREIGN_KEY_CHECKS = 1;

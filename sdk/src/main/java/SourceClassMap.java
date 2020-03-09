@@ -138,10 +138,6 @@ public class SourceClassMap {
 			put("org.zstack.header.core.trash.CleanTrashResult", "org.zstack.sdk.CleanTrashResult");
 			put("org.zstack.header.core.trash.InstallPathRecycleInventory", "org.zstack.sdk.InstallPathRecycleInventory");
 			put("org.zstack.header.core.webhooks.WebhookInventory", "org.zstack.sdk.WebhookInventory");
-			put("org.zstack.header.daho.process.DahoCloudConnectionInventory", "org.zstack.sdk.DahoCloudConnectionInventory");
-			put("org.zstack.header.daho.process.DahoConnectionInventory", "org.zstack.sdk.DahoConnectionInventory");
-			put("org.zstack.header.daho.process.DahoVllVbrRefInventory", "org.zstack.sdk.DahoVllVbrRefInventory");
-			put("org.zstack.header.daho.process.DahoVllsInventory", "org.zstack.sdk.DahoVllsInventory");
 			put("org.zstack.header.datacenter.DataCenterInventory", "org.zstack.sdk.DataCenterInventory");
 			put("org.zstack.header.datacenter.DataCenterProperty", "org.zstack.sdk.DataCenterProperty");
 			put("org.zstack.header.errorcode.ElaborationInventory", "org.zstack.sdk.ElaborationInventory");
@@ -590,10 +586,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure");
 			put("org.zstack.sdk.DRSAdviceInventory", "org.zstack.drs.entity.DRSAdviceInventory");
 			put("org.zstack.sdk.DRSVmMigrationActivityInventory", "org.zstack.drs.entity.DRSVmMigrationActivityInventory");
-			put("org.zstack.sdk.DahoCloudConnectionInventory", "org.zstack.header.daho.process.DahoCloudConnectionInventory");
-			put("org.zstack.sdk.DahoConnectionInventory", "org.zstack.header.daho.process.DahoConnectionInventory");
-			put("org.zstack.sdk.DahoVllVbrRefInventory", "org.zstack.header.daho.process.DahoVllVbrRefInventory");
-			put("org.zstack.sdk.DahoVllsInventory", "org.zstack.header.daho.process.DahoVllsInventory");
 			put("org.zstack.sdk.DataCenterInventory", "org.zstack.header.datacenter.DataCenterInventory");
 			put("org.zstack.sdk.DataCenterProperty", "org.zstack.header.datacenter.DataCenterProperty");
 			put("org.zstack.sdk.DataVolumeBillingInventory", "org.zstack.billing.generator.volume.data.DataVolumeBillingInventory");
