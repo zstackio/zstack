@@ -404,7 +404,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 try {
                     Long weight = Long.valueOf(s);
                     if (weight < LoadBalancerConstants.BALANCER_WEIGHT_MIN || weight > LoadBalancerConstants.BALANCER_WEIGHT_MAX) {
-                        throw new OperationFailureException(argerr("invalid balancer weight[%s], %s is not in the range [%l, %l]",
+                        throw new OperationFailureException(argerr("invalid balancer weight[%s], %s is not in the range [%d, %d]",
                                 systemTag, s, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
                     }
                 } catch (NumberFormatException e) {
@@ -480,7 +480,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     if (nicUuids.isEmpty()) {
                         return;
                     }
-                    new LoadBalancerWeightOperator().deleteWeight(nicUuids);
+                    new LoadBalancerWeightOperator().deleteNicsWeight(nicUuids, newTag.getResourceUuid());
                 }
             }
         });

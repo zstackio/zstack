@@ -267,7 +267,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             assert token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN) == LoadBalancerConstants.BALANCER_WEIGHT_default.toString()
         }
 
-        String weight = "balancerWeight::" + vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid + "::120"
+        String weight = "balancerWeight::" + vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid + "::20"
         ChangeLoadBalancerListenerAction action = new ChangeLoadBalancerListenerAction()
         action.uuid  = lblRes.value.inventory.uuid
         action.systemTags = [weight]
@@ -280,8 +280,14 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             if (!vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid.equals(token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN))) {
                 continue
             }
-            assert token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN) == "120"
+            assert token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN) == "20"
         }
+
+        /*invalid weight*/
+        weight = weight + "123"
+        action.systemTags = [weight]
+        res = action.call()
+        assert res.error != null
 
         removeVmNicFromLoadBalancer {
             vmNicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]

@@ -1003,7 +1003,7 @@ public class LoadBalancerBase {
                         .condAnd(LoadBalancerListenerVmNicRefVO_.vmNicUuid, Op.IN, vmNicUuids)
                         .condAnd(LoadBalancerListenerVmNicRefVO_.listenerUuid, Op.IN, listenerUuids)
                         .delete();
-                new LoadBalancerWeightOperator().deleteWeight(vmNicUuids);
+                listenerUuids.stream().forEach(listenerUuid -> new LoadBalancerWeightOperator().deleteNicsWeight(vmNicUuids, listenerUuid));
                 completion.success();
             }
 
@@ -1020,7 +1020,6 @@ public class LoadBalancerBase {
         removeNics(Arrays.asList(msg.getListenerUuid()), msg.getVmNicUuids(), new Completion(msg, completion) {
             @Override
             public void success() {
-                new LoadBalancerWeightOperator().deleteWeight(msg.getVmNicUuids());
                 evt.setInventory(reloadAndGetInventory());
                 bus.publish(evt);
                 completion.done();
@@ -1561,15 +1560,16 @@ public class LoadBalancerBase {
                 RefreshLoadBalancerMsg msg = new RefreshLoadBalancerMsg();
                 msg.setUuid(lblVo.getLoadBalancerUuid());
                 bus.makeLocalServiceId(msg, LoadBalancerConstants.SERVICE_ID);
-                bus.send(msg, new CloudBusCallBack(new NopeCompletion()) {
+                bus.send(msg, new CloudBusCallBack(chain) {
                     @Override
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
                             logger.warn(String.format( "update listener [uuid:%s] failed", lblVo.getUuid()));
+                            evt.setError(reply.getError());
                         }
+
                     }
                 });
-
                 evt.setInventory( LoadBalancerListenerInventory.valueOf(lblVo));
                 bus.publish(evt);
                 chain.next();
