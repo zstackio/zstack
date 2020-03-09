@@ -16,6 +16,7 @@ public class ApplianceVmNicTO {
     private String l2type;
     private Integer vni;
     private String physicalInterface;
+    private Integer mtu;
 
     public ApplianceVmNicTO(VmNicInventory inv) {
         ip = inv.getIp();
@@ -113,5 +114,13 @@ public class ApplianceVmNicTO {
 
     public void setPhysicalInterface(String physicalInterface) {
         this.physicalInterface = physicalInterface;
+    }
+
+    public Integer getMtu() {
+        return mtu;
+    }
+
+    public void setMtu(Integer mtu) {
+        this.mtu = mtu;
     }
 }

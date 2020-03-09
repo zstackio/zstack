@@ -64,6 +64,7 @@ public class VirtualRouterCommands {
 		private String l2type;
 		private Integer vni;
 		private String firewallDefaultAction;
+		private Integer mtu;
 		
 		public String getIp() {
 			return ip;
@@ -134,6 +135,14 @@ public class VirtualRouterCommands {
 
 		public void setFirewallDefaultAction(String firewallDefaultAction) {
 			this.firewallDefaultAction = firewallDefaultAction;
+		}
+
+		public Integer getMtu() {
+			return mtu;
+		}
+
+		public void setMtu(Integer mtu) {
+			this.mtu = mtu;
 		}
 	}
 	
