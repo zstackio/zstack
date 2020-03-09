@@ -314,6 +314,7 @@ class BatchQuery {
         msg.setConditions([])
         boolean count = false
         boolean replyWithCount = false
+        String filterName
 
         AutoQuery at = msg.getClass().getAnnotation(AutoQuery.class)
         if (at == null) {
@@ -384,6 +385,9 @@ class BatchQuery {
         }
         if (replyWithCount) {
             msg.setReplyWithCount(true)
+        }
+        if (filterName != null) {
+            msg.setFilterName(filterName)
         }
 
         ZQLQueryReturn ret = queryf.queryUseZQL(msg, inventoryClass)

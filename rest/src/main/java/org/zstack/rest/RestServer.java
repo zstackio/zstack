@@ -998,6 +998,8 @@ public class RestServer implements Component, CloudBusEventListener {
                 msg.setGroupBy(varvalue);
             } else if ("replyWithCount".equals(varname)) {
                 msg.setReplyWithCount(Boolean.valueOf(varvalue));
+            } else if ("filterName".equals(varname)) {
+                msg.setFilterName(String.valueOf(varvalue));
             } else if ("sort".equals(varname)) {
                 if (varvalue.startsWith("+")) {
                     msg.setSortDirection("asc");

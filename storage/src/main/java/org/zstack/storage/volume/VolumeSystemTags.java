@@ -1,6 +1,5 @@
 package org.zstack.storage.volume;
 
-import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
@@ -35,5 +34,4 @@ public class VolumeSystemTags {
     public static PatternedSystemTag NOT_SUPPORT_ACTUAL_SIZE_FLAG = new PatternedSystemTag(String.format("notSupportActualSize::{%s}", NOT_SUPPORT_ACTUAL_SIZE_FLAG_TOKEN), VolumeVO.class);
 
     public static PatternedSystemTag PACKER_BUILD = new PatternedSystemTag("packer", VolumeVO.class);
-
 }
