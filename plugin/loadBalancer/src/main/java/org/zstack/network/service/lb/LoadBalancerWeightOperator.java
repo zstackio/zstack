@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.tag.SystemTagCreator;
@@ -16,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -68,6 +70,10 @@ public class LoadBalancerWeightOperator {
     public void setWeight(String listenerUuid, String nicUuid, Long weight) {
         DebugUtils.Assert(listenerUuid != null && nicUuid != null, String.format("invalid parameter listener uuid:%s nicUuid:%s", listenerUuid, nicUuid));
 
+        if ( weight < LoadBalancerConstants.BALANCER_WEIGHT_MIN || weight > LoadBalancerConstants.BALANCER_WEIGHT_MAX) {
+            throw new OperationFailureException(argerr("invalid balancer weight for nic:%s, %d is not in the range [%d, %d]", nicUuid, weight, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
+
+        }
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.select(SystemTagVO_.uuid);
         q.add(SystemTagVO_.resourceType, SimpleQuery.Op.EQ, LoadBalancerListenerVO.class.getSimpleName());
@@ -122,9 +128,9 @@ public class LoadBalancerWeightOperator {
         }
     }
 
-    public void deleteWeight(List<String> vnicUuids) {
+    public void deleteNicsWeight(List<String> vnicUuids, String listenerUuid) {
         for (String vnicUuid: vnicUuids) {
-            LoadBalancerSystemTags.BALANCER_WEIGHT.delete(null, LoadBalancerSystemTags.BALANCER_WEIGHT.instantiateTag(map(
+            LoadBalancerSystemTags.BALANCER_WEIGHT.delete(listenerUuid, LoadBalancerSystemTags.BALANCER_WEIGHT.instantiateTag(map(
                     e(LoadBalancerSystemTags.BALANCER_NIC_TOKEN, vnicUuid),
                     e(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN, "%")
             )));
