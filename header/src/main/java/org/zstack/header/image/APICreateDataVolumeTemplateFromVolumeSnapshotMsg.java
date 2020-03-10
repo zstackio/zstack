@@ -7,6 +7,7 @@ import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.tag.TagResourceType;
 
 import java.util.Collections;
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.concurrent.TimeUnit;
         method = HttpMethod.POST,
         parameterName = "params"
 )
+@TagResourceType(ImageVO.class)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 72)
 public class APICreateDataVolumeTemplateFromVolumeSnapshotMsg extends APICreateMessage implements APIAuditor {
     @APIParam(resourceType = VolumeSnapshotVO.class, checkAccount = true, operationTarget = true)
