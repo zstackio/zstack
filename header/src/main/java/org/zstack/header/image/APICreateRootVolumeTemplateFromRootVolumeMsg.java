@@ -6,6 +6,7 @@ import org.zstack.header.message.*;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.tag.TagResourceType;
 import org.zstack.header.volume.VolumeVO;
 
 import java.util.Collections;
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeUnit;
         responseClass = APICreateRootVolumeTemplateFromRootVolumeEvent.class,
         parameterName = "params"
 )
+@TagResourceType(ImageVO.class)
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 72)
 public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessage implements APIAuditor {
     @APIParam(maxLength = 255)
