@@ -1204,7 +1204,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             Tuple t = q.findTuple();
             VmInstanceState state = t.get(0, VmInstanceState.class);
             hostUuid = t.get(1, String.class);
-            offline = (state == VmInstanceState.Stopped);
+            offline = (state == VmInstanceState.Stopped || state == VmInstanceState.Destroyed);
         }
 
         if (offline) {

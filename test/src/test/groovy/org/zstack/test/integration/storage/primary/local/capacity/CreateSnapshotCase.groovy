@@ -134,6 +134,7 @@ class CreateSnapshotCase extends SubCase {
     void test() {
         env.create {
             checkPSAvailableCapacityAfterCreateSnapshot()
+            testDeleteRootSnapshotWhenVmDestroyed()
         }
     }
 
@@ -191,4 +192,24 @@ class CreateSnapshotCase extends SubCase {
         assert refVO.availableCapacity  == currentRefVO.availableCapacity
     }
 
+    void testDeleteRootSnapshotWhenVmDestroyed() {
+        VmInstanceInventory vm = env.inventoryByName("vm")
+
+        def snapshot = createVolumeSnapshot {
+            name = "root-volume-snapshot2"
+            volumeUuid = vm.rootVolumeUuid
+        } as VolumeSnapshotInventory
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+
+        deleteVolumeSnapshot {
+            uuid = snapshot.uuid
+        }
+    }
 }

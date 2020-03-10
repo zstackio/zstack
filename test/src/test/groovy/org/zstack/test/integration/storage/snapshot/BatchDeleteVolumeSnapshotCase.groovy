@@ -20,6 +20,7 @@ import org.zstack.testlib.SubCase
 import org.zstack.testlib.VmSpec
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
 
 /**
  * Create by weiwang at 2018-12-22
@@ -314,7 +315,7 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
         assert vo.state == VmInstanceState.Destroyed
 
         List<KVMAgentCommands.MergeSnapshotCmd> cmds = Collections.synchronizedList(new ArrayList<>())
-        env.afterSimulator(KVMConstant.KVM_MERGE_SNAPSHOT_PATH) { rsp, HttpEntity<String> e ->
+        env.afterSimulator(LocalStorageKvmBackend.OFFLINE_MERGE_PATH) { rsp, HttpEntity<String> e ->
             def mergeCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.MergeSnapshotCmd.class)
             cmds.add(mergeCmd)
             return rsp
