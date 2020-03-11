@@ -128,21 +128,6 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
                 lb {
                     name = "lb"
                     useVip("pubL3")
-
-                    listener {
-                        protocol = "tcp"
-                        loadBalancerPort = 22
-                        instancePort = 22
-                        useVmNic("vm", "l3")
-                    }
-
-                    listener {
-                        name = "tcp33"
-                        protocol = "tcp"
-                        loadBalancerPort = 33
-                        instancePort = 33
-                        useVmNic("vm", "l3")
-                    }
                 }
             }
 
@@ -159,8 +144,8 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
     void test() {
         dbf = bean(DatabaseFacade.class)
         env.create {
-            testLoadBalancerWrrCase()
             testLoadBalancerHealthCheckCase()
+            testLoadBalancerWrrCase()
         }
     }
 
