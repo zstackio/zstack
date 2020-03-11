@@ -9,6 +9,9 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
+import org.zstack.network.service.header.acl.AccessControlListVO;
+
+import java.util.List;
 
 /**
  * Created by frank on 8/8/2015.
@@ -44,6 +47,12 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     private String healthCheckURI;
     @APIParam(maxLength = 80, required = false)
     private String healthCheckHttpCode;
+    @APIParam(validValues = {"enable", "disable"}, required = false)
+    private String aclStatus;
+    @APIParam(resourceType = AccessControlListVO.class, required = false)
+    private List<String> aclUuids;
+    @APIParam(validValues = {"white","black"}, required = false)
+    private String aclType;
 
     @Override
     public String getLoadBalancerUuid() {
@@ -132,6 +141,30 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
 
     public void setCertificateUuid(String certificateUuid) {
         this.certificateUuid = certificateUuid;
+    }
+
+    public String getAclStatus() {
+        return aclStatus;
+    }
+
+    public void setAclStatus(String aclStatus) {
+        this.aclStatus = aclStatus;
+    }
+
+    public List<String> getAclUuids() {
+        return aclUuids;
+    }
+
+    public void setAclUuids(List<String> aclUuids) {
+        this.aclUuids = aclUuids;
+    }
+
+    public String getAclType() {
+        return aclType;
+    }
+
+    public void setAclType(String aclType) {
+        this.aclType = aclType;
     }
 
     public static APICreateLoadBalancerListenerMsg __example__() {

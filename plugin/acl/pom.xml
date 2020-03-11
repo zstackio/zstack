@@ -9,22 +9,12 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>loadBalancer</artifactId>
+    <artifactId>acl</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>network</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>vip</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>acl</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

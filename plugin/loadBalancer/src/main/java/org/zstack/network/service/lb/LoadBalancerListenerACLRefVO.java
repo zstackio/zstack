@@ -1,0 +1,95 @@
+package org.zstack.network.service.lb;
+
+import org.zstack.header.vo.EntityGraph;
+import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ForeignKey.ReferenceOption;
+import org.zstack.header.vo.ToInventory;
+import org.zstack.network.service.header.acl.AccessControlListVO;
+
+import javax.persistence.*;
+import java.sql.Timestamp;
+
+/**
+ * @author: zhanyong.miao
+ * @date: 2020-03-11
+ **/
+@Entity
+@Table
+@EntityGraph(
+        friends = {
+                @EntityGraph.Neighbour(type = LoadBalancerListenerVO.class, myField = "listenerUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = AccessControlListVO.class, myField = "aclUuid", targetField = "uuid"),
+        }
+)
+public class LoadBalancerListenerACLRefVO implements ToInventory {
+    @Id
+    @Column
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    private String id;
+
+    @Column
+    @ForeignKey(parentEntityClass = LoadBalancerListenerVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
+    private String listenerUuid;
+
+    @Column
+    @ForeignKey(parentEntityClass = AccessControlListVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.RESTRICT)
+    private String aclUuid;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    private LoadBalancerAclType type;
+
+    @Column
+    private Timestamp createDate;
+
+    @Column
+    private Timestamp lastOpDate;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getListenerUuid() {
+        return listenerUuid;
+    }
+
+    public void setListenerUuid(String listenerUuid) {
+        this.listenerUuid = listenerUuid;
+    }
+
+    public String getAclUuid() {
+        return aclUuid;
+    }
+
+    public void setAclUuid(String aclUuid) {
+        this.aclUuid = aclUuid;
+    }
+
+    public LoadBalancerAclType getType() {
+        return type;
+    }
+
+    public void setType(LoadBalancerAclType type) {
+        this.type = type;
+    }
+
+    public Timestamp getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(Timestamp createDate) {
+        this.createDate = createDate;
+    }
+
+    public Timestamp getLastOpDate() {
+        return lastOpDate;
+    }
+
+    public void setLastOpDate(Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
+    }
+}

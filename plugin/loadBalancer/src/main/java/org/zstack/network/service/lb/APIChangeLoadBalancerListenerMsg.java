@@ -50,8 +50,19 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     private String healthCheckURI;
     @APIParam(maxLength = 80, required = false)
     private String healthCheckHttpCode;
+    @APIParam(validValues = {"enable", "disable"}, required = false)
+    private String aclStatus;
+
     @APINoSee
     private String loadBalancerUuid;
+
+    public String getAclStatus() {
+        return aclStatus;
+    }
+
+    public void setAclStatus(String aclStatus) {
+        this.aclStatus = aclStatus;
+    }
 
     public String getUuid() {
         return uuid;
