@@ -385,12 +385,20 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ExternalBackupVO` (
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `zstack`.`ExternalBackupMetadataVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `metadata` TEXT DEFAULT NULL,
+
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT `fkExternalBackupMetadataVOExternalBackupVO` FOREIGN KEY (`uuid`) REFERENCES `zstack`.`ExternalBackupVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `zstack`.`ZBoxBackupVO` (
     `uuid` VARCHAR(32) NOT NULL,
     `zBoxUuid` VARCHAR(32) NOT NULL,
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `uuid` (`uuid`) USING BTREE,
-    CONSTRAINT `fkZBoxBackupVOExternalBackupVO` FOREIGN KEY (`uuid`) REFERENCES `ExternalBackupVO` (`uuid`) ON DELETE CASCADE,
-    CONSTRAINT `fkZBoxBackupVOZBoxVO` FOREIGN KEY (`zBoxUuid`) REFERENCES `ZBoxVO` (`uuid`) ON DELETE CASCADE
+    CONSTRAINT `fkZBoxBackupVOExternalBackupVO` FOREIGN KEY (`uuid`) REFERENCES `zstack`.`ExternalBackupVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkZBoxBackupVOZBoxVO` FOREIGN KEY (`zBoxUuid`) REFERENCES `zstack`.`ZBoxVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
