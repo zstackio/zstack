@@ -1,40 +1,108 @@
 package org.zstack.core.rest;
 
+import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
+import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.db.GLock;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
+import org.zstack.header.allocator.AllocateHostMsg;
+import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.apimediator.ApiMediatorConstant;
+import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.RecalculateHostCapacityMsg;
 import org.zstack.header.message.*;
-import org.zstack.header.rest.RESTApiFacade;
-import org.zstack.header.rest.RestAPIResponse;
-import org.zstack.header.rest.RestAPIState;
-import org.zstack.header.rest.RestAPIVO;
+import org.zstack.header.rest.*;
 import org.zstack.header.search.APISearchMessage;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.vm.VmInstance;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Query;
+import javax.persistence.*;
+import java.math.BigInteger;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-public class RESTApiFacadeImpl implements RESTApiFacade, CloudBusEventListener, Component {
+public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade, CloudBusEventListener, Component {
     private static final CLogger logger = Utils.getLogger(RESTApiFacadeImpl.class);
 
     private EntityManagerFactory entityManagerFactory;
     private Set<String> basePkgNames;
     private List<String> processingRequests = Collections.synchronizedList(new ArrayList<String>(100));
+    private Future<Void> restAPIVOCleanTask = null;
+
+    @Autowired
+    private ResourceDestinationMaker destMaker;
 
     @Autowired
     private CloudBus bus;
+
+    @Autowired
+    private ThreadFacade thdf;
+
+    @Override
+    @MessageSafe
+    public void handleMessage(Message msg) {
+        if (msg instanceof DeleteRestApiVOMsg) {
+            handle((DeleteRestApiVOMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    @Override
+    public String getId() {
+        return bus.makeLocalServiceId(RESTApiConstant.SERVICE_ID);
+    }
+
+    private void handle(final DeleteRestApiVOMsg msg){
+        int ret = 1;
+        int delete = 0;
+        EntityManager mgr = getEntityManager();
+        EntityTransaction tran = mgr.getTransaction();
+        Long time = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) - TimeUnit.DAYS.toSeconds(msg.getRetentionDay());
+        long start = System.currentTimeMillis();
+        try {
+            while (ret > 0) {
+                String sql = String.format("delete from RestAPIVO where unix_timestamp(lastOpDate) <= %d limit 1000", time);
+                tran.begin();
+                Query query = mgr.createNativeQuery(sql);
+                ret = query.executeUpdate();
+                tran.commit();
+                delete = delete + ret;
+                if (delete == 0) {
+                    logger.debug("no RestApiVO history to clean");
+                    return;
+                }
+            }
+            logger.debug(String.format("delete %d days ago RestApi history %d, cost %d ms", msg.getRetentionDay(), delete, System.currentTimeMillis() - start));
+        } catch (Exception e) {
+            tran.rollback();
+            logger.warn(String.format("unable to delete RestApiVO history because %s", e));
+        } finally {
+            mgr.close();
+        }
+    }
 
     void init() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         Set<APIEvent> boundEvents = new HashSet<APIEvent>(100);
@@ -59,6 +127,10 @@ public class RESTApiFacadeImpl implements RESTApiFacade, CloudBusEventListener, 
 
     public void setEntityManagerFactory(EntityManagerFactory entityManagerFactory) {
         this.entityManagerFactory = entityManagerFactory;
+    }
+
+    public EntityManagerFactory getEntityManagerFactory() {
+        return entityManagerFactory;
     }
 
     private RestAPIVO persist(APIMessage msg) {
@@ -196,8 +268,52 @@ public class RESTApiFacadeImpl implements RESTApiFacade, CloudBusEventListener, 
         return basePkgNames;
     }
 
+    public void refreshIntervalClean() {
+        if (restAPIVOCleanTask != null){
+            restAPIVOCleanTask.cancel(true);
+        }
+        startIntervalClean();
+    }
+
+    private void startIntervalClean() {
+        restAPIVOCleanTask = thdf.submitPeriodicTask(restAPIVOCleanTask(), RESTApiGlobalProperty.CLEAN_RESTAPIVO_DELAY);
+    }
+
+    private PeriodicTask restAPIVOCleanTask(){
+        return new PeriodicTask(){
+
+            @Override
+            public void run() {
+                if (!destMaker.isManagedByUs(RESTApiConstant.CleanRestAPIVOKey)) {
+                    logger.debug(String.format("Not send DeleteRestAPpiVOMsg because not managed by us"));
+                    return;
+                }
+                DeleteRestApiVOMsg msg = new DeleteRestApiVOMsg();
+                msg.setRetentionDay(RESTApiGlobalProperty.RESTAPIVO_RETENTION_DAY);
+                bus.makeTargetServiceIdByResourceUuid(msg, RESTApiConstant.SERVICE_ID, RESTApiConstant.CleanRestAPIVOKey);
+                bus.send(msg);
+            }
+
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return RESTApiGlobalProperty.cleanIntervalSecond;
+            }
+
+            @Override
+            public String getName() {
+                return String.format("clean-RestAPpiVO-periodic-Task");
+            }
+        };
+    }
+
     @Override
     public boolean start() {
+        startIntervalClean();
         return true;
     }
 
