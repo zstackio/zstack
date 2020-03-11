@@ -116,6 +116,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             handle((APICancelLongJobMsg) msg);
         } else if (msg instanceof APIDeleteLongJobMsg) {
             handle((APIDeleteLongJobMsg) msg);
+        } else if (msg instanceof APIUpdateLongJobMsg) {
+            handle((APIUpdateLongJobMsg) msg);
         } else if (msg instanceof APIRerunLongJobMsg) {
             handle((APIRerunLongJobMsg) msg);
         } else {
@@ -157,6 +159,44 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             }
         });
     }
+
+    private void handle(APIUpdateLongJobMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+		return String.format("update-longjob-%s", msg.getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                APIUpdateLongJobEvent evt = new APIUpdateLongJobEvent(msg.getId());
+                LongJobVO vo = dbf.findByUuid(msg.getUuid(), LongJobVO.class);
+
+                boolean update = false;
+                if (msg.getName() != null) {
+                    vo.setName(msg.getName());
+                    update = true;
+                }
+                if (msg.getDescription() != null) {
+                    vo.setDescription(msg.getDescription());
+                    update = true;
+                }
+                if (update) {
+		    vo = dbf.updateAndRefresh(vo);
+                }
+
+                evt.setInventory(LongJobInventory.valueOf(vo));
+                bus.publish(evt);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+		return String.format("update-longjob-%s", msg.getName());
+            }
+        });
+    }
+    
 
     private void handle(APIDeleteLongJobMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {

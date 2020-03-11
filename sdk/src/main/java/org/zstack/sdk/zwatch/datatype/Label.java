@@ -28,4 +28,12 @@ public class Label  {
         return this.op;
     }
 
+    public boolean compatible;
+    public void setCompatible(boolean compatible) {
+        this.compatible = compatible;
+    }
+    public boolean getCompatible() {
+        return this.compatible;
+    }
+
 }
