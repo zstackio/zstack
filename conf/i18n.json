@@ -41,6 +41,62 @@
     "fileName": "src/main/java/org/zstack/accessKey/AccessKeyApiInterceptor.java"
   },
   {
+    "raw": "not support the ip version %d",
+    "en_US": "not support the ip version {0}",
+    "zh_CN": "不支持的IP版本{0}",
+    "arguments": [
+      "ipVer"
+    ],
+    "line": 92,
+    "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
+  },
+  {
+    "raw": "%s duplicate/overlap ip entry with access-control-list group:%s",
+    "en_US": "{0} duplicate/overlap ip entry with access-control-list group:{1}",
+    "zh_CN": "{0}中有和访问控制组{1}里的ip重复/重叠",
+    "arguments": [
+      "ips",
+      "acl.getUuid()"
+    ],
+    "line": 98,
+    "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
+  },
+  {
+    "raw": "ip format only supports ip/iprange/cidr, but find %s",
+    "en_US": "ip format only supports ip/iprange/cidr, but find {0}",
+    "zh_CN": "只支持IP地址/IP段/IP网络的格式，不支持{0}",
+    "arguments": [
+      "ips"
+    ],
+    "line": 105,
+    "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
+  },
+  {
+    "raw": "ip range[%s, %s] is overlap with [%s, %s] in access-control-list group:%s",
+    "en_US": "ip range[{0}, {1}] is overlap with [{2}, {3}] in access-control-list group:{4}",
+    "zh_CN": "IP段[{0}，{1}]和访问控制组：{4}里的[{2}, {3}]有重叠的ip",
+    "arguments": [
+      "startIp",
+      "endIp",
+      "NetworkUtils.longToIpv4String(r.lowerEndpoint())",
+      "NetworkUtils.longToIpv4String(r.upperEndpoint())",
+      "acl.getUuid()"
+    ],
+    "line": 109,
+    "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
+  },
+  {
+    "raw": "the access-control-list groups[%s] can\u0027t be added more than %d ip entries",
+    "en_US": "the access-control-list groups[{0}] can\u0027t be added more than {1} ip entries",
+    "zh_CN": "访问控制组[{0}]最多只能添加{1}ip组",
+    "arguments": [
+      "acl.getUuid()",
+      "AccessControlListConstants.MAX_ENTRY_COUNT_PER_GROUP"
+    ],
+    "line": 127,
+    "fileName": "src/main/java/org/zstack/acl/AccessControlListApiInterceptor.java"
+  },
+  {
     "raw": "cannot connect to [%s] in %d milliseconds, so aliyun openapi is unreachable.",
     "en_US": "cannot connect to [{0}] in {1} milliseconds, so aliyun openapi is unreachable.",
     "zh_CN": "",
@@ -12398,6 +12454,116 @@
     "fileName": "src/main/java/org/zstack/network/service/flat/FlatUserdataBackend.java"
   },
   {
+    "raw": "invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default",
+    "en_US": "invalid health target[{0}], the format is targetCheckProtocol:port, for example, tcp:default",
+    "zh_CN": "无效的健康检查目标[{0}]，格式为[目标检查协议(targetCheckProtocol):端口(port)], 例如[tcp:default]",
+    "arguments": [
+      "target"
+    ],
+    "line": 672,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "the access control list group[%s] is being used by the load balancer listeners[%s]",
+    "en_US": "the access control list group[{0}] is being used by the load balancer listeners[{1}]",
+    "zh_CN": "访问控制组[{0}]正在被监听器[{1}]使用",
+    "arguments": [
+      "msg.getUuid()",
+      "refs"
+    ],
+    "line": 121,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "operation failure, not support the ip version %d",
+    "en_US": "operation failure, not support the ip version {0}",
+    "zh_CN": "操作失败，不支持IPv{0}",
+    "arguments": [
+      "ipVer"
+    ],
+    "line": 203,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "operation failure, duplicate/overlap ip entry in %s of accesscontrol list group:%s",
+    "en_US": "operation failure, duplicate/overlap ip entry in {0} of accesscontrol list group:{1}",
+    "zh_CN": "操作失败，在访问控制组：{1}中有重复/重叠ip{0}",
+    "arguments": [
+      "ips",
+      "acl.getUuid()"
+    ],
+    "line": 209,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "operation failure, ip format only supports ip/iprange/cidr, but find %s",
+    "en_US": "operation failure, ip format only supports ip/iprange/cidr, but find {0}",
+    "zh_CN": "操作失败，只支持IP地址/IP段/IP网络格式的参数，不支持{0}",
+    "arguments": [
+      "ips"
+    ],
+    "line": 216,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "ip range[%s, %s] is overlap with start ip:%s, end ip: %s of access-control-list group:%s",
+    "en_US": "ip range[{0}, {1}] is overlap with start ip:{2}, end ip: {3} of access-control-list group:{4}",
+    "zh_CN": "ip段[{0}, {1}]和访问控制列表组：{4}中的ip段[{2},{3}]重叠",
+    "arguments": [
+      "startIp",
+      "endIp",
+      "NetworkUtils.longToIpv4String(r.lowerEndpoint())",
+      "NetworkUtils.longToIpv4String(r.upperEndpoint())",
+      "acl.getUuid()"
+    ],
+    "line": 220,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "Can\u0027t attach the type access-control-list group[%s] whose ip version is different with LoadBalancer[%s]",
+    "en_US": "Can\u0027t attach the type access-control-list group[{0}] whose ip version is different with LoadBalancer[{1}]",
+    "zh_CN": "负载均衡器[{1}]不能添加IP版本不一致的访问控制列表组[{0}]",
+    "arguments": [
+      "aclUuids",
+      "lbUuid"
+    ],
+    "line": 242,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "the access-control-list groups[uuid:%s] are already on the load balancer listener[uuid:%s]",
+    "en_US": "the access-control-list groups[uuid:{0}] are already on the load balancer listener[uuid:{1}]",
+    "zh_CN": "负载均衡监听器[uuid:{1}]已经添加了访问控制列表组[uuid:{0}]",
+    "arguments": [
+      "existingAcls",
+      "msg.getListenerUuid()"
+    ],
+    "line": 302,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "the load balancer listener[uuid:%s] just only attach the %s type access-control-list group",
+    "en_US": "the load balancer listener[uuid:{0}] just only attach the {1} type access-control-list group",
+    "zh_CN": "负载均衡监听器[uuid:{0}]只能以{1}方式添加访问控制列表组",
+    "arguments": [
+      "msg.getListenerUuid()",
+      "type.toString()"
+    ],
+    "line": 308,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "the load balancer listener[uuid:%s] can\u0027t  attach more than %d access-control-list groups",
+    "en_US": "the load balancer listener[uuid:{0}] can\u0027t  attach more than {1} access-control-list groups",
+    "zh_CN": "负载均衡监听器[uuid:{0}]最多只能添加{1}个访问控制列表组",
+    "arguments": [
+      "msg.getListenerUuid()",
+      "LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)"
+    ],
+    "line": 313,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
     "raw": "L3 networks[uuids:%s] of the vm nics has no network service[%s] enabled",
     "en_US": "L3 networks[uuids:{0}] of the vm nics has no network service[{1}] enabled",
     "zh_CN": "虚拟机网卡的三层网络没有可用的网络服务",
@@ -12405,7 +12571,7 @@
       "l3Uuids",
       "LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING"
     ],
-    "line": 135,
+    "line": 339,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -12416,19 +12582,58 @@
       "existingNics",
       "msg.getListenerUuid()"
     ],
-    "line": 145,
+    "line": 349,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "the listener with protocol [%s] doesn\u0027t support this health check:[%s]",
+    "en_US": "the listener with protocol [{0}] doesn\u0027t support this health check:[{1}]",
+    "zh_CN": "[{0}]类型的监听器不支持此类型[{1}]的健康检查",
+    "arguments": [
+      "listenerVO.getProtocol()",
+      "msg.getHealthCheckProtocol()"
+    ],
+    "line": 678,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "the http health check protocol must be specified its healthy checking parameter healthCheckURI",
+    "en_US": "the http health check protocol must be specified its healthy checking parameter healthCheckURI",
+    "zh_CN": "http类型的健康检查必须提供healthCheckURI参数",
+    "arguments": [],
+    "line": 652,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "the http health check protocol\u0027s expecting code [%s] is invalidate",
+    "en_US": "the http health check protocol\u0027s expecting code [{0}] is invalidate",
+    "zh_CN": "http健康检查协议的expeting-code参数非法",
+    "arguments": [
+      "msg.getHealthCheckHttpCode()"
+    ],
+    "line": 659,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "Can\u0027t attach more than %d access-control-list groups to a listener",
+    "en_US": "Can\u0027t attach more than {0} access-control-list groups to a listener",
+    "zh_CN": "一个监听器加载的访问控制组不能超过{0}",
+    "arguments": [
+      "LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)"
+    ],
+    "line": 457,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
     "raw": "invalid max connection[%s], %s is larger than upper threshold %d",
     "en_US": "invalid max connection[{0}], {1} is larger than upper threshold {2}",
-    "zh_CN": "",
+    "zh_CN": "非法的最大连接数标签[{0}]，因为其值{1}大于上限值{2}",
     "arguments": [
       "tag",
       "s",
       "LoadBalancerConstants.MAX_CONNECTION_LIMIT"
     ],
-    "line": 257,
+    "line": 537,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -12439,7 +12644,7 @@
       "msg.getLoadBalancerPort()",
       "luuid"
     ],
-    "line": 279,
+    "line": 559,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -12447,7 +12652,7 @@
     "en_US": "udp port 53 is used by dns daemon",
     "zh_CN": "udp端口53已经被dns进程使用",
     "arguments": [],
-    "line": 284,
+    "line": 564,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -12455,7 +12660,7 @@
     "en_US": "tcp port 22, 7272 is used by vrouter",
     "zh_CN": "tcp端口22,7272已经被vrouter管理进程进程使用",
     "arguments": [],
-    "line": 297,
+    "line": 577,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -12465,7 +12670,7 @@
     "arguments": [
       "vo.getProtocol()"
     ],
-    "line": 324,
+    "line": 604,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -12476,7 +12681,7 @@
       "msg.getListenerUuid()",
       "msg.getCertificateUuid()"
     ],
-    "line": 328,
+    "line": 608,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -12487,7 +12692,7 @@
       "msg.getCertificateUuid()",
       "msg.getListenerUuid()"
     ],
-    "line": 338,
+    "line": 618,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -12497,7 +12702,15 @@
     "arguments": [
       "target"
     ],
-    "line": 353,
+    "line": 633,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
+  },
+  {
+    "raw": "the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI",
+    "en_US": "the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI",
+    "zh_CN": "http类型的健康检查协议必须提供healthCheckMethod和healthCheckURI参数",
+    "arguments": [],
+    "line": 683,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerApiInterceptor.java"
   },
   {
@@ -12507,7 +12720,7 @@
     "arguments": [
       "msg.getVmNicUuids().get(0)"
     ],
-    "line": 1108,
+    "line": 1113,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerBase.java"
   },
   {
@@ -12520,7 +12733,17 @@
       "msg.getVmNicUuids().get(0)",
       "providerType"
     ],
-    "line": 1135,
+    "line": 1140,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerBase.java"
+  },
+  {
+    "raw": "invalid health checking parameters[%s], the format is method:URI:code, for example, GET:/index.html:http_2xx",
+    "en_US": "invalid health checking parameters[{0}], the format is method:URI:code, for example, GET:/index.html:http_2xx",
+    "zh_CN": "无效的健康检查参数[{0}]，正确格式：method:URI:code，例如 GET:/index.html:http_2xx",
+    "arguments": [
+      "param"
+    ],
+    "line": 1670,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerBase.java"
   },
   {
@@ -12530,7 +12753,7 @@
     "arguments": [
       "msg.getLoadBalancerUuid()"
     ],
-    "line": 97,
+    "line": 99,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -12540,7 +12763,42 @@
     "arguments": [
       "tag.getTag()"
     ],
-    "line": 379,
+    "line": 381,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
+  },
+  {
+    "raw": "nic[uuid:%s] not found. Please correct your system tag[%s] of loadbalancer",
+    "en_US": "nic[uuid:{0}] not found. Please correct your system tag[{1}] of loadbalancer",
+    "zh_CN": "找不到网卡[uuid:{0}]。请检查负载均衡器的系统标签[{1}]",
+    "arguments": [
+      "nicUuid",
+      "systemTag"
+    ],
+    "line": 399,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
+  },
+  {
+    "raw": "invalid balancer weight[%s], %s is not a number",
+    "en_US": "invalid balancer weight[{0}], {1} is not a number",
+    "zh_CN": "无效的权重值[{0}], {1}不是一个数字",
+    "arguments": [
+      "systemTag",
+      "s"
+    ],
+    "line": 411,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
+  },
+  {
+    "raw": "invalid balancer weight[%s], %s is not in the range [%d, %d]",
+    "en_US": "invalid balancer weight[{0}], {1} is not in the range [{2}, {3}]",
+    "zh_CN": "无效的权重值[{0}], {1}不在允许范围[{2}, {3}]中",
+    "arguments": [
+      "systemTag",
+      "s",
+      "LoadBalancerConstants.BALANCER_WEIGHT_MIN",
+      "LoadBalancerConstants.BALANCER_WEIGHT_MAX"
+    ],
+    "line": 407,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -12551,7 +12809,7 @@
       "algorithm",
       "LoadBalancerConstants.BALANCE_ALGORITHMS"
     ],
-    "line": 398,
+    "line": 423,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -12562,7 +12820,7 @@
       "systemTag",
       "s"
     ],
-    "line": 412,
+    "line": 497,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -12573,7 +12831,7 @@
       "systemTag",
       "s"
     ],
-    "line": 426,
+    "line": 511,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -12584,7 +12842,7 @@
       "systemTag",
       "s"
     ],
-    "line": 440,
+    "line": 525,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -12595,7 +12853,7 @@
       "systemTag",
       "s"
     ],
-    "line": 454,
+    "line": 539,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -12606,7 +12864,7 @@
       "systemTag",
       "s"
     ],
-    "line": 468,
+    "line": 553,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -12617,17 +12875,7 @@
       "systemTag",
       "s"
     ],
-    "line": 482,
-    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
-  },
-  {
-    "raw": "invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default",
-    "en_US": "invalid health target[{0}], the format is targetCheckProtocol:port, for example, tcp:default",
-    "zh_CN": "无效的健康检查目标[{0}]，格式为[目标检查协议(targetCheckProtocol):端口(port)], 例如[tcp:default]",
-    "arguments": [
-      "systemTag"
-    ],
-    "line": 495,
+    "line": 567,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -12639,7 +12887,7 @@
       "protocol",
       "LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCOLS"
     ],
-    "line": 500,
+    "line": 585,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -12650,7 +12898,7 @@
       "systemTag",
       "port"
     ],
-    "line": 512,
+    "line": 597,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
   },
   {
@@ -12661,8 +12909,21 @@
       "systemTag",
       "port"
     ],
-    "line": 509,
+    "line": 594,
     "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerManagerImpl.java"
+  },
+  {
+    "raw": "invalid balancer weight for nic:%s, %d is not in the range [%d, %d]",
+    "en_US": "invalid balancer weight for nic:{0}, {1} is not in the range [{2}, {3}]",
+    "zh_CN": "无效的网卡:{0}权重值{1}，不在有效范围[{2}, {3}]内",
+    "arguments": [
+      "nicUuid",
+      "weight",
+      "LoadBalancerConstants.BALANCER_WEIGHT_MIN",
+      "LoadBalancerConstants.BALANCER_WEIGHT_MAX"
+    ],
+    "line": 74,
+    "fileName": "src/main/java/org/zstack/network/service/lb/LoadBalancerWeightOperator.java"
   },
   {
     "raw": "guest l3Network of vm nic[uuid:%s] and vip l3Network of vip[uuid: %s] are the same network",

@@ -1,5 +1,10 @@
 package org.zstack.network.service.lb;
 
+import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
@@ -8,8 +13,10 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.acl.*;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -19,17 +26,24 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO_;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.IpRangeSet;
 import org.zstack.utils.VipUseForList;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -39,7 +53,7 @@ import static org.zstack.utils.CollectionDSL.map;
 /**
  * Created by frank on 8/12/2015.
  */
-public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
+public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -50,6 +64,21 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
     private TagManager tagMgr;
 
     private static final CLogger logger = CLoggerImpl.getLogger(LoadBalancerApiInterceptor.class);
+    private static String SPLIT = "-";
+    private static String IP_SPLIT = ",";
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        List<Class> ret = new ArrayList<>();
+        ret.add(APIDeleteAccessControlListMsg.class);
+        ret.add(APIAddAccessControlListEntryMsg.class);
+        return ret;
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.END;
+    }
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
@@ -73,8 +102,25 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
             validate((APIRemoveCertificateFromLoadBalancerListenerMsg) msg);
         } else if(msg instanceof APIChangeLoadBalancerListenerMsg){
             validate((APIChangeLoadBalancerListenerMsg) msg);
+        } else if (msg instanceof APIAddAccessControlListToLoadBalancerMsg) {
+            validate((APIAddAccessControlListToLoadBalancerMsg) msg);
+        } else if (msg instanceof APIRemoveAccessControlListFromLoadBalancerMsg) {
+            validate((APIRemoveAccessControlListFromLoadBalancerMsg) msg);
+        } else if (msg instanceof APIAddAccessControlListEntryMsg) {
+            validate((APIAddAccessControlListEntryMsg) msg);
+        } else if (msg instanceof APIDeleteAccessControlListMsg) {
+            validate((APIDeleteAccessControlListMsg) msg);
         }
+
         return msg;
+    }
+
+    private void validate(APIDeleteAccessControlListMsg msg) {
+        List<String> refs = Q.New(LoadBalancerListenerACLRefVO.class).select(LoadBalancerListenerVmNicRefVO_.listenerUuid)
+                             .eq(LoadBalancerListenerACLRefVO_.aclUuid, msg.getUuid()).listValues();
+        if ( !refs.isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr("the access control list group[%s] is being used by the load balancer listeners[%s]", msg.getUuid(), refs));
+        }
     }
 
     private void validate(APIGetCandidateVmNicsForLoadBalancerMsg msg) {
@@ -83,6 +129,21 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
         lq.add(LoadBalancerListenerVO_.uuid, Op.EQ, msg.getListenerUuid());
         String lbuuid = lq.findValue();
         msg.setLoadBalancerUuid(lbuuid);
+    }
+
+    private void validate(APIRemoveAccessControlListFromLoadBalancerMsg msg) {
+        LoadBalancerListenerVO vo = Q.New(LoadBalancerListenerVO.class).eq(LoadBalancerListenerVO_.uuid, msg.getListenerUuid()).find();
+        msg.setLoadBalancerUuid(vo.getLoadBalancerUuid());
+
+        List<String> existingAcls = Q.New(LoadBalancerListenerACLRefVO.class).select(LoadBalancerListenerACLRefVO_.aclUuid)
+                                     .eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).in(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuids())
+                                     .listValues();
+        if (existingAcls.isEmpty()) {
+            APIRemoveAccessControlListFromLoadBalancerEvent evt = new APIRemoveAccessControlListFromLoadBalancerEvent(msg.getId());
+            evt.setInventory(LoadBalancerListenerInventory.valueOf(vo));
+            bus.publish(evt);
+            throw new StopRoutingException();
+        }
     }
 
     private void validate(APIRemoveVmNicFromLoadBalancerMsg msg) {
@@ -100,6 +161,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
         if (vmNicUuids.isEmpty()) {
             APIRemoveVmNicFromLoadBalancerEvent evt = new APIRemoveVmNicFromLoadBalancerEvent(msg.getId());
             evt.setInventory(LoadBalancerInventory.valueOf(dbf.findByUuid(lbuuid, LoadBalancerVO.class)));
+            bus.publish(evt);
             throw new StopRoutingException();
         }
     }
@@ -112,6 +174,150 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("the vip[uuid:%s] has been occupied other network service entity[%s]", msg.getVipUuid(), useForList.toString()));
             }
         }
+    }
+
+    private boolean validateIpRange(String startIp, String endIp) {
+        if (NetworkUtils.isIpv4Address(startIp) && !NetworkUtils.isIpv4Address(endIp)) {
+            return false;
+        }
+
+        if (IPv6NetworkUtils.isIpv6Address(startIp) && !IPv6NetworkUtils.isIpv6Address(endIp)) {
+            return false;
+        }
+
+        try {
+            if (NetworkUtils.isIpv4Address(startIp)) {
+                NetworkUtils.validateIpRange(startIp, endIp);
+            } else {
+                //IPv6NetworkUtils.validateIpRange(startIp, endIp);
+            }
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private void validateIp(String ips, AccessControlListVO acl) {
+        DebugUtils.Assert(acl != null, "the invalide null AccessControlListVO");
+        Integer ipVer = acl.getIpVersion();
+        if (!ipVer.equals(IPv6Constants.IPv4)) {
+            throw new ApiMessageInterceptionException(argerr("operation failure, not support the ip version %d", ipVer));
+        }
+        try {
+            RangeSet<Long> ipRanges = IpRangeSet.listAllRanges(ips);
+            String[] ipcount = ips.split(IP_SPLIT);
+            if (ipRanges.asRanges().size() < ipcount.length) {
+                throw new ApiMessageInterceptionException(argerr("operation failure, duplicate/overlap ip entry in %s of accesscontrol list group:%s", ips, acl.getUuid()));
+            }
+            for (Range<Long> range : ipRanges.asRanges()) {
+                final Range<Long> frange = ContiguousSet.create(range, DiscreteDomain.longs()).range();
+                String startIp = NetworkUtils.longToIpv4String(frange.lowerEndpoint());
+                String endIp = NetworkUtils.longToIpv4String(frange.upperEndpoint());
+                if (!validateIpRange(startIp, endIp)) {
+                    throw new ApiMessageInterceptionException(argerr("operation failure, ip format only supports ip/iprange/cidr, but find %s", ips));
+                }
+                ipRanges.asRanges().stream().forEach(r -> {
+                    if (!frange.equals(r) && NetworkUtils.isIpv4RangeOverlap(startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint()))) {
+                        throw new ApiMessageInterceptionException(argerr("ip range[%s, %s] is overlap with start ip:%s, end ip: %s of access-control-list group:%s",
+                                startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint()), acl.getUuid()));
+                    }
+                });
+            }
+
+        } catch (IllegalArgumentException e) {
+            throw new ApiMessageInterceptionException(argerr("Invalid rule expression, the detail: %s", e.getMessage()));
+        }
+
+    }
+
+    private void validateAcl(List<String> newAclUuids, List<String> oriAclUuids, String lbUuid) {
+        LoadBalancerVO lb = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, lbUuid).find();
+        VipVO vip = Q.New(VipVO.class).eq(VipVO_.uuid, lb.getVipUuid()).find();
+
+        List<AccessControlListVO> acls = Q.New(AccessControlListVO.class)
+                                          .in(AccessControlListVO_.uuid, newAclUuids).list();
+        if (!acls.isEmpty()) {
+            /*check if the ip version is same*/
+            List<String> aclUuids = acls.stream().filter(acl -> acl.getIpVersion() != NetworkUtils.getIpversion(vip.getIp())).map(AccessControlListVO::getUuid).collect(Collectors.toList());
+            if (!aclUuids.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("Can't attach the type access-control-list group[%s] whose ip version is different with LoadBalancer[%s]", aclUuids, lbUuid));
+            }
+
+            List<AccessControlListVO> allAcl = acls;
+            if ( !oriAclUuids.isEmpty()) {
+                List<AccessControlListVO> attached = Q.New(AccessControlListVO.class).in(AccessControlListVO_.uuid, oriAclUuids).list();
+                allAcl.addAll(attached);
+            }
+            /*check all the ip entry not overlap include with each other*/
+            for (AccessControlListVO acl : acls) {
+                if (acl.getEntries().isEmpty()) {
+                    continue;
+                }
+                List<String> ipentries = acl.getEntries().stream().map(AccessControlListEntryVO::getIpEntries).collect(Collectors.toList());
+                for (AccessControlListVO acl2 : allAcl) {
+                    if ( acl.getUuid().equals(acl2.getUuid())) {
+                        continue;
+                    }
+                    if (acl2.getEntries().isEmpty()) {
+                        continue;
+                    }
+                    List<String> ipentries2 = acl2.getEntries().stream().map(AccessControlListEntryVO::getIpEntries).collect(Collectors.toList());
+                    ipentries2.addAll(ipentries);
+                    validateIp(StringUtils.join(ipentries2.toArray(), ','), acl2);
+                }
+            }
+        }
+    }
+
+    private void validate(APIAddAccessControlListEntryMsg msg) {
+        List<String> listenerUuids = Q.New(LoadBalancerListenerACLRefVO.class).select(LoadBalancerListenerACLRefVO_.listenerUuid)
+                                    .eq(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuid()).listValues();
+        if (listenerUuids.isEmpty()) {
+            return;
+        }
+
+        List<String> aclUuids = Q.New(LoadBalancerListenerACLRefVO.class).select(LoadBalancerListenerACLRefVO_.aclUuid)
+                                 .in(LoadBalancerListenerACLRefVO_.listenerUuid, listenerUuids).listValues();
+        if (aclUuids.isEmpty()) {
+            return;
+        }
+        List<AccessControlListVO> acls = Q.New(AccessControlListVO.class).in(AccessControlListVO_.uuid, aclUuids).list();
+
+        for (AccessControlListVO acl : acls) {
+            if (acl.getEntries().isEmpty()) {
+                continue;
+            }
+            List<String> ipentries = acl.getEntries().stream().map(AccessControlListEntryVO::getIpEntries).collect(Collectors.toList());
+            ipentries.add(msg.getEntries());
+            validateIp(StringUtils.join(ipentries.toArray(), ','), acl);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private void validate(APIAddAccessControlListToLoadBalancerMsg msg) {
+        List<LoadBalancerListenerACLRefVO> refVOs = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).list();
+        if ( !refVOs.isEmpty()) {
+            /*check if duplicated*/
+            List<String> existingAcls = refVOs.stream().filter(vo -> msg.getAclUuids().contains(vo.getAclUuid())).map(vo -> vo.getAclUuid()).collect(Collectors.toList());
+            if (!existingAcls.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("the access-control-list groups[uuid:%s] are already on the load balancer listener[uuid:%s]", existingAcls, msg.getListenerUuid()));
+            }
+
+            /*check if type is same*/
+            LoadBalancerAclType type = refVOs.get(0).getType();
+            if (!type.equals(LoadBalancerAclType.valueOf(msg.getAclType()))) {
+                throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] just only attach the %s type access-control-list group", msg.getListenerUuid(), type.toString()));
+            }
+        }
+
+        if (msg.getAclUuids().size() + refVOs.size() > LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)) {
+            throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] can't  attach more than %d access-control-list groups", msg.getListenerUuid(), LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)));
+        }
+
+        String lbUuid = Q.New(LoadBalancerListenerVO.class).select(LoadBalancerListenerVO_.loadBalancerUuid).eq(LoadBalancerListenerVO_.uuid, msg.getListenerUuid()).findValue();
+        msg.setLoadBalancerUuid(lbUuid);
+
+        validateAcl(msg.getAclUuids(), refVOs.stream().map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList()), lbUuid );
     }
 
     @Transactional(readOnly = true)
@@ -246,6 +452,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
                     )
             );
         }
+
+        if (msg.getAclUuids() != null) {
+            if (msg.getAclUuids().size() > LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)) {
+                throw new ApiMessageInterceptionException(argerr("Can't attach more than %d access-control-list groups to a listener", LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)));
+            }
+            validateAcl(msg.getAclUuids(),new ArrayList<>(), msg.getLoadBalancerUuid());
+        }
+
         insertTagIfNotExisting(
                 msg, LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT,
                 LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.instantiateTag(
@@ -301,6 +515,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
                         map(e(LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN, LoadBalancerGlobalConfig.BALANCER_ALGORITHM.value()))
                 )
         );
+
+        insertTagIfNotExisting(
+                msg, LoadBalancerSystemTags.BALANCER_ACL,
+                LoadBalancerSystemTags.BALANCER_ACL.instantiateTag(
+                        map(e(LoadBalancerSystemTags.BALANCER_ACL_TOKEN, msg.getAclStatus()))
+                )
+        );
+
 
         /*check the validation of systemtags*/
         for (String tag : msg.getSystemTags()) {

@@ -61,6 +61,9 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, maxLength = 80, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String healthCheckHttpCode;
 
+    @Param(required = false, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String aclStatus;
+
     @Param(required = false)
     public java.util.List systemTags;
 

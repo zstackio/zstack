@@ -23,7 +23,8 @@ import java.util.Set;
         parents = {
                 @EntityGraph.Neighbour(type = LoadBalancerVO.class, myField = "loadBalancerUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = LoadBalancerListenerVmNicRefVO.class, myField = "uuid", targetField = "listenerUuid"),
-                @EntityGraph.Neighbour(type = LoadBalancerListenerCertificateRefVO.class, myField = "uuid", targetField = "listenerUuid")
+                @EntityGraph.Neighbour(type = LoadBalancerListenerCertificateRefVO.class, myField = "uuid", targetField = "listenerUuid"),
+                @EntityGraph.Neighbour(type = LoadBalancerListenerACLRefVO.class, myField = "uuid", targetField = "listenerUuid")
         }
 )
 public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount {
@@ -50,6 +51,11 @@ public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount
     @JoinColumn(name="listenerUuid", insertable=false, updatable=false)
     @NoView
     private Set<LoadBalancerListenerVmNicRefVO> vmNicRefs = new HashSet<LoadBalancerListenerVmNicRefVO>();
+
+    @OneToMany(fetch=FetchType.EAGER)
+    @JoinColumn(name="listenerUuid", insertable=false, updatable=false)
+    @NoView
+    private Set<LoadBalancerListenerACLRefVO> aclRefs = new HashSet<LoadBalancerListenerACLRefVO>();
 
     @OneToMany(fetch=FetchType.EAGER)
     @JoinColumn(name="listenerUuid", insertable=false, updatable=false)
@@ -87,6 +93,14 @@ public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount
 
     public void setVmNicRefs(Set<LoadBalancerListenerVmNicRefVO> vmNicRefs) {
         this.vmNicRefs = vmNicRefs;
+    }
+
+    public Set<LoadBalancerListenerACLRefVO> getAclRefs() {
+        return aclRefs;
+    }
+
+    public void setAclRefs(Set<LoadBalancerListenerACLRefVO> aclRefs) {
+        this.aclRefs = aclRefs;
     }
 
     public String getName() {

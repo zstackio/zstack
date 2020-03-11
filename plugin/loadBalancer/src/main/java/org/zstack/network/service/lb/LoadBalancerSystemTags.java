@@ -47,4 +47,7 @@ public class LoadBalancerSystemTags {
 
     public static final String HEALTH_PARAMETER_TOKEN = "healthCheckParameter";
     public static PatternedSystemTag HEALTH_PARAMETER = new PatternedSystemTag(String.format("healthCheckParameter::{%s}", HEALTH_PARAMETER_TOKEN), LoadBalancerListenerVO.class);
+
+    public static final String BALANCER_ACL_TOKEN = "accessControlStatus";
+    public static PatternedSystemTag BALANCER_ACL = new PatternedSystemTag(String.format("accessControlStatus::{%s}", BALANCER_ACL_TOKEN), LoadBalancerListenerVO.class);
 }
