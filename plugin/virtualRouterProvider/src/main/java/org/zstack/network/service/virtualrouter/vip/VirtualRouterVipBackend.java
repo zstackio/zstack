@@ -213,7 +213,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
 
     private List<VipTO> findVipsOnVirtualRouter(VmNicInventory nic) {
         List<VipVO> vips = SQL.New("select vip from VipVO vip, VipPeerL3NetworkRefVO ref " +
-                "where ref.vipUuid = vip.uuid " +
+                "where ref.vipUuid = vip.uuid and vip.system = false " +
                 "and ref.l3NetworkUuid = :l3Uuid")
                 .param("l3Uuid", nic.getL3NetworkUuid())
                 .list();

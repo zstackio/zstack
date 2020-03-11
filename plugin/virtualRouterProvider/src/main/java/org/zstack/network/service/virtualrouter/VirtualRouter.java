@@ -404,19 +404,36 @@ public class VirtualRouter extends ApplianceVmBase {
         return snatInfo;
     }
 
-    private void changeVirutalRouterDefaultL3Network(String vrUuid, String l3Uuid, Completion completion) {
-        VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
+    @Transactional
+    protected void changeVirtualRouterNicMetaData(String vrUuid, String newL3Uuid, String oldL3Uuid) {
+        VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+        for (VmNicVO nic : vrVo.getVmNics()) {
+            if (nic.getL3NetworkUuid().equals(oldL3Uuid)) {
+                VirtualRouterNicMetaData.removePublicToNic(nic);
+                VirtualRouterNicMetaData.addAdditionalPublicToNic(nic);
+                dbf.update(nic);
+            } else if (nic.getL3NetworkUuid().equals(newL3Uuid)) {
+                VirtualRouterNicMetaData.removeAdditionalPublicToNic(nic);
+                VirtualRouterNicMetaData.addPublicToNic(nic);
+                dbf.update(nic);
+            }
+        }
+    }
 
-        VmNicInventory newNic = CollectionUtils.find(vrInv.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
+    private void changeVirutalRouterDefaultL3Network(String vrUuid, String newL3Uuid, String oldL3Uuid, Completion completion) {
+        VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+        VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVo);
+
+        VmNicVO newNic = CollectionUtils.find(vrVo.getVmNics(), new Function<VmNicVO, VmNicVO>() {
             @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                if (arg.getL3NetworkUuid().equals(l3Uuid)) {
+            public VmNicVO call(VmNicVO arg) {
+                if (arg.getL3NetworkUuid().equals(newL3Uuid)) {
                     return arg;
                 }
                 return null;
             }
         });
-        DebugUtils.Assert(newNic != null, String.format("cannot find nic for old default network[uuid:%s]", l3Uuid));
+        DebugUtils.Assert(newNic != null, String.format("cannot find nic for old default network[uuid:%s]", newL3Uuid));
 
         VirtualRouterCommands.NicInfo newNicInfo  = new VirtualRouterCommands.NicInfo();
         newNicInfo.setMac(newNic.getMac());
@@ -451,6 +468,7 @@ public class VirtualRouter extends ApplianceVmBase {
                             vr.getUuid(), ret.getError());
                     completion.fail(err);
                 } else {
+                    changeVirtualRouterNicMetaData(vrUuid, newL3Uuid, oldL3Uuid);
                     completion.success();
                 }
             }
@@ -516,9 +534,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     return;
                 }
 
-                final VmNicVO fNic = oldNic;
                 data.put("oldVip", vipVO);
-                data.put("oldNic", oldNic);
                 ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                 struct.setUseFor(NetworkServiceType.SNAT.toString());
                 struct.setServiceUuid(vipVO.getUuid());
@@ -527,9 +543,6 @@ public class VirtualRouter extends ApplianceVmBase {
                 vip.release(new Completion(trigger) {
                     @Override
                     public void success() {
-                        VirtualRouterNicMetaData.removePublicToNic(fNic);
-                        VirtualRouterNicMetaData.addAdditionalPublicToNic(fNic);
-                        dbf.update(fNic);
                         trigger.next();
                     }
 
@@ -548,7 +561,6 @@ public class VirtualRouter extends ApplianceVmBase {
                     return;
                 }
 
-                VmNicVO fNic = (VmNicVO) data.get("oldNic");
                 ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                 struct.setUseFor(NetworkServiceType.SNAT.toString());
                 struct.setServiceUuid(vipVO.getUuid());
@@ -557,9 +569,6 @@ public class VirtualRouter extends ApplianceVmBase {
                 vip.acquire(new Completion(trigger) {
                     @Override
                     public void success() {
-                        VirtualRouterNicMetaData.addPublicToNic(fNic);
-                        VirtualRouterNicMetaData.removeAdditionalPublicToNic(fNic);
-                        dbf.update(fNic);
                         trigger.rollback();
                     }
 
@@ -605,8 +614,6 @@ public class VirtualRouter extends ApplianceVmBase {
                 }
 
                 data.put("newVip", vipVO);
-                data.put("newNic", newNic);
-                final VmNicVO fNic = newNic;
                 ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                 struct.setUseFor(NetworkServiceType.SNAT.toString());
                 struct.setServiceUuid(vipVO.getUuid());
@@ -615,9 +622,6 @@ public class VirtualRouter extends ApplianceVmBase {
                 vip.acquire(new Completion(trigger) {
                     @Override
                     public void success() {
-                        VirtualRouterNicMetaData.addPublicToNic(fNic);
-                        VirtualRouterNicMetaData.removeAdditionalPublicToNic(fNic);
-                        dbf.update(fNic);
                         trigger.next();
                     }
 
@@ -636,7 +640,6 @@ public class VirtualRouter extends ApplianceVmBase {
                     return;
                 }
 
-                VmNicVO fNic = (VmNicVO) data.get("newNic");
                 ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                 struct.setUseFor(NetworkServiceType.SNAT.toString());
                 struct.setServiceUuid(vipVO.getUuid());
@@ -645,9 +648,6 @@ public class VirtualRouter extends ApplianceVmBase {
                 vip.release(new Completion(trigger) {
                     @Override
                     public void success() {
-                        VirtualRouterNicMetaData.addAdditionalPublicToNic(fNic);
-                        VirtualRouterNicMetaData.removePublicToNic(fNic);
-                        dbf.update(fNic);
                         trigger.rollback();
                     }
 
@@ -662,7 +662,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                changeVirutalRouterDefaultL3Network(msg.getVmInstanceUuid(), msg.getDefaultRouteL3NetworkUuid(), new Completion(trigger) {
+                changeVirutalRouterDefaultL3Network(msg.getVmInstanceUuid(), msg.getDefaultRouteL3NetworkUuid(), vrVO.getDefaultRouteL3NetworkUuid(), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -681,11 +681,13 @@ public class VirtualRouter extends ApplianceVmBase {
                 haData.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), VirtualRouterConstant.VR_CHANGE_DEFAULT_ROUTE_JOB);
                 haData.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), msg.getVmInstanceUuid());
                 haData.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), msg.getDefaultRouteL3NetworkUuid());
+                haData.put(VirtualRouterHaCallbackInterface.Params.Struct1.toString(), vrVO.getDefaultRouteL3NetworkUuid());
                 haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
                     @Override
                     public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
-                        String l3Uuid =  (String) data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                        changeVirutalRouterDefaultL3Network(vrUuid, l3Uuid, compl);
+                        String newL3Uuid =  (String) data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                        String oldL3Uuid =  (String) data.get(VirtualRouterHaCallbackInterface.Params.Struct1.toString());
+                        changeVirutalRouterDefaultL3Network(vrUuid, newL3Uuid, oldL3Uuid, compl);
                     }
                 }, haData, completion);
             }
