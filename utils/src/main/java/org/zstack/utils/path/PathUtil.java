@@ -1,14 +1,12 @@
 package org.zstack.utils.path;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -26,7 +24,7 @@ public class PathUtil {
         assert paths != null && paths.length > 0;
 
         File parent = new File(paths[0]);
-        for (int i=1; i<paths.length; i++) {
+        for (int i = 1; i < paths.length; i++) {
             parent = new File(parent, paths[i]);
         }
         return parent.getPath();
@@ -64,7 +62,7 @@ public class PathUtil {
     }
 
     public static String parentFolder(String fullPath) {
-        if (! fullPath.contains(File.separator)) {
+        if (!fullPath.contains(File.separator)) {
             return fullPath;
         }
 
@@ -89,7 +87,7 @@ public class PathUtil {
         return f.exists();
     }
 
-    public static File findFolderOnClassPath(String folderName,  boolean exceptionOnNotFound) {
+    public static File findFolderOnClassPath(String folderName, boolean exceptionOnNotFound) {
         File folder = findFolderOnClassPath(folderName);
         if (folder == null && exceptionOnNotFound) {
             throw new RuntimeException(String.format("The folder %s is not found on classpath or there is another resource has the same name.", folderName));
@@ -132,38 +130,20 @@ public class PathUtil {
     }
 
     public static boolean compareFileByMd5(File src, File dst) {
-        FileInputStream srcIn = null;
-        FileInputStream dstIn = null;
-        try {
-            srcIn = new FileInputStream(src);
+        try (FileInputStream srcIn = new FileInputStream(src);
+             FileInputStream dstIn = new FileInputStream(dst)) {
             String srcMd5 = DigestUtils.md5Hex(srcIn);
-            dstIn = new FileInputStream(dst);
             String dstMd5 = DigestUtils.md5Hex(dstIn);
             return srcMd5.equals(dstMd5);
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
-        } finally {
-            if (srcIn != null) {
-                try {
-                    srcIn.close();
-                } catch (IOException e) {
-                    logger.warn(String.format("FileInputStream close IOException：%s", e.getMessage()));
-                }
-            }
-            if (dstIn != null) {
-                try {
-                    dstIn.close();
-                } catch (IOException e) {
-                    logger.warn(String.format("FileInputStream close IOException：%s", e.getMessage()));
-                }
-            }
         }
     }
 
     public static List<String> scanFolderOnClassPath(String folderName) {
         URL folderUrl = PathUtil.class.getClassLoader().getResource(folderName);
         if (folderUrl == null || !folderUrl.getProtocol().equals("file")) {
-            String info = String.format("The folder %s is not found in classpath or there is another resource has the same name.",folderName);
+            String info = String.format("The folder %s is not found in classpath or there is another resource has the same name.", folderName);
             logger.warn(info);
             return new ArrayList<String>();
         }
@@ -190,7 +170,7 @@ public class PathUtil {
                 return;
             }
 
-            for(File f: fileArray) {
+            for (File f : fileArray) {
                 if (f.isDirectory()) {
                     scanFolder(ret, f.getAbsolutePath());
                 } else {
@@ -208,11 +188,20 @@ public class PathUtil {
             boolean success = f.delete();
             logger.warn(String.format("Delete %s status: %s", path, success));
         } catch (Exception e) {
-            logger.warn(String.format("Failed to delete file[path:%s]", path));
+            logger.warn(String.format("Failed in deleting file: %s", path));
         }
     }
 
-    public static String createTempDirectory(){
+    public static void forceRemoveDirectory(String path) {
+        try {
+            FileUtils.deleteDirectory(new File(path));
+            logger.warn(String.format("Deleted directory: %s", path));
+        } catch (IOException ignored) {
+            logger.warn(String.format("Failed in deleting directory: %s", path));
+        }
+    }
+
+    public static String createTempDirectory() {
         try {
             return Files.createTempDirectory("tmp").toAbsolutePath().normalize().toString();
         } catch (IOException e) {
@@ -220,7 +209,7 @@ public class PathUtil {
         }
     }
 
-    public static String createTempFile(String prefix, String suffix){
+    public static String createTempFile(String prefix, String suffix) {
         try {
             return Files.createTempFile(prefix, suffix).toAbsolutePath().normalize().toString();
         } catch (IOException e) {
@@ -228,13 +217,22 @@ public class PathUtil {
         }
     }
 
-    public static String createTempFileWithContent(String content){
+    public static void writeFile(String fpath, String content) throws IOException {
+        writeFile(fpath, content.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static void writeFile(String fpath, byte[] data) throws IOException {
+        try (FileOutputStream outputStream = new FileOutputStream(new File(fpath))) {
+            outputStream.write(data);
+            outputStream.flush();
+        }
+    }
+
+    public static String createTempFileWithContent(String content) {
         String tmpFile = null;
         try {
             tmpFile = Files.createTempFile("zs-", ".tmp").toAbsolutePath().normalize().toString();
-            FileOutputStream outputStream = new FileOutputStream(new File(tmpFile));
-            outputStream.write(content.getBytes(StandardCharsets.UTF_8));
-            outputStream.close();
+            writeFile(tmpFile, content);
             return tmpFile;
         } catch (IOException e) {
             Optional.ofNullable(tmpFile).ifPresent(PathUtil::forceRemoveFile);
@@ -247,7 +245,7 @@ public class PathUtil {
     }
 
     public static String readFileToString(String path, Charset charset) {
-        try(UnicodeReader reader = new UnicodeReader(new FileInputStream(new File(path)), charset.toString())) {
+        try (UnicodeReader reader = new UnicodeReader(new FileInputStream(new File(path)), charset.toString())) {
             return IOUtils.toString(reader);
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
