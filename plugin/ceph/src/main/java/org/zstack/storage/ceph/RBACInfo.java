@@ -14,7 +14,10 @@ public class RBACInfo implements RBACDescription {
 
     @Override
     public void contributeToRoles() {
-
+        roleContributorBuilder()
+                .roleName("image")
+                .actions(APIQueryCephBackupStorageMsg.class)
+                .build();
     }
 
     @Override
