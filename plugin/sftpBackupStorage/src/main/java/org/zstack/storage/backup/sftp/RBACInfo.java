@@ -6,6 +6,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
+                .name("sftp")
                 .adminOnlyAPIs("org.zstack.storage.backup.sftp.**")
                 .normalAPIs(APIQuerySftpBackupStorageMsg.class)
                 .build();
@@ -13,7 +14,10 @@ public class RBACInfo implements RBACDescription {
 
     @Override
     public void contributeToRoles() {
-
+        roleContributorBuilder()
+                .roleName("image")
+                .actionsByPermissionName("sftp")
+                .build();
     }
 
     @Override
