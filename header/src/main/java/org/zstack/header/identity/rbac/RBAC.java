@@ -56,6 +56,36 @@ public class RBAC {
         }
     }
 
+    public static void checkMissingApiInRoles() {
+        PolicyMatcher matcher = new PolicyMatcher();
+
+        List<String> missing = new ArrayList<>();
+        APIMessage.apiMessageClasses.forEach(clz -> {
+            if (clz.isAnnotationPresent(Deprecated.class) || clz.isAnnotationPresent(SuppressCredentialCheck.class)) {
+                return;
+            }
+
+            boolean adminApi = permissions.stream()
+                    .anyMatch(p -> p.adminOnlyAPIs.stream().anyMatch(s -> matcher.match(s, clz.getName())));
+
+            if (adminApi) {
+                return;
+            }
+
+            boolean inlclude = roles.stream()
+                    .anyMatch(p -> p.getAllowedActions().stream().anyMatch(s -> matcher.match(s, clz.getName())) || p.getExcludedActions().stream().anyMatch(s -> matcher.match(s, clz.getName())));
+
+            if (!inlclude) {
+                missing.add(clz.getName());
+            }
+        });
+
+        Collections.sort(missing);
+        if (!missing.isEmpty()) {
+            throw new CloudRuntimeException(String.format("no RBACInfo.java describes below APIs:\n %s", StringUtils.join(missing, "\n")));
+        }
+    }
+
     public static class RoleBuilder {
         private Role role = new Role();
         private List<String> permissionsByNames = new ArrayList<>();
