@@ -615,7 +615,7 @@ public abstract class HostBase extends AbstractHost {
         scanVmPorts(msg);
     }
 
-    private void handle(final PingHostMsg msg, ReturnValueCompletion<PingHostReply> completion) {
+    private void doPingHost(final PingHostMsg msg, ReturnValueCompletion<PingHostReply> completion) {
         final PingHostReply reply = new PingHostReply();
         if (self.getStatus() == HostStatus.Connecting) {
             completion.fail(operr("host is connecting, ping failed"));
