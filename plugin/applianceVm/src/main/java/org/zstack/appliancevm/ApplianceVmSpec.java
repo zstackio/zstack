@@ -24,6 +24,7 @@ public class ApplianceVmSpec implements Serializable {
     private String name;
     private String uuid;
     private String description;
+    private L3NetworkInventory defaultL3Network;
     private L3NetworkInventory defaultRouteL3Network;
     private ApplianceVmType applianceVmType;
     private String accountUuid;
@@ -201,5 +202,13 @@ public class ApplianceVmSpec implements Serializable {
 
     public void setStaticVip(String staticVip) {
         this.staticVip = staticVip;
+    }
+
+    public L3NetworkInventory getDefaultL3Network() {
+        return defaultL3Network;
+    }
+
+    public void setDefaultL3Network(L3NetworkInventory defaultL3Network) {
+        this.defaultL3Network = defaultL3Network;
     }
 }

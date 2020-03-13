@@ -20,7 +20,7 @@
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosConfigSshFlow</value>
                 <value>org.zstack.network.service.virtualrouter.ha.VirtualRouterHaSyncConfigToBackendFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosChangePrivateL3FirewallDefaultActionFlow</value>
-                <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterCreateVipForPublicIpFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterCreatePublicVipFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>

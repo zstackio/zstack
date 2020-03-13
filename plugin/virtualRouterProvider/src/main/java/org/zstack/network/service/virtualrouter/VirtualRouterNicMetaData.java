@@ -127,4 +127,44 @@ public class VirtualRouterNicMetaData {
         int mask = Integer.valueOf(meta);
         return (mask & GUEST_NIC_MASK) != 0;
     }
+
+    public static void removePublicToNic(VmNicVO nic) {
+        String meta = nic.getMetaData();
+        if (meta == null) {
+            return;
+        }
+
+        int mask = Integer.valueOf(meta) & ~PUBLIC_NIC_MASK;
+        nic.setMetaData(String.valueOf(mask));
+    }
+
+    public static void addPublicToNic(VmNicVO nic) {
+        String meta = nic.getMetaData();
+        if (meta == null) {
+            return;
+        }
+
+        int mask = Integer.valueOf(meta) | PUBLIC_NIC_MASK;
+        nic.setMetaData(String.valueOf(mask));
+    }
+
+    public static void removeAdditionalPublicToNic(VmNicVO nic) {
+        String meta = nic.getMetaData();
+        if (meta == null) {
+            return;
+        }
+
+        int mask = Integer.valueOf(meta) & ~ADDITIONAL_PUBLIC_NIC_MASK;
+        nic.setMetaData(String.valueOf(mask));
+    }
+
+    public static void addAdditionalPublicToNic(VmNicVO nic) {
+        String meta = nic.getMetaData();
+        if (meta == null) {
+            return;
+        }
+
+        int mask = Integer.valueOf(meta) | ADDITIONAL_PUBLIC_NIC_MASK;
+        nic.setMetaData(String.valueOf(mask));
+    }
 }

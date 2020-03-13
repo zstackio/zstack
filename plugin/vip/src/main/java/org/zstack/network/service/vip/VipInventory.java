@@ -6,6 +6,7 @@ import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 
+import javax.persistence.Column;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -107,6 +108,11 @@ public class VipInventory implements Serializable {
      */
     private String useFor;
 
+    /**
+     * @desc true -- vip is created by zstack, false --- vip is created by user
+     */
+    private boolean system;
+
     @APINoSee
     private String usedIpUuid;
     /**
@@ -142,6 +148,7 @@ public class VipInventory implements Serializable {
 
         inv.setServicesRefs(VipNetworkServicesRefInventory.valueOf(vo.getServicesRefs()));
         inv.setUseFor(vo.getUseFor());
+        inv.setSystem(vo.isSystem());
         return inv;
     }
 
@@ -273,5 +280,13 @@ public class VipInventory implements Serializable {
 
     public void setPrefixLen(Integer prefixLen) {
         this.prefixLen = prefixLen;
+    }
+
+    public boolean isSystem() {
+        return system;
+    }
+
+    public void setSystem(boolean system) {
+        this.system = system;
     }
 }

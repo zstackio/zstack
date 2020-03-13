@@ -3,6 +3,7 @@ package org.zstack.network.service.vip;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -19,6 +20,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -167,8 +169,8 @@ public class VipBase {
 
         self = dbf.updateAndRefresh(self);
 
-        /* snat service is bound the router interface, don't need to bound to backend */
-        if (s.getUseFor().equals(NetworkServiceType.SNAT.toString())) {
+        /* system Vip don't need to be bound to backend */
+        if (self.isSystem()) {
             return false;
         }
 
@@ -186,9 +188,8 @@ public class VipBase {
             return false;
         }
 
-        if ( services.contains(NetworkServiceType.SNAT.toString())) {
-            /* snat is bound to router public interface, it is created automatically,
-             * so it should be deleted automatically, but don't need to remove from backend */
+        if (self.isSystem()){
+            /* system Vip don't need to be remove from backend */
             return false;
         }
 
@@ -225,19 +226,18 @@ public class VipBase {
         }
 
         if (services.size() == 1) {
-            if (s.isUserFor() && s.getUseFor().equals(NetworkServiceType.SNAT.toString())) {
+            if (self.isSystem()) {
                 /* snat is bound to router public interface, it is created automatically,
                  * so it should be deleted automatically, but don't need to remove from backend */
-                dbf.remove(self);
                 return false;
             }
 
             return true;
         }
 
-        if ( services.contains(NetworkServiceType.SNAT.toString())) {
-            /* snat is bound to router public interface, it is created automatically,
-             * so it should be deleted automatically, but don't need to remove from backend */
+
+        if (self.isSystem()){
+            /* system Vip don't need to be remove from backend */
             return false;
         }
 
@@ -356,7 +356,7 @@ public class VipBase {
                 if (s.getUseFor() != null && releaseServices) {
                     delServicesRef(s.getServiceUuid(),s.getUseFor());
                 }
-                if (s.isPeerL3NetworkUuid() && s.isServiceProvider() && !services.contains(NetworkServiceType.SNAT.toString())) {
+                if (s.isPeerL3NetworkUuid() && s.isServiceProvider() && !self.isSystem()) {
                     s.getPeerL3NetworkUuids().forEach(peer -> deletePeerL3Network(peer));
                 }
             } catch (CloudRuntimeException e) {
@@ -555,8 +555,7 @@ public class VipBase {
         String useFor = it.next();
         if (useFor.equals(VipUseForList.SNAT_NETWORK_SERVICE_TYPE)){
             releaseServicesOnVip(it, trigger);
-        }
-        else if (useFor != null && !useFor.equals("null")) {
+        } else if (!useFor.equals("null")) {
             VipReleaseExtensionPoint ext = vipMgr.getVipReleaseExtensionPoint(useFor);
             ext.releaseServicesOnVip(getSelfInventory(), new Completion(trigger) {
                 @Override
@@ -566,30 +565,18 @@ public class VipBase {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    trigger.fail(errorCode);
+                    releaseServicesOnVip(it, trigger);
                 }
             });
         } else {
-            trigger.next();
-            return;
+            releaseServicesOnVip(it, trigger);
         }
     }
 
     protected void deleteVip(Completion completion) {
         refresh();
-        Set<String> services = self.getServicesTypes();
-
-        if(services == null || services.isEmpty()){
-            /*there are no any services using this vip*/
-            dbf.remove(self);
-            returnVip(completion);
-
-            logger.debug(String.format("no services using this vip, released vip[uuid:%s, ip:%s] on l3Network[uuid:%s]",
-                    self.getUuid(), self.getIp(), self.getL3NetworkUuid()));
-
-            return;
-        }
-
+        final Set<String> services = self.getServicesTypes();
+        
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-vip-uuid-%s-ip-%s-name-%s", self.getUuid(), self.getIp(), self.getName()));
         chain.then(new ShareFlow() {
@@ -600,25 +587,36 @@ public class VipBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        if(!services.isEmpty()){
+                            trigger.next();
+                            return;
+                        }
+
+                        /* this flow only work for the virtual public vip without service */
                         List<PreVipReleaseExtensionPoint> exts = pluginRgty.getExtensionList(PreVipReleaseExtensionPoint.class);
                         if(exts.isEmpty()){
                             trigger.next();
+                            return;
                         }
-                        
-                        for (PreVipReleaseExtensionPoint ext : exts){
-                            ext.preReleaseServicesOnVip(getSelfInventory(), new Completion(trigger) {
+
+                        new While<>(exts).each((ext, compl) -> {
+                            ext.preReleaseServicesOnVip(VipInventory.valueOf(self), new Completion(compl) {
                                 @Override
                                 public void success() {
-                                    trigger.next();
+                                    compl.done();
                                 }
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
+                                    compl.done();
                                 }
                             });
-                        }
-
+                        }).run(new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
+                                trigger.next();
+                            }
+                        });
                     }
                 });
 
@@ -627,6 +625,11 @@ public class VipBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        if(services.isEmpty()){
+                            trigger.next();
+                            return;
+                        }
+
                         List<String> types = new ArrayList<>(services);
                         Iterator<String> it = types.iterator();
                         releaseServicesOnVip(it, trigger);
@@ -638,6 +641,11 @@ public class VipBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        if(services.isEmpty()){
+                            trigger.next();
+                            return;
+                        }
+
                         releaseVip(null, true, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -706,13 +714,6 @@ public class VipBase {
     protected void handle(APIDeleteVipMsg msg) {
         final APIDeleteVipEvent evt = new APIDeleteVipEvent(msg.getId());
         refresh();
-        /* virtual router public nic vip can not be deleted */
-        Set<String> services = self.getServicesTypes();
-        if(services != null && services.contains( VipUseForList.SNAT_NETWORK_SERVICE_TYPE)) {
-            evt.setError(operr("Vip [uuid %s, ip %s] of router public interface can not be deleted", self.getUuid(), self.getIp()));
-            bus.publish(evt);
-            return;
-        }
 
         final String issuer = VipVO.class.getSimpleName();
         final List<VipInventory> ctx = asList(VipInventory.valueOf(self));
