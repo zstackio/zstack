@@ -37,10 +37,8 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.tag.TagManager;
@@ -190,6 +188,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
         amsg.setAllocatorStrategy(msg.getAllocatorStrategy());
         amsg.setRequiredIp(msg.getRequiredIp());
+        amsg.setSystem(msg.isSystem());
         amsg.setSession(msg.getSession());
         docreateVip(amsg, new ReturnValueCompletion<VipInventory>(msg) {
             @Override
@@ -220,6 +219,17 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        /* if ip address is allocated, vip is virtual router system vip */
+                        if (msg.getRequiredIp() != null) {
+                            UsedIpVO usedIpVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getRequiredIp())
+                                    .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).find();
+                            if (usedIpVO != null) {
+                                ip = UsedIpInventory.valueOf(usedIpVO);
+                                trigger.next();
+                                return;
+                            }
+                        }
+
                         L3NetworkVO l3Vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
                         String strategyType = msg.getAllocatorStrategy();
                         if (msg.getAllocatorStrategy() == null) {
@@ -240,6 +250,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                                 if (reply.isSuccess()) {
                                     AllocateIpReply re = reply.castReply();
                                     ip = re.getIpInventory();
+                                    data.put("newCreate", ip);
                                     trigger.next();
                                 } else {
                                     trigger.fail(reply.getError());
@@ -250,7 +261,8 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
 
                     @Override
                     public void rollback(final FlowRollback trigger, Map data) {
-                        if (ip == null) {
+                        UsedIpInventory newVip = (UsedIpInventory)data.get("newCreate");
+                        if (newVip == null) {
                             trigger.rollback();
                             return;
                         }
@@ -294,6 +306,7 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                         vipvo.setNetmask(ip.getNetmask());
                         vipvo.setUsedIpUuid(ip.getUuid());
                         vipvo.setAccountUuid(msg.getSession().getAccountUuid());
+                        vipvo.setSystem(msg.isSystem());
 
                         L3NetworkInventory vipL3 = L3NetworkInventory.valueOf(dbf.findByUuid(vipvo.getL3NetworkUuid(), L3NetworkVO.class));
                         vipvo.setPrefixLen(vipL3.getIpRanges().get(0).getPrefixLen());
@@ -496,5 +509,20 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         if (!vipVOS.isEmpty()) {
             dbf.updateCollection(vipVOS);
         }
+
+        vipVOS = Q.New(VipVO.class).eq(VipVO_.system, false).list();
+        for (VipVO vip : vipVOS) {
+            if (vip.getServicesTypes().contains(NetworkServiceType.SNAT.toString())) {
+                vip.setSystem(true);
+            }
+        }
+        if (!vipVOS.isEmpty()) {
+            dbf.updateCollection(vipVOS);
+        }
+    }
+
+    @Override
+    public boolean isSystemVip(VipVO vip) {
+        return  Q.New(VmNicVO.class).eq(VmNicVO_.ip, vip.getIp()).eq(VmNicVO_.l3NetworkUuid, vip.getL3NetworkUuid()).isExists();
     }
 }

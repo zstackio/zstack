@@ -317,11 +317,11 @@ public class VirtualRouterCommands {
 	public static class SNATInfo {
 		private String publicNicMac;
 		private String publicIp;
-        private String privateNicMac;
-        private String privateNicIp;
+		private String privateNicMac;
+		private String privateNicIp;
 		private String snatNetmask;
 
-        public String getPrivateNicMac() {
+		public String getPrivateNicMac() {
 			return privateNicMac;
 		}
 		public void setPrivateNicMac(String nicMac) {
@@ -772,5 +772,30 @@ public class VirtualRouterCommands {
 		public void setHealthDetail(String healthDetail) {
 			this.healthDetail = healthDetail;
 		}
+	}
+
+	public static class ChangeDefaultNicCmd extends AgentCommand {
+		private NicInfo newNic;
+		private List<SNATInfo> snats;
+
+		public NicInfo getNewNic() {
+			return newNic;
+		}
+
+		public void setNewNic(NicInfo newNic) {
+			this.newNic = newNic;
+		}
+
+		public List<SNATInfo> getSnats() {
+			return snats;
+		}
+
+		public void setSnats(List<SNATInfo> snats) {
+			this.snats = snats;
+		}
+	}
+
+	public static class ChangeDefaultNicRsp extends AgentResponse {
+
 	}
 }
