@@ -638,24 +638,28 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 		vo = dbf.persistAndRefresh(vo);
 		virtualRouterProvider = NetworkServiceProviderInventory.valueOf(vo);
 
-		/* apply to ha router */
+		/* vip upgrade for multiple public interface */
         List<VipVO> vips = new ArrayList<>();
         List<VirtualRouterVipVO> vvips = new ArrayList<>();
         List<VirtualRouterVmVO> vrVos = Q.New(VirtualRouterVmVO.class).list();
         for (VirtualRouterVmVO vr : vrVos) {
+            logger.debug("ruanshixin " + vr.getName());
             if (vr.getDefaultL3NetworkUuid() == null) {
                 SQL.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vr.getUuid())
                         .set(VirtualRouterVmVO_.defaultL3NetworkUuid, vr.getPublicNetworkUuid()).update();
             }
 
             if (vr.isHaEnabled()) {
+                logger.debug("ruanshixin is ha");
                 continue;
             }
 
             /* create public vip for additional public nic */
             VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vr);
             for (VmNicInventory nic : vrInv.getAdditionalPublicNics()) {
+                logger.debug("ruanshixin public nic ip " + nic.getIp());
                 if (Q.New(VipVO.class).eq(VipVO_.ip, nic.getIp()).eq(VipVO_.l3NetworkUuid, nic.getL3NetworkUuid()).isExists()) {
+                    logger.debug("ruanshixin public vip found " + nic.getIp());
                     continue;
                 }
 
@@ -669,6 +673,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 }
 
                 if (ipRange == null){
+                    logger.debug("ruanshixin no ip range");
                     logger.debug(String.format("can not find ip range ip address[ip:%s, l3 network: Uuid]",
                             nic.getIp(), nic.getL3NetworkUuid()));
                     continue;
@@ -676,8 +681,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
                 VipVO vipvo = new VipVO();
                 vipvo.setUuid(Platform.getUuid());
-                vipvo.setName(String.format("vip-", vr.getName()));
-                vipvo.setDescription(String.format("system vip for ", vr.getName()));
+                vipvo.setName(String.format("vip-%s", vr.getName()));
+                vipvo.setDescription(String.format("system vip for %s", vr.getName()));
                 vipvo.setState(VipState.Enabled);
                 vipvo.setGateway(nic.getGateway());
                 vipvo.setIp(nic.getIp());
@@ -691,6 +696,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
                 vips.add(vipvo);
 
+                logger.debug("ruanshixin new vip for " + vipvo.getName());
+
                 VirtualRouterVipVO vvip = new VirtualRouterVipVO();
                 vvip.setVirtualRouterVmUuid(vrInv.getUuid());
                 vvip.setUuid(vipvo.getUuid());
@@ -699,6 +706,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         if (!vips.isEmpty()) {
+            logger.debug("ruanshixin persist vips ");
             dbf.persistCollection(vips);
         }
 

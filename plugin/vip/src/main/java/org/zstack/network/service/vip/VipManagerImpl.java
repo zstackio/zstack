@@ -505,6 +505,13 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         List<VipVO> vipVOS = Q.New(VipVO.class).isNull(VipVO_.prefixLen).list();
         for (VipVO vip : vipVOS) {
             vip.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(vip.getNetmask()));
+        }
+        if (!vipVOS.isEmpty()) {
+            dbf.updateCollection(vipVOS);
+        }
+
+        vipVOS = Q.New(VipVO.class).eq(VipVO_.system, false).list();
+        for (VipVO vip : vipVOS) {
             if (vip.getServicesTypes().contains(NetworkServiceType.SNAT.toString())) {
                 vip.setSystem(true);
             }
