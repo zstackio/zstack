@@ -136,6 +136,8 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                     backupStorageRefVO.setInstallPath(ref.getInstallPath());
                     backupStorageRefVO.setImageUuid(ref.getImageUuid());
                     backupStorageRefVO.setBackupStorageUuid(backupStorageUuid);
+                    backupStorageRefVO.setExportMd5Sum(ref.getExportMd5Sum());
+                    backupStorageRefVO.setExportUrl(ref.getExportUrl());
                     backupStorageRefVO.setCreateDate(ref.getCreateDate());
                     backupStorageRefVO.setLastOpDate(ref.getLastOpDate());
                     backupStorageRefVOs.add(backupStorageRefVO);
@@ -157,8 +159,6 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
                 imageVO.setActualSize(imageInventory.getActualSize());
                 imageVO.setDescription(imageInventory.getDescription());
                 imageVO.setStatus(ImageStatus.valueOf(imageInventory.getStatus()));
-                imageVO.setExportUrl(imageInventory.getExportUrl());
-                imageVO.setExportMd5Sum(imageInventory.getExportMd5Sum());
                 imageVO.setFormat(imageInventory.getFormat());
                 imageVO.setGuestOsType(imageInventory.getGuestOsType());
                 imageVO.setMd5Sum(imageInventory.getMd5Sum());
