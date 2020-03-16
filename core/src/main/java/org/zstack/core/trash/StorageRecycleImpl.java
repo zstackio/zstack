@@ -95,7 +95,8 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
         vo.setInstallPath(image.getUrl());
         vo.setResourceType(ImageVO.class.getSimpleName());
         vo.setResourceUuid(image.getUuid());
-        vo.setStorageUuid(image.getExportUrl());
+        //the description field temporarily records the uuid value of image storage
+        vo.setStorageUuid(image.getDescription());
         vo.setStorageType(BackupStorageVO.class.getSimpleName());
         vo.setTrashType(type.toString());
         vo.setSize(image.getSize());

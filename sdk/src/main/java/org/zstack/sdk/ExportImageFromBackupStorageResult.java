@@ -11,4 +11,11 @@ public class ExportImageFromBackupStorageResult {
         return this.imageUrl;
     }
 
+    private java.lang.String exportMd5Sum;
+    public java.lang.String getExportMd5Sum() {
+        return exportMd5Sum;
+    }
+    public void setExportMd5Sum(java.lang.String exportMd5Sum) {
+        this.exportMd5Sum = exportMd5Sum;
+    }
 }

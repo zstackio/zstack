@@ -21,6 +21,12 @@ doc {
 		since "1.7"
 	}
 	field {
+		name "exportMd5Sum"
+		desc "被导出镜像的md5值"
+		type "String"
+		since "3.9"
+	}
+	field {
 		name "success"
 		desc "导出成功失败标志"
 		type "boolean"

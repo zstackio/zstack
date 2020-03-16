@@ -76,7 +76,7 @@ class BackupStorageTrashCase extends SubCase {
         def vo = Q.New(ImageVO.class).eq(ImageVO_.uuid, image.uuid).find() as ImageVO
         def i = org.zstack.header.image.ImageInventory.valueOf(vo)
         i.url = image.backupStorageRefs.get(0).installPath
-        i.exportUrl = bs.uuid
+        i.description = bs.uuid
         label = trashMrg.createTrash(TrashType.MigrateImage, false, i) as InstallPathRecycleInventory
 
         assert label.resourceUuid == image.uuid
