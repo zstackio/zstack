@@ -139,6 +139,7 @@ class TestVrPublicVipFailedCase extends SubCase{
     void test() {
         env.create {
             TestVrPublicVipFail()
+            TestCreateVipSameToVmIpFail()
         }
     }
 
@@ -214,5 +215,27 @@ class TestVrPublicVipFailedCase extends SubCase{
         }
         assert !Q.New(VipVO.class).eq(VipVO_.ip, pubNic.ip).exists
         assert Q.New(VipVO.class).count() == 0
+    }
+
+    void TestCreateVipSameToVmIpFail(){
+        ImageInventory image = env.inventoryByName("image")
+        InstanceOfferingInventory offer = env.inventoryByName("instanceOffering")
+        L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
+
+        vm = createVmInstance {
+            name = "pub-vm"
+            instanceOfferingUuid = offer.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [pubL3.uuid]
+        }
+        VmNicInventory nic = vm.getVmNics().get(0)
+
+        expect (AssertionError.class) {
+            createVip {
+                name = "vip"
+                l3NetworkUuid = pubL3.uuid
+                requiredIp = nic.ip
+            }
+        }
     }
 }
