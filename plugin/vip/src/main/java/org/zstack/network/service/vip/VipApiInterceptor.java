@@ -3,6 +3,7 @@ package org.zstack.network.service.vip;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -11,8 +12,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.network.l3.IpAllocatorType;
-import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.*;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
@@ -74,6 +74,13 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
             if (q.isExists()) {
                 throw new ApiMessageInterceptionException(operr("there is already a vip[%s] on l3Network[uuid:%s]", msg.getRequiredIp(), msg.getL3NetworkUuid()));
             }
+
+            UsedIpVO usedIpVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.ip, msg.getRequiredIp())
+                    .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).find();
+            if (usedIpVO != null && !msg.isSystem()) {
+                throw new ApiMessageInterceptionException(operr("required ip address [%s] is already used", msg.getRequiredIp()));
+            }
+
         }
     }
 }
