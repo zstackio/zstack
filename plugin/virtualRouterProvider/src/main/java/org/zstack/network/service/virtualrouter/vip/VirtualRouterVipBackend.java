@@ -278,7 +278,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     }
 
     private void detachVipForPublicL3(VmNicInventory nic, Completion completion) {
-        List<String> vipUuids = proxy.getServiceUuidsByRouterUuid(nic.getVmInstanceUuid(), VipVO.class.getTypeName());
+        List<String> vipUuids = proxy.getServiceUuidsByRouterUuid(nic.getVmInstanceUuid(), VipVO.class.getSimpleName());
         if (vipUuids.isEmpty()) {
             completion.success();
             return;
