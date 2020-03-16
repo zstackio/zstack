@@ -11,6 +11,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -164,6 +165,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private VipConfigProxy vipProxy;
     @Autowired
     protected VirutalRouterDefaultL3ConfigProxy defaultL3ConfigProxy;
+    @Autowired
+    private ResourceDestinationMaker destinationMaker;
 
 	@Override
     @MessageSafe
@@ -615,34 +618,16 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
 
-    public void prepareDbInitialValue() {
-		SimpleQuery<NetworkServiceProviderVO> query = dbf.createQuery(NetworkServiceProviderVO.class);
-		query.add(NetworkServiceProviderVO_.type, Op.EQ, VIRTUAL_ROUTER_PROVIDER_TYPE);
-		NetworkServiceProviderVO rpvo = query.find();
-		if (rpvo != null) {
-			virtualRouterProvider = NetworkServiceProviderInventory.valueOf(rpvo);
-			return;
-		}
-		
-		NetworkServiceProviderVO vo = new NetworkServiceProviderVO();
-        vo.setUuid(Platform.getUuid());
-		vo.setName(VIRTUAL_ROUTER_PROVIDER_TYPE);
-		vo.setDescription("zstack virtual router network service provider");
-		vo.getNetworkServiceTypes().add(NetworkServiceType.DHCP.toString());
-		vo.getNetworkServiceTypes().add(NetworkServiceType.DNS.toString());
-		vo.getNetworkServiceTypes().add(NetworkServiceType.SNAT.toString());
-		vo.getNetworkServiceTypes().add(NetworkServiceType.PortForwarding.toString());
-        vo.getNetworkServiceTypes().add(EipConstant.EIP_NETWORK_SERVICE_TYPE);
-        vo.getNetworkServiceTypes().add(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
-		vo.setType(VIRTUAL_ROUTER_PROVIDER_TYPE);
-		vo = dbf.persistAndRefresh(vo);
-		virtualRouterProvider = NetworkServiceProviderInventory.valueOf(vo);
-
-		/* vip upgrade for multiple public interface */
+    private void prepareDbInitialValueForPublicVip() {
+        /* vip upgrade for multiple public interface */
         List<VipVO> vips = new ArrayList<>();
         List<VirtualRouterVipVO> vvips = new ArrayList<>();
         List<VirtualRouterVmVO> vrVos = Q.New(VirtualRouterVmVO.class).list();
         for (VirtualRouterVmVO vr : vrVos) {
+            if (!destinationMaker.isManagedByUs(vr.getUuid())) {
+                continue;
+            }
+
             if (vr.getDefaultL3NetworkUuid() == null) {
                 SQL.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vr.getUuid())
                         .set(VirtualRouterVmVO_.defaultL3NetworkUuid, vr.getPublicNetworkUuid()).update();
@@ -705,6 +690,32 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         if (!vvips.isEmpty()) {
             dbf.persistCollection(vvips);
         }
+    }
+
+    public void prepareDbInitialValue() {
+        prepareDbInitialValueForPublicVip();
+
+		SimpleQuery<NetworkServiceProviderVO> query = dbf.createQuery(NetworkServiceProviderVO.class);
+		query.add(NetworkServiceProviderVO_.type, Op.EQ, VIRTUAL_ROUTER_PROVIDER_TYPE);
+		NetworkServiceProviderVO rpvo = query.find();
+		if (rpvo != null) {
+			virtualRouterProvider = NetworkServiceProviderInventory.valueOf(rpvo);
+			return;
+		}
+		
+		NetworkServiceProviderVO vo = new NetworkServiceProviderVO();
+        vo.setUuid(Platform.getUuid());
+		vo.setName(VIRTUAL_ROUTER_PROVIDER_TYPE);
+		vo.setDescription("zstack virtual router network service provider");
+		vo.getNetworkServiceTypes().add(NetworkServiceType.DHCP.toString());
+		vo.getNetworkServiceTypes().add(NetworkServiceType.DNS.toString());
+		vo.getNetworkServiceTypes().add(NetworkServiceType.SNAT.toString());
+		vo.getNetworkServiceTypes().add(NetworkServiceType.PortForwarding.toString());
+        vo.getNetworkServiceTypes().add(EipConstant.EIP_NETWORK_SERVICE_TYPE);
+        vo.getNetworkServiceTypes().add(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+		vo.setType(VIRTUAL_ROUTER_PROVIDER_TYPE);
+		vo = dbf.persistAndRefresh(vo);
+		virtualRouterProvider = NetworkServiceProviderInventory.valueOf(vo);
 	}
 	
 	private void populateExtensions() {
