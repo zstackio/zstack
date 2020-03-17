@@ -3,7 +3,6 @@ package org.zstack.network.l3;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.Platform;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -35,7 +34,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.data.FieldPrinter;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
@@ -110,53 +108,16 @@ public class L3BasicNetwork implements L3Network {
     public void deleteHook() {
     }
 
-    private IpRangeInventory createIpRange(APICreateMessage msg, IpRangeInventory ipr) {
-        IpRangeVO vo = new SQLBatchWithReturn<IpRangeVO>() {
-            @Override
-            protected IpRangeVO scripts() {
-                IpRangeVO vo = new IpRangeVO();
-                vo.setUuid(ipr.getUuid() == null ? Platform.getUuid() : ipr.getUuid());
-                vo.setDescription(ipr.getDescription());
-                vo.setEndIp(ipr.getEndIp());
-                vo.setGateway(ipr.getGateway());
-                vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
-                vo.setName(ipr.getName());
-                vo.setNetmask(ipr.getNetmask());
-                vo.setStartIp(ipr.getStartIp());
-                vo.setNetworkCidr(ipr.getNetworkCidr());
-                vo.setAccountUuid(msg.getSession().getAccountUuid());
-                vo.setIpVersion(ipr.getIpVersion());
-                vo.setAddressMode(ipr.getAddressMode());
-                vo.setPrefixLen(ipr.getPrefixLen());
-                dbf.getEntityManager().persist(vo);
-                dbf.getEntityManager().flush();
-                dbf.getEntityManager().refresh(vo);
-
-                return vo;
-            }
-        }.execute();
-
-        final IpRangeInventory finalIpr = ipr;
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAddIpRangeExtensionPoint.class), new ForEachFunction<AfterAddIpRangeExtensionPoint>() {
-            @Override
-            public void run(AfterAddIpRangeExtensionPoint ext) {
-                ext.afterAddIpRange(finalIpr, msg.getSystemTags());
-            }
-        });
-
-        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), IpRangeVO.class.getSimpleName());
-
-        IpRangeInventory inv = IpRangeInventory.valueOf(vo);
-        logger.debug(String.format("Successfully added ip range: %s", JSONObjectUtil.toJsonString(inv)));
-        return inv;
-    }
-
     private void handle(APIAddIpRangeMsg msg) {
         IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
-        ipr = createIpRange(msg, ipr);
+
+        IpRangeFactory factory = l3NwMgr.getIpRangeFactory(ipr.getIpRangeType());
+        IpRangeInventory inv = factory.createIpRange(ipr, msg);
+
+        tagMgr.createTagsFromAPICreateMessage(msg, inv.getL3NetworkUuid(), L3NetworkVO.class.getSimpleName());
 
         APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
-        evt.setInventory(ipr);
+        evt.setInventory(inv);
         bus.publish(evt);
     }
 
@@ -402,7 +363,7 @@ public class L3BasicNetwork implements L3Network {
             return;
         }
 
-        List<IpRangeVO> ipRangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+        List<NormalIpRangeVO> ipRangeVOS = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
         if (ipRangeVOS == null || ipRangeVOS.isEmpty()) {
             reply.setRouterInterfaceIp(null);
             bus.reply(msg, reply);
@@ -557,25 +518,37 @@ public class L3BasicNetwork implements L3Network {
 
     private void handle(APIAddIpRangeByNetworkCidrMsg msg) {
         IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
-        ipr = createIpRange(msg, ipr);
+        IpRangeFactory factory = l3NwMgr.getIpRangeFactory(ipr.getIpRangeType());
+        IpRangeInventory inv = factory.createIpRange(ipr, msg);
+
+        tagMgr.createTagsFromAPICreateMessage(msg, inv.getL3NetworkUuid(), L3NetworkVO.class.getSimpleName());
+
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
-        evt.setInventory(ipr);
+        evt.setInventory(inv);
         bus.publish(evt);
     }
 
     private void handle(APIAddIpv6RangeByNetworkCidrMsg msg) {
         IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
-        ipr = createIpRange(msg, ipr);
+        IpRangeFactory factory = l3NwMgr.getIpRangeFactory(ipr.getIpRangeType());
+        IpRangeInventory inv = factory.createIpRange(ipr, msg);
+
+        tagMgr.createTagsFromAPICreateMessage(msg, inv.getL3NetworkUuid(), L3NetworkVO.class.getSimpleName());;
+
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
-        evt.setInventory(ipr);
+        evt.setInventory(inv);
         bus.publish(evt);
     }
 
     private void handle(APIAddIpv6RangeMsg msg) {
         IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
-        ipr = createIpRange(msg, ipr);
+        IpRangeFactory factory = l3NwMgr.getIpRangeFactory(ipr.getIpRangeType());
+        IpRangeInventory inv = factory.createIpRange(ipr, msg);
+
+        tagMgr.createTagsFromAPICreateMessage(msg, inv.getL3NetworkUuid(), L3NetworkVO.class.getSimpleName());
+
         APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
-        evt.setInventory(ipr);
+        evt.setInventory(inv);
         bus.publish(evt);
     }
 

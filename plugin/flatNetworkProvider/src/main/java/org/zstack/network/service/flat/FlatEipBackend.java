@@ -21,8 +21,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l3.IpRangeVO;
-import org.zstack.header.network.l3.IpRangeVO_;
+import org.zstack.header.network.l3.NormalIpRangeVO;
+import org.zstack.header.network.l3.NormalIpRangeVO_;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.service.AfterApplyFlatEipExtensionPoint;
 import org.zstack.header.vm.*;
@@ -407,7 +407,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                         to.nicIp = ip.getIp();
                         to.nicGateway = ip.getGateway();
                         to.nicNetmask = ip.getNetmask();
-                        IpRangeVO ipr = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, ip.getIpRangeUuid()).find();
+                        NormalIpRangeVO ipr = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ip.getIpRangeUuid()).find();
                         to.nicPrefixLen = ipr.getPrefixLen();
                         to.vmBridgeName = bridgeNames.get(ip.getL3NetworkUuid());
                     }
@@ -419,7 +419,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 to.vipGateway = vip.getGateway();
                 to.vipNetmask = vip.getNetmask();
                 to.vipUuid = vip.getUuid();
-                List<IpRangeVO> vipIprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, vip.getL3NetworkUuid()).list();
+                List<NormalIpRangeVO> vipIprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, vip.getL3NetworkUuid()).list();
                 to.vipPrefixLen = vipIprs.get(0).getPrefixLen();
                 to.publicBridgeName = pubBridgeNames.get(eip.getVipUuid());
                 return to;
@@ -605,7 +605,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         to.vipGateway = struct.getVip().getGateway();
         to.vipNetmask = struct.getVip().getNetmask();
         to.vipUuid = struct.getVip().getUuid();
-        List<IpRangeVO> iprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, struct.getVip().getL3NetworkUuid()).list();
+        List<NormalIpRangeVO> iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, struct.getVip().getL3NetworkUuid()).list();
         to.vipPrefixLen = iprs.get(0).getPrefixLen();
         to.publicBridgeName = new BridgeNameFinder().findByL3Uuid(struct.getVip().getL3NetworkUuid());
         return to;

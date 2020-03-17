@@ -29,6 +29,12 @@ public class APIAddIpRangeByNetworkCidrMsg extends APICreateMessage implements L
     @APIParam(required = false, maxLength = 64)
     private String gateway;
 
+    /**
+     * @desc IPv4 range type
+     */
+    @APIParam(required = false, validValues = {"Normal", "AddressPool"})
+    private String ipRangeType;
+
     @Override
     public String getL3NetworkUuid() {
         return l3NetworkUuid;
@@ -70,12 +76,21 @@ public class APIAddIpRangeByNetworkCidrMsg extends APICreateMessage implements L
         this.gateway = gateway;
     }
 
+    public String getIpRangeType() {
+        return ipRangeType;
+    }
+
+    public void setIpRangeType(String ipRangeType) {
+        this.ipRangeType = ipRangeType;
+    }
+
     public static APIAddIpRangeByNetworkCidrMsg __example__() {
         APIAddIpRangeByNetworkCidrMsg msg = new APIAddIpRangeByNetworkCidrMsg();
 
         msg.setName("Test-IPRange");
         msg.setL3NetworkUuid(uuid());
         msg.setNetworkCidr("192.168.10.0/24");
+        msg.setIpRangeType(IpRangeType.Normal.toString());
 
         return msg;
     }

@@ -87,9 +87,19 @@ doc {
 					desc "网关"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 					
+				}
+				column {
+					name "ipRangeType"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					values ("Normal","AddressPool")
 				}
 				column {
 					name "resourceUuid"
@@ -99,7 +109,7 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
+
 				}
 				column {
 					name "systemTags"

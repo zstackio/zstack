@@ -8,8 +8,8 @@ import java.util.List;
 public interface L3NetworkManager {
     IpAllocatorStrategy getIpAllocatorStrategy(IpAllocatorType type);
 
-    UsedIpInventory reserveIp(IpRangeInventory ipRange, String ip);
-    UsedIpInventory reserveIp(IpRangeInventory ipRange, String ip, boolean allowDuplicatedAddress);
+    UsedIpInventory reserveIp(IpRangeVO ipRange, String ip);
+    UsedIpInventory reserveIp(IpRangeVO ipRange, String ip, boolean allowDuplicatedAddress);
 
     boolean isIpRangeFull(IpRangeVO vo);
     
@@ -19,4 +19,6 @@ public interface L3NetworkManager {
     L3NetworkFactory getL3NetworkFactory(L3NetworkType type);
 
     void updateIpAllocationMsg(AllocateIpMsg msg, String mac);
+
+    IpRangeFactory getIpRangeFactory(IpRangeType type);
 }

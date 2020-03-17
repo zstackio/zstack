@@ -11,6 +11,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
@@ -506,7 +507,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
             } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
                 List<IpRangeInventory> iprs = action.getParentIssuerContext();
-                List<String> iprUuids = iprs.stream().map(ipr -> ipr.getUuid()).collect(Collectors.toList());
+                List<String> uuids = iprs.stream().map(ipr -> ipr.getUuid()).collect(Collectors.toList());
+                List<String> iprUuids = Q.New(NormalIpRangeVO.class).in(NormalIpRangeVO_.uuid, uuids).select(NormalIpRangeVO_.uuid).listValues();
                 for (VmDeletionStruct vm : vminvs) {
                     for (VmNicInventory nic : vm.getInventory().getVmNics()) {
                         List<String> rangeUuids = nic.getUsedIps().stream().map(n -> n.getIpRangeUuid()).collect(Collectors.toList());
@@ -729,15 +731,19 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     new Function<String, IpRangeInventory>() {
                         @Override
                         public String call(IpRangeInventory arg) {
-                            return arg.getUuid();
+                            return Q.New(NormalIpRangeVO.class).select(NormalIpRangeVO_.uuid).eq(NormalIpRangeVO_.uuid, arg.getUuid()).findValue();
                         }
                     });
+
+            if (ipruuids.isEmpty()) {
+                return new ArrayList<>();
+            }
 
             List<VmInstanceVO> vmvos = new Callable<List<VmInstanceVO>>() {
                 @Override
                 @Transactional(readOnly = true)
                 public List<VmInstanceVO> call() {
-                    String sql = "select vm from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip, IpRangeVO ipr" +
+                    String sql = "select vm from VmInstanceVO vm, VmNicVO nic, UsedIpVO ip, NormalIpRangeVO ipr" +
                             " where vm.type = :vmType" +
                             " and vm.uuid = nic.vmInstanceUuid" +
                             " and vm.state in (:vmStates)" +

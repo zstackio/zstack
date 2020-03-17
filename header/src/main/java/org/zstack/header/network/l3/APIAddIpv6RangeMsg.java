@@ -61,6 +61,12 @@ public class APIAddIpv6RangeMsg extends APICreateMessage implements L3NetworkMes
     @APIParam(validValues = {IPv6Constants.SLAAC, IPv6Constants.Stateful_DHCP, IPv6Constants.Stateless_DHCP})
     private String addressMode;
 
+    /**
+     * @desc IPv4 range type
+     */
+    @APIParam(required = false, validValues = {"Normal", "AddressPool"})
+    private String ipRangeType;
+
     @Override
     public String getL3NetworkUuid() {
         return l3NetworkUuid;
@@ -126,6 +132,14 @@ public class APIAddIpv6RangeMsg extends APICreateMessage implements L3NetworkMes
         this.gateway = gateway;
     }
 
+    public String getIpRangeType() {
+        return ipRangeType;
+    }
+
+    public void setIpRangeType(String ipRangeType) {
+        this.ipRangeType = ipRangeType;
+    }
+
     public static APIAddIpv6RangeMsg __example__() {
         APIAddIpv6RangeMsg msg = new APIAddIpv6RangeMsg();
 
@@ -136,6 +150,7 @@ public class APIAddIpv6RangeMsg extends APICreateMessage implements L3NetworkMes
         msg.setGateway("2002:2001::01");
         msg.setPrefixLen(64);
         msg.setAddressMode(IPv6Constants.Stateful_DHCP);
+        msg.setIpRangeType(IpRangeType.Normal.toString());
 
         return msg;
     }

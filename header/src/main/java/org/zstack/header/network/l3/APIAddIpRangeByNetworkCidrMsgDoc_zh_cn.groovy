@@ -69,7 +69,17 @@ doc {
 					type "String"
 					optional true
 					since "3.7"
-					
+
+				}
+				column {
+					name "ipRangeType"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "3.9"
+					values ("Normal","AddressPool")
 				}
 				column {
 					name "resourceUuid"
@@ -79,7 +89,7 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					
+
 				}
 				column {
 					name "systemTags"

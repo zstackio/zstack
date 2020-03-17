@@ -5,6 +5,7 @@ import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.network.*;
@@ -82,6 +83,9 @@ public class IpRangeInventory implements Serializable {
 
     private Integer prefixLen;
 
+    @APINoSee
+    private IpRangeType ipRangeType;
+
     /**
      * @desc the time this resource gets created
      */
@@ -93,6 +97,7 @@ public class IpRangeInventory implements Serializable {
 
     public static IpRangeInventory valueOf(IpRangeVO vo) {
         IpRangeInventory inv = new IpRangeInventory();
+        inv.setUuid(vo.getUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setDescription(vo.getDescription());
         inv.setEndIp(vo.getEndIp());
@@ -231,6 +236,14 @@ public class IpRangeInventory implements Serializable {
         this.prefixLen = prefixLen;
     }
 
+    public IpRangeType getIpRangeType() {
+        return ipRangeType;
+    }
+
+    public void setIpRangeType(IpRangeType ipRangeType) {
+        this.ipRangeType = ipRangeType;
+    }
+
     @Override
     public String toString() {
         return JSONObjectUtil.toJsonString(this);
@@ -246,10 +259,11 @@ public class IpRangeInventory implements Serializable {
         ipr.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(msg.getNetmask()));
         ipr.setGateway(msg.getGateway());
         ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
-        SubnetUtils su = new SubnetUtils(msg.getGateway(), msg.getNetmask());
+        SubnetUtils su = new SubnetUtils(msg.getStartIp(), msg.getNetmask());
         ipr.setNetworkCidr(su.getInfo().getCidrSignature());
         ipr.setUuid(msg.getResourceUuid());
         ipr.setIpVersion(IPv6Constants.IPv4);
+        ipr.setIpRangeType(IpRangeType.valueOf(msg.getIpRangeType()));
         return ipr;
     }
 
@@ -262,16 +276,24 @@ public class IpRangeInventory implements Serializable {
         ipr.setName(msg.getName());
         ipr.setDescription(msg.getDescription());
 
+        ipr.setIpRangeType(IpRangeType.valueOf(msg.getIpRangeType()));
+
         String lowAddress = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()));
         String highAddress = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()));
-        if (msg.getGateway() == null || msg.getGateway().equals(lowAddress)) {
+        if (ipr.getIpRangeType() == IpRangeType.Normal) {
+            if (msg.getGateway() == null || msg.getGateway().equals(lowAddress)) {
+                ipr.setGateway(lowAddress);
+                ipr.setStartIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()) + 1));
+                ipr.setEndIp(subnet.getHighAddress());
+            } else if (msg.getGateway().equals(highAddress)) {
+                ipr.setGateway(highAddress);
+                ipr.setStartIp(lowAddress);
+                ipr.setEndIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()) - 1));
+            }
+        } else {
             ipr.setGateway(lowAddress);
-            ipr.setStartIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()) + 1));
-            ipr.setEndIp(subnet.getHighAddress());
-        } else if (msg.getGateway().equals(highAddress)){
-            ipr.setGateway(highAddress);
-            ipr.setStartIp(lowAddress);
-            ipr.setEndIp(NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()) - 1));
+            ipr.setStartIp(highAddress);
+            ipr.setEndIp(highAddress);
         }
         ipr.setNetmask(subnet.getNetmask());
         ipr.setPrefixLen(NetworkUtils.getPrefixLengthFromNetwork(subnet.getNetmask()));
@@ -296,6 +318,7 @@ public class IpRangeInventory implements Serializable {
         ipr.setUuid(msg.getResourceUuid());
         ipr.setIpVersion(IPv6Constants.IPv6);
         ipr.setPrefixLen(IPv6NetworkUtils.getPrefixLenOfNetworkCidr(msg.getNetworkCidr()));
+        ipr.setIpRangeType(IpRangeType.valueOf(msg.getIpRangeType()));
 
         return ipr;
     }
@@ -315,6 +338,7 @@ public class IpRangeInventory implements Serializable {
         ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
         ipr.setUuid(msg.getResourceUuid());
         ipr.setIpVersion(IPv6Constants.IPv6);
+        ipr.setIpRangeType(IpRangeType.valueOf(msg.getIpRangeType()));
 
         return ipr;
     }

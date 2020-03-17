@@ -60,6 +60,7 @@ import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.eip.EipConstant;
@@ -268,8 +269,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 String pubEndIp;
 
                 L3NetworkVO pubL3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid,msg.getOffering().getPublicNetworkUuid()).find();
-                List<IpRangeInventory> priIpranges = l3Network.getIpRanges();
-                List<IpRangeInventory> pubIpranges = IpRangeInventory.valueOf(pubL3Network.getIpRanges());
+                List<IpRangeInventory> priIpranges = IpRangeHelper.getNormalIpRanges(l3Network);
+                List<IpRangeInventory> pubIpranges = IpRangeHelper.getNormalIpRanges(pubL3Network);
 
 
                 for(IpRangeInventory priIprange : priIpranges){
@@ -358,8 +359,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     ApplianceVmNicSpec nicSpec = new ApplianceVmNicSpec();
                     nicSpec.setL3NetworkUuid(l3Network.getUuid());
                     if ((L3NetworkSystemTags.ROUTER_INTERFACE_IP.hasTag(l3Network.getUuid()) || neededService.contains(NetworkServiceType.SNAT.toString())) && !msg.isNotGatewayForGuestL3Network()) {
-                        DebugUtils.Assert(!l3Network.getIpRanges().isEmpty(), String.format("how can l3Network[uuid:%s] doesn't have ip range", l3Network.getUuid()));
-                        IpRangeInventory ipr = l3Network.getIpRanges().get(0);
+                        DebugUtils.Assert(!IpRangeHelper.getNormalIpRanges(l3Network).isEmpty(), String.format("how can l3Network[uuid:%s] doesn't have ip range", l3Network.getUuid()));
+                        IpRangeInventory ipr = IpRangeHelper.getNormalIpRanges(l3Network).get(0);
                         nicSpec.setL3NetworkUuid(l3Network.getUuid());
                         nicSpec.setAcquireOnNetwork(false);
                         nicSpec.setNetmask(ipr.getNetmask());
@@ -475,12 +476,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         Set<L3NetworkVO> attachableL3NetworkVOS = new HashSet<>(l3NetworkVOS);
 
         for (L3NetworkVO l3NetworkVO : l3NetworkVOS) {
+            List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3NetworkVO);
 	        for (VmNicVO vmNicVO : vmNicVOS) {
-	            if (l3NetworkVO.getIpRanges() == null || l3NetworkVO.getIpRanges().isEmpty()) {
+	            if (iprs.isEmpty()) {
                     attachableL3NetworkVOS.remove(l3NetworkVO);
                 }
                 String vmNicCidr = NetworkUtils.getCidrFromIpMask(vmNicVO.getIp(), vmNicVO.getNetmask());
-                if (NetworkUtils.isCidrOverlap(l3NetworkVO.getIpRanges().stream().findFirst().get().getNetworkCidr(), vmNicCidr)) {
+                if (NetworkUtils.isCidrOverlap(iprs.stream().findFirst().get().getNetworkCidr(), vmNicCidr)) {
                     attachableL3NetworkVOS.remove(l3NetworkVO);
                 }
                 attachableL3NetworkVOS.removeAll(attachableL3NetworkVOS.stream()
@@ -642,7 +644,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
                 L3NetworkInventory vipL3 = L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class));
                 IpRangeInventory ipRange = null;
-                for (IpRangeInventory ipr : vipL3.getIpRanges()) {
+                for (IpRangeInventory ipr : IpRangeHelper.getNormalIpRanges(vipL3)) {
                     if (NetworkUtils.isIpv4InRange(nic.getIp(), ipr.getStartIp(), ipr.getEndIp())) {
                         ipRange = ipr;
                         break;
@@ -1815,7 +1817,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             final List<String> iprL3Uuids = CollectionUtils.transformToList((List<String>) parentIssuerUuids, new Function<String, String>() {
                 @Override
                 public String call(String arg) {
-                    return Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, arg).select(IpRangeVO_.l3NetworkUuid).findValue();
+                    return Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, arg).select(NormalIpRangeVO_.l3NetworkUuid).findValue();
                 }
             });
             List<ApplianceVmVO> vos = applianceVmsToBeDeleted(applianceVmVOS, iprL3Uuids);

@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @BaseResource
 @EntityGraph(
         parents = {
-                @EntityGraph.Neighbour(type = IpRangeVO.class, myField = "ipRangeUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = NormalIpRangeVO.class, myField = "ipRangeUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = L3NetworkVO.class, myField = "l3NetworkUuid", targetField = "uuid"),
         },
 
