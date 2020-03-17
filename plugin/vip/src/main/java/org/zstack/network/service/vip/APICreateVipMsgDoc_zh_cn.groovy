@@ -52,6 +52,16 @@ doc {
 					
 				}
 				column {
+					name "ipRangeUuid"
+					enclosedIn "params"
+					desc "IP段UUID"
+					location "body"
+					type "String"
+					optional true
+					since "3.9"
+
+				}
+				column {
 					name "allocatorStrategy"
 					enclosedIn "params"
 					desc "分配策略"

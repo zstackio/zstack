@@ -190,10 +190,13 @@ public class SourceClassMap {
 			put("org.zstack.header.managementnode.ManagementNodeInventory", "org.zstack.sdk.ManagementNodeInventory");
 			put("org.zstack.header.network.l2.L2NetworkInventory", "org.zstack.sdk.L2NetworkInventory");
 			put("org.zstack.header.network.l2.L2VlanNetworkInventory", "org.zstack.sdk.L2VlanNetworkInventory");
+			put("org.zstack.header.network.l3.AddressPoolInventory", "org.zstack.sdk.AddressPoolInventory");
 			put("org.zstack.header.network.l3.FreeIpInventory", "org.zstack.sdk.FreeIpInventory");
 			put("org.zstack.header.network.l3.IpRangeInventory", "org.zstack.sdk.IpRangeInventory");
+			put("org.zstack.header.network.l3.IpRangeType", "org.zstack.sdk.IpRangeType");
 			put("org.zstack.header.network.l3.L3NetworkHostRouteInventory", "org.zstack.sdk.L3NetworkHostRouteInventory");
 			put("org.zstack.header.network.l3.L3NetworkInventory", "org.zstack.sdk.L3NetworkInventory");
+			put("org.zstack.header.network.l3.NormalIpRangeInventory", "org.zstack.sdk.NormalIpRangeInventory");
 			put("org.zstack.header.network.l3.UsedIpInventory", "org.zstack.sdk.UsedIpInventory");
 			put("org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory", "org.zstack.sdk.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.header.network.service.NetworkServiceProviderInventory", "org.zstack.sdk.NetworkServiceProviderInventory");
@@ -528,6 +531,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ActionType", "org.zstack.vpcfirewall.entity.ActionType");
 			put("org.zstack.sdk.AddHostFromFileResult", "org.zstack.header.host.AddHostFromFileResult");
 			put("org.zstack.sdk.AddingNewVmRuleInventory", "org.zstack.autoscaling.group.rule.AddingNewVmRuleInventory");
+			put("org.zstack.sdk.AddressPoolInventory", "org.zstack.header.network.l3.AddressPoolInventory");
 			put("org.zstack.sdk.AffinityGroupInventory", "org.zstack.header.affinitygroup.AffinityGroupInventory");
 			put("org.zstack.sdk.AffinityGroupUsageInventory", "org.zstack.header.affinitygroup.AffinityGroupUsageInventory");
 			put("org.zstack.sdk.AlertInventory", "org.zstack.monitoring.AlertInventory");
@@ -659,6 +663,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.InstallPathRecycleInventory", "org.zstack.header.core.trash.InstallPathRecycleInventory");
 			put("org.zstack.sdk.InstanceOfferingInventory", "org.zstack.header.configuration.InstanceOfferingInventory");
 			put("org.zstack.sdk.IpRangeInventory", "org.zstack.header.network.l3.IpRangeInventory");
+			put("org.zstack.sdk.IpRangeType", "org.zstack.header.network.l3.IpRangeType");
 			put("org.zstack.sdk.IpStatisticData", "org.zstack.network.service.flat.IpStatisticData");
 			put("org.zstack.sdk.IscsiLunInventory", "org.zstack.storage.device.iscsi.IscsiLunInventory");
 			put("org.zstack.sdk.IscsiServerClusterRefInventory", "org.zstack.storage.device.iscsi.IscsiServerClusterRefInventory");
@@ -718,6 +723,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.NetworkRouterFlowMeterRefInventory", "org.zstack.header.flowMeter.NetworkRouterFlowMeterRefInventory");
 			put("org.zstack.sdk.NetworkServiceL3NetworkRefInventory", "org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.sdk.NetworkServiceProviderInventory", "org.zstack.header.network.service.NetworkServiceProviderInventory");
+			put("org.zstack.sdk.NormalIpRangeInventory", "org.zstack.header.network.l3.NormalIpRangeInventory");
 			put("org.zstack.sdk.OssBucketInventory", "org.zstack.header.aliyun.oss.OssBucketInventory");
 			put("org.zstack.sdk.OssBucketProperty", "org.zstack.header.aliyun.oss.OssBucketProperty");
 			put("org.zstack.sdk.PacketsForwardType", "org.zstack.vpcfirewall.entity.PacketsForwardType");

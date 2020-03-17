@@ -34,10 +34,13 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
     private PluginRegistry pluginRgty;
 
     protected UsedIpInventory allocateRequiredIp(IpAllocateMessage msg) {
-        SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
-        q.add(IpRangeVO_.l3NetworkUuid, SimpleQuery.Op.EQ, msg.getL3NetworkUuid());
-        List<IpRangeVO> iprs = q.list();
-
+        List<IpRangeVO> iprs;
+        /* when allocate ip address from address pool, ipRangeUuid is not null */
+        if (msg.getIpRangeUuid() != null) {
+            iprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
+        } else {
+            iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+        }
         final long rip = NetworkUtils.ipv4StringToLong(msg.getRequiredIp());
 
         IpRangeVO ipr = CollectionUtils.find(iprs, new Function<IpRangeVO, IpRangeVO>() {
@@ -64,13 +67,17 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
             ));
         }
 
-        return l3NwMgr.reserveIp(IpRangeInventory.valueOf(ipr), msg.getRequiredIp(), msg.isDuplicatedIpAllowed());
+        return l3NwMgr.reserveIp(ipr, msg.getRequiredIp(), msg.isDuplicatedIpAllowed());
     }
 
     protected UsedIpInventory allocateRequiredIpv6(IpAllocateMessage msg) {
-        SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
-        q.add(IpRangeVO_.l3NetworkUuid, SimpleQuery.Op.EQ, msg.getL3NetworkUuid());
-        List<IpRangeVO> iprs = q.list();
+        List<IpRangeVO> iprs;
+        /* when allocate ip address from address pool, ipRangeUuid is not null */
+        if (msg.getIpRangeUuid() != null) {
+            iprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
+        } else {
+            iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+        }
 
         IpRangeVO ipr = CollectionUtils.find(iprs, new Function<IpRangeVO, IpRangeVO>() {
             @Override
@@ -98,6 +105,6 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
             ));
         }
 
-        return l3NwMgr.reserveIp(IpRangeInventory.valueOf(ipr), msg.getRequiredIp(), msg.isDuplicatedIpAllowed());
+        return l3NwMgr.reserveIp(ipr, msg.getRequiredIp(), msg.isDuplicatedIpAllowed());
     }
 }

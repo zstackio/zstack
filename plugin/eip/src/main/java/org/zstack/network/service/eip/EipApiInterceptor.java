@@ -15,7 +15,9 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.network.l3.IpRangeVO;
+import org.zstack.header.network.l3.AddressPoolVO;
+import org.zstack.header.network.l3.AddressPoolVO_;
+import org.zstack.header.network.l3.NormalIpRangeVO;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicHelper;
@@ -87,6 +89,19 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
             if (state != EipState.Enabled) {
                 throw new ApiMessageInterceptionException(operr("eip[uuid:%s] is not in state of Enabled, cannot get attachable vm nic", msg.getEipUuid()));
             }
+        }
+
+        boolean isAddressPool = false;
+        if (msg.getVipUuid() != null) {
+            VipVO vip = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
+            isAddressPool = Q.New(AddressPoolVO.class).eq(AddressPoolVO_.uuid, vip.getIpRangeUuid()).isExists();
+        } else if (msg.getEipUuid() != null) {
+            EipVO eipVO = dbf.findByUuid(msg.getEipUuid(), EipVO.class);
+            VipVO vip = dbf.findByUuid(eipVO.getVipUuid(), VipVO.class);
+            isAddressPool = Q.New(AddressPoolVO.class).eq(AddressPoolVO_.uuid, vip.getIpRangeUuid()).isExists();
+        }
+        if (isAddressPool) {
+            msg.setNetworkServiceProvider("vrouter");
         }
     }
 
@@ -194,10 +209,10 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
     private void isVipInVmNicSubnet(String vipUuid, String guestIpUuid) {
         VipVO vip = dbf.findByUuid(vipUuid, VipVO.class);
         UsedIpVO vipIp = dbf.findByUuid(vip.getUsedIpUuid(), UsedIpVO.class);
-        IpRangeVO vipRange = dbf.findByUuid(vipIp.getIpRangeUuid(), IpRangeVO.class);
+        NormalIpRangeVO vipRange = dbf.findByUuid(vipIp.getIpRangeUuid(), NormalIpRangeVO.class);
 
         UsedIpVO guestIp = dbf.findByUuid(guestIpUuid, UsedIpVO.class);
-        IpRangeVO guestRange = dbf.findByUuid(guestIp.getIpRangeUuid(), IpRangeVO.class);
+        NormalIpRangeVO guestRange = dbf.findByUuid(guestIp.getIpRangeUuid(), NormalIpRangeVO.class);
 
         if (!vipIp.getIpVersion().equals(guestIp.getIpVersion())) {
             throw new ApiMessageInterceptionException(operr("vip ipVersion [%d] is different from guestIp ipVersion [%d].",

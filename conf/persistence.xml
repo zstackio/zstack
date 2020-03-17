@@ -55,6 +55,8 @@
         <class>org.zstack.header.network.l3.IpRangeVO</class>
         <class>org.zstack.header.network.l3.IpRangeEO</class>
         <class>org.zstack.header.network.l3.UsedIpVO</class>
+        <class>org.zstack.header.network.l3.AddressPoolVO</class>
+        <class>org.zstack.header.network.l3.NormalIpRangeVO</class>
         <class>org.zstack.network.service.vip.VipVO</class>
         <class>org.zstack.network.service.vip.VipNetworkServicesRefVO</class>
         <class>org.zstack.network.service.vip.VipPeerL3NetworkRefVO</class>

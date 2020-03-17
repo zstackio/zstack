@@ -17,6 +17,7 @@ import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceSpec.HostName;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -122,8 +123,9 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
         List<VmNicVO> nics = new ArrayList<>();
 
         /* SLACC mode doesn't need DHCP service */
-        if (l3.getIpRanges() != null && !l3.getIpRanges().isEmpty()) {
-            IpRangeVO ipr = dbf.findByUuid(l3.getIpRanges().get(0).getUuid(), IpRangeVO.class);
+        List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3);
+        if (!iprs.isEmpty()) {
+            NormalIpRangeVO ipr = dbf.findByUuid(iprs.get(0).getUuid(), NormalIpRangeVO.class);
             if (ipr.getIpVersion() == IPv6Constants.IPv6 &&
                     (ipr.getAddressMode().equals(IPv6Constants.SLAAC))) {
                 return res;
@@ -177,11 +179,11 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
                 struct.setMac(nic.getMac());
                 struct.setNetmask(ip.getNetmask());
                 struct.setMtu(new MtuGetter().getMtu(l3.getUuid()));
-                if (l3.getIpRanges() != null && !l3.getIpRanges().isEmpty()) {
-                    struct.setRaMode(l3.getIpRanges().get(0).getAddressMode());
-                    struct.setFirstIp(NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(r -> r.getStartIp()).collect(Collectors.toList())));
-                    struct.setEndIP(NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(r -> r.getEndIp()).collect(Collectors.toList())));
-                    struct.setPrefixLength(l3.getIpRanges().get(0).getPrefixLen());
+                if (!iprs.isEmpty()) {
+                    struct.setRaMode(iprs.get(0).getAddressMode());
+                    struct.setFirstIp(NetworkUtils.getSmallestIp(iprs.stream().map(r -> r.getStartIp()).collect(Collectors.toList())));
+                    struct.setEndIP(NetworkUtils.getBiggesttIp(iprs.stream().map(r -> r.getEndIp()).collect(Collectors.toList())));
+                    struct.setPrefixLength(iprs.get(0).getPrefixLen());
                 }
                 res.add(struct);
             }

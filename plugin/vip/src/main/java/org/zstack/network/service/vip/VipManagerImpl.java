@@ -243,6 +243,9 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                         amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
                         amsg.setAllocateStrategy(strategyType);
                         amsg.setRequiredIp(msg.getRequiredIp());
+                        if (msg.getIpRangeUuid() != null) {
+                            amsg.setIpRangeUuid(msg.getIpRangeUuid());
+                        }
                         bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());
                         bus.send(amsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -308,8 +311,8 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                         vipvo.setAccountUuid(msg.getSession().getAccountUuid());
                         vipvo.setSystem(msg.isSystem());
 
-                        L3NetworkInventory vipL3 = L3NetworkInventory.valueOf(dbf.findByUuid(vipvo.getL3NetworkUuid(), L3NetworkVO.class));
-                        vipvo.setPrefixLen(vipL3.getIpRanges().get(0).getPrefixLen());
+                        IpRangeVO ipr = dbf.findByUuid(ip.getIpRangeUuid(), IpRangeVO.class);
+                        vipvo.setPrefixLen(ipr.getPrefixLen());
 
                         VipVO finalVipvo = vipvo;
                         vipvo = new SQLBatchWithReturn<VipVO>() {

@@ -134,7 +134,7 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
     private List<VmNicInventory> findNicsNeedNewIps(List<VmNicInventory> nics) {
         List<String> usedIpUuids = nics.stream().map(VmNicInventory::getUsedIpUuid).collect(Collectors.toList());
 
-        String sql = "select nic.uuid from VmNicVO nic, UsedIpVO ip, IpRangeVO r where nic.usedIpUuid = ip.uuid and ip.ipRangeUuid = r.uuid and ip.uuid in (:uuids)";
+        String sql = "select nic.uuid from VmNicVO nic, UsedIpVO ip, NormalIpRangeVO r where nic.usedIpUuid = ip.uuid and ip.ipRangeUuid = r.uuid and ip.uuid in (:uuids)";
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuids", usedIpUuids);
         List<String> nicUuids = q.getResultList();

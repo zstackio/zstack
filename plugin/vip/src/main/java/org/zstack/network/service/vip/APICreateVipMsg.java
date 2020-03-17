@@ -6,9 +6,7 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
-import org.zstack.header.network.l3.IpAllocateMessage;
-import org.zstack.header.network.l3.L3NetworkMessage;
-import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
@@ -81,6 +79,9 @@ public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessag
      */
     private String allocatorStrategy;
 
+    @APIParam(required = false, resourceType = IpRangeVO.class)
+    private String ipRangeUuid;
+
     @APIParam(required = false)
     private String requiredIp;
 
@@ -137,10 +138,20 @@ public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessag
         this.system = system;
     }
 
+    @Override
+    public String getIpRangeUuid() {
+        return ipRangeUuid;
+    }
+
+    public void setIpRangeUuid(String ipRangeUuid) {
+        this.ipRangeUuid = ipRangeUuid;
+    }
+
     public static APICreateVipMsg __example__() {
         APICreateVipMsg msg = new APICreateVipMsg();
         msg.setName("vip1");
         msg.setL3NetworkUuid(uuid());
+        msg.setIpRangeUuid(uuid());
         msg.setRequiredIp("10.0.0.2");
         return msg;
     }

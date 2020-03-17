@@ -90,8 +90,14 @@ public class APIAddIpRangeMsg extends APICreateMessage implements L3NetworkMessa
     /**
      * @desc IPv4 gateway
      */
-    @APIParam
+    @APIParam(required = false)
     private String gateway;
+
+    /**
+     * @desc IPv4 range type
+     */
+    @APIParam(required = false, validValues = {"Normal", "AddressPool"})
+    private String ipRangeType;
 
     @Override
     public String getL3NetworkUuid() {
@@ -149,7 +155,15 @@ public class APIAddIpRangeMsg extends APICreateMessage implements L3NetworkMessa
     public void setGateway(String gateway) {
         this.gateway = gateway;
     }
- 
+
+    public String getIpRangeType() {
+        return ipRangeType;
+    }
+
+    public void setIpRangeType(String ipRangeType) {
+        this.ipRangeType = ipRangeType;
+    }
+
     public static APIAddIpRangeMsg __example__() {
         APIAddIpRangeMsg msg = new APIAddIpRangeMsg();
 
@@ -159,6 +173,7 @@ public class APIAddIpRangeMsg extends APICreateMessage implements L3NetworkMessa
         msg.setEndIp("192.168.100.250");
         msg.setNetmask("255.255.255.0");
         msg.setGateway("192.168.100.1");
+        msg.setIpRangeType(IpRangeType.Normal.toString());
 
         return msg;
     }

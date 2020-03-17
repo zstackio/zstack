@@ -29,9 +29,13 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
         }
 
         String excludeIp = msg.getExcludedIp();
-        SimpleQuery<IpRangeVO> query = dbf.createQuery(IpRangeVO.class);
-        query.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-        List<IpRangeVO> ranges = query.list();
+        List<IpRangeVO> ranges;
+        /* when allocate ip address from address pool, ipRangeUuid is not null */
+        if (msg.getIpRangeUuid() != null) {
+            ranges = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
+        } else {
+            ranges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+        }
 
         Collections.shuffle(ranges);
 
@@ -51,7 +55,7 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
                 return null;
             }
 
-            UsedIpInventory inv = l3NwMgr.reserveIp(IpRangeInventory.valueOf(tr), ip, msg.isDuplicatedIpAllowed());
+            UsedIpInventory inv = l3NwMgr.reserveIp(tr, ip, msg.isDuplicatedIpAllowed());
             if (inv != null) {
                 return inv;
             }
