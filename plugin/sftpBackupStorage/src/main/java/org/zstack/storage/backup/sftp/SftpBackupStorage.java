@@ -360,7 +360,7 @@ public class SftpBackupStorage extends BackupStorageBase {
 
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("sudo iptables-save | grep '%s' | while read LINE; do echo $LINE | sed -e \"s/-A/-D/\" | xargs sudo iptables ; done",
-                SftpBackupStorageGlobalProperty.IPTABLES_KEY));
+                Platform.getGlobalPropertyAnnotationName(SftpBackupStorageGlobalProperty.class, "IPTABLES_RULES")));
         for (String rule : SftpBackupStorageGlobalProperty.IPTABLES_RULES) {
             builder.append(String.format(";sudo iptables %s", rule));
         }

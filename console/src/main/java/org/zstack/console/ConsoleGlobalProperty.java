@@ -1,6 +1,5 @@
 package org.zstack.console;
 
-import org.zstack.configuration.BusinessProperties;
 import org.zstack.core.GlobalProperty;
 import org.zstack.core.GlobalPropertyDefinition;
 
@@ -12,7 +11,6 @@ import java.util.List;
 public class ConsoleGlobalProperty {
     @GlobalProperty(name="ConsoleProxy.agentPackageName", defaultValue = "consoleproxy-3.9.0.tar.gz")
     public static String AGENT_PACKAGE_NAME;
-
-    public static String IPTABLES_KEY = "ConsoleProxy.iptables.rule";
-    public static List<String> IPTABLES_RULES = BusinessProperties.getPropertiesAsList(IPTABLES_KEY);
+    @GlobalProperty(name="ConsoleProxy.iptables.rule.", defaultValue = "")
+    public static List<String> IPTABLES_RULES;
 }

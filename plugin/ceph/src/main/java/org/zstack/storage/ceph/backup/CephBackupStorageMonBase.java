@@ -1,7 +1,6 @@
 package org.zstack.storage.ceph.backup;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.console.ConsoleGlobalProperty;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.*;
@@ -24,7 +23,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.backup.CephBackupStorageBase.PingOperationFailure;
-import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -164,7 +162,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
                         public void run(FlowTrigger trigger, Map data) {
                             StringBuilder builder = new StringBuilder();
                             builder.append(String.format("sudo iptables-save | grep '%s' | while read LINE; do echo $LINE | sed -e \"s/-A/-D/\" | xargs sudo iptables ; done",
-                                    CephGlobalProperty.CEPH_BACKUP_STORAGE_IPTABLES_KEY));
+                                    Platform.getGlobalPropertyAnnotationName(CephGlobalProperty.class, "CEPH_BACKUP_STORAGE_IPTABLES_RULES")));
                             for (String rule : CephGlobalProperty.CEPH_BACKUP_STORAGE_IPTABLES_RULES) {
                                 builder.append(String.format(";sudo iptables %s", rule));
                             }

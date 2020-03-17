@@ -1,6 +1,5 @@
 package org.zstack.kvm;
 
-import org.zstack.configuration.BusinessProperties;
 import org.zstack.core.GlobalProperty;
 import org.zstack.core.GlobalPropertyDefinition;
 
@@ -20,9 +19,8 @@ public class KVMGlobalProperty {
     public static int AGENT_PORT;
     @GlobalProperty(name="KvmAgentServer.port", defaultValue = "10001")
     public static int AGENT_SERVER_PORT;
-
-    public static String IPTABLES_KEY = "KvmHost.iptables.rule";
-    public static List<String> IPTABLES_RULES = BusinessProperties.getPropertiesAsList(IPTABLES_KEY);
+    @GlobalProperty(name="KvmHost.iptables.rule.", defaultValue = "")
+    public static List<String> IPTABLES_RULES;
     @GlobalProperty(name="KvmHost.maxThreads.ratio", defaultValue = "0.6")
     public static double KVM_HOST_MAX_THREDS_RATIO;
 }
