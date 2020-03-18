@@ -20,6 +20,14 @@ public class AlarmDataV2 extends org.zstack.sdk.zwatch.datatype.AlarmData {
         return this.TAG_ACCOUNT_UUID;
     }
 
+    public java.lang.String TAG_EMERGENCY_LEVEL;
+    public void setTAG_EMERGENCY_LEVEL(java.lang.String TAG_EMERGENCY_LEVEL) {
+        this.TAG_EMERGENCY_LEVEL = TAG_EMERGENCY_LEVEL;
+    }
+    public java.lang.String getTAG_EMERGENCY_LEVEL() {
+        return this.TAG_EMERGENCY_LEVEL;
+    }
+
     public java.lang.String FIELD_CONTEXT;
     public void setFIELD_CONTEXT(java.lang.String FIELD_CONTEXT) {
         this.FIELD_CONTEXT = FIELD_CONTEXT;
@@ -76,14 +84,6 @@ public class AlarmDataV2 extends org.zstack.sdk.zwatch.datatype.AlarmData {
         return this.FIELD_RESOURCE_UUID;
     }
 
-    public java.lang.String TAG_EMERGENCY_LEVEL;
-    public void setTAG_EMERGENCY_LEVEL(java.lang.String TAG_EMERGENCY_LEVEL) {
-        this.TAG_EMERGENCY_LEVEL = TAG_EMERGENCY_LEVEL;
-    }
-    public java.lang.String getTAG_EMERGENCY_LEVEL() {
-        return this.TAG_EMERGENCY_LEVEL;
-    }
-
     public java.lang.String FIELD_READ_STATUS;
     public void setFIELD_READ_STATUS(java.lang.String FIELD_READ_STATUS) {
         this.FIELD_READ_STATUS = FIELD_READ_STATUS;
@@ -98,6 +98,14 @@ public class AlarmDataV2 extends org.zstack.sdk.zwatch.datatype.AlarmData {
     }
     public java.util.Set getQueryableLabels() {
         return this.queryableLabels;
+    }
+
+    public java.util.Set tagsFromV1;
+    public void setTagsFromV1(java.util.Set tagsFromV1) {
+        this.tagsFromV1 = tagsFromV1;
+    }
+    public java.util.Set getTagsFromV1() {
+        return this.tagsFromV1;
     }
 
 }

@@ -92,4 +92,12 @@ public class AuditDataV2 extends org.zstack.sdk.zwatch.datatype.AuditData {
         return this.success;
     }
 
+    public java.util.Set tagsFromV1;
+    public void setTagsFromV1(java.util.Set tagsFromV1) {
+        this.tagsFromV1 = tagsFromV1;
+    }
+    public java.util.Set getTagsFromV1() {
+        return this.tagsFromV1;
+    }
+
 }
