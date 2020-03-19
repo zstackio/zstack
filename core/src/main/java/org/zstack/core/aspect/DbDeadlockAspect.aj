@@ -6,6 +6,7 @@ import org.zstack.core.db.DatabaseGlobalProperty;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,7 +51,7 @@ public aspect DbDeadlockAspect {
                         logger.warn("deadlock happened, retry");
 
                         try {
-                            TimeUnit.MILLISECONDS.sleep(500);
+                            TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(400, 600));
                         } catch (InterruptedException e) {
                             logger.warn(e.getMessage(), e);
                         }
