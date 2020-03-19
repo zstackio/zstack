@@ -13328,6 +13328,33 @@ trait ApiHelper {
     }
 
 
+    def ejectZBox(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.EjectZBoxAction.class) Closure c) {
+        def a = new org.zstack.sdk.EjectZBoxAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def executeAutoScalingRule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ExecuteAutoScalingRuleAction.class) Closure c) {
         def a = new org.zstack.sdk.ExecuteAutoScalingRuleAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -17568,6 +17595,33 @@ trait ApiHelper {
 
     def identifyHost(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.IdentifyHostAction.class) Closure c) {
         def a = new org.zstack.sdk.IdentifyHostAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def addZBox(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddZBoxAction.class) Closure c) {
+        def a = new org.zstack.sdk.AddZBoxAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -24180,6 +24234,35 @@ trait ApiHelper {
 
     def queryWebhook(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryWebhookAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryWebhookAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryZBox(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryZBoxAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryZBoxAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

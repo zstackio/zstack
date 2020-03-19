@@ -174,7 +174,7 @@ public class SystemTag {
         return getTag(resourceUuid, resourceClass);
     }
 
-    public Map<String, List<String>> getTags(List<String> resourceUuids, Class resourceClass) {
+    public Map<String, List<String>> getTags(Collection<String> resourceUuids, Class resourceClass) {
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.select(SystemTagVO_.tag, SystemTagVO_.resourceUuid);
         q.add(SystemTagVO_.resourceType, Op.EQ, resourceClass.getSimpleName());
@@ -194,7 +194,7 @@ public class SystemTag {
         return ret;
     }
 
-    public Map<String, List<String>> getTags(List<String> resourceUuids) {
+    public Map<String, List<String>> getTags(Collection<String> resourceUuids) {
         DebugUtils.Assert(!resourceUuids.isEmpty(), "how can you pass an empty resourceUuids");
         return getTags(resourceUuids, resourceClass);
     }
