@@ -1430,7 +1430,7 @@ public class LoadBalancerBase {
                     dbf.update(lblVo);
                 }
 
-                evt.setInventory( LoadBalancerListenerInventory.valueOf(lblVo));
+                evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
                 bus.publish(evt);
                 chain.next();
             }
@@ -1440,18 +1440,6 @@ public class LoadBalancerBase {
                 return "update-lb-listener";
             }
         });
-    }
-
-    private String[] getHeathCheckTarget(String ListenerUuid) {
-        String target = LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(ListenerUuid,
-                LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);
-        DebugUtils.Assert(target != null, String.format("the health target not exist, please check if the listener[%s] exist", ListenerUuid));
-
-        String[] ts = target.split(":");
-        if (ts.length != 2) {
-            throw new OperationFailureException(argerr("invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", target));
-        }
-        return ts;
     }
 
     private void handle(APIAddAccessControlListToLoadBalancerMsg msg) {
@@ -1479,10 +1467,10 @@ public class LoadBalancerBase {
 
                 Boolean refresh = Q.New(LoadBalancerListenerVmNicRefVO.class).eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getListenerUuid()).isExists();
                 if (refresh) {
-                    RefreshLoadBalancerMsg msg = new RefreshLoadBalancerMsg();
-                    msg.setUuid(msg.getLoadBalancerUuid());
-                    bus.makeLocalServiceId(msg, LoadBalancerConstants.SERVICE_ID);
-                    bus.send(msg, new CloudBusCallBack(chain) {
+                    RefreshLoadBalancerMsg rmsg = new RefreshLoadBalancerMsg();
+                    rmsg.setUuid(msg.getLoadBalancerUuid());
+                    bus.makeLocalServiceId(rmsg, LoadBalancerConstants.SERVICE_ID);
+                    bus.send(rmsg, new CloudBusCallBack(chain) {
                         @Override
                         public void run(MessageReply reply) {
                             if (!reply.isSuccess()) {
@@ -1523,9 +1511,9 @@ public class LoadBalancerBase {
                 APIRemoveAccessControlListFromLoadBalancerEvent evt = new APIRemoveAccessControlListFromLoadBalancerEvent(msg.getId());
                 List<LoadBalancerListenerACLRefVO> refs = Q.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuids()).list();
 
-                if( !refs.isEmpty()) {
+                if (refs.isEmpty()) {
                     final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
-                    evt.setInventory( LoadBalancerListenerInventory.valueOf(lblVo));
+                    evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
                     bus.publish(evt);
                     chain.next();
                     return;
@@ -1536,10 +1524,10 @@ public class LoadBalancerBase {
 
                 Boolean refresh = Q.New(LoadBalancerListenerVmNicRefVO.class).eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getListenerUuid()).isExists();
                 if (refresh) {
-                    RefreshLoadBalancerMsg msg = new RefreshLoadBalancerMsg();
-                    msg.setUuid(msg.getLoadBalancerUuid());
-                    bus.makeLocalServiceId(msg, LoadBalancerConstants.SERVICE_ID);
-                    bus.send(msg, new CloudBusCallBack(chain) {
+                    RefreshLoadBalancerMsg rmsg = new RefreshLoadBalancerMsg();
+                    rmsg.setUuid(msg.getLoadBalancerUuid());
+                    bus.makeLocalServiceId(rmsg, LoadBalancerConstants.SERVICE_ID);
+                    bus.send(rmsg, new CloudBusCallBack(chain) {
                         @Override
                         public void run(MessageReply reply) {
                             if (!reply.isSuccess()) {
@@ -1557,16 +1545,28 @@ public class LoadBalancerBase {
                     return;
                 }
 
-                evt.setInventory( LoadBalancerListenerInventory.valueOf(lblVo));
+                evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
                 bus.publish(evt);
                 chain.next();
             }
 
             @Override
             public String getName() {
-                return "add-acl-lb-listener";
+                return "remove-acl-lb-listener";
             }
         });
+    }
+
+    private String[] getHeathCheckTarget(String ListenerUuid) {
+        String target = LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(ListenerUuid,
+                LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);
+        DebugUtils.Assert(target != null, String.format("the health target not exist, please check if the listener[%s] exist", ListenerUuid));
+
+        String[] ts = target.split(":");
+        if (ts.length != 2) {
+            throw new OperationFailureException(argerr("invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", target));
+        }
+        return ts;
     }
 
     private void handle(APIChangeLoadBalancerListenerMsg msg) {

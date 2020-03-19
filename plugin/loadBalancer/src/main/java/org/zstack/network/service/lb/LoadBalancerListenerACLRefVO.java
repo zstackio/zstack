@@ -4,7 +4,7 @@ import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.ToInventory;
-import org.zstack.network.service.header.acl.AccessControlListVO;
+import org.zstack.header.acl.AccessControlListVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -25,7 +25,7 @@ public class LoadBalancerListenerACLRefVO implements ToInventory {
     @Id
     @Column
     @GeneratedValue(strategy=GenerationType.IDENTITY)
-    private String id;
+    private Long id;
 
     @Column
     @ForeignKey(parentEntityClass = LoadBalancerListenerVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
@@ -45,11 +45,11 @@ public class LoadBalancerListenerACLRefVO implements ToInventory {
     @Column
     private Timestamp lastOpDate;
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

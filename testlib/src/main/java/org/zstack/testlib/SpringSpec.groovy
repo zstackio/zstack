@@ -73,6 +73,7 @@ class SpringSpec {
 
     void lb() {
         include("vip.xml")
+        include("acl.xml")
         include("lb.xml")
     }
 

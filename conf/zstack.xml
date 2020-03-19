@@ -64,6 +64,7 @@
     <import resource="springConfigXml/keyValueFacade.xml"/>
     <import resource="springConfigXml/Kvm.xml"/>
     <import resource="springConfigXml/lb.xml"/>
+    <import resource="springConfigXml/acl.xml"/>
     <import resource="springConfigXml/LdapManagerImpl.xml"/>
     <import resource="springConfigXml/localStorage.xml"/>
     <import resource="springConfigXml/ManagementNodeManager.xml"/>

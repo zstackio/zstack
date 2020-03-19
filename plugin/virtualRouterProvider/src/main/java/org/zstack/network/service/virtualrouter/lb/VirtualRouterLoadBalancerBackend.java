@@ -37,8 +37,8 @@ import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.header.acl.AccessControlListEntryVO;
-import org.zstack.network.service.header.acl.AccessControlListEntryVO_;
+import org.zstack.header.acl.AccessControlListEntryVO;
+import org.zstack.header.acl.AccessControlListEntryVO_;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
@@ -404,7 +404,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 }
                 String  aclEntry = "";
                 List<String> aclRules = new ArrayList<>();
-                List<LoadBalancerListenerACLRefVO> refs = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.listenerUuid, listenerUuid).listValues();
+                List<LoadBalancerListenerACLRefVO> refs = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.listenerUuid, listenerUuid).list();
                 if (refs.isEmpty()) {
                     aclRules.add(String.format("aclEntry::%s", aclEntry));
                     return aclRules;

@@ -17,7 +17,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
-import org.zstack.network.service.header.acl.APIDeleteAccessControlListMsg;
+import org.zstack.header.acl.APIDeleteAccessControlListMsg;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO_;
 import org.zstack.tag.PatternedSystemTag;

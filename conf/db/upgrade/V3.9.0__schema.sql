@@ -27,14 +27,13 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AccessControlListVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`AccessControlListEntryVO` (
-  `entryId` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(32) NOT NULL UNIQUE,
   `aclUuid` varchar(32) NOT NULL,
   `ipEntries` varchar(2048) NOT NULL,
   `description` varchar(2048) DEFAULT NULL,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `id` (`id`) USING BTREE,
+  PRIMARY KEY (`uuid`),
   KEY `fkACLRuleVOAccessControlListVO` (`aclUuid`),
   CONSTRAINT `fkACLRuleVOAccessControlListVO` FOREIGN KEY (`aclUuid`) REFERENCES `AccessControlListVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -43,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LoadBalancerListenerACLRefVO` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `aclUuid` varchar(32) NOT NULL,
   `listenerUuid` varchar(32) NOT NULL,
-  `aclType` varchar(32) NOT NULL,
+  `type` varchar(32) NOT NULL,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

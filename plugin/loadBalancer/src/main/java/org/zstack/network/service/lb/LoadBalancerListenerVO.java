@@ -55,7 +55,7 @@ public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount
     @OneToMany(fetch=FetchType.EAGER)
     @JoinColumn(name="listenerUuid", insertable=false, updatable=false)
     @NoView
-    private Set<LoadBalancerListenerACLRefVO> aclRefs = new HashSet<>();
+    private Set<LoadBalancerListenerACLRefVO> aclRefs = new HashSet<LoadBalancerListenerACLRefVO>();
 
     @OneToMany(fetch=FetchType.EAGER)
     @JoinColumn(name="listenerUuid", insertable=false, updatable=false)

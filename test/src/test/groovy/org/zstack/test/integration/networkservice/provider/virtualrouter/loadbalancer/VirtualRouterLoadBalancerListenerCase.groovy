@@ -1,17 +1,23 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.loadbalancer
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
+import org.zstack.network.service.lb.LoadBalancerAclStatus
+import org.zstack.network.service.lb.LoadBalancerAclType
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.lb.LoadBalancerSystemTags
 import org.zstack.network.service.portforwarding.PortForwardingConstant
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.*
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
+
 /**
  * @author: zhanyong.miao
  * @date: 2020-02-28
@@ -146,10 +152,103 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         env.create {
             testLoadBalancerHealthCheckCase()
             testLoadBalancerWrrCase()
+            testLoadBalancerAclCase()
         }
     }
 
-    void testLoadBalancerHealthCheckCase() {
+    private void testLoadBalancerAclCase() {
+        def load = env.inventoryByName("lb") as LoadBalancerInventory
+        def vm = env.inventoryByName("vm") as VmInstanceInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
+        def _name = "test6"
+
+        VirtualRouterLoadBalancerBackend.RefreshLbCmd cmd = null
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class)
+            return rsp
+        }
+
+        CreateLoadBalancerListenerAction listenerAction = new CreateLoadBalancerListenerAction()
+        listenerAction.loadBalancerUuid = load.uuid
+        listenerAction.name = _name
+        listenerAction.loadBalancerPort = 66
+        listenerAction.instancePort = 66
+        listenerAction.protocol = "tcp"
+        listenerAction.sessionId = adminSession()
+
+        CreateLoadBalancerListenerAction.Result lblRes = listenerAction.call()
+        assert lblRes.error == null
+
+        String aclStatus = LoadBalancerSystemTags.BALANCER_ACL.getTokenByResourceUuid(lblRes.value.inventory.uuid, LoadBalancerSystemTags.BALANCER_ACL_TOKEN);
+        assert aclStatus.equals(LoadBalancerAclStatus.disable.toString())
+        assert cmd == null
+
+        addVmNicToLoadBalancer {
+            vmNicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
+            listenerUuid = lblRes.value.inventory.uuid
+        }
+        assert cmd.getLbs().get(0).parameters.contains("accessControlStatus::disable")
+
+
+        ChangeLoadBalancerListenerAction action = new ChangeLoadBalancerListenerAction()
+        action.uuid  = lblRes.value.inventory.uuid
+        action.aclStatus = LoadBalancerAclStatus.enable.toString()
+        action.sessionId = adminSession()
+        ChangeLoadBalancerListenerAction.Result res = action.call()
+        assert res.error == null
+        aclStatus = LoadBalancerSystemTags.BALANCER_ACL.getTokenByResourceUuid(lblRes.value.inventory.uuid, LoadBalancerSystemTags.BALANCER_ACL_TOKEN);
+        assert aclStatus.equals(LoadBalancerAclStatus.enable.toString())
+        assert cmd.getLbs().find {l -> l.listenerUuid == lblRes.value.inventory.uuid}.parameters.contains("accessControlStatus::enable")
+        assert cmd.getLbs().find {l -> l.listenerUuid == lblRes.value.inventory.uuid}.parameters.contains("aclEntry::")
+
+        AccessControlListInventory acl = createAccessControlList {
+            name = "acl1"
+            ipVersion = 4
+        }
+        addAccessControlListEntry {
+            aclUuid = acl.uuid
+            entries = "192.168.0.1,192.168.1.0/24"
+        }
+
+        addAccessControlListToLoadBalancer {
+            aclUuids = [acl.uuid]
+            aclType = LoadBalancerAclType.black.toString()
+            listenerUuid = lblRes.value.inventory.uuid
+        }
+        assert cmd.getLbs().find {l -> l.listenerUuid == lblRes.value.inventory.uuid}.parameters.contains("aclEntry::192.168.0.1,192.168.1.0/24")
+
+        cmd = null
+        AccessControlListEntryInventory entry = addAccessControlListEntry {
+            aclUuid = acl.uuid
+            entries = "192.168.0.2,192.168.2.0/24"
+        }
+        retryInSecs {
+            assert cmd != null
+        }
+        cmd = null
+        removeAccessControlListEntry {
+            uuid = entry.uuid
+            aclUuid = acl.uuid
+        }
+        retryInSecs {
+            assert cmd.getLbs().find {l -> l.listenerUuid == lblRes.value.inventory.uuid}.parameters.contains("aclEntry::192.168.0.1,192.168.1.0/24")
+        }
+        expect( [ApiException.class, AssertionError.class] ) {
+            deleteAccessControlList {
+                uuid = acl.uuid
+            }
+        }
+
+        deleteLoadBalancerListener {
+            uuid = lblRes.value.inventory.uuid
+        }
+
+        deleteAccessControlList {
+            uuid = acl.uuid
+        }
+    }
+
+    private void testLoadBalancerHealthCheckCase() {
         def load = env.inventoryByName("lb") as LoadBalancerInventory
         def _name = "test5"
 

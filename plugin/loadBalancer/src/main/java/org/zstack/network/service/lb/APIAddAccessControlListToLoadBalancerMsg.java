@@ -8,7 +8,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.network.service.header.acl.AccessControlListVO;
+import org.zstack.header.acl.AccessControlListVO;
 
 import java.util.Arrays;
 import java.util.List;
@@ -19,7 +19,7 @@ import java.util.List;
  **/
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
-        path = "/load-balancers/listeners/{uuid}/access-control-lists",
+        path = "/load-balancers/listeners/{listenerUuid}/access-control-lists",
         method = HttpMethod.POST,
         parameterName = "params",
         responseClass = APIAddAccessControlListToLoadBalancerEvent.class

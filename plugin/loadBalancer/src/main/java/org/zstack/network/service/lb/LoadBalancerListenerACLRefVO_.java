@@ -8,7 +8,7 @@ import java.sql.Timestamp;
  * @author: zhanyong.miao
  * @date: 2020-03-11
  **/
-@StaticMetamodel(LoadBalancerListenerCertificateRefVO.class)
+@StaticMetamodel(LoadBalancerListenerACLRefVO.class)
 public class LoadBalancerListenerACLRefVO_ {
     public static volatile SingularAttribute<LoadBalancerListenerCertificateRefVO, Long> id;
     public static volatile SingularAttribute<LoadBalancerListenerCertificateRefVO, String> listenerUuid;

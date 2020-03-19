@@ -5,7 +5,7 @@ import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.query.ExpandedQueryAlias;
 import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
-import org.zstack.network.service.header.acl.AccessControlListInventory;
+import org.zstack.header.acl.AccessControlListInventory;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -39,9 +39,21 @@ public class LoadBalancerListenerACLRefInventory {
     public static List<LoadBalancerListenerACLRefInventory> valueOf(Collection<LoadBalancerListenerACLRefVO> vos) {
         List<LoadBalancerListenerACLRefInventory> invs = new ArrayList<>();
         for (LoadBalancerListenerACLRefVO vo : vos ) {
-            invs.add(vo.toInventory());
+            invs.add(valueOf(vo));
         }
         return invs;
+    }
+
+    public static LoadBalancerListenerACLRefInventory valueOf(LoadBalancerListenerACLRefVO vo) {
+        LoadBalancerListenerACLRefInventory inv = new LoadBalancerListenerACLRefInventory();
+        inv.setType(vo.getType().toString());
+        inv.setAclUuid(vo.getAclUuid());
+        inv.setId(vo.getId());
+        inv.setListenerUuid(vo.getListenerUuid());
+        inv.setCreateDate(vo.getCreateDate());
+        inv.setLastOpDate(vo.getLastOpDate());
+
+        return inv;
     }
 
     public Long getId() {
