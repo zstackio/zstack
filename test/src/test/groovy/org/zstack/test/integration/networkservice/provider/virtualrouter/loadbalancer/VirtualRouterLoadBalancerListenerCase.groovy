@@ -12,6 +12,9 @@ import org.zstack.test.integration.networkservice.provider.NetworkServiceProvide
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+
+import java.util.stream.Collectors
+
 /**
  * @author: zhanyong.miao
  * @date: 2020-02-28
@@ -152,6 +155,13 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
                 useL3Networks("l3")
                 useInstanceOffering("instanceOffering")
             }
+
+            vm {
+                name = "vm2"
+                useImage("image")
+                useL3Networks("l3")
+                useInstanceOffering("instanceOffering")
+            }
         }
     }
 
@@ -238,6 +248,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
     void testLoadBalancerWrrCase() {
         def load = env.inventoryByName("lb") as LoadBalancerInventory
         def vm = env.inventoryByName("vm") as VmInstanceInventory
+        def vm2 = env.inventoryByName("vm2") as VmInstanceInventory
         def l3 = env.inventoryByName("l3") as L3NetworkInventory
         def _name = "test2"
 
@@ -253,18 +264,18 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         CreateLoadBalancerListenerAction.Result lblRes = listenerAction.call()
         assert lblRes.error == null
 
+        List<String> nicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid, vm2.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
         addVmNicToLoadBalancer {
-            vmNicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
+            vmNicUuids = nicUuids
             listenerUuid = lblRes.value.inventory.uuid
         }
 
         List<Map<String, String>> tokens = LoadBalancerSystemTags.BALANCER_WEIGHT.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
 
-        for (Map<String, String>  token: tokens) {
-            if (!vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid.equals(token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN))) {
-                continue
-            }
-            assert token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN) == LoadBalancerConstants.BALANCER_WEIGHT_default.toString()
+        nicUuids.forEach { it ->
+            List<Map<String, String>> ts = tokens.stream().filter { Map<String, String> token -> it.equals(token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN)) }.collect(Collectors.toList()) as List
+            assert !ts.isEmpty()
+            assert ts.get(0).get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN) == LoadBalancerConstants.BALANCER_WEIGHT_default.toString()
         }
 
         String weight = "balancerWeight::" + vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid + "::20"
@@ -290,7 +301,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         assert res.error != null
 
         removeVmNicFromLoadBalancer {
-            vmNicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
+            vmNicUuids = nicUuids
             listenerUuid = lblRes.value.inventory.uuid
         }
 
