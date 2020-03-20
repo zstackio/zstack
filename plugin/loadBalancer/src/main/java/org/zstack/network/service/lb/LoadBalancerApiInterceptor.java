@@ -13,6 +13,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
@@ -28,10 +29,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
 import javax.persistence.TypedQuery;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -149,16 +147,16 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
         if (LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(
                 LoadBalancerSystemTags.BALANCER_ALGORITHM.getTokenByResourceUuid(
                         msg.getListenerUuid(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN))) {
+            Map<String, Long> weight = new LoadBalancerWeightOperator().getWeight(msg.getSystemTags());
             CollectionUtils.forEach(msg.getVmNicUuids(), new ForEachFunction<String>() {
                 @Override
                 public void run(String arg) {
-                    insertTagIfNotExisting(
-                            msg, LoadBalancerSystemTags.BALANCER_WEIGHT,
-                            LoadBalancerSystemTags.BALANCER_WEIGHT.instantiateTag(
-                                    map(e(LoadBalancerSystemTags.BALANCER_NIC_TOKEN, arg),
-                                        e(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN, LoadBalancerConstants.BALANCER_WEIGHT_default))
-                            )
-                    );
+                    if (!weight.containsKey(arg)) {
+                        msg.addSystemTag(LoadBalancerSystemTags.BALANCER_WEIGHT.instantiateTag(
+                                map(e(LoadBalancerSystemTags.BALANCER_NIC_TOKEN, arg),
+                                        e(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN, LoadBalancerConstants.BALANCER_WEIGHT_default)))
+                        );
+                    }
                 }
             });
         }
@@ -182,7 +180,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor {
         return false;
     }
 
-    private void insertTagIfNotExisting(APIMessage msg, PatternedSystemTag tag, String value) {
+    private void insertTagIfNotExisting(APICreateMessage msg, PatternedSystemTag tag, String value) {
         if (!hasTag(msg, tag)) {
             msg.addSystemTag(value);
         }
