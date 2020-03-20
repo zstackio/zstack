@@ -869,7 +869,7 @@ public class VirtualRouter extends ApplianceVmBase {
             }
 
             VirtualRouterAfterAttachNicExtensionPoint ext = it.next();
-            logger.debug(String.format("apply network service [%s] after attach Nic", ext.getClass()));
+            logger.debug(String.format("execute afterAttachNic extension %s", ext.getClass().getSimpleName()));
             ext.afterAttachNic(nicInv, new Completion(completion) {
                 @Override
                 public void success() {

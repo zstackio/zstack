@@ -114,4 +114,22 @@ public class VirtualRouterHaBackend {
 
         exps.get(0).cleanupHaNetworkService(vrUuid, completion);
     }
+
+    public String getVirutalRouterHaName(String vrUuid) {
+        List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
+        if (exps.isEmpty()) {
+            return null;
+        }
+
+        return exps.get(0).getHaGroupName(vrUuid);
+    }
+
+    public String getVirutalRouterHaUuid(String vrUuid) {
+        List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
+        if (exps.isEmpty()) {
+            return null;
+        }
+
+        return exps.get(0).getHaGroupUuid(vrUuid);
+    }
 }
