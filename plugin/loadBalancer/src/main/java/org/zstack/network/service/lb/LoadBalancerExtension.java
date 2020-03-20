@@ -2,13 +2,18 @@ package org.zstack.network.service.lb;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.acl.RefreshAccessControlListExtensionPoint;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.workflow.FlowChainBuilder;
+import org.zstack.header.acl.AccessControlListEntryInventory;
+import org.zstack.header.acl.AccessControlListInventory;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
@@ -35,7 +40,7 @@ import java.util.Map.Entry;
 /**
  * Created by frank on 8/13/2015.
  */
-public class LoadBalancerExtension extends AbstractNetworkServiceExtension implements VipReleaseExtensionPoint {
+public class LoadBalancerExtension extends AbstractNetworkServiceExtension implements VipReleaseExtensionPoint, RefreshAccessControlListExtensionPoint {
     private static final CLogger logger = Utils.getLogger(LoadBalancerExtension.class);
 
     @Autowired
@@ -249,5 +254,77 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
         q.add(LoadBalancerVO_.vipUuid, Op.EQ, vip.getUuid());
         List<LoadBalancerVO> rules = q.list();
         releaseServicesOnVip(rules.iterator(), completion);
+    }
+
+    @Override
+    public void beforeAddIpEntry(AccessControlListInventory acl, AccessControlListEntryInventory entry) {
+        return;
+    }
+
+    private void refreshLoadBalancerByAcl(String aclUuid) {
+        List<String> listenerUuids = Q.New(LoadBalancerListenerACLRefVO.class).select(LoadBalancerListenerACLRefVO_.listenerUuid)
+                                      .eq(LoadBalancerListenerACLRefVO_.aclUuid, aclUuid).listValues();
+        if (listenerUuids.isEmpty()) {
+            return;
+        }
+        listenerUuids = Q.New(LoadBalancerListenerVmNicRefVO.class).select(LoadBalancerListenerVmNicRefVO_.listenerUuid)
+                         .in(LoadBalancerListenerVmNicRefVO_.listenerUuid, listenerUuids).listValues();
+        if (listenerUuids.isEmpty()) {
+            return;
+        }
+        List<String> lbUuids = Q.New(LoadBalancerListenerVO.class).select(LoadBalancerListenerVO_.loadBalancerUuid)
+                                .in(LoadBalancerListenerVO_.uuid, listenerUuids).listValues();
+        if (lbUuids.isEmpty()) {
+            return;
+        }
+
+        List<RefreshLoadBalancerMsg> rmsgs = new ArrayList<>();
+        for (String lbUuid : lbUuids) {
+
+            RefreshLoadBalancerMsg msg = new RefreshLoadBalancerMsg();
+            msg.setUuid(lbUuid);
+            bus.makeLocalServiceId(msg, LoadBalancerConstants.SERVICE_ID);
+            rmsgs.add(msg);
+        }
+        new While<>(rmsgs).each((msg, comp) -> {
+            bus.send(msg, new CloudBusCallBack(comp) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.warn(String.format("update listener [uuid:%s] failed", msg.getLoadBalancerUuid()));
+                    }
+                    comp.done();
+                }
+            });
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+            }
+        });
+    }
+    @Override
+    public void afterAddIpEntry(AccessControlListInventory acl, AccessControlListEntryInventory entry) {
+        refreshLoadBalancerByAcl(acl.getUuid());
+    }
+
+    @Override
+    public void beforeDeleteIpEntry(AccessControlListInventory acl, AccessControlListEntryInventory entry) {
+        return;
+    }
+
+    @Override
+    public void afterDeleteIpEntry(AccessControlListInventory acl, AccessControlListEntryInventory entry) {
+        refreshLoadBalancerByAcl(acl.getUuid());
+    }
+
+    @Override
+    public void beforeDeleteAcl(AccessControlListInventory acl) {
+        return;
+
+    }
+
+    @Override
+    public void afterDeleteAcl(AccessControlListInventory acl) {
+        return;
     }
 }

@@ -564,6 +564,10 @@ public class LoadBalancerBase {
             handle((APIAddCertificateToLoadBalancerListenerMsg) msg);
         } else if (msg instanceof APIRemoveCertificateFromLoadBalancerListenerMsg) {
             handle((APIRemoveCertificateFromLoadBalancerListenerMsg) msg);
+        } else if (msg instanceof APIRemoveAccessControlListFromLoadBalancerMsg) {
+            handle((APIRemoveAccessControlListFromLoadBalancerMsg) msg);
+        } else if (msg instanceof APIAddAccessControlListToLoadBalancerMsg) {
+            handle((APIAddAccessControlListToLoadBalancerMsg) msg);
         } else if (msg instanceof APIChangeLoadBalancerListenerMsg) {
             handle((APIChangeLoadBalancerListenerMsg) msg);
         } else {
@@ -1343,6 +1347,19 @@ public class LoadBalancerBase {
             dbf.persist(ref);
         }
 
+        if (msg.getAclUuids() != null) {
+            final String listenerUuid = vo.getUuid();
+            List<LoadBalancerListenerACLRefVO> refs = new ArrayList<>();
+            msg.getAclUuids().stream().forEach(aclUuid -> {
+                LoadBalancerListenerACLRefVO ref = new LoadBalancerListenerACLRefVO();
+                ref.setAclUuid(aclUuid);
+                ref.setType(LoadBalancerAclType.valueOf(msg.getAclType()));
+                ref.setListenerUuid(listenerUuid);
+                refs.add(ref);
+            });
+            dbf.persistCollection(refs);
+        }
+
         tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), LoadBalancerListenerVO.class.getSimpleName());
         vo = dbf.updateAndRefresh(vo);
         evt.setInventory(LoadBalancerListenerInventory.valueOf(vo));
@@ -1413,7 +1430,7 @@ public class LoadBalancerBase {
                     dbf.update(lblVo);
                 }
 
-                evt.setInventory( LoadBalancerListenerInventory.valueOf(lblVo));
+                evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
                 bus.publish(evt);
                 chain.next();
             }
@@ -1421,6 +1438,121 @@ public class LoadBalancerBase {
             @Override
             public String getName() {
                 return "update-lb-listener";
+            }
+        });
+    }
+
+    private void handle(APIAddAccessControlListToLoadBalancerMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                DebugUtils.Assert(msg.getAclType() != null && msg.getAclUuids() != null, "parameters cannot be null");
+                APIAddAccessControlListToLoadBalancerEvent evt = new APIAddAccessControlListToLoadBalancerEvent(msg.getId());
+                List<LoadBalancerListenerACLRefVO> refs = new ArrayList<>();
+                msg.getAclUuids().stream().forEach(aclUuid -> {
+                    LoadBalancerListenerACLRefVO ref = new LoadBalancerListenerACLRefVO();
+                    ref.setAclUuid(aclUuid);
+                    ref.setType(LoadBalancerAclType.valueOf(msg.getAclType()));
+                    ref.setListenerUuid(msg.getListenerUuid());
+                    refs.add(ref);
+                });
+                dbf.persistCollection(refs);
+
+                final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+
+                Boolean refresh = Q.New(LoadBalancerListenerVmNicRefVO.class).eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getListenerUuid()).isExists();
+                if (refresh) {
+                    RefreshLoadBalancerMsg rmsg = new RefreshLoadBalancerMsg();
+                    rmsg.setUuid(msg.getLoadBalancerUuid());
+                    bus.makeLocalServiceId(rmsg, LoadBalancerConstants.SERVICE_ID);
+                    bus.send(rmsg, new CloudBusCallBack(chain) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.warn(String.format("update listener [uuid:%s] failed", msg.getLoadBalancerUuid()));
+                                evt.setError(reply.getError());
+                                dbf.removeCollection(refs, LoadBalancerListenerVmNicRefVO.class);
+                            } else {
+                                evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
+                            }
+                            bus.publish(evt);
+                        }
+                    });
+                    chain.next();
+                    return;
+                }
+
+                evt.setInventory( LoadBalancerListenerInventory.valueOf(lblVo));
+                bus.publish(evt);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "add-acl-lb-listener";
+            }
+        });
+    }
+
+    private void handle(APIRemoveAccessControlListFromLoadBalancerMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                APIRemoveAccessControlListFromLoadBalancerEvent evt = new APIRemoveAccessControlListFromLoadBalancerEvent(msg.getId());
+                List<LoadBalancerListenerACLRefVO> refs = Q.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuids()).list();
+
+                if (refs.isEmpty()) {
+                    final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+                    evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
+                    bus.publish(evt);
+                    chain.next();
+                    return;
+                }
+                dbf.removeCollection(refs, LoadBalancerListenerVmNicRefVO.class);
+
+                final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+
+                Boolean refresh = Q.New(LoadBalancerListenerVmNicRefVO.class).eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getListenerUuid()).isExists();
+                if (refresh) {
+                    RefreshLoadBalancerMsg rmsg = new RefreshLoadBalancerMsg();
+                    rmsg.setUuid(msg.getLoadBalancerUuid());
+                    bus.makeLocalServiceId(rmsg, LoadBalancerConstants.SERVICE_ID);
+                    bus.send(rmsg, new CloudBusCallBack(chain) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.warn(String.format("update listener [uuid:%s] failed", msg.getLoadBalancerUuid()));
+                                evt.setError(reply.getError());
+                                dbf.persistCollection(refs);
+                            } else {
+                                evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
+                            }
+                            bus.publish(evt);
+                        }
+                    });
+
+                    chain.next();
+                    return;
+                }
+
+                evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
+                bus.publish(evt);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "remove-acl-lb-listener";
             }
         });
     }
@@ -1550,6 +1682,22 @@ public class LoadBalancerBase {
                                 LoadBalancerSystemTags.HEALTH_PARAMETER.instantiateTag(
                                         map(e(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN, String.format("%s:%s:%s", pm[0], pm[1], pm[2]))
                                         )));
+                    }
+                }
+
+		if (msg.getAclStatus() != null) {
+                    if (LoadBalancerSystemTags.BALANCER_ACL.hasTag(msg.getUuid())) {
+                        LoadBalancerSystemTags.BALANCER_ACL.update(msg.getUuid(),
+                                LoadBalancerSystemTags.BALANCER_ACL.instantiateTag(map(
+                                        e(LoadBalancerSystemTags.BALANCER_ACL_TOKEN, msg.getAclStatus())
+                                )));
+                    } else {
+                        SystemTagCreator creator = LoadBalancerSystemTags.BALANCER_ACL.newSystemTagCreator(msg.getUuid());
+                        creator.setTagByTokens(map(
+                                e(LoadBalancerSystemTags.BALANCER_ACL_TOKEN, msg.getAclStatus())
+                        ));
+                        creator.inherent = false;
+                        creator.create();
                     }
                 }
 

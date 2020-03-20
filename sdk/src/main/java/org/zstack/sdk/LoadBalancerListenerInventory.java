@@ -84,6 +84,14 @@ public class LoadBalancerListenerInventory  {
         return this.vmNicRefs;
     }
 
+    public java.util.List aclRefs;
+    public void setAclRefs(java.util.List aclRefs) {
+        this.aclRefs = aclRefs;
+    }
+    public java.util.List getAclRefs() {
+        return this.aclRefs;
+    }
+
     public java.util.List certificateRefs;
     public void setCertificateRefs(java.util.List certificateRefs) {
         this.certificateRefs = certificateRefs;

@@ -1,5 +1,6 @@
 package org.zstack.network.service.virtualrouter.lb;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,8 @@ import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.NetworkServiceManager;
+import org.zstack.header.acl.AccessControlListEntryVO;
+import org.zstack.header.acl.AccessControlListEntryVO_;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
@@ -390,6 +393,35 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 .findFirst().get().getMac();
 
         return CollectionUtils.transformToList(struct.getListeners(), new Function<LbTO, LoadBalancerListenerInventory>() {
+            private List<String> makeAcl(String listenerUuid) {
+                LoadBalancerAclStatus status = LoadBalancerAclStatus.disable;
+                if (LoadBalancerSystemTags.BALANCER_ACL.hasTag(listenerUuid)) {
+                    status = LoadBalancerAclStatus.valueOf(LoadBalancerSystemTags.BALANCER_ACL.getTokenByResourceUuid(listenerUuid, LoadBalancerSystemTags.BALANCER_ACL_TOKEN));
+                }
+
+                if (status.equals(LoadBalancerAclStatus.disable)) {
+                    return new ArrayList<>();
+                }
+                String  aclEntry = "";
+                List<String> aclRules = new ArrayList<>();
+                List<LoadBalancerListenerACLRefVO> refs = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.listenerUuid, listenerUuid).list();
+                if (refs.isEmpty()) {
+                    aclRules.add(String.format("aclEntry::%s", aclEntry));
+                    return aclRules;
+                }
+
+                aclRules.add(String.format("aclType::%s", refs.get(0).getType().toString()));
+
+                List<String> aclUuids = refs.stream().map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList());
+                List<String> entry = Q.New(AccessControlListEntryVO.class).select(AccessControlListEntryVO_.ipEntries)
+                                      .in(AccessControlListEntryVO_.aclUuid, aclUuids).listValues();
+                if (!entry.isEmpty()) {
+                    aclEntry = StringUtils.join(entry.toArray(), ',');
+                }
+                aclRules.add(String.format("aclEntry::%s", aclEntry));
+                return aclRules;
+            }
+
             @Override
             public LbTO call(LoadBalancerListenerInventory l) {
                 LbTO to = new LbTO();
@@ -438,6 +470,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         return arg;
                     }
                 }));
+                to.getParameters().addAll(makeAcl(l.getUuid()));
                 return to;
             }
         });
