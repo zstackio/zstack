@@ -1518,7 +1518,7 @@ public class LoadBalancerBase {
                     chain.next();
                     return;
                 }
-                dbf.removeCollection(refs, LoadBalancerListenerVmNicRefVO.class);
+                dbf.removeCollection(refs, LoadBalancerListenerACLRefVO.class);
 
                 final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
 
