@@ -6,7 +6,6 @@ import org.zstack.compute.vm.ImageBackupStorageSelector;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
@@ -14,7 +13,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
@@ -85,12 +83,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     @Autowired
     private LocalStorageFactory localStorageFactory;
     @Autowired
-    private ApiTimeoutManager timeoutMgr;
-    @Autowired
     private RESTFacade restf;
-    @Autowired
-    private PluginRegistry pluginRgty;
-
 
     public static class AgentCommand extends KVMAgentCommands.PrimaryStorageCommand {
         public String uuid;
@@ -1885,7 +1878,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             q.select(VmInstanceVO_.state);
             q.add(VmInstanceVO_.uuid, Op.EQ, volume.getVmInstanceUuid());
             VmInstanceState state = q.findValue();
-            offline = (state == VmInstanceState.Stopped);
+
+            if (state != VmInstanceState.Stopped && state != VmInstanceState.Running
+                    && state != VmInstanceState.Destroyed && state != VmInstanceState.Paused) {
+                throw new OperationFailureException(operr("the volume[uuid;%s] is attached to a VM[uuid:%s] which is in state of %s, cannot do the snapshot merge",
+                        volume.getUuid(), volume.getVmInstanceUuid(), state));
+            }
+
+            offline = (state == VmInstanceState.Stopped || state == VmInstanceState.Destroyed);
         }
 
         final MergeVolumeSnapshotOnPrimaryStorageReply ret = new MergeVolumeSnapshotOnPrimaryStorageReply();

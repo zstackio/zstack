@@ -1138,12 +1138,13 @@ public class KvmBackend extends HypervisorBackend {
             VmInstanceState state = t.get(0, VmInstanceState.class);
             hostUuid = t.get(1, String.class);
 
-            if (state != VmInstanceState.Stopped && state != VmInstanceState.Running) {
+            if (state != VmInstanceState.Stopped && state != VmInstanceState.Running
+                    && state != VmInstanceState.Destroyed && state != VmInstanceState.Paused) {
                 throw new OperationFailureException(operr("the volume[uuid;%s] is attached to a VM[uuid:%s] which is in state of %s, cannot do the snapshot merge",
                                 volume.getUuid(), volume.getVmInstanceUuid(), state));
             }
 
-            offline = (state == VmInstanceState.Stopped);
+            offline = (state == VmInstanceState.Stopped || state == VmInstanceState.Destroyed);
         }
 
         final MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
