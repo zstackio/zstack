@@ -62,12 +62,12 @@ class CreateVmConcurrentlyCase extends SubCase {
 
                 image {
                     name = "image"
-                    url  = "http://zstack.org/download/test.qcow2"
+                    url = "http://zstack.org/download/test.qcow2"
                 }
 
                 image {
                     name = "vr"
-                    url  = "http://zstack.org/download/vr.qcow2"
+                    url = "http://zstack.org/download/vr.qcow2"
                 }
             }
 
@@ -115,10 +115,10 @@ class CreateVmConcurrentlyCase extends SubCase {
                         name = "l3"
 
                         ip {
-                            startIp = "192.168.100.10"
-                            endIp = "192.168.110.100"
+                            startIp = "192.168.0.2"
+                            endIp = "192.168.255.254"
                             netmask = "255.255.0.0"
-                            gateway = "192.168.100.1"
+                            gateway = "192.168.0.1"
                         }
                     }
                 }
@@ -141,10 +141,10 @@ class CreateVmConcurrentlyCase extends SubCase {
                         }
 
                         ip {
-                            startIp = "192.168.100.10"
-                            endIp = "192.168.110.100"
+                            startIp = "192.168.0.2"
+                            endIp = "192.168.255.254"
                             netmask = "255.255.0.0"
-                            gateway = "192.168.100.1"
+                            gateway = "192.168.0.1"
                         }
                     }
 
@@ -152,10 +152,10 @@ class CreateVmConcurrentlyCase extends SubCase {
                         name = "pubL3"
 
                         ip {
-                            startIp = "12.16.10.10"
-                            endIp = "12.16.10.100"
-                            netmask = "255.255.255.0"
-                            gateway = "12.16.10.1"
+                            startIp = "12.16.0.2"
+                            endIp = "12.16.255.254"
+                            netmask = "255.255.0.0"
+                            gateway = "12.16.0.1"
                         }
                     }
                 }
@@ -187,6 +187,23 @@ class CreateVmConcurrentlyCase extends SubCase {
     void test() {
         env.create {
             def flatl3 = env.inventoryByName("l3") as L3NetworkInventory
+            def host = env.inventoryByName("host1") as HostInventory
+
+            String newHosts = System.getProperty("newHosts")
+            if (newHosts != null) {
+                int nhost = Integer.parseInt(newHosts)
+                logger.info(String.format("XXX: additional host: %d", nhost))
+                for (int i = 0; i < nhost; i++) {
+                    int idx = i + 2 + 1
+                    addKVMHost {
+                        name = "host" + idx
+                        managementIp = "127.0.0." + idx
+                        username = "root"
+                        password = "password"
+                        clusterUuid = host.clusterUuid
+                    }
+                }
+            }
 
             StopWatch sw = Utils.getStopWatch()
             int n = 50
@@ -228,7 +245,7 @@ class CreateVmConcurrentlyCase extends SubCase {
         def l3 = env.inventoryByName("l3") as L3NetworkInventory
 
         shareResource {
-            resourceUuids = [ instanceOffering.uuid, image.uuid, l3.uuid]
+            resourceUuids = [instanceOffering.uuid, image.uuid, l3.uuid]
             accountUuids = [newAccount.uuid]
         }
 
@@ -257,7 +274,7 @@ class CreateVmConcurrentlyCase extends SubCase {
             password = userpass
         } as SessionInventory
 
-        for (int i = 0; i < runningVmQuota+1; i++) {
+        for (int i = 0; i < runningVmQuota + 1; i++) {
             def thread = Thread.start {
                 try {
                     createVmInstance {
@@ -342,7 +359,7 @@ class CreateVmConcurrentlyCase extends SubCase {
 
         def cnt = 0
         hasError = false
-        for (int i = 0; i < imageNumQuota+1; ++i) {
+        for (int i = 0; i < imageNumQuota + 1; ++i) {
             try {
                 createRootVolumeTemplateFromRootVolume {
                     name = "vm-template"
@@ -381,27 +398,35 @@ class CreateVmConcurrentlyCase extends SubCase {
 
         def list = []
         def existingVM = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.state, VmInstanceState.Running).count()
+        def count = new AtomicInteger(0)
 
+        logger.info("XXX: creating $numberOfVM VMs ...")
         for (int i = 0; i < numberOfVM; i++) {
-            def thread = Thread.start {
-                VmInstanceInventory inv = createVmInstance {
-                    name = "test-vm"
-                    instanceOfferingUuid = instanceOffering.uuid
-                    imageUuid = image.uuid
-                    l3NetworkUuids = [l3Uuid]
-                } as VmInstanceInventory
-
-                assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, inv.uuid).eq(VmInstanceVO_.state, VmInstanceState.Running).isExists()
-            }
-
-            list.add(thread)
+            new CreateVmInstanceAction(
+                    name: "test-vm",
+                    instanceOfferingUuid: instanceOffering.uuid,
+                    imageUuid: image.uuid,
+                    l3NetworkUuids: [l3Uuid],
+                    systemTags: ["createWithoutCdRom::true"],
+                    sessionId: adminSession(),
+            ).call(new Completion<CreateVmInstanceAction.Result>() {
+                @Override
+                void complete(CreateVmInstanceAction.Result ret) {
+                    count.incrementAndGet()
+                    if (ret.error == null) {
+                        def uuid = ret.value.inventory.uuid
+                        list.add(uuid)
+                        assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, uuid).eq(VmInstanceVO_.state, VmInstanceState.Running).isExists()
+                    }
+                }
+            })
         }
 
-        list.each { it.join() }
-
-        retryInSecs(25, 3) {
-            assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.type, "UserVm").eq(VmInstanceVO_.state, VmInstanceState.Running).count() == existingVM + numberOfVM
+        while (count.get() < numberOfVM) {
+            TimeUnit.SECONDS.sleep(1)
         }
 
+        logger.info("XXX: created $numberOfVM VMs ...")
+        assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.type, "UserVm").eq(VmInstanceVO_.state, VmInstanceState.Running).count() == existingVM + numberOfVM
     }
 }
