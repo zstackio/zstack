@@ -4,17 +4,19 @@ import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.acl.APIAddAccessControlListEntryMsg;
 import org.zstack.header.acl.APICreateAccessControlListMsg;
+import org.zstack.header.acl.AccessControlListVO;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.acl.AccessControlListVO;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.IpRangeSet;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
@@ -22,7 +24,7 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.Set;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -82,7 +84,9 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void validateIp(String ips, Integer ipVer) {
+    private void validateIp(String ips, AccessControlListVO acl) {
+        DebugUtils.Assert(acl != null, "the invalide null AccessControlListVO");
+        Integer ipVer = acl.getIpVersion();
         if (!ipVer.equals(IPv6Constants.IPv4)) {
             throw new ApiMessageInterceptionException(argerr("operation failure, not support the ip version %d", ipVer));
         }
@@ -90,7 +94,7 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
             RangeSet<Long> ipRanges = IpRangeSet.listAllRanges(ips);
             String[] ipcount = ips.split(IP_SPLIT);
             if (ipRanges.asRanges().size() < ipcount.length) {
-                throw new ApiMessageInterceptionException(argerr("operation failure, duplicate/overlap ip entry in %s", ips));
+                throw new ApiMessageInterceptionException(argerr("operation failure, duplicate/overlap ip entry in %s of acesscontrol list group:%s", ips, acl.getUuid()));
             }
             for (Range<Long> range : ipRanges.asRanges()) {
                 final Range<Long> frange = ContiguousSet.create(range, DiscreteDomain.longs()).range();
@@ -101,8 +105,8 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
                 }
                 ipRanges.asRanges().stream().forEach(r -> {
                     if (!frange.equals(r) && NetworkUtils.isIpv4RangeOverlap(startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint()))) {
-                        throw new ApiMessageInterceptionException(argerr("operation failure, there are overlap ip range[start ip:%s, end ip: %s and start ip:%s, end ip: %s]",
-                                startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint())));
+                        throw new ApiMessageInterceptionException(argerr("operation failure, there are overlap ip range[start ip:%s, end ip: %s and start ip:%s, end ip: %s in acesscontrol list group:%s]",
+                                startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint()), acl.getUuid()));
                     }
                 });
             }
@@ -115,14 +119,15 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
 
     private void validate (APIAddAccessControlListEntryMsg msg) {
         AccessControlListVO acl = dbf.findByUuid(msg.getAclUuid(), AccessControlListVO.class);
-        validateIp(msg.getEntries(), acl.getIpVersion());
 
         /*check if the entry is exist*/
         if (acl.getEntries()!= null && !acl.getEntries().isEmpty()) {
-            Set<String> ipentries = acl.getEntries().stream().map(entry -> entry.getIpEntries()).collect(Collectors.toSet());
+            List<String> ipentries = acl.getEntries().stream().map(entry -> entry.getIpEntries()).collect(Collectors.toList());
             ipentries.add(msg.getEntries());
             /*miaozhanyong to be done*/
-            //validateIp(ipentries, acl.getIpVersion());
+            validateIp(StringUtils.join(ipentries.toArray(), ','), acl);
+        } else {
+            validateIp(msg.getEntries(), acl);
         }
     }
 }
