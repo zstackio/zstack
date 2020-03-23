@@ -1557,19 +1557,25 @@ public class LoadBalancerBase {
                     new LoadBalancerWeightOperator().setWeight(msg.getSystemTags(), msg.getLoadBalancerListenerUuid());
                 }
 
-                RefreshLoadBalancerMsg msg = new RefreshLoadBalancerMsg();
-                msg.setUuid(lblVo.getLoadBalancerUuid());
-                bus.makeLocalServiceId(msg, LoadBalancerConstants.SERVICE_ID);
-                bus.send(msg, new CloudBusCallBack(chain) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            logger.warn(String.format( "update listener [uuid:%s] failed", lblVo.getUuid()));
-                            evt.setError(reply.getError());
-                        }
+                boolean refresh = Q.New(LoadBalancerListenerVmNicRefVO.class)
+                        .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getUuid())
+                        .isExists();
+                if (refresh) {
+                    RefreshLoadBalancerMsg msg = new RefreshLoadBalancerMsg();
+                    msg.setUuid(lblVo.getLoadBalancerUuid());
+                    bus.makeLocalServiceId(msg, LoadBalancerConstants.SERVICE_ID);
+                    bus.send(msg, new CloudBusCallBack(chain) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.warn(String.format("update listener [uuid:%s] failed", lblVo.getUuid()));
+                                evt.setError(reply.getError());
+                            }
 
-                    }
-                });
+                        }
+                    });
+                }
+
                 evt.setInventory( LoadBalancerListenerInventory.valueOf(lblVo));
                 bus.publish(evt);
                 chain.next();
