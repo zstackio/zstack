@@ -276,7 +276,26 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
     }
 
     private void startIntervalClean() {
+        checkParams();
+        if (RESTApiGlobalProperty.RESTAPIVO_RETENTION_DAY == -1){
+            logger.debug("ResetApiVO retention day -1 ,not clean");
+            return;
+        }
         restAPIVOCleanTask = thdf.submitPeriodicTask(restAPIVOCleanTask(), RESTApiGlobalProperty.CLEAN_RESTAPIVO_DELAY);
+    }
+
+    private void checkParams() {
+        if (RESTApiGlobalProperty.CLEAN_RESTAPIVO_DELAY < 0 || RESTApiGlobalProperty.CLEAN_RESTAPIVO_DELAY > 3600) {
+            throw new IllegalArgumentException("resetApiVO period clean task delay time must >= 0s and <= 3600s");
+        }
+
+        if (RESTApiGlobalProperty.CLEAN_INTERVAL_SECOND < 86400 || RESTApiGlobalProperty.CLEAN_INTERVAL_SECOND > 864000) {
+            throw new IllegalArgumentException("resetApiVO period clean task interval must >= 86400s and <= 864000s");
+        }
+
+        if (RESTApiGlobalProperty.RESTAPIVO_RETENTION_DAY < -1 || RESTApiGlobalProperty.RESTAPIVO_RETENTION_DAY > 365) {
+            throw new IllegalArgumentException("resetApiVO retention day must >= -1 day and <= 365 day, if set -1, will not clean RestApiVO");
+        }
     }
 
     private PeriodicTask restAPIVOCleanTask(){
@@ -301,7 +320,7 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
 
             @Override
             public long getInterval() {
-                return RESTApiGlobalProperty.cleanIntervalSecond;
+                return RESTApiGlobalProperty.CLEAN_INTERVAL_SECOND;
             }
 
             @Override
