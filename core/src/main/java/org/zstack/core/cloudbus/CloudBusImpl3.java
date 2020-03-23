@@ -32,6 +32,7 @@ import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RESTFacade;
+import org.zstack.header.rest.RestAPIExtensionPoint;
 import org.zstack.header.rest.TimeoutRestTemplate;
 import org.zstack.header.search.APISearchMessage;
 import org.zstack.header.search.APISearchReply;
@@ -84,6 +85,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
     private List<Service> services = new ArrayList<>();
     private Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<Class, List<ReplyMessagePreSendingExtensionPoint>>();
+    private List<RestAPIExtensionPoint> apiExts = new ArrayList<>();
 
     private Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new HashMap<Class, List<BeforeDeliveryMessageInterceptor>>();
     private Map<Class, List<BeforeSendMessageInterceptor>> beforeSendMessageInterceptors = new HashMap<Class, List<BeforeSendMessageInterceptor>>();
@@ -398,6 +400,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                 ext.marshalReplyMessageBeforeSending(msg, msgReq);
             }
         }
+        apiExts.forEach(e -> e.beforeAPIResponse(msg));
     }
 
     @Override
@@ -1052,6 +1055,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
     private void populateExtension() {
         services = pluginRgty.getExtensionList(Service.class);
+        apiExts = pluginRgty.getExtensionList(RestAPIExtensionPoint.class);
         services.forEach(serv->{
             assert serv.getId() != null : String.format("service id can not be null[%s]", serv.getClass().getName());
             registerService(serv);

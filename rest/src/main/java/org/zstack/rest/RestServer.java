@@ -76,6 +76,7 @@ public class RestServer implements Component, CloudBusEventListener {
     private static final CLogger logger = Utils.getLogger(RestServer.class);
     private static final CLogger requestLogger = Utils.getSafeLogger("api.request");
     private static ThreadLocal<RequestInfo> requestInfo = new ThreadLocal<>();
+    private List<RestAPIExtensionPoint> extensions = new ArrayList<>();
 
     private static final OkHttpClient http;
     private MediaType JSON = MediaType.parse("application/json; charset=utf-8");
@@ -488,6 +489,7 @@ public class RestServer implements Component, CloudBusEventListener {
 
             requestLogger.trace(sb.toString());
         }
+        extensions.forEach(ext -> ext.beforeRestResponse(info.method, statusCode));
 
         rsp.setStatus(statusCode);
         rsp.getWriter().write(body == null ? "" : body);
@@ -534,6 +536,7 @@ public class RestServer implements Component, CloudBusEventListener {
         rsp.setCharacterEncoding("utf-8");
         String path = getDecodedUrl(req);
         HttpEntity<String> entity = toHttpEntity(req);
+        extensions.forEach(ext -> ext.afterRestRequest(info.method));
 
         if (requestLogger.isTraceEnabled() && needLog(info)) {
             StringBuilder sb = new StringBuilder(String.format("[ID: %s, Method: %s] Request from %s (to %s), ",
@@ -1162,6 +1165,10 @@ public class RestServer implements Component, CloudBusEventListener {
                         bkd.getClass().getName(), old.getClass().getName(), bkd.getAuthenticationType()));
             }
             restAuthBackends.put(bkd.getAuthenticationType(), bkd);
+        }
+
+        for (RestAPIExtensionPoint ext : pluginRgty.getExtensionList(RestAPIExtensionPoint.class)) {
+            extensions.add(ext);
         }
     }
 

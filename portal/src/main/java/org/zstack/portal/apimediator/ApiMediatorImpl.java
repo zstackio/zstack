@@ -6,6 +6,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
@@ -15,6 +16,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.managementnode.*;
 import org.zstack.header.message.*;
+import org.zstack.header.rest.RestAPIExtensionPoint;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.VersionComparator;
@@ -38,6 +40,10 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
     private ThreadFacade thdf;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
+    private List<RestAPIExtensionPoint> apiExts = new ArrayList<>();
+
 
     private ApiMessageProcessor processor;
 
@@ -95,6 +101,7 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
 
     @Override
     public void handleMessage(final Message msg) {
+        apiExts.forEach(e -> e.afterAPIRequest(msg));
         thdf.syncSubmit(new SyncTask<Object>() {
             @Override
             public String getSyncSignature() {
@@ -208,6 +215,8 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
         config.put("serviceConfigFolders", serviceConfigFolders);
         processor = new ApiMessageProcessorImpl(config);
         bus.registerService(this);
+        apiExts = pluginRgty.getExtensionList(RestAPIExtensionPoint.class);
+
         return true;
     }
 

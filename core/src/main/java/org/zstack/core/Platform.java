@@ -247,6 +247,13 @@ public class Platform {
         }
     }
 
+    public static String getManagementPid() {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            return "";
+        }
+        return ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+    }
+
     private static void writePidFile() throws IOException {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             return;
