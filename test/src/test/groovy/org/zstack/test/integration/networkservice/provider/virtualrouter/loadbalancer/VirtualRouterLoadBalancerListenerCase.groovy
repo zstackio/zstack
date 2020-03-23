@@ -210,6 +210,20 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             entries = "192.168.0.1,192.168.1.0/24"
         }
 
+        expect( [ApiException.class, AssertionError.class] ) {
+            addAccessControlListEntry {
+                aclUuid = acl.uuid
+                entries = "192.168.0.1,192.168.20.0/24"
+            }
+        }
+
+        expect( [ApiException.class, AssertionError.class] ) {
+            addAccessControlListEntry {
+                aclUuid = acl.uuid
+                entries = "192.168.3.3,192.168.3.0/24"
+            }
+        }
+
         addAccessControlListToLoadBalancer {
             aclUuids = [acl.uuid]
             aclType = LoadBalancerAclType.black.toString()
@@ -237,6 +251,11 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             deleteAccessControlList {
                 uuid = acl.uuid
             }
+        }
+
+        removeAccessControlListFromLoadBalancer {
+            aclUuids =[acl.uuid]
+            listenerUuid = lblRes.value.inventory.uuid
         }
 
         deleteLoadBalancerListener {
