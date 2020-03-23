@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 #If some arguments are "", the script will be called failed, since shell can't 
 #recognize "", when sending it through arguments. 
@@ -11,11 +11,17 @@ zstack_user_password="$5"
 
 base=`dirname $0`
 
-flyway="$base/tools/flyway-3.2.1/flyway"
-flyway_sql="$base/tools/flyway-3.2.1/sql/"
+flywayver=3.2.1
+flyway="$base/tools/flyway-$flywayver/flyway"
+flyway_sql="$base/tools/flyway-$flywayver/sql/"
 
+MYSQL='mysql'
 
-mysql --user=$user --password=$password --host=$host --port=$port << EOF
+if [[ `id -u` -ne 0 ]] && [[ x"$user" = x"root" ]]; then
+    MYSQL='sudo mysql'
+fi
+
+$MYSQL --user=$user --password=$password --host=$host --port=$port << EOF
 DROP DATABASE IF EXISTS zstack;
 CREATE DATABASE zstack;
 DROP DATABASE IF EXISTS zstack_rest;
