@@ -10,6 +10,7 @@ public class VmStateChangedOnHostMsg extends NeedReplyMessage implements VmInsta
     private String vmInstanceUuid;
     private String hostUuid;
     private String stateOnHost;
+    //fromSync is used to determine whether the msg is from a host
     private boolean fromSync = false;
 
     public VmStateChangedOnHostMsg() { }
