@@ -32,7 +32,7 @@ public class CreateAccessControlListAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = false, validValues = {"4","6"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public int ipVersion = 0;
+    public java.lang.Integer ipVersion;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

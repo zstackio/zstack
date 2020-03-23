@@ -203,13 +203,29 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
 
         AccessControlListInventory acl = createAccessControlList {
             name = "acl1"
+        }
+
+        AccessControlListInventory acl6 = createAccessControlList {
+            name = "acl6"
+            ipVersion = 6
+        }
+
+        AccessControlListInventory acl2 = createAccessControlList {
+            name = "acl2"
             ipVersion = 4
         }
+
         addAccessControlListEntry {
             aclUuid = acl.uuid
             entries = "192.168.0.1,192.168.1.0/24"
         }
 
+        addAccessControlListEntry {
+            aclUuid = acl2.uuid
+            entries = "192.168.0.1,192.168.1.0/24"
+        }
+
+        /*duplicate ip*/
         expect( [ApiException.class, AssertionError.class] ) {
             addAccessControlListEntry {
                 aclUuid = acl.uuid
@@ -231,6 +247,15 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         }
         assert cmd.getLbs().find {l -> l.listenerUuid == lblRes.value.inventory.uuid}.parameters.contains("aclEntry::192.168.0.1,192.168.1.0/24")
 
+        /*add acl to lbl with different ip version*/
+        expect( [ApiException.class, AssertionError.class] ) {
+            addAccessControlListToLoadBalancer {
+                aclUuids = [acl6.uuid]
+                aclType = LoadBalancerAclType.black.toString()
+                listenerUuid = lblRes.value.inventory.uuid
+            }
+        }
+
         cmd = null
         AccessControlListEntryInventory entry = addAccessControlListEntry {
             aclUuid = acl.uuid
@@ -247,6 +272,17 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         retryInSecs {
             assert cmd.getLbs().find {l -> l.listenerUuid == lblRes.value.inventory.uuid}.parameters.contains("aclEntry::192.168.0.1,192.168.1.0/24")
         }
+
+        /*can't add the acl overlap entry into same lbl */
+        expect( [ApiException.class, AssertionError.class] ) {
+            addAccessControlListToLoadBalancer {
+                aclUuids = [acl2.uuid]
+                aclType = LoadBalancerAclType.black.toString()
+                listenerUuid = lblRes.value.inventory.uuid
+            }
+        }
+
+        /*delete acl being used by lbl*/
         expect( [ApiException.class, AssertionError.class] ) {
             deleteAccessControlList {
                 uuid = acl.uuid
@@ -264,6 +300,12 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
 
         deleteAccessControlList {
             uuid = acl.uuid
+        }
+        deleteAccessControlList {
+            uuid = acl2.uuid
+        }
+        deleteAccessControlList {
+            uuid = acl6.uuid
         }
     }
 

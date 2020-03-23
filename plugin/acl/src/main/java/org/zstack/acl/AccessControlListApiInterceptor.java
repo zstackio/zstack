@@ -58,7 +58,7 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate (APICreateAccessControlListMsg msg) {
-        if (msg.getIpVersion() == 0) {
+        if (msg.getIpVersion() == null) {
             msg.setIpVersion(IPv6Constants.IPv4);
         }
     }

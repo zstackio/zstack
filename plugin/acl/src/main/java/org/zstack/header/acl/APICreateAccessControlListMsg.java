@@ -28,7 +28,7 @@ public class APICreateAccessControlListMsg extends APICreateMessage implements A
     @APIParam(maxLength = 2048, required = false)
     private String description;
     @APIParam(validValues = {"4", "6"}, required = false)
-    private int ipVersion;
+    private Integer ipVersion;
 
 
     public String getName() {
@@ -47,11 +47,11 @@ public class APICreateAccessControlListMsg extends APICreateMessage implements A
         this.description = description;
     }
 
-    public int getIpVersion() {
+    public Integer getIpVersion() {
         return ipVersion;
     }
 
-    public void setIpVersion(int ipVersion) {
+    public void setIpVersion(Integer ipVersion) {
         this.ipVersion = ipVersion;
     }
 
