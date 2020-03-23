@@ -852,6 +852,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((DownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else if (msg instanceof CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) {
             handle((CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
+        } else if ((msg instanceof GetDownloadBitsFromKVMHostProgressMsg)) {
+            handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -868,6 +870,24 @@ public class LocalStorageBase extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 DownloadBitsFromKVMHostToPrimaryStorageReply reply = new DownloadBitsFromKVMHostToPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(GetDownloadBitsFromKVMHostProgressMsg msg) {
+        LocalStorageHypervisorBackend bkd = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid()).getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<GetDownloadBitsFromKVMHostProgressReply>(msg) {
+
+            @Override
+            public void success(GetDownloadBitsFromKVMHostProgressReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                GetDownloadBitsFromKVMHostProgressReply reply = new GetDownloadBitsFromKVMHostProgressReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

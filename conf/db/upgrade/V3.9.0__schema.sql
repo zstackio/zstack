@@ -219,3 +219,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LoadBalancerListenerACLRefVO` (
   CONSTRAINT `fkLoadbalancerListenerACLRefVOLoadBalancerListenerVO` FOREIGN KEY (`listenerUuid`) REFERENCES `LoadBalancerListenerVO` (`uuid`) ON DELETE RESTRICT,
   CONSTRAINT `fkLoadbalancerListenerACLRefVOAccessControlListVO` FOREIGN KEY (`aclUuid`) REFERENCES `AccessControlListVO` (`uuid`) ON DELETE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8;
+
+ALTER TABLE V2VConversionHostVO ADD COLUMN totalSize bigint unsigned NOT NULL DEFAULT 0;
+ALTER TABLE V2VConversionHostVO ADD COLUMN availableSize bigint unsigned NOT NULL DEFAULT 0;

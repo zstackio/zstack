@@ -2394,4 +2394,14 @@ public class KVMAgentCommands {
         public String uuid;
         public String operation;
     }
+
+    public static class GetDevCapacityCmd extends AgentCommand {
+        public String dirPath;
+    }
+
+    public static class GetDevCapacityResponse extends AgentResponse {
+        public long totalSize;
+        public long availableSize;
+        public long dirSize;
+    }
 }

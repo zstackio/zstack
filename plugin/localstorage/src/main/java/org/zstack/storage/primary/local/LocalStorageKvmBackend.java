@@ -694,8 +694,20 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public String identificationCode;
     }
 
+    public static class DownloadBitsFromKVMHostRsp extends AgentResponse {
+        public String format;
+    }
+
     public static class CancelDownloadBitsFromKVMHostCmd extends AgentCommand {
         public String primaryStorageInstallPath;
+    }
+
+    public static class GetDownloadBitsFromKVMHostProgressCmd extends AgentCommand {
+        public List<String> volumePaths;
+    }
+
+    public static class GetDownloadBitsFromKVMHostProgressRsp extends AgentResponse {
+        public long totalSize;
     }
 
     public static final String INIT_PATH = "/localstorage/init";
@@ -722,6 +734,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String CREATE_INITIALIZED_FILE = "/localstorage/create/initializedfile";
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/localstorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/localstorage/kvmhost/download/cancel";
+    public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/localstorage/kvmhost/download/progress";
 
     public LocalStorageKvmBackend() {
     }
@@ -3069,10 +3082,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 cmd.primaryStorageInstallPath = msg.getPrimaryStorageInstallPath();
                 cmd.bandWidth = msg.getBandWidth();
                 cmd.identificationCode = msg.getLongJobUuid() + msg.getPrimaryStorageInstallPath();
-                httpCall(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, msg.getDestHostUuid(), cmd, true, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(completion) {
+                httpCall(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, msg.getDestHostUuid(), cmd, true, DownloadBitsFromKVMHostRsp.class, new ReturnValueCompletion<DownloadBitsFromKVMHostRsp>(completion) {
                     @Override
-                    public void success(AgentResponse rsp) {
-                        completion.success(new DownloadBitsFromKVMHostToPrimaryStorageReply());
+                    public void success(DownloadBitsFromKVMHostRsp rsp) {
+                        reply.setFormat(rsp.format);
+                        completion.success(reply);
                     }
 
                     @Override
@@ -3139,6 +3153,25 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             @Override
             public void success(AgentResponse rsp) {
                 completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(GetDownloadBitsFromKVMHostProgressMsg msg, ReturnValueCompletion<GetDownloadBitsFromKVMHostProgressReply> completion) {
+        GetDownloadBitsFromKVMHostProgressReply reply = new GetDownloadBitsFromKVMHostProgressReply();
+        GetDownloadBitsFromKVMHostProgressCmd cmd = new GetDownloadBitsFromKVMHostProgressCmd();
+        cmd.volumePaths = msg.getVolumePaths();
+        httpCall(GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH, msg.getHostUuid(), cmd, true, GetDownloadBitsFromKVMHostProgressRsp.class, new ReturnValueCompletion<GetDownloadBitsFromKVMHostProgressRsp>(completion) {
+            @Override
+            public void success(GetDownloadBitsFromKVMHostProgressRsp rsp) {
+                reply.setTotalSize(rsp.totalSize);
+                completion.success(reply);
             }
 
             @Override

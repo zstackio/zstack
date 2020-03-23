@@ -880,6 +880,26 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
+    public static class GetDownloadBitsFromKVMHostProgressCmd extends AgentCommand {
+        public List<String> volumePaths;
+    }
+
+    public static class GetDownloadBitsFromKVMHostProgressRsp extends AgentResponse {
+        public long totalSize;
+
+        public long getTotalSize() {
+            return totalSize;
+        }
+
+        public void setTotalSize(long totalSize) {
+            this.totalSize = totalSize;
+        }
+    }
+
+    public static class DownloadBitsFromKVMHostRsp extends AgentResponse {
+        public String format;
+    }
+
     public static class DownloadBitsFromKVMHostCmd extends AgentCommand implements ReloadableCommand {
         private String hostname;
         private String username;
@@ -1039,6 +1059,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download/cancel";
     public static final String CHECK_SNAPSHOT_COMPLETED = "/ceph/primarystorage/check/snapshot";
+    public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/ceph/primarystorage/kvmhost/download/progress";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
     List<PrimaryStorageLicenseInfoFactory> licenseExts = new ArrayList<>();
@@ -3537,6 +3558,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((CleanUpTrashOnPrimaryStroageMsg) msg);
         } else if ((msg instanceof GetPrimaryStorageLicenseInfoMsg)) {
             handle((GetPrimaryStorageLicenseInfoMsg) msg);
+        } else if ((msg instanceof GetDownloadBitsFromKVMHostProgressMsg)) {
+            handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -3587,11 +3610,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 cmd.setIdentificationCode(msg.getLongJobUuid() + msg.getPrimaryStorageInstallPath());
                 String randomFactor = msg.getLongJobUuid();
 
-                new HttpCaller<>(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(reply) {
+                new HttpCaller<>(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, DownloadBitsFromKVMHostRsp.class, new ReturnValueCompletion<DownloadBitsFromKVMHostRsp>(reply) {
                     @Override
-                    public void success(AgentResponse returnValue) {
+                    public void success(DownloadBitsFromKVMHostRsp returnValue) {
                         if (returnValue.isSuccess()) {
                             logger.info(String.format("successfully downloaded bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));
+                            reply.setFormat(returnValue.format);
                             bus.reply(msg, reply);
                         } else {
                             logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));
@@ -3635,6 +3659,33 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         }).specifyOrder(randomFactor).tryNext().call();
+    }
+
+    private void handle(GetDownloadBitsFromKVMHostProgressMsg msg) {
+        GetDownloadBitsFromKVMHostProgressReply reply = new GetDownloadBitsFromKVMHostProgressReply();
+        GetDownloadBitsFromKVMHostProgressCmd cmd = new GetDownloadBitsFromKVMHostProgressCmd();
+        cmd.volumePaths = msg.getVolumePaths();
+        final String apiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
+        new HttpCaller<>(GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH, cmd, GetDownloadBitsFromKVMHostProgressRsp.class, new ReturnValueCompletion<GetDownloadBitsFromKVMHostProgressRsp>(reply) {
+            @Override
+            public void success(GetDownloadBitsFromKVMHostProgressRsp rsp) {
+                if (rsp.isSuccess()) {
+                    logger.info(String.format("successfully get download progress from primary storage %s", msg.getPrimaryStorageUuid()));
+                    reply.setTotalSize(rsp.totalSize);
+                } else {
+                    logger.error(String.format("failed to get download progress from primary storage %s",msg.getPrimaryStorageUuid()));
+                    reply.setError(Platform.operr("operation error, because:%s", rsp.getError()));
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.error(String.format("failed to get download progress from primary storage %s", msg.getPrimaryStorageUuid()));
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        }).specifyOrder(apiId).tryNext().call();
     }
 
     private void handle(DeleteImageCacheOnPrimaryStorageMsg msg) {
