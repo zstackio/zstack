@@ -1,7 +1,5 @@
 #!/bin/bash
 set -e
-#If some arguments are "", the script will be called failed, since shell can't
-#recognize "", when sending it through arguments.
 echo "$0 $*"
 user="$1"
 password="$2"
