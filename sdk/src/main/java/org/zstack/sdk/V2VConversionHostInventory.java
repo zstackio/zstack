@@ -60,6 +60,22 @@ public class V2VConversionHostInventory  {
         return this.state;
     }
 
+    public long totalSize;
+    public void setTotalSize(long totalSize) {
+        this.totalSize = totalSize;
+    }
+    public long getTotalSize() {
+        return this.totalSize;
+    }
+
+    public long availableSize;
+    public void setAvailableSize(long availableSize) {
+        this.availableSize = availableSize;
+    }
+    public long getAvailableSize() {
+        return this.availableSize;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

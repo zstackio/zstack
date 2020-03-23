@@ -60,6 +60,14 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public String primaryStorageInstallPath;
     }
 
+    public static class GetDownloadBitsFromKVMHostProgressCmd extends AgentCommand {
+        public List<String> volumePaths;
+    }
+
+    public static class GetDownloadBitsFromKVMHostProgressRsp extends AgentResponse {
+        public long totalSize;
+    }
+
     public static class MountCmd extends NfsPrimaryStorageAgentCommand {
         private String url;
         private String mountPath;

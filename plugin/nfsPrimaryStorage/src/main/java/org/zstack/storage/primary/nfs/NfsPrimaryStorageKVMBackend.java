@@ -121,6 +121,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String NFS_REBASE_VOLUME_BACKING_FILE_PATH = "/nfsprimarystorage/rebasevolumebackingfile";
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/nfsprimarystorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/nfsprimarystorage/kvmhost/download/cancel";
+    public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/nfsprimarystorage/kvmhost/download/progress";
 
 
     //////////////// For unit test //////////////////////////
@@ -560,6 +561,35 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             @Override
             public void success(KvmResponseWrapper wrapper) {
                 completion.success(new CancelDownloadBitsFromKVMHostToPrimaryStorageReply());
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    public void handle(PrimaryStorageInventory inv, GetDownloadBitsFromKVMHostProgressMsg msg, ReturnValueCompletion<GetDownloadBitsFromKVMHostProgressReply> completion) {
+        HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
+
+        GetDownloadBitsFromKVMHostProgressCmd cmd = new GetDownloadBitsFromKVMHostProgressCmd();
+        cmd.volumePaths = msg.getVolumePaths();
+
+        new KvmCommandSender(host.getUuid()).send(cmd, GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH, new KvmCommandFailureChecker() {
+            @Override
+            public ErrorCode getError(KvmResponseWrapper wrapper) {
+                GetDownloadBitsFromKVMHostProgressRsp rsp = wrapper.getResponse(GetDownloadBitsFromKVMHostProgressRsp.class);
+                return rsp.isSuccess() ? null : operr("%s", rsp.getError());
+            }
+        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            @Override
+            public void success(KvmResponseWrapper wrapper) {
+                GetDownloadBitsFromKVMHostProgressRsp rsp = wrapper.getResponse(GetDownloadBitsFromKVMHostProgressRsp.class);
+                GetDownloadBitsFromKVMHostProgressReply reply = new GetDownloadBitsFromKVMHostProgressReply();
+                reply.setTotalSize(rsp.totalSize);
+                completion.success(reply);
             }
 
             @Override

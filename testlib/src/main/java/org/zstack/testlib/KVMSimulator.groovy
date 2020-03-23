@@ -270,5 +270,12 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH) {
             return new KVMAgentCommands.UpdateSpiceChannelConfigResponse()
         }
+
+        spec.simulator(KVMConstant.GET_DEV_CAPACITY) {
+            KVMAgentCommands.GetDevCapacityResponse rsp = new KVMAgentCommands.GetDevCapacityResponse()
+            rsp.totalSize = SizeUnit.GIGABYTE.toByte(100)
+            rsp.availableSize = SizeUnit.GIGABYTE.toByte(80)
+            return rsp
+        }
     }
 }
