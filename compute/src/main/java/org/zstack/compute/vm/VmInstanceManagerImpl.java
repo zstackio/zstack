@@ -2338,6 +2338,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             vcmsg.setHostUuid(inv.getUuid());
                             vcmsg.setVmInstanceUuid(e.getKey());
                             vcmsg.setStateOnHost(state);
+                            vcmsg.setVmStateAtTracingMoment(vmStateMap.get(e.getKey()));
+                            vcmsg.setFromSync(true);
                             bus.makeTargetServiceIdByResourceUuid(vcmsg, VmInstanceConstant.SERVICE_ID, e.getKey());
                             bus.send(vcmsg);
                         }
