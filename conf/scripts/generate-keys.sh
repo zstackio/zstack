@@ -26,7 +26,7 @@ echo "organization = zstack"            > $TMP
 echo "country = CN"                     >> $TMP
 echo "state = Shanghai"                 >> $TMP
 echo "locality = Shanghai"              >> $TMP
-echo "CN=store.zstack.org"              >> $TMP
+echo "cn = store.zstack.org"            >> $TMP
 echo "expiration_days = 3652"           >> $TMP
 echo "activation_date = \"$activation_date\"" >> $TMP
 certtool --template "$TMP" \
