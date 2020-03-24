@@ -1,5 +1,7 @@
 package org.zstack.storage.volume;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -174,15 +176,6 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component {
 
         if (ImageStatus.Ready != img.getStatus()) {
             throw new ApiMessageInterceptionException(operr("image[uuid:%s] is not Ready, it's %s", img.getUuid(), img.getStatus()));
-        }
-
-        if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()) {
-            for (String systemTag : msg.getSystemTags()) {
-                if (VolumeSystemTags.SHAREABLE.isMatch(systemTag)) {
-                    throw new ApiMessageInterceptionException(argerr(
-                            "DataVolumeFromVolumeTemplate not support Shareable"));
-                }
-            }
         }
     }
 

@@ -4,6 +4,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class PrimaryStorageType {
@@ -81,7 +82,7 @@ public class PrimaryStorageType {
         return typeName.hashCode();
     }
 
-    public static List<String> getAllTypeNames() {
+    private static List<PrimaryStorageType> getExposedTypes() {
         List<PrimaryStorageType> exposedTypes = new ArrayList<PrimaryStorageType>();
         for (PrimaryStorageType type : types.values()) {
             if (type.isExposed()) {
@@ -95,6 +96,20 @@ public class PrimaryStorageType {
                 return o1.getOrder() - o2.getOrder();
             }
         });
+
+        return exposedTypes;
+    }
+
+    public static List<String> getSupportSharedVolumePSTypeNames() {
+        List<PrimaryStorageType> exposedTypes = getExposedTypes();
+        return exposedTypes.stream()
+                .filter(PrimaryStorageType::isSupportSharedVolume)
+                .map(PrimaryStorageType::toString)
+                .collect(Collectors.toList());
+    }
+
+    public static List<String> getAllTypeNames() {
+        List<PrimaryStorageType> exposedTypes = getExposedTypes();
 
         return CollectionUtils.transformToList(exposedTypes, new Function<String, PrimaryStorageType>() {
             @Override

@@ -57,17 +57,6 @@ class CreateDataVolumeWithCephFromTemplateCase extends SubCase {
         PrimaryStorageInventory ceph = env.inventoryByName("ceph-ps")
         ImageInventory image = env.inventoryByName("image-data-volume")
 
-
-        expect(AssertionError.class) {
-            createDataVolumeFromVolumeTemplate {
-                name = 'test-volume-template-local-1'
-                imageUuid = image.uuid
-                primaryStorageUuid = ceph.uuid
-                hostUuid = host.uuid
-                systemTags = ["capability::virtio-scsi", "ephemeral::shareable"]
-            }
-        }
-
         VolumeInventory dataVolume = createDataVolumeFromVolumeTemplate {
             name = 'test-volume-template-local-2'
             imageUuid = image.uuid

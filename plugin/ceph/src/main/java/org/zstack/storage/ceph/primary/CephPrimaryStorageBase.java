@@ -406,6 +406,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         int sshPort;
         String backupStorageInstallPath;
         String primaryStorageInstallPath;
+        boolean shareable;
+
+        public boolean isShareable() {
+            return shareable;
+        }
+
+        public void setShareable(boolean shareable) {
+            this.shareable = shareable;
+        }
 
         public String getUsername() {
             return username;
@@ -638,6 +647,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         String resourceUuid;
         String srcPath;
         String dstPath;
+        boolean shareable;
     }
 
     public static class UploadCmd extends AgentCommand implements HasThreadContext {
@@ -1114,6 +1124,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             cmd.sshKey = sshkey;
                             cmd.sshPort = sshport;
                             cmd.primaryStorageInstallPath = dparam.getInstallPath();
+                            cmd.shareable = dparam.isShareable();
 
                             httpCall(SFTP_DOWNLOAD_PATH, cmd, SftpDownloadRsp.class, new ReturnValueCompletion<SftpDownloadRsp>(trigger) {
                                 @Override
@@ -1297,6 +1308,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 CpCmd cmd = new CpCmd();
                 cmd.srcPath = dparam.getImage().getSelectedBackupStorage().getInstallPath();
                 cmd.dstPath = dparam.getInstallPath();
+                cmd.shareable = dparam.isShareable();
                 httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(completion) {
                     @Override
                     public void success(CpRsp returnValue) {
@@ -2452,6 +2464,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         param.setImage(spec);
         param.setInstallPath(makeDataVolumeInstallPath(msg.getVolumeUuid()));
         param.setPrimaryStorageUuid(self.getUuid());
+        param.setShareable(dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class).isShareable());
         mediator.param = param;
         mediator.download(new ReturnValueCompletion<String>(msg) {
             @Override

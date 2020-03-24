@@ -157,16 +157,6 @@ class CreateSystemTagForAPICreateDataVolumeFromVolumeTemplateMsgCase extends Sub
         assert VolumeConstant.VOLUME_FORMAT_RAW == img.getFormat()
 
         // create volume from template with system tags
-        expect(AssertionError.class) {
-            createDataVolumeFromVolumeTemplate {
-                imageUuid = img.uuid
-                name = "new-1"
-                primaryStorageUuid = ps.uuid
-                systemTags = ["ephemeral::shareable".toString(),
-                              "capability::virtio-scsi".toString()]
-            }
-        }
-
         VolumeInventory dataVolume = createDataVolumeFromVolumeTemplate {
             imageUuid = img.uuid
             name = "new"
