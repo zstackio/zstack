@@ -9,6 +9,11 @@ import org.zstack.header.configuration.InstanceOfferingVO
 import org.zstack.header.configuration.InstanceOfferingVO_
 import org.zstack.header.identity.AccountConstant
 import org.zstack.core.db.DBSourceUtils
+import org.zstack.header.identity.SharedResourceVO
+import org.zstack.header.identity.role.RolePolicyStatementVO
+import org.zstack.header.identity.role.RoleVO
+import org.zstack.header.vo.ResourceVO
+import org.zstack.header.vo.ResourceVO_
 import org.zstack.testlib.SubCase
 
 import java.sql.SQLException
@@ -115,6 +120,26 @@ class DatabaseWrapperCase extends SubCase {
         assert v3.memorySize == v2.memorySize
 
         dbf.remove(v2)
+
+        String uuid = Platform.getUuid()
+        try {
+            new SQLBatch() {
+                @Override
+                protected void scripts() {
+                    for (int i = 0; i < 10; i++) {
+                        ResourceVO vo = new ResourceVO()
+                        vo.setUuid(uuid)
+                        vo.setResourceName("test")
+                        vo.setResourceType("test");
+                        vo.setConcreteResourceType("test")
+                        persist(vo)
+                    }
+                }
+            }.execute();
+        }catch (Throwable throwable) {
+        }
+        long count = Q.New(ResourceVO.class).eq(ResourceVO_.uuid, uuid).count()
+        assert count == 0
     }
 
     @Override
