@@ -49,9 +49,6 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
     public java.lang.Integer healthCheckInterval;
 
-    @Param(required = false, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String aclStatus;
-
     @Param(required = false, validValues = {"tcp","udp","http"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String healthCheckProtocol;
 
@@ -63,6 +60,9 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
 
     @Param(required = false, maxLength = 80, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String healthCheckHttpCode;
+
+    @Param(required = false, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String aclStatus;
 
     @Param(required = false)
     public java.util.List systemTags;

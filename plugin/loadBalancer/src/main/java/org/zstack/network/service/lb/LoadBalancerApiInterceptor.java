@@ -1,5 +1,10 @@
 package org.zstack.network.service.lb;
 
+import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
@@ -8,6 +13,10 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.acl.APIDeleteAccessControlListMsg;
+import org.zstack.header.acl.AccessControlListEntryVO;
+import org.zstack.header.acl.AccessControlListVO;
+import org.zstack.header.acl.AccessControlListVO_;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -17,17 +26,22 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
-import org.zstack.header.acl.APIDeleteAccessControlListMsg;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO_;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.IpRangeSet;
 import org.zstack.utils.VipUseForList;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -52,6 +66,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     private TagManager tagMgr;
 
     private static final CLogger logger = CLoggerImpl.getLogger(LoadBalancerApiInterceptor.class);
+    private static String SPLIT = "-";
+    private static String IP_SPLIT = ",";
 
     @Override
     public List<Class> getMessageClassToIntercept() {
@@ -157,6 +173,60 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         }
     }
 
+    private boolean validateIpRange(String startIp, String endIp) {
+        if (NetworkUtils.isIpv4Address(startIp) && !NetworkUtils.isIpv4Address(endIp)) {
+            return false;
+        }
+
+        if (IPv6NetworkUtils.isIpv6Address(startIp) && !IPv6NetworkUtils.isIpv6Address(endIp)) {
+            return false;
+        }
+
+        try {
+            if (NetworkUtils.isIpv4Address(startIp)) {
+                NetworkUtils.validateIpRange(startIp, endIp);
+            } else {
+                //IPv6NetworkUtils.validateIpRange(startIp, endIp);
+            }
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private void validateIp(String ips, AccessControlListVO acl) {
+        DebugUtils.Assert(acl != null, "the invalide null AccessControlListVO");
+        Integer ipVer = acl.getIpVersion();
+        if (!ipVer.equals(IPv6Constants.IPv4)) {
+            throw new ApiMessageInterceptionException(argerr("operation failure, not support the ip version %d", ipVer));
+        }
+        try {
+            RangeSet<Long> ipRanges = IpRangeSet.listAllRanges(ips);
+            String[] ipcount = ips.split(IP_SPLIT);
+            if (ipRanges.asRanges().size() < ipcount.length) {
+                throw new ApiMessageInterceptionException(argerr("operation failure, duplicate/overlap ip entry in %s of acesscontrol list group:%s", ips, acl.getUuid()));
+            }
+            for (Range<Long> range : ipRanges.asRanges()) {
+                final Range<Long> frange = ContiguousSet.create(range, DiscreteDomain.longs()).range();
+                String startIp = NetworkUtils.longToIpv4String(frange.lowerEndpoint());
+                String endIp = NetworkUtils.longToIpv4String(frange.upperEndpoint());
+                if (!validateIpRange(startIp, endIp)) {
+                    throw new ApiMessageInterceptionException(argerr("operation failure, ip format only supports ip/iprange/cidr, but find %s", ips));
+                }
+                ipRanges.asRanges().stream().forEach(r -> {
+                    if (!frange.equals(r) && NetworkUtils.isIpv4RangeOverlap(startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint()))) {
+                        throw new ApiMessageInterceptionException(argerr("operation failure, there are overlap ip range[start ip:%s, end ip: %s and start ip:%s, end ip: %s in acesscontrol list group:%s]",
+                                startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint()), acl.getUuid()));
+                    }
+                });
+            }
+
+        } catch (IllegalArgumentException e) {
+            throw new ApiMessageInterceptionException(argerr("Invalid rule expression, the detail: %s", e.getMessage()));
+        }
+
+    }
+
     @Transactional(readOnly = true)
     private void validate(APIAddAccessControlListToLoadBalancerMsg msg) {
         List<LoadBalancerListenerACLRefVO> refVOs = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).list();
@@ -170,13 +240,51 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             /*check if type is same*/
             LoadBalancerAclType type = refVOs.get(0).getType();
             if (!type.equals(LoadBalancerAclType.valueOf(msg.getAclType()))) {
-                throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] just only attach the %s type access-control-list group", type.toString(), msg.getListenerUuid()));
+                throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] just only attach the %s type access-control-list group", msg.getListenerUuid(), type.toString()));
             }
         }
-        /*check all the ip entry not overlap include each other*/
-        /*miao zhanyong to be done*/
+
         String lbUuid = Q.New(LoadBalancerListenerVO.class).select(LoadBalancerListenerVO_.loadBalancerUuid).eq(LoadBalancerListenerVO_.uuid, msg.getListenerUuid()).findValue();
         msg.setLoadBalancerUuid(lbUuid);
+
+        LoadBalancerVO lb = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).find();
+        VipVO vip = Q.New(VipVO.class).eq(VipVO_.uuid, lb.getVipUuid()).find();
+
+
+        List<AccessControlListVO> acls = Q.New(AccessControlListVO.class)
+                                          .in(AccessControlListVO_.uuid, msg.getAclUuids()).list();
+        if (!acls.isEmpty()) {
+            /*check if the ip version is same*/
+            List<String> aclUuids = acls.stream().filter(acl -> acl.getIpVersion() != NetworkUtils.getIpversion(vip.getIp())).map(AccessControlListVO::getUuid).collect(Collectors.toList());
+            if (!aclUuids.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] can't attach the type access-control-list group[%s] whose ip version is different", msg.getListenerUuid(), aclUuids));
+            }
+
+            List<AccessControlListVO> allAcl = acls;
+            if ( !refVOs.isEmpty()) {
+                List<String> attachedUuids = refVOs.stream().map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList());
+                List<AccessControlListVO> attached = Q.New(AccessControlListVO.class).in(AccessControlListVO_.uuid, attachedUuids).list();
+                allAcl.addAll(attached);
+            }
+            /*check all the ip entry not overlap include with each other*/
+            for (AccessControlListVO acl : acls) {
+                if (acl.getEntries().isEmpty()) {
+                    continue;
+                }
+                List<String> ipentries = acl.getEntries().stream().map(AccessControlListEntryVO::getIpEntries).collect(Collectors.toList());
+                for (AccessControlListVO acl2 : allAcl) {
+                    if ( acl.getUuid().equals(acl2.getUuid())) {
+                        continue;
+                    }
+                    if (acl2.getEntries().isEmpty()) {
+                        continue;
+                    }
+                    List<String> ipentries2 = acl2.getEntries().stream().map(AccessControlListEntryVO::getIpEntries).collect(Collectors.toList());
+                    ipentries2.addAll(ipentries);
+                    validateIp(StringUtils.join(ipentries2.toArray(), ','), acl2);
+                }
+            }
+        }
     }
 
     @Transactional(readOnly = true)
