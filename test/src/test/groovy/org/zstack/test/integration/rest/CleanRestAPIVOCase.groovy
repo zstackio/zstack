@@ -13,9 +13,14 @@ import javax.persistence.EntityManagerFactory
 import javax.persistence.EntityTransaction
 import javax.persistence.Query
 import java.sql.Timestamp
+import java.util.concurrent.TimeUnit;
 
 class CleanRestAPIVOCase extends SubCase{
     EnvSpec env
+    RESTApiFacadeImpl restApiImpl
+    EntityManagerFactory entityManagerFactory
+    EntityManager mgr
+    EntityTransaction tran
 
     @Override
     void clean() {
@@ -39,15 +44,18 @@ class CleanRestAPIVOCase extends SubCase{
     @Override
     void test() {
         env.create{
+            restApiImpl = bean(RESTApiFacadeImpl.class)
+            entityManagerFactory = restApiImpl.entityManagerFactory
+            mgr = entityManagerFactory.createEntityManager()
+            tran = mgr.getTransaction()
+
             testCleanRestAPIVO()
+            testNotCleanRestAPIVO()
+            deleteRestAPIVO()
         }
     }
 
     void testCleanRestAPIVO() {
-        RESTApiFacadeImpl restApiImpl = bean(RESTApiFacadeImpl.class)
-        EntityManagerFactory entityManagerFactory = restApiImpl.entityManagerFactory
-        EntityManager mgr = entityManagerFactory.createEntityManager()
-        EntityTransaction tran = mgr.getTransaction()
         for (int i = 0; i < 1200; i++){
             RestAPIVO vo = new RestAPIVO()
             vo.setUuid(String.valueOf(i))
@@ -86,14 +94,29 @@ class CleanRestAPIVOCase extends SubCase{
             tran.commit()
             assert result.get(0) == 200
         }
+    }
 
-        String sql = String.format("delete from RestAPIVO");
-        tran.begin();
-        Query query = mgr.createNativeQuery(sql);
-        int ret = query.executeUpdate();
-        tran.commit();
-        assert ret == 200
+    void testNotCleanRestAPIVO() {
+        RESTApiGlobalProperty.RESTAPIVO_RETENTION_DAY = -1
+        restApiImpl.refreshIntervalClean()
+        TimeUnit.SECONDS.sleep(3)
+        retryInSecs {
+            tran.begin()
+            String sql = "select count(*) from RestAPIVO"
+            Query query = mgr.createQuery(sql)
+            List result = query.resultList
+            tran.commit()
+            assert result.get(0) == 200
+        }
+    }
 
+    void deleteRestAPIVO() {
+            tran.begin()
+            String sql = "delete from RestAPIVO"
+            Query query = mgr.createQuery(sql)
+            int ret = query.executeUpdate()
+            tran.commit()
+            assert ret == 200
         mgr.close()
     }
 }
