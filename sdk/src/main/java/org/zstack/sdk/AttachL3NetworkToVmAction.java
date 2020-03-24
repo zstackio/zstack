@@ -31,9 +31,6 @@ public class AttachL3NetworkToVmAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String l3NetworkUuid;
 
-    @Param(required = false, validValues = {"VNIC","VF"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vnicType;
-
     @Param(required = false)
     public java.lang.String staticIp;
 

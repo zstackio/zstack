@@ -278,16 +278,6 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
 
-    private List<String> systemTags;
-
-    public List<String> getSystemTags() {
-        return systemTags;
-    }
-
-    public void setSystemTags(List<String> systemTags) {
-        this.systemTags = systemTags;
-    }
-
     public AllocationScene getAllocationScene() {
         return allocationScene;
     }

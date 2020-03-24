@@ -13,10 +13,7 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.network.IPv6Constants;
@@ -146,6 +143,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                     nvo.setInternalName(nic.getInternalName());
                     nvo.setAccountUuid(acntUuid);
                     nvo.setIpVersion(nic.getIpVersion());
+                    nvo.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
                     persist(nvo);
                     if (nic.getUsedIpUuid() != null) {
                         SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, nic.getUsedIpUuid()).set(UsedIpVO_.vmNicUuid, nvo.getUuid()).update();

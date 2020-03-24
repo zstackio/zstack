@@ -1,10 +1,8 @@
 package org.zstack.compute.vm;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.orm.jpa.JpaSystemException;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -22,6 +20,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.Utils;
@@ -93,9 +93,17 @@ public class VmAllocateNicFlow implements Flow {
             }
             final String mac = customMac;
 
+            // choose vnic factory based on enableSRIOV system tag
             VmInstanceNicFactory vnicFactory;
-            if (spec.getSystemTags() != null &&
-                    spec.getSystemTags().contains(String.format("enableSRIOV::%s", nw.getUuid()))) {
+            boolean enableSriov = Q.New(SystemTagVO.class)
+                    .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
+                    .eq(SystemTagVO_.resourceUuid, spec.getVmInventory().getUuid())
+                    .eq(SystemTagVO_.tag, String.format("enableSRIOV::%s", nw.getUuid()))
+                    .isExists();
+            logger.debug(String.format("create %s on l3 network[uuid:%s] inside VmAllocateNicFlow",
+                    enableSriov ? "vf nic" : "vnic", nw.getUuid()));
+
+            if (enableSriov) {
                 vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("VF"));
             } else {
                 vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("VNIC"));
@@ -142,28 +150,6 @@ public class VmAllocateNicFlow implements Flow {
                         nic.setInternalName(VmNicVO.generateNicInternalName(spec.getVmInventory().getInternalId(), nic.getDeviceId()));
 
                         new SQLBatch() {
-                            private VmNicVO persistAndRetryIfMacCollision(VmNicVO vo) {
-                                int tries = 5;
-                                while (tries-- > 0) {
-                                    try {
-                                        persist(vo);
-                                        return reload(vo);
-                                    } catch (JpaSystemException e) {
-                                        if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException &&
-                                                e.getRootCause().getMessage().contains("Duplicate entry")) {
-                                            logger.debug(String.format("Concurrent mac allocation. Mac[%s] has been allocated, try allocating another one. " +
-                                                    "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
-                                                    "we will try finding another mac", vo.getMac()));
-                                            logger.trace("", e);
-                                            vo.setMac(NetworkUtils.generateMacWithDeviceId((short) vo.getDeviceId()));
-                                        } else {
-                                            throw e;
-                                        }
-                                    }
-                                }
-                                return null;
-                            }
-
                             @Override
                             protected void scripts() {
                                 vnicFactory.createVmNic(nic, spec);

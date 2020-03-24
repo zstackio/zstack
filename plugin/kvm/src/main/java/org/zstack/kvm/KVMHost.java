@@ -934,6 +934,12 @@ public class KVMHost extends HostBase implements Host {
         DetachNicCommand cmd = new DetachNicCommand();
         cmd.setVmUuid(msg.getVmInstanceUuid());
         cmd.setNic(to);
+
+        KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
+        for (KvmPreDetachNicExtensionPoint ext : pluginRgty.getExtensionList(KvmPreDetachNicExtensionPoint.class)) {
+            ext.preDetachNicExtensionPoint(inv, cmd);
+        }
+
         new Http<>(detachNicPath, cmd, DetachNicRsp.class).call(new ReturnValueCompletion<DetachNicRsp>(msg, completion) {
             @Override
             public void success(DetachNicRsp ret) {

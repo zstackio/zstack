@@ -718,6 +718,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 nicVO.setDeviceId(deviceId);
                 nicVO.setMac(mac);
                 nicVO.setAccountUuid(msg.getSession().getAccountUuid());
+                nicVO.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
 
                 int tries = 5;
                 while (tries-- > 0) {
@@ -925,7 +926,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         smsg.setTimeout(msg.getTimeout());
         smsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         smsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
-        smsg.setSystemTags(msg.getSystemTags());
         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, vo.getUuid());
         bus.send(smsg, new CloudBusCallBack(smsg) {
             @Override
@@ -1047,6 +1047,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
         cmsg.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         cmsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
+
         cmsg.setClusterUuid(msg.getClusterUuid());
         cmsg.setHostUuid(msg.getHostUuid());
         cmsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
@@ -1056,7 +1057,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         cmsg.setDescription(msg.getDescription());
         cmsg.setResourceUuid(msg.getResourceUuid());
         cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
-        cmsg.setSystemTags(msg.getSystemTags());
         cmsg.setStrategy(msg.getStrategy());
         cmsg.setServiceId(msg.getServiceId());
         cmsg.setHeaders(msg.getHeaders());
