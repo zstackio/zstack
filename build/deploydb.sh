@@ -32,7 +32,8 @@ grant all privileges on zstack.* to root@'127.0.0.1' identified by "${password}"
 grant all privileges on zstack_rest.* to root@'127.0.0.1' identified by "${password}";
 EOF
 
-flywayver=3.2.1
+# assign flyway version if not defined
+: "${flywayver:=3.2.1}"
 flyway="$base/../conf//tools/flyway-$flywayver/flyway"
 flyway_sql="$base/../conf/tools/flyway-$flywayver/sql/"
 
