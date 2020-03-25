@@ -11,7 +11,8 @@ zstack_user_password="$5"
 
 base=`dirname $0`
 
-flywayver=3.2.1
+# assign flyway version if not defined
+: "${flywayver:=3.2.1}"
 flyway="$base/tools/flyway-$flywayver/flyway"
 flyway_sql="$base/tools/flyway-$flywayver/sql/"
 
