@@ -62,7 +62,7 @@ public class AddImageLongJob implements LongJob {
         public void success(ImageInventory image) {
             if (done.compareAndSet(false, true)) {
                 event.setInventory(image);
-                job = updateByUuid(job.getUuid(), vo -> vo.setJobResult(JSONObjectUtil.toJsonString(event)));
+                job = updateByUuid(job.getUuid(), vo -> vo.setJobResultStr(JSONObjectUtil.toJsonString(event)));
                 completion.success(event);
             }
         }
@@ -70,7 +70,9 @@ public class AddImageLongJob implements LongJob {
         @Override
         public void fail(ErrorCode err) {
             if (done.compareAndSet(false, true)) {
-                job = updateByUuid(job.getUuid(), vo -> vo.setJobResult(wrapDefaultReuslt(vo, err)));
+                job = updateByUuid(job.getUuid(), vo -> {
+                    vo.setJobResult(wrapDefaultReuslt(vo, err));
+                });
                 completion.fail(err);
             }
         }
@@ -78,7 +80,7 @@ public class AddImageLongJob implements LongJob {
         public void track(ImageInventory inv) {
             if (!done.get()) {
                 event.setInventory(inv);
-                job = updateByUuid(job.getUuid(), vo -> vo.setJobResult(JSONObjectUtil.toJsonString(event)));
+                job = updateByUuid(job.getUuid(), vo -> vo.setJobResultStr(JSONObjectUtil.toJsonString(event)));
             }
         }
 
@@ -165,7 +167,7 @@ public class AddImageLongJob implements LongJob {
                 }
 
                 LongJobUtils.changeState(job.getUuid(), LongJobStateEvent.fail,
-                        vo -> vo.setJobResult("Failed because management node restarted."));
+                        vo -> vo.setJobResultStr("Failed because management node restarted."));
             }
         });
     }

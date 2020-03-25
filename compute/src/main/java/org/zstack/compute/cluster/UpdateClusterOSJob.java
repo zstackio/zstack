@@ -39,7 +39,7 @@ public class UpdateClusterOSJob implements LongJob {
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
                     UpdateClusterOSReply rly = reply.castReply();
-                    job.setJobResult(JSONObjectUtil.toJsonString(rly.getResults()));
+                    job.setJobResultStr(JSONObjectUtil.toJsonString(rly.getResults()));
                     dbf.update(job);
                     completion.success(null);
                 } else {

@@ -106,7 +106,7 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
         vo.setJobName(msg.getJobName());
         vo.setJobData(msg.getJobData());
         vo.setState(LongJobState.Succeeded);
-        vo.setJobResult(LongJobState.Succeeded.toString());
+        vo.setJobResultStr(LongJobUtils.succeeded);
         vo.setTargetResourceUuid(msg.getTargetResourceUuid());
         vo.setManagementNodeUuid(Platform.getManagementServerId());
         vo.setAccountUuid(msg.getSession().getAccountUuid());

@@ -984,6 +984,14 @@
     "message_en": "There are duplicate MAC addresses in the migration environment, please resolve the problem and continue"
   },
   {
+    "category": "V2V",
+    "code": "1003",
+    "method": "regex",
+    "regex": ".*refers to non-existing datastore.*This may be a bug in vCenter 5.5, please detach ISO in vSphere client and try again",
+    "message_cn": "文件名指向的datastore不存在，请通过vSphere客户端卸载掉iso再重试",
+    "message_en": "filename refers to non-existing datatore. please detach ISO in vSphere client and try again"
+  },
+  {
     "category": "VCENTER",
     "code": "1000",
     "method": "regex",
