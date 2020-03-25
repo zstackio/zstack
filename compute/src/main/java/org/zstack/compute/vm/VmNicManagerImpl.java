@@ -1,24 +1,31 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.l3.UsedIpVO_;
-import org.zstack.header.vm.VmNicInventory;
-import org.zstack.header.vm.VmNicVO;
-import org.zstack.header.vm.VmNicVO_;
+import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
-public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, PrepareDbInitialValueExtensionPoint {
+@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
+public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, PrepareDbInitialValueExtensionPoint, VmPlatformChangedExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmNicManagerImpl.class);
+
+    private List<String> supportNicDriverTypes;
+    private String defaultPVNicDriver;
+    private String defaultNicDriver;
 
     @Override
     public void afterAddIpAddress(String vmNicUUid, String usedIpUuid) {
@@ -108,5 +115,72 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
                 new DualStackNicSecondaryNetworksOperator().createSecondaryNetworksByVmNic(VmNicInventory.valueOf(nic), ip.getL3NetworkUuid());
             }
         }
+
+        nics.forEach(nic -> {
+            if (nic.getDriverType() != null) {
+                return;
+            }
+            SQL.New(VmNicVO.class)
+                    .eq(VmNicVO_.uuid, nic.getUuid())
+                    .set(VmNicVO_.driverType, getNicDefaultDriver(nic.getVmInstanceUuid()))
+                    .update();
+        });
+    }
+
+    @Override
+    public void vmPlatformChange(VmInstanceInventory vm, String previousPlatform, String nowPlatform) {
+        if (ImagePlatform.valueOf(nowPlatform).isParaVirtualization()) {
+            resetVmNicDriverType(vm, defaultPVNicDriver);
+            return;
+        }
+
+        resetVmNicDriverType(vm, defaultNicDriver);
+    }
+
+    private void resetVmNicDriverType(VmInstanceInventory vm, String driverType) {
+        VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.getUuid()).find();
+        List<String> needUpdateNics = vo.getVmNics().stream()
+                .filter(nic -> nic.getDriverType() == null || !nic.getDriverType().equals(driverType))
+                .map(VmNicVO::getUuid)
+                .collect(Collectors.toList());
+
+        if (CollectionUtils.isEmpty(needUpdateNics)) {
+            return;
+        }
+
+        SQL.New(VmNicVO.class).in(VmNicVO_.uuid, needUpdateNics).set(VmNicVO_.driverType, driverType).update();
+    }
+
+    private String getNicDefaultDriver(String vmUuid) {
+        VmInstanceVO vm = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).find();
+        return ImagePlatform.valueOf(vm.getPlatform()).isParaVirtualization() ?
+                defaultPVNicDriver : defaultNicDriver;
+    }
+
+    public void setSupportNicDriverTypes(List<String> supportNicDriverTypes) {
+        this.supportNicDriverTypes = supportNicDriverTypes;
+    }
+
+    public void setDefaultPVNicDriver(String defaultPVNicDriver) {
+        this.defaultPVNicDriver = defaultPVNicDriver;
+    }
+
+    public void setDefaultNicDriver(String defaultNicDriver) {
+        this.defaultNicDriver = defaultNicDriver;
+    }
+
+    @Override
+    public List<String> getSupportNicDriverTypes() {
+        return supportNicDriverTypes;
+    }
+
+    @Override
+    public String getDefaultPVNicDriver() {
+        return defaultPVNicDriver;
+    }
+
+    @Override
+    public String getDefaultNicDriver() {
+        return defaultNicDriver;
     }
 }

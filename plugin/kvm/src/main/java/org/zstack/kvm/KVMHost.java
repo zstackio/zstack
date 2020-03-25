@@ -11,10 +11,7 @@ import org.zstack.compute.host.HostBase;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.compute.host.MigrateNetworkExtensionPoint;
-import org.zstack.compute.vm.IsoOperator;
-import org.zstack.compute.vm.VmGlobalConfig;
-import org.zstack.compute.vm.VmPriorityOperator;
-import org.zstack.compute.vm.VmSystemTags;
+import org.zstack.compute.vm.*;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
@@ -112,6 +109,8 @@ public class KVMHost extends HostBase implements Host {
     private ResourceConfigFacade rcf;
     @Autowired
     private DeviceBootOrderOperator deviceBootOrderOperator;
+    @Autowired
+    private VmNicManager nicManager;
 
     private KVMHostContext context;
 
@@ -2048,6 +2047,35 @@ public class KVMHost extends HostBase implements Host {
             to.setUseVirtio(ImagePlatform.valueOf(platform).isParaVirtualization());
             to.setIps(getCleanTrafficIp(nic));
         }
+
+        if (to.getDriverType() == null) {
+            if (nic.getDriverType() != null) {
+                to.setDriverType(nic.getDriverType());
+            } else {
+                to.setDriverType(to.getUseVirtio() ? nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
+            }
+        }
+
+        VHostAddOn vHostAddOn = new VHostAddOn();
+
+        if (to.getDriverType().equals(nicManager.getDefaultPVNicDriver())) {
+            vHostAddOn.setQueueNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM, nic.getVmInstanceUuid(), Integer.class));
+        } else {
+            vHostAddOn.setQueueNum(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.defaultValue(Integer.class));
+        }
+
+        if (VmSystemTags.VM_VRING_BUFFER_SIZE.hasTag(nic.getVmInstanceUuid())) {
+            Map<String, String> tokens = VmSystemTags.VM_VRING_BUFFER_SIZE.getTokensByResourceUuid(nic.getVmInstanceUuid());
+            if (tokens.get(VmSystemTags.RX_SIZE_TOKEN) != null) {
+                vHostAddOn.setRxBufferSize(tokens.get(VmSystemTags.RX_SIZE_TOKEN));
+            }
+
+            if (tokens.get(VmSystemTags.TX_SIZE_TOKEN) != null) {
+                vHostAddOn.setTxBufferSize(tokens.get(VmSystemTags.TX_SIZE_TOKEN));
+            }
+        }
+
+        to.setvHostAddOn(vHostAddOn);
 
         return to;
     }
