@@ -28,6 +28,8 @@ import static org.zstack.core.Platform.err;
 public class LongJobUtils {
     private static final CLogger logger = Utils.getLogger(LongJobUtils.class);
 
+    public static String succeeded = "Succeeded";
+
     @Autowired
     private ProgressReportService progRpt;
 
@@ -79,13 +81,11 @@ public class LongJobUtils {
         return canceledStates.contains(vo.getState());
     }
 
-    public static String wrapDefaultReuslt(LongJobVO job, ErrorCode err) {
-        if (err == null) {
-            return "Succeeded";
-        } else if (jobCanceled(job) && !err.isError(LongJobErrors.CANCELED)) {
-            return "Failed : " + cancelErr(job.getUuid(), err).toString();
+    public static ErrorCode wrapDefaultReuslt(LongJobVO job, ErrorCode err) {
+        if (jobCanceled(job) && !err.isError(LongJobErrors.CANCELED)) {
+            return cancelErr(job.getUuid(), err);
         } else {
-            return "Failed : " + err.toString();
+            return err;
         }
     }
 

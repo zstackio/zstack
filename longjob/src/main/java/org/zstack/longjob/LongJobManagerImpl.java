@@ -347,7 +347,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             vo.setApiId(ThreadContext.getImmutableContext().get(Constants.THREAD_CONTEXT_API));
             vo.setState(LongJobState.Waiting);
             vo.setExecuteTime(null);
-            vo.setJobResult(null);
             vo.setManagementNodeUuid(Platform.getManagementServerId());
             Timestamp now = Timestamp.valueOf(LocalDateTime.now());
             vo.setCreateDate(now);
@@ -425,7 +424,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 reportProgress("100");
                 changeState(longJobUuid, LongJobStateEvent.succeed, it -> {
                     if (Strings.isEmpty(it.getJobResult())) {
-                        it.setJobResult(wrapDefaultReuslt(it, null));
+                        it.setJobResultStr(LongJobUtils.succeeded);
                     }
                 });
 

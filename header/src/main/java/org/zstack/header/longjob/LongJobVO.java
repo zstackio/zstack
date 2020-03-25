@@ -1,5 +1,6 @@
 package org.zstack.header.longjob;
 
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.managementnode.ManagementNodeVO;
 import org.zstack.header.vo.ForeignKey;
@@ -114,7 +115,11 @@ public class LongJobVO extends ResourceVO implements OwnedByAccount {
         return jobResult;
     }
 
-    public void setJobResult(String jobResult) {
+    public void setJobResult(ErrorCode errorCode) {
+        this.jobResult = ErrorCode.getJobResult(errorCode);
+    }
+
+    public void setJobResultStr(String jobResult) {
         this.jobResult = jobResult;
     }
 

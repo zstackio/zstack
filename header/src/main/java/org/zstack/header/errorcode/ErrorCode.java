@@ -208,4 +208,13 @@ public class ErrorCode implements Serializable, Cloneable {
     public static String getDeduplicateError(String operationName) {
         return String.format("an other %s task is running, cancel this operation", operationName);
     }
+
+
+    public static String getJobResult(ErrorCode errorCode) {
+        if (errorCode == null) {
+            return null;
+        }
+        JobResultError error = new JobResultError(errorCode.messages, errorCode.details);
+        return JSONObjectUtil.toJsonString(error);
+    }
 }
