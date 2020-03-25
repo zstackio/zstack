@@ -140,6 +140,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (existingAcls.isEmpty()) {
             APIRemoveAccessControlListFromLoadBalancerEvent evt = new APIRemoveAccessControlListFromLoadBalancerEvent(msg.getId());
             evt.setInventory(LoadBalancerListenerInventory.valueOf(vo));
+            bus.publish(evt);
             throw new StopRoutingException();
         }
     }
@@ -159,6 +160,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (vmNicUuids.isEmpty()) {
             APIRemoveVmNicFromLoadBalancerEvent evt = new APIRemoveVmNicFromLoadBalancerEvent(msg.getId());
             evt.setInventory(LoadBalancerInventory.valueOf(dbf.findByUuid(lbuuid, LoadBalancerVO.class)));
+            bus.publish(evt);
             throw new StopRoutingException();
         }
     }
