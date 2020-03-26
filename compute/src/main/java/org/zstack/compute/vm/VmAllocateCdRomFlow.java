@@ -79,10 +79,13 @@ public class VmAllocateCdRomFlow implements Flow {
     @Override
     public void rollback(final FlowRollback chain, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        List<CdRomSpec> cdRomSpecs = spec.getCdRomSpecs();
 
-        UpdateQuery.New(VmCdRomVO.class)
-                .eq(VmCdRomVO_.vmInstanceUuid, spec.getVmInventory().getUuid())
-                .hardDelete();
+        if (!cdRomSpecs.isEmpty()) {
+            UpdateQuery.New(VmCdRomVO.class)
+                    .eq(VmCdRomVO_.vmInstanceUuid, spec.getVmInventory().getUuid())
+                    .hardDelete();
+        }
 
         chain.rollback();
     }
