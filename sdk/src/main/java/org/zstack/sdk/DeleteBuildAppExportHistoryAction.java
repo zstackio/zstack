@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class DeleteBuildAppExportHistoryAction extends AbstractAction {
 
@@ -28,10 +29,10 @@ public class DeleteBuildAppExportHistoryAction extends AbstractAction {
     public java.lang.String buildAppUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String buildSystemUuid;
+    public java.lang.String exportId;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String exportId;
+    public java.lang.String buildSystemUuid;
 
     @Param(required = false)
     public java.lang.String deleteMode = "Permissive";

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeprecateBuildAppAction extends AbstractAction {
+public class GetResourceStackFromResourceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeprecateBuildAppAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeprecateBuildAppResult value;
+        public org.zstack.sdk.GetResourceStackFromResourceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,7 +26,7 @@ public class DeprecateBuildAppAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -46,12 +46,6 @@ public class DeprecateBuildAppAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -60,8 +54,8 @@ public class DeprecateBuildAppAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeprecateBuildAppResult value = res.getResult(org.zstack.sdk.DeprecateBuildAppResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeprecateBuildAppResult() : value; 
+        org.zstack.sdk.GetResourceStackFromResourceResult value = res.getResult(org.zstack.sdk.GetResourceStackFromResourceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetResourceStackFromResourceResult() : value; 
 
         return ret;
     }
@@ -90,11 +84,11 @@ public class DeprecateBuildAppAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/appcenter/buildapp/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/cloudformation/resources/stack";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "deprecateBuildApp";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.PublishAppStatus;
-
 public class PublishAppResourceStruct  {
 
     public java.lang.String appUuid;
@@ -10,14 +8,6 @@ public class PublishAppResourceStruct  {
     }
     public java.lang.String getAppUuid() {
         return this.appUuid;
-    }
-
-    public PublishAppStatus appStatus;
-    public void setAppStatus(PublishAppStatus appStatus) {
-        this.appStatus = appStatus;
-    }
-    public PublishAppStatus getAppStatus() {
-        return this.appStatus;
     }
 
     public java.lang.String resourceUuid;

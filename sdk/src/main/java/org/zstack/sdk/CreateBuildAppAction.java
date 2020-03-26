@@ -34,9 +34,6 @@ public class CreateBuildAppAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String dataPath;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean buildImage;
-
     @Param(required = false)
     public java.lang.String resourceUuid;
 

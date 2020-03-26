@@ -34,9 +34,6 @@ public class AddBuildAppAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String backupStorageUuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean fromBuild;
-
     @Param(required = false)
     public java.lang.String resourceUuid;
 
