@@ -150,6 +150,7 @@ public class KVMHost extends HostBase implements Host {
     private String updateSpiceChannelConfigPath;
     private String cancelJob;
     private String getVmFirstBootDevicePath;
+    private String getDevCapacityPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -290,6 +291,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_GET_VM_FIRST_BOOT_DEVICE_PATH);
         getVmFirstBootDevicePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.GET_DEV_CAPACITY);
+        getDevCapacityPath = ub.build().toString();
     }
 
     class Http<T> {

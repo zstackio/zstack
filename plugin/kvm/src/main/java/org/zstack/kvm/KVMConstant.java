@@ -53,6 +53,7 @@ public interface KVMConstant {
     String HOST_SHUTDOWN = "/host/shutdown";
     String HOST_UPDATE_SPICE_CHANNEL_CONFIG_PATH = "/host/updateSpiceChannelConfig";
     String KVM_GET_VM_FIRST_BOOT_DEVICE_PATH = "/vm/getfirstbootdevice";
+    String GET_DEV_CAPACITY = "/host/dev/capacity";
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";

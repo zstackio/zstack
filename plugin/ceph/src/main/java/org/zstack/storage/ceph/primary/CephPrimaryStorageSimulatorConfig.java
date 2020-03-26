@@ -53,4 +53,6 @@ public class CephPrimaryStorageSimulatorConfig {
     public List<DeleteImageCacheCmd> deleteImageCacheCmds = new ArrayList<>();
     public Map<String, String> monAddr = new HashMap<>();
     public boolean synchronizedCreateEmptyVolume = false;
+
+    public List<GetDownloadBitsFromKVMHostProgressCmd> getDownLoadProgressCmds = new ArrayList<>();
 }

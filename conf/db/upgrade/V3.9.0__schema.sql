@@ -19,3 +19,5 @@ CREATE VIEW `zstack`.`ImageVO` AS SELECT uuid, name, description, status, state,
 ALTER TABLE ImageEO DROP exportMd5Sum, DROP exportUrl;
 
 UPDATE ResourceVO SET resourceType = "PrimaryStorageVO", concreteResourceType = "org.zstack.storage.primary.sharedblock.SharedBlockGroupVO"  WHERE resourceType = "SharedBlockGroupVO";
+ALTER TABLE V2VConversionHostVO ADD COLUMN totalSize bigint unsigned NOT NULL DEFAULT 0;
+ALTER TABLE V2VConversionHostVO ADD COLUMN availableSize bigint unsigned NOT NULL DEFAULT 0;

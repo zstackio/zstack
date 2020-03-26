@@ -382,4 +382,17 @@ public class CephPrimaryStorageSimulator {
         reply(entity, rsp);
         return null;
     }
+
+    @RequestMapping(value= CephPrimaryStorageBase.GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH, method= RequestMethod.POST)
+    public @ResponseBody
+    String getDownlaodProgress(HttpEntity<String> entity) {
+        GetDownloadBitsFromKVMHostProgressCmd cmd = JSONObjectUtil.toObject(entity.getBody(), GetDownloadBitsFromKVMHostProgressCmd.class);
+        config.getDownLoadProgressCmds.add(cmd);
+
+        GetDownloadBitsFromKVMHostProgressRsp rsp = new GetDownloadBitsFromKVMHostProgressRsp();
+        rsp.setTotalSize(1L);
+
+        reply(entity, rsp);
+        return null;
+    }
 }

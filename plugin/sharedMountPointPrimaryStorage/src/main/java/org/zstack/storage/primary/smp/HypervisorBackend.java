@@ -51,6 +51,8 @@ public abstract class HypervisorBackend extends SMPPrimaryStorageBase {
 
     abstract void handle(CancelDownloadBitsFromKVMHostToPrimaryStorageMsg msg, Completion completion);
 
+    abstract void handle(GetDownloadBitsFromKVMHostProgressMsg msg, ReturnValueCompletion<GetDownloadBitsFromKVMHostProgressReply> completion);
+
     abstract void deleteBits(String path, Completion completion);
 
     abstract void deleteBits(String path, boolean folder, Completion completion);
