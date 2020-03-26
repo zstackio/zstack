@@ -68,20 +68,20 @@ public class ResourceStackInventory  {
         return this.status;
     }
 
-    public java.lang.String outputs;
-    public void setOutputs(java.lang.String outputs) {
-        this.outputs = outputs;
-    }
-    public java.lang.String getOutputs() {
-        return this.outputs;
-    }
-
     public java.lang.String reason;
     public void setReason(java.lang.String reason) {
         this.reason = reason;
     }
     public java.lang.String getReason() {
         return this.reason;
+    }
+
+    public java.lang.String outputs;
+    public void setOutputs(java.lang.String outputs) {
+        this.outputs = outputs;
+    }
+    public java.lang.String getOutputs() {
+        return this.outputs;
     }
 
     public java.lang.Boolean enableRollback;
