@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteBuildAppExportHistoryAction extends AbstractAction {
+public class GetResourceStackFromResourceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteBuildAppExportHistoryAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteBuildAppExportHistoryResult value;
+        public org.zstack.sdk.GetResourceStackFromResourceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,8 @@ public class DeleteBuildAppExportHistoryAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String buildAppUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String exportId;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String buildSystemUuid;
-
-    @Param(required = false)
-    public java.lang.String deleteMode = "Permissive";
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -55,12 +46,6 @@ public class DeleteBuildAppExportHistoryAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -69,8 +54,8 @@ public class DeleteBuildAppExportHistoryAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteBuildAppExportHistoryResult value = res.getResult(org.zstack.sdk.DeleteBuildAppExportHistoryResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteBuildAppExportHistoryResult() : value; 
+        org.zstack.sdk.GetResourceStackFromResourceResult value = res.getResult(org.zstack.sdk.GetResourceStackFromResourceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetResourceStackFromResourceResult() : value; 
 
         return ret;
     }
@@ -99,10 +84,10 @@ public class DeleteBuildAppExportHistoryAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/buildapp/exports/{buildAppUuid}";
+        info.httpMethod = "GET";
+        info.path = "/cloudformation/resources/stack";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }
