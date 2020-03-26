@@ -637,7 +637,7 @@ CREATE FUNCTION `Upgrade_Scheduler` (
     repeatCount int unsigned,
     cronScheduler varchar(255),
     jobClassName varchar(255),
-    jobData varchar(65535),
+    jobData text,
     state varchar(255),
     startTime timestamp,
     stopTime timestamp,
