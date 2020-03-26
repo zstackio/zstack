@@ -352,8 +352,14 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             if (result.inventories != null) {
                 if (msg.getFilterName() != null) {
                     filter(result.inventories, msg.getFilterName());
+                    if (msg.isReplyWithCount()) {
+                        reply.setTotal(result.inventories.size());
+                    } else {
+                        replySetter.invoke(reply, result.inventories);
+                    }
+                } else {
+                    replySetter.invoke(reply, result.inventories);
                 }
-                replySetter.invoke(reply, result.inventories);
             }
             bus.reply(msg, reply);
         } catch (OperationFailureException of) {
@@ -461,7 +467,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             }
         }
 
-        if (!msg.isCount() && msg.isReplyWithCount()) {
+        if (!msg.isCount() && msg.isReplyWithCount() && msg.getFilterName() == null) {
             sb.add("return with (total)");
         }
 
