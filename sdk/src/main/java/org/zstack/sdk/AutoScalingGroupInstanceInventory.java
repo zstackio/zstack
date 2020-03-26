@@ -84,4 +84,12 @@ public class AutoScalingGroupInstanceInventory  {
         return this.lastOpDate;
     }
 
+    public java.lang.String protectionStrategy;
+    public void setProtectionStrategy(java.lang.String protectionStrategy) {
+        this.protectionStrategy = protectionStrategy;
+    }
+    public java.lang.String getProtectionStrategy() {
+        return this.protectionStrategy;
+    }
+
 }

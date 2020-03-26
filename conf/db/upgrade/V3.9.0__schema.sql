@@ -22,3 +22,6 @@ ALTER TABLE `zstack`.`PolicyRouteRuleSetVO` ADD COLUMN type VARCHAR(64) DEFAULT 
 ALTER TABLE `zstack`.`PolicyRouteTableVO` ADD COLUMN type VARCHAR(64) DEFAULT "User" NOT NULL;
 
 ALTER TABLE `zstack`.`VmNicVO` ADD COLUMN `driverType` varchar(64) DEFAULT NULL;
+
+ALTER TABLE `zstack`.`AutoScalingGroupInstanceVO` ADD COLUMN protectionStrategy VARCHAR(128) DEFAULT "Unprotected" NOT NULL;
+ALTER TABLE `zstack`.`AutoScalingGroupInstanceVO` MODIFY COLUMN `protectionStrategy` VARCHAR(128) NOT NULL;

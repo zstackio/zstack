@@ -65,7 +65,7 @@ public class CreateAlarmAction extends AbstractAction {
     public java.lang.Boolean enableRecovery = false;
 
     @Param(required = false, validValues = {"Emergent","Important","Normal"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String emergencyLevel;
+    public java.lang.String emergencyLevel = "Important";
 
     @Param(required = false)
     public java.lang.String resourceUuid;
