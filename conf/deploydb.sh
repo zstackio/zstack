@@ -22,7 +22,11 @@ if [[ `id -u` -ne 0 ]] && [[ x"$user" = x"root" ]]; then
     MYSQL='sudo mysql'
 fi
 
-$MYSQL --user=$user --password=$password --host=$host --port=$port << EOF
+mysql_run() {
+    $MYSQL --user=$user --password=$password --host=$host --port=$port "$@"
+}
+
+mysql_run << EOF
 DROP DATABASE IF EXISTS zstack;
 CREATE DATABASE zstack;
 DROP DATABASE IF EXISTS zstack_rest;
@@ -40,7 +44,14 @@ cp $base/db/V0.6__schema.sql $flyway_sql
 cp $base/db/upgrade/* $flyway_sql
 
 url="jdbc:mysql://$host:$port/zstack"
+
 bash $flyway -user=$user -password=$password -url=$url clean
+
+# create baseline and clean its contents for 'beforeValidate.sql'
+mysql_run -se "SELECT table_name FROM information_schema.tables WHERE table_name = 'schema_version'" | \
+  grep -wq schema_version || \
+  ( bash $flyway -user=$user -password=$password -url=$url baseline; mysql_run zstack -e "DELETE FROM schema_version" )
+
 bash $flyway -user=$user -password=$password -url=$url migrate
 
 eval "rm -f $flyway_sql/*"
