@@ -1,12 +1,12 @@
 package org.zstack.utils.message;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class OperationChecker {
-    private Map<String, Set<String>> states = new HashMap<String, Set<String>>();
+    private Map<String, Set<String>> states = new ConcurrentHashMap<String, Set<String>>();
     private final boolean allowedWhenHavingState;
 
     public OperationChecker() {
