@@ -2,9 +2,9 @@
 -- of the newer version MariaDB.
 DELIMITER $$
 
-DROP PROCEDURE IF EXISTS `update_schema_checksum` $$
+DROP PROCEDURE IF EXISTS `zstack`.`update_schema_checksum` $$
 
-CREATE PROCEDURE `update_schema_checksum`()
+CREATE PROCEDURE `zstack`.`update_schema_checksum`()
 BEGIN
     IF EXISTS(SELECT schema_name   FROM information_schema.schemata  WHERE schema_name = 'zstack')
     THEN
@@ -20,5 +20,5 @@ END $$
 
 DELIMITER  ;
 
-CALL update_schema_checksum();
-DROP PROCEDURE IF EXISTS update_schema_checksum;
+CALL `zstack`.update_schema_checksum();
+DROP PROCEDURE IF EXISTS `zstack`.update_schema_checksum;
