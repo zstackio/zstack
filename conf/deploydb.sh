@@ -48,9 +48,8 @@ url="jdbc:mysql://$host:$port/zstack"
 bash $flyway -user=$user -password=$password -url=$url clean
 
 # create baseline and clean its contents for 'beforeValidate.sql'
-mysql_run -se "SELECT table_name FROM information_schema.tables WHERE table_name = 'schema_version'" | \
-  grep -wq schema_version || \
-  ( bash $flyway -user=$user -password=$password -url=$url baseline; mysql_run zstack -e "DELETE FROM schema_version" )
+bash $flyway -user=$user -password=$password -url=$url baseline
+mysql_run zstack -e "DELETE FROM schema_version"
 
 bash $flyway -user=$user -password=$password -url=$url migrate
 
