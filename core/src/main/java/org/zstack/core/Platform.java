@@ -594,6 +594,10 @@ public class Platform {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
+    public static String getUuidFromBytes(byte[] name) {
+        return UUID.nameUUIDFromBytes(name).toString().replace("-", "");
+    }
+
     public static String getManagementServerIp() {
         if (managementServerIp == null) {
             managementServerIp = getManagementServerIpInternal();
