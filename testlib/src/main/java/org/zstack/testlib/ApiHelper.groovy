@@ -8333,6 +8333,60 @@ trait ApiHelper {
     }
 
 
+    def deleteAliyunProxyVSwitch(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteAliyunProxyVSwitchAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteAliyunProxyVSwitchAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deleteAliyunProxyVpc(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteAliyunProxyVpcAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteAliyunProxyVpcAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def deleteAliyunRouteEntryRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteAliyunRouteEntryRemoteAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteAliyunRouteEntryRemoteAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -15733,6 +15787,33 @@ trait ApiHelper {
 
     def getResourceNames(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetResourceNamesAction.class) Closure c) {
         def a = new org.zstack.sdk.GetResourceNamesAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getSchedulerJobGroupExecutionReport(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetSchedulerJobGroupExecutionReportAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetSchedulerJobGroupExecutionReportAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -34923,8 +35004,8 @@ trait ApiHelper {
     }
 
 
-    def updateSubscribeEvent(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.UpdateSubscribeEventAction.class) Closure c) {
-        def a = new org.zstack.sdk.zwatch.alarm.UpdateSubscribeEventAction()
+    def updateEventSubscriptionLabel(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.UpdateEventSubscriptionLabelAction.class) Closure c) {
+        def a = new org.zstack.sdk.zwatch.alarm.UpdateEventSubscriptionLabelAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -34950,8 +35031,8 @@ trait ApiHelper {
     }
 
 
-    def updateEventSubscriptionLabel(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.UpdateEventSubscriptionLabelAction.class) Closure c) {
-        def a = new org.zstack.sdk.zwatch.alarm.UpdateEventSubscriptionLabelAction()
+    def updateSubscribeEvent(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.zwatch.alarm.UpdateSubscribeEventAction.class) Closure c) {
+        def a = new org.zstack.sdk.zwatch.alarm.UpdateSubscribeEventAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
