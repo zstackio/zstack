@@ -120,6 +120,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             handle((APIUpdateLongJobMsg) msg);
         } else if (msg instanceof APIRerunLongJobMsg) {
             handle((APIRerunLongJobMsg) msg);
+        } else if (msg instanceof APIResumeLongJobMsg) {
+            handle((APIResumeLongJobMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -247,7 +249,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                         chain.next();
                     }
                 });
-                chain.next();
             }
 
             @Override
@@ -319,6 +320,55 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 completion.fail(errorCode);
             }
         });
+    }
+
+    private void handle(APIResumeLongJobMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "longjob-" + msg.getUuid();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                final APIResumeLongJobEvent evt = new APIResumeLongJobEvent(msg.getId());
+                resume(msg.getUuid(), new Completion(chain) {
+                    @Override
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
+    @Deferred
+    private void resume(String uuid, Completion completion) {
+        LongJobVO vo = dbf.findByUuid(uuid, LongJobVO.class);
+
+        Runnable cleanup = ThreadContextUtils.saveThreadContext();
+        Defer.defer(cleanup);
+        // launch the waiting jobs
+        ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
+        LongJob job = longJobFactory.getLongJob(vo.getJobName());
+        ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
+
+        logger.info(String.format("start to resume longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
+        job.resume(vo);
+        completion.success();
     }
 
     private void handle(APISubmitLongJobMsg msg) {

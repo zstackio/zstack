@@ -58,6 +58,8 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
             validate((APIDeleteLongJobMsg) msg);
         } else if (msg instanceof APIRerunLongJobMsg) {
             validate((APIRerunLongJobMsg) msg);
+        } else if (msg instanceof APIResumeLongJobMsg) {
+            validate((APIResumeLongJobMsg) msg);
         }
 
         return msg;
@@ -169,6 +171,17 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
         }
 
         dbf.updateAndRefresh(vo);
+    }
+
+    private void validate(APIResumeLongJobMsg msg) {
+        LongJobState state = Q.New(LongJobVO.class)
+                .select(LongJobVO_.state)
+                .eq(LongJobVO_.uuid, msg.getUuid())
+                .findValue();
+
+        if (state != LongJobState.Suspended) {
+            throw new ApiMessageInterceptionException(argerr("can only resume longjob that is Suspended"));
+        }
     }
 
     @Override
