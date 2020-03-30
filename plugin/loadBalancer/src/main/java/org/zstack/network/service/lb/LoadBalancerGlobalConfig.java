@@ -27,4 +27,6 @@ public class LoadBalancerGlobalConfig {
     public static GlobalConfig MAX_CONNECTION = new GlobalConfig(CATEGORY, "maxConnection");
     @GlobalConfigValidation
     public static GlobalConfig BALANCER_ALGORITHM = new GlobalConfig(CATEGORY, "balancerAlgorithm");
+    @GlobalConfigValidation
+    public static GlobalConfig ACL_MAX_COUNT = new GlobalConfig(CATEGORY, "aclMaxCount");
 }

@@ -11,6 +11,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.acl.APIAddAccessControlListEntryMsg;
 import org.zstack.header.acl.APICreateAccessControlListMsg;
+import org.zstack.header.acl.AccessControlListConstants;
 import org.zstack.header.acl.AccessControlListVO;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
@@ -94,7 +95,7 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
             RangeSet<Long> ipRanges = IpRangeSet.listAllRanges(ips);
             String[] ipcount = ips.split(IP_SPLIT);
             if (ipRanges.asRanges().size() < ipcount.length) {
-                throw new ApiMessageInterceptionException(argerr("operation failure, duplicate/overlap ip entry in %s of acesscontrol list group:%s", ips, acl.getUuid()));
+                throw new ApiMessageInterceptionException(argerr("operation failure, duplicate/overlap ip entry in %s of accesscontrol list group:%s", ips, acl.getUuid()));
             }
             for (Range<Long> range : ipRanges.asRanges()) {
                 final Range<Long> frange = ContiguousSet.create(range, DiscreteDomain.longs()).range();
@@ -105,7 +106,7 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
                 }
                 ipRanges.asRanges().stream().forEach(r -> {
                     if (!frange.equals(r) && NetworkUtils.isIpv4RangeOverlap(startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint()))) {
-                        throw new ApiMessageInterceptionException(argerr("operation failure, there are overlap ip range[start ip:%s, end ip: %s and start ip:%s, end ip: %s in acesscontrol list group:%s]",
+                        throw new ApiMessageInterceptionException(argerr("operation failure, there are overlap ip range[start ip:%s, end ip: %s and start ip:%s, end ip: %s in accesscontrol list group:%s]",
                                 startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint()), acl.getUuid()));
                     }
                 });
@@ -122,6 +123,10 @@ public class AccessControlListApiInterceptor implements ApiMessageInterceptor {
 
         /*check if the entry is exist*/
         if (acl.getEntries()!= null && !acl.getEntries().isEmpty()) {
+            if (acl.getEntries().size() >= AccessControlListConstants.MAX_ENTRY_COUNT_PER_GROUP) {
+                throw new ApiMessageInterceptionException(argerr("the access-control-list groups[%s] can't be added more than %d ip entries", acl.getUuid(), AccessControlListConstants.MAX_ENTRY_COUNT_PER_GROUP));
+            }
+
             List<String> ipentries = acl.getEntries().stream().map(entry -> entry.getIpEntries()).collect(Collectors.toList());
             ipentries.add(msg.getEntries());
             /*miaozhanyong to be done*/

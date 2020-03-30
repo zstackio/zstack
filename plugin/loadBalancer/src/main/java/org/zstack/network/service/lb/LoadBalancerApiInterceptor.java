@@ -206,7 +206,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             RangeSet<Long> ipRanges = IpRangeSet.listAllRanges(ips);
             String[] ipcount = ips.split(IP_SPLIT);
             if (ipRanges.asRanges().size() < ipcount.length) {
-                throw new ApiMessageInterceptionException(argerr("operation failure, duplicate/overlap ip entry in %s of acesscontrol list group:%s", ips, acl.getUuid()));
+                throw new ApiMessageInterceptionException(argerr("operation failure, duplicate/overlap ip entry in %s of accesscontrol list group:%s", ips, acl.getUuid()));
             }
             for (Range<Long> range : ipRanges.asRanges()) {
                 final Range<Long> frange = ContiguousSet.create(range, DiscreteDomain.longs()).range();
@@ -217,7 +217,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 }
                 ipRanges.asRanges().stream().forEach(r -> {
                     if (!frange.equals(r) && NetworkUtils.isIpv4RangeOverlap(startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint()))) {
-                        throw new ApiMessageInterceptionException(argerr("operation failure, there are overlap ip range[start ip:%s, end ip: %s and start ip:%s, end ip: %s in acesscontrol list group:%s]",
+                        throw new ApiMessageInterceptionException(argerr("operation failure, there are overlap ip range[start ip:%s, end ip: %s and start ip:%s, end ip: %s in accesscontrol list group:%s]",
                                 startIp, endIp, NetworkUtils.longToIpv4String(r.lowerEndpoint()), NetworkUtils.longToIpv4String(r.upperEndpoint()), acl.getUuid()));
                     }
                 });
@@ -244,6 +244,10 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             if (!type.equals(LoadBalancerAclType.valueOf(msg.getAclType()))) {
                 throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] just only attach the %s type access-control-list group", msg.getListenerUuid(), type.toString()));
             }
+        }
+
+        if (msg.getAclUuids().size() + refVOs.size() > LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)) {
+            throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] can't  attach more than %d access-control-list groups", msg.getListenerUuid(), LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)));
         }
 
         String lbUuid = Q.New(LoadBalancerListenerVO.class).select(LoadBalancerListenerVO_.loadBalancerUuid).eq(LoadBalancerListenerVO_.uuid, msg.getListenerUuid()).findValue();
