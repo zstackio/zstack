@@ -36,7 +36,7 @@
         <category>console</category>
         <name>vnc.allow.ports</name>
         <description>tcp or udp ports allowed by vnc, udp port start with 'u' like 'u67', port range can be like this: 1100:1200, multiple port or port range can be separated by ”,“</description>
-        <defaultValue>4900,4901</defaultValue>
+        <defaultValue>{consoleProxyPort},4901</defaultValue>
         <type>java.lang.String</type>
     </config>
 </globalConfig>

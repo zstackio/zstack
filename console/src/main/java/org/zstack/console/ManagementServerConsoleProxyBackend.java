@@ -57,7 +57,6 @@ import static org.zstack.core.Platform.operr;
  */
 public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBackend {
     private static final CLogger logger = Utils.getLogger(ManagementServerConsoleProxyBackend.class);
-    private int agentPort = 7758;
     private String agentPackageName = ConsoleGlobalProperty.AGENT_PACKAGE_NAME;
     private boolean connected = false;
 
@@ -91,7 +90,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
     }
 
     protected ConsoleProxy getConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo) {
-        return new ConsoleProxyBase(vo, getAgentPort());
+        return new ConsoleProxyBase(vo, ConsoleGlobalProperty.AGENT_PORT);
     }
 
     @Override
@@ -104,7 +103,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         inv.setAgentType(getConsoleBackendType());
         inv.setToken(session.getUuid() + "_" + vm.getUuid());
         inv.setVmInstanceUuid(vm.getUuid());
-        return new ConsoleProxyBase(inv, getAgentPort());
+        return new ConsoleProxyBase(inv, ConsoleGlobalProperty.AGENT_PORT);
     }
 
     private void setupPublicKey() {
@@ -169,8 +168,8 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                             builder.append(String.format(";sudo iptables -w -I INPUT -m set --match-set ZS-MN src -p tcp -m comment --comment %s -m tcp --dport %s -j ACCEPT",
                                     ConsoleConstants.VNC_IPTABLES_COMMENTS, dport));
                         }
-                        builder.append(String.format(";sudo iptables -w -I INPUT -m set --match-set ZS-MN src -p tcp -m comment --comment %s -m tcp ! -s 127.0.0.1 --dport %s -j REJECT",
-                                ConsoleConstants.VNC_IPTABLES_COMMENTS, agentPort));
+                        builder.append(String.format(";sudo iptables -I INPUT -m set --match-set ZS-MN src -p tcp -m comment --comment %s -m tcp ! -s 127.0.0.1 --dport %s -j REJECT",
+                                ConsoleConstants.VNC_IPTABLES_COMMENTS, ConsoleGlobalProperty.AGENT_PORT));
                     } else {
                         builder.append(String.format("sudo iptables-save | grep '%s' | while read LINE;do drule=${LINE//\\\"/};sudo iptables -w ${drule/-A/-D};done",
                                 ConsoleConstants.VNC_IPTABLES_COMMENTS));
@@ -178,8 +177,8 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                             builder.append(String.format(";sudo iptables -w -I INPUT -p tcp -m comment --comment %s -m tcp --dport %s -j ACCEPT",
                                     ConsoleConstants.VNC_IPTABLES_COMMENTS, dport));
                         }
-                        builder.append(String.format(";sudo iptables -w -I INPUT -p tcp -m comment --comment %s -m tcp ! -s 127.0.0.1 --dport %s -j REJECT",
-                                ConsoleConstants.VNC_IPTABLES_COMMENTS, agentPort));
+                        builder.append(String.format(";sudo iptables -I INPUT -p tcp -m comment --comment %s -m tcp ! -s 127.0.0.1 --dport %s -j REJECT",
+                                ConsoleConstants.VNC_IPTABLES_COMMENTS, ConsoleGlobalProperty.AGENT_PORT));
                     }
                     ShellUtils.run(builder.toString());
 
@@ -208,15 +207,29 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     runner.installChecker(checker);
                     runner.setUsername("root");
                     runner.setPrivateKey(privKey);
-                    runner.setAgentPort(7758);
+                    runner.setAgentPort(ConsoleGlobalProperty.AGENT_PORT);
                     runner.setTargetIp(Platform.getManagementServerIp());
                     runner.setTargetUuid(Platform.getManagementServerId());
                     runner.setPlayBookName(ANSIBLE_PLAYBOOK_NAME);
                     runner.setFullDeploy(fullDeploy);
+<<<<<<< HEAD
 
                     ConsoleProxyDeployArguments deployArguments = new ConsoleProxyDeployArguments();
                     deployArguments.setHttpConsoleProxyPort(String.valueOf(CoreGlobalProperty.HTTP_CONSOLE_PROXY_PORT));
                     runner.setDeployArguments(deployArguments);
+=======
+                    runner.putArgument("pkg_consoleproxy", agentPackageName);
+                    runner.putArgument("http_console_proxy_port", CoreGlobalProperty.HTTP_CONSOLE_PROXY_PORT);
+                    runner.putArgument("console_proxy_agent_port", ConsoleGlobalProperty.AGENT_PORT);
+                    if (CoreGlobalProperty.SYNC_NODE_TIME) {
+                        if (CoreGlobalProperty.CHRONY_SERVERS == null || CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
+                            completion.fail(operr("chrony server not configured!"));
+                            chain.next();
+                            return;
+                        }
+                        runner.putArgument("chrony_servers", String.join(",", CoreGlobalProperty.CHRONY_SERVERS));
+                    }
+>>>>>>> 79bcc5c08d ([BugFix: ZSTACK-25869]internal-port)
                     runner.run(new ReturnValueCompletion<Boolean>(completion, chain) {
                         @Override
                         public void success(Boolean deployed) {
@@ -298,7 +311,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
 
     private void handle(PingConsoleProxyAgentMsg msg) {
         ConsoleProxyCommands.PingCmd cmd = new ConsoleProxyCommands.PingCmd();
-        String url = URLBuilder.buildHttpUrl("127.0.0.1", agentPort, ConsoleConstants.CONSOLE_PROXY_PING_PATH);
+        String url = URLBuilder.buildHttpUrl("127.0.0.1", ConsoleGlobalProperty.AGENT_PORT, ConsoleConstants.CONSOLE_PROXY_PING_PATH);
         ConsoleProxyAgentVO vo = dbf.findByUuid(Platform.getManagementServerId(), ConsoleProxyAgentVO.class);
 
         boolean success;
@@ -573,14 +586,5 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
     public boolean start() {
         tracker.track(Platform.getManagementServerId());
         return super.start();
-    }
-
-
-    public int getAgentPort() {
-        return agentPort;
-    }
-
-    public void setAgentPort(int agentPort) {
-        this.agentPort = agentPort;
     }
 }

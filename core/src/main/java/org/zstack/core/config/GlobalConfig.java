@@ -337,6 +337,7 @@ public class GlobalConfig {
     private void update(String newValue, boolean localUpdate) {
         // substitute system properties in newValue
         newValue = StringTemplate.substitute(newValue, propertiesMap);
+        newValue = StringTemplate.substitute(newValue, Platform.getGlobalProperties());
 
         validate(newValue);
 

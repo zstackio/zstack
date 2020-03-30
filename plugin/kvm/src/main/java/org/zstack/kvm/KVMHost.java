@@ -4122,8 +4122,14 @@ public class KVMHost extends HostBase implements Host {
                             ub.path(new StringBind(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT).bind("uuid", self.getUuid()).toString());
                             String postUrl = ub.build().toString();
 
+<<<<<<< HEAD
                             deployArguments.setPostUrl(postUrl);
                             runner.setDeployArguments(deployArguments);
+=======
+                            runner.putArgument("post_url", postUrl);
+                            runner.putArgument("kvmagent_prometheus_port", String.valueOf(KVMGlobalProperty.PROMETHEUS_PORT));
+                            runner.putArgument("kvmagent_port", String.valueOf(KVMGlobalProperty.AGENT_PORT));
+>>>>>>> 79bcc5c08d ([BugFix: ZSTACK-25869]internal-port)
                             runner.run(new ReturnValueCompletion<Boolean>(trigger) {
                                 @Override
                                 public void success(Boolean run) {
