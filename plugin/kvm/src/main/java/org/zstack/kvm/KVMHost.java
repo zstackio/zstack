@@ -3581,6 +3581,7 @@ public class KVMHost extends HostBase implements Host {
                             String postUrl = ub.build().toString();
 
                             runner.putArgument("post_url", postUrl);
+                            runner.putArgument("kvmagent_prometheus_port", KVMGlobalProperty.PROMETHEUS_PORT);
                             runner.run(new ReturnValueCompletion<Boolean>(trigger) {
                                 @Override
                                 public void success(Boolean run) {

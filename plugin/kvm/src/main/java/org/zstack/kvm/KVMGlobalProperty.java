@@ -25,4 +25,6 @@ public class KVMGlobalProperty {
     public static double KVM_HOST_MAX_THREDS_RATIO;
     @GlobalProperty(name="MN.network.", defaultValue = "")
     public static List<String> MN_NETWORKS;
+    @GlobalProperty(name="KvmAgent.prometheus.port", defaultValue = "7069")
+    public static int PROMETHEUS_PORT;
 }
