@@ -125,7 +125,7 @@ class IpRangeCase extends SubCase {
         check.sessionId = adminSession()
         CheckIpAvailabilityAction.Result res = check.call()
         assert res.value.available == false
-        assert res.value.reason == IpNotAvailabilityReason.GATEWAY.toi18nString()
+        assert res.value.reason == IpNotAvailabilityReason.GATEWAY.toString()
 
         check = new CheckIpAvailabilityAction()
         check.ip = "10.0.1.2"
@@ -133,7 +133,7 @@ class IpRangeCase extends SubCase {
         check.sessionId = adminSession()
         res = check.call()
         assert res.value.available == false
-        assert res.value.reason == IpNotAvailabilityReason.NO_IN_RANGE.toi18nString()
+        assert res.value.reason == IpNotAvailabilityReason.NO_IN_RANGE.toString()
 
         check = new CheckIpAvailabilityAction()
         check.ip = "10.0.1.120"
@@ -156,7 +156,7 @@ class IpRangeCase extends SubCase {
         check.sessionId = adminSession()
         res = check.call()
         assert res.value.available == false
-        assert res.value.reason == IpNotAvailabilityReason.USED.toi18nString()
+        assert res.value.reason == IpNotAvailabilityReason.USED.toString()
 
         L3NetworkInventory l3_4 = createL3Network {
             name = "l3-4"
