@@ -366,9 +366,9 @@ public class L3BasicNetwork implements L3Network {
             // not an IP of this L3 or is a gateway
             reply.setAvailable(false);
             if (isGateway) {
-                reply.setReason(IpNotAvailabilityReason.GATEWAY.toi18nString());
+                reply.setReason(IpNotAvailabilityReason.GATEWAY.toString());
             } else {
-                reply.setReason(IpNotAvailabilityReason.NO_IN_RANGE.toi18nString());
+                reply.setReason(IpNotAvailabilityReason.NO_IN_RANGE.toString());
             }
             return reply;
         } else {
@@ -377,7 +377,7 @@ public class L3BasicNetwork implements L3Network {
             q.add(UsedIpVO_.ip, Op.EQ, ip);
             if (q.isExists()) {
                 reply.setAvailable(false);
-                reply.setReason(IpNotAvailabilityReason.USED.toi18nString());
+                reply.setReason(IpNotAvailabilityReason.USED.toString());
             } else {
                 reply.setAvailable(true);
             }
