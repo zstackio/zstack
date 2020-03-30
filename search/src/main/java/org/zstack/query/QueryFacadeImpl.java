@@ -23,10 +23,7 @@ import org.zstack.header.query.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.SearchConstant;
-import org.zstack.utils.BeanUtils;
-import org.zstack.utils.FieldUtils;
-import org.zstack.utils.TypeUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQL;
@@ -352,7 +349,10 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             if (result.inventories != null) {
                 if (msg.getFilterName() != null) {
                     filter(result.inventories, msg.getFilterName());
-                    if (msg.isReplyWithCount()) {
+                    if (msg.isCount()) {
+                        reply.setTotal(result.inventories.size());
+                    } else if (msg.isReplyWithCount()) {
+                        replySetter.invoke(reply, new ArrayList<>());
                         reply.setTotal(result.inventories.size());
                     } else {
                         replySetter.invoke(reply, result.inventories);
