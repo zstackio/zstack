@@ -49,8 +49,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -630,7 +629,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         boolean isTcpReservePort = msg.getLoadBalancerPort() == LoadBalancerConstants.SSH_PORT
                 || msg.getLoadBalancerPort() == LoadBalancerConstants.ZVR_PORT;
         if (isTcpProto && isTcpReservePort && useForList.isIncluded(useForList.SNAT_NETWORK_SERVICE_TYPE)) {
-            throw new ApiMessageInterceptionException(argerr("tcp port 22, 7272 is used by vrouter"));
+            throw new ApiMessageInterceptionException(argerr("tcp port 22, %d is used by vrouter", LoadBalancerConstants.ZVR_PORT));
         }
     }
 

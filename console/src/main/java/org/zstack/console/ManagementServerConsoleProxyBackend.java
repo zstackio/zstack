@@ -57,7 +57,6 @@ import static org.zstack.core.Platform.operr;
  */
 public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBackend {
     private static final CLogger logger = Utils.getLogger(ManagementServerConsoleProxyBackend.class);
-    private int agentPort = 7758;
     private String agentPackageName = ConsoleGlobalProperty.AGENT_PACKAGE_NAME;
     private boolean connected = false;
 
@@ -80,7 +79,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
     }
 
     protected ConsoleProxy getConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo) {
-        return new ConsoleProxyBase(vo, getAgentPort());
+        return new ConsoleProxyBase(vo, ConsoleGlobalProperty.AGENT_PORT);
     }
 
     @Override
@@ -93,7 +92,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         inv.setAgentType(getConsoleBackendType());
         inv.setToken(session.getUuid() + "_" + vm.getUuid());
         inv.setVmInstanceUuid(vm.getUuid());
-        return new ConsoleProxyBase(inv, getAgentPort());
+        return new ConsoleProxyBase(inv, ConsoleGlobalProperty.AGENT_PORT);
     }
 
     private void setupPublicKey() {
@@ -188,11 +187,12 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     runner.installChecker(checker);
                     runner.setUsername("root");
                     runner.setPrivateKey(privKey);
-                    runner.setAgentPort(7758);
+                    runner.setAgentPort(ConsoleGlobalProperty.AGENT_PORT);
                     runner.setTargetIp(Platform.getManagementServerIp());
                     runner.setTargetUuid(Platform.getManagementServerId());
                     runner.setPlayBookName(ANSIBLE_PLAYBOOK_NAME);
                     runner.putArgument("pkg_consoleproxy", agentPackageName);
+                    runner.putArgument("consoleproxy_daemon_port", ConsoleGlobalProperty.AGENT_PORT);
                     if (CoreGlobalProperty.SYNC_NODE_TIME) {
                         if (CoreGlobalProperty.CHRONY_SERVERS == null || CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
                             completion.fail(operr("chrony server not configured!"));
@@ -282,7 +282,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
 
     private void handle(PingConsoleProxyAgentMsg msg) {
         ConsoleProxyCommands.PingCmd cmd = new ConsoleProxyCommands.PingCmd();
-        String url = URLBuilder.buildHttpUrl("127.0.0.1", agentPort, ConsoleConstants.CONSOLE_PROXY_PING_PATH);
+        String url = URLBuilder.buildHttpUrl("127.0.0.1", ConsoleGlobalProperty.AGENT_PORT, ConsoleConstants.CONSOLE_PROXY_PING_PATH);
         ConsoleProxyAgentVO vo = dbf.findByUuid(Platform.getManagementServerId(), ConsoleProxyAgentVO.class);
 
         boolean success;
@@ -544,14 +544,5 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
     public boolean start() {
         tracker.track(Platform.getManagementServerId());
         return super.start();
-    }
-
-
-    public int getAgentPort() {
-        return agentPort;
-    }
-
-    public void setAgentPort(int agentPort) {
-        this.agentPort = agentPort;
     }
 }

@@ -54,6 +54,7 @@ public class GlobalConfig {
     private GlobalConfigDef configDef;
 
     private static Map<String, String> propertiesMap = new HashMap<>();
+    private static Map<String, String> globalPropertiesMap;
     static {
         boolean noTrim = System.getProperty("DoNotTrimPropertyFile") != null;
         for (final String name : System.getProperties().stringPropertyNames()) {
@@ -63,6 +64,7 @@ public class GlobalConfig {
             }
             propertiesMap.put(name, value);
         }
+        globalPropertiesMap = Platform.getGlobalProperties();
     }
 
     @Autowired
@@ -328,6 +330,7 @@ public class GlobalConfig {
     private void update(String newValue, boolean localUpdate) {
         // substitute system properties in newValue
         newValue = StringTemplate.substitute(newValue, propertiesMap);
+        newValue = StringTemplate.substitute(newValue, globalPropertiesMap);
 
         validate(newValue);
 

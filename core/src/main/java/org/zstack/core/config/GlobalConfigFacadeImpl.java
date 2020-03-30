@@ -1,6 +1,7 @@
 package org.zstack.core.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -118,12 +119,14 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             Map<String, GlobalConfig> configsFromDatabase = new HashMap<String, GlobalConfig>();
             List<Field> globalConfigFields = new ArrayList<Field>();
             Map<String, String> propertiesMap = new HashMap<>();
+            Map<String, String> globalPropertiesMap;
 
             void init() {
                 GLock lock = new GLock(GlobalConfigConstant.LOCK, 320);
                 lock.lock();
                 try {
                     loadSystemProperties();
+                    loadGlobalProperties();
                     parseGlobalConfigFields();
                     loadConfigFromXml();
                     loadConfigFromJava();
@@ -157,6 +160,13 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                     }
                     propertiesMap.put(name, value);
                 }
+                for(Map.Entry<String, String> entry : propertiesMap.entrySet()) {
+                    logger.debug("capritu " + entry.getKey() + entry.getValue());
+                }
+            }
+
+            private void loadGlobalProperties() {
+                globalPropertiesMap = Platform.getGlobalProperties();
             }
 
             private void parseGlobalConfigFields() {
@@ -199,6 +209,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         }
                         // substitute system properties in defaultValue
                         String defaultValue = StringTemplate.substitute(d.defaultValue(), propertiesMap);
+                        defaultValue = StringTemplate.substitute(defaultValue, globalPropertiesMap);
 
                         GlobalConfig c = new GlobalConfig();
                         c.setCategory(config.getCategory());
@@ -271,7 +282,9 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             private void persistConfigInXmlButNotInDatabase() {
                 List<GlobalConfigVO> toSave = new ArrayList<GlobalConfigVO>();  // new config options
                 List<GlobalConfig> toRemove = new ArrayList<>(); // obsolete config options
+                //xml里面和db里面默认值不相同，并且db里面value和defaultvalue一样
                 List<GlobalConfig> toUpdate = new ArrayList<>(); // update both defaultValue and value
+                //xml里面和db里面默认值不相同，并且db里面value和defaultvalue不一样
                 List<GlobalConfig> toUpdate2 = new ArrayList<>(); // only update defaultValue
                 List<GlobalConfig> toUpdate3 = new ArrayList<>(); // configs' value is not match type (normally the values were from an old zstack version)
 
@@ -487,11 +500,13 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                         throw new IllegalArgumentException(String.format("GlobalConfig[category:%s, name:%s] must have a default value", c.getCategory(), c.getName()));
                     } else {
                         c.setDefaultValue(StringTemplate.substitute(c.getDefaultValue(), propertiesMap));
+                        c.setDefaultValue(StringTemplate.substitute(c.getDefaultValue(), globalPropertiesMap));
                     }
                     if (c.getValue() == null) {
                         c.setValue(c.getDefaultValue());
                     } else {
                         c.setValue(StringTemplate.substitute(c.getValue(), propertiesMap));
+                        c.setValue(StringTemplate.substitute(c.getValue(), globalPropertiesMap));
                     }
                     GlobalConfig config = GlobalConfig.valueOf(c);
                     if (configsFromXml.containsKey(config.getIdentity())) {
