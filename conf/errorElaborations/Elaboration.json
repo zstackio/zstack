@@ -1368,6 +1368,30 @@
     "message_en": "the vm can only be started on the host[%2$s] because of its primary storage, but the host is either not having enough cpu/memory/gpu, or in the Enabled/Connected status"
   },
   {
+    "category": "VM",
+    "code": "1042",
+    "method": "regex",
+    "regex": "IP\\[.*] is not available on the L3 network\\[uuid:.*] because:.*it is gateway.*",
+    "message_cn": "在L3网络[uuid:%2$s]中，IP[%1$s]不可用, 因为IP是网关地址",
+    "message_en": "IP[%1$s] is not available on the L3 network[uuid:%2$s] because: it is gateway"
+  },
+  {
+    "category": "VM",
+    "code": "1043",
+    "method": "regex",
+    "regex": "IP\\[.*] is not available on the L3 network\\[uuid:.*] because:.*it is not in this range.*",
+    "message_cn": "在L3网络[uuid:%2$s]中，IP[%1$s]不可用, 因为IP不在网络段范围内",
+    "message_en": "IP[%1$s] is not available on the L3 network[uuid:%2$s] because: it is not in this range"
+  },
+  {
+    "category": "VM",
+    "code": "1044",
+    "method": "regex",
+    "regex": "IP\\[.*] is not available on the L3 network\\[uuid:.*] because:.*it is used.*",
+    "message_cn": "在L3网络[uuid:%2$s]中，IP[%1$s]不可用, 因为IP被占用",
+    "message_en": "IP[%1$s] is not available on the L3 network[uuid:%2$s] because: it is used"
+  },
+  {
     "category": "VOLUME",
     "code": "1000",
     "method": "regex",
