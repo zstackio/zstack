@@ -55,4 +55,8 @@ public class VmGlobalConfig {
 
     @GlobalConfigValidation(inNumberRange = {0, 28})
     public static GlobalConfig PCIE_PORT_NUMS = new GlobalConfig(CATEGORY, "pciePortNums");
+    @GlobalConfigValidation(inNumberRange = {1, 256})
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig VM_NIC_MULTIQUEUE_NUM = new GlobalConfig(CATEGORY, "nicMultiQueueNum");
+
 }
