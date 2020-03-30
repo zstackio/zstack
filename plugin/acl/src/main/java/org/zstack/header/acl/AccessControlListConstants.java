@@ -7,5 +7,5 @@ package org.zstack.header.acl;
 public class AccessControlListConstants {
     public static final String ACTION_CATEGORY = "acl";
     public static final String SERVICE_ID = "acl";
-
+    public static final Long MAX_ENTRY_COUNT_PER_GROUP = 100l;
 }

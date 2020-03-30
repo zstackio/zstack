@@ -1476,7 +1476,7 @@ public class LoadBalancerBase {
                             if (!reply.isSuccess()) {
                                 logger.warn(String.format("update listener [uuid:%s] failed", msg.getLoadBalancerUuid()));
                                 evt.setError(reply.getError());
-                                dbf.removeCollection(refs, LoadBalancerListenerVmNicRefVO.class);
+                                dbf.removeCollection(refs, LoadBalancerListenerACLRefVO.class);
                             } else {
                                 evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
                             }
