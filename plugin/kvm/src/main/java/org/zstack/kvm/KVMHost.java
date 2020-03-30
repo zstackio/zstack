@@ -1902,6 +1902,22 @@ public class KVMHost extends HostBase implements Host {
             to.setIps(getCleanTrafficIp(nic));
         }
 
+        if (to.getUseVirtio()) {
+            VHostAddOn vHostAddOn = new VHostAddOn();
+            vHostAddOn.setQueueNum(rcf.getResourceConfigValue(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM, nic.getVmInstanceUuid(), Integer.class));
+
+            if (VmSystemTags.VM_VRING_BUFFER_SIZE.hasTag(nic.getVmInstanceUuid())) {
+                Map<String, String> tokens = VmSystemTags.VM_VRING_BUFFER_SIZE.getTokensByResourceUuid(nic.getVmInstanceUuid());
+                if (tokens.get(VmSystemTags.RX_SIZE_TOKEN) != null) {
+                    vHostAddOn.setRxBufferSize(tokens.get(VmSystemTags.RX_SIZE_TOKEN));
+                }
+
+                if (tokens.get(VmSystemTags.TX_SIZE_TOKEN) != null) {
+                    vHostAddOn.setTxBufferSize(tokens.get(VmSystemTags.TX_SIZE_TOKEN));
+                }
+            }
+            to.setvHostAddOn(vHostAddOn);
+        }
         return to;
     }
 
