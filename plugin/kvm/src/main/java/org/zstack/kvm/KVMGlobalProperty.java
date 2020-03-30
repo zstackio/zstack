@@ -29,4 +29,6 @@ public class KVMGlobalProperty {
     public static String TAKEVOERFLAGPATH;
     @GlobalProperty(name="MN.network.", defaultValue = "")
     public static List<String> MN_NETWORKS;
+    @GlobalProperty(name="KvmAgent.prometheus.port", defaultValue = "7069")
+    public static int PROMETHEUS_PORT;
 }
