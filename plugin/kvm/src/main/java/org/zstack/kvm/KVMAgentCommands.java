@@ -612,6 +612,7 @@ public class KVMAgentCommands {
         private int bootOrder;
 
         // only for vf nic
+        private String vlanId;
         private String pciDeviceAddress;
 
         public List<String> getIps() {
@@ -685,6 +686,14 @@ public class KVMAgentCommands {
         public void setBootOrder(int bootOrder) {
             this.bootOrder = bootOrder;
 		}
+
+        public String getVlanId() {
+            return vlanId;
+        }
+
+        public void setVlanId(String vlanId) {
+            this.vlanId = vlanId;
+        }
 
         public String getPciDeviceAddress() {
             return pciDeviceAddress;

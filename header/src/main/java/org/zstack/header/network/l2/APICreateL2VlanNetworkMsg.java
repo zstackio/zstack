@@ -3,6 +3,7 @@ package org.zstack.header.network.l2;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.tag.TagResourceType;
 
 /**
  * @api create a l2VlanNetwork
@@ -40,6 +41,7 @@ import org.zstack.header.rest.RestRequest;
  * @result see :ref:`APICreateL2VlanNetworkEvent`
  * @since 0.1.0
  */
+@TagResourceType(L2NetworkVO.class)
 @RestRequest(
         path = "/l2-networks/vlan",
         method = HttpMethod.POST,
