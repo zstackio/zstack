@@ -35,6 +35,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedQuotaCheckMessage;
+import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3Network;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -44,6 +45,7 @@ import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO;
 import org.zstack.query.QueryFacade;
 import org.zstack.tag.TagManager;
@@ -401,8 +403,9 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     .eq(SecurityGroupL3NetworkRefVO_.securityGroupUuid, sgUuid).listValues();
             for (String uuid: l3Uuids) {
                 L3NetworkInventory inv = L3NetworkInventory.valueOf(dbf.findByUuid(uuid, L3NetworkVO.class));
-                if (!inv.getIpRanges().isEmpty()) {
-                    ret.add(inv.getIpRanges().get(0).getGateway());
+                List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(inv);
+                if (!iprs.isEmpty()) {
+                    ret.add(iprs.get(0).getGateway());
                 }
             }
 

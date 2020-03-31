@@ -7,6 +7,8 @@ public interface IpAllocateMessage {
 
     String getRequiredIp();
 
+    String getIpRangeUuid();
+
     default String getExcludedIp() {
         return null;
     }

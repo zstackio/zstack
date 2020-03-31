@@ -2,7 +2,7 @@ package org.zstack.network.service.virtualrouter;
 
 import org.zstack.header.message.APIReply;
 import org.zstack.header.network.l3.IpRangeInventory;
-import org.zstack.header.network.l3.IpRangeVO;
+import org.zstack.header.network.l3.NormalIpRangeVO;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.rest.RestResponse;
 

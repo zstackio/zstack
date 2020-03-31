@@ -1,5 +1,6 @@
 package org.zstack.network.l3;
 
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.network.l3.*;
@@ -34,9 +35,13 @@ public class FirstAvailableIpAllocatorStrategy extends AbstractIpAllocatorStrate
         }
 
         String excludeIp = msg.getExcludedIp();
-        SimpleQuery<IpRangeVO> query = dbf.createQuery(IpRangeVO.class);
-        query.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-        List<IpRangeVO> ranges = query.list();
+        List<IpRangeVO> ranges;
+        /* when allocate ip address from address pool, ipRangeUuid is not null */
+        if (msg.getIpRangeUuid() != null) {
+            ranges = Q.New(AddressPoolVO.class).eq(AddressPoolVO_.uuid, msg.getIpRangeUuid()).list();
+        } else {
+            ranges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+        }
         do {
             String ip = null;
             IpRangeVO tr = null;
@@ -59,7 +64,7 @@ public class FirstAvailableIpAllocatorStrategy extends AbstractIpAllocatorStrate
                 return null;
             }
             
-            UsedIpInventory inv = l3NwMgr.reserveIp(IpRangeInventory.valueOf(tr), ip, msg.isDuplicatedIpAllowed());
+            UsedIpInventory inv = l3NwMgr.reserveIp(tr, ip, msg.isDuplicatedIpAllowed());
             if (inv != null) {
                 return inv;
             }

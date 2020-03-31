@@ -20,3 +20,39 @@ ALTER TABLE ImageEO DROP exportMd5Sum, DROP exportUrl;
 
 ALTER TABLE `zstack`.`PolicyRouteRuleSetVO` ADD COLUMN type VARCHAR(64) DEFAULT "User" NOT NULL;
 ALTER TABLE `zstack`.`PolicyRouteTableVO` ADD COLUMN type VARCHAR(64) DEFAULT "User" NOT NULL;
+
+CREATE TABLE  `zstack`.`NormalIpRangeVO` (
+                                             `uuid` varchar(32) NOT NULL UNIQUE,
+                                             PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+ALTER TABLE `zstack`.`NormalIpRangeVO` ADD CONSTRAINT fkNormalIpRangeVOIpRangeEO FOREIGN KEY (uuid) REFERENCES `zstack`.`IpRangeEO` (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+
+CREATE TABLE  `zstack`.`AddressPoolVO` (
+                                             `uuid` varchar(32) NOT NULL UNIQUE,
+                                             PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+ALTER TABLE `zstack`.`AddressPoolVO` ADD CONSTRAINT fkAddressPoolVOIpRangeEO FOREIGN KEY (uuid) REFERENCES `zstack`.`IpRangeEO` (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+
+DELIMITER $$
+CREATE PROCEDURE generateNormalpRangeVO()
+BEGIN
+    DECLARE ipRangeUuid VARCHAR(32);
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur CURSOR FOR SELECT uuid FROM `zstack`.`IpRangeVO`;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO ipRangeUuid;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        INSERT INTO zstack.NormalIpRangeVO (uuid) values(ipRangeUuid);
+
+    END LOOP;
+    CLOSE cur;
+END $$
+DELIMITER ;
+
+CALL generateNormalpRangeVO();
+DROP PROCEDURE IF EXISTS generateNormalpRangeVO;

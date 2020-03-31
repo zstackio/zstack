@@ -82,7 +82,7 @@ public class FlatHostRouteBackend implements NetworkServiceHostRouteBackend, Dhc
             return;
         }
 
-        IpRangeVO rangeVO = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, L3NetworkUuid).limit(1).find();
+        NormalIpRangeVO rangeVO = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, L3NetworkUuid).limit(1).find();
         if (rangeVO == null) {
             return;
         }

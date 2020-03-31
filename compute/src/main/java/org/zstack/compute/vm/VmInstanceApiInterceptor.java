@@ -32,6 +32,7 @@ import org.zstack.header.vm.cdrom.*;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.Utils;
@@ -258,7 +259,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         for (UsedIpVO ipVo : vmNicVO.getUsedIps()) {
             if (ipVo.getL3NetworkUuid().equals(l3NetworkVO.getUuid())) {
-                IpRangeVO rangeVO = dbf.findByUuid(ipVo.getIpRangeUuid(), IpRangeVO.class);
+                NormalIpRangeVO rangeVO = dbf.findByUuid(ipVo.getIpRangeUuid(), NormalIpRangeVO.class);
                 if (ipVo.getIp().equals(ip)) {
                     throw new ApiMessageInterceptionException(argerr("ip address [%s] already set to vmNic [uuid:%s]",
                             ip, vmNicVO.getUuid()));
@@ -282,7 +283,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr("ip address [%s] already set to vmNic [uuid:%s]",
                             ip, vmNicVO.getUuid()));
                 }
-                IpRangeVO rangeVO = dbf.findByUuid(ipVo.getIpRangeUuid(), IpRangeVO.class);
+                NormalIpRangeVO rangeVO = dbf.findByUuid(ipVo.getIpRangeUuid(), NormalIpRangeVO.class);
                 if (!IPv6NetworkUtils.isIpv6InRange(ip, rangeVO.getStartIp(), rangeVO.getEndIp())) {
                     throw new ApiMessageInterceptionException(argerr("ip address [%s] is not in ip range [startIp %s, endIp %s]",
                             ip, rangeVO.getStartIp(), rangeVO.getEndIp()));
@@ -395,12 +396,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getIp() != null) {
-            SimpleQuery<IpRangeVO> iprq = dbf.createQuery(IpRangeVO.class);
-            iprq.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-            List<IpRangeVO> iprs = iprq.list();
+            SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
+            iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+            List<NormalIpRangeVO> iprs = iprq.list();
 
             boolean found = false;
-            for (IpRangeVO ipr : iprs) {
+            for (NormalIpRangeVO ipr : iprs) {
                 if (NetworkUtils.isInRange(msg.getIp(), ipr.getStartIp(), ipr.getEndIp())) {
                     found = true;
                     break;
@@ -490,7 +491,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 ipv4Count++;
             } else {
                 L3NetworkInventory inv = L3NetworkInventory.valueOf(l3Vo);
-                if ((!inv.getIpRanges().isEmpty()) && !inv.getIpRanges().get(0).getAddressMode().equals(IPv6Constants.SLAAC)) {
+                List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(inv);
+                if ((!iprs.isEmpty()) && !iprs.get(0).getAddressMode().equals(IPv6Constants.SLAAC)) {
                     statefulIpv6++;
                 }
             }
@@ -506,12 +508,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         Map<String, String> staticIps = new StaticIpOperator().getStaticIpbySystemTag(msg.getSystemTags());
         if (msg.getStaticIp() != null) {
             staticIps.put(msg.getL3NetworkUuid(), msg.getStaticIp());
-            SimpleQuery<IpRangeVO> iprq = dbf.createQuery(IpRangeVO.class);
-            iprq.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-            List<IpRangeVO> iprs = iprq.list();
+            SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
+            iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+            List<NormalIpRangeVO> iprs = iprq.list();
 
             boolean found = false;
-            for (IpRangeVO ipr : iprs) {
+            for (NormalIpRangeVO ipr : iprs) {
                 if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp())) {
                     found = true;
                     break;
@@ -537,12 +539,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
             String l3Uuid = e.getKey();
             String staticIp = e.getValue();
-            SimpleQuery<IpRangeVO> iprq = dbf.createQuery(IpRangeVO.class);
-            iprq.add(IpRangeVO_.l3NetworkUuid, Op.EQ, l3Uuid);
-            List<IpRangeVO> iprs = iprq.list();
+            SimpleQuery<NormalIpRangeVO> iprq = dbf.createQuery(NormalIpRangeVO.class);
+            iprq.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, l3Uuid);
+            List<NormalIpRangeVO> iprs = iprq.list();
 
             boolean found = false;
-            for (IpRangeVO ipr : iprs) {
+            for (NormalIpRangeVO ipr : iprs) {
                 if (NetworkUtils.isInRange(staticIp, ipr.getStartIp(), ipr.getEndIp())) {
                     found = true;
                     break;
@@ -928,11 +930,11 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
             }
         } else {
-            List<IpRangeVO> ranges = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+            List<NormalIpRangeVO> ranges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
             String addressMode = ranges.get(0).getAddressMode();
             if (addressMode.equals(IPv6Constants.Stateful_DHCP)) {
                 for (UsedIpVO ipVO : vmNicVO.getUsedIps()) {
-                    IpRangeVO rangeVO = dbf.findByUuid(ipVO.getIpRangeUuid(), IpRangeVO.class);
+                    NormalIpRangeVO rangeVO = dbf.findByUuid(ipVO.getIpRangeUuid(), NormalIpRangeVO.class);
                     if (rangeVO.getIpVersion() == IPv6Constants.IPv6 && rangeVO.getAddressMode().equals(addressMode)) {
                         throw new ApiMessageInterceptionException(argerr("there is another IPv6 stateful-dhcp network[uuid:%s] attached vmNic[uuid:%s]",
                                 ipVO.getL3NetworkUuid(), msg.getVmNicUuid()));

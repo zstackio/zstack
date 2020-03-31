@@ -63,6 +63,7 @@ import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
@@ -1587,7 +1588,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             ipv4Count++;
                         } else {
                             L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(l3Vo);
-                            if (!l3Inv.getIpRanges().get(0).getAddressMode().equals(IPv6Constants.SLAAC)) {
+                            List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3Inv);
+                            if (!iprs.get(0).getAddressMode().equals(IPv6Constants.SLAAC)) {
                                 statefulIpv6Count++;
                             }
                         }
@@ -1631,13 +1633,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             primaryL3Uuid, secondaryL3Uuid));
                 }
 
-                L3NetworkInventory primaryL3 = L3NetworkInventory.valueOf(primaryL3Vo);
-                L3NetworkInventory secodaryL3 = L3NetworkInventory.valueOf(secondaryL3Vo);
-                if (primaryL3.getIpRanges().isEmpty()) {
+                if (IpRangeHelper.getNormalIpRanges(primaryL3Vo).isEmpty()) {
                     throw new ApiMessageInterceptionException(operr("L3 networks[uuid:%s] does not have ip range", primaryL3Uuid));
                 }
 
-                if (secodaryL3.getIpRanges().isEmpty()) {
+                if (IpRangeHelper.getNormalIpRanges(secondaryL3Vo).isEmpty()) {
                     throw new ApiMessageInterceptionException(operr("L3 networks[uuid:%s] does not have ip range", secondaryL3Uuid));
                 }
             }

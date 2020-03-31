@@ -22,6 +22,7 @@ import org.zstack.header.vm.*;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMSystemTags;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.network.service.virtualrouter.vyos.VyosOfferingSelector;
@@ -242,7 +243,7 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
                 inv.getDefaultL3NetworkUuid()
         ));
 
-        cmd.setDns(defaultL3Inv.getIpRanges().get(0).getGateway());
+        cmd.setDns(IpRangeHelper.getNormalIpRanges(defaultL3Inv).get(0).getGateway());
         cmd.setWrongDns(defaultL3Inv.getDns());
 
         KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
@@ -322,7 +323,7 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
 
             NetworkServiceProviderVO vo = Q.New(NetworkServiceProviderVO.class).eq(NetworkServiceProviderVO_.uuid, ref.getNetworkServiceProviderUuid()).find();
             if (vo.getType().equals(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE) || vo.getType().equals(VyosConstants.VYOS_ROUTER_PROVIDER_TYPE)) {
-                dns.add(inv.getIpRanges().get(0).getGateway());
+                dns.add(IpRangeHelper.getNormalIpRanges(inv).get(0).getGateway());
             }
         }
 

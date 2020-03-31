@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.workflow.*;
@@ -26,10 +27,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkDetachStruct;
 import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l3.IpRangeInventory;
-import org.zstack.header.network.l3.IpRangeVO;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageDetachStruct;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
@@ -631,15 +629,23 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
             final List<String> ipruuids = CollectionUtils.transformToList((List<IpRangeInventory>) action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
                 @Override
                 public String call(IpRangeInventory arg) {
-                    return arg.getUuid();
+                    if (Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, arg.getUuid()).isExists()) {
+                        return arg.getUuid();
+                    } else {
+                        return null;
+                    }
                 }
             });
+
+            if (ipruuids.isEmpty()) {
+                return new ArrayList<>();
+            }
 
             List<ApplianceVmVO> vmvos = new Callable<List<ApplianceVmVO>>() {
                 @Override
                 @Transactional(readOnly = true)
                 public List<ApplianceVmVO> call() {
-                    String sql = "select vm from ApplianceVmVO vm, VmNicVO nic, UsedIpVO ip, IpRangeVO ipr where vm.uuid = nic.vmInstanceUuid" +
+                    String sql = "select vm from ApplianceVmVO vm, VmNicVO nic, UsedIpVO ip, NormalIpRangeVO ipr where vm.uuid = nic.vmInstanceUuid" +
                             " and nic.usedIpUuid = ip.uuid and ip.ipRangeUuid = ipr.uuid and ipr.uuid in (:uuids)";
                     TypedQuery<ApplianceVmVO> q = dbf.getEntityManager().createQuery(sql, ApplianceVmVO.class);
                     q.setParameter("uuids", ipruuids);

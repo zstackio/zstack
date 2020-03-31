@@ -43,8 +43,11 @@ public class AddIpRangeAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String netmask;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String gateway;
+
+    @Param(required = false, validValues = {"Normal","AddressPool"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ipRangeType;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

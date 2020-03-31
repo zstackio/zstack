@@ -26,6 +26,8 @@ import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedQuotaCheckMessage;
+import org.zstack.header.network.l2.L2NetworkFactory;
+import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
@@ -75,6 +77,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     @Autowired
     private TagManager tagMgr;
 
+    private Map<String, IpRangeFactory> ipRangeFactories = Collections.synchronizedMap(new HashMap<String, IpRangeFactory>());
     private Map<String, L3NetworkFactory> l3NetworkFactories = Collections.synchronizedMap(new HashMap<String, L3NetworkFactory>());
     private Map<String, IpAllocatorStrategy> ipAllocatorStrategies = Collections.synchronizedMap(new HashMap<String, IpAllocatorStrategy>());
     private Set<String> notAccountMetaDatas = Collections.synchronizedSet(new HashSet<>());
@@ -350,11 +353,30 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         for (UsedIpNotAccountMetaDataExtensionPoint f : pluginRgty.getExtensionList(UsedIpNotAccountMetaDataExtensionPoint.class)) {
             notAccountMetaDatas.add(f.usedIpNotAccountMetaData());
         }
+
+        for (IpRangeFactory f : pluginRgty.getExtensionList(IpRangeFactory.class)) {
+            IpRangeFactory old = ipRangeFactories.get(f.getType().toString());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate L2NetworkFactory[%s, %s] for type[%s]",
+                        f.getClass().getName(), old.getClass().getName(), f.getType()));
+            }
+            ipRangeFactories.put(f.getType().toString(), f);
+        }
     }
 
     @Override
     public boolean stop() {
         return true;
+    }
+
+    @Override
+    public IpRangeFactory getIpRangeFactory(IpRangeType type) {
+        IpRangeFactory factory = ipRangeFactories.get(type.toString());
+        if (factory == null) {
+            throw new CloudRuntimeException(String.format("Cannot find IpRangeFactory for type(%s)", type));
+        }
+
+        return factory;
     }
 
     @Override
@@ -377,7 +399,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         return factory;
     }
 
-    private UsedIpInventory reserveIpv6(IpRangeInventory ipRange, String ip) {
+    private UsedIpInventory reserveIpv6(IpRangeVO ipRange, String ip) {
         try {
             UsedIpVO vo = new UsedIpVO();
             //vo.setIpInLong(NetworkUtils.ipv4StringToLong(ip));
@@ -406,7 +428,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         }
     }
 
-    private UsedIpInventory reserveIpv4(IpRangeInventory ipRange, String ip, boolean allowDuplicatedAddress) {
+    private UsedIpInventory reserveIpv4(IpRangeVO ipRange, String ip, boolean allowDuplicatedAddress) {
         try {
             UsedIpVO vo = new UsedIpVO(ipRange.getUuid(), ip);
             vo.setIpInLong(NetworkUtils.ipv4StringToLong(ip));
@@ -439,12 +461,12 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     @Override
-    public UsedIpInventory reserveIp(IpRangeInventory ipRange, String ip) {
+    public UsedIpInventory reserveIp(IpRangeVO ipRange, String ip) {
         return reserveIp(ipRange, ip, false);
     }
 
     @Override
-    public UsedIpInventory reserveIp(IpRangeInventory ipRange, String ip, boolean allowDuplicatedAddress) {
+    public UsedIpInventory reserveIp(IpRangeVO ipRange, String ip, boolean allowDuplicatedAddress) {
         if (NetworkUtils.isIpv4Address(ip)) {
             return reserveIpv4(ipRange, ip, allowDuplicatedAddress);
         } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
@@ -494,7 +516,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             return;
         }
 
-        List<IpRangeVO> iprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+        List<NormalIpRangeVO> iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
         if (iprs.get(0).getIpVersion() == IPv6Constants.IPv4) {
             return;
         }

@@ -25,6 +25,7 @@ import org.zstack.header.query.QueryOp;
 import org.zstack.header.vm.VmNicHelper;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.identity.QuotaUtil;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.network.IPv6Constants;
@@ -121,8 +122,8 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
         if (!l3vo1.getIpVersion().equals(l3vo2.getIpVersion())) {
             return false;
         }
-        List<IpRangeInventory> ipInvs1 = IpRangeInventory.valueOf(l3vo1.getIpRanges());
-        List<IpRangeInventory> ipInvs2 = IpRangeInventory.valueOf(l3vo2.getIpRanges());
+        List<IpRangeInventory> ipInvs1 = IpRangeHelper.getNormalIpRanges(l3vo1);
+        List<IpRangeInventory> ipInvs2 = IpRangeHelper.getNormalIpRanges(l3vo2);
 
         if (l3vo1.getIpVersion() == IPv6Constants.IPv4) {
             String netAddr1 = new SubnetUtils(ipInvs1.get(0).getGateway(), ipInvs1.get(0).getNetmask()).getInfo().getNetworkAddress();
@@ -205,9 +206,9 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void checkIfManagementNetworkReachable(String managementNetworkUuid) {
-        SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
-        q.add(IpRangeVO_.l3NetworkUuid, Op.EQ, managementNetworkUuid);
-        List<IpRangeVO> iprs = q.list();
+        SimpleQuery<NormalIpRangeVO> q = dbf.createQuery(NormalIpRangeVO.class);
+        q.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, managementNetworkUuid);
+        List<NormalIpRangeVO> iprs = q.list();
         if (iprs.isEmpty()) {
             throw new ApiMessageInterceptionException(operr("the management network[uuid:%s] doesn't have any IP range", managementNetworkUuid));
         }
