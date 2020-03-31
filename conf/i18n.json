@@ -9610,6 +9610,34 @@
     "fileName": "src/main/java/org/zstack/log4j2/appender/syslog/SyslogAppenderProxyFactory.java"
   },
   {
+    "raw": "MN HA environment, but only updated license for %s",
+    "en_US": "MN HA environment, but only updated license for {0}",
+    "zh_CN": "管理节点有多个，但是仅更新了节点{0}的许可证",
+    "arguments": [
+      "Platform.getManagementServerIp()"
+    ],
+    "line": 1456,
+    "fileName": "src/main/java/org/zstack/license/LicenseManagerImpl.java"
+  },
+  {
+    "raw": "Multiple MN exists but only supplied licenses for %s",
+    "en_US": "Multiple MN exists but only supplied licenses for {0}",
+    "zh_CN": "管理节点有多个，但是仅提供了节点{0}的许可证",
+    "arguments": [
+      "Platform.getManagementServerIp()"
+    ],
+    "line": 1454,
+    "fileName": "src/main/java/org/zstack/license/LicenseManagerImpl.java"
+  },
+  {
+    "raw": "unexpected license file",
+    "en_US": "unexpected license file",
+    "zh_CN": "许可证错误",
+    "arguments": [],
+    "line": 1569,
+    "fileName": "src/main/java/org/zstack/license/LicenseManagerImpl.java"
+  },
+  {
     "raw": "unsupported protocol %s",
     "en_US": "unsupported protocol {0}",
     "zh_CN": "",
