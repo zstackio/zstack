@@ -159,7 +159,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
                     PrimaryStorageLicenseInfo info = r.getPrimaryStorageLicenseInfo();
                     if (info != null) {
                         sreply.setUuid(msg.getUuid());
-                        sreply.setExpireTime(info.getExpireTime());
+                        sreply.setExpireTime(info.getExpireTime().toString());
                         sreply.setName(vo.getName());
                     }
                 } else {

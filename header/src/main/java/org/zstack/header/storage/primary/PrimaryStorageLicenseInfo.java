@@ -1,8 +1,10 @@
 package org.zstack.header.storage.primary;
 
+import java.time.OffsetDateTime;
+
 public class PrimaryStorageLicenseInfo {
     private String uuid;
-    private String expireTime;
+    private OffsetDateTime expireTime;
     private String type;
 
     public String getUuid() {
@@ -21,11 +23,11 @@ public class PrimaryStorageLicenseInfo {
         this.type = type;
     }
 
-    public String getExpireTime() {
+    public OffsetDateTime getExpireTime() {
         return expireTime;
     }
 
-    public void setExpireTime(String expireTime) {
+    public void setExpireTime(OffsetDateTime expireTime) {
         this.expireTime = expireTime;
     }
 
