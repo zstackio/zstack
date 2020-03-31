@@ -60,6 +60,7 @@ public class AddressPoolInventory extends IpRangeInventory {
         inv.setIpVersion(vo.getIpVersion());
         inv.setAddressMode(vo.getAddressMode());
         inv.setPrefixLen(vo.getPrefixLen());
+        inv.setIpRangeType(IpRangeType.AddressPool);
 
         return inv;
     }

@@ -8,19 +8,19 @@ import java.sql.Timestamp
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "地址池结构清单"
 
 	field {
 		name "uuid"
 		desc "资源的UUID，唯一标示该资源"
 		type "String"
-		since "0.6"
+		since "3.9"
 	}
 	field {
 		name "l3NetworkUuid"
 		desc "三层网络UUID"
 		type "String"
-		since "0.6"
+		since "3.9"
 	}
 	field {
 		name "name"
@@ -32,74 +32,74 @@ doc {
 		name "description"
 		desc "资源的详细描述"
 		type "String"
-		since "0.6"
+		since "3.9"
 	}
 	field {
 		name "startIp"
-		desc ""
+		desc "起始IP"
 		type "String"
-		since "0.6"
+		since "3.9"
 	}
 	field {
 		name "endIp"
-		desc ""
+		desc "结束IP"
 		type "String"
-		since "0.6"
+		since "3.9"
 	}
 	field {
 		name "netmask"
-		desc ""
+		desc "掩码"
 		type "String"
-		since "0.6"
-	}
-	field {
-		name "prefixLen"
-		desc "掩码长度"
-		type "String"
-		since "3.1"
+		since "3.9"
 	}
 	field {
 		name "gateway"
 		desc ""
 		type "String"
-		since "0.6"
+		since "3.9"
 	}
 	field {
 		name "networkCidr"
 		desc ""
 		type "String"
-		since "0.6"
+		since "3.9"
 	}
 	field {
 		name "ipVersion"
-		desc "ip协议号"
+		desc ""
 		type "Integer"
-		since "3.1"
+		since "3.9"
 	}
 	field {
 		name "addressMode"
-		desc "IPv6地址分配模式"
+		desc ""
 		type "String"
-		since "3.1"
+		since "3.9"
+	}
+	field {
+		name "prefixLen"
+		desc ""
+		type "Integer"
+		since "3.9"
 	}
 	ref {
 		name "ipRangeType"
-		path "org.zstack.header.network.l3.IpRangeInventory.ipRangeType"
+		path "org.zstack.header.network.l3.AddressPoolInventory.ipRangeType"
 		desc "null"
 		type "IpRangeType"
-		since "0.6"
+		since "3.9"
 		clz IpRangeType.class
 	}
 	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"
-		since "0.6"
+		since "3.9"
 	}
 	field {
 		name "lastOpDate"
 		desc "最后一次修改时间"
 		type "Timestamp"
-		since "0.6"
+		since "3.9"
 	}
 }

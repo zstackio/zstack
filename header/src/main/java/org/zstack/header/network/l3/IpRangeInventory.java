@@ -83,7 +83,6 @@ public class IpRangeInventory implements Serializable {
 
     private Integer prefixLen;
 
-    @APINoSee
     private IpRangeType ipRangeType;
 
     /**
