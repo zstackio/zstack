@@ -25,6 +25,7 @@ import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.FutureReturnValueCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeNoErrorCompletion;
+import org.zstack.header.core.cloudbus.CloudBusExtensionPoint;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
@@ -86,6 +87,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     private List<Service> services = new ArrayList<>();
     private Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<Class, List<ReplyMessagePreSendingExtensionPoint>>();
     private List<RestAPIExtensionPoint> apiExts = new ArrayList<>();
+    private List<CloudBusExtensionPoint> msgExts = new ArrayList<>();
 
     private Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new HashMap<Class, List<BeforeDeliveryMessageInterceptor>>();
     private Map<Class, List<BeforeSendMessageInterceptor>> beforeSendMessageInterceptors = new HashMap<Class, List<BeforeSendMessageInterceptor>>();
@@ -328,6 +330,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         };
 
         envelopes.put(msg.getId(), e);
+        msgExts.forEach(m -> m.afterAddEnvelopes(msg.getId()));
         send(msg, false);
     }
 
@@ -1056,6 +1059,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     private void populateExtension() {
         services = pluginRgty.getExtensionList(Service.class);
         apiExts = pluginRgty.getExtensionList(RestAPIExtensionPoint.class);
+        msgExts = pluginRgty.getExtensionList(CloudBusExtensionPoint.class);
         services.forEach(serv->{
             assert serv.getId() != null : String.format("service id can not be null[%s]", serv.getClass().getName());
             registerService(serv);
@@ -1200,5 +1204,10 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         } catch (Throwable t) {
             logger.warn(String.format("unable to deliver a message received from HTTP. HTTP body: %s", e.getBody()), t);
         }
+    }
+
+    @Override
+    public int getEnvelopeSize() {
+        return envelopes.size();
     }
 }

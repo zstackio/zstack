@@ -97,4 +97,8 @@ public interface CloudBus extends Component {
     String HEADER_TASK_STACK = "task-stack";
     String HEADER_TASK_CONTEXT = "task-context";
     String HEADER_SCHEMA = "schema";
+
+    default int getEnvelopeSize() {
+        return 0;
+    }
 }
