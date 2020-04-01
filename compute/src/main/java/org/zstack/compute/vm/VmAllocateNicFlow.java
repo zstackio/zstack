@@ -126,7 +126,8 @@ public class VmAllocateNicFlow implements Flow {
                         nic.setVmInstanceUuid(spec.getVmInventory().getUuid());
                         nic.setL3NetworkUuid(areply.getIpInventory().getL3NetworkUuid());
                         nic.setMac(mac);
-                        nic.setHypervisorType(spec.getDestHost().getHypervisorType());
+                        nic.setHypervisorType(spec.getDestHost() == null ?
+                                spec.getVmInventory().getHypervisorType() : spec.getDestHost().getHypervisorType());
                         if (mo.checkDuplicateMac(nic.getHypervisorType(), nic.getMac())) {
                             trigger.fail(operr("Duplicate mac address [%s]", nic.getMac()));
                             return;
