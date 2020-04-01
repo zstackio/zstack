@@ -1436,7 +1436,7 @@
     "code": "1002",
     "method": "regex",
     "regex": ".*Message\\[name: org.zstack.appliancevm.StartNewCreatedApplianceVmMsg, id: .*] timeout after 1800 seconds.*",
-    "message_cn": "创建VPC路由器超时。",
-    "message_en": "Creating VPC router timeout."
+    "message_cn": "创建VPC路由器超时。请检查镜像，检查管理网双向互通，再试一次。",
+    "message_en": "Creating VPC router timeout.Please check the mirror, check the two-way communication between the management network, and try again."
   }
 ]
