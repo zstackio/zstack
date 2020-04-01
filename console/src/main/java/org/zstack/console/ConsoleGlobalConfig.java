@@ -18,4 +18,7 @@ public class ConsoleGlobalConfig {
 
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig VNC_TOKEN_TIMEOUT = new GlobalConfig(CATEGORY, "vnc.token.timeout");
+
+    @GlobalConfigValidation
+    public static GlobalConfig VNC_ALLOW_PORTS_LIST = new GlobalConfig(CATEGORY, "vnc.allow.ports");
 }

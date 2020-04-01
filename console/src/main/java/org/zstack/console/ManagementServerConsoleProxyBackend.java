@@ -140,10 +140,26 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                 try {
                     ShellUtils.run("rm -rf /var/lib/zstack/consoleProxy/ && mkdir -p /var/lib/zstack/consoleProxy/");
                     StringBuilder builder = new StringBuilder();
-                    builder.append(String.format("iptables-save | grep '%s' | while read LINE; do echo $LINE | sed -e \"s/-A/-D/\" | xargs sudo iptables ; done",
-                            Platform.getGlobalPropertyAnnotationName(ConsoleGlobalProperty.class, "IPTABLES_RULES")));
-                    for (String rule : ConsoleGlobalProperty.IPTABLES_RULES) {
-                        builder.append(String.format(";sudo iptables %s", rule));
+                    String[] ports = ConsoleGlobalConfig.VNC_ALLOW_PORTS_LIST.value(String.class).split(",");
+                    if (!ConsoleGlobalProperty.MN_NETWORKS.isEmpty()) {
+                        builder.append(String.format("sudo ipset create ZS-MN hash:net -exist; sudo ipset flush ZS-MN"));
+                        for (String net : ConsoleGlobalProperty.MN_NETWORKS) {
+                            builder.append(String.format(";sudo ipset add ZS-MN %s", net));
+                        }
+
+                        builder.append(String.format(";sudo iptables-save | grep '%s' | while read LINE;do drule=${LINE//\\\"/};sudo iptables ${drule/-A/-D};done",
+                                ConsoleConstants.VNC_IPTABLES_COMMENTS));
+                        for (String dport : ports) {
+                            builder.append(String.format(";sudo iptables -I INPUT -m set --match-set ZS-MN src -p tcp -m comment --comment %s -m tcp --dport %s -j ACCEPT",
+                                    ConsoleConstants.VNC_IPTABLES_COMMENTS, dport));
+                        }
+                    } else {
+                        builder.append(String.format("sudo iptables-save | grep '%s' | while read LINE;do drule=${LINE//\\\"/};sudo iptables ${drule/-A/-D};done",
+                                ConsoleConstants.VNC_IPTABLES_COMMENTS));
+                        for (String dport : ports) {
+                            builder.append(String.format(";sudo iptables -I INPUT -p tcp -m comment --comment %s -m tcp --dport %s -j ACCEPT",
+                                    ConsoleConstants.VNC_IPTABLES_COMMENTS, dport));
+                        }
                     }
                     ShellUtils.run(builder.toString());
 

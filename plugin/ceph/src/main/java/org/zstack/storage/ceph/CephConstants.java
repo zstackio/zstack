@@ -23,4 +23,7 @@ public interface CephConstants {
     String CEPH_SCECRET_KEY = "ceph_secret_key";
 
     String CEPH_SECRECT_UUID = "ceph_secret_uuid";
+
+    String CEPH_BS_IPTABLES_COMMENTS = "Cephb.allow.port";
+    String CEPH_PS_IPTABLES_COMMENTS = "Cephp.allow.port";
 }

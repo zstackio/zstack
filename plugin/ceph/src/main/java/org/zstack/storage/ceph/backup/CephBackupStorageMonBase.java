@@ -156,28 +156,6 @@ public class CephBackupStorageMonBase extends CephMonBase {
                     });
 
                     flow(new NoRollbackFlow() {
-                        String __name__ = "configure-iptables";
-
-                        @Autowired
-                        public void run(FlowTrigger trigger, Map data) {
-                            StringBuilder builder = new StringBuilder();
-                            builder.append(String.format("sudo iptables-save | grep '%s' | while read LINE; do echo $LINE | sed -e \"s/-A/-D/\" | xargs sudo iptables ; done",
-                                    Platform.getGlobalPropertyAnnotationName(CephGlobalProperty.class, "CEPH_BACKUP_STORAGE_IPTABLES_RULES")));
-                            for (String rule : CephGlobalProperty.CEPH_BACKUP_STORAGE_IPTABLES_RULES) {
-                                builder.append(String.format(";sudo iptables %s", rule));
-                            }
-
-                            new Ssh().shell(builder.toString())
-                                    .setUsername(self.getSshUsername())
-                                    .setPassword(self.getSshPassword())
-                                    .setHostname(self.getHostname())
-                                    .setPort(self.getSshPort()).runErrorByExceptionAndClose();
-
-                            trigger.next();
-                        }
-                    });
-
-                    flow(new NoRollbackFlow() {
                         String __name__ = "deploy-agent";
 
                         @Override
@@ -280,6 +258,37 @@ public class CephBackupStorageMonBase extends CephMonBase {
                                     trigger.fail(errCode);
                                 }
                             }).start();
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "configure-iptables";
+
+                        @Autowired
+                        public void run(FlowTrigger trigger, Map data) {
+
+                            StringBuilder builder = new StringBuilder();
+                            if (!CephGlobalProperty.MN_NETWORKS.isEmpty()) {
+                                builder.append(String.format("sudo bash %s -m %s -p %s -c %s",
+                                        "/var/lib/zstack/cephb/package/cephbs-iptables",
+                                        CephConstants.CEPH_BS_IPTABLES_COMMENTS,
+                                        CephGlobalConfig.CEPH_BS_ALLOW_PORTS.value(),
+                                        String.join(",", CephGlobalProperty.MN_NETWORKS)));
+                            } else {
+                                builder.append(String.format("sudo bash %s -m %s -p %s",
+                                        "/var/lib/zstack/cephb/package/cephbs-iptables",
+                                        CephConstants.CEPH_BS_IPTABLES_COMMENTS,
+                                        CephGlobalConfig.CEPH_BS_ALLOW_PORTS.value()));
+                            }
+
+                            new Ssh().shell(builder.toString())
+                                    .setUsername(self.getSshUsername())
+                                    .setPassword(self.getSshPassword())
+                                    .setHostname(self.getHostname())
+                                    .setPort(self.getSshPort()).runErrorByExceptionAndClose();
+
+
+                            trigger.next();
                         }
                     });
 

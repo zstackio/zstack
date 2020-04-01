@@ -11,6 +11,6 @@ import java.util.List;
 public class ConsoleGlobalProperty {
     @GlobalProperty(name="ConsoleProxy.agentPackageName", defaultValue = "consoleproxy-3.9.0.tar.gz")
     public static String AGENT_PACKAGE_NAME;
-    @GlobalProperty(name="ConsoleProxy.iptables.rule.", defaultValue = "")
-    public static List<String> IPTABLES_RULES;
+    @GlobalProperty(name="MN.network.", defaultValue = "")
+    public static List<String> MN_NETWORKS;
 }
