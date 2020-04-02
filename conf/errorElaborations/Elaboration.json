@@ -340,8 +340,8 @@
     "code": "1011",
     "method": "regex",
     "regex": ".*connection error for KVM host\\[uuid:.*, ip:.*].*",
-    "message_cn": "物理机[uuid:%1$s，ip:%2$s]连接错误。",
-    "message_en": "Connection error for KVM host[uuid:%1$s, ip:%2$s]."
+    "message_cn": "无法重连物理机，可能由于物理机的ssh端口与管理节点不通, 或者ssh的端口、用户名或密码有误。",
+    "message_en": "Connection error for KVM host[uuid:%1$s, ip:%2$s], timeout expired.The problem may be caused by an incorrect user name or password or SSH port."
   },
   {
     "category": "HOST",
