@@ -17,7 +17,7 @@ public class DatabaseGlobalProperty {
     public static String DbPassword;
     @GlobalProperty(name="DB.idleConnectionTestPeriod")
     public static String DbIdleConnectionTestPeriod;
-    @GlobalProperty(name="DB.maxIdleTime")
+    @GlobalProperty(name="DB.maxIdleTime", defaultValue = "60")
     public static String DbMaxIdleTime;
     @GlobalProperty(name="DB.glock.waitTimeout", defaultValue = "28800")
     public static Long GLockWaitTimeout;
