@@ -971,9 +971,9 @@
     "category": "V2V",
     "code": "1001",
     "method": "regex",
-    "regex": ".*underlying host of conversion host\\[uuid:.*] should be Enabled and Connected.*",
-    "message_cn": "v2v迁移时所使用的迁移物理机应处于启用且己连接状态。",
-    "message_en": "The state and the status of the conversion host should be Enabled and Connected while v2v is working."
+    "regex": ".*underlying host of conversion host\\[uuid:.*] should be Connected.*",
+    "message_cn": "v2v迁移时所使用的迁移物理机应处于己连接状态。",
+    "message_en": "The state and the status of the conversion host should be Connected while v2v is working."
   },
   {
     "category": "V2V",

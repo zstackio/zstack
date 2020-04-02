@@ -21418,9 +21418,9 @@
     "fileName": "src/main/java/org/zstack/v2v/V2VApiInterceptor.java"
   },
   {
-    "raw": "underlying host of conversion host[uuid:%s] should be Enabled and Connected",
-    "en_US": "underlying host of conversion host[uuid:{0}] should be Enabled and Connected",
-    "zh_CN": "",
+    "raw": "underlying host of conversion host[uuid:%s] should be Connected",
+    "en_US": "underlying host of conversion host[uuid:{0}] should be Connected",
+    "zh_CN": "迁移服务器[uuid:{0}]所关联的物理机应处于己连接状态",
     "arguments": [
       "msg.getConversionHostUuid()"
     ],
