@@ -23,10 +23,7 @@ import org.zstack.header.query.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.SearchConstant;
-import org.zstack.utils.BeanUtils;
-import org.zstack.utils.FieldUtils;
-import org.zstack.utils.TypeUtils;
-import org.zstack.utils.Utils;
+import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQL;
@@ -44,6 +41,7 @@ import static org.zstack.core.Platform.inerr;
 public class QueryFacadeImpl extends AbstractService implements QueryFacade, GlobalApiMessageInterceptor {
     private static CLogger logger = Utils.getLogger(QueryFacadeImpl.class);
     private Map<String, QueryBuilderFactory> builerFactories = new HashMap<>();
+    private Map<String, QueryBelongFilter> belongfilters = new HashMap<>();
     private String queryBuilderType = MysqlQueryBuilderFactory.type.toString();
 
     @Autowired
@@ -88,6 +86,15 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             }
             builerFactories.put(extp.getQueryBuilderType().toString(), extp);
         }
+
+        for (QueryBelongFilter extp : pluginRgty.getExtensionList(QueryBelongFilter.class)) {
+            QueryBelongFilter old = belongfilters.get(extp.filterName());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate QueryBelongFilter[%s, %s] for type[%s]",
+                        extp.getClass().getName(), old.getClass().getName(), extp.filterName()));
+            }
+            belongfilters.put(extp.filterName(), extp);
+        }
     }
 
     private QueryBuilderFactory getFactory(String type) {
@@ -96,6 +103,14 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             throw new CloudRuntimeException(String.format("unable to find QueryBuilderFactory with type[%s]", type));
         }
         return factory;
+    }
+
+    private QueryBelongFilter getBelongFilter(String type) {
+        QueryBelongFilter filter = belongfilters.get(type.split(":")[0]);
+        if (filter == null) {
+            throw new CloudRuntimeException(String.format("unable to find QueryBelongFilter with type[%s]", type));
+        }
+        return filter;
     }
 
     private void checkBoxTypeInInventory() {
@@ -301,6 +316,14 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
     }
 
+    private void filter(List inventories, String filterType) {
+        if (filterType.split(":").length < 2) {
+            throw new OperationFailureException(argerr("filterName must be formatted as [filterType:condition(s)]"));
+        }
+        QueryBelongFilter filter = getBelongFilter(filterType);
+        filter.filter(inventories, filterType.split(":")[1]);
+    }
+
     private void handle(APIQueryMessage msg) {
         AutoQuery at = autoQueryMap.get(msg.getClass());
         if (at == null) {
@@ -324,7 +347,20 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                 reply.setTotal(result.total);
             }
             if (result.inventories != null) {
-                replySetter.invoke(reply, result.inventories);
+                if (msg.getFilterName() != null) {
+                    filter(result.inventories, msg.getFilterName());
+                    if (msg.isCount()) {
+                        reply.setTotal(result.inventories.size());
+                    } else {
+                        replySetter.invoke(reply, result.inventories);
+                    }
+
+                    if (msg.isReplyWithCount()) {
+                        reply.setTotal(result.inventories.size());
+                    }
+                } else {
+                    replySetter.invoke(reply, result.inventories);
+                }
             }
             bus.reply(msg, reply);
         } catch (OperationFailureException of) {
@@ -416,7 +452,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
 
     public ZQLQueryReturn queryUseZQL(APIQueryMessage msg, Class inventoryClass) {
         List<String> sb = new ArrayList<>();
-        sb.add(msg.isCount() ? "count" : "query");
+        sb.add(msg.isCount() && msg.getFilterName() == null ? "count" : "query");
         Class targetInventoryClass = getQueryTargetInventoryClass(msg, inventoryClass);
         sb.add(msg.getFields() == null || msg.getFields().isEmpty() ? ZQL.queryTargetNameFromInventoryClass(targetInventoryClass) : ZQL.queryTargetNameFromInventoryClass(targetInventoryClass) + "." + StringUtils.join(msg.getFields(), ","));
 
@@ -432,7 +468,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             }
         }
 
-        if (!msg.isCount() && msg.isReplyWithCount()) {
+        if (!msg.isCount() && msg.isReplyWithCount() && msg.getFilterName() == null) {
             sb.add("return with (total)");
         }
 

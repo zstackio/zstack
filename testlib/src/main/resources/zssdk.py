@@ -408,6 +408,7 @@ class QueryAction(AbstractAction):
         'start': ParamAnnotation(),
         'count': ParamAnnotation(),
         'groupBy': ParamAnnotation(),
+        'filterName': ParamAnnotation(),
         'replyWithCount': ParamAnnotation(),
         'sortBy': ParamAnnotation(),
         'sortDirection': ParamAnnotation(valid_values=['asc', 'desc']),
@@ -422,6 +423,7 @@ class QueryAction(AbstractAction):
         self.count = None
         self.groupBy = None
         self.replyWithCount = None
+        self.filterName = None
         self.sortBy = None
         self.sortDirection = None
         self.fields = None

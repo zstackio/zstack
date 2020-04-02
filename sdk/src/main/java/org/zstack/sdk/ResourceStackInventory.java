@@ -76,6 +76,14 @@ public class ResourceStackInventory  {
         return this.reason;
     }
 
+    public java.lang.String outputs;
+    public void setOutputs(java.lang.String outputs) {
+        this.outputs = outputs;
+    }
+    public java.lang.String getOutputs() {
+        return this.outputs;
+    }
+
     public java.lang.Boolean enableRollback;
     public void setEnableRollback(java.lang.Boolean enableRollback) {
         this.enableRollback = enableRollback;

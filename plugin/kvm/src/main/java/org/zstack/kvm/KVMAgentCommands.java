@@ -1609,6 +1609,48 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class ScanVmPortCmd extends AgentCommand {
+        private String ip;
+        private String brname;
+        private int port;
+
+        public String getIp() {
+            return ip;
+        }
+
+        public void setIp(String ip) {
+            this.ip = ip;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public void setPort(int port) {
+            this.port = port;
+        }
+
+        public String getBrname() {
+            return brname;
+        }
+
+        public void setBrname(String brname) {
+            this.brname = brname;
+        }
+    }
+
+    public static class ScanVmPortResponse extends AgentResponse {
+        private Map<String, String> portStatus;
+
+        public Map<String, String> getPortStatus() {
+            return portStatus;
+        }
+
+        public void setPortStatus(Map<String, String> portStatus) {
+            this.portStatus = portStatus;
+        }
+    }
+
     public static class GetVncPortCmd extends AgentCommand {
         private String vmUuid;
 

@@ -14,6 +14,7 @@ public abstract class APIQueryMessage extends APISyncCallMessage {
     private boolean count;
     private String groupBy;
     private boolean replyWithCount;
+    private String filterName;
     private String sortBy;
     @APIParam(required = false, validValues = {"asc", "desc"})
     private String sortDirection = "asc";
@@ -120,5 +121,13 @@ public abstract class APIQueryMessage extends APISyncCallMessage {
 
     public void setCount(boolean count) {
         this.count = count;
+    }
+
+    public String getFilterName() {
+        return filterName;
+    }
+
+    public void setFilterName(String filterName) {
+        this.filterName = filterName;
     }
 }
