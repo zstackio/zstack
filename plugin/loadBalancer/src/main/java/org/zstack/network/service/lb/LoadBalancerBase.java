@@ -1509,7 +1509,8 @@ public class LoadBalancerBase {
             @Override
             public void run(SyncTaskChain chain) {
                 APIRemoveAccessControlListFromLoadBalancerEvent evt = new APIRemoveAccessControlListFromLoadBalancerEvent(msg.getId());
-                List<LoadBalancerListenerACLRefVO> refs = Q.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuids()).list();
+                List<LoadBalancerListenerACLRefVO> refs = Q.New(LoadBalancerListenerACLRefVO.class).in(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuids())
+                                                           .eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).list();
 
                 if (refs.isEmpty()) {
                     final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);

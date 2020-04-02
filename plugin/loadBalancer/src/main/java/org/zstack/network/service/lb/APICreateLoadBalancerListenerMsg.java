@@ -48,11 +48,11 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     @APIParam(maxLength = 80, required = false)
     private String healthCheckHttpCode;
     @APIParam(validValues = {"enable", "disable"}, required = false)
-    private String aclStatus;
+    private String aclStatus = LoadBalancerAclStatus.disable.toString();
     @APIParam(resourceType = AccessControlListVO.class, required = false)
     private List<String> aclUuids;
     @APIParam(validValues = {"white","black"}, required = false)
-    private String aclType;
+    private String aclType = LoadBalancerAclType.black.toString();
 
     @Override
     public String getLoadBalancerUuid() {
