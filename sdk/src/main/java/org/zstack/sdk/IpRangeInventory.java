@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.IpRangeType;
 
 public class IpRangeInventory  {
 
@@ -98,6 +98,14 @@ public class IpRangeInventory  {
     }
     public java.lang.Integer getPrefixLen() {
         return this.prefixLen;
+    }
+
+    public IpRangeType ipRangeType;
+    public void setIpRangeType(IpRangeType ipRangeType) {
+        this.ipRangeType = ipRangeType;
+    }
+    public IpRangeType getIpRangeType() {
+        return this.ipRangeType;
     }
 
     public java.sql.Timestamp createDate;

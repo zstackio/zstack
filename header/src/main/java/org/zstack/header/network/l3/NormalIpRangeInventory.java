@@ -60,6 +60,7 @@ public class NormalIpRangeInventory extends IpRangeInventory {
         inv.setIpVersion(vo.getIpVersion());
         inv.setAddressMode(vo.getAddressMode());
         inv.setPrefixLen(vo.getPrefixLen());
+        inv.setIpRangeType(IpRangeType.Normal);
 
         return inv;
     }

@@ -87,7 +87,7 @@ doc {
 					desc "网关"
 					location "body"
 					type "String"
-					optional true
+					optional false
 					since "0.6"
 					
 				}
@@ -98,7 +98,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "3.9"
 					values ("Normal","AddressPool")
 				}
 				column {
@@ -109,7 +109,7 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-
+					
 				}
 				column {
 					name "systemTags"
