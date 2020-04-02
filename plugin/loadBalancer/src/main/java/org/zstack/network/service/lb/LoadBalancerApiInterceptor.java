@@ -13,10 +13,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.acl.APIDeleteAccessControlListMsg;
-import org.zstack.header.acl.AccessControlListEntryVO;
-import org.zstack.header.acl.AccessControlListVO;
-import org.zstack.header.acl.AccessControlListVO_;
+import org.zstack.header.acl.*;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -73,6 +70,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     public List<Class> getMessageClassToIntercept() {
         List<Class> ret = new ArrayList<>();
         ret.add(APIDeleteAccessControlListMsg.class);
+        ret.add(APIAddAccessControlListEntryMsg.class);
         return ret;
     }
 
@@ -107,6 +105,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             validate((APIAddAccessControlListToLoadBalancerMsg) msg);
         } else if (msg instanceof APIRemoveAccessControlListFromLoadBalancerMsg) {
             validate((APIRemoveAccessControlListFromLoadBalancerMsg) msg);
+        } else if (msg instanceof APIAddAccessControlListEntryMsg) {
+            validate((APIAddAccessControlListEntryMsg) msg);
         } else if (msg instanceof APIDeleteAccessControlListMsg) {
             validate((APIDeleteAccessControlListMsg) msg);
         }
@@ -229,6 +229,69 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
     }
 
+    private void validateAcl(List<String> newAclUuids, List<String> oriAclUuids, String lbUuid) {
+        LoadBalancerVO lb = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, lbUuid).find();
+        VipVO vip = Q.New(VipVO.class).eq(VipVO_.uuid, lb.getVipUuid()).find();
+
+        List<AccessControlListVO> acls = Q.New(AccessControlListVO.class)
+                                          .in(AccessControlListVO_.uuid, newAclUuids).list();
+        if (!acls.isEmpty()) {
+            /*check if the ip version is same*/
+            List<String> aclUuids = acls.stream().filter(acl -> acl.getIpVersion() != NetworkUtils.getIpversion(vip.getIp())).map(AccessControlListVO::getUuid).collect(Collectors.toList());
+            if (!aclUuids.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr("Can't attach the type access-control-list group[%s] whose ip version is different with LoadBalancer[%s]", aclUuids, lbUuid));
+            }
+
+            List<AccessControlListVO> allAcl = acls;
+            if ( !oriAclUuids.isEmpty()) {
+                List<AccessControlListVO> attached = Q.New(AccessControlListVO.class).in(AccessControlListVO_.uuid, oriAclUuids).list();
+                allAcl.addAll(attached);
+            }
+            /*check all the ip entry not overlap include with each other*/
+            for (AccessControlListVO acl : acls) {
+                if (acl.getEntries().isEmpty()) {
+                    continue;
+                }
+                List<String> ipentries = acl.getEntries().stream().map(AccessControlListEntryVO::getIpEntries).collect(Collectors.toList());
+                for (AccessControlListVO acl2 : allAcl) {
+                    if ( acl.getUuid().equals(acl2.getUuid())) {
+                        continue;
+                    }
+                    if (acl2.getEntries().isEmpty()) {
+                        continue;
+                    }
+                    List<String> ipentries2 = acl2.getEntries().stream().map(AccessControlListEntryVO::getIpEntries).collect(Collectors.toList());
+                    ipentries2.addAll(ipentries);
+                    validateIp(StringUtils.join(ipentries2.toArray(), ','), acl2);
+                }
+            }
+        }
+    }
+
+    private void validate(APIAddAccessControlListEntryMsg msg) {
+        List<String> listenerUuids = Q.New(LoadBalancerListenerACLRefVO.class).select(LoadBalancerListenerACLRefVO_.listenerUuid)
+                                    .eq(LoadBalancerListenerACLRefVO_.aclUuid, msg.getAclUuid()).listValues();
+        if (listenerUuids.isEmpty()) {
+            return;
+        }
+
+        List<String> aclUuids = Q.New(LoadBalancerListenerACLRefVO.class).select(LoadBalancerListenerACLRefVO_.aclUuid)
+                                 .in(LoadBalancerListenerACLRefVO_.listenerUuid, listenerUuids).listValues();
+        if (aclUuids.isEmpty()) {
+            return;
+        }
+        List<AccessControlListVO> acls = Q.New(AccessControlListVO.class).in(AccessControlListVO_.uuid, aclUuids).list();
+
+        for (AccessControlListVO acl : acls) {
+            if (acl.getEntries().isEmpty()) {
+                continue;
+            }
+            List<String> ipentries = acl.getEntries().stream().map(AccessControlListEntryVO::getIpEntries).collect(Collectors.toList());
+            ipentries.add(msg.getEntries());
+            validateIp(StringUtils.join(ipentries.toArray(), ','), acl);
+        }
+    }
+
     @Transactional(readOnly = true)
     private void validate(APIAddAccessControlListToLoadBalancerMsg msg) {
         List<LoadBalancerListenerACLRefVO> refVOs = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.listenerUuid, msg.getListenerUuid()).list();
@@ -253,44 +316,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         String lbUuid = Q.New(LoadBalancerListenerVO.class).select(LoadBalancerListenerVO_.loadBalancerUuid).eq(LoadBalancerListenerVO_.uuid, msg.getListenerUuid()).findValue();
         msg.setLoadBalancerUuid(lbUuid);
 
-        LoadBalancerVO lb = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).find();
-        VipVO vip = Q.New(VipVO.class).eq(VipVO_.uuid, lb.getVipUuid()).find();
-
-
-        List<AccessControlListVO> acls = Q.New(AccessControlListVO.class)
-                                          .in(AccessControlListVO_.uuid, msg.getAclUuids()).list();
-        if (!acls.isEmpty()) {
-            /*check if the ip version is same*/
-            List<String> aclUuids = acls.stream().filter(acl -> acl.getIpVersion() != NetworkUtils.getIpversion(vip.getIp())).map(AccessControlListVO::getUuid).collect(Collectors.toList());
-            if (!aclUuids.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr("the load balancer listener[uuid:%s] can't attach the type access-control-list group[%s] whose ip version is different", msg.getListenerUuid(), aclUuids));
-            }
-
-            List<AccessControlListVO> allAcl = acls;
-            if ( !refVOs.isEmpty()) {
-                List<String> attachedUuids = refVOs.stream().map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList());
-                List<AccessControlListVO> attached = Q.New(AccessControlListVO.class).in(AccessControlListVO_.uuid, attachedUuids).list();
-                allAcl.addAll(attached);
-            }
-            /*check all the ip entry not overlap include with each other*/
-            for (AccessControlListVO acl : acls) {
-                if (acl.getEntries().isEmpty()) {
-                    continue;
-                }
-                List<String> ipentries = acl.getEntries().stream().map(AccessControlListEntryVO::getIpEntries).collect(Collectors.toList());
-                for (AccessControlListVO acl2 : allAcl) {
-                    if ( acl.getUuid().equals(acl2.getUuid())) {
-                        continue;
-                    }
-                    if (acl2.getEntries().isEmpty()) {
-                        continue;
-                    }
-                    List<String> ipentries2 = acl2.getEntries().stream().map(AccessControlListEntryVO::getIpEntries).collect(Collectors.toList());
-                    ipentries2.addAll(ipentries);
-                    validateIp(StringUtils.join(ipentries2.toArray(), ','), acl2);
-                }
-            }
-        }
+        validateAcl(msg.getAclUuids(), refVOs.stream().map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList()), lbUuid );
     }
 
     @Transactional(readOnly = true)
@@ -426,12 +452,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             );
         }
 
-        if (msg.getAclStatus() == null) {
-            msg.setAclStatus(LoadBalancerAclStatus.disable.toString());
-        }
-
-        if (msg.getAclType() == null) {
-            msg.setAclType(LoadBalancerAclType.black.toString());
+        if (msg.getAclUuids() != null) {
+            if (msg.getAclUuids().size() > LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)) {
+                throw new ApiMessageInterceptionException(argerr("Can't attach more than %d access-control-list groups to a listener", LoadBalancerGlobalConfig.ACL_MAX_COUNT.value(Long.class)));
+            }
+            validateAcl(msg.getAclUuids(),new ArrayList<>(), msg.getLoadBalancerUuid());
         }
 
         insertTagIfNotExisting(

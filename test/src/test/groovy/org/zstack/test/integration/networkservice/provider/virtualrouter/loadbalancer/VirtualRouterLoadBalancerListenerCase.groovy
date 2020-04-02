@@ -168,6 +168,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             return rsp
         }
 
+        /*acl default value: disable, black*/
         CreateLoadBalancerListenerAction listenerAction = new CreateLoadBalancerListenerAction()
         listenerAction.loadBalancerUuid = load.uuid
         listenerAction.name = _name
@@ -189,7 +190,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         }
         assert cmd.getLbs().get(0).parameters.contains("accessControlStatus::disable")
 
-
+        /*change acl status enable*/
         ChangeLoadBalancerListenerAction action = new ChangeLoadBalancerListenerAction()
         action.uuid  = lblRes.value.inventory.uuid
         action.aclStatus = LoadBalancerAclStatus.enable.toString()
@@ -247,12 +248,24 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         }
         assert cmd.getLbs().find {l -> l.listenerUuid == lblRes.value.inventory.uuid}.parameters.contains("aclEntry::192.168.0.1,192.168.1.0/24")
 
-        /*add acl to lbl with different ip version*/
+        /*ip version verify*/
         expect( [ApiException.class, AssertionError.class] ) {
             addAccessControlListToLoadBalancer {
                 aclUuids = [acl6.uuid]
                 aclType = LoadBalancerAclType.black.toString()
                 listenerUuid = lblRes.value.inventory.uuid
+            }
+        }
+
+        expect( [ApiException.class, AssertionError.class]) {
+            createLoadBalancerListener {
+                loadBalancerUuid = load.uuid
+                name = "77"
+                loadBalancerPort = 77
+                instancePort = 77
+                protocol = "tcp"
+                aclStatus = "enable"
+                aclUuids = [acl6.uuid]
             }
         }
 
@@ -282,6 +295,19 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             }
         }
 
+
+        LoadBalancerListenerInventory lbl2 = createLoadBalancerListener {
+            loadBalancerUuid = load.uuid
+            name = "77"
+            loadBalancerPort = 77
+            instancePort = 77
+            protocol = "tcp"
+            aclUuids = [acl.uuid]
+        }
+        LoadBalancerListenerACLRefInventory ref = lbl2.aclRefs.get(0);
+        assert ref.aclUuid == acl.uuid
+        assert ref.type == LoadBalancerAclType.black.toString()
+
         /*delete acl being used by lbl*/
         expect( [ApiException.class, AssertionError.class] ) {
             deleteAccessControlList {
@@ -292,6 +318,17 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         removeAccessControlListFromLoadBalancer {
             aclUuids =[acl.uuid]
             listenerUuid = lblRes.value.inventory.uuid
+        }
+
+        expect( [ApiException.class, AssertionError.class] ) {
+            deleteAccessControlList {
+                uuid = acl.uuid
+            }
+        }
+
+        removeAccessControlListFromLoadBalancer {
+            aclUuids =[acl.uuid]
+            listenerUuid = lbl2.uuid
         }
 
         deleteLoadBalancerListener {
