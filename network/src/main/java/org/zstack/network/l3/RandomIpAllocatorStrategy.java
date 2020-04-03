@@ -31,7 +31,7 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
         List<IpRangeVO> ranges;
         /* when allocate ip address from address pool, ipRangeUuid is not null */
         if (msg.getIpRangeUuid() != null) {
-            ranges = Q.New(AddressPoolVO.class).eq(AddressPoolVO_.uuid, msg.getIpRangeUuid()).list();
+            ranges = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
         } else {
             ranges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
         }
