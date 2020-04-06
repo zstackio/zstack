@@ -157,7 +157,9 @@ class EnvSpec implements Node, ApiHelper {
             [AddSharedBlockGroupPrimaryStorageAction.metaClass, AddSharedBlockGroupPrimaryStorageAction.Result.metaClass, DeletePrimaryStorageAction.class],
             [CreateTagAction.metaClass, CreateTagAction.Result.metaClass, DeleteTagAction.class],
             [CreateResourcePriceAction.metaClass, CreateResourcePriceAction.Result.metaClass, DeleteResourcePriceAction.class],
-            [CreatePriceTableAction.metaClass, CreatePriceTableAction.Result.metaClass, DeletePriceTableAction.class]
+            [CreatePriceTableAction.metaClass, CreatePriceTableAction.Result.metaClass, DeletePriceTableAction.class],
+            [CreateAliyunProxyVpcAction.metaClass, CreateAliyunProxyVpcAction.Result.metaClass, DeleteAliyunProxyVpcAction.class],
+            [CreateAliyunProxyVSwitchAction.metaClass, CreateAliyunProxyVSwitchAction.Result.metaClass, DeleteAliyunProxyVSwitchAction.class]
     ]
 
     static Closure GLOBAL_DELETE_HOOK

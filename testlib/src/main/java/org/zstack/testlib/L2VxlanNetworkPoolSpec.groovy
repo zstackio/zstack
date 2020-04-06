@@ -1,9 +1,14 @@
 package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.Q
+import org.zstack.header.Constants
+import org.zstack.header.host.HostVO
+import org.zstack.header.host.HostVO_
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 import org.zstack.sdk.L2NetworkInventory
+import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * Created by weiwang on 15/03/2017.
@@ -36,6 +41,22 @@ class L2VxlanNetworkPoolSpec extends L2NetworkSpec implements Simulator {
 
     @Override
     void registerSimulators(EnvSpec env) {
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            def rsp = new VxlanKvmAgentCommands.CheckVxlanCidrResponse()
+            def cmd = JSONObjectUtil.toObject(entity.body, VxlanKvmAgentCommands.CheckVxlanCidrCmd.class)
+            def hostUuid = entity.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+
+            rsp.success = true
+
+            if (cmd.vtepip != null) {
+                rsp.vtepIp = cmd.vtepip
+            } else {
+                rsp.vtepIp = Q.New(HostVO.class).select(HostVO_.managementIp).eq(HostVO_.uuid, hostUuid).findValue()
+            }
+
+            return rsp
+        }
+
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             return new VxlanKvmAgentCommands.CreateVxlanBridgeResponse()
         }
