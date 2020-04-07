@@ -604,6 +604,8 @@ public class KVMAgentCommands {
         private String mac;
         private List<String> ips;
         private String bridgeName;
+        // run `bridge fdb add NicTO.mac dev NicTO.physicalInterface` on vnics to allow vf <-> vnic communication
+        private String physicalInterface;
         private String uuid;
         private String nicInternalName;
         private int deviceId;
@@ -653,6 +655,14 @@ public class KVMAgentCommands {
 
         public void setBridgeName(String bridgeName) {
             this.bridgeName = bridgeName;
+        }
+
+        public String getPhysicalInterface() {
+            return physicalInterface;
+        }
+
+        public void setPhysicalInterface(String physicalInterface) {
+            this.physicalInterface = physicalInterface;
         }
 
         public int getDeviceId() {
