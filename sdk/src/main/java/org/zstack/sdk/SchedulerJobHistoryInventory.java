@@ -44,11 +44,11 @@ public class SchedulerJobHistoryInventory  {
         return this.startTime;
     }
 
-    public long executeTime;
-    public void setExecuteTime(long executeTime) {
+    public Long executeTime;
+    public void setExecuteTime(Long executeTime) {
         this.executeTime = executeTime;
     }
-    public long getExecuteTime() {
+    public Long getExecuteTime() {
         return this.executeTime;
     }
 

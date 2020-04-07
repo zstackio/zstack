@@ -20,3 +20,14 @@ ALTER TABLE ImageEO DROP exportMd5Sum, DROP exportUrl;
 
 ALTER TABLE `zstack`.`PolicyRouteRuleSetVO` ADD COLUMN type VARCHAR(64) DEFAULT "User" NOT NULL;
 ALTER TABLE `zstack`.`PolicyRouteTableVO` ADD COLUMN type VARCHAR(64) DEFAULT "User" NOT NULL;
+
+ALTER TABLE `zstack`.`SchedulerJobHistoryVO` ADD COLUMN jobType VARCHAR(255) DEFAULT NULL;
+ALTER TABLE `zstack`.`SchedulerJobHistoryVO` ADD COLUMN fireInstanceId VARCHAR(32) DEFAULT NULL;
+ALTER TABLE `zstack`.`SchedulerJobHistoryVO` ADD INDEX idxSchedulerJobHistoryVOStartTime (`startTime`);
+ALTER TABLE `zstack`.`SchedulerJobHistoryVO` ADD INDEX idxSchedulerJobHistoryVOFireInstanceId (`fireInstanceId`);
+
+UPDATE `zstack`.`SchedulerJobGroupVO` SET `jobClassName` = 'org.zstack.storage.backup.CreateRootVolumeBackupJob' WHERE `jobType` = 'rootVolumeBackup';
+UPDATE `zstack`.`SchedulerJobVO` job, `zstack`.`SchedulerJobGroupVO` jobGroup, `zstack`.`SchedulerJobGroupJobRefVO` ref
+SET job.`jobClassName` = 'org.zstack.storage.backup.CreateRootVolumeBackupJob'
+WHERE jobGroup.jobType = 'rootVolumeBackup' AND ref.schedulerJobGroupUuid = jobGroup.uuid AND ref.schedulerJobUuid = job.uuid;
+
