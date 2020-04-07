@@ -54,6 +54,16 @@ doc {
 					
 				}
 				column {
+					name "ipRangeType"
+					enclosedIn ""
+					desc "地址类型"
+					location "query"
+					type "String"
+					optional true
+					since "3.9"
+					values ("Normal","AddressPool")
+				}
+				column {
 					name "limit"
 					enclosedIn ""
 					desc "数量限制"

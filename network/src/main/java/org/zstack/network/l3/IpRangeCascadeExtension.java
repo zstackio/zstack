@@ -1,14 +1,19 @@
 package org.zstack.network.l3;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.utils.CollectionUtils;
@@ -50,15 +55,9 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
         completion.success();
     }
 
-    private void handleDeletion(final CascadeAction action, final Completion completion) {
-        final List<IpRangeInventory> iprinvs = ipRangeFromAction(action);
-        if (iprinvs == null) {
-            completion.success();
-            return;
-        }
-
+    private void deleteIpRanges(final CascadeAction action,List<IpRangeInventory> iprs, NoErrorCompletion completion) {
         List<IpRangeDeletionMsg> msgs = new ArrayList<IpRangeDeletionMsg>();
-        for (IpRangeInventory iprinv : iprinvs) {
+        for (IpRangeInventory iprinv : iprs) {
             IpRangeDeletionMsg msg = new IpRangeDeletionMsg();
             msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
             msg.setL3NetworkUuid(iprinv.getL3NetworkUuid());
@@ -67,21 +66,67 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
             msgs.add(msg);
         }
 
-        bus.send(msgs, new CloudBusListCallBack(completion) {
-            @Override
-            public void run(List<MessageReply> replies) {
-                if (!action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
-                    for (MessageReply r : replies) {
-                        if (!r.isSuccess()) {
-                            completion.fail(r.getError());
-                            return;
-                        }
-                    }
+        new While<>(msgs).all((msg, compl) -> {
+            bus.send(msg, new CloudBusCallBack(compl) {
+                @Override
+                public void run(MessageReply reply) {
+                    compl.done();
                 }
-
-                completion.success();
+            });
+        }).run(new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                completion.done();
             }
         });
+    }
+
+    private void handleDeletion(final CascadeAction action, final Completion completion) {
+        final List<IpRangeInventory> iprinvs = ipRangeFromAction(action);
+        if (iprinvs == null) {
+            completion.success();
+            return;
+        }
+
+        List<IpRangeInventory> addressPools = new ArrayList<>();
+        List<IpRangeInventory> normalIpRanges = new ArrayList<>();
+        for (IpRangeInventory inv : iprinvs) {
+            if (Q.New(AddressPoolVO.class).eq(AddressPoolVO_.uuid, inv.getUuid()).isExists()) {
+                addressPools.add(inv);
+            } else {
+                normalIpRanges.add(inv);
+            }
+        }
+
+        /* delete address pool first */
+        if (!addressPools.isEmpty()) {
+            deleteIpRanges(action, addressPools, new NoErrorCompletion(completion) {
+                @Override
+                public void done() {
+                    if (normalIpRanges.isEmpty()) {
+                        completion.success();
+                    } else {
+                        deleteIpRanges(action, normalIpRanges, new NoErrorCompletion() {
+                            @Override
+                            public void done() {
+                                completion.success();
+                            }
+                        });
+                    }
+                }
+            });
+        } else {
+            if (normalIpRanges.isEmpty()) {
+                completion.success();
+            } else {
+                deleteIpRanges(action, normalIpRanges, new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        completion.success();
+                    }
+                });
+            }
+        }
     }
 
     private void handleDeletionCheck(CascadeAction action, Completion completion) {
