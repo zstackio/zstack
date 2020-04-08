@@ -1,5 +1,4 @@
 ALTER TABLE JsonLabelVO MODIFY COLUMN labelValue MEDIUMTEXT;
-
 CREATE INDEX idxTaskProgressVOapiId ON TaskProgressVO(apiId);
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -184,6 +183,43 @@ CREATE TABLE  IF NOT EXISTS `ResourceStackVmPortRefVO` (
 
 ALTER TABLE ResourceStackVO ADD COLUMN outputs text DEFAULT NULL;
 
+CREATE TABLE IF NOT EXISTS `zstack`.`AccessControlListVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE,
+  `name` varchar(255) NOT NULL,
+  `ipVersion` int(10) unsigned DEFAULT 4,
+  `description` varchar(2048) DEFAULT NULL,
+  `createDate` timestamp not null default '0000-00-00 00:00:00',
+  `lastOpDate` timestamp not null default '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`AccessControlListEntryVO` (
+  `uuid` varchar(32) NOT NULL UNIQUE,
+  `aclUuid` varchar(32) NOT NULL,
+  `ipEntries` varchar(2048) NOT NULL,
+  `description` varchar(2048) DEFAULT NULL,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`uuid`),
+  KEY `fkACLRuleVOAccessControlListVO` (`aclUuid`),
+  CONSTRAINT `fkACLRuleVOAccessControlListVO` FOREIGN KEY (`aclUuid`) REFERENCES `AccessControlListVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`LoadBalancerListenerACLRefVO` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `aclUuid` varchar(32) NOT NULL,
+  `listenerUuid` varchar(32) NOT NULL,
+  `type` varchar(32) NOT NULL,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`) USING BTREE,
+  KEY `fkLoadbalancerListenerACLRefVOLoadBalancerListenerVO` (`listenerUuid`) USING BTREE,
+  KEY `fkLoadbalancerListenerACLRefVOAccessControlListVO` (`aclUuid`) USING BTREE,
+  CONSTRAINT `fkLoadbalancerListenerACLRefVOLoadBalancerListenerVO` FOREIGN KEY (`listenerUuid`) REFERENCES `LoadBalancerListenerVO` (`uuid`) ON DELETE RESTRICT,
+  CONSTRAINT `fkLoadbalancerListenerACLRefVOAccessControlListVO` FOREIGN KEY (`aclUuid`) REFERENCES `AccessControlListVO` (`uuid`) ON DELETE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8;
+
 DROP PROCEDURE IF EXISTS addResourceConfigForVirtualRouter;
 DELIMITER $$
 CREATE PROCEDURE addResourceConfigForVirtualRouter()
@@ -213,4 +249,3 @@ END $$
 DELIMITER ;
 
 CALL addResourceConfigForVirtualRouter();
-DROP PROCEDURE IF EXISTS addResourceConfigForVirtualRouter;

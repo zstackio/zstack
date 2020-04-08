@@ -77,4 +77,12 @@
         <category>quota</category>
         <type>java.lang.Long</type>
     </config>
+
+    <config>
+        <category>loadBalancer</category>
+        <name>aclMaxCount</name>
+        <description>The number of max access-control-list groups for one listener.</description>
+        <defaultValue>50</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
 </globalConfig>

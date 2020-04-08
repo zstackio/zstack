@@ -27,6 +27,7 @@
         <module>sharedMountPointPrimaryStorage</module>
         <module>ldap</module>
         <module>vxlan</module>
+        <module>acl</module>
     </modules>
     <dependencies>
         <dependency>

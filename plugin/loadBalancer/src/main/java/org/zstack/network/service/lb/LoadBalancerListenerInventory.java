@@ -37,6 +37,7 @@ public class LoadBalancerListenerInventory {
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private List<LoadBalancerListenerVmNicRefInventory> vmNicRefs;
+    private List<LoadBalancerListenerACLRefInventory> aclRefs;
     private List<LoadBalancerListenerCertificateRefInventory> certificateRefs;
 
     public static LoadBalancerListenerInventory valueOf(LoadBalancerListenerVO vo) {
@@ -51,6 +52,7 @@ public class LoadBalancerListenerInventory {
         inv.setName(vo.getName());
         inv.setDescription(vo.getDescription());
         inv.setVmNicRefs(LoadBalancerListenerVmNicRefInventory.valueOf(vo.getVmNicRefs()));
+        inv.setAclRefs(LoadBalancerListenerACLRefInventory.valueOf(vo.getAclRefs()));
         inv.setCertificateRefs(LoadBalancerListenerCertificateRefInventory.valueOf(vo.getCertificateRefs()));
         return inv;
     }
@@ -69,6 +71,14 @@ public class LoadBalancerListenerInventory {
 
     public void setVmNicRefs(List<LoadBalancerListenerVmNicRefInventory> vmNicRefs) {
         this.vmNicRefs = vmNicRefs;
+    }
+
+    public List<LoadBalancerListenerACLRefInventory> getAclRefs() {
+        return aclRefs;
+    }
+
+    public void setAclRefs(List<LoadBalancerListenerACLRefInventory> aclRefs) {
+        this.aclRefs = aclRefs;
     }
 
     public String getName() {
