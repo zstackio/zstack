@@ -2837,7 +2837,8 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            long timeout = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Long.class));
+                            long sshTimeout = TimeUnit.SECONDS.toMillis(KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Long.class));
+                            long timeout = System.currentTimeMillis() + sshTimeout;
                             long ctimeout = TimeUnit.SECONDS.toMillis(KVMGlobalConfig.TEST_SSH_PORT_ON_CONNECT_TIMEOUT.value(Integer.class).longValue());
 
                             thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask(trigger) {
@@ -2862,7 +2863,7 @@ public class KVMHost extends HostBase implements Host {
 
                                 private boolean ifTimeout() {
                                     if (System.currentTimeMillis() > timeout) {
-                                        trigger.fail(operr("the host' ssh port[%s] not open after %s seconds, connect timeout", getSelf().getPort(), KVMGlobalConfig.TEST_SSH_PORT_ON_OPEN_TIMEOUT.value(Long.class)));
+                                        trigger.fail(operr("the host[%s] ssh port[%s] not open after %s seconds, connect timeout", getSelf().getManagementIp(), getSelf().getPort(), sshTimeout));
                                         return true;
                                     } else {
                                         return false;

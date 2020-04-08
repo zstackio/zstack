@@ -307,9 +307,9 @@
     "category": "HOST",
     "code": "1007",
     "method": "regex",
-    "regex": ".*the host' ssh port\\[.*] not open after [0-9]* seconds, connect timeout.*",
-    "message_cn": "物理机的ssh端口[%1$s]在 %2$s 秒内未开放，连接超时",
-    "message_en": "the host' ssh port[%1$s] not open after %2$s seconds, connect timeout"
+    "regex": ".*the host\\[.*] ssh port\\[.*] not open after [0-9]* seconds, connect timeout.*",
+    "message_cn": "物理机[%1$s]的ssh端口[%2$s]在 %3$s 秒内未开放，连接超时",
+    "message_en": "the host[%1$s] ssh port[%2$s] not open after %3$s seconds, connect timeout"
   },
   {
     "category": "HOST",
