@@ -28,6 +28,11 @@ public class TestDateCountCache {
             exception = true;
         }
         assert exception;
+        cache.expandIfNeed(2020, null);
+        cache.expandIfNeed(2021, 2022);
+        cache.setCountUnsafe(2020, 0, 1, 2);
+        cache.expandIfNeed(2019, null);
+        cache.expandIfNeed(null, 2019);
         cache.expandIfNeed(null, 2020);
         cache.setCountUnsafe(2020, 0, 1, 2);
         assert cache.getCount(2020, 0, 1) == 2;

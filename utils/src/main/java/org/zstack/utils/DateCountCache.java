@@ -59,8 +59,8 @@ public class DateCountCache {
     }
 
     public void expandIfNeed(Integer newStartYear, Integer newEndYear) {
-        newStartYear = newStartYear == null ? startYear : newStartYear;
-        newEndYear = newEndYear == null ? endYear : newEndYear;
+        newStartYear = newStartYear == null || newStartYear > startYear ? startYear : newStartYear;
+        newEndYear = newEndYear == null || newEndYear < endYear ? endYear : newEndYear;
         int[][][] newCounts = new int[newEndYear - newStartYear + 1][12][31 + 1];
 
         for (int i = startYear - newStartYear; i < newCounts.length - (newEndYear - endYear); i++) {
