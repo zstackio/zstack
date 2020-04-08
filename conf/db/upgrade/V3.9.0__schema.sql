@@ -249,3 +249,4 @@ END $$
 DELIMITER ;
 
 CALL addResourceConfigForVirtualRouter();
+DROP PROCEDURE IF EXISTS addResourceConfigForVirtualRouter;
