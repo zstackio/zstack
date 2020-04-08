@@ -886,6 +886,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
+    public static class DownloadBitsFromKVMHostRsp extends AgentResponse {
+        public String format;
+    }
+
     public static class DownloadBitsFromKVMHostCmd extends AgentCommand implements ReloadableCommand {
         private String hostname;
         private String username;
@@ -3593,11 +3597,12 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 cmd.setIdentificationCode(msg.getLongJobUuid() + msg.getPrimaryStorageInstallPath());
                 String randomFactor = msg.getLongJobUuid();
 
-                new HttpCaller<>(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(reply) {
+                new HttpCaller<>(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, DownloadBitsFromKVMHostRsp.class, new ReturnValueCompletion<DownloadBitsFromKVMHostRsp>(reply) {
                     @Override
-                    public void success(AgentResponse returnValue) {
+                    public void success(DownloadBitsFromKVMHostRsp returnValue) {
                         if (returnValue.isSuccess()) {
                             logger.info(String.format("successfully downloaded bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));
+                            reply.setFormat(returnValue.format);
                             bus.reply(msg, reply);
                         } else {
                             logger.error(String.format("failed to download bits %s from kvm host %s to primary storage %s", cmd.getBackupStorageInstallPath(), msg.getSrcHostUuid(), msg.getPrimaryStorageUuid()));

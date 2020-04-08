@@ -526,13 +526,16 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 new KvmCommandSender(host.getUuid()).send(cmd, DOWNLOAD_BITS_FROM_KVM_HOST_PATH, new KvmCommandFailureChecker() {
                     @Override
                     public ErrorCode getError(KvmResponseWrapper wrapper) {
-                        AgentResponse rsp = wrapper.getResponse(AgentResponse.class);
+                        DownloadBitsFromKVMHostRsp rsp = wrapper.getResponse(DownloadBitsFromKVMHostRsp.class);
                         return rsp.isSuccess() ? null : operr("%s", rsp.getError());
                     }
                 }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
                     @Override
                     public void success(KvmResponseWrapper wrapper) {
-                        completion.success(new DownloadBitsFromKVMHostToPrimaryStorageReply());
+                        DownloadBitsFromKVMHostRsp rsp = wrapper.getResponse(DownloadBitsFromKVMHostRsp.class);
+                        DownloadBitsFromKVMHostToPrimaryStorageReply rly = new DownloadBitsFromKVMHostToPrimaryStorageReply();
+                        rly.setFormat(rsp.format);
+                        completion.success(rly);
                     }
 
                     @Override

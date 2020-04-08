@@ -701,6 +701,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public String identificationCode;
     }
 
+    public static class DownloadBitsFromKVMHostRsp extends AgentResponse {
+        public String format;
+    }
+
     public static class CancelDownloadBitsFromKVMHostCmd extends AgentCommand {
         public String primaryStorageInstallPath;
     }
@@ -3078,10 +3082,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 cmd.primaryStorageInstallPath = msg.getPrimaryStorageInstallPath();
                 cmd.bandWidth = msg.getBandWidth();
                 cmd.identificationCode = msg.getLongJobUuid() + msg.getPrimaryStorageInstallPath();
-                httpCall(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, msg.getDestHostUuid(), cmd, true, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(completion) {
+                httpCall(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, msg.getDestHostUuid(), cmd, true, DownloadBitsFromKVMHostRsp.class, new ReturnValueCompletion<DownloadBitsFromKVMHostRsp>(completion) {
                     @Override
-                    public void success(AgentResponse rsp) {
-                        completion.success(new DownloadBitsFromKVMHostToPrimaryStorageReply());
+                    public void success(DownloadBitsFromKVMHostRsp rsp) {
+                        reply.setFormat(rsp.format);
+                        completion.success(reply);
                     }
 
                     @Override

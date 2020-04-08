@@ -201,6 +201,8 @@ class LocalStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(LocalStorageKvmBackend.DOWNLOAD_BITS_FROM_KVM_HOST_PATH) {
+                def rsp = new LocalStorageKvmBackend.DownloadBitsFromKVMHostRsp()
+                rsp.format = "qcow2"
                 return new LocalStorageKvmBackend.AgentResponse()
             }
 
