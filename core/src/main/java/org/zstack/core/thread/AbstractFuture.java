@@ -10,7 +10,7 @@ public abstract class AbstractFuture<T> implements Future<T> {
     private static CLogger logger = Utils.getLogger(AbstractFuture.class);
     
     protected volatile Throwable exception;
-    protected AtomicBoolean done = new AtomicBoolean(false);
+    protected AtomicBoolean _done = new AtomicBoolean(false);
     protected AtomicBoolean canceled = new AtomicBoolean(false);
     protected volatile T ret;
     protected final Object task;
@@ -76,12 +76,12 @@ public abstract class AbstractFuture<T> implements Future<T> {
 
     @Override
     public boolean isDone() {
-        return done.get();
+        return _done.get();
     }
     
     protected void done() {
         synchronized (this) {
-            if (!done.compareAndSet(false, true)) {
+            if (!_done.compareAndSet(false, true)) {
                 return;
             }
 
