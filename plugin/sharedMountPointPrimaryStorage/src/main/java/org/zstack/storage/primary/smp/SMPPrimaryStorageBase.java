@@ -527,17 +527,17 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(final DownloadBitsFromKVMHostToPrimaryStorageMsg msg) {
-        DownloadBitsFromKVMHostToPrimaryStorageReply reply = new DownloadBitsFromKVMHostToPrimaryStorageReply();
         HypervisorFactory f = getHypervisorFactoryByHostUuid(msg.getDestHostUuid());
         HypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, new Completion(msg) {
+        bkd.handle(msg, new ReturnValueCompletion<DownloadBitsFromKVMHostToPrimaryStorageReply>(msg) {
             @Override
-            public void success() {
-                bus.reply(msg, reply);
+            public void success(DownloadBitsFromKVMHostToPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
+                DownloadBitsFromKVMHostToPrimaryStorageReply reply = new DownloadBitsFromKVMHostToPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

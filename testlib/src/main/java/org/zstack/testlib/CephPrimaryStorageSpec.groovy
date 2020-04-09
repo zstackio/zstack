@@ -242,7 +242,9 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(CephPrimaryStorageBase.DOWNLOAD_BITS_FROM_KVM_HOST_PATH) {
-                return new CephPrimaryStorageBase.AgentResponse()
+                CephPrimaryStorageBase.DownloadBitsFromKVMHostRsp rsp = new CephPrimaryStorageBase.DownloadBitsFromKVMHostRsp()
+                rsp.format = 'raw'
+                return rsp
             }
 
             simulator(CephPrimaryStorageBase.CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH) {

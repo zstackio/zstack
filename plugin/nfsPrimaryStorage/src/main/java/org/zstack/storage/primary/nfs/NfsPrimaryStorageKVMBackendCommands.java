@@ -44,6 +44,10 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
+    public static class DownloadBitsFromKVMHostRsp extends AgentResponse {
+        public String format;
+    }
+
     public static class DownloadBitsFromKVMHostCmd extends AgentCommand {
         public String hostname;
         public String username;
