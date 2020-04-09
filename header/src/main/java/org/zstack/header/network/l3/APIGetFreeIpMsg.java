@@ -35,6 +35,8 @@ public class APIGetFreeIpMsg extends APISyncCallMessage implements L3NetworkMess
     private String ipRangeUuid;
     @APIParam(required = false)
     private String start;
+    @APIParam(required = false, validValues = {"Normal", "AddressPool"})
+    private String ipRangeType;
 
     private int limit = 100;
 
@@ -68,6 +70,14 @@ public class APIGetFreeIpMsg extends APISyncCallMessage implements L3NetworkMess
 
     public void setLimit(int limit) {
         this.limit = limit;
+    }
+
+    public String getIpRangeType() {
+        return ipRangeType;
+    }
+
+    public void setIpRangeType(String ipRangeType) {
+        this.ipRangeType = ipRangeType;
     }
 
     public static APIGetFreeIpMsg __example__() {

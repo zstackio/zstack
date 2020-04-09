@@ -96,12 +96,28 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             validate((APIAddIpv6RangeByNetworkCidrMsg) msg);
         } else if (msg instanceof APIAddIpv6RangeMsg) {
             validate((APIAddIpv6RangeMsg) msg);
+        } else if (msg instanceof APIDeleteIpRangeMsg) {
+            validate((APIDeleteIpRangeMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
     }
+
+    private void validate(APIDeleteIpRangeMsg msg) {
+        NormalIpRangeVO ipr = dbf.findByUuid(msg.getUuid(), NormalIpRangeVO.class);
+        if (ipr == null) {
+            return;
+        }
+
+        long normaCnt = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).count();
+        long addressPoolCnt = Q.New(AddressPoolVO.class).eq(AddressPoolVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).count();
+        if (addressPoolCnt > 0 && normaCnt == 1) {
+            throw new ApiMessageInterceptionException(argerr("can not delete the last normal ip range because there is still has address pool"));
+        }
+    }
+
 
     private void validate(APIUpdateL3NetworkMsg msg) {
         if (msg.getCategory() == null && msg.getSystem() == null) {
@@ -439,12 +455,16 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
         SubnetUtils sub = new SubnetUtils(ipr.getStartIp(), ipr.getNetmask());
         SubnetInfo info = sub.getInfo();
-        if (!info.isInRange(ipr.getGateway())) {
-            throw new ApiMessageInterceptionException(argerr("the gateway[%s] is not in the subnet %s/%s", ipr.getGateway(), ipr.getStartIp(), ipr.getNetmask()));
-        }
+        if (ipr.getIpRangeType() == IpRangeType.Normal) {
+            if (!info.isInRange(ipr.getGateway())) {
+                throw new ApiMessageInterceptionException(argerr("the gateway[%s] is not in the subnet %s/%s", ipr.getGateway(), ipr.getStartIp(), ipr.getNetmask()));
+            }
 
-        if (!info.isInRange(ipr.getEndIp())) {
-            throw new ApiMessageInterceptionException(argerr("the endip[%s] is not in the subnet %s/%s", ipr.getEndIp(), ipr.getStartIp(), ipr.getNetmask()));
+            if (ipr.getStartIp().equals(info.getNetworkAddress()) || ipr.getEndIp().equals(info.getBroadcastAddress())) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "ip allocation can not contain network address or broadcast address")
+                );
+            }
         }
 
         if (!NetworkUtils.isIpv4Address(ipr.getStartIp())) {
@@ -463,12 +483,6 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("netmask[%s] is not a netmask, and the IP range netmask cannot be 0.0.0.0", ipr.getNetmask()));
         }
 
-        if (ipr.getStartIp().equals(info.getNetworkAddress()) || ipr.getEndIp().equals(info.getBroadcastAddress())){
-            throw new ApiMessageInterceptionException(argerr(
-                    "ip allocation can not contain network address or broadcast address")
-            );
-        }
-
         long startip = NetworkUtils.ipv4StringToLong(ipr.getStartIp());
         long endip = NetworkUtils.ipv4StringToLong(ipr.getEndIp());
         if (startip > endip) {
@@ -477,11 +491,11 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
         String cidr = ipr.toSubnetUtils().getInfo().getCidrSignature();
         List<String> l3Uuids = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.l2NetworkUuid, l3Vo.getL2NetworkUuid()).select(L3NetworkVO_.uuid).listValues();
-        SimpleQuery<NormalIpRangeVO> q = dbf.createQuery(NormalIpRangeVO.class);
-        q.add(NormalIpRangeVO_.l3NetworkUuid, Op.IN, l3Uuids);
-        q.add(NormalIpRangeVO_.ipVersion, Op.EQ, IPv6Constants.IPv4);
-        List<NormalIpRangeVO> ranges = q.list();
-        for (NormalIpRangeVO r : ranges) {
+        SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
+        q.add(IpRangeVO_.l3NetworkUuid, Op.IN, l3Uuids);
+        q.add(IpRangeVO_.ipVersion, Op.EQ, IPv6Constants.IPv4);
+        List<IpRangeVO> ranges = q.list();
+        for (IpRangeVO r : ranges) {
             if (NetworkUtils.isIpv4RangeOverlap(ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp())) {
                 throw new ApiMessageInterceptionException(argerr("overlap with ip range[uuid:%s, start ip:%s, end ip: %s]", r.getUuid(), r.getStartIp(), r.getEndIp()));
             }
@@ -503,6 +517,10 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
         /* normal ip ranges of same l3 network must have same gateway */
         if (ipr.getIpRangeType() == IpRangeType.Normal) {
+            if (!info.isInRange(ipr.getEndIp())) {
+                throw new ApiMessageInterceptionException(argerr("the endip[%s] is not in the subnet %s/%s", ipr.getEndIp(), ipr.getStartIp(), ipr.getNetmask()));
+            }
+
             long gw = NetworkUtils.ipv4StringToLong(ipr.getGateway());
             if (startip <= gw && gw <= endip) {
                 throw new ApiMessageInterceptionException(argerr("gateway[%s] can not be part of range[%s, %s]", ipr.getGateway(), ipr.getStartIp(), ipr.getEndIp()));

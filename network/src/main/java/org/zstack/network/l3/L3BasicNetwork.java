@@ -468,9 +468,21 @@ public class L3BasicNetwork implements L3Network {
             List<FreeIpInventory> free = getFreeIp(ipr, msg.getLimit(),msg.getStart());
             reply.setInventories(free);
         } else {
-            SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
-            q.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-            List<IpRangeVO> iprs = q.list();
+            List<IpRangeVO> iprs;
+            if (msg.getIpRangeType() == null) {
+                SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
+                q.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+                iprs = q.list();
+            } else if (msg.getIpRangeType().equals(IpRangeType.Normal)){
+                SimpleQuery<NormalIpRangeVO> q = dbf.createQuery(NormalIpRangeVO.class);
+                q.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+                iprs = q.list();
+            } else {
+                SimpleQuery<AddressPoolVO> q = dbf.createQuery(AddressPoolVO.class);
+                q.add(AddressPoolVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+                iprs = q.list();
+            }
+
             List<FreeIpInventory> res = new ArrayList<FreeIpInventory>();
             int limit = msg.getLimit();
             for (IpRangeVO ipr : iprs) {

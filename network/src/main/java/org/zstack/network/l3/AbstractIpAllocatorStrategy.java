@@ -37,7 +37,7 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
         List<IpRangeVO> iprs;
         /* when allocate ip address from address pool, ipRangeUuid is not null */
         if (msg.getIpRangeUuid() != null) {
-            iprs = Q.New(AddressPoolVO.class).eq(AddressPoolVO_.uuid, msg.getIpRangeUuid()).list();
+            iprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
         } else {
             iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
         }
@@ -74,7 +74,7 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
         List<IpRangeVO> iprs;
         /* when allocate ip address from address pool, ipRangeUuid is not null */
         if (msg.getIpRangeUuid() != null) {
-            iprs = Q.New(AddressPoolVO.class).eq(AddressPoolVO_.uuid, msg.getIpRangeUuid()).list();
+            iprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
         } else {
             iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
         }

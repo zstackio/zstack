@@ -15,6 +15,8 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.network.l3.AddressPoolVO;
+import org.zstack.header.network.l3.AddressPoolVO_;
 import org.zstack.header.network.l3.NormalIpRangeVO;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.vm.VmInstanceState;
@@ -87,6 +89,19 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
             if (state != EipState.Enabled) {
                 throw new ApiMessageInterceptionException(operr("eip[uuid:%s] is not in state of Enabled, cannot get attachable vm nic", msg.getEipUuid()));
             }
+        }
+
+        boolean isAddressPool = false;
+        if (msg.getVipUuid() != null) {
+            VipVO vip = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
+            isAddressPool = Q.New(AddressPoolVO.class).eq(AddressPoolVO_.uuid, vip.getIpRangeUuid()).isExists();
+        } else if (msg.getEipUuid() != null) {
+            EipVO eipVO = dbf.findByUuid(msg.getEipUuid(), EipVO.class);
+            VipVO vip = dbf.findByUuid(eipVO.getVipUuid(), VipVO.class);
+            isAddressPool = Q.New(AddressPoolVO.class).eq(AddressPoolVO_.uuid, vip.getIpRangeUuid()).isExists();
+        }
+        if (isAddressPool) {
+            msg.setNetworkServiceProvider("vrouter");
         }
     }
 
