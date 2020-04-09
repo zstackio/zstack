@@ -193,11 +193,15 @@ class CreateVmConcurrentlyCase extends SubCase {
             if (newHosts != null) {
                 int nhost = Integer.parseInt(newHosts)
                 logger.info(String.format("XXX: additional host: %d", nhost))
+                int c = 0
                 for (int i = 0; i < nhost; i++) {
-                    int idx = i + 2 + 1
+                    int idx = (i + 2 + 1) % 256
+                    if (idx == 0) {
+                        c += 1
+                    }
                     addKVMHost {
                         name = "host" + idx
-                        managementIp = "127.0.0." + idx
+                        managementIp = "127.0.$c.$idx"
                         username = "root"
                         password = "password"
                         clusterUuid = host.clusterUuid
