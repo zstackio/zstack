@@ -63,8 +63,8 @@ import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.eip.EipConstant;
-import org.zstack.network.service.eip.GetL3NetworkForEipInVirtualRouterExtensionPoint;
 import org.zstack.network.service.eip.FilterVmNicsForEipInVirtualRouterExtensionPoint;
+import org.zstack.network.service.eip.GetL3NetworkForEipInVirtualRouterExtensionPoint;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
@@ -829,6 +829,34 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 .param("stype", nsType.toString())
                 .param("ntype", asList(VIRTUAL_ROUTER_PROVIDER_TYPE, VYOS_ROUTER_PROVIDER_TYPE))
                 .list();
+    }
+
+    @Override
+    public List<String> selectGuestL3NetworksNeedingSpecificNetworkService(List<String> candidate, NetworkServiceType nsType, String publicUuid) {
+        List<String> ret = selectL3NetworksNeedingSpecificNetworkService(candidate, nsType);
+        if (ret.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        /*List<String > offeringUuids = Q.New(VirtualRouterOfferingVO.class).eq(VirtualRouterOfferingVO_.publicNetworkUuid, publicUuid)
+                                        .eq(VirtualRouterOfferingVO_.state, InstanceOfferingState.Enabled)
+                                       .select(VirtualRouterOfferingVO_.uuid).listValues();
+        if (offeringUuids.isEmpty()) {
+            return new ArrayList<>();
+        }*/
+
+        return ret.stream().filter(l3 -> {
+            List<String> offer = Q.New(SystemTagVO.class).
+                    eq(SystemTagVO_.tag, VirtualRouterSystemTags.VR_OFFERING_GUEST_NETWORK.instantiateTag(map(e(VirtualRouterSystemTags.VR_OFFERING_GUEST_NETWORK_TOKEN, l3))))
+                    .select(SystemTagVO_.resourceUuid).eq(SystemTagVO_.resourceType, InstanceOfferingVO.class.getSimpleName())
+                    .listValues();
+
+            return !offer.isEmpty();
+            //List<String> offer = VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING.getTokensOfTagsByResourceUuid(l3)
+            //                                                     .stream().map(tokens -> tokens.get(VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING_TOKEN)).filter(uuid -> offeringUuids.contains(uuid)).collect(Collectors.toList());
+            //return !offer.isEmpty();
+
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -1618,7 +1646,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                         "and lb.uuid = :lbUuid")
                                    .param("lbUuid", msg.getLoadBalancerUuid()).find();
 
-                //1.get the vm nics which are managed by vrouter or virtual router.
+                //1.get the l3 networks which has the vrouter lb network service.
                 List<String>  inners = sql("select l3.uuid from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO pro" +
                         " where l3.uuid = ref.l3NetworkUuid and ref.networkServiceProviderUuid = pro.uuid and l3.uuid in (:l3Uuids)" +
                         " and pro.type in (:providerType)", String.class)
@@ -1643,11 +1671,29 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                         " and nic.vmInstanceUuid = vm.uuid" +
                         " )"+
                         " and l3.uuid = nic.l3NetworkUuid" +
+                        " and nic.metaData = :metaData" +
                         " and l3.system = :isSystem")
                                               .param("l3NetworkUuid", vipNetwork.getUuid())
                                               .param("isSystem", false)
+                                              .param("metaData", VirtualRouterNicMetaData.GUEST_NIC_MASK.toString())
                                               .list();
+                // 3. filter all the l3 networks which are not managed by vrouter or virtual router currently and
+                // have been attached the virtualrouter offers,
+                // such as without other services except for vrouter lb services
 
+                List<String> excludeL3Uuids = SQL.New("select l3.uuid" +
+                        " from VmNicVO nic, L3NetworkVO l3"  +
+                        " where l3.uuid in (:l3NetworkUuids)" +
+                        " and l3.uuid = nic.l3NetworkUuid" +
+                        " and nic.metaData = :metaData" +
+                        " and l3.system = :isSystem")
+                                              .param("l3NetworkUuids", inners)
+                                              .param("isSystem", false)
+                                              .param("metaData", VirtualRouterNicMetaData.GUEST_NIC_MASK.toString())
+                                              .list();
+                inners.removeAll(excludeL3Uuids);
+                peerL3Uuids.addAll(selectGuestL3NetworksNeedingSpecificNetworkService(inners,
+                        LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE, vipNetwork.getUuid()));
                 return ret.stream().filter(nic -> peerL3Uuids.contains(nic.getL3NetworkUuid())).collect(Collectors.toList());
 
             }

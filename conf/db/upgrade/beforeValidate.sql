@@ -9,7 +9,7 @@ DROP PROCEDURE IF EXISTS `zstack`.`update_schema_checksum` $$
 
 CREATE PROCEDURE `zstack`.`update_schema_checksum`()
 BEGIN
-    IF EXISTS(SELECT table_name FROM information_schema.tables WHERE table_name = 'schema_version')
+    IF EXISTS(SELECT table_name FROM information_schema.tables WHERE table_schema = 'zstack' AND table_name = 'schema_version')
     THEN
         update `zstack`.`schema_version` set `checksum`=1083194846  where `script`='V1.6__schema.sql'   and `checksum` <> 1083194846;
         update `zstack`.`schema_version` set `checksum`=-1569422253 where `script`='V2.1.0__schema.sql' and `checksum` <> -1569422253;
