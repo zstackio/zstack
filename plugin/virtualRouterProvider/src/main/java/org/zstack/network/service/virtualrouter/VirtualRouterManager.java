@@ -5,20 +5,20 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.NetworkServiceProviderInventory;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.vip.VipVO;
 
 import java.util.List;
 
 public interface VirtualRouterManager {
 
-	VirtualRouterHypervisorBackend getHypervisorBackend(HypervisorType hypervisorType);
+    VirtualRouterHypervisorBackend getHypervisorBackend(HypervisorType hypervisorType);
 	
-	String buildUrl(String mgmtNicIp, String subPath);
+    String buildUrl(String mgmtNicIp, String subPath);
 
-	List<String> selectL3NetworksNeedingSpecificNetworkService(List<String> candidate, NetworkServiceType nsType);
+    List<String> selectL3NetworksNeedingSpecificNetworkService(List<String> candidate, NetworkServiceType nsType);
+
+    List<String> selectGuestL3NetworksNeedingSpecificNetworkService(List<String> candidate, NetworkServiceType nsType, String publicUuid);
 
     boolean isL3NetworkNeedingNetworkServiceByVirtualRouter(String l3Uuid, String nsType);
 

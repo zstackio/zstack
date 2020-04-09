@@ -249,3 +249,32 @@ END $$
 DELIMITER ;
 
 CALL addResourceConfigForVirtualRouter();
+
+# flat network supports LB service
+DELIMITER $$
+CREATE PROCEDURE addLBServiceToPrivateBasicNetwork()
+BEGIN
+DECLARE l3Uuid VARCHAR(32);
+DECLARE vRouterProviderUuid VARCHAR(32);
+DECLARE done INT DEFAULT FALSE;
+DECLARE cur CURSOR FOR SELECT uuid
+FROM L3NetworkEO l3 LEFT JOIN NetworkServiceL3NetworkRefVO ref
+  on (l3.uuid = ref.l3NetworkUuid and ref.networkServiceType = 'LoadBalancer')
+where l3.category = 'Private' AND l3.type = 'L3BasicNetwork' AND ref.networkServiceType is NULL;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+OPEN cur;
+read_loop: LOOP
+FETCH cur INTO l3Uuid;
+IF done THEN
+LEAVE read_loop;
+END IF;
+SELECT uuid INTO vRouterProviderUuid FROM zstack.NetworkServiceProviderVO WHERE type = 'vrouter';
+INSERT INTO NetworkServiceL3NetworkRefVO (`l3NetworkUuid`, `networkServiceProviderUuid`, `networkServiceType`)
+VALUES (l3Uuid, vRouterProviderUuid, 'LoadBalancer');
+END LOOP;
+CLOSE cur;
+END $$
+DELIMITER ;
+
+CALL addLBServiceToPrivateBasicNetwork();
+DROP PROCEDURE IF EXISTS addLBServiceToPrivateBasicNetwork;
