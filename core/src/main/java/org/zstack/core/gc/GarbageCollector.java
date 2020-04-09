@@ -108,8 +108,7 @@ public abstract class GarbageCollector {
         dbf.update(vo);
     }
 
-
-    final protected void saveToDb() {
+    private String buildContext() {
         Map context = new HashMap<>();
 
         for (Field f : FieldUtils.getAllFields(getClass())) {
@@ -124,10 +123,13 @@ public abstract class GarbageCollector {
                 throw new CloudRuntimeException(e);
             }
         }
+        return JSONObjectUtil.toJsonString(context);
+    }
 
+    final protected void saveToDb() {
         GarbageCollectorVO vo = new GarbageCollectorVO();
         vo.setUuid(Platform.getUuid());
-        vo.setContext(JSONObjectUtil.toJsonString(context));
+        vo.setContext(buildContext());
         vo.setRunnerClass(getClass().getName());
         vo.setManagementNodeUuid(Platform.getManagementServerId());
         vo.setStatus(GCStatus.Idle);
@@ -143,6 +145,12 @@ public abstract class GarbageCollector {
         uuid = vo.getUuid();
 
         logger.debug(String.format("[GC] saved a job[name:%s, id:%s] to DB", NAME, uuid));
+    }
+
+    public void updateContext() {
+        SQL.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.uuid, uuid)
+                .set(GarbageCollectorVO_.context, buildContext())
+                .update();
     }
 
     void loadFromVO(GarbageCollectorVO vo) {
