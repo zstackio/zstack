@@ -18,17 +18,18 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.eip.*;
+import org.zstack.network.service.eip.EipConstant;
+import org.zstack.network.service.eip.EipGlobalConfig;
+import org.zstack.network.service.eip.EipVO;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SyncEipRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-
-import static org.zstack.core.Platform.operr;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -38,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  */
@@ -60,10 +63,12 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
 
     @Transactional(readOnly = true)
     private List<EipTO> findEipOnThisRouter(VirtualRouterVmInventory vr, List<String> eipUuids) {
-        String sql = "select vip.ip, nic.l3NetworkUuid, nic.ip, vip.l3NetworkUuid from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm where nic.vmInstanceUuid = vm.uuid and vm.state in (:vmState) and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and eip.uuid in (:euuids)";
+        String sql = "select vip.ip, nic.l3NetworkUuid, nic.ip, vip.l3NetworkUuid from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm where nic.vmInstanceUuid = vm.uuid and vm.state in (:vmState) and eip.vipUuid = vip.uuid and vip.serviceProvider in (:providers) and eip.vmNicUuid = nic.uuid and eip.uuid in (:euuids)";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("euuids", eipUuids);
         q.setParameter("vmState", Arrays.asList(VmInstanceState.Running, VmInstanceState.Unknown));
+        /*just only vrouter vip and skip the flat vip*/
+        q.setParameter("providers", Arrays.asList(VyosConstants.PROVIDER_TYPE.toString(), VirtualRouterConstant.PROVIDER_TYPE.toString()));
         List<Tuple> tuples =  q.getResultList();
         List<EipTO> ret = new ArrayList<EipTO>();
         for (Tuple t : tuples) {

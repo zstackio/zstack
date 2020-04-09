@@ -250,16 +250,25 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                                 .param("nsType", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE).list();
                     }
                 } else {
-                    VmNicVO rnic = Q.New(VmNicVO.class).in(VmNicVO_.l3NetworkUuid, vipPeerL3Uuids)
+                    List<String> guestNetworks = sql("select distinct l3.uuid" +
+                            " from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref" +
+                            " where l3.uuid = ref.l3NetworkUuid" +
+                            " and l3.uuid in (:uuids)" +
+                            " and ref.networkServiceType = :type")
+                            .param("uuids", vipPeerL3Uuids)
+                            .param("type", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE)
+                            .list();
+
+                    VmNicVO rnic = Q.New(VmNicVO.class).in(VmNicVO_.l3NetworkUuid, guestNetworks)
                             .notNull(VmNicVO_.metaData).limit(1).find();
                     if (rnic == null) {
-                        l3Uuids.addAll(vipPeerL3Uuids);
+                        l3Uuids.addAll(guestNetworks);
                     } else {
                         List<String> vrAttachedL3Uuids = Q.New(VmNicVO.class)
                                 .select(VmNicVO_.l3NetworkUuid)
                                 .eq(VmNicVO_.vmInstanceUuid, rnic.getVmInstanceUuid())
                                 .listValues();
-                        Set l3UuidSet = new HashSet<>(vipPeerL3Uuids);
+                        Set l3UuidSet = new HashSet<>(guestNetworks);
                         l3UuidSet.addAll(vrAttachedL3Uuids);
                         l3Uuids.addAll(l3UuidSet);
                     }

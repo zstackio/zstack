@@ -12,11 +12,14 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.identity.Account;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterManager;
@@ -26,10 +29,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-
-import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouterCreatePublicVipFlow implements Flow {
@@ -41,6 +41,8 @@ public class VirtualRouterCreatePublicVipFlow implements Flow {
     protected VipConfigProxy vipConfigProxy;
     @Autowired
     protected VirtualRouterManager vrMgr;
+    @Autowired
+    private NetworkServiceManager nwServiceMgr;
 
     private final static CLogger logger = Utils.getLogger(VirtualRouterCreatePublicVipFlow.class);
 
@@ -131,6 +133,14 @@ public class VirtualRouterCreatePublicVipFlow implements Flow {
                 ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
                 struct.setUseFor(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE);
                 struct.setServiceUuid(vipInventory.getUuid());
+                String l3NetworkUuuid = vr.getGuestL3Networks().get(0);
+                try {
+                    NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(l3NetworkUuuid, NetworkServiceType.SNAT);
+                    struct.setPeerL3NetworkUuid(l3NetworkUuuid);
+                    struct.setServiceProvider(providerType.toString());
+                } catch (OperationFailureException e){
+                    logger.debug(String.format("Get providerType exception %s", e.toString()));
+                }
                 Vip vip = new Vip(vipInventory.getUuid());
                 vip.setStruct(struct);
                 vip.acquire(new Completion(chain) {

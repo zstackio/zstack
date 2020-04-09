@@ -7,7 +7,7 @@ doc {
 
     category "loadBalancer"
 
-    desc """监听器候选L3网络返回清单"""
+    desc """获取监听器可加载L3网络"""
 
     rest {
         request {
