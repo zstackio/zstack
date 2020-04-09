@@ -155,6 +155,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
 		to.setMac(nic.getMac());
         to.setUuid(nic.getUuid());
 		to.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface(), vo.getVlan()));
+        to.setPhysicalInterface(l2Network.getPhysicalInterface());
 		to.setDeviceId(nic.getDeviceId());
 		to.setNicInternalName(nic.getInternalName());
 		to.setMetaData(String.valueOf(vo.getVlan()));
