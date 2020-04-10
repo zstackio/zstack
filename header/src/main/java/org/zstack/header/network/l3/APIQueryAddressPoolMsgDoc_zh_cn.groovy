@@ -1,14 +1,14 @@
-package org.zstack.network.l3
+package org.zstack.header.network.l3
 
-import org.zstack.network.l3.APIQueryAddressPoolReply
+import org.zstack.header.network.l3.APIQueryAddressPoolReply
 import org.zstack.header.query.APIQueryMessage
 
 doc {
-    title "查询IP地址地址池"
+    title "查询IP地址池(QueryAddressPool)"
 
     category "三层网络"
 
-    desc """查询IP地址地址池"""
+    desc """查询IP地址池"""
 
     rest {
         request {

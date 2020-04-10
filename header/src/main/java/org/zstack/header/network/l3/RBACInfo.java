@@ -30,6 +30,8 @@ public class RBACInfo implements RBACDescription {
     public void globalReadableResources() {
         globalReadableResourceBuilder()
                 .resources(UsedIpVO.class)
+                .resources(IpRangeVO.class)
+                .resources(AddressPoolVO.class)
                 .build();
     }
 }

@@ -1,8 +1,5 @@
-package org.zstack.network.l3;
+package org.zstack.header.network.l3;
 
-import org.zstack.header.network.l3.AddressPoolInventory;
-import org.zstack.header.network.l3.IpRangeInventory;
-import org.zstack.header.network.l3.IpRangeType;
 import org.zstack.header.query.APIQueryReply;
 import org.zstack.header.rest.RestResponse;
 

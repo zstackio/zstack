@@ -1,11 +1,7 @@
-package org.zstack.network.l3;
+package org.zstack.header.network.l3;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.network.l3.APIQueryIpRangeReply;
-import org.zstack.header.network.l3.AddressPoolInventory;
-import org.zstack.header.network.l3.IpRangeInventory;
-import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.query.APIQueryMessage;
 import org.zstack.header.query.AutoQuery;
 import org.zstack.header.rest.RestRequest;
