@@ -150,11 +150,6 @@ class OperateLoadBalancerCase extends SubCase {
 
                 attachBackupStorage("sftp")
 
-                lb {
-                    name = "lb-3"
-                    useVip("pubL3")
-                }
-
                 virtualRouterOffering {
                     name = "vro"
                     memory = SizeUnit.MEGABYTE.toByte(512)
@@ -222,11 +217,27 @@ class OperateLoadBalancerCase extends SubCase {
         }
     }
 
+    private String attachOffering2L3(String offerUuid, String L3Uuid) {
+        SystemTagInventory tag = createSystemTag {
+            tag = "virtualRouterOffering::" + offerUuid
+            resourceType = L3NetworkVO.simpleName
+            resourceUuid = L3Uuid
+        }
+        return tag.uuid
+    }
+
+    private void detachOfferingFromL3(String resourceUuid) {
+        deleteTag {
+            uuid = resourceUuid
+        }
+    }
+
     /*
     offering: flat attach/detach offering
      */
     private void testAttachFlatLbOfferCase() {
         def l3 = env.inventoryByName("l3") as L3NetworkInventory
+        def l3_2 = env.inventoryByName("l3-2") as L3NetworkInventory
         def pubOffer = env.inventoryByName("vro") as VirtualRouterOfferingInventory
         SystemTagInventory tag1 = createSystemTag {
             tag = "guestL3Network::" + l3.uuid
@@ -247,7 +258,7 @@ class OperateLoadBalancerCase extends SubCase {
         SystemTagInventory tag2 = createSystemTag {
             tag = "virtualRouterOffering::" + flatOffer.uuid
             resourceType = L3NetworkVO.simpleName
-            resourceUuid = l3.uuid
+            resourceUuid = l3_2.uuid
         }
 
         deleteInstanceOffering {
@@ -268,11 +279,8 @@ class OperateLoadBalancerCase extends SubCase {
         def l3 = env.inventoryByName("l3") as L3NetworkInventory
         def publ3 = env.inventoryByName("pubL3") as L3NetworkInventory
         def pubOffer = env.inventoryByName("vro") as VirtualRouterOfferingInventory
-        SystemTagInventory tag = createSystemTag {
-            tag = "guestL3Network::" + l3.uuid
-            resourceType = InstanceOfferingVO.class.simpleName
-            resourceUuid = pubOffer.uuid
-        }
+
+        String resource = attachOffering2L3(pubOffer.uuid, l3.uuid)
 
         VipInventory vip = createVip {
             name = "flat-vip"
@@ -321,9 +329,7 @@ class OperateLoadBalancerCase extends SubCase {
         deleteLoadBalancer {
             uuid = lb.uuid
         }
-        deleteTag {
-            uuid = tag.uuid
-        }
+        detachOfferingFromL3(resource)
         VirtualRouterVmInventory vr = queryVirtualRouterVm {}[0]
         destroyVmInstance {
             uuid = vr.uuid
@@ -348,11 +354,7 @@ class OperateLoadBalancerCase extends SubCase {
             delegate.zoneUuid = pubOffer.zoneUuid
         }
 
-        SystemTagInventory tag = createSystemTag {
-            tag = "guestL3Network::" + l3.uuid
-            resourceType = InstanceOfferingVO.class.simpleName
-            resourceUuid = flatOffer.uuid
-        }
+        String resource = attachOffering2L3(flatOffer.uuid, l3.uuid)
 
         VipInventory vip = createVip {
             name = "flat-vip"
@@ -401,9 +403,7 @@ class OperateLoadBalancerCase extends SubCase {
         deleteLoadBalancer {
             uuid = lb.uuid
         }
-        deleteTag {
-            uuid = tag.uuid
-        }
+        detachOfferingFromL3(resource)
 
         deleteInstanceOffering {
             uuid = flatOffer.uuid
@@ -432,11 +432,7 @@ class OperateLoadBalancerCase extends SubCase {
             delegate.zoneUuid = pubOffer.zoneUuid
         }
 
-        SystemTagInventory tag = createSystemTag {
-            tag = "guestL3Network::" + l3.uuid
-            resourceType = InstanceOfferingVO.class.simpleName
-            resourceUuid = flatOffer.uuid
-        }
+        String resource = attachOffering2L3(flatOffer.uuid, l3.uuid)
 
         VipInventory vip = createVip {
             name = "flat-vip"
@@ -485,9 +481,7 @@ class OperateLoadBalancerCase extends SubCase {
         deleteLoadBalancer {
             uuid = lb.uuid
         }
-        deleteTag {
-            uuid = tag.uuid
-        }
+        detachOfferingFromL3(resource)
 
         deleteInstanceOffering {
             uuid = flatOffer.uuid
@@ -525,11 +519,7 @@ class OperateLoadBalancerCase extends SubCase {
             delegate.zoneUuid = pubOffer.zoneUuid
         }
 
-        SystemTagInventory tag = createSystemTag {
-            tag = "guestL3Network::" + l3.uuid
-            resourceType = InstanceOfferingVO.class.simpleName
-            resourceUuid = flatOffer.uuid
-        }
+        String resource = attachOffering2L3(flatOffer.uuid, l3.uuid)
 
         VipInventory vip = createVip {
             name = "flat-vip"
@@ -603,9 +593,7 @@ class OperateLoadBalancerCase extends SubCase {
             uuid = lb3.uuid
         }
 
-        deleteTag {
-            uuid = tag.uuid
-        }
+        detachOfferingFromL3(resource)
 
         deleteInstanceOffering {
             uuid = flatOffer.uuid
@@ -646,17 +634,8 @@ class OperateLoadBalancerCase extends SubCase {
             delegate.zoneUuid = pubOffer.zoneUuid
         }
 
-        SystemTagInventory tag = createSystemTag {
-            delegate.tag = "guestL3Network::" + l3.uuid
-            delegate.resourceType = InstanceOfferingVO.class.simpleName
-            delegate.resourceUuid = flatOffer2.uuid
-        }
-
-        createSystemTag {
-            delegate.tag = "guestL3Network::" + l3_2.uuid
-            delegate.resourceType = InstanceOfferingVO.class.simpleName
-            delegate.resourceUuid = flatOffer1.uuid
-        }
+        attachOffering2L3(flatOffer2.uuid, l3.uuid)
+        attachOffering2L3(flatOffer1.uuid, l3_2.uuid)
 
         VipInventory vip1 = createVip {
             name = "flat-vip"

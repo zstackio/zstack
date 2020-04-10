@@ -39,10 +39,12 @@ class LoadBalancerListenerSpec extends Spec implements HasSession {
             delegate.loadBalancerUuid = (parent as LoadBalancerSpec).inventory.uuid
         }
 
-        addVmNicToLoadBalancer {
-            delegate.listenerUuid = inventory.uuid
-            delegate.vmNicUuids = vmNics.collect { it() }
-            delegate.sessionId = sessionId
+        if (!vmNics.isEmpty()) {
+            addVmNicToLoadBalancer {
+                delegate.listenerUuid = inventory.uuid
+                delegate.vmNicUuids = vmNics.collect { it() }
+                delegate.sessionId = sessionId
+            }
         }
 
         return id(name, inventory.uuid)
