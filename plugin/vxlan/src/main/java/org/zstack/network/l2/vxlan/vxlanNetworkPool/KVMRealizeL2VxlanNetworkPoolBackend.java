@@ -20,6 +20,7 @@ import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.*;
 import org.zstack.network.l2.L2NetworkManager;
@@ -29,6 +30,7 @@ import org.zstack.network.l2.vxlan.vtep.VtepVO_;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkGlobalConfig;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
+import org.zstack.network.service.MtuGetter;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -360,15 +362,14 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
     }
 
     @Override
-    public KVMAgentCommands.NicTO completeNicInformation(L2NetworkInventory l2Network, VmNicInventory nic) {
+    public KVMAgentCommands.NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         VxlanNetworkPoolVO vo = dbf.findByUuid(l2Network.getUuid(), VxlanNetworkPoolVO.class);
         KVMAgentCommands.NicTO to = new KVMAgentCommands.NicTO();
         to.setMac(nic.getMac());
         to.setUuid(nic.getUuid());
         to.setDeviceId(nic.getDeviceId());
         to.setNicInternalName(nic.getInternalName());
-        L2NetworkFactory factory = l2Mgr.getL2NetworkFactory(L2NetworkType.valueOf(l2Network.getType()));
-        to.setMtu(factory.getMtu(l2Network));
+        to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
         return to;
     }
 
