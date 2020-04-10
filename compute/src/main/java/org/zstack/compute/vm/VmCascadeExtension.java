@@ -331,7 +331,22 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     private void handleDeletionCleanup(CascadeAction action, Completion completion) {
-        dbf.eoCleanup(VmInstanceVO.class);
+        int op = toDeletionOpCode(action);
+        if (op == OP_NOPE) {
+            completion.success();
+            return;
+        }
+
+        final List<VmDeletionStruct> vminvs = vmFromDeleteAction(action);
+        if (vminvs == null || vminvs.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        for (VmDeletionStruct struct : vminvs) {
+            dbf.eoCleanup(VmInstanceVO.class, struct.getInventory().getUuid());
+        }
+
         completion.success();
     }
 
