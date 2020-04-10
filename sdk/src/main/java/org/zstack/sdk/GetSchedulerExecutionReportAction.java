@@ -2,9 +2,8 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
-public class GetSchedulerJobGroupExecutionReportAction extends AbstractAction {
+public class GetSchedulerExecutionReportAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +11,7 @@ public class GetSchedulerJobGroupExecutionReportAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetSchedulerJobGroupExecutionReportResult value;
+        public GetSchedulerExecutionReportResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,7 +33,7 @@ public class GetSchedulerJobGroupExecutionReportAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,31L}, noTrim = false)
     public int range = 0;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List schedulerJobTypes;
 
     @Param(required = false)
@@ -63,8 +62,8 @@ public class GetSchedulerJobGroupExecutionReportAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetSchedulerJobGroupExecutionReportResult value = res.getResult(org.zstack.sdk.GetSchedulerJobGroupExecutionReportResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetSchedulerJobGroupExecutionReportResult() : value; 
+        GetSchedulerExecutionReportResult value = res.getResult(GetSchedulerExecutionReportResult.class);
+        ret.value = value == null ? new GetSchedulerExecutionReportResult() : value;
 
         return ret;
     }
@@ -94,7 +93,7 @@ public class GetSchedulerJobGroupExecutionReportAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/scheduler/jobgroups/report";
+        info.path = "/scheduler/report";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
