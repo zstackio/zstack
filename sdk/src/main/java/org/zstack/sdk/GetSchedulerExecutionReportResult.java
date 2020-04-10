@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class GetSchedulerJobGroupExecutionReportResult {
+public class GetSchedulerExecutionReportResult {
     public java.util.List successRecords;
     public void setSuccessRecords(java.util.List successRecords) {
         this.successRecords = successRecords;
