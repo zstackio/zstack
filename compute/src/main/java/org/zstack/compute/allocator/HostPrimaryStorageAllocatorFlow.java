@@ -29,86 +29,84 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
     @Autowired
     private PrimaryStorageOverProvisioningManager ratioMgr;
 
+    private List<HostVO> allocateIfNotNewCreate(List<String> huuids, Set<String> requiredPsUuids) {
+        String sqlappend = "";
+        if (!requiredPsUuids.isEmpty()) {
+            sqlappend = requiredPsUuids.size() == 1 ?
+                    String.format(" and ps.uuid = '%s'", requiredPsUuids.iterator().next()) :
+                    String.format(" and ps.uuid in ('%s')" +
+                                    " group by ref.clusterUuid" +
+                                    " having count(distinct ref.primaryStorageUuid) = %d",
+                            String.join("','", requiredPsUuids), requiredPsUuids.size());
+        }
+
+        String sql = "select h" +
+                " from HostVO h" +
+                " where h.uuid in :uuids" +
+                " and h.clusterUuid in" +
+                " (" +
+                " select ref.clusterUuid" +
+                " from PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps" +
+                " where ref.primaryStorageUuid = ps.uuid" +
+                " and (ps.state = :state or ps.state =:state1)" +
+                " and ps.status = :status" +
+                sqlappend +
+                " )";
+
+        TypedQuery<HostVO> query = dbf.getEntityManager().createQuery(sql, HostVO.class);
+        query.setParameter("uuids", huuids);
+        query.setParameter("state", PrimaryStorageState.Enabled);
+        query.setParameter("state1", PrimaryStorageState.Disabled);
+        query.setParameter("status", PrimaryStorageStatus.Connected);
+        List<HostVO> hosts = query.getResultList();
+
+        // in case no host is connected
+        if (hosts.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<String> hostUuids = hosts.stream().map(HostVO::getUuid).collect(Collectors.toList());
+        List<String> disconnectHostUuids = requiredPsUuids.isEmpty() ? Collections.emptyList() :
+                Q.New(PrimaryStorageHostRefVO.class).select(PrimaryStorageHostRefVO_.hostUuid)
+                        .in(PrimaryStorageHostRefVO_.primaryStorageUuid, requiredPsUuids)
+                        .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
+                        .in(PrimaryStorageHostRefVO_.hostUuid, hostUuids)
+                        .listValues();
+
+        if (!disconnectHostUuids.isEmpty()) {
+            logger.trace(String.format("There are some disconnection between primary storage[uuids:%s]" +
+                    " and host[uuids:%s], remove these hosts", requiredPsUuids, disconnectHostUuids));
+            Set<String> discHostSet = new HashSet<>(disconnectHostUuids);
+            hosts.removeIf(it -> discHostSet.contains(it.getUuid()));
+        }
+
+        return hosts;
+    }
+
     @Transactional(readOnly = true)
     private List<HostVO> allocateFromCandidates() {
         List<String> huuids = getHostUuidsFromCandidates();
         Set<String> requiredPsUuids = spec.getRequiredPrimaryStorageUuids();
         if (!VmOperation.NewCreate.toString().equals(spec.getVmOperation())) {
-            String sqlappend = "";
-            if (!requiredPsUuids.isEmpty()) {
-                sqlappend = requiredPsUuids.size() == 1 ?
-                        String.format(" and ps.uuid = '%s'", requiredPsUuids.iterator().next()) :
-                        String.format(" and ps.uuid in ('%s')" +
-                        " group by ref.clusterUuid" +
-                        " having count(distinct ref.primaryStorageUuid) = %d",
-                        String.join("','", requiredPsUuids), requiredPsUuids.size());
-            }
-
-            String sql = "select h" +
-                    " from HostVO h" +
-                    " where h.uuid in :uuids" +
-                    " and h.clusterUuid in" +
-                    " (" +
-                    " select ref.clusterUuid" +
-                    " from PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps" +
-                    " where ref.primaryStorageUuid = ps.uuid" +
-                    " and (ps.state = :state or ps.state =:state1)" +
-                    " and ps.status = :status" +
-                    sqlappend +
-                    " )";
-
-            TypedQuery<HostVO> query = dbf.getEntityManager().createQuery(sql, HostVO.class);
-            query.setParameter("uuids", huuids);
-            query.setParameter("state", PrimaryStorageState.Enabled);
-            query.setParameter("state1", PrimaryStorageState.Disabled);
-            query.setParameter("status", PrimaryStorageStatus.Connected);
-            List<HostVO> hosts = query.getResultList();
-
-            // in case no host is connected
-            if (hosts.isEmpty()) {
-                return new ArrayList<>();
-            }
-
-            List<String> hostUuids = hosts.stream().map(HostVO::getUuid).collect(Collectors.toList());
-            List<String> disconnectHostUuids = requiredPsUuids.isEmpty() ? Collections.emptyList() :
-                    Q.New(PrimaryStorageHostRefVO.class).select(PrimaryStorageHostRefVO_.hostUuid)
-                            .in(PrimaryStorageHostRefVO_.primaryStorageUuid, requiredPsUuids)
-                            .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
-                            .in(PrimaryStorageHostRefVO_.hostUuid, hostUuids)
-                            .listValues();
-
-            if (!disconnectHostUuids.isEmpty()) {
-                logger.trace(String.format("There are some disconnection between primary storage[uuids:%s]" +
-                        " and host[uuids:%s], remove these hosts", requiredPsUuids, disconnectHostUuids));
-                Set<String> discHostSet = new HashSet<>(disconnectHostUuids);
-                hosts.removeIf(it -> discHostSet.contains(it.getUuid()));
-            }
-
-            return hosts;
+            return allocateIfNotNewCreate(huuids, requiredPsUuids);
         }
 
         // for new created vm
-        String sql = "select ps.uuid, cap.availableCapacity" +
-                " from PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps, HostVO h, PrimaryStorageCapacityVO cap" +
+        String sql = "select ps.uuid" +
+                " from PrimaryStorageClusterRefVO ref, PrimaryStorageVO ps, HostVO h" +
                 " where ref.primaryStorageUuid = ps.uuid" +
-                " and cap.uuid = ps.uuid" +
                 " and ps.state = :state" +
                 " and ps.status = :status" +
                 " and ref.clusterUuid = h.clusterUuid" +
                 " and h.uuid in (:huuids)";
 
-        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("state", PrimaryStorageState.Enabled);
         q.setParameter("status", PrimaryStorageStatus.Connected);
         q.setParameter("huuids", huuids);
-        List<Tuple> ts = q.getResultList();
-        if (ts.isEmpty()) {
+        List<String> psUuids = q.getResultList();
+        if (psUuids.isEmpty()) {
             return new ArrayList<>();
-        }
-
-        List<String> psUuids = new ArrayList<>();
-        for (Tuple t : ts) {
-            psUuids.add(t.get(0, String.class));
         }
 
         if (!requiredPsUuids.isEmpty()) {
@@ -134,61 +132,44 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             }
         }
 
-        sql = "select i.primaryStorageUuid from ImageCacheVO i where i.primaryStorageUuid in (:psUuids) and i.imageUuid = :iuuid";
-        TypedQuery<String> iq = dbf.getEntityManager().createQuery(sql, String.class);
-        iq.setParameter("psUuids", psUuids);
-        iq.setParameter("iuuid", spec.getImage().getUuid());
-        List<String> hasImagePrimaryStorage = iq.getResultList();
+        String sqlappend = psUuids.size() == 1 ?
+                String.format(" and ref.primaryStorageUuid = '%s'", psUuids.get(0)) :
+                String.format(" and ref.primaryStorageUuid in ('%s')", String.join("','", psUuids));
 
-        List<String> hostCandidates = new ArrayList<>();
-        sql = "select h.uuid, ref.clusterUuid" +
-                " from PrimaryStorageClusterRefVO ref, HostVO h" +
+        sql = "select h.uuid, ref.primaryStorageUuid, cap.availableCapacity" +
+                " from PrimaryStorageClusterRefVO ref, HostVO h, PrimaryStorageCapacityVO cap" +
                 " where ref.clusterUuid = h.clusterUuid" +
+                " and cap.uuid = ref.primaryStorageUuid" +
                 " and h.uuid in (:hostUuids)" +
-                " and ref.primaryStorageUuid in (:psUuids)";
+                sqlappend;
         TypedQuery<Tuple> hostCluster = dbf.getEntityManager().createQuery(sql, Tuple.class);
         hostCluster.setParameter("hostUuids", huuids);
-        hostCluster.setParameter("psUuids", psUuids);
         List<Tuple> result = hostCluster.getResultList();
+        Map<String, Long> psCap = new HashMap<>();           // psUuid -> available capacities (with ratio).
+        Map<String, Long> availableHostPs = new HashMap<>(); // hostUuid -> available capacities (with ratio).
+        Map<String, String> hostPsDict = new HashMap<>();    // host -> ps mapping
         for (Tuple t : result) {
             String hostUuid = t.get(0, String.class);
-            String clusterUuid = t.get(1, String.class);
+            String psUuid = t.get(1, String.class);
+            Long psAvaCap = t.get(2, Long.class);
 
-            List<String> clusterPsUuids = Q.New(PrimaryStorageClusterRefVO.class)
-                    .select(PrimaryStorageClusterRefVO_.primaryStorageUuid)
-                    .eq(PrimaryStorageClusterRefVO_.clusterUuid, clusterUuid)
-                    .in(PrimaryStorageClusterRefVO_.primaryStorageUuid, psUuids)
-                    .listValues();
-
-            if(clusterPsUuids.isEmpty()){
-                break;
+            if (!psCap.containsKey(psUuid)) {
+                psCap.put(psUuid, ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, psAvaCap));
             }
 
-            // background: http://dev.zstack.io/browse/ZSTAC-4852
-            // only fix problem one
-            long cap = 0L;
-            if(clusterPsUuids.size() == 1){
-                String psUuid = clusterPsUuids.get(0);
-                Long psAvaCap = Q.New(PrimaryStorageCapacityVO.class).select(PrimaryStorageCapacityVO_.availableCapacity)
-                        .eq(PrimaryStorageCapacityVO_.uuid, psUuid).findValue();
-
-                if (hasImagePrimaryStorage.contains(psUuid)) {
-                    cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, psAvaCap );
-                } else {
-                    // the primary storage doesn't have the image in cache
-                    // so we need to add the image size
-                    cap = ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, psAvaCap) - spec.getImage().getActualSize();
-                }
-            }else{
-                // multi ps, don't consider image cache, because of cannot determine the primary storage associated with the root disk
-                for(String psUuid : clusterPsUuids){
-                    Long psAvaCap = Q.New(PrimaryStorageCapacityVO.class).select(PrimaryStorageCapacityVO_.availableCapacity)
-                            .eq(PrimaryStorageCapacityVO_.uuid, psUuid).findValue();
-                    cap = cap + ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(psUuid, psAvaCap);
-                }
+            Long tmpCap = availableHostPs.get(hostUuid);
+            if (tmpCap == null) {
+                availableHostPs.put(hostUuid, psCap.get(psUuid));
+                hostPsDict.put(hostUuid, psUuid);
+            } else {
+                availableHostPs.put(hostUuid, tmpCap + psCap.get(psUuid));
             }
+        }
 
-            if (cap >= spec.getDiskSize()) {
+        Set<String> hostCandidates = new HashSet<>();
+        Map<String, Boolean> psImageCacheDict = new HashMap<>();
+        for (String hostUuid: availableHostPs.keySet()) {
+            if (hasCapablePS(hostPsDict.get(hostUuid), availableHostPs.get(hostUuid), psImageCacheDict)) {
                 hostCandidates.add(hostUuid);
             }
         }
@@ -197,21 +178,46 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             return new ArrayList<>();
         }
 
-        sql = "select h from HostVO h where h.uuid in (:huuids)";
-        TypedQuery<HostVO> hq = dbf.getEntityManager().createQuery(sql, HostVO.class);
-        hq.setParameter("huuids", hostCandidates);
-        return hq.getResultList();
+        return candidates.stream()
+                .filter(h -> hostCandidates.contains(h.getUuid()))
+                .collect(Collectors.toList());
+    }
+
+    private Boolean psHasImageCache(String psUuid, Map<String, Boolean> psImageCacheDict) {
+        Boolean b = psImageCacheDict.get(psUuid);
+        if (b != null) {
+            return b;
+        }
+
+        b = Q.New(ImageCacheVO.class)
+                .eq(ImageCacheVO_.primaryStorageUuid, psUuid)
+                .eq(ImageCacheVO_.imageUuid, spec.getImage().getUuid())
+                .isExists();
+        psImageCacheDict.put(psUuid, b);
+        return b;
+    }
+
+    private boolean hasCapablePS(String psUuid, Long cap, Map<String, Boolean> psImageCacheDict) {
+        // background: http://dev.zstack.io/browse/ZSTAC-4852
+        // only fix problem one
+        long requiredSize = spec.getDiskSize();
+
+        if (spec.getImage() != null) {
+            if (!psHasImageCache(psUuid, psImageCacheDict)) {
+                // the primary storage doesn't have the image in cache
+                // so we need to add the image size
+                requiredSize +=  spec.getImage().getActualSize();
+            }
+        }
+
+        // if multi ps, don't consider image cache, because of cannot determine the primary storage associated with the root disk
+        return cap >= requiredSize;
     }
 
     @Override
     public void allocate() {
         if (amITheFirstFlow()) {
             throw new CloudRuntimeException("HostPrimaryStorageAllocatorFlow cannot be the first flow in the chain");
-        }
-
-        if (spec.getImage() == null) {
-            next(candidates);
-            return;
         }
 
         candidates = allocateFromCandidates();
