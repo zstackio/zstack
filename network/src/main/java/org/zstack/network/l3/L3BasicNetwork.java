@@ -473,7 +473,7 @@ public class L3BasicNetwork implements L3Network {
                 SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
                 q.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
                 iprs = q.list();
-            } else if (msg.getIpRangeType().equals(IpRangeType.Normal)){
+            } else if (msg.getIpRangeType().equals(IpRangeType.Normal.toString())){
                 SimpleQuery<NormalIpRangeVO> q = dbf.createQuery(NormalIpRangeVO.class);
                 q.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
                 iprs = q.list();
