@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.DeadlockAutoRestart;
 import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.Flow;
@@ -71,9 +72,14 @@ public class VmAllocateCdRomFlow implements Flow {
             cdRomVOS.add(vmCdRomVO);
         }
 
-        dbf.persistCollection(cdRomVOS);
+        persistCdRomVOS(cdRomVOS);
         new IsoOperator().syncVmIsoSystemTag(spec.getVmInventory().getUuid());
         trigger.next();
+    }
+
+    @DeadlockAutoRestart
+    private void persistCdRomVOS(List<VmCdRomVO> cdRomVOS) {
+        dbf.persistCollection(cdRomVOS);
     }
 
     @Override
