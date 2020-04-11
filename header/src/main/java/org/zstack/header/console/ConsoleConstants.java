@@ -20,6 +20,9 @@ public interface ConsoleConstants {
     public static final String CONSOLE_PROXY_DELETE_PROXY_PATH = "/console/delete";
     public static final String CONSOLE_PROXY_PING_PATH = "/console/ping";
 
+    String VNC_IPTABLES_COMMENTS = "vnc.allow.port";
+
+
     public static enum ConsoleGlobalConfig {
         ProxyIdleTimeout;
 

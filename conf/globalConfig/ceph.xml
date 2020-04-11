@@ -63,4 +63,20 @@
         <category>ceph</category>
         <type>java.lang.Integer</type>
     </config>
+
+    <config>
+        <name>cephbs.allow.ports</name>
+        <description>tcp or udp ports allowed by ceph backup storage, udp port start with 'u' like 'u67', port range can be like this: 1100:1200, multiple port or port range can be separated by ”,“</description>
+        <defaultValue>7761</defaultValue>
+        <category>ceph</category>
+        <type>java.lang.String</type>
+    </config>
+
+    <config>
+        <name>cephps.allow.ports</name>
+        <description>tcp or udp ports allowed by ceph primary storage, udp port start with 'u' like 'u67', port range can be like this: 1100:1200, multiple port or port range can be separated by ”,“</description>
+        <defaultValue>7762</defaultValue>
+        <category>ceph</category>
+        <type>java.lang.String</type>
+    </config>
 </globalConfig>

@@ -2810,27 +2810,6 @@ public class KVMHost extends HostBase implements Host {
                 boolean deployed = false;
                 @Override
                 public void setup() {
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "configure-iptables";
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            StringBuilder builder = new StringBuilder();
-                            builder.append(String.format("sudo iptables-save | grep '%s' | while read LINE; do echo $LINE | sed -e \"s/-A/-D/\" | xargs sudo iptables ; done",
-                                    Platform.getGlobalPropertyAnnotationName(KVMGlobalProperty.class, "IPTABLES_RULES")));
-                            for (String rule : KVMGlobalProperty.IPTABLES_RULES) {
-                                builder.append(String.format(";sudo iptables %s", rule));
-                            }
-
-                            new Ssh().shell(builder.toString())
-                                    .setUsername(getSelf().getUsername())
-                                    .setPassword(getSelf().getPassword())
-                                    .setHostname(getSelf().getManagementIp())
-                                    .setPort(getSelf().getPort()).runErrorByExceptionAndClose();
-
-                            trigger.next();
-                        }
-                    });
 
                     flow(new NoRollbackFlow() {
                         String __name__ = "test-if-ssh-port-open";
@@ -3047,6 +3026,35 @@ public class KVMHost extends HostBase implements Host {
                                     trigger.fail(errorCode);
                                 }
                             });
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "configure-iptables";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            StringBuilder builder = new StringBuilder();
+                            if (!KVMGlobalProperty.MN_NETWORKS.isEmpty()) {
+                                builder.append(String.format("sudo bash %s -m %s -p %s -c %s",
+                                        "/var/lib/zstack/kvm/kvmagent-iptables",
+                                        KVMConstant.IPTABLES_COMMENTS,
+                                        KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class),
+                                        String.join(",", KVMGlobalProperty.MN_NETWORKS)));
+                            } else {
+                                builder.append(String.format("sudo bash %s -m %s -p %s",
+                                        "/var/lib/zstack/kvm/kvmagent-iptables",
+                                        KVMConstant.IPTABLES_COMMENTS,
+                                        KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class)));
+                            }
+
+                            new Ssh().shell(builder.toString())
+                                    .setUsername(getSelf().getUsername())
+                                    .setPassword(getSelf().getPassword())
+                                    .setHostname(getSelf().getManagementIp())
+                                    .setPort(getSelf().getPort()).runErrorByExceptionAndClose();
+
+                            trigger.next();
                         }
                     });
 

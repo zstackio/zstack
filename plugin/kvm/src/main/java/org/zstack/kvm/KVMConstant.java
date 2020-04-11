@@ -83,6 +83,8 @@ public interface KVMConstant {
 
     String HOST_PASSTHROUGH = "host-passthrough";
 
+    String IPTABLES_COMMENTS = "kvmagent.allow.port";
+
     enum KvmVmState {
         NoState,
         Running,

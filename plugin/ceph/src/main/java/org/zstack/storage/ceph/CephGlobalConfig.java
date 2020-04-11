@@ -25,4 +25,8 @@ public class CephGlobalConfig {
     public static GlobalConfig BACKUP_STORAGE_MON_AUTO_RECONNECT = new GlobalConfig(CATEGORY, "backupStorage.mon.autoReconnect");
     @GlobalConfigValidation
     public static GlobalConfig GC_INTERVAL = new GlobalConfig(CATEGORY, "deletion.gcInterval");
+    @GlobalConfigValidation
+    public static GlobalConfig CEPH_BS_ALLOW_PORTS = new GlobalConfig(CATEGORY, "cephbs.allow.ports");
+    @GlobalConfigValidation
+    public static GlobalConfig CEPH_PS_ALLOW_PORTS = new GlobalConfig(CATEGORY, "cephps.allow.ports");
 }

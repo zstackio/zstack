@@ -358,19 +358,6 @@ public class SftpBackupStorage extends BackupStorageBase {
             return;
         }
 
-        StringBuilder builder = new StringBuilder();
-        builder.append(String.format("sudo iptables-save | grep '%s' | while read LINE; do echo $LINE | sed -e \"s/-A/-D/\" | xargs sudo iptables ; done",
-                Platform.getGlobalPropertyAnnotationName(SftpBackupStorageGlobalProperty.class, "IPTABLES_RULES")));
-        for (String rule : SftpBackupStorageGlobalProperty.IPTABLES_RULES) {
-            builder.append(String.format(";sudo iptables %s", rule));
-        }
-
-        new Ssh().shell(builder.toString())
-                .setUsername(getSelf().getUsername())
-                .setPassword(getSelf().getPassword())
-                .setHostname(getSelf().getHostname())
-                .setPort(getSelf().getSshPort()).runErrorByExceptionAndClose();
-
         SshFileMd5Checker checker = new SshFileMd5Checker();
         checker.setTargetIp(getSelf().getHostname());
         checker.setUsername(getSelf().getUsername());
@@ -424,6 +411,26 @@ public class SftpBackupStorage extends BackupStorageBase {
         runner.run(new ReturnValueCompletion<Boolean>(complete) {
             @Override
             public void success(Boolean deployed) {
+                StringBuilder builder = new StringBuilder();
+                if (!SftpBackupStorageGlobalProperty.MN_NETWORKS.isEmpty()) {
+                    builder.append(String.format("sudo bash %s -m %s -p %s -c %s",
+                            "/var/lib/zstack/sftpbackupstorage/package/sftp-iptables",
+                            SftpBackupStorageConstant.IPTABLES_COMMENTS,
+                            SftpBackupStorageGlobalConfig.SFTP_ALLOW_PORTS.value(),
+                            String.join(",", SftpBackupStorageGlobalProperty.MN_NETWORKS)));
+                } else {
+                    builder.append(String.format("sudo bash %s -m %s -p %s",
+                            "/var/lib/zstack/sftpbackupstorage/package/sftp-iptables",
+                            SftpBackupStorageConstant.IPTABLES_COMMENTS,
+                            SftpBackupStorageGlobalConfig.SFTP_ALLOW_PORTS.value()));
+                }
+
+                new Ssh().shell(builder.toString())
+                        .setUsername(getSelf().getUsername())
+                        .setPassword(getSelf().getPassword())
+                        .setHostname(getSelf().getHostname())
+                        .setPort(getSelf().getSshPort()).runErrorByExceptionAndClose();
+
                 continueConnect(complete);
             }
 
