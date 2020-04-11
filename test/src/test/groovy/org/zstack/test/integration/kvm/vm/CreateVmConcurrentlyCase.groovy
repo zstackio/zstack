@@ -189,25 +189,7 @@ class CreateVmConcurrentlyCase extends SubCase {
             def flatl3 = env.inventoryByName("l3") as L3NetworkInventory
             def host = env.inventoryByName("host1") as HostInventory
 
-            String newHosts = System.getProperty("newHosts")
-            if (newHosts != null) {
-                int nhost = Integer.parseInt(newHosts)
-                logger.info(String.format("XXX: additional host: %d", nhost))
-                int c = 0
-                for (int i = 0; i < nhost; i++) {
-                    int idx = (i + 2 + 1) % 256
-                    if (idx == 0) {
-                        c += 1
-                    }
-                    addKVMHost {
-                        name = "host" + idx
-                        managementIp = "127.0.$c.$idx"
-                        username = "root"
-                        password = "password"
-                        clusterUuid = host.clusterUuid
-                    }
-                }
-            }
+            prepareNewHosts(host.clusterUuid)
 
             StopWatch sw = Utils.getStopWatch()
             int n = 50
@@ -228,6 +210,39 @@ class CreateVmConcurrentlyCase extends SubCase {
             //testCreateVMConcurrently(300, vrl3.uuid)
 
             testCreateVMWithQuota()
+        }
+    }
+
+    void prepareNewHosts(String clusterUuid) {
+        String newHosts = System.getProperty("newHosts")
+        if (newHosts != null) {
+            int nhost = Integer.parseInt(newHosts)
+            def count = new AtomicInteger(0)
+            logger.info(String.format("XXX: additional host: %d", nhost))
+            int c = 0
+            for (int i = 0; i < nhost; i++) {
+                int idx = (i + 2 + 1) % 256
+                if (idx == 0) {
+                    c += 1
+                }
+                new AddKVMHostAction(
+                        name: "host" + idx,
+                        managementIp: "127.0.$c.$idx",
+                        username: "root",
+                        password: "password",
+                        clusterUuid: clusterUuid,
+                        sessionId: adminSession(),
+                ).call(new Completion<AddKVMHostAction.Result>() {
+                    @Override
+                    void complete(AddKVMHostAction.Result ret) {
+                        count.incrementAndGet()
+                    }
+                })
+            }
+
+            while (count.get() < nhost) {
+                TimeUnit.SECONDS.sleep(1)
+            }
         }
     }
 
