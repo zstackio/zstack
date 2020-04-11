@@ -19,6 +19,7 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
@@ -31,6 +32,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 
@@ -93,7 +95,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
         if (VmOperation.NewCreate.toString().equals(spec.getVmOperation())) {
             List<String> huuids = getNeedCheckHostLocalStorageList(candidates, spec);
-            if(huuids.isEmpty()){
+            if (huuids.isEmpty()) {
                 return candidates;
             }
 
@@ -145,28 +147,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 }
             }
         } else if (VmOperation.Start.toString().equals(spec.getVmOperation())) {
-
-            for(VolumeInventory volume : spec.getVmInstance().getAllVolumes()){
-                final LocalStorageResourceRefVO ref = Q.New(LocalStorageResourceRefVO.class)
-                        .eq(LocalStorageResourceRefVO_.resourceUuid, volume.getUuid())
-                        .find();
-                if (ref != null) {
-                    candidates = CollectionUtils.transformToList(candidates, new Function<HostVO, HostVO>() {
-                        @Override
-                        public HostVO call(HostVO arg) {
-                            return arg.getUuid().equals(ref.getHostUuid()) ? arg : null;
-                        }
-                    });
-
-                    if (candidates.isEmpty()) {
-                        throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
-                                "the vm[uuid: %s] using local primary storage can only be started on the host[uuid: %s], but the host is either not having enough CPU/memory/GPU or in" +
-                                        " the state[Enabled] or status[Connected] to start the vm", spec.getVmInstance().getUuid(), ref.getHostUuid()
-                        ));
-                    }
-                    break;
-                }
-            }
+            checkLocalStorageForVmStart(spec.getVmInstance(), candidates);
         }
 
 
@@ -185,42 +166,77 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         return candidates;
     }
 
+    private void checkLocalStorageForVmStart(VmInstanceInventory vm, List<HostVO> candidates) {
+        final List<String> localPS = Q.New(PrimaryStorageVO.class)
+                .select(PrimaryStorageVO_.uuid)
+                .eq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE)
+                .listValues();
+        if (localPS.isEmpty()) {
+            return;
+        }
+
+        for (VolumeInventory volume : vm.getAllVolumes()) {
+            if (!localPS.contains(volume.getPrimaryStorageUuid())) {
+                continue;
+            }
+
+            final String hostUuid = Q.New(LocalStorageResourceRefVO.class)
+                    .eq(LocalStorageResourceRefVO_.resourceUuid, volume.getUuid())
+                    .select(LocalStorageResourceRefVO_.hostUuid)
+                    .findValue();
+            if (hostUuid != null) {
+                candidates.removeIf(h -> !hostUuid.equals(h.getUuid()));
+                if (candidates.isEmpty()) {
+                    throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
+                            "the vm[uuid: %s] using local primary storage can only be started on the host[uuid: %s], but the host is either not having enough CPU/memory/GPU or in" +
+                                    " the state[Enabled] or status[Connected] to start the vm", vm.getUuid(), hostUuid
+                    ));
+                }
+
+                // A VM with local disk can only run on this host
+                break;
+            }
+        }
+    }
+
     /**
      * @return hostUuid list
-     *
+     * <p>
      * Just check it :
      * The current cluster is mounted only local storage
      * Specified local storage
-     *
+     * <p>
      * Negative impact
      * In the case of local + non-local and no ps specified (non-local is Disconnected/Disabled, or non-local capacity not enough), the allocated host may not have enough disks
      */
-    private List<String> getNeedCheckHostLocalStorageList(List<HostVO> candidates, HostAllocatorSpec spec){
+    private List<String> getNeedCheckHostLocalStorageList(List<HostVO> candidates, HostAllocatorSpec spec) {
         boolean isRequireNonLocalStorage = spec.getRequiredPrimaryStorageUuids()
                 .stream().noneMatch(LocalStorageUtils::isLocalStorage);
+        Map<String, List<String>> grouped = candidates.stream().collect(
+                Collectors.groupingBy(
+                        HostVO::getClusterUuid,
+                        Collectors.mapping(HostVO::getUuid, Collectors.toList())
+                )
+        );
+
         List<String> result = new ArrayList<>();
-        for(HostVO hostVO : candidates){
-            boolean isOnlyAttachedLocalStorage = LocalStorageUtils.isOnlyAttachedLocalStorage(hostVO.getClusterUuid());
-
-            if(!isOnlyAttachedLocalStorage && isRequireNonLocalStorage){
+        for (Map.Entry<String, List<String>> entry : grouped.entrySet()) {
+            boolean isOnlyAttachedLocalStorage = LocalStorageUtils.isOnlyAttachedLocalStorage(entry.getKey());
+            if (!isOnlyAttachedLocalStorage && (isRequireNonLocalStorage || spec.isDryRun())) {
                 continue;
             }
 
-            if(!isOnlyAttachedLocalStorage && spec.isDryRun()){
-                continue;
-            }
-
-            result.add(hostVO.getUuid());
+            result.addAll(entry.getValue());
         }
 
         return result;
     }
 
-    private void addHostPrimaryStorageBlacklist(String hostUuid, String psUuid, HostAllocatorSpec spec){
+    private void addHostPrimaryStorageBlacklist(String hostUuid, String psUuid, HostAllocatorSpec spec) {
         Map<String, Set<String>> host2PrimaryStorageBlacklist = spec.getHost2PrimaryStorageBlacklist();
         Set<String> psList = host2PrimaryStorageBlacklist.get(hostUuid);
 
-        if(psList == null){
+        if (psList == null) {
             psList = new HashSet<>();
         }
 
@@ -239,15 +255,14 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
             allocatorType = LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY;
         } else if (msg.getRequiredPrimaryStorageUuid() != null) {
             SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
-            q.select(PrimaryStorageVO_.type);
+            q.add(PrimaryStorageVO_.type, Op.EQ, LocalStorageConstants.LOCAL_STORAGE_TYPE);
             q.add(PrimaryStorageVO_.uuid, Op.EQ, msg.getRequiredPrimaryStorageUuid());
-            String type = q.findValue();
-            if (LocalStorageConstants.LOCAL_STORAGE_TYPE.equals(type)) {
+            if (q.isExists()) {
                 allocatorType = LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY;
             }
         } else if (msg.getRequiredHostUuid() != null) {
 
-            if(msg.getAllocationStrategy() != null && !LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY.equals(msg.getAllocationStrategy())){
+            if (msg.getAllocationStrategy() != null && !LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY.equals(msg.getAllocationStrategy())) {
                 return null;
             }
 
