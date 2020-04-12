@@ -8,6 +8,7 @@ import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.network.l2.*;
+import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
@@ -61,8 +62,8 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
     }
 
     @Override
-    public Integer getDefaultMtu() {
-        return Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value());
+    public Integer getDefaultMtu(L2NetworkInventory inv) {
+        return rcf.getResourceConfigValue(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN, inv.getUuid(), Integer.class);
     }
 
     @Override
@@ -73,10 +74,5 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
     @Override
     public String getL2NetworkVniType() {
         return type.toString();
-    }
-
-    @Override
-    public int getMtu(L2NetworkInventory inv) {
-        return rcf.getResourceConfigValue(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN, inv.getUuid(), Integer.class);
     }
 }
