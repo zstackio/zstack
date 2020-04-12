@@ -9,7 +9,6 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.AsyncThread;
@@ -23,7 +22,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.rest.*;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.IptablesUtils;
@@ -34,7 +32,10 @@ import org.zstack.utils.logging.CLogger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -62,8 +63,8 @@ public class RESTFacadeImpl implements RESTFacade {
     private String sendCommandUrl;
     private String callbackHostName;
 
-    private Map<String, HttpCallStatistic> statistics = new ConcurrentHashMap<String, HttpCallStatistic>();
-    private Map<String, HttpCallHandlerWrapper> httpCallhandlers = new ConcurrentHashMap<String, HttpCallHandlerWrapper>();
+    final private Map<String, HttpCallStatistic> statistics = new ConcurrentHashMap<String, HttpCallStatistic>();
+    final private Map<String, HttpCallHandlerWrapper> httpCallhandlers = new ConcurrentHashMap<String, HttpCallHandlerWrapper>();
     private final List<BeforeAsyncJsonPostInterceptor> interceptors = new ArrayList<BeforeAsyncJsonPostInterceptor>();
 
     private interface AsyncHttpWrapper {
@@ -78,7 +79,7 @@ public class RESTFacadeImpl implements RESTFacade {
         HttpCallHandler getHandler();
     }
 
-    private Map<String, AsyncHttpWrapper> wrappers = new ConcurrentHashMap<String, AsyncHttpWrapper>();
+    final private Map<String, AsyncHttpWrapper> wrappers = new ConcurrentHashMap<String, AsyncHttpWrapper>();
 
     void init() {
         port =  Integer.parseInt(System.getProperty("RESTFacade.port", "8080"));
@@ -266,10 +267,10 @@ public class RESTFacadeImpl implements RESTFacade {
         };
 
         AsyncHttpWrapper wrapper = new AsyncHttpWrapper() {
-            AtomicBoolean called = new AtomicBoolean(false);
+            final AtomicBoolean called = new AtomicBoolean(false);
 
             final AsyncHttpWrapper self = this;
-            TimeoutTaskReceipt timeoutTaskReceipt = thdf.submitTimeoutTask(new Runnable() {
+            final TimeoutTaskReceipt timeoutTaskReceipt = thdf.submitTimeoutTask(new Runnable() {
                 @Override
                 public void run() {
                     self.fail(touterr(
