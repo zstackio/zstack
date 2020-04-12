@@ -9,6 +9,7 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.l2.*;
+import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.query.QueryFacade;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -93,8 +94,8 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
     }
 
     @Override
-    public Integer getDefaultMtu() {
-        return Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VLAN.value());
+    public Integer getDefaultMtu(L2NetworkInventory inv) {
+        return rcf.getResourceConfigValue(NetworkServiceGlobalConfig.DHCP_MTU_VLAN, inv.getUuid(), Integer.class);
     }
 
     @Override
@@ -106,10 +107,5 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
     @Override
     public String getL2NetworkVniType() {
         return type.toString();
-    }
-
-    @Override
-    public int getMtu(L2NetworkInventory inv) {
-        return rcf.getResourceConfigValue(NetworkServiceGlobalConfig.DHCP_MTU_VLAN, inv.getUuid(), Integer.class);
     }
 }

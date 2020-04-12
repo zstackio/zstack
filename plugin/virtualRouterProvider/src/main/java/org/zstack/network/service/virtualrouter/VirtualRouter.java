@@ -32,6 +32,7 @@ import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPo
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.*;
+import org.zstack.network.service.MtuGetter;
 import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
@@ -429,7 +430,6 @@ public class VirtualRouter extends ApplianceVmBase {
             info.setNetmask(nicInventory.getNetmask());
 
             L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
-            L2NetworkFactory factory = l2Mgr.getL2NetworkFactory(L2NetworkType.valueOf(l2NetworkVO.getType()));
             info.setCategory(l3NetworkVO.getCategory().toString());
             info.setL2type(l2NetworkVO.getType());
             info.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
@@ -438,7 +438,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     info.setVni(ext.getL2NetworkVni(l2NetworkVO.getUuid()));
                 }
             }
-            info.setMtu(factory.getMtu(L2NetworkInventory.valueOf(l2NetworkVO)));
+            info.setMtu(new MtuGetter().getMtu(l3NetworkVO.getUuid()));
             cmd.setNics(Arrays.asList(info));
 
             VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();
