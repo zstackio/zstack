@@ -2,6 +2,7 @@ package org.zstack.test.integration.kvm.vm.cdrom
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.IsoOperator
+import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.Q
 import org.zstack.core.db.SimpleQuery
@@ -159,6 +160,7 @@ class VmCdRomBasicCase extends SubCase {
             testDetachIso()
 
             testCreateVmWithCdRoms()
+            testCreateVmWithoutCdRom()
         }
     }
 
@@ -629,5 +631,35 @@ class VmCdRomBasicCase extends SubCase {
             rootDiskOfferingUuid = diskOfferingInventory.uuid
         }
         assert null != cmd
+    }
+
+    void testCreateVmWithoutCdRom() {
+        VmGlobalConfig.VM_DEFAULT_CD_ROM_NUM.updateValue(0)
+
+        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
+        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+        ImageInventory image = env.inventoryByName("image")
+        ImageInventory iso = env.inventoryByName("iso_0")
+
+        env.cleanAfterSimulatorHandlers()
+
+        VmInstanceInventory newVm = createVmInstance {
+            name = "new-vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            rootDiskOfferingUuid = diskOffering.uuid
+        }
+        assert 0 == newVm.vmCdRoms.size()
+
+        newVm = createVmInstance {
+            name = "new-vm-with-iso"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3.uuid]
+            rootDiskOfferingUuid = diskOffering.uuid
+        }
+        assert 1 == newVm.vmCdRoms.size()
     }
 }
