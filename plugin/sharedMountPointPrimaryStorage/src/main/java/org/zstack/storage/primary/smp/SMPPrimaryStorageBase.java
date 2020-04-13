@@ -519,23 +519,25 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
             handle((DownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else if (msg instanceof CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) {
             handle((CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
+        } else if ((msg instanceof GetDownloadBitsFromKVMHostProgressMsg)) {
+            handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
     }
 
     private void handle(final DownloadBitsFromKVMHostToPrimaryStorageMsg msg) {
-        DownloadBitsFromKVMHostToPrimaryStorageReply reply = new DownloadBitsFromKVMHostToPrimaryStorageReply();
         HypervisorFactory f = getHypervisorFactoryByHostUuid(msg.getDestHostUuid());
         HypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg, new Completion(msg) {
+        bkd.handle(msg, new ReturnValueCompletion<DownloadBitsFromKVMHostToPrimaryStorageReply>(msg) {
             @Override
-            public void success() {
-                bus.reply(msg, reply);
+            public void success(DownloadBitsFromKVMHostToPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
+                DownloadBitsFromKVMHostToPrimaryStorageReply reply = new DownloadBitsFromKVMHostToPrimaryStorageReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
@@ -554,6 +556,25 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(final GetDownloadBitsFromKVMHostProgressMsg msg) {
+        HypervisorFactory f = getHypervisorFactoryByHostUuid(msg.getHostUuid());
+        HypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<GetDownloadBitsFromKVMHostProgressReply>(msg) {
+            public void success(GetDownloadBitsFromKVMHostProgressReply returnValue) {
+                logger.info(String.format("successfully get downloaded bits progress from primary storage %s", msg.getPrimaryStorageUuid()));
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.error(String.format("failed to get downloaded bits progress from primary storage %s", msg.getPrimaryStorageUuid()));
+                GetDownloadBitsFromKVMHostProgressReply reply = new GetDownloadBitsFromKVMHostProgressReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

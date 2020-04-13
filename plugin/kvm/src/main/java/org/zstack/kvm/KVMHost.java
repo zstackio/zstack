@@ -150,6 +150,7 @@ public class KVMHost extends HostBase implements Host {
     private String cancelJob;
     private String getVmFirstBootDevicePath;
     private String scanVmPortPath;
+    private String getDevCapacityPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -294,6 +295,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_SCAN_VM_PORT_STATUS);
         scanVmPortPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.GET_DEV_CAPACITY);
+        getDevCapacityPath = ub.build().toString();
     }
 
     class Http<T> {

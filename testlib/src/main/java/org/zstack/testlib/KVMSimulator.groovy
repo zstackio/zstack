@@ -274,5 +274,12 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.KVM_SCAN_VM_PORT_STATUS) {
             return new KVMAgentCommands.ScanVmPortResponse()
         }
+
+        spec.simulator(KVMConstant.GET_DEV_CAPACITY) {
+            KVMAgentCommands.GetDevCapacityResponse rsp = new KVMAgentCommands.GetDevCapacityResponse()
+            rsp.totalSize = SizeUnit.GIGABYTE.toByte(100)
+            rsp.availableSize = SizeUnit.GIGABYTE.toByte(80)
+            return rsp
+        }
     }
 }

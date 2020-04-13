@@ -87,4 +87,6 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
     abstract void checkHostAttachedPSMountPath(String hostUuid, Completion completion);
 
     abstract void initializeHostAttachedPSMountPath(String hostUuid, Completion completion);
+
+    abstract void handle(GetDownloadBitsFromKVMHostProgressMsg msg, ReturnValueCompletion<GetDownloadBitsFromKVMHostProgressReply> completion);
 }

@@ -187,6 +187,14 @@ public class KvmBackend extends HypervisorBackend {
         public long size;
     }
 
+    public static class GetDownloadBitsFromKVMHostProgressCmd extends AgentCmd {
+        public List<String> volumePaths;
+    }
+
+    public static class GetDownloadBitsFromKVMHostProgressRsp extends AgentRsp {
+        public long totalSize;
+    }
+
     public static class OfflineMergeSnapshotCmd extends AgentCmd implements HasThreadContext {
         public String srcPath;
         public String destPath;
@@ -216,6 +224,10 @@ public class KvmBackend extends HypervisorBackend {
     public static class GetVolumeSizeRsp extends AgentRsp {
         public Long actualSize;
         public Long size;
+    }
+
+    public static class DownloadBitsFromKVMHostRsp extends AgentRsp {
+        public String format;
     }
 
     public static class DownloadBitsFromKVMHostCmd extends AgentCmd {
@@ -250,6 +262,7 @@ public class KvmBackend extends HypervisorBackend {
     public static final String GET_VOLUME_SIZE_PATH = "/sharedmountpointprimarystorage/volume/getsize";
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/sharedmountpointprimarystorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/sharedmountpointprimarystorage/kvmhost/download/cancel";
+    public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/sharedmountpointprimarystorage/kvmhost/download/progress";
 
     public KvmBackend(PrimaryStorageVO self) {
         super(self);
@@ -1119,6 +1132,27 @@ public class KvmBackend extends HypervisorBackend {
         });
     }
 
+    @Override
+    void handle(GetDownloadBitsFromKVMHostProgressMsg msg, final ReturnValueCompletion<GetDownloadBitsFromKVMHostProgressReply> completion) {
+        GetDownloadBitsFromKVMHostProgressCmd cmd = new GetDownloadBitsFromKVMHostProgressCmd();
+        cmd.volumePaths = msg.getVolumePaths();
+
+        new Do().go(GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH, cmd, GetDownloadBitsFromKVMHostProgressRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
+            @Override
+            public void success(AgentRsp returnValue) {
+                GetDownloadBitsFromKVMHostProgressRsp rsp = (GetDownloadBitsFromKVMHostProgressRsp) returnValue;
+                GetDownloadBitsFromKVMHostProgressReply reply = new GetDownloadBitsFromKVMHostProgressReply();
+                reply.setTotalSize(rsp.totalSize);
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
 
     void handle(MergeVolumeSnapshotOnPrimaryStorageMsg msg, final ReturnValueCompletion<MergeVolumeSnapshotOnPrimaryStorageReply> completion) {
         boolean offline = true;
@@ -1187,7 +1221,7 @@ public class KvmBackend extends HypervisorBackend {
     }
 
     @Override
-    void handle(DownloadBitsFromKVMHostToPrimaryStorageMsg msg, Completion completion) {
+    void handle(DownloadBitsFromKVMHostToPrimaryStorageMsg msg, ReturnValueCompletion<DownloadBitsFromKVMHostToPrimaryStorageReply> completion) {
         GetKVMHostDownloadCredentialMsg gmsg = new GetKVMHostDownloadCredentialMsg();
         gmsg.setHostUuid(msg.getSrcHostUuid());
 
@@ -1215,10 +1249,13 @@ public class KvmBackend extends HypervisorBackend {
                 cmd.bandWidth = msg.getBandWidth();
                 cmd.identificationCode = msg.getLongJobUuid() + msg.getPrimaryStorageInstallPath();
 
-                new Do(msg.getDestHostUuid()).go(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, new ReturnValueCompletion<AgentRsp>(completion) {
+                new Do(msg.getDestHostUuid()).go(DOWNLOAD_BITS_FROM_KVM_HOST_PATH, cmd, DownloadBitsFromKVMHostRsp.class, new ReturnValueCompletion<AgentRsp>(completion) {
                     @Override
                     public void success(AgentRsp returnValue) {
-                        completion.success();
+                        DownloadBitsFromKVMHostRsp rsp = (DownloadBitsFromKVMHostRsp) returnValue;
+                        DownloadBitsFromKVMHostToPrimaryStorageReply reply = new DownloadBitsFromKVMHostToPrimaryStorageReply();
+                        reply.setFormat(rsp.format);
+                        completion.success(reply);
                     }
 
                     @Override

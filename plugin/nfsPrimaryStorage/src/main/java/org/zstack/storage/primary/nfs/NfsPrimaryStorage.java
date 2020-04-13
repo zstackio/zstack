@@ -117,6 +117,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((DownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
         } else if (msg instanceof CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) {
             handle((CancelDownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
+        } else if ((msg instanceof GetDownloadBitsFromKVMHostProgressMsg)) {
+            handle((GetDownloadBitsFromKVMHostProgressMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -1263,6 +1265,28 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 CancelDownloadBitsFromKVMHostToPrimaryStorageReply reply = new CancelDownloadBitsFromKVMHostToPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(GetDownloadBitsFromKVMHostProgressMsg msg) {
+        NfsPrimaryStorageBackend backend = getUsableBackend();
+        if (backend == null) {
+            throw new OperationFailureException(operr("the NFS primary storage[uuid:%s, name:%s] cannot find hosts in attached clusters to perform the operation",
+                    self.getUuid(), self.getName()));
+        }
+
+        backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<GetDownloadBitsFromKVMHostProgressReply>(msg) {
+            @Override
+            public void success(GetDownloadBitsFromKVMHostProgressReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                GetDownloadBitsFromKVMHostProgressReply reply = new GetDownloadBitsFromKVMHostProgressReply();
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }

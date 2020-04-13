@@ -44,6 +44,10 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
+    public static class DownloadBitsFromKVMHostRsp extends AgentResponse {
+        public String format;
+    }
+
     public static class DownloadBitsFromKVMHostCmd extends AgentCommand {
         public String hostname;
         public String username;
@@ -58,6 +62,14 @@ public class NfsPrimaryStorageKVMBackendCommands {
 
     public static class CancelDownloadBitsFromKVMHostCmd extends AgentCommand {
         public String primaryStorageInstallPath;
+    }
+
+    public static class GetDownloadBitsFromKVMHostProgressCmd extends AgentCommand {
+        public List<String> volumePaths;
+    }
+
+    public static class GetDownloadBitsFromKVMHostProgressRsp extends AgentResponse {
+        public long totalSize;
     }
 
     public static class MountCmd extends NfsPrimaryStorageAgentCommand {
