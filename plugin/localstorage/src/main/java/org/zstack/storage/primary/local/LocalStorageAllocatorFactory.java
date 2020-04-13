@@ -160,7 +160,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
                     if (candidates.isEmpty()) {
                         throw new OperationFailureException(err(HostAllocatorError.NO_AVAILABLE_HOST,
-                                "the vm[uuid: %s] using local primary storage can only be started on the host[uuid: %s], but the host is either not having enough CPU/memory/GPU or in" +
+                                "the vm[uuid: %s] using local primary storage can only be started on the host[uuid: %s], but the host is either not having enough CPU/memory/GPU/VFNIC or in" +
                                         " the state[Enabled] or status[Connected] to start the vm", spec.getVmInstance().getUuid(), ref.getHostUuid()
                         ));
                     }
