@@ -47,7 +47,7 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"true","false"})
     public static GlobalConfig MULTI_VNIC_SUPPORT = new GlobalConfig(CATEGORY, "multivNic.support");
 
-    @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = VmInstanceConstant.MAXIMUM_CDROM_NUMBER)
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = VmInstanceConstant.MAXIMUM_CDROM_NUMBER)
     public static GlobalConfig VM_DEFAULT_CD_ROM_NUM = new GlobalConfig(CATEGORY, "vmDefaultCdRomNum");
 
     @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = VmInstanceConstant.MAXIMUM_CDROM_NUMBER)
