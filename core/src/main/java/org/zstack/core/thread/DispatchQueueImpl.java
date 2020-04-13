@@ -320,23 +320,27 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
         String syncSignature;
 
         int addSubPending(String deduplicateStr) {
-            AtomicInteger currentCount = subPendingMap.get(deduplicateStr);
-            if (currentCount == null) {
-                subPendingMap.put(deduplicateStr, new AtomicInteger(1));
-                return 1;
-            } else {
-                return currentCount.incrementAndGet();
+            synchronized (subPendingMap) {
+                AtomicInteger currentCount = subPendingMap.get(deduplicateStr);
+                if (currentCount == null) {
+                    subPendingMap.put(deduplicateStr, new AtomicInteger(1));
+                    return 1;
+                } else {
+                    return currentCount.incrementAndGet();
+                }
             }
         }
 
         void removeSubPending(String deduplicateStr) {
-            AtomicInteger currentCount = subPendingMap.get(deduplicateStr);
-            if (currentCount == null) {
-                // do nothing
-            } else if (currentCount.intValue() == 1) {
-                subPendingMap.remove(deduplicateStr);
-            } else {
-                currentCount.decrementAndGet();
+            synchronized (subPendingMap) {
+                AtomicInteger currentCount = subPendingMap.get(deduplicateStr);
+                if (currentCount == null) {
+                    // do nothing
+                } else if (currentCount.intValue() == 1) {
+                    subPendingMap.remove(deduplicateStr);
+                } else {
+                    currentCount.decrementAndGet();
+                }
             }
         }
 
@@ -396,9 +400,11 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
                             return;
                         }
-                        if (subPendingMap.get(cf.getTask().getDeduplicateString()) != null) {
-                            if (subPendingMap.get(cf.getTask().getDeduplicateString()).decrementAndGet() == 0) {
-                                subPendingMap.remove(cf.getTask().getDeduplicateString());
+                        synchronized (subPendingMap) {
+                            if (subPendingMap.get(cf.getTask().getDeduplicateString()) != null) {
+                                if (subPendingMap.get(cf.getTask().getDeduplicateString()).decrementAndGet() == 0) {
+                                    subPendingMap.remove(cf.getTask().getDeduplicateString());
+                                }
                             }
                         }
                     }
