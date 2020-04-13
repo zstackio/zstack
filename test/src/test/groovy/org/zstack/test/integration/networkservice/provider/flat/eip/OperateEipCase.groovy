@@ -1,7 +1,6 @@
 package org.zstack.test.integration.networkservice.provider.flat.eip
 
 import org.springframework.http.HttpEntity
-import org.zstack.core.db.Q
 import org.zstack.header.host.HostStatus
 import org.zstack.header.host.HostVO
 import org.zstack.header.network.service.NetworkServiceType
@@ -10,23 +9,13 @@ import org.zstack.network.service.eip.EipVO
 import org.zstack.network.service.flat.FlatEipBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
-import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.userdata.UserdataConstant
-import org.zstack.network.service.vip.VipVO
-import org.zstack.network.service.vip.VipVO_
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
-import org.zstack.sdk.AttachEipAction
-import org.zstack.sdk.CreateEipAction
-import org.zstack.sdk.EipInventory
-import org.zstack.sdk.GetEipAttachableVmNicsAction
-import org.zstack.sdk.L3NetworkInventory
-import org.zstack.sdk.HostInventory
-import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.*
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by heathhose on 17-5-15.
  */
@@ -117,6 +106,11 @@ class OperateEipCase extends SubCase {
                         service {
                             provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
                             types = [NetworkServiceType.DHCP.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE, UserdataConstant.USERDATA_TYPE_STRING]
+                        }
+
+                        service {
+                            provider = VyosConstants.VYOS_ROUTER_PROVIDER_TYPE
+                            types = [LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING]
                         }
 
                         ip {
@@ -257,6 +251,16 @@ class OperateEipCase extends SubCase {
             return rsp
 
         }
+        String vipUuid = eip.vipUuid
+        GetEipAttachableVmNicsAction getEipAttachableVmNicsAction = new GetEipAttachableVmNicsAction()
+        getEipAttachableVmNicsAction.eipUuid = eip.uuid
+        getEipAttachableVmNicsAction.vipUuid = vipUuid
+        getEipAttachableVmNicsAction.sessionId = adminSession()
+        GetEipAttachableVmNicsAction.Result res = getEipAttachableVmNicsAction.call()
+        assert res.error == null
+        assert res.value.inventories != null
+        assert res.value.inventories.size() == 2
+
         attachEip {
             eipUuid = eip.uuid
             vmNicUuid = vm.getVmNics().get(0).getUuid()
@@ -265,13 +269,7 @@ class OperateEipCase extends SubCase {
         assert cmd.eip.eipUuid == eip.uuid
         assert dbFindByUuid(eip.uuid, EipVO.class).guestIp == vm.getVmNics().get(0).getIp()
 
-
-        String vipUuid = eip.vipUuid
-        GetEipAttachableVmNicsAction getEipAttachableVmNicsAction = new GetEipAttachableVmNicsAction()
-        getEipAttachableVmNicsAction.eipUuid = eip.uuid
-        getEipAttachableVmNicsAction.vipUuid = vipUuid
-        getEipAttachableVmNicsAction.sessionId = adminSession()
-        GetEipAttachableVmNicsAction.Result res = getEipAttachableVmNicsAction.call()
+        res = getEipAttachableVmNicsAction.call()
         assert res.error == null
         assert res.value.inventories != null
         assert res.value.inventories.size() == 0

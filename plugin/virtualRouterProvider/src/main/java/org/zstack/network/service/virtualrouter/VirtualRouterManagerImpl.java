@@ -1405,12 +1405,15 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         // it also means to ignore vm in flat.
         List<String> privateL3Uuids = candidates.stream().map(VmNicInventory::getL3NetworkUuid).distinct()
                 .collect(Collectors.toList());
-        List<String> innerl3Uuids = SQL.New("select ref.l3NetworkUuid" +
+        /*innerL3: vRouter:Eip network service*/
+        List<String> innerl3Uuids = SQL.New("select distinct ref.l3NetworkUuid" +
                 " from NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO pro" +
                 " where pro.type in (:providerTypes)" +
                 " and ref.networkServiceProviderUuid = pro.uuid" +
+                " and ref.networkServiceType = :serviceType" +
                 " and ref.l3NetworkUuid in (:l3Uuids)", String.class)
                 .param("l3Uuids", privateL3Uuids)
+                .param("serviceType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
                 .param("providerTypes", Arrays.asList(
                         VyosConstants.PROVIDER_TYPE.toString(),
                         VirtualRouterConstant.PROVIDER_TYPE.toString()))
@@ -1453,27 +1456,32 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         // 2. keep vmnics which associated vrouter attached public network of vip
-        List<String> peerL3Uuids = SQL.New("select l3.uuid" +
-                " from VmNicVO nic, L3NetworkVO l3"  +
-                " where nic.vmInstanceUuid in " +
-                " (" +
-                " select vm.uuid" +
-                " from VmNicVO nic, ApplianceVmVO vm" +
-                " where nic.l3NetworkUuid = :l3NetworkUuid" +
-                " and nic.vmInstanceUuid = vm.uuid" +
-                " )"+
-                " and l3.uuid = nic.l3NetworkUuid" +
-                " and l3.system = :isSystem")
-                .param("l3NetworkUuid", vip.getL3NetworkUuid())
-                .param("isSystem", false)
-                .list();
+        if (!innerl3Uuids.isEmpty()) {
+            List<String> peerL3Uuids = SQL.New("select l3.uuid" +
+                    " from VmNicVO nic, L3NetworkVO l3" +
+                    " where nic.vmInstanceUuid in " +
+                    " (" +
+                    " select vm.uuid" +
+                    " from VmNicVO nic, ApplianceVmVO vm" +
+                    " where nic.l3NetworkUuid = :l3NetworkUuid" +
+                    " and nic.vmInstanceUuid = vm.uuid" +
+                    " )" +
+                    " and l3.uuid = nic.l3NetworkUuid" +
+                    " and l3.uuid in (:virtualNetworks)" +
+                    " and l3.system = :isSystem")
+                                          .param("l3NetworkUuid", vip.getL3NetworkUuid())
+                                          .param("virtualNetworks", innerl3Uuids)
+                                          .param("isSystem", false)
+                                          .list();
 
-        Set<VmNicInventory> r = candidates.stream()
-            .filter(nic -> peerL3Uuids.contains(nic.getL3NetworkUuid()))
-            .collect(Collectors.toSet());
-        candidates.removeAll(vmNicInVirtualRouter);
-        candidates.addAll(r);
-
+            Set<VmNicInventory> r = candidates.stream()
+                                              .filter(nic -> peerL3Uuids.contains(nic.getL3NetworkUuid()))
+                                              .collect(Collectors.toSet());
+            candidates.removeAll(vmNicInVirtualRouter);
+            candidates.addAll(r);
+        } else {
+            candidates.removeAll(vmNicInVirtualRouter);
+        }
         return candidates;
     }
 
