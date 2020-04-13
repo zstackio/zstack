@@ -222,3 +222,4 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LoadBalancerListenerACLRefVO` (
 
 ALTER TABLE V2VConversionHostVO ADD COLUMN totalSize bigint unsigned NOT NULL DEFAULT 0;
 ALTER TABLE V2VConversionHostVO ADD COLUMN availableSize bigint unsigned NOT NULL DEFAULT 0;
+drop table AvailableInstanceTypesVO;
