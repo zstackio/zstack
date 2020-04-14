@@ -39,9 +39,7 @@ public class ShellUtils {
 
         @Override
         public void run() {
-            BufferedReader br = null;
-            try {
-                br = new BufferedReader(new InputStreamReader(in));
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
                 String line;
                 while ( (line = br.readLine()) != null) {
                     out.println(line);
@@ -51,14 +49,6 @@ public class ShellUtils {
                 }
             } catch (Exception e) {
                 logger.warn(e.getMessage(), e);
-            } finally {
-                try {
-                    if (br != null) {
-                        br.close();
-                    }
-                } catch (IOException e) {
-                    logger.warn(e.getMessage(), e);
-                }
             }
         }
     }
