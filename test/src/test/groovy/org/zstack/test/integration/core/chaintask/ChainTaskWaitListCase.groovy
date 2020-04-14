@@ -36,7 +36,7 @@ class ChainTaskWaitListCase extends SubCase {
 
         void execute() {
             task = true
-            sleep 100
+            sleep 50
         }
 
         void lock() {
@@ -85,9 +85,10 @@ class ChainTaskWaitListCase extends SubCase {
                     return it.name
                 }
             })
+            sleep 5
         }
 
-        sleep 1000
+        sleep 500
 
         latches.each {
             if (it.name == "task1") {
@@ -152,9 +153,10 @@ class ChainTaskWaitListCase extends SubCase {
             sleep 5
         }
 
-        sleep 1000
+        sleep 500
 
         latches.each {
+            logger.debug(it.name)
             if (it.name == "task4") {
                 assert !it.task
                 assert it.abandon
@@ -198,7 +200,7 @@ class ChainTaskWaitListCase extends SubCase {
                 return "max tasks"
             }
         })
-        sleep 1000
+        sleep 500
         assert task.task
         assert !task.abandon
     }
@@ -296,7 +298,7 @@ class ChainTaskWaitListCase extends SubCase {
  * pending:   task2-1, task2-2
  * throwed:   task1-2, task1-3, task2-3
  */
-        sleep 1000
+        sleep 500
 
         latches1.each {
             if (it.name == "task1-1") {

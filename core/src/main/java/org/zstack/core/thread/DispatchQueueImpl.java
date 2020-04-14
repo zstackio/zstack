@@ -344,6 +344,11 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             }
         }
 
+        void warningAndRemove(ChainFuture task, int length, int queueLength) {
+            logger.warn(String.format("[%s] max pending size: %d, pending now: %d, throw the task: %s!", task.getTask().getDeduplicateString(), length, queueLength, task.getTask().getName()));
+            removeSubPending(task.getTask().getDeduplicateString());
+        }
+
         boolean addTask(ChainFuture task, int length) {
             if (length != -1 && CoreGlobalProperty.CHAIN_TASK_QOS) {
                 DebugUtils.Assert(task.getTask().getDeduplicateString() != null, "deduplicate String must be set if max pending string has been set!");
@@ -351,8 +356,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                 if (queueLength > length) {
                     synchronized (runningQueue) {
                         if (length != 0 || queueLength != 1 || runningQueue.size() != 0) {
-                            logger.warn(String.format("[%s] max pending size: %d, pending now: %d, throw the task: %s!", task.getTask().getDeduplicateString(), length, queueLength, task.getTask().getName()));
-                            removeSubPending(task.getTask().getDeduplicateString());
+                            warningAndRemove(task, length, queueLength);
                             return false;
                         }
                     }
@@ -400,13 +404,6 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
                             return;
                         }
-                        synchronized (subPendingMap) {
-                            if (subPendingMap.get(cf.getTask().getDeduplicateString()) != null) {
-                                if (subPendingMap.get(cf.getTask().getDeduplicateString()).decrementAndGet() == 0) {
-                                    subPendingMap.remove(cf.getTask().getDeduplicateString());
-                                }
-                            }
-                        }
                     }
 
                     synchronized (runningQueue) {
@@ -418,6 +415,14 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                         Optional.ofNullable(getApiId(cf))
                                 .ifPresent(apiId -> apiRunningSignature.computeIfAbsent(apiId,
                                         k -> new HashSet<>()).add(syncSignature));
+                    }
+
+                    synchronized (subPendingMap) {
+                        if (subPendingMap.get(cf.getTask().getDeduplicateString()) != null) {
+                            if (subPendingMap.get(cf.getTask().getDeduplicateString()).decrementAndGet() == 0) {
+                                subPendingMap.remove(cf.getTask().getDeduplicateString());
+                            }
+                        }
                     }
 
                     cf.run(() -> {
