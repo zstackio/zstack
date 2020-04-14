@@ -525,6 +525,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     public void nodeLeft(ManagementNodeInventory inv) {
         logger.debug(String.format("Management node[uuid:%s] left, node[uuid:%s] starts to take over longjobs", inv.getUuid(), Platform.getManagementServerId()));
         takeOverLongJob();
+        resumeLocalSuspendLongJob();
     }
 
     @Override
@@ -534,6 +535,18 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
     @Override
     public void iJoin(ManagementNodeInventory inv) {
+    }
+
+    private void resumeLocalSuspendLongJob() {
+        logger.debug("Starting to resume local suspend long jobs");
+        List<LongJobVO> jobs = Q.New(LongJobVO.class)
+                .eq(LongJobVO_.managementNodeUuid, Platform.getManagementServerId())
+                .eq(LongJobVO_.state, LongJobState.Suspended)
+                .list();
+        for (LongJobVO vo : jobs) {
+            LongJobOperation operation = getLoadOperation(vo);
+            doLoadLongJob(vo, operation);
+        }
     }
 
     private void takeOverLongJob() {
