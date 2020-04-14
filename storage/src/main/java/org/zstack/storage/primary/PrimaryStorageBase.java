@@ -56,10 +56,8 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -1432,7 +1430,43 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     }
 
     protected void handle(APIDeletePrimaryStorageMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                deletePrimaryStorage(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("delete-primary-storage-%s", self.getUuid());
+            }
+        });
+    }
+
+    private void deletePrimaryStorage(final APIDeletePrimaryStorageMsg msg, final NoErrorCompletion completion) {
         final APIDeletePrimaryStorageEvent evt = new APIDeletePrimaryStorageEvent(msg.getId());
+        self = dbf.reload(self);
+        Set<PrimaryStorageClusterRefVO> pscRefs = self.getAttachedClusterRefs();
+        if (!pscRefs.isEmpty()) {
+            String clusterUuidsString = pscRefs.stream()
+                    .map(PrimaryStorageClusterRefVO::getClusterUuid)
+                    .collect(Collectors.joining(", "));
+            evt.setError(operr("primary storage[uuid:%s] cannot be deleted for still " + "being attached to cluster[uuid:%s].", self.getUuid(), clusterUuidsString));
+            bus.publish(evt);
+            completion.done();
+            return;
+        }
+
         final String issuer = PrimaryStorageVO.class.getSimpleName();
         final List<PrimaryStorageInventory> ctx = PrimaryStorageInventory.valueOf(Arrays.asList(self));
         self.setState(PrimaryStorageState.Deleting);
@@ -1520,12 +1554,14 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 d.setPrimaryStorageUuid(self.getUuid());
                 d.setInventory(PrimaryStorageInventory.valueOf(self));
                 evtf.fire(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_DELETED_PATH, d);
+                completion.done();
             }
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
                 evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.publish(evt);
+                completion.done();
             }
         }).start();
     }

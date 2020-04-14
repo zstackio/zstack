@@ -170,18 +170,6 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             bus.publish(evt);
             throw new StopRoutingException();
         }
-
-        SimpleQuery<PrimaryStorageClusterRefVO> sq = dbf.createQuery(PrimaryStorageClusterRefVO.class);
-        sq.add(PrimaryStorageClusterRefVO_.primaryStorageUuid, Op.EQ, msg.getPrimaryStorageUuid());
-        List<PrimaryStorageClusterRefVO> pscRefs = sq.list();
-        if (!pscRefs.isEmpty()) {
-            String clusterUuidsString = pscRefs.stream()
-                    .map(PrimaryStorageClusterRefVO::getClusterUuid)
-                    .collect(Collectors.joining(", "));
-            throw new ApiMessageInterceptionException(operr("primary storage[uuid:%s] cannot be deleted for still " +
-                            "being attached to cluster[uuid:%s].",
-                    msg.getPrimaryStorageUuid(), clusterUuidsString));
-        }
     }
 
     private void validate(final APIGetTrashOnPrimaryStorageMsg msg) {
