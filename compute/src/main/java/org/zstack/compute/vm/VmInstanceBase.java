@@ -5876,8 +5876,17 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
                     });
                 } else {
-                    self.setState(originState);
-                    self = dbf.updateAndRefresh(self);
+                    VmInstanceState currentState = Q.New(VmInstanceVO.class)
+                            .select(VmInstanceVO_.state)
+                            .eq(VmInstanceVO_.uuid, self.getUuid())
+                            .findValue();
+                    if (currentState == VmInstanceState.Rebooting) {
+                        SQL.New(VmInstanceVO.class)
+                                .set(VmInstanceVO_.state, originState)
+                                .eq(VmInstanceVO_.uuid, self.getUuid())
+                                .update();
+                    }
+
                     completion.fail(errCode);
                 }
             }
