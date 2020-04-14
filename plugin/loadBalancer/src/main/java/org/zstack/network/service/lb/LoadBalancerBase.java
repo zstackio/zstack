@@ -195,7 +195,13 @@ public class LoadBalancerBase {
         if (listenerVOS != null && !listenerVOS.isEmpty()) {
             logger.debug(String.format("delete loadBalancerListeners[%s] for loadBalancer[uuid:%s]",
                     listenerVOS.stream().map(vo -> vo.getUuid()).collect(Collectors.toList()), lbUuid));
-            listenerVOS.forEach(vo -> dbf.remove(vo));
+            listenerVOS.forEach(vo -> {
+                /*there is no cascade deleting configure for acl ref in db */
+                if (!vo.getAclRefs().isEmpty()) {
+                    dbf.removeCollection(vo.getAclRefs(), LoadBalancerListenerACLRefVO.class);
+                }
+                dbf.remove(vo);
+            });
         }
     }
 
