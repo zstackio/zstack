@@ -505,6 +505,11 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             }
 
             if (ipr.getIpRangeType() == IpRangeType.Normal) {
+                /* normal ip ranges must in same cidr */
+                if (!Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, r.getUuid()).isExists()) {
+                    continue;
+                }
+
                 /* same l3 network can have only 1 cidr */
                 String rcidr = IpRangeInventory.valueOf(r).toSubnetUtils().getInfo().getCidrSignature();
                 if (!cidr.equals(rcidr)) {
