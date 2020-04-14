@@ -11,8 +11,6 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
-import java.io.IOException;
-
 
 public class ComponentLoaderImpl implements ComponentLoader {
     private static final CLogger logger = CLoggerImpl.getLogger(ComponentLoaderImpl.class);
@@ -27,21 +25,21 @@ public class ComponentLoaderImpl implements ComponentLoader {
         }
         isInit = true;
     }
-    
+
     public ComponentLoaderImpl(ApplicationContext appContext) {
         checkInit();
         ioc = appContext;
     }
 
 
-    public ComponentLoaderImpl () throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
+    public ComponentLoaderImpl () {
         checkInit();
         BeanFactoryLocator factoryLocator = ContextSingletonBeanFactoryLocator
                 .getInstance(String.format("classpath:%s", CoreGlobalProperty.BEAN_REF_CONTEXT_CONF));
         BeanFactoryReference ref = factoryLocator.useBeanFactory("parentContext");
         ioc = ref.getFactory();
     }
-    
+
     @Override
     public <T> T getComponent(Class<T> clazz) {
         return ioc.getBean(clazz);
@@ -67,6 +65,7 @@ public class ComponentLoaderImpl implements ComponentLoader {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getComponent(String className) {
         try {
             Class<?> clazz = Class.forName(className);
@@ -97,7 +96,7 @@ public class ComponentLoaderImpl implements ComponentLoader {
             }
             pluginRegistry.initialize();
         }
-        return (PluginRegistry) pluginRegistry;
+        return pluginRegistry;
     }
 
     @Override
@@ -106,6 +105,7 @@ public class ComponentLoaderImpl implements ComponentLoader {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getComponentByBeanName(String beanName) {
         return (T) ioc.getBean(beanName);
     }

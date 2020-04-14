@@ -8,7 +8,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.AsyncThread;
@@ -31,6 +30,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -47,8 +47,6 @@ public class RESTFacadeImpl implements RESTFacade {
     
     @Autowired
     private ThreadFacade thdf;
-    @Autowired
-    private ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager timeoutMgr;
     @Autowired
@@ -194,7 +192,9 @@ public class RESTFacadeImpl implements RESTFacade {
     @Override
     public void asyncJsonPost(String url, Object body, Map<String, String> headers, AsyncRESTCallback callback, TimeUnit unit, long timeout) {
         // for unit test finding invocation chain
-        MessageCommandRecorder.record(body.getClass());
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            MessageCommandRecorder.record(body.getClass());
+        }
         String bodyStr = JSONObjectUtil.toJsonString(body);
         asyncJsonPost(url, bodyStr, headers, callback, unit, timeout);
     }
@@ -401,12 +401,13 @@ public class RESTFacadeImpl implements RESTFacade {
     public HttpEntity<String> httpServletRequestToHttpEntity(HttpServletRequest req) {
         try {
             StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = req.getReader().readLine()) != null) {
-                sb.append(line);
+            try (BufferedReader reader = req.getReader()) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line);
+                }
             }
-            req.getReader().close();
-            
+
             HttpHeaders header = new HttpHeaders();
             for (Enumeration e = req.getHeaderNames() ; e.hasMoreElements() ;) {
                 String name = e.nextElement().toString();
@@ -428,7 +429,7 @@ public class RESTFacadeImpl implements RESTFacade {
     @Override
     public <T> T syncJsonPost(String url, Object body, Class<T> returnClass) {
         // for unit test finding invocation chain
-        if (body != null) {
+        if (CoreGlobalProperty.UNIT_TEST_ON && body != null) {
             MessageCommandRecorder.record(body.getClass());
         }
 
@@ -438,7 +439,7 @@ public class RESTFacadeImpl implements RESTFacade {
     @Override
     public <T> T syncJsonPost(String url, Object body, Class<T> returnClass, TimeUnit unit, long timeout) {
         // for unit test finding invocation chain
-        if (body != null) {
+        if (CoreGlobalProperty.UNIT_TEST_ON && body != null) {
             MessageCommandRecorder.record(body.getClass());
         }
 
@@ -477,7 +478,7 @@ public class RESTFacadeImpl implements RESTFacade {
         return syncJson(url, body, headers, HttpMethod.GET, returnClass, unit, timeout);
     }
 
-    public <T> T syncJson(String url, String body, Map<String, String> headers, HttpMethod method, Class<T> returnClass, TimeUnit unit, long timeout) {
+    protected  <T> T syncJson(String url, String body, Map<String, String> headers, HttpMethod method, Class<T> returnClass, TimeUnit unit, long timeout) {
         body = body == null ? "" : body;
 
         HttpHeaders requestHeaders = new HttpHeaders();
@@ -543,7 +544,7 @@ public class RESTFacadeImpl implements RESTFacade {
     public void echo(String url, Completion callback) {
         echo(url, callback, TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(CoreGlobalProperty.REST_FACADE_ECHO_TIMEOUT));
     }
-    
+
     @Override
     public void echo(final String url, final Completion completion, final long interval, long timeout) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
