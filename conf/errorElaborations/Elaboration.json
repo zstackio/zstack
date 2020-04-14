@@ -979,14 +979,6 @@
     "category": "V2V",
     "code": "1002",
     "method": "regex",
-    "regex": "Detected .*MAC address conflict.*",
-    "message_cn": "迁移环境内存在重复的MAC地址，请先解决该问题再继续",
-    "message_en": "There are duplicate MAC addresses in the migration environment, please resolve the problem and continue"
-  },
-  {
-    "category": "V2V",
-    "code": "1003",
-    "method": "regex",
     "regex": ".*refers to non-existing datastore.*This may be a bug in vCenter 5.5, please detach ISO in vSphere client and try again",
     "message_cn": "文件名指向的datastore不存在，请通过vSphere客户端卸载掉iso再重试",
     "message_en": "filename refers to non-existing datatore. please detach ISO in vSphere client and try again"
@@ -1030,6 +1022,14 @@
     "regex": ".*invoke method RetrieveServiceContent; .*java.net.SocketException.*",
     "message_cn": "无法连接到vCenter，请确保vCenter处于运行状态。",
     "message_en": "Failed to connect to vCenter, please ensure vCenter host is running."
+  },
+  {
+    "category": "VCENTER",
+    "code": "1005",
+    "method": "regex",
+    "regex": "Detected .*MAC address conflict.*",
+    "message_cn": "与当前已纳管的vCenter环境存在重复的MAC地址",
+    "message_en": "duplicate MAC address with the currently managed vCenter environment"
   },
   {
     "category": "VIRTUALROUTER",
