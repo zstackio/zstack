@@ -1,5 +1,6 @@
 package org.zstack.testlib
 
+import org.zstack.sdk.GetSchedulerExecutionReportAction
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.core.Platform
 
@@ -15812,8 +15813,8 @@ trait ApiHelper {
     }
 
 
-    def getSchedulerJobGroupExecutionReport(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetSchedulerJobGroupExecutionReportAction.class) Closure c) {
-        def a = new org.zstack.sdk.GetSchedulerJobGroupExecutionReportAction()
+    def getSchedulerExecutionReport(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = GetSchedulerExecutionReportAction.class) Closure c) {
+        def a = new GetSchedulerExecutionReportAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
