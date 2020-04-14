@@ -61,7 +61,11 @@ class ChainTaskWaitListCase extends SubCase {
     void testDefaultTasks() {
         logger.debug("start test default tasks")
         ThreadFacade thdf = bean(ThreadFacade.class)
-        def latches = [new LatchTask("task1"), new LatchTask("task2"), new LatchTask("task3")]
+//        def latches = [new LatchTask("task1"), new LatchTask("task2"), new LatchTask("task3")]
+        def latches = []
+        latches.add(new LatchTask("task1"))
+        latches.add(new LatchTask("task2"))
+        latches.add(new LatchTask("task3"))
 
         latches.each {
             thdf.chainSubmit(new ChainTask(null) {
@@ -102,7 +106,15 @@ class ChainTaskWaitListCase extends SubCase {
     void testMaxTasks() {
         logger.debug("start test max tasks")
         ThreadFacade thdf = bean(ThreadFacade.class)
-        def latches = [new LatchTask("task1"), new LatchTask("task2"), new LatchTask("task3"), new LatchTask("task4")]
+        def latches = []
+        latches.add(new LatchTask("task1"))
+        latches.add(new LatchTask("task2"))
+        latches.add(new LatchTask("task3"))
+        latches.add(new LatchTask("task4"))
+        /**
+         * use add instead of the bellow code, cause some failed cases indicate there maybe some bugs
+         */
+        //def latches = [new LatchTask("task1"), new LatchTask("task2"), new LatchTask("task3"), new LatchTask("task4")]
 
         latches.each {
             thdf.chainSubmit(new ChainTask(null) {
@@ -194,8 +206,18 @@ class ChainTaskWaitListCase extends SubCase {
     void testTwoDedupTasks() {
         logger.debug("start test two dedup tasks")
         ThreadFacade thdf = bean(ThreadFacade.class)
-        def latches1 = [new LatchTask("task1-1"), new LatchTask("task1-2"), new LatchTask("task1-3")]
-        def latches2 = [new LatchTask("task2-1"), new LatchTask("task2-2"), new LatchTask("task2-3")]
+
+        def latches1 = []
+        latches1.add(new LatchTask("task1-1"))
+        latches1.add(new LatchTask("task1-2"))
+        latches1.add(new LatchTask("task1-3"))
+
+        def latches2 = []
+        latches2.add(new LatchTask("task2-1"))
+        latches2.add(new LatchTask("task2-2"))
+        latches2.add(new LatchTask("task2-3"))
+//        def latches1 = [new LatchTask("task1-1"), new LatchTask("task1-2"), new LatchTask("task1-3")]
+//        def latches2 = [new LatchTask("task2-1"), new LatchTask("task2-2"), new LatchTask("task2-3")]
 
         latches1.each {
             thdf.chainSubmit(new ChainTask(null) {
