@@ -45,6 +45,8 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.primary.*;
@@ -2044,9 +2046,10 @@ public class KVMHost extends HostBase implements Host {
     @Transactional(readOnly = true)
     private NicTO completeNicInfo(VmNicInventory nic) {
         /* all l3 networks of the nic has same l2 network */
+        L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class));
         L2NetworkInventory l2inv = getL2NetworkTypeFromL3NetworkUuid(nic.getL3NetworkUuid());
         KVMCompleteNicInformationExtensionPoint extp = factory.getCompleteNicInfoExtension(L2NetworkType.valueOf(l2inv.getType()));
-        NicTO to = extp.completeNicInformation(l2inv, nic);
+        NicTO to = extp.completeNicInformation(l2inv, l3Inv, nic);
 
         if (to.getUseVirtio() == null) {
             SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);

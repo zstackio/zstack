@@ -5,11 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l2.L2NetworkVO_;
+import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l3.L3Network;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.network.l2.L2NetworkDefaultMtu;
+import org.zstack.network.l2.L2NetworkManager;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -40,10 +42,10 @@ public class MtuGetter {
             return mtu;
         }
 
-        String l2type = Q.New(L2NetworkVO.class).select(L2NetworkVO_.type).eq(L2NetworkVO_.uuid, l2NetworkUuid).findValue();
+        L2NetworkVO l2VO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l2NetworkUuid).find();
         for (L2NetworkDefaultMtu e : pluginRgty.getExtensionList(L2NetworkDefaultMtu.class)) {
-            if (l2type.equals(e.getL2NetworkType())) {
-                mtu = e.getDefaultMtu();
+            if (l2VO.getType().equals(e.getL2NetworkType())) {
+                mtu = e.getDefaultMtu(L2NetworkInventory.valueOf(l2VO));
             }
         }
 
@@ -52,9 +54,55 @@ public class MtuGetter {
         } else {
             mtu = Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_DUMMY.value());
             logger.warn(String.format("unknown network type [%s], set mtu as default [%s]",
-                    l2type, mtu));
+                    l2VO.getType(), mtu));
             return mtu;
         }
+    }
+
+    public Integer getL2Mtu(L2NetworkInventory l2Inv) {
+
+        Integer mtu = null;
+
+        /* get max mtu of l3 network in l2 network */
+        List<String> l3Uuids = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.l2NetworkUuid, l2Inv.getUuid()).select(L3NetworkVO_.uuid).listValues();
+        for (String uuid : l3Uuids) {
+            String token = NetworkServiceSystemTag.L3_MTU.getTokenByResourceUuid(uuid, NetworkServiceSystemTag.MTU_TOKEN);
+            if (token == null) {
+                continue;
+            }
+
+            if (mtu == null) {
+                mtu = Integer.valueOf(token);
+                continue;
+            }
+            Integer newMtu = Integer.valueOf(token);
+            if (newMtu > mtu) {
+                mtu = newMtu;
+            }
+        }
+
+        /* compare to default mtu */
+        for (L2NetworkDefaultMtu e : pluginRgty.getExtensionList(L2NetworkDefaultMtu.class)) {
+            if (l2Inv.getType().equals(e.getL2NetworkType())) {
+                Integer l2mtu = e.getDefaultMtu(l2Inv);
+                if (mtu == null) {
+                    mtu = l2mtu;
+                    break;
+                }
+                if (l2mtu > mtu) {
+                    mtu = l2mtu;
+                }
+                break;
+            }
+        }
+
+        if (mtu != null) {
+            return mtu;
+        }
+
+        logger.warn(String.format("unknown network type [%s], set mtu as default [%s]",
+                l2Inv.getType(), mtu));
+        return Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_DUMMY.value());
     }
 
 }
