@@ -49,6 +49,7 @@ class Ipv6RangeCase extends SubCase {
             testAttachIpv6CidrOverLap()
             testAttachIpv6RangeAddressMode()
             testIpv6RangeWith2Ips()
+            testIpv6RangeLastAddress()
         }
     }
 
@@ -129,16 +130,14 @@ class Ipv6RangeCase extends SubCase {
                 addressMode = IPv6Constants.Stateful_DHCP
             }
         }
-        expect(AssertionError.class) {
-            addIpv6Range {
-                name = "ipr-6"
-                l3NetworkUuid = l3_pub_ipv6.getUuid()
-                startIp = "2002:2001::02"
-                endIp = "2002:2001::ff"
-                gateway = "2002:2001::01"
-                prefixLen = 120
-                addressMode = IPv6Constants.Stateful_DHCP
-            }
+        addIpv6Range {
+            name = "ipr-6"
+            l3NetworkUuid = l3_pub_ipv6.getUuid()
+            startIp = "2002:2001::02"
+            endIp = "2002:2001::ff"
+            gateway = "2002:2001::01"
+            prefixLen = 120
+            addressMode = IPv6Constants.Stateful_DHCP
         }
 
         expect(AssertionError.class) {
@@ -435,6 +434,37 @@ class Ipv6RangeCase extends SubCase {
                 imageUuid = image.uuid
                 l3NetworkUuids = asList(l3_ipv6.uuid)
             }
+        }
+    }
+
+    void testIpv6RangeLastAddress() {
+        L2NetworkInventory l2 = env.inventoryByName("l2")
+
+        L3NetworkInventory l3_ipv6_last = createL3Network {
+            category = "Private"
+            l2NetworkUuid = l2.uuid
+            name = "l3_ipv6_last"
+            ipVersion = 6
+        }
+
+        def flatProvider = queryNetworkServiceProvider {
+            delegate.conditions = ["type=Flat"]
+        }[0] as NetworkServiceProviderInventory
+
+        def netServices = ["${flatProvider.uuid}":["DHCP", "DNS", "Eip"]]
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3_ipv6_last.uuid
+            networkServices = netServices
+        }
+
+        addIpv6Range {
+            name = "l3_ipv6_last"
+            l3NetworkUuid = l3_ipv6_last.getUuid()
+            startIp = "3004:2001::0002"
+            endIp = "3004:2001::03ff"
+            gateway = "3004:2001::1"
+            prefixLen = 118
+            addressMode = IPv6Constants.Stateful_DHCP
         }
     }
 }

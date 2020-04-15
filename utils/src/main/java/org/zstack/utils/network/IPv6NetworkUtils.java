@@ -183,7 +183,7 @@ public class IPv6NetworkUtils {
                 return false;
             }
             /* end can not be last of the cidr */
-            if (network.getLast().compareTo(end) == 0) {
+            if (network.getLast().compareTo(end) < 0) {
                 return false;
             }
             return true;
