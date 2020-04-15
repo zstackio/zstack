@@ -350,6 +350,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkInterfaceVO` (
     CONSTRAINT `fkHostNetworkInterfaceVOHostNetworkBondingVO` FOREIGN KEY (`bondingUuid`) REFERENCES `zstack`.`HostNetworkBondingVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `zstack`.`SchedulerJobHistoryVO` CHANGE COLUMN `startTime` `startTime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE `zstack`.`SchedulerJobHistoryVO` ADD COLUMN jobType VARCHAR(255) DEFAULT NULL;
 ALTER TABLE `zstack`.`SchedulerJobHistoryVO` ADD COLUMN fireInstanceId VARCHAR(32) DEFAULT NULL;
 ALTER TABLE `zstack`.`SchedulerJobHistoryVO` ADD INDEX idxSchedulerJobHistoryVOStartTime (`startTime`);
