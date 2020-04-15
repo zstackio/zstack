@@ -3,9 +3,9 @@ package org.zstack.network.service.virtualrouter
 import org.zstack.network.service.virtualrouter.APIUpdateVirtualRouterEvent
 
 doc {
-    title "UpdateVirtualRouter"
+    title "更新虚拟路由器(UpdateVirtualRouter)"
 
-    category "virtualRouter"
+    category "虚拟路由器"
 
     desc """更新虚拟路由器"""
 
