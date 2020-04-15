@@ -44,6 +44,8 @@ public class APIRemoveAccessControlListEntryMsg extends APIDeleteMessage impleme
     public static APIRemoveAccessControlListEntryMsg __example__() {
         APIRemoveAccessControlListEntryMsg msg = new APIRemoveAccessControlListEntryMsg();
         msg.setUuid(uuid());
+        msg.setAclUuid(uuid());
+
         return msg;
     }
 

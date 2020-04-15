@@ -74,6 +74,7 @@ public class APIAddAccessControlListToLoadBalancerMsg extends APIMessage impleme
         msg.setAclUuids(Arrays.asList(uuid()));
         msg.setListenerUuid(uuid());
         msg.setLoadBalancerUuid(uuid());
+        msg.setAclType(LoadBalancerAclType.black.toString());
 
         return msg;
     }

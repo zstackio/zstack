@@ -121,6 +121,56 @@ doc {
 					since "3.4"
 					
 				}
+				column {
+					name "healthCheckProtocol"
+					enclosedIn "changeLoadBalancerListener"
+					desc "负载均衡健康检查协议"
+					location "body"
+					type "String"
+					optional true
+					since "3.9"
+					values ("tcp","udp","http")
+				}
+				column {
+					name "healthCheckMethod"
+					enclosedIn "changeLoadBalancerListener"
+					desc "健康检查方法"
+					location "body"
+					type "String"
+					optional true
+					since "3.9"
+					values ("GET","HEAD")
+				}
+				column {
+					name "healthCheckURI"
+					enclosedIn "changeLoadBalancerListener"
+					desc "健康检查的URI"
+					location "body"
+					type "String"
+					optional true
+					since "3.9"
+					
+				}
+				column {
+					name "healthCheckHttpCode"
+					enclosedIn "changeLoadBalancerListener"
+					desc "健康检查期望的成功返回码"
+					location "body"
+					type "String"
+					optional true
+					since "3.9"
+					
+				}
+				column {
+					name "aclStatus"
+					enclosedIn "changeLoadBalancerListener"
+					desc "访问控制状态"
+					location "body"
+					type "String"
+					optional true
+					since "3.9"
+					values ("enable","disable")
+				}
 			}
         }
 

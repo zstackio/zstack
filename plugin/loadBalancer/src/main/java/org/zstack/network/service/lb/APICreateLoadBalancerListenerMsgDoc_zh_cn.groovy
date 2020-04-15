@@ -52,14 +52,14 @@ doc {
 					
 				}
 				column {
-					name "云主机端口"
+					name "instancePort"
 					enclosedIn "params"
-					desc ""
+					desc "云主机端口"
 					location "body"
 					type "Integer"
 					optional true
 					since "0.6"
-					
+
 				}
 				column {
 					name "loadBalancerPort"
@@ -91,6 +91,77 @@ doc {
 					since "2.3"
 					
 				}
+
+				column {
+					name "healthCheckProtocol"
+					enclosedIn "params"
+					desc "健康检查协议"
+					location "body"
+					type "String"
+					optional true
+					since "3.9"
+					values ("tcp","udp","http")
+				}
+				column {
+					name "healthCheckMethod"
+					enclosedIn "params"
+					desc "健康检查方法"
+					location "body"
+					type "String"
+					optional true
+					since "3.9"
+					values ("GET","HEAD")
+				}
+				column {
+					name "healthCheckURI"
+					enclosedIn "params"
+					desc "健康检查的URI"
+					location "body"
+					type "String"
+					optional true
+					since "3.9"
+
+				}
+				column {
+					name "healthCheckHttpCode"
+					enclosedIn "params"
+					desc "健康检查期望的返回码"
+					location "body"
+					type "String"
+					optional true
+					since "3.9"
+
+				}
+				column {
+					name "aclStatus"
+					enclosedIn "params"
+					desc "访问控制策略状态"
+					location "body"
+					type "String"
+					optional true
+					since "3.9"
+					values ("enable","disable")
+				}
+				column {
+					name "aclUuids"
+					enclosedIn "params"
+					desc "访问控制策略组"
+					location "body"
+					type "List"
+					optional true
+					since "3.9"
+
+				}
+				column {
+					name "aclType"
+					enclosedIn "params"
+					desc "访问控制策略类型"
+					location "body"
+					type "String"
+					optional true
+					since "3.9"
+					values ("white","black")
+				}
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
@@ -115,6 +186,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "tagUuids"
+					enclosedIn "params"
+					desc "标签UUID列表"
 					location "body"
 					type "List"
 					optional true
