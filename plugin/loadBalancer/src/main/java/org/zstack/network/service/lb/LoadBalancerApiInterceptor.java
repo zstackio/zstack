@@ -94,6 +94,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             validate((APIRemoveVmNicFromLoadBalancerMsg) msg);
         } else if (msg instanceof APIGetCandidateVmNicsForLoadBalancerMsg) {
             validate((APIGetCandidateVmNicsForLoadBalancerMsg) msg);
+        } else if (msg instanceof APIGetCandidateL3NetworksForLoadBalancerMsg) {
+            validate((APIGetCandidateL3NetworksForLoadBalancerMsg) msg);
         } else if(msg instanceof APIUpdateLoadBalancerListenerMsg){
             validate((APIUpdateLoadBalancerListenerMsg) msg);
         } else if(msg instanceof APIAddCertificateToLoadBalancerListenerMsg){
@@ -124,6 +126,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     private void validate(APIGetCandidateVmNicsForLoadBalancerMsg msg) {
+        SimpleQuery<LoadBalancerListenerVO> lq = dbf.createQuery(LoadBalancerListenerVO.class);
+        lq.select(LoadBalancerListenerVO_.loadBalancerUuid);
+        lq.add(LoadBalancerListenerVO_.uuid, Op.EQ, msg.getListenerUuid());
+        String lbuuid = lq.findValue();
+        msg.setLoadBalancerUuid(lbuuid);
+    }
+
+    private void validate(APIGetCandidateL3NetworksForLoadBalancerMsg msg) {
         SimpleQuery<LoadBalancerListenerVO> lq = dbf.createQuery(LoadBalancerListenerVO.class);
         lq.select(LoadBalancerListenerVO_.loadBalancerUuid);
         lq.add(LoadBalancerListenerVO_.uuid, Op.EQ, msg.getListenerUuid());

@@ -562,6 +562,8 @@ public class LoadBalancerBase {
             handle((APIRefreshLoadBalancerMsg) msg);
         } else if (msg instanceof APIGetCandidateVmNicsForLoadBalancerMsg) {
             handle((APIGetCandidateVmNicsForLoadBalancerMsg) msg);
+        } else if (msg instanceof APIGetCandidateL3NetworksForLoadBalancerMsg) {
+            handle((APIGetCandidateL3NetworksForLoadBalancerMsg) msg);
         } else if (msg instanceof APIUpdateLoadBalancerMsg) {
             handle((APIUpdateLoadBalancerMsg) msg);
         } else if (msg instanceof APIUpdateLoadBalancerListenerMsg) {
@@ -579,6 +581,20 @@ public class LoadBalancerBase {
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APIGetCandidateL3NetworksForLoadBalancerMsg msg) {
+        APIGetCandidateL3NetworksForLoadBalancerReply reply = new APIGetCandidateL3NetworksForLoadBalancerReply();
+        LoadBalancerGetPeerL3NetworksMsg amsg = new LoadBalancerGetPeerL3NetworksMsg();
+        amsg.setLoadBalancerUuid(msg.getLoadBalancerUuid());
+        bus.makeTargetServiceIdByResourceUuid(amsg, LoadBalancerConstants.SERVICE_ID, msg.getLoadBalancerUuid());
+        LoadBalancerGetPeerL3NetworksReply areply = (LoadBalancerGetPeerL3NetworksReply)bus.call(amsg);
+        if (areply.isSuccess()) {
+            reply.setInventories(msg.filter(areply.getInventories()));
+        } else {
+            reply.setError(areply.getError());
+        }
+        bus.reply(msg, reply);
     }
 
     @Transactional(readOnly = true)
@@ -1142,7 +1158,7 @@ public class LoadBalancerBase {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("add-vm-nic-to-lb-listener-%s", msg.getListenerUuid()));
         chain.then(new ShareFlow() {
-            List<LoadBalancerListenerVmNicRefVO> refs = new ArrayList<LoadBalancerListenerVmNicRefVO>();
+            List<LoadBalancerListenerVmNicRefVO> refs = new ArrayList<>();
             boolean init = false;
 
             @Override
@@ -1313,7 +1329,7 @@ public class LoadBalancerBase {
             SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
             nq.add(VmNicVO_.uuid, Op.IN, activeNicUuids);
             List<VmNicVO> nicvos = nq.list();
-            Map<String, VmNicInventory> m = new HashMap<String, VmNicInventory>();
+            Map<String, VmNicInventory> m = new HashMap<>();
             for (VmNicVO n : nicvos) {
                 m.put(n.getUuid(), VmNicInventory.valueOf(n));
             }
@@ -1398,8 +1414,6 @@ public class LoadBalancerBase {
             @Override
             public void run(SyncTaskChain chain) {
                 APIUpdateLoadBalancerEvent evt = new APIUpdateLoadBalancerEvent(msg.getId());
-
-                final LoadBalancerInventory lb = new LoadBalancerInventory();
 
                 boolean update = false;
                 if (msg.getName() != null) {

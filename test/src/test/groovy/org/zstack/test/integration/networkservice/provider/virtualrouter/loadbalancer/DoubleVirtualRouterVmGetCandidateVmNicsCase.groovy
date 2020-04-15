@@ -284,6 +284,11 @@ class DoubleVirtualRouterVmGetCandidateVmNicsCase extends SubCase{
         assert vmNics.size() == 1
         assert vmNics.get(0).getL3NetworkUuid() == l31.uuid
 
+        def l3Networks = getCandidateL3NetworksForLoadBalancer {
+            listenerUuid = listener.getUuid()
+        } as List<L3NetworkInventory>
+        assert l3Networks.size() == 1
+        assert l3Networks.get(0).getUuid() == l31.uuid
 
         destroyVmInstance {
             uuid = vm.uuid
@@ -293,6 +298,11 @@ class DoubleVirtualRouterVmGetCandidateVmNicsCase extends SubCase{
         } as List<VmNicInventory>
         assert vmNics.size() == 0
 
+        l3Networks = getCandidateL3NetworksForLoadBalancer {
+            listenerUuid = listener.getUuid()
+        } as List<L3NetworkInventory>
+        assert l3Networks.size() == 1
+        assert l3Networks.get(0).getUuid() == l31.uuid
 
         destroyVmInstance {
             uuid = vm2.uuid
