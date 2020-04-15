@@ -21,6 +21,7 @@ ALTER TABLE ImageEO DROP exportMd5Sum, DROP exportUrl;
 ALTER TABLE `zstack`.`PolicyRouteRuleSetVO` ADD COLUMN type VARCHAR(64) DEFAULT "User" NOT NULL;
 ALTER TABLE `zstack`.`PolicyRouteTableVO` ADD COLUMN type VARCHAR(64) DEFAULT "User" NOT NULL;
 
+ALTER TABLE `zstack`.`SchedulerJobHistoryVO` CHANGE COLUMN `startTime` `startTime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE `zstack`.`SchedulerJobHistoryVO` ADD COLUMN jobType VARCHAR(255) DEFAULT NULL;
 ALTER TABLE `zstack`.`SchedulerJobHistoryVO` ADD COLUMN fireInstanceId VARCHAR(32) DEFAULT NULL;
 ALTER TABLE `zstack`.`SchedulerJobHistoryVO` ADD INDEX idxSchedulerJobHistoryVOStartTime (`startTime`);
