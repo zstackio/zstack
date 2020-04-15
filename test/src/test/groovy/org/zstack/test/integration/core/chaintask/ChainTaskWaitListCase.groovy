@@ -68,6 +68,7 @@ class ChainTaskWaitListCase extends SubCase {
         latches.add(new LatchTask("task3"))
 
         latches.each {
+            def lat = it
             thdf.chainSubmit(new ChainTask(null) {
                 @Override
                 String getSyncSignature() {
@@ -76,13 +77,13 @@ class ChainTaskWaitListCase extends SubCase {
 
                 @Override
                 void run(SyncTaskChain chain) {
-                    it.lock()
+                    lat.lock()
                     chain.next()
                 }
 
                 @Override
                 String getName() {
-                    return it.name
+                    return lat.name
                 }
             })
             sleep 5
@@ -118,6 +119,7 @@ class ChainTaskWaitListCase extends SubCase {
         //def latches = [new LatchTask("task1"), new LatchTask("task2"), new LatchTask("task3"), new LatchTask("task4")]
 
         latches.each {
+            def lat = it
             thdf.chainSubmit(new ChainTask(null) {
                 @Override
                 String getSyncSignature() {
@@ -126,13 +128,13 @@ class ChainTaskWaitListCase extends SubCase {
 
                 @Override
                 void run(SyncTaskChain chain) {
-                    it.execute()
+                    lat.execute()
                     chain.next()
                 }
 
                 @Override
                 String getName() {
-                    return it.name
+                    return lat.name
                 }
 
                 @Override
@@ -142,7 +144,7 @@ class ChainTaskWaitListCase extends SubCase {
 
                 @Override
                 void exceedMaxPendingCallback() {
-                    it.throwed()
+                    lat.throwed()
                 }
 
                 @Override
@@ -222,6 +224,7 @@ class ChainTaskWaitListCase extends SubCase {
 //        def latches2 = [new LatchTask("task2-1"), new LatchTask("task2-2"), new LatchTask("task2-3")]
 
         latches1.each {
+            def lat = it
             thdf.chainSubmit(new ChainTask(null) {
                 @Override
                 String getSyncSignature() {
@@ -230,13 +233,13 @@ class ChainTaskWaitListCase extends SubCase {
 
                 @Override
                 void run(SyncTaskChain chain) {
-                    it.execute()
+                    lat.execute()
                     chain.next()
                 }
 
                 @Override
                 String getName() {
-                    return it.name
+                    return lat.name
                 }
 
                 @Override
@@ -246,7 +249,7 @@ class ChainTaskWaitListCase extends SubCase {
 
                 @Override
                 void exceedMaxPendingCallback() {
-                    it.throwed()
+                    lat.throwed()
                 }
 
                 @Override
@@ -258,6 +261,7 @@ class ChainTaskWaitListCase extends SubCase {
         }
 
         latches2.each {
+            def lat = it
             thdf.chainSubmit(new ChainTask(null) {
                 @Override
                 String getSyncSignature() {
@@ -266,13 +270,13 @@ class ChainTaskWaitListCase extends SubCase {
 
                 @Override
                 void run(SyncTaskChain chain) {
-                    it.execute()
+                    lat.execute()
                     chain.next()
                 }
 
                 @Override
                 String getName() {
-                    return it.name
+                    return lat.name
                 }
 
                 @Override
@@ -282,7 +286,7 @@ class ChainTaskWaitListCase extends SubCase {
 
                 @Override
                 void exceedMaxPendingCallback() {
-                    it.throwed()
+                    lat.throwed()
                 }
 
                 @Override
