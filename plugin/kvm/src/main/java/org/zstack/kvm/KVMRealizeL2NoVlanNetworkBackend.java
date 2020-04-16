@@ -34,14 +34,14 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     @Autowired
     private CloudBus bus;
 
-    private static String makeBridgeName(String physicalInterfaceName) {
-        return "br_" + physicalInterfaceName;
+    private static String makeBridgeName(String l2Uuid) {
+        return KVMHostUtils.getNormalizedBridgeName(l2Uuid, "br_%s");
     }
 
     public void realize(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
         final CreateBridgeCmd cmd = new CreateBridgeCmd();
         cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
-        cmd.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface()));
+        cmd.setBridgeName(makeBridgeName(l2Network.getUuid()));
         cmd.setL2NetworkUuid(l2Network.getUuid());
         cmd.setDisableIptables(NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES);
         cmd.setMtu(new MtuGetter().getL2Mtu(l2Network));
@@ -94,7 +94,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     public void check(final L2NetworkInventory l2Network, final String hostUuid, boolean noStatusCheck, final Completion completion) {
         final KVMAgentCommands.CheckBridgeCmd cmd = new KVMAgentCommands.CheckBridgeCmd();
         cmd.setPhysicalInterfaceName(l2Network.getPhysicalInterface());
-        cmd.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface()));
+        cmd.setBridgeName(makeBridgeName(l2Network.getUuid()));
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setNoStatusCheck(noStatusCheck);
@@ -152,7 +152,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
         NicTO to = new NicTO();
         to.setMac(nic.getMac());
         to.setUuid(nic.getUuid());
-        to.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface()));
+        to.setBridgeName(makeBridgeName(l2Network.getUuid()));
         to.setPhysicalInterface(l2Network.getPhysicalInterface());
         to.setDeviceId(nic.getDeviceId());
         to.setNicInternalName(nic.getInternalName());
@@ -164,6 +164,6 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
 
     @Override
     public String getBridgeName(L2NetworkInventory l2Network) {
-        return makeBridgeName(l2Network.getPhysicalInterface());
+        return makeBridgeName(l2Network.getUuid());
     }
 }
