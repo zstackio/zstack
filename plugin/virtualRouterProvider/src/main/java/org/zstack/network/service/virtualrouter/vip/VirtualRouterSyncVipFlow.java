@@ -14,6 +14,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -57,9 +58,15 @@ public class VirtualRouterSyncVipFlow implements Flow {
             return;
         }
 
-        List<VipVO> vips = vipUuids.stream()
-                .map(uuid -> (VipVO)Q.New(VipVO.class).eq(VipVO_.uuid, uuid).find())
-                .collect(Collectors.toList());
+        /*just only vrouter vip and skip the flat vip*/
+        List<VipVO> vips = Q.New(VipVO.class)
+                            .in(VipVO_.serviceProvider, Arrays.asList(VyosConstants.PROVIDER_TYPE.toString(),
+                                VirtualRouterConstant.PROVIDER_TYPE.toString()))
+                            .in(VipVO_.uuid, vipUuids).list();
+        if (vips.isEmpty()) {
+            chain.next();
+            return;
+        }
 
         List<VipInventory> invs = VipInventory.valueOf(vips);
         vipExt.createVipOnVirtualRouterVm(vr, invs, new Completion(chain) {

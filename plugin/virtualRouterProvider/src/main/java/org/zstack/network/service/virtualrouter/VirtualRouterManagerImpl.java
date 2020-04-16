@@ -1696,9 +1696,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 .list();
 
         if (peerL3NetworkUuids != null && !peerL3NetworkUuids.isEmpty()) {
-            return getCandidateVmNicsIfPeerL3NetworkExists(msg, candidates.stream()
-                        .filter(n -> peerL3NetworkUuids.contains(n.getL3NetworkUuid()))
-                        .collect(Collectors.toList()), peerL3NetworkUuids);
+            return getCandidateVmNicsIfPeerL3NetworkExists(msg, candidates, peerL3NetworkUuids);
         }
 
         return new SQLBatchWithReturn<List<VmNicInventory>>(){
@@ -1765,8 +1763,14 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private List<VmNicInventory> getCandidateVmNicsIfPeerL3NetworkExists(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates, List<String> peerL3NetworkUuids) {
-	    return candidates.stream()
+
+        List<String> attachedVmNicUuids = Q.New(LoadBalancerListenerVmNicRefVO.class)
+                                           .select(LoadBalancerListenerVmNicRefVO_.vmNicUuid)
+                                           .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getListenerUuid())
+                                           .listValues();
+        return candidates.stream()
                 .filter(n -> peerL3NetworkUuids.contains(n.getL3NetworkUuid()))
+                .filter(n -> !attachedVmNicUuids.contains(n.getUuid()))
                 .collect(Collectors.toList());
     }
 

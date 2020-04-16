@@ -5,10 +5,10 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
-import org.zstack.network.service.lb.LoadBalancerListenerACLRefVO
 import org.zstack.network.service.lb.LoadBalancerAclStatus
 import org.zstack.network.service.lb.LoadBalancerAclType
 import org.zstack.network.service.lb.LoadBalancerConstants
+import org.zstack.network.service.lb.LoadBalancerListenerACLRefVO
 import org.zstack.network.service.lb.LoadBalancerSystemTags
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
@@ -21,7 +21,6 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.stream.Collectors
-
 /**
  * @author: zhanyong.miao
  * @date: 2020-02-28
@@ -342,9 +341,10 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             listenerUuid = lbl2.uuid
         }
 
-        deleteLoadBalancerListener {
-            uuid = lblRes.value.inventory.uuid
+        deleteLoadBalancer {
+            uuid = lblRes.value.inventory.loadBalancerUuid
         }
+        assert Q.New(LoadBalancerListenerACLRefVO.class).count() == 0
 
         deleteAccessControlList {
             uuid = acl.uuid
@@ -355,7 +355,6 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         deleteAccessControlList {
             uuid = acl6.uuid
         }
-        assert Q.New(LoadBalancerListenerACLRefVO.class).count() == 0;
     }
 
     private void testLoadBalancerHealthCheckCase() {
