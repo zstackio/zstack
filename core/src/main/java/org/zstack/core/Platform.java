@@ -66,6 +66,7 @@ public class Platform {
     private static MessageSource messageSource;
     private static String encryptionKey = EncryptRSA.generateKeyString("ZStack open source");
     private static EncryptRSA rsa = new EncryptRSA();
+    private static Map<String, Double> errorCounter = new HashMap<>();
 
     public static final String COMPONENT_CLASSPATH_HOME = "componentsHome";
     public static final String FAKE_UUID = "THIS_IS_A_FAKE_UUID";
@@ -843,6 +844,7 @@ public class Platform {
                 logger.warn(e.getMessage());
             }
         }
+        addErrorCounter(result);
 
         return result;
     }
@@ -934,5 +936,13 @@ public class Platform {
         RuntimeMXBean bean = ManagementFactory.getRuntimeMXBean();
         Timestamp startMnTime = new Timestamp(bean.getStartTime());
         return ts.after(startMnTime);
+    }
+
+    private static void addErrorCounter(ErrorCode code) {
+        errorCounter.compute(code.getCode().split("\\.")[0], (k, v) -> v == null ? 1 : v ++);
+    }
+
+    public static Map<String, Double> getErrorCounter() {
+        return errorCounter;
     }
 }
