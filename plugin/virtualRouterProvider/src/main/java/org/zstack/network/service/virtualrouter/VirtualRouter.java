@@ -991,6 +991,26 @@ public class VirtualRouter extends ApplianceVmBase {
         });
     }
 
+    private void virtualRouterAfterDetachNic(Iterator<VirtualRouterAfterDetachNicExtensionPoint> exts, VmNicInventory nicInventory, Completion completion) {
+        if (!exts.hasNext()) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterAfterDetachNicExtensionPoint ext = exts.next();
+        ext.afterDetachVirtualRouterNic(nicInventory, new Completion(completion) {
+            @Override
+            public void success() {
+                virtualRouterAfterDetachNic(exts, nicInventory, completion);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
     @Override
     protected void afterDetachNic(VmNicInventory nicInventory, boolean isRollback, Completion completion) {
         if (isRollback) {
@@ -998,12 +1018,19 @@ public class VirtualRouter extends ApplianceVmBase {
             return;
         }
 
-        for (VirtualRouterAfterDetachNicExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterAfterDetachNicExtensionPoint.class)) {
-            ext.afterDetachNic(nicInventory);
-        }
+        List<VirtualRouterAfterDetachNicExtensionPoint> exts = pluginRgty.getExtensionList(VirtualRouterAfterDetachNicExtensionPoint.class);
+        virtualRouterAfterDetachNic(exts.iterator(), nicInventory, new Completion(completion) {
+            @Override
+            public void success() {
+                haBackend.detachL3NetworkFromVirtualRouterHaGroup(nicInventory.getVmInstanceUuid(),
+                        nicInventory.getL3NetworkUuid(), isRollback, completion);
+            }
 
-        haBackend.detachL3NetworkFromVirtualRouterHaGroup(nicInventory.getVmInstanceUuid(),
-                nicInventory.getL3NetworkUuid(), isRollback, completion);
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)

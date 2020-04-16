@@ -163,9 +163,9 @@ class VirtualRouterRebootCase extends SubCase {
         List<VirtualRouterVmVO> vrs = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.managementNetworkUuid, l3.uuid).list()
 
         VirtualRouterVmVO vr = vrs.get(0)
-        VirtualRouterCommands.AddDhcpEntryCmd cmd = null
-        env.afterSimulator(VirtualRouterConstant.VR_ADD_DHCP_PATH) { VirtualRouterCommands.AddDhcpEntryRsp rsp, HttpEntity<String> e ->
-            cmd = JSONObjectUtil.toObject(e.body, VirtualRouterCommands.AddDhcpEntryCmd.class)
+        VirtualRouterCommands.RefreshDHCPServerCmd cmd = null
+        env.afterSimulator(VirtualRouterConstant.VR_REFRESH_DHCP_SERVER_PATH) { VirtualRouterCommands.RefreshDHCPServerRsp rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, VirtualRouterCommands.RefreshDHCPServerCmd.class)
             return rsp
         }
 

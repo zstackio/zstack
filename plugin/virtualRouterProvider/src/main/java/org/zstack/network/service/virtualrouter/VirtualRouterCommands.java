@@ -271,7 +271,73 @@ public class VirtualRouterCommands {
 		}
 
 	}
-	
+
+	public static class DhcpServerInfo {
+		private String 	nicMac;
+		private String 	subnet;
+		private String 	netmask;
+		private String 	gateway;
+		private String 	dnsDomain;
+		private Integer mtu;
+		private List<DhcpInfo> dhcpInfos;
+
+		public String getNicMac() {
+			return nicMac;
+		}
+
+		public void setNicMac(String nicMac) {
+			this.nicMac = nicMac;
+		}
+
+		public String getSubnet() {
+			return subnet;
+		}
+
+		public void setSubnet(String subnet) {
+			this.subnet = subnet;
+		}
+
+		public String getNetmask() {
+			return netmask;
+		}
+
+		public void setNetmask(String netmask) {
+			this.netmask = netmask;
+		}
+
+		public String getGateway() {
+			return gateway;
+		}
+
+		public void setGateway(String gateway) {
+			this.gateway = gateway;
+		}
+
+		public String getDnsDomain() {
+			return dnsDomain;
+		}
+
+		public void setDnsDomain(String dnsDomain) {
+			this.dnsDomain = dnsDomain;
+		}
+
+		public Integer getMtu() {
+			return mtu;
+		}
+
+		public void setMtu(Integer mtu) {
+			this.mtu = mtu;
+		}
+
+		public List<DhcpInfo> getDhcpInfos() {
+			return dhcpInfos;
+		}
+
+		public void setDhcpInfos(List<DhcpInfo> dhcpInfos) {
+			this.dhcpInfos = dhcpInfos;
+		}
+	}
+
 	public static class RemoveDhcpEntryCmd extends AgentCommand {
 		private List<DhcpInfo> dhcpEntries;
 
@@ -312,6 +378,21 @@ public class VirtualRouterCommands {
 	}
 	
 	public static class AddDhcpEntryRsp extends AgentResponse {
+	}
+
+	public static class RefreshDHCPServerCmd extends AgentCommand {
+		private List<DhcpServerInfo> dhcpServers;
+
+		public List<DhcpServerInfo> getDhcpServers() {
+			return dhcpServers;
+		}
+
+		public void setDhcpServers(List<DhcpServerInfo> dhcpServers) {
+			this.dhcpServers = dhcpServers;
+		}
+	}
+
+	public static class RefreshDHCPServerRsp extends AgentResponse {
 	}
 	
 	public static class SNATInfo {
