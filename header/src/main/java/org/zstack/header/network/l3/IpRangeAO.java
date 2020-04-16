@@ -5,6 +5,8 @@ import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ResourceVO;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Id;
@@ -171,5 +173,13 @@ public class IpRangeAO extends ResourceVO {
 
     public void setPrefixLen(Integer prefixLen) {
         this.prefixLen = prefixLen;
+    }
+
+    public int size() {
+        if (getIpVersion() == IPv6Constants.IPv4) {
+            return NetworkUtils.getTotalIpInRange(getStartIp(), getEndIp());
+        } else {
+            return 0;
+        }
     }
 }

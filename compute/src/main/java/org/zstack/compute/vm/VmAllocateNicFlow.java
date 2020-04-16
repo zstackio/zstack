@@ -78,8 +78,8 @@ public class VmAllocateNicFlow implements Flow {
         List<VmNicSpec> firstL3s = VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks())
                 .stream()
                 .peek(v -> {
-                    if (!Q.New(IpRangeVO.class)
-                            .eq(IpRangeVO_.l3NetworkUuid, v.getL3Invs().get(0).getUuid())
+                    if (!Q.New(NormalIpRangeVO.class)
+                            .eq(NormalIpRangeVO_.l3NetworkUuid, v.getL3Invs().get(0).getUuid())
                             .isExists()) {
                         throw new OperationFailureException(Platform.operr("there is no available ipRange on L3 network [%s]", v.getL3Invs().get(0).getUuid()));
                     }

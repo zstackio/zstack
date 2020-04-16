@@ -102,6 +102,16 @@ doc {
 					values ("SLAAC","Stateful-DHCP","Stateless-DHCP")
 				}
 				column {
+					name "ipRangeType"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "3.9"
+					values ("Normal","AddressPool")
+				}
+				column {
 					name "resourceUuid"
 					enclosedIn "params"
 					desc "资源UUID。若指定，三层网络会使用该字段值作为UUID"

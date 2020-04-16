@@ -34,6 +34,9 @@ public class GetFreeIpOfIpRangeAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String start;
 
+    @Param(required = false, validValues = {"Normal","AddressPool"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ipRangeType;
+
     @Param(required = false)
     public int limit = 100;
 

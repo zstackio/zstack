@@ -31,6 +31,11 @@ public class APIAddIpv6RangeByNetworkCidrMsg extends APICreateMessage implements
     private String networkCidr;
     @APIParam(validValues = {IPv6Constants.SLAAC, IPv6Constants.Stateful_DHCP, IPv6Constants.Stateless_DHCP})
     private String addressMode;
+    /**
+     * @desc IPv4 range type
+     */
+    @APIParam(required = false, validValues = {"Normal", "AddressPool"})
+    private String ipRangeType;
 
     @Override
     public String getL3NetworkUuid() {
@@ -73,6 +78,14 @@ public class APIAddIpv6RangeByNetworkCidrMsg extends APICreateMessage implements
         this.addressMode = addressMode;
     }
 
+    public String getIpRangeType() {
+        return ipRangeType;
+    }
+
+    public void setIpRangeType(String ipRangeType) {
+        this.ipRangeType = ipRangeType;
+    }
+
     public static APIAddIpv6RangeByNetworkCidrMsg __example__() {
         APIAddIpv6RangeByNetworkCidrMsg msg = new APIAddIpv6RangeByNetworkCidrMsg();
 
@@ -80,6 +93,7 @@ public class APIAddIpv6RangeByNetworkCidrMsg extends APICreateMessage implements
         msg.setL3NetworkUuid(uuid());
         msg.setNetworkCidr("2002:2001::/64");
         msg.setAddressMode(IPv6Constants.SLAAC);
+        msg.setIpRangeType(IpRangeType.Normal.toString());
 
         return msg;
     }

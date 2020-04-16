@@ -223,3 +223,39 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LoadBalancerListenerACLRefVO` (
 ALTER TABLE V2VConversionHostVO ADD COLUMN totalSize bigint unsigned NOT NULL DEFAULT 0;
 ALTER TABLE V2VConversionHostVO ADD COLUMN availableSize bigint unsigned NOT NULL DEFAULT 0;
 drop table AvailableInstanceTypesVO;
+
+CREATE TABLE  `zstack`.`NormalIpRangeVO` (
+                                             `uuid` varchar(32) NOT NULL UNIQUE,
+                                             PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+ALTER TABLE `zstack`.`NormalIpRangeVO` ADD CONSTRAINT fkNormalIpRangeVOIpRangeEO FOREIGN KEY (uuid) REFERENCES `zstack`.`IpRangeEO` (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+
+CREATE TABLE  `zstack`.`AddressPoolVO` (
+                                             `uuid` varchar(32) NOT NULL UNIQUE,
+                                             PRIMARY KEY  (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+ALTER TABLE `zstack`.`AddressPoolVO` ADD CONSTRAINT fkAddressPoolVOIpRangeEO FOREIGN KEY (uuid) REFERENCES `zstack`.`IpRangeEO` (uuid) ON UPDATE RESTRICT ON DELETE CASCADE;
+
+DELIMITER $$
+CREATE PROCEDURE generateNormalpRangeVO()
+BEGIN
+    DECLARE ipRangeUuid VARCHAR(32);
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur CURSOR FOR SELECT uuid FROM `zstack`.`IpRangeVO`;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO ipRangeUuid;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        INSERT INTO zstack.NormalIpRangeVO (uuid) values(ipRangeUuid);
+
+    END LOOP;
+    CLOSE cur;
+END $$
+DELIMITER ;
+
+CALL generateNormalpRangeVO();
+DROP PROCEDURE IF EXISTS generateNormalpRangeVO;

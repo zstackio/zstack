@@ -1,6 +1,8 @@
 package org.zstack.header.network.l3
 
 import java.lang.Integer
+import java.lang.Integer
+import org.zstack.header.network.l3.IpRangeType
 import java.sql.Timestamp
 import java.sql.Timestamp
 
@@ -79,6 +81,14 @@ doc {
 		desc "IPv6地址分配模式"
 		type "String"
 		since "3.1"
+	}
+	ref {
+		name "ipRangeType"
+		path "org.zstack.header.network.l3.IpRangeInventory.ipRangeType"
+		desc "null"
+		type "IpRangeType"
+		since "0.6"
+		clz IpRangeType.class
 	}
 	field {
 		name "createDate"

@@ -38,6 +38,9 @@ public class CreateVipAction extends AbstractAction {
     public java.lang.String allocatorStrategy;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ipRangeUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String requiredIp;
 
     @Param(required = false)

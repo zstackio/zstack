@@ -53,6 +53,11 @@
     </message>
 
     <message>
+        <name>org.zstack.header.network.l3.APIQueryAddressPoolMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
         <name>org.zstack.header.network.l3.APIGetL3NetworkTypesMsg</name>
     </message>
 

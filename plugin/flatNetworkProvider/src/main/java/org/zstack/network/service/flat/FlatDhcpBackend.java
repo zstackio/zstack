@@ -37,6 +37,7 @@ import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperati
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceProviderLookup;
@@ -216,9 +217,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 L3NetworkVO l3 = l3Map.get(ip.getL3NetworkUuid());
                 info.dnsDomain = l3.getDnsDomain();
                 info.dns = getL3NetworkDns(ip.getL3NetworkUuid());
-                info.firstIp = NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(IpRangeAO::getStartIp).collect(Collectors.toList()));
-                info.endIp = NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(IpRangeAO::getEndIp).collect(Collectors.toList()));
-                info.prefixLength = l3.getIpRanges().stream().findAny().map(IpRangeAO::getPrefixLen).orElse(null);
+                List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3);
+                info.firstIp = NetworkUtils.getSmallestIp(iprs.stream().map(IpRangeInventory::getStartIp).collect(Collectors.toList()));
+                info.endIp = NetworkUtils.getBiggesttIp(iprs.stream().map(IpRangeInventory::getEndIp).collect(Collectors.toList()));
+                info.prefixLength = IpRangeHelper.getNormalIpRanges(l3).stream().findAny().map(IpRangeInventory::getPrefixLen).orElse(null);
 
                 if (info.isDefaultL3Network) {
                     info.hostname = hostnames.get(nic.getVmInstanceUuid());
@@ -818,7 +820,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 FlatDhcpAcquireDhcpServerIpReply reply = new FlatDhcpAcquireDhcpServerIpReply();
                 String ip = allocateDhcpIp(msg.getL3NetworkUuid());
                 if (ip != null) {
-                    List<IpRangeVO> iprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+                    List<NormalIpRangeVO> iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
                     if (iprs == null || iprs.isEmpty()) {
                         reply.setError(operr("L3 network[uuid:%s] does not have any iprange", msg.getL3NetworkUuid()));
                         bus.reply(msg, reply);
@@ -1043,11 +1045,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.gateway = ip.getGateway();
 
                 L3NetworkVO l3 = l3Map.get(ip.getL3NetworkUuid());
+                List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3);
                 info.dnsDomain = l3.getDnsDomain();
                 info.dns = getL3NetworkDns(ip.getL3NetworkUuid());
-                info.firstIp = NetworkUtils.getSmallestIp(l3.getIpRanges().stream().map(IpRangeAO::getStartIp).collect(Collectors.toList()));
-                info.endIp = NetworkUtils.getBiggesttIp(l3.getIpRanges().stream().map(IpRangeAO::getEndIp).collect(Collectors.toList()));
-                info.prefixLength = l3.getIpRanges().stream().findAny().map(IpRangeAO::getPrefixLen).orElse(null);
+                info.firstIp = NetworkUtils.getSmallestIp(iprs.stream().map(IpRangeInventory::getStartIp).collect(Collectors.toList()));
+                info.endIp = NetworkUtils.getBiggesttIp(iprs.stream().map(IpRangeInventory::getEndIp).collect(Collectors.toList()));
+                info.prefixLength = iprs.stream().findAny().map(IpRangeInventory::getPrefixLen).orElse(null);
 
                 if (info.isDefaultL3Network) {
                     info.hostname = hostnames.get(nic.getVmInstanceUuid());
@@ -1321,7 +1324,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public void afterDeleteIpRange(IpRangeInventory ipRange) {
         String dhcpServerIp = getDHCPServerIP(ipRange.getL3NetworkUuid());
 
-        boolean ipRangeExisted = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, ipRange.getL3NetworkUuid()).isExists();
+        boolean ipRangeExisted = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, ipRange.getL3NetworkUuid()).isExists();
         if (!ipRangeExisted && dhcpServerIp != null) {
             deleteDhcpServerIp(ipRange.getL3NetworkUuid(), dhcpServerIp);
             logger.debug(String.format("delete DHCP IP[%s] of the flat network[uuid:%s] as the IP range[uuid:%s] is deleted",
@@ -1662,7 +1665,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                                 cmd.prefixLen = prefixLen;
                                 cmd.ipVersion = i.ipVersion;
 
-                                List<IpRangeVO> rangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, l3Uuid).list();
+                                List<NormalIpRangeVO> rangeVOS = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, l3Uuid).list();
                                 cmd.addressMode = rangeVOS.get(0).getAddressMode();
 
                                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -2019,6 +2022,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
      *      */
     @Override
     public void afterAddIpRange(IpRangeInventory ipr, List<String> systemTags) {
+        if (!Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ipr.getUuid()).isExists()) {
+            return;
+        }
+
         String dhcpTag = null;
         String dhcpServerIp = null;
         if (systemTags != null) {

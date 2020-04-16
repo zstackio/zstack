@@ -220,9 +220,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 //0.check the l3 of vm nic has been attached to port forwarding service
                 List<String> l3Uuids = new ArrayList<>();
                 if (vipPeerL3Uuids == null || vipPeerL3Uuids.isEmpty()) {
-                    List<String> services = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType)
-                                             .eq(VipNetworkServicesRefVO_.vipUuid, vipVO.getUuid()).listValues();
-                    if(services!= null && services.contains(SNAT_NETWORK_SERVICE_TYPE)) {
+                    if(vipVO.isSystem()) {
                         l3Uuids = sql("select l3.uuid" +
                                 " from L3NetworkVO l3, VipVO vip, NetworkServiceL3NetworkRefVO ref, " +
                                 " VmNicVO vmnic, VirtualRouterVipVO vrVip" +
@@ -275,8 +273,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
 
                 // 1.select private l3
-                String rulePublicL3Uuid = sql("select l3NetworkUuid from VipVO where uuid = (select vipUuid from PortForwardingRuleVO where uuid = :ruleUuid)", String.class)
-                        .param("ruleUuid", ruleUuid).find();
+                String rulePublicL3Uuid = vipVO.getL3NetworkUuid();
 
                 /*fix ZSTAC-24893 publicL3 maybe default pulbic network or additional public network*/
                 List<String> vrouterUuids = sql("select distinct vr.uuid from VirtualRouterVmVO vr, VmNicVO nic where nic.vmInstanceUuid = vr.uuid and nic.l3NetworkUuid = :publicNetworkUuid",String.class)
