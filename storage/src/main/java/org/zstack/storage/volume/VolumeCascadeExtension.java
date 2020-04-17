@@ -93,7 +93,7 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
         }
 
         List<String> volumeUuids = volumesCleanupFromAction(action);
-        if (volumeUuids == null | volumeUuids.isEmpty()) {
+        if (volumeUuids == null || volumeUuids.isEmpty()) {
             completion.success();
             return;
         }
