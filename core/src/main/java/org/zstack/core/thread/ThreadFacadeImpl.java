@@ -7,6 +7,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,20 +15,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedExecutionHandler, ThreadFacadeMXBean {
     private static final CLogger _logger = CLoggerImpl.getLogger(ThreadFacadeImpl.class);
 
-    private int totalThreadNum;
-
-    private Map<PeriodicTask, ScheduledFuture<?>> _periodicTasks = new ConcurrentHashMap<PeriodicTask, ScheduledFuture<?>>();
-    private Map<CancelablePeriodicTask, ScheduledFuture<?>> cancelablePeriodicTasks = new ConcurrentHashMap<CancelablePeriodicTask, ScheduledFuture<?>>();
-    private static AtomicInteger seqNum = new AtomicInteger(0);
+    private final Map<PeriodicTask, ScheduledFuture<?>> _periodicTasks = new ConcurrentHashMap<PeriodicTask, ScheduledFuture<?>>();
+    private final Map<CancelablePeriodicTask, ScheduledFuture<?>> cancelablePeriodicTasks = new ConcurrentHashMap<CancelablePeriodicTask, ScheduledFuture<?>>();
+    private static final AtomicInteger seqNum = new AtomicInteger(0);
     private ScheduledThreadPoolExecutorExt _pool;
     private ScheduledThreadPoolExecutorExt _syncpool;  // for sync tasks
     private DispatchQueue dpq;
-    private TimerPool timerPool = new TimerPool(5);
+    private final TimerPool timerPool = new TimerPool(5);
 
     @Autowired
     private JmxFacade jmxf;
 
-    private class TimerWrapper extends Timer {
+    private static class TimerWrapper extends Timer {
         private int cancelledTimerTaskCount = 0;
         private static final int PURGE_CANCELLED_TIMER_TASK_THRESHOLD = 2000;
 
@@ -39,7 +38,7 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
         }
     }
 
-    private class TimerPool {
+    private static class TimerPool {
         int poolSize;
         List<TimerWrapper> pool;
 
@@ -121,14 +120,19 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
 
     }
 
+    private int getSyncThreadNum(int totalThreadNum) {
+        int n = totalThreadNum / 3;
+        return Math.min(n, 50);
+    }
+
     public void init() {
-        totalThreadNum = ThreadGlobalProperty.MAX_THREAD_NUM;
+        int totalThreadNum = ThreadGlobalProperty.MAX_THREAD_NUM;
         if (totalThreadNum < 10) {
             _logger.warn(String.format("ThreadFacade.maxThreadNum is configured to %s, which is too small for running zstack. Change it to 10", ThreadGlobalProperty.MAX_THREAD_NUM));
             totalThreadNum = 10;
         }
         _pool = new ScheduledThreadPoolExecutorExt(totalThreadNum, this, this);
-        _syncpool = new ScheduledThreadPoolExecutorExt(totalThreadNum/3, this, this);
+        _syncpool = new ScheduledThreadPoolExecutorExt(getSyncThreadNum(totalThreadNum), this, this);
         _logger.debug(String.format("create ThreadFacade with max thread number:%s", totalThreadNum));
         dpq = new DispatchQueueImpl();
 
@@ -151,15 +155,13 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
     }
 
     @Override
-    public Thread newThread(Runnable arg0) {
-        return new Thread(arg0, "zs-thread-" + String.valueOf(seqNum.getAndIncrement()));
+    public Thread newThread(@Nonnull Runnable arg0) {
+        return new Thread(arg0, "zs-thread-" + seqNum.getAndIncrement());
     }
-
 
     @Override
     public void rejectedExecution(Runnable arg0, ThreadPoolExecutor arg1) {
-        StringBuilder warn = new StringBuilder("Task " + arg0.getClass().getSimpleName() + " got rejected by ThreadPool, the pool looks full");
-        _logger.warn(warn.toString());
+        _logger.warn("Task " + arg0.getClass().getSimpleName() + " got rejected by ThreadPool, the pool looks full");
     }
 
     private Map<PeriodicTask, ScheduledFuture<?>> getPeriodicTasks() {
@@ -171,6 +173,7 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
         assert task.getInterval() != 0;
         assert task.getTimeUnit() != null;
 
+        @SuppressWarnings("unchecked")
         ScheduledFuture<Void> ret = (ScheduledFuture<Void>) _pool.scheduleAtFixedRate(new Runnable() {
             public void run() {
                 try {
@@ -208,14 +211,6 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
         _pool.unregisterHook(hook);
     }
 
-    public int getTotalThreadNum() {
-        return totalThreadNum;
-    }
-
-    public void setTotalThreadNum(int totalThreadNum) {
-        this.totalThreadNum = totalThreadNum;
-    }
-
     @Override
     public <T> Future<T> syncSubmit(SyncTask<T> task) {
         return dpq.syncSubmit(task);
@@ -241,7 +236,7 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
         return dpq.getApiRunningTaskSignature(apiId);
     }
 
-    public static interface TimeoutTaskReceipt {
+    public interface TimeoutTaskReceipt {
         boolean cancel();
     }
 
@@ -314,6 +309,7 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
 
     @Override
     public Future<Void> submitCancelablePeriodicTask(final CancelablePeriodicTask task, long delay) {
+        @SuppressWarnings("unchecked")
         ScheduledFuture<Void> ret = (ScheduledFuture<Void>) _pool.scheduleAtFixedRate(new Runnable() {
             private void cancelTask() {
                 ScheduledFuture<?> ft = cancelablePeriodicTasks.get(task);

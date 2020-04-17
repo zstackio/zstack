@@ -13,7 +13,6 @@
 	default-init-method="init" default-destroy-method="destroy">
 
 	<bean id="ThreadFacade" class="org.zstack.core.thread.ThreadFacadeImpl">
-		<property name="totalThreadNum" value="500" />
 		<!-- don't declare Component extension, it's specially handled -->
 	</bean>
 
