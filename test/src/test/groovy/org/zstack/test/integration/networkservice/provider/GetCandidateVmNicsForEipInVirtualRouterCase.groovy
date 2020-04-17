@@ -16,18 +16,10 @@ import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
-import org.zstack.sdk.ClusterInventory
-import org.zstack.sdk.EipInventory
-import org.zstack.sdk.GetEipAttachableVmNicsAction
-import org.zstack.sdk.GetEipAttachableVmNicsResult
-import org.zstack.sdk.L2NetworkInventory
-import org.zstack.sdk.L3NetworkInventory
-import org.zstack.sdk.VmInstanceInventory
-import org.zstack.sdk.VmNicInventory
+import org.zstack.sdk.*
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-
 /**
  * Created by heathhose on 17-5-14.
  */
@@ -186,7 +178,10 @@ class GetCandidateVmNicsForEipInVirtualRouterCase extends SubCase{
                             provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
                             types = [NetworkServiceType.DHCP.toString(), EipConstant.EIP_NETWORK_SERVICE_TYPE, UserdataConstant.USERDATA_TYPE_STRING]
                         }
-
+                        service {
+                            provider = VyosConstants.VYOS_ROUTER_PROVIDER_TYPE
+                            types = [LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING]
+                        }
                         ip {
                             startIp = "192.168.100.10"
                             endIp = "192.168.100.100"

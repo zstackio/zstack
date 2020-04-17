@@ -1111,6 +1111,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         public void run(final FlowTrigger trigger, Map data) {
                             VirtualRouterStruct s = new VirtualRouterStruct();
                             s.setL3Network(l3);
+                            /*flat network*/
+                            if (l3.getNetworkServiceTypes().contains(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE)) {
+                                s.setNotGatewayForGuestL3Network(true);
+                            }
 
                             acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(trigger) {
                                 @Override
