@@ -33,6 +33,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.vip.ModifyVipAttributesStruct;
@@ -1335,6 +1337,16 @@ public class LoadBalancerBase {
             }
             struct.setVmNics(m);
         }
+
+        Map<String, List<String>> systemTags = new HashMap<>();
+        for (LoadBalancerListenerVO l : self.getListeners()) {
+            SimpleQuery<SystemTagVO> q  = dbf.createQuery(SystemTagVO.class);
+            q.select(SystemTagVO_.tag);
+            q.add(SystemTagVO_.resourceUuid, Op.EQ, l.getUuid());
+            q.add(SystemTagVO_.resourceType, Op.EQ, LoadBalancerListenerVO.class.getSimpleName());
+            systemTags.put(l.getUuid(), q.listValue());
+        }
+        struct.setTags(systemTags);
 
         struct.setListeners(LoadBalancerListenerInventory.valueOf(self.getListeners()));
 

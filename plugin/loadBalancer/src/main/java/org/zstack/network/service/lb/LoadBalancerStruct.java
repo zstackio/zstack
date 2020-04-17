@@ -1,7 +1,6 @@
 package org.zstack.network.service.lb;
 
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.vip.VipInventory;
 
 import java.util.List;
 import java.util.Map;
@@ -13,6 +12,7 @@ public class LoadBalancerStruct {
     private LoadBalancerInventory lb;
     private Map<String, VmNicInventory> vmNics;
     private List<LoadBalancerListenerInventory> listeners;
+    private Map<String, List<String>> tags;
     private boolean init;
 
     public Map<String, VmNicInventory> getVmNics() {
@@ -25,6 +25,14 @@ public class LoadBalancerStruct {
 
     public void setInit(boolean init) {
         this.init = init;
+    }
+
+    public Map<String, List<String>> getTags() {
+        return tags;
+    }
+
+    public void setTags(Map<String, List<String>> tags) {
+        this.tags = tags;
     }
 
     public List<LoadBalancerListenerInventory> getListeners() {
