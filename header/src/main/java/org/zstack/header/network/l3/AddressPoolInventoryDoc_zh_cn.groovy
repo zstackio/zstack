@@ -54,38 +54,38 @@ doc {
 	}
 	field {
 		name "gateway"
-		desc ""
+		desc "网关"
 		type "String"
 		since "3.9"
 	}
 	field {
 		name "networkCidr"
-		desc ""
+		desc "网络CIDR"
 		type "String"
 		since "3.9"
 	}
 	field {
 		name "ipVersion"
-		desc ""
+		desc "ip协议号"
 		type "Integer"
 		since "3.9"
 	}
 	field {
 		name "addressMode"
-		desc ""
+		desc "IPv6地址分配模式"
 		type "String"
 		since "3.9"
 	}
 	field {
 		name "prefixLen"
-		desc ""
+		desc "掩码长度"
 		type "Integer"
 		since "3.9"
 	}
 	ref {
 		name "ipRangeType"
 		path "org.zstack.header.network.l3.AddressPoolInventory.ipRangeType"
-		desc "null"
+		desc "地址段类型"
 		type "IpRangeType"
 		since "3.9"
 		clz IpRangeType.class

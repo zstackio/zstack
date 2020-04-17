@@ -36,19 +36,19 @@ doc {
 	}
 	field {
 		name "startIp"
-		desc ""
+		desc "起始地址"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "endIp"
-		desc ""
+		desc "结束地址"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "netmask"
-		desc ""
+		desc "掩码"
 		type "String"
 		since "0.6"
 	}
@@ -60,13 +60,13 @@ doc {
 	}
 	field {
 		name "gateway"
-		desc ""
+		desc "网关"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "networkCidr"
-		desc ""
+		desc "网络CIDR"
 		type "String"
 		since "0.6"
 	}
@@ -85,9 +85,9 @@ doc {
 	ref {
 		name "ipRangeType"
 		path "org.zstack.header.network.l3.IpRangeInventory.ipRangeType"
-		desc "null"
+		desc "地址段类型"
 		type "IpRangeType"
-		since "0.6"
+		since "3.9"
 		clz IpRangeType.class
 	}
 	field {

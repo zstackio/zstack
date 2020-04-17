@@ -104,7 +104,7 @@ doc {
 				column {
 					name "ipRangeType"
 					enclosedIn "params"
-					desc ""
+					desc "地址段类型"
 					location "body"
 					type "String"
 					optional true

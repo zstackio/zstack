@@ -8,13 +8,13 @@ doc {
 
 	field {
 		name "Normal"
-		desc ""
+		desc "普通地址段"
 		type "IpRangeType"
 		since "3.9"
 	}
 	field {
 		name "AddressPool"
-		desc ""
+		desc "地址池段"
 		type "IpRangeType"
 		since "3.9"
 	}
