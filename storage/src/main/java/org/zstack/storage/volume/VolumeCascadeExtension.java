@@ -7,9 +7,7 @@ import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
-import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
@@ -88,8 +86,83 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     private void handleDeletionCleanup(CascadeAction action, Completion completion) {
-        dbf.eoCleanup(VolumeVO.class);
+        int op = actionToOpCode(action);
+        if (op != OP_DELETE_VOLUME) {
+            completion.success();
+            return;
+        }
+
+        List<String> volumeUuids = volumesCleanupFromAction(action);
+        if (volumeUuids == null | volumeUuids.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        for (String volumeUuid  : volumeUuids) {
+            dbf.eoCleanup(VolumeVO.class, volumeUuid);
+        }
         completion.success();
+    }
+
+    private List<String> volumesCleanupFromAction(CascadeAction action) {
+        List<String> volumeUuids = new ArrayList<>();
+        if (NAME.equals(action.getParentIssuer())) {
+            List<VolumeDeletionStruct> list = action.getParentIssuerContext();
+            if (list == null) {
+                return null;
+            }
+
+            volumeUuids = CollectionUtils.transformToList(list, new Function<String, VolumeDeletionStruct>() {
+                @Override
+                public String call(VolumeDeletionStruct arg) {
+                    return arg.getInventory().getUuid();
+                }
+            });
+            return volumeUuids;
+        } else if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            List<PrimaryStorageInventory> pinvs = action.getParentIssuerContext();
+            if (pinvs == null || pinvs.isEmpty()) {
+                return null;
+            }
+
+            List<String> psUuids = CollectionUtils.transformToList(pinvs, new Function<String, PrimaryStorageInventory>() {
+                @Override
+                public String call(PrimaryStorageInventory arg) {
+                    return arg.getUuid();
+                }
+            });
+
+            volumeUuids = Q.New(VolumeEO.class)
+                    .in(VolumeAO_.primaryStorageUuid, psUuids)
+                    .select(VolumeAO_.uuid)
+                    .listValues();
+            return volumeUuids;
+        } else if (AccountVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            final List<String> auuids = CollectionUtils.transformToList((List<AccountInventory>) action.getParentIssuerContext(), new Function<String, AccountInventory>() {
+                @Override
+                public String call(AccountInventory arg) {
+                    return arg.getUuid();
+                }
+            });
+
+            if (auuids == null || auuids.isEmpty()) {
+                return null;
+            }
+
+            volumeUuids = SQL.New("select d.uuid" +
+                    " from VolumeEO d, AccountResourceRefVO r" +
+                    " where d.uuid = r.resourceUuid" +
+                    " and r.resourceType = :rtype" +
+                    " and r.accountUuid in (:auuids)" +
+                    " and d.type = :dtype")
+                    .param("auuids", auuids)
+                    .param("rtype", VolumeVO.class.getSimpleName())
+                    .param("dtype", VolumeType.Data)
+                    .list();
+            return volumeUuids;
+        }
+
+        return null;
     }
 
     private List<VolumeDeletionStruct> toVolumeDeletionStruct(CascadeAction action, List<VolumeVO> vos) {

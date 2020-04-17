@@ -715,15 +715,17 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
 
         String deleted = info.eoSoftDeleteColumn.getName();
-        String sql = String.format("select eo.%s from %s eo where eo.%s is not null", info.voPrimaryKeyField.getName(),
+        String sql = String.format("select eo from %s eo where eo.%s is not null",
                 info.eoClass.getSimpleName(), deleted);
         Query q = getEntityManager().createQuery(sql);
-        List ids = q.getResultList();
-        if (ids.isEmpty()) {
+        List eoList = q.getResultList();
+        if (eoList.isEmpty()) {
             return;
         }
 
-        info.hardDelete(ids);
+        for (Object eo : eoList) {
+            info.hardDelete(eo);
+        }
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

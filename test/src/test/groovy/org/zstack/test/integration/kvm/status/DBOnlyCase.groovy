@@ -25,6 +25,7 @@ class DBOnlyCase extends SubCase {
             virtualRouter()
             securityGroup()
             kvm()
+            include("vyos.xml")
         }
     }
 
