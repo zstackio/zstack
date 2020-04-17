@@ -93,7 +93,7 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
         }
 
         List<String> volumeUuids = volumesCleanupFromAction(action);
-        if (volumeUuids == null | volumeUuids.isEmpty()) {
+        if (volumeUuids == null || volumeUuids.isEmpty()) {
             completion.success();
             return;
         }
@@ -121,6 +121,10 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
             return volumeUuids;
         } else if (PrimaryStorageVO.class.getSimpleName().equals(action.getParentIssuer())) {
             List<PrimaryStorageInventory> pinvs = action.getParentIssuerContext();
+            if (pinvs == null || pinvs.isEmpty()) {
+                return null;
+            }
+
             List<String> psUuids = CollectionUtils.transformToList(pinvs, new Function<String, PrimaryStorageInventory>() {
                 @Override
                 public String call(PrimaryStorageInventory arg) {

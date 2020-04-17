@@ -25,11 +25,14 @@ import org.zstack.core.db.Q
 import java.util.concurrent.atomic.AtomicInteger
 import org.zstack.core.db.SQL
 
+import java.util.stream.Collectors
+
 /**
  * Created by lining on 2020/04/09.
  */
 class BatchCreateVmFailDeadlockCase extends SubCase{
     EnvSpec env
+    DatabaseFacade dbf
 
     @Override
     void clean() {
@@ -125,36 +128,41 @@ class BatchCreateVmFailDeadlockCase extends SubCase{
     @Override
     void test() {
         env.create {
-            testBatchCreateVm()
+            long startTime = new Date().getTime()
+
+            dbf = bean(DatabaseFacade.class)
+
+            String num = System.getProperty("num")
+            int numberOfResources = num == null ? 3000 : Integer.parseInt(num)
+            List<ResourceVO> mockResourceVOs = persistResourceVOs(numberOfResources)
+
+            String runTimes = System.getProperty("runTimes")
+            int times = runTimes == null ? 1 : Integer.parseInt(runTimes)
+            for (int i = 0; i < times; i++) {
+                long s = new Date().getTime()
+                testBatchCreateVm()
+                long e = new Date().getTime()
+                logger.warn("testBatchCreateVm-${i} execute time is ${e - s}")
+            }
+
+            List<String> mockResourceUuids = mockResourceVOs.stream().map({vo -> vo.getUuid()}).collect(Collectors.toList())
+            List resourceUuidParts = Lists.partition(mockResourceUuids, 1000)
+            resourceUuidParts.stream().forEach({ List resourceUuids ->
+                SQL.New(ResourceVO.class)
+                        .in(ResourceVO_.uuid, resourceUuids)
+                        .delete()
+            })
+
+            long endTime = new Date().getTime()
+            logger.warn("env.create execute time is ${endTime - startTime}")
         }
     }
 
     void testBatchCreateVm() {
-        DatabaseFacade dbf = bean(DatabaseFacade.class)
-        PrimaryStorageInventory ps = env.inventoryByName("local")
         InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering")
         L3NetworkInventory l3 = env.inventoryByName("l3")
         ImageInventory image = env.inventoryByName("iso")
         DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
-
-        String num = System.getProperty("num")
-        int numberOfResources = num == null ? 3000 : Integer.parseInt(num)
-        List<String> mockResourceUuids = []
-        List<ResourceVO> mockResourceVOs = []
-        for (int i = 0 ; i < numberOfResources; i++) {
-            String resourceUuid = Platform.getUuid()
-            mockResourceUuids.add(resourceUuid)
-
-            List<String> args = [resourceUuid, "mock by case", "Mock"]
-            ResourceVO resourceVO = new ResourceVO(args.toArray())
-            resourceVO.setConcreteResourceType("Mock")
-            mockResourceVOs.add(resourceVO)
-        }
-
-        List resourceVOParts = Lists.partition(mockResourceVOs, 5000)
-        resourceVOParts.stream().forEach({ List resourceVOS ->
-               dbf.persistCollection(resourceVOS)
-        })
 
         env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) {FlatDhcpBackend.ApplyDhcpRsp rsp, HttpEntity<java.lang.String> e ->
             Random r = new Random()
@@ -179,7 +187,6 @@ class BatchCreateVmFailDeadlockCase extends SubCase{
                         rootDiskOfferingUuid : diskOffering.uuid,
                         dataDiskOfferingUuids: [diskOffering.uuid],
                         sessionId: Test.currentEnvSpec.session.uuid,
-                        //systemTags: [VmSystemTags.CREATE_WITHOUT_CD_ROM.instantiateTag([(VmSystemTags.CREATE_WITHOUT_CD_ROM_TOKEN): true])]
                 )
 
                 CreateVmInstanceAction.Result ret = action.call()
@@ -209,12 +216,23 @@ class BatchCreateVmFailDeadlockCase extends SubCase{
                 uuid = vmUuid
             }
         }
+    }
 
-        List resourceUuidParts = Lists.partition(mockResourceUuids, 1000)
-        resourceUuidParts.stream().forEach({ List resourceUuids ->
-            SQL.New(ResourceVO.class)
-                .in(ResourceVO_.uuid, resourceUuids)
-                .delete()
+    private List<ResourceVO> persistResourceVOs(int num) {
+        List<ResourceVO> mockResourceVOs = []
+        for (int i = 0 ; i < num; i++) {
+            String resourceUuid = Platform.getUuid()
+            List<String> args = [resourceUuid, "mock by case", "Mock"]
+            ResourceVO resourceVO = new ResourceVO(args.toArray())
+            resourceVO.setConcreteResourceType("Mock")
+            mockResourceVOs.add(resourceVO)
+        }
+
+        List resourceVOParts = Lists.partition(mockResourceVOs, 5000)
+        resourceVOParts.stream().forEach({ List resourceVOS ->
+            dbf.persistCollection(resourceVOS)
         })
+
+        return mockResourceVOs
     }
 }
