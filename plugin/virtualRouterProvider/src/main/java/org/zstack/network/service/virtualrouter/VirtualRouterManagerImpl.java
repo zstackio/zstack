@@ -652,8 +652,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 }
 
                 if (ipRange == null){
-                    logger.debug(String.format("can not find ip range ip address[ip:%s, l3 network: Uuid]",
+                    logger.warn(String.format("can not find ip range for ip address[ip:%s, l3 network: Uuid]",
                             nic.getIp(), nic.getL3NetworkUuid()));
+                    continue;
+                }
+
+                if (nic.getUsedIpUuid() == null) {
+                    logger.warn(String.format("usedIpUuid of vmnic [Uuid:%s] is NULL", nic.getUuid()));
                     continue;
                 }
 
@@ -671,6 +676,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 vipvo.setAccountUuid(Account.getAccountUuidOfResource(vr.getUuid()));
                 vipvo.setSystem(true);
                 vipvo.setPrefixLen(ipRange.getPrefixLen());
+                vipvo.setServiceProvider(VyosConstants.PROVIDER_TYPE.toString());
 
                 vips.add(vipvo);
 
