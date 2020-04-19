@@ -9,7 +9,9 @@ import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
 
 import javax.persistence.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  */
@@ -24,7 +26,7 @@ public class VirtualRouterVmVO extends ApplianceVmVO {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "virtualRouterVmUuid", insertable = false, updatable = false)
     @NoView
-    private List<VirtualRouterVipVO> virtualRouterVips = new ArrayList<>();
+    private Set<VirtualRouterVipVO> virtualRouterVips = new HashSet<>();
 
     public VirtualRouterVmVO(VirtualRouterVmVO other) {
         super(other);
@@ -47,11 +49,11 @@ public class VirtualRouterVmVO extends ApplianceVmVO {
         this.publicNetworkUuid = publicNetworkUuid;
     }
 
-    public List<VirtualRouterVipVO> getVirtualRouterVips() {
+    public Set<VirtualRouterVipVO> getVirtualRouterVips() {
         return virtualRouterVips;
     }
 
-    public void setVirtualRouterVips(List<VirtualRouterVipVO> virtualRouterVips) {
+    public void setVirtualRouterVips(Set<VirtualRouterVipVO> virtualRouterVips) {
         this.virtualRouterVips = virtualRouterVips;
     }
 }
