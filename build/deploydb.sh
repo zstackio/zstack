@@ -20,7 +20,7 @@ else
   loginCmd="--user=$user --password=$password --host=$host --port=$port"
 fi
 
-$MYSQL ${loginCmd} << EOF
+${MYSQL} ${loginCmd} << EOF
 set global log_bin_trust_function_creators=1;
 DROP DATABASE IF EXISTS zstack;
 CREATE DATABASE zstack;
@@ -49,6 +49,11 @@ else
   url="jdbc:mysql://$host:$port/zstack"
 fi
 ${flyway} -user=${user} -password=${password} -url=${url} clean
+
+# create baseline and clean its contents for 'beforeValidate.sql'
+${flyway} -user=${user} -password=${password} -url=${url} baseline
+${MYSQL} ${loginCmd} zstack -e "DELETE FROM schema_version"
+
 ${flyway} -outOfOrder=true -user=${user} -password=${password} -url=${url} migrate
 
 eval "rm -f ${flyway_sql}/*"
