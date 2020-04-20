@@ -2308,7 +2308,11 @@ public class VolumeBase implements Volume {
             private VolumeSnapshotGroupVO createGroup(CreateVolumesSnapshotReply r) {
                 List<VolumeSnapshotGroupRefVO> refs = new ArrayList<>();
                 VolumeSnapshotGroupVO group = new VolumeSnapshotGroupVO();
-                group.setUuid(getUuid());
+                if (msg.getResourceUuid() != null) {
+                    group.setUuid(msg.getResourceUuid());
+                } else {
+                    group.setUuid(getUuid());
+                }
                 group.setSnapshotCount(vm.getAllVolumes().size());
                 group.setName(msg.getName());
                 group.setDescription(msg.getDescription());
