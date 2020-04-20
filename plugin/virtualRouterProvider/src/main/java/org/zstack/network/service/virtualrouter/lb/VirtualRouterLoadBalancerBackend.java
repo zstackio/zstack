@@ -17,6 +17,8 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.acl.AccessControlListEntryVO;
+import org.zstack.header.acl.AccessControlListEntryVO_;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -37,8 +39,6 @@ import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.header.acl.AccessControlListEntryVO;
-import org.zstack.header.acl.AccessControlListEntryVO_;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
@@ -393,26 +393,18 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 .findFirst().get().getMac();
 
         return CollectionUtils.transformToList(struct.getListeners(), new Function<LbTO, LoadBalancerListenerInventory>() {
-            private List<String> makeAcl(String listenerUuid) {
-                LoadBalancerAclStatus status = LoadBalancerAclStatus.disable;
-                if (LoadBalancerSystemTags.BALANCER_ACL.hasTag(listenerUuid)) {
-                    status = LoadBalancerAclStatus.valueOf(LoadBalancerSystemTags.BALANCER_ACL.getTokenByResourceUuid(listenerUuid, LoadBalancerSystemTags.BALANCER_ACL_TOKEN));
-                }
-
-                if (status.equals(LoadBalancerAclStatus.disable)) {
-                    return new ArrayList<>();
-                }
+            private List<String> makeAcl(LoadBalancerListenerInventory listenerInv) {
                 String  aclEntry = "";
                 List<String> aclRules = new ArrayList<>();
-                List<LoadBalancerListenerACLRefVO> refs = Q.New(LoadBalancerListenerACLRefVO.class).eq(LoadBalancerListenerACLRefVO_.listenerUuid, listenerUuid).list();
+                List<LoadBalancerListenerACLRefInventory> refs = listenerInv.getAclRefs();
                 if (refs.isEmpty()) {
                     aclRules.add(String.format("aclEntry::%s", aclEntry));
                     return aclRules;
                 }
 
-                aclRules.add(String.format("aclType::%s", refs.get(0).getType().toString()));
+                aclRules.add(String.format("aclType::%s", refs.get(0).getType()));
 
-                List<String> aclUuids = refs.stream().map(LoadBalancerListenerACLRefVO::getAclUuid).collect(Collectors.toList());
+                List<String> aclUuids = refs.stream().map(LoadBalancerListenerACLRefInventory::getAclUuid).collect(Collectors.toList());
                 List<String> entry = Q.New(AccessControlListEntryVO.class).select(AccessControlListEntryVO_.ipEntries)
                                       .in(AccessControlListEntryVO_.aclUuid, aclUuids).listValues();
                 if (!entry.isEmpty()) {
@@ -449,12 +441,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 }));
 
                 to.setPublicNic(publicMac);
-                SimpleQuery<SystemTagVO> q  = dbf.createQuery(SystemTagVO.class);
-                q.select(SystemTagVO_.tag);
-                q.add(SystemTagVO_.resourceUuid, Op.EQ, l.getUuid());
-                q.add(SystemTagVO_.resourceType, Op.EQ, LoadBalancerListenerVO.class.getSimpleName());
-                List<String> tags = q.listValue();
-                to.setParameters(CollectionUtils.transformToList(tags, new Function<String, String>() {
+
+                to.setParameters(CollectionUtils.transformToList(struct.getTags().get(l.getUuid()), new Function<String, String>() {
                     // vnicUuid::weight
                     @Override
                     public String call(String arg) {
@@ -470,7 +458,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         return arg;
                     }
                 }));
-                to.getParameters().addAll(makeAcl(l.getUuid()));
+                to.getParameters().addAll(makeAcl(l));
                 return to;
             }
         });
@@ -1843,11 +1831,21 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 }
             }
 
+            Map<String, List<String>> systemTags = new HashMap<>();
+            for (LoadBalancerListenerVO l : listenerVOS) {
+                SimpleQuery<SystemTagVO> q  = dbf.createQuery(SystemTagVO.class);
+                q.select(SystemTagVO_.tag);
+                q.add(SystemTagVO_.resourceUuid, Op.EQ, l.getUuid());
+                q.add(SystemTagVO_.resourceType, Op.EQ, LoadBalancerListenerVO.class.getSimpleName());
+                systemTags.put(l.getUuid(), q.listValue());
+            }
+
             LoadBalancerStruct struct = new LoadBalancerStruct();
             LoadBalancerVO lb = dbf.findByUuid(e.getKey(), LoadBalancerVO.class);
             struct.setLb(LoadBalancerInventory.valueOf(lb));
             struct.setListeners(LoadBalancerListenerInventory.valueOf(e.getValue()));
             struct.setVmNics(nicMap);
+            struct.setTags(systemTags);
             ret.add(struct);
         }
 

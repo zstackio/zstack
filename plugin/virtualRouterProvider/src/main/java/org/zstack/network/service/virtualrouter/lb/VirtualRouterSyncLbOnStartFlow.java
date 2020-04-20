@@ -13,11 +13,15 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.lb.*;
-import org.zstack.network.service.vip.*;
+import org.zstack.network.service.vip.VipInventory;
+import org.zstack.network.service.vip.VipVO;
+import org.zstack.network.service.vip.VipVO_;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
@@ -73,6 +77,16 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
             }
             struct.setVmNics(m);
         }
+
+        Map<String, List<String>> systemTags = new HashMap<>();
+        for (LoadBalancerListenerVO l : vo.getListeners()) {
+            SimpleQuery<SystemTagVO> q  = dbf.createQuery(SystemTagVO.class);
+            q.select(SystemTagVO_.tag);
+            q.add(SystemTagVO_.resourceUuid, Op.EQ, l.getUuid());
+            q.add(SystemTagVO_.resourceType, Op.EQ, LoadBalancerListenerVO.class.getSimpleName());
+            systemTags.put(l.getUuid(), q.listValue());
+        }
+        struct.setTags(systemTags);
 
         struct.setListeners(LoadBalancerListenerInventory.valueOf(vo.getListeners()));
 

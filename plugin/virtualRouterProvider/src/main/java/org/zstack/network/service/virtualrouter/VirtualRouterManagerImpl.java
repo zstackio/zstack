@@ -1552,7 +1552,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             protected List<L3NetworkInventory> scripts() {
 
                 //1.get the l3 which are managed by vrouter or virtual router.
-                List<String>  inners = sql("select l3.uuid from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO pro" +
+                List<String>  inners = sql("select distinct l3.uuid from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO pro" +
                         " where l3.uuid = ref.l3NetworkUuid and ref.networkServiceProviderUuid = pro.uuid and l3.uuid in (:l3Uuids)" +
                         " and pro.type in (:providerType)", String.class)
                         .param("l3Uuids", candidates.stream().map(L3NetworkInventory::getUuid).collect(Collectors.toList()))
