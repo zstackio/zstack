@@ -181,8 +181,10 @@ class Attach2VmToPortForwardingsOnSameVipCase extends SubCase{
             sessionId = adminSession()
             vipUuid = vip.getUuid()
         }
-        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
-        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).count() == 2
+        assert Q.New(VipNetworkServicesRefVO.class)
+                .eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid())
+                .eq(VipNetworkServicesRefVO_.serviceType, VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE)
+                .count() == 2L
 
         /* pause VM */
         pauseVmInstance {
@@ -197,12 +199,18 @@ class Attach2VmToPortForwardingsOnSameVipCase extends SubCase{
             ruleUuid = pf1Inv.uuid
             vmNicUuid  = vm1.getVmNics().get(0).uuid
         }
-        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class)
+                .eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid())
+                .eq(VipNetworkServicesRefVO_.serviceType, VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE)
+                .count() > 0
         attachPortForwardingRule {
             ruleUuid = pf2Inv.uuid
             vmNicUuid  = vm2.getVmNics().get(0).uuid
         }
-        assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.uuid, pf2Inv.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE
+        assert Q.New(VipNetworkServicesRefVO.class)
+                .eq(VipNetworkServicesRefVO_.uuid, pf2Inv.getUuid())
+                .eq(VipNetworkServicesRefVO_.serviceType, VipUseForList.PORTFORWARDING_NETWORK_SERVICE_TYPE)
+                .count() > 0
 
         /* resume vm */
         resumeVmInstance {
