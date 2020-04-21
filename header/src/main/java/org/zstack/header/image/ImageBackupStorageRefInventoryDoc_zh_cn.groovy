@@ -21,25 +21,25 @@ doc {
 	}
 	field {
 		name "installPath"
-		desc ""
+		desc "在镜像服务器上的安装路径"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "exportUrl"
-		desc ""
+		desc "导出镜像的url"
 		type "String"
-		since "0.6"
+		since "3.9.0"
 	}
 	field {
 		name "exportMd5Sum"
-		desc ""
+		desc "导出镜像的md5值"
 		type "String"
-		since "0.6"
+		since "3.9.0"
 	}
 	field {
 		name "status"
-		desc ""
+		desc "镜像就绪状态"
 		type "String"
 		since "0.6"
 	}

@@ -9,7 +9,7 @@ import org.zstack.header.image.ImageBackupStorageRefInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "镜像清单"
 
 	field {
 		name "uuid"
@@ -31,73 +31,73 @@ doc {
 	}
 	field {
 		name "state"
-		desc ""
+		desc "镜像的启动状态"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "status"
-		desc ""
+		desc "镜像的就绪状态"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "size"
-		desc ""
+		desc "镜像大小"
 		type "Long"
 		since "0.6"
 	}
 	field {
 		name "actualSize"
-		desc ""
+		desc "镜像真实容量"
 		type "Long"
 		since "0.6"
 	}
 	field {
 		name "md5Sum"
-		desc ""
+		desc "镜像的md5值"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "url"
-		desc ""
+		desc "镜像的URL地址"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "mediaType"
-		desc ""
+		desc "镜像的类型"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "guestOsType"
-		desc ""
+		desc "镜像对应的客户机操作系统类型"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "type"
-		desc ""
+		desc "内部使用字段"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "platform"
-		desc ""
+		desc "镜像的系统平台"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "format"
-		desc ""
+		desc "镜像的格式，比如：raw"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "system"
-		desc ""
+		desc "标识是否为系统镜像"
 		type "Boolean"
 		since "0.6"
 	}
