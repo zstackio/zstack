@@ -19,6 +19,8 @@ import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoi
 import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
@@ -284,17 +286,19 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
             return;
         }
 
-        vipUuids = Q.New(VipVO.class).in(VipVO_.uuid, vipUuids).eq(VipVO_.l3NetworkUuid, nic.getL3NetworkUuid())
-                .select(VipVO_.uuid).listValues();
-        if (vipUuids.isEmpty()) {
+        List<VipVO> vips = Q.New(VipVO.class).in(VipVO_.uuid, vipUuids).eq(VipVO_.l3NetworkUuid, nic.getL3NetworkUuid()).list();
+        if (vips.isEmpty()) {
             completion.success();
             return;
         }
 
-        new While<>(vipUuids).each((uuid, compl) -> {
+        new While<>(vips).each((vip, compl) -> {
             VipDeletionMsg dmsg = new VipDeletionMsg();
-            dmsg.setVipUuid(uuid);
-            bus.makeTargetServiceIdByResourceUuid(dmsg, VipConstant.SERVICE_ID, uuid);
+            /* if system vip is also a ip of vmnic, don't return ip address in vip flow */
+            boolean exists = Q.New(VmNicVO.class).eq(VmNicVO_.usedIpUuid, vip.getUsedIpUuid()).eq(VmNicVO_.l3NetworkUuid, vip.getL3NetworkUuid()).isExists();
+            dmsg.setVipUuid(vip.getUuid());
+            dmsg.setReturnIp(!exists);
+            bus.makeTargetServiceIdByResourceUuid(dmsg, VipConstant.SERVICE_ID, vip.getUuid());
             bus.send(dmsg, new CloudBusCallBack(compl) {
                 @Override
                 public void run(MessageReply reply) {
