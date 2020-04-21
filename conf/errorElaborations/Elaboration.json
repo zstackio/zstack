@@ -480,6 +480,14 @@
     "message_en": "No space left on device"
   },
   {
+    "category": "HOST",
+    "code": "1029",
+    "method": "regex",
+    "regex": "Unable to reconnect host",
+    "message_cn": "无法重连物理机",
+    "message_en": "Unable to reconnect host"
+  },
+  {
     "category": "IAM2",
     "code": "1000",
     "method": "regex",
