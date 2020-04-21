@@ -115,11 +115,7 @@ public class LongJobVO extends ResourceVO implements OwnedByAccount {
         return jobResult;
     }
 
-    public void setJobResult(ErrorCode errorCode) {
-        this.jobResult = ErrorCode.getJobResult(errorCode);
-    }
-
-    public void setJobResultStr(String jobResult) {
+    public void setJobResult(String jobResult) {
         this.jobResult = jobResult;
     }
 

@@ -15,6 +15,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.longjob.*;
 import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
@@ -86,7 +87,7 @@ public class LongJobUtils {
         return canceledStates.contains(vo.getState());
     }
 
-    public static ErrorCode wrapDefaultReuslt(LongJobVO job, ErrorCode err) {
+    static ErrorCode wrapDefaultError(LongJobVO job, ErrorCode err) {
         if (jobCanceled(job) && !err.isError(LongJobErrors.CANCELED)) {
             return cancelErr(job.getUuid(), err);
         } else {
@@ -94,12 +95,23 @@ public class LongJobUtils {
         }
     }
 
+    public static LongJobVO setJobError(String uuid, ErrorCode error) {
+        return updateByUuid(uuid, vo -> vo.setJobResult(ErrorCode.getJobResult(wrapDefaultError(vo, error))));
+    }
 
-    public static boolean jobCompleted(LongJobVO vo) {
+    public static LongJobVO setJobResult(String uuid, String result) {
+        return updateByUuid(uuid, vo -> vo.setJobResult(result));
+    }
+
+    public static LongJobVO setJobResult(String uuid, Object result) {
+        return updateByUuid(uuid, vo -> vo.setJobResult(JSONObjectUtil.toJsonString(result)));
+    }
+
+    static boolean jobCompleted(LongJobVO vo) {
         return completedStates.contains(vo.getState());
     }
 
-    public static LongJobVO updateByUuid(String uuid, Consumer<LongJobVO> consumer) {
+    static LongJobVO updateByUuid(String uuid, Consumer<LongJobVO> consumer) {
         return new SQLBatchWithReturn<LongJobVO>(){
 
             @Override
@@ -124,18 +136,18 @@ public class LongJobUtils {
         }.execute();
     }
 
-    public static LongJobVO changeState(String uuid, LongJobStateEvent stateEvent) {
+    static LongJobVO changeState(String uuid, LongJobStateEvent stateEvent) {
         return updateByUuid(uuid, it -> it.setState(it.getState().nextState(stateEvent)));
     }
 
-    public static LongJobVO changeState(String uuid, LongJobStateEvent stateEvent, Consumer<LongJobVO> consumer) {
+    static LongJobVO changeState(String uuid, LongJobStateEvent stateEvent, Consumer<LongJobVO> consumer) {
         return updateByUuid(uuid, it -> {
             it.setState(it.getState().nextState(stateEvent));
             consumer.accept(it);
         });
     }
 
-    public static LongJobStateEvent getEventOnError(ErrorCode errorCode) {
+    static LongJobStateEvent getEventOnError(ErrorCode errorCode) {
         if (errorCode.isError(SysErrors.MANAGEMENT_NODE_UNAVAILABLE_ERROR, LongJobErrors.INTERRUPTED)) {
             return LongJobStateEvent.suspend;
         } else if (errorCode.isError(LongJobErrors.CANCELED)) {

@@ -25,7 +25,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.longjob.LongJobUtils.*;
+import static org.zstack.longjob.LongJobUtils.setJobResult;
 
 
 /**
@@ -62,7 +64,7 @@ public class AddImageLongJob implements LongJob {
         public void success(ImageInventory image) {
             if (done.compareAndSet(false, true)) {
                 event.setInventory(image);
-                job = updateByUuid(job.getUuid(), vo -> vo.setJobResultStr(JSONObjectUtil.toJsonString(event)));
+                job = setJobResult(job.getUuid(), event);
                 completion.success(event);
             }
         }
@@ -70,9 +72,7 @@ public class AddImageLongJob implements LongJob {
         @Override
         public void fail(ErrorCode err) {
             if (done.compareAndSet(false, true)) {
-                job = updateByUuid(job.getUuid(), vo -> {
-                    vo.setJobResult(wrapDefaultReuslt(vo, err));
-                });
+                job = setJobError(job.getUuid(), err);
                 completion.fail(err);
             }
         }
@@ -80,7 +80,7 @@ public class AddImageLongJob implements LongJob {
         public void track(ImageInventory inv) {
             if (!done.get()) {
                 event.setInventory(inv);
-                job = updateByUuid(job.getUuid(), vo -> vo.setJobResultStr(JSONObjectUtil.toJsonString(event)));
+                job = setJobResult(job.getUuid(), event);
             }
         }
 
@@ -156,7 +156,7 @@ public class AddImageLongJob implements LongJob {
     }
 
     @Override
-    public void resume(LongJobVO job) {
+    public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
         AddImageMsg msg = JSONObjectUtil.toObject(job.getJobData(), AddImageMsg.class);
         ImageDeletionMsg dmsg = buildDeletionMsg(msg);
         bus.send(dmsg, new CloudBusCallBack(null) {
@@ -166,8 +166,7 @@ public class AddImageLongJob implements LongJob {
                     logger.warn(String.format("delete image [%s] failed after management node restarted", msg.getResourceUuid()));
                 }
 
-                LongJobUtils.changeState(job.getUuid(), LongJobStateEvent.fail,
-                        vo -> vo.setJobResultStr("Failed because management node restarted."));
+                completion.fail(operr("Failed because management node restarted."));
             }
         });
     }

@@ -39,6 +39,7 @@ public enum LongJobState {
         Running.transactions(
                 new Transaction(LongJobStateEvent.succeed, LongJobState.Succeeded),
                 new Transaction(LongJobStateEvent.fail, LongJobState.Failed),
+                new Transaction(LongJobStateEvent.resume, LongJobState.Running),
                 new Transaction(LongJobStateEvent.suspend, LongJobState.Suspended),
                 new Transaction(LongJobStateEvent.canceling, LongJobState.Canceling),
                 new Transaction(LongJobStateEvent.canceled, LongJobState.Canceled)
