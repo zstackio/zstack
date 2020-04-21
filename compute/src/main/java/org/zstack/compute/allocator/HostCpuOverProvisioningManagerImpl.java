@@ -128,7 +128,7 @@ public class HostCpuOverProvisioningManagerImpl implements HostCpuOverProvisioni
     @Override
     public int calculateByRatio(String hostUuid, int cpuNum) {
         int r = getRatio(hostUuid);
-        int ret = Math.round(cpuNum / r);
+        int ret = Math.round((float)cpuNum / r);
         return ret == 0 ? 1 : ret;
     }
 
