@@ -20,6 +20,14 @@ public class ResourceExternalBackupInfo  {
         return this.name;
     }
 
+    public java.lang.String state;
+    public void setState(java.lang.String state) {
+        this.state = state;
+    }
+    public java.lang.String getState() {
+        return this.state;
+    }
+
     public java.lang.String installPath;
     public void setInstallPath(java.lang.String installPath) {
         this.installPath = installPath;

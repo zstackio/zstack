@@ -11,10 +11,7 @@ import org.zstack.header.message.APIEvent;
 public interface LongJob {
     void start(LongJobVO job, ReturnValueCompletion<APIEvent> completion);
     void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion);
-    default void resume(LongJobVO job) {
-        job.setJobResult(new ErrorCode(SysErrors.INTERNAL.toString(), "", "Failed because management node restarted."));
-        job.setState(LongJobState.Failed);
-    }
+    void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion);
     default Class getAuditType() {
         return null;
     }

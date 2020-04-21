@@ -1,6 +1,7 @@
 package org.zstack.header.longjob
 
 import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.longjob.LongJobInventory
 
 doc {
 
@@ -13,5 +14,13 @@ doc {
 		type "ErrorCode"
 		since "3.9.0"
 		clz ErrorCode.class
+	}
+	ref {
+		name "inventory"
+		path "org.zstack.header.longjob.APIResumeLongJobEvent.inventory"
+		desc "长任务清单"
+		type "LongJobInventory"
+		since "3.9.0"
+		clz LongJobInventory.class
 	}
 }

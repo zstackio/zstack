@@ -23,6 +23,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.longjob.LongJobUtils.cancelErr;
 import static org.zstack.longjob.LongJobUtils.jobCanceled;
 
@@ -117,6 +118,11 @@ public class CreateDataVolumeTemplateFromVolumeLongJob implements LongJob {
                 }
             }
         });
+    }
+
+    @Override
+    public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
+        completion.fail(operr("not supported"));
     }
 
     @Override
