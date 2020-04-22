@@ -62,7 +62,7 @@ public class KeyValueQuery<T> {
         return entityProxy;
     }
 
-    public void and(Object _, Op op, Object...vals) {
+    public void and(Object unused, Op op, Object...vals) {
         opAndVals.add(Bucket.newBucket(op, vals));
     }
 
