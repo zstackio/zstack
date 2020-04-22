@@ -14,6 +14,7 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
+import org.zstack.header.apimediator.ApiMediatorConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
@@ -73,6 +74,13 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
             @Override
             public void beforeDeliveryMessage(Message msg) {
+                if (msg.getServiceId().equals(ApiMediatorConstant.SERVICE_ID)) {
+                    // the API message will be routed by ApiMediator,
+                    // filter out this message to avoid reporting the same
+                    // API message twice
+                    return;
+                }
+
                 if (msg instanceof VmInstanceMessage) {
                     final String vmUuid = ((VmInstanceMessage) msg).getVmInstanceUuid();
                     vmsToSkip.putIfAbsent(vmUuid, true);
