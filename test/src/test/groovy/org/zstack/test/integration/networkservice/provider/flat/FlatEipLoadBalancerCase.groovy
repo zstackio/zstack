@@ -15,6 +15,7 @@ import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.LoadBalancerListenerInventory
 import org.zstack.sdk.SystemTagInventory
 import org.zstack.sdk.VirtualRouterOfferingInventory
+import org.zstack.sdk.VirtualRouterVmInventory
 import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
@@ -183,9 +184,8 @@ class FlatEipLoadBalancerCase extends SubCase {
     void test() {
         env.create {
             /* case
-    *  offering: flat attach/detach offering
     *  lb pub-flat: detach nics
-    *  eip public-flat detach nics check vip
+    *  eip public-flat attach nics
     *  lb delete vrouter, detach nic and attach nic
     *  check eip ref & vip table
     * */
@@ -230,6 +230,11 @@ class FlatEipLoadBalancerCase extends SubCase {
         }
         assert Q.New(VipPeerL3NetworkRefVO.class).eq(VipPeerL3NetworkRefVO_.l3NetworkUuid, l3.uuid).count() == 2
         assert Q.New(VirtualRouterEipRefVO.class).count() == 0
+
+        VirtualRouterVmInventory vr = queryVirtualRouterVm {}[0]
+        destroyVmInstance {
+            uuid = vr.uuid
+        }
 
         removeVmNicFromLoadBalancer {
             vmNicUuids = [nicUuid]
