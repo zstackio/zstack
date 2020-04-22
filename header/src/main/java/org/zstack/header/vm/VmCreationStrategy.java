@@ -7,4 +7,5 @@ public enum VmCreationStrategy {
     InstantStart,
     JustCreate,
     CreateStopped,
+    CreatedPaused,
 }

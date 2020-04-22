@@ -5157,7 +5157,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             InstantiateVmFromNewCreatedStruct struct = new JsonLabel().get(
                     InstantiateVmFromNewCreatedStruct.makeLabelKey(self.getUuid()), InstantiateVmFromNewCreatedStruct.class);
 
-            struct.setStrategy(VmCreationStrategy.InstantStart);
+            if (msg instanceof StartVmInstanceMsg && ((StartVmInstanceMsg) msg).isStartPaused()) {
+                struct.setStrategy(VmCreationStrategy.CreatedPaused);
+            } else {
+                struct.setStrategy(VmCreationStrategy.InstantStart);
+            }
+
             instantiateVmFromNewCreate(struct, completion);
             return;
         }
@@ -5366,7 +5371,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setConsolePassword(VmSystemTags.CONSOLE_PASSWORD.
                 getTokenByResourceUuid(self.getUuid(), VmSystemTags.CONSOLE_PASSWORD_TOKEN));
         spec.setUsbRedirect(VmSystemTags.USB_REDIRECT.getTokenByResourceUuid(self.getUuid(), VmSystemTags.USB_REDIRECT_TOKEN));
-        if (struct.getStrategy() == VmCreationStrategy.CreateStopped) {
+        if (struct.getStrategy() == VmCreationStrategy.CreateStopped || struct.getStrategy() == VmCreationStrategy.CreatedPaused) {
             spec.setCreatePaused(true);
         }
 

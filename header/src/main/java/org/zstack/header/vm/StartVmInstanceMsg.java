@@ -18,6 +18,15 @@ public class StartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMe
     private String accountUuid;
     private List<String> softAvoidHostUuids;
     private AllocationScene allocationScene;
+    private boolean startPaused;
+
+    public boolean isStartPaused() {
+        return startPaused;
+    }
+
+    public void setStartPaused(boolean startPaused) {
+        this.startPaused = startPaused;
+    }
 
     public AllocationScene getAllocationScene() {
         return allocationScene;

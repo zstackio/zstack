@@ -39,12 +39,13 @@ public class VmAttachVolumeOnHypervisorFlow implements Flow {
         assert spec != null;
         assert attachedDataVolumes != null;
 
-        if (spec.getVmInventory().getState().equals(VmInstanceState.Stopped.toString())) {
+        String vmState = spec.getVmInventory().getState();
+        if (VmInstanceState.Stopped.toString().equals(vmState)) {
             chain.next();
             return;
         }
 
-        assert VmInstanceState.Running.toString().equals(spec.getVmInventory().getState());
+        assert VmInstanceState.Running.toString().equals(vmState) || VmInstanceState.Paused.toString().equals(vmState);
 
         String hostUuid = spec.getVmInventory().getHostUuid();
 
