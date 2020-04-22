@@ -1626,6 +1626,15 @@ public class KVMHost extends HostBase implements Host {
                 }
 
                 bus.reply(msg, reply);
+
+                if (ret.getPciAddress() != null) {
+                    SystemTagCreator creator = KVMSystemTags.VMNIC_PCI_ADDRESS.newSystemTagCreator(msg.getNicInventory().getUuid());
+                    creator.inherent = true;
+                    creator.recreate = true;
+                    creator.setTagByTokens(map(e(KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN, ret.getPciAddress().toString())));
+                    creator.create();
+                }
+
                 completion.done();
             }
 
@@ -2048,6 +2057,11 @@ public class KVMHost extends HostBase implements Host {
 
             to.setUseVirtio(ImagePlatform.valueOf(platform).isParaVirtualization());
             to.setIps(getCleanTrafficIp(nic));
+        }
+
+        String pci = KVMSystemTags.VMNIC_PCI_ADDRESS.getTokenByResourceUuid(nic.getUuid(), KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN);
+        if (pci != null) {
+            to.setPci(PciAddressConfig.fromString(pci));
         }
 
         return to;
