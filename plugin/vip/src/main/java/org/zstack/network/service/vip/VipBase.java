@@ -501,7 +501,7 @@ public class VipBase {
 
             @Override
             public void run(SyncTaskChain chain) {
-                deleteVip(new Completion(msg, chain) {
+                deleteVip(msg, new Completion(msg, chain) {
                     @Override
                     public void success() {
                         bus.reply(msg, reply);
@@ -573,7 +573,7 @@ public class VipBase {
         }
     }
 
-    protected void deleteVip(Completion completion) {
+    protected void deleteVip(VipDeletionMsg msg, Completion completion) {
         refresh();
         final Set<String> services = self.getServicesTypes();
         
@@ -665,7 +665,11 @@ public class VipBase {
                     public void handle(Map data) {
                         refresh();
                         dbf.remove(self);
-                        returnVip(completion);
+                        if (msg.isReturnIp()) {
+                            returnVip(completion);
+                        } else {
+                            completion.success();
+                        }
                     }
                 });
 
