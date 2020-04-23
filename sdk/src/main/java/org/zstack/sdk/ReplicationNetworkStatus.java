@@ -22,5 +22,7 @@ public enum ReplicationNetworkStatus {
 	PausedSyncT,
 	VerifyS,
 	VerifyT,
+	StandAlone,
+	Ready,
 	Unknown,
 }

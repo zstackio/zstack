@@ -37,6 +37,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.message.*;
 import org.zstack.header.storage.backup.*;
+import org.zstack.header.vm.APISetVmBootModeEvent;
 import org.zstack.header.vm.DetachIsoFromVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.VolumeType;
@@ -53,6 +54,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -599,9 +602,23 @@ public class ImageBase implements Image {
             handle((APIRecoverImageMsg) msg);
         } else if (msg instanceof APISyncImageSizeMsg) {
             handle((APISyncImageSizeMsg) msg);
+        } else if (msg instanceof APISetImageBootModeMsg) {
+            handle((APISetImageBootModeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(APISetImageBootModeMsg msg) {
+        SystemTagCreator creator = ImageSystemTags.BOOT_MODE.newSystemTagCreator(self.getUuid());
+        creator.setTagByTokens(map(
+                e(ImageSystemTags.BOOT_MODE_TOKEN, msg.getBootMode())
+        ));
+        creator.recreate = true;
+        creator.create();
+
+        APISetImageBootModeEvent evt = new APISetImageBootModeEvent(msg.getId());
+        bus.publish(evt);
     }
 
     private void handle(APISyncImageSizeMsg msg) {

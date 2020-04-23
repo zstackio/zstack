@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddResourceStackVmPortMonitorAction extends AbstractAction {
+public class SetImageBootModeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddResourceStackVmPortMonitorAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddResourceStackVmPortMonitorResult value;
+        public org.zstack.sdk.SetImageBootModeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,11 @@ public class AddResourceStackVmPortMonitorAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String stackUuid;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
+    public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer port;
+    @Param(required = true, validValues = {"Legacy","UEFI","UEFI_WITH_CSM"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String bootMode;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +63,8 @@ public class AddResourceStackVmPortMonitorAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddResourceStackVmPortMonitorResult value = res.getResult(org.zstack.sdk.AddResourceStackVmPortMonitorResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddResourceStackVmPortMonitorResult() : value; 
+        org.zstack.sdk.SetImageBootModeResult value = res.getResult(org.zstack.sdk.SetImageBootModeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.SetImageBootModeResult() : value; 
 
         return ret;
     }
@@ -96,11 +93,11 @@ public class AddResourceStackVmPortMonitorAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/cloudformation/stack/monitor/addvm";
+        info.httpMethod = "PUT";
+        info.path = "/images/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "setImageBootMode";
         return info;
     }
 

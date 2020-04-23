@@ -10,5 +10,6 @@ public enum ReplicationDiskStatus {
 	DUnknown,
 	Consistent,
 	UpToDate,
+	Ready,
 	Unknown,
 }
