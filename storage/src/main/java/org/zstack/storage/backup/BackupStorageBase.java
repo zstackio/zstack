@@ -890,6 +890,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     }
 
     protected boolean changeStatus(BackupStorageStatus status) {
+        self = dbf.reload(self);
         if (status == self.getStatus()) {
             return false;
         }
