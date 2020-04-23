@@ -1,6 +1,7 @@
 package org.zstack.tag;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import org.hibernate.TransactionException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -243,6 +244,14 @@ public class SystemTag {
                     } else {
                         throw e;
                     }
+                } catch (JpaSystemException e) {
+                    if (e.getCause() != null && e.getCause() instanceof TransactionException) {
+                        if (exceptionCanBeIgnored) {
+                            return null;
+                        }
+                    }
+
+                    throw e;
                 }
             }
 
