@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
@@ -28,7 +29,6 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
@@ -42,6 +42,8 @@ public class VmAllocateVolumeFlow implements Flow {
     protected AccountManager acntMgr;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    private EventFacade evtf;
 
     protected List<CreateVolumeMsg> prepareMsg(Map<String, Object> ctx) {
         taskProgress("create volumes");
@@ -125,6 +127,12 @@ public class VmAllocateVolumeFlow implements Flow {
                         }
 
                         vspec.setIsVolumeCreated(true);
+                        if (!vspec.isRoot()) {
+                            VolumeConstant.CreateDataVolumeData d = new VolumeConstant.CreateDataVolumeData();
+                            d.vmUuid = inv.getVmInstanceUuid();
+                            d.dataVolumeUuid = inv.getUuid();
+                            evtf.fire(VolumeConstant.DATAVOLUME_CREATE_EVENT_PATH, d);
+                        }
                     } else {
                         err = r.getError();
                         vspec.setIsVolumeCreated(false);
