@@ -310,3 +310,42 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmVfNicVO` (
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkVmVfNicVOPciDeviceVO` FOREIGN KEY (`pciDeviceUuid`) REFERENCES `zstack`.`PciDeviceVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkBondingVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `hostUuid` varchar(32) NOT NULL,
+    `bondingName` varchar(128) NOT NULL,
+    `mode` varchar(32) NOT NULL,
+    `xmitHashPolicy` varchar(32) DEFAULT NULL,
+    `miiStatus` varchar(32) DEFAULT NULL,
+    `miimon` BIGINT UNSIGNED DEFAULT NULL,
+    `mac` varchar(17) DEFAULT NULL,
+    `ipAddresses` varchar(255) DEFAULT NULL,
+    `allSlavesActive` tinyint(1) UNSIGNED NOT NULL DEFAULT 0,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`uuid`),
+    INDEX `idxHostNetworkBondingVOhostUuid` (`hostUuid`),
+    CONSTRAINT `fkHostNetworkBondingVOHostVO` FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkInterfaceVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `hostUuid` varchar(32) NOT NULL,
+    `bondingUuid` varchar(32) DEFAULT NULL,
+    `interfaceName` varchar(32) NOT NULL,
+    `interfaceType` varchar(32) NOT NULL,
+    `mac` varchar(17) DEFAULT NULL,
+    `speed` BIGINT UNSIGNED DEFAULT NULL,
+    `ipAddresses` varchar(255) DEFAULT NULL,
+    `pciDeviceAddress` varchar(32) DEFAULT NULL,
+    `slaveActive` tinyint(1) UNSIGNED NOT NULL DEFAULT 0,
+    `carrierActive` tinyint(1) UNSIGNED NOT NULL DEFAULT 0,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY  (`uuid`),
+    INDEX `idxHostNetworkInterfaceVOhostUuid` (`hostUuid`),
+    INDEX `idxHostNetworkInterfaceVObondingUuid` (`bondingUuid`),
+    CONSTRAINT `fkHostNetworkInterfaceVOHostVO` FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkHostNetworkInterfaceVOHostNetworkBondingVO` FOREIGN KEY (`bondingUuid`) REFERENCES `zstack`.`HostNetworkBondingVO` (`uuid`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
