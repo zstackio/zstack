@@ -297,3 +297,7 @@ DELIMITER ;
 
 CALL addLBServiceToPrivateBasicNetwork();
 DROP PROCEDURE IF EXISTS addLBServiceToPrivateBasicNetwork;
+
+ALTER TABLE `zstack`.`VCenterClusterVO` ADD COLUMN `dataCenterUuid` varchar(32) DEFAULT NULL;
+ALTER TABLE `zstack`.`VCenterClusterVO` ADD CONSTRAINT fkVCenterDataCenterVOVCenterClusterVO FOREIGN KEY (dataCenterUuid) REFERENCES VCenterDatacenterVO (uuid) ON DELETE CASCADE ;
+ALTER TABLE `zstack`.`VCenterVO` ADD COLUMN `version` varchar(32) DEFAULT NULL;

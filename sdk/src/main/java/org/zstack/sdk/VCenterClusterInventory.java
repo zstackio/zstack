@@ -20,4 +20,12 @@ public class VCenterClusterInventory extends org.zstack.sdk.ClusterInventory {
         return this.morval;
     }
 
+    public java.lang.String dataCenterUuid;
+    public void setDataCenterUuid(java.lang.String dataCenterUuid) {
+        this.dataCenterUuid = dataCenterUuid;
+    }
+    public java.lang.String getDataCenterUuid() {
+        return this.dataCenterUuid;
+    }
+
 }

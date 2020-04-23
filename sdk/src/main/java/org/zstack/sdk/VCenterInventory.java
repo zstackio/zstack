@@ -60,6 +60,14 @@ public class VCenterInventory  {
         return this.zoneUuid;
     }
 
+    public java.lang.String version;
+    public void setVersion(java.lang.String version) {
+        this.version = version;
+    }
+    public java.lang.String getVersion() {
+        return this.version;
+    }
+
     public java.lang.Boolean https;
     public void setHttps(java.lang.Boolean https) {
         this.https = https;
