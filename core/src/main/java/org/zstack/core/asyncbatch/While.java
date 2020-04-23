@@ -12,16 +12,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Created by xing5 on 2017/3/5.
  */
+
 public class While<T> {
     private Collection<T> items;
     private Do consumer;
 
-    private int mode;
     private int step;
-
-    private final int EACH = 1;
-    private final int ALL = 2;
-    private final int STEP = 3;
+    private WhileMode mode;
 
     private AtomicBoolean isOver = new AtomicBoolean(false);
     private AtomicInteger doneCount = new AtomicInteger(0);
@@ -36,13 +33,13 @@ public class While<T> {
     }
 
     public While each(Do<T> consumer) {
-        mode = EACH;
+        mode = WhileMode.EACH;
         this.consumer = consumer;
         return this;
     }
 
     public While all(Do<T> consumer) {
-        mode = ALL;
+        mode = WhileMode.ALL;
         this.consumer = consumer;
         return this;
     }
@@ -74,7 +71,7 @@ public class While<T> {
 
         this.consumer = consumer;
         this.step = step;
-        mode = STEP;
+        mode = WhileMode.STEP;
         return this;
     }
 
@@ -85,14 +82,22 @@ public class While<T> {
             return;
         }
 
-        if (mode == EACH) {
-            run(items.iterator(), completion);
-        } else if (mode == ALL) {
-            runAll(completion);
-        } else if (mode == STEP) {
-            runStep(completion);
-        } else {
-            DebugUtils.Assert(false, "should be here");
+        switch (mode) {
+            case EACH: {
+                run(items.iterator(), completion);
+            }
+            break;
+            case ALL: {
+                runAll(completion);
+            }
+            break;
+            case STEP: {
+                runStep(completion);
+            }
+            break;
+            default:
+                DebugUtils.Assert(false, "should be here");
+                break;
         }
     }
 
@@ -100,7 +105,7 @@ public class While<T> {
         int s = Math.min(step, items.size());
 
         Iterator<T> it = items.iterator();
-        for (int i=0; i<s; i++) {
+        for (int i = 0; i < s; i++) {
             runStep(it, completion);
         }
     }
@@ -120,9 +125,10 @@ public class While<T> {
             public void allDone() {
                 doneCompletion(completion);
             }
+
             @Override
             public void done() {
-                if (doneCount.decrementAndGet() == 0){
+                if (doneCount.decrementAndGet() == 0) {
                     doneCompletion(completion);
                     return;
                 }
@@ -149,7 +155,7 @@ public class While<T> {
         }
     }
 
-    private void doneCompletion(NoErrorCompletion completion){
+    private void doneCompletion(NoErrorCompletion completion) {
         if (isOver.compareAndSet(false, true)) {
             completion.done();
         }
