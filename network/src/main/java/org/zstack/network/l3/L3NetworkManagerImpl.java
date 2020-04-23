@@ -26,19 +26,17 @@ import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedQuotaCheckMessage;
-import org.zstack.header.network.l2.L2NetworkFactory;
-import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l3.datatypes.IpCapacityData;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
+import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceSystemTag;
-import org.zstack.search.GetQuery;
-import org.zstack.search.SearchQuery;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ObjectUtils;
@@ -154,9 +152,10 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         APIGetIpAddressCapacityReply reply = new APIGetIpAddressCapacityReply();
 
         class IpCapacity {
+            Map<String, IpCapacity> elements;
             long total;
             long avail;
-            long used;
+            long used = 0L;
         }
 
         IpCapacity ret = new Callable<IpCapacity>() {
@@ -179,6 +178,64 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                 return total;
             }
 
+            private void calcElementTotalIp(List<Tuple> tuples, IpCapacity capacity) {
+                if (capacity.elements == null) {
+                    capacity.elements = new HashMap<>();
+                }
+                Map<String, IpCapacity> elements = capacity.elements;
+                long total = 0;
+
+                for (Tuple tuple : tuples) {
+                    String sip = tuple.get(0, String.class);
+                    String eip = tuple.get(1, String.class);
+                    int ipVersion = tuple.get(2, Integer.class);
+                    String elementUuid = tuple.get(3, String.class);
+
+                    IpCapacity element = elements.getOrDefault(elementUuid, new IpCapacity());
+                    elements.put(elementUuid, element);
+                    if (ipVersion == IPv6Constants.IPv4) {
+                        int t = NetworkUtils.getTotalIpInRange(sip, eip);
+                        element.total += t;
+                        element.avail = element.total;
+                        total += t;
+                    } else {
+                        long t = IPv6NetworkUtils.getIpv6RangeSize(sip, eip);
+                        element.total += t;
+                        element.total = Math.min(element.total, Integer.MAX_VALUE);
+                        element.avail = element.total;
+                        total += t;
+                        total = Math.min(total, (long)Integer.MAX_VALUE);
+                    }
+
+                }
+                capacity.total = total;
+                capacity.avail = total;
+            }
+
+            private void calcElementUsedIp(List<Tuple> tuples, IpCapacity capacity) {
+                if (capacity == null) {
+                    return;
+                }
+                long total = 0;
+
+                for (Tuple tuple : tuples) {
+                    long used = tuple.get(0, Long.class);
+                    String elementUuid = tuple.get(1, String.class);
+                    total += used;
+                    total = Math.min(total, Integer.MAX_VALUE);
+                    if (capacity.elements != null) {
+                        IpCapacity element = capacity.elements.get(elementUuid);
+                        if (element == null) {
+                            continue;
+                        }
+                        element.used += used;
+                        element.avail -= used;
+                    }
+                }
+                capacity.used = total;
+                capacity.avail -= total;
+            }
+
             @Override
             @Transactional(readOnly = true)
             public IpCapacity call() {
@@ -188,55 +245,68 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                 }
 
                 if (msg.getIpRangeUuids() != null && !msg.getIpRangeUuids().isEmpty()) {
-                    String sql = "select ipr.startIp, ipr.endIp, ipr.ipVersion from IpRangeVO ipr where ipr.uuid in (:uuids)";
+                    reply.setResourceType(IpRangeVO.class.getSimpleName());
+                    String sql = "select ipr.startIp, ipr.endIp, ipr.ipVersion, ipr.uuid from IpRangeVO ipr where ipr.uuid in (:uuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("uuids", msg.getIpRangeUuids());
                     List<Tuple> ts = q.getResultList();
-                    ret.total = calcTotalIp(ts);
+                    calcElementTotalIp(ts, ret);
 
-                    sql = "select count(distinct uip.ip) from UsedIpVO uip where uip.ipRangeUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
-                    TypedQuery<Long> cq = dbf.getEntityManager().createQuery(sql, Long.class);
+                    sql = "select count(distinct uip.ip), uip.ipRangeUuid from UsedIpVO uip where uip.ipRangeUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by uip.ipRangeUuid";
+                    TypedQuery<Tuple> cq = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     cq.setParameter("uuids", msg.getIpRangeUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
-                    Long used = cq.getSingleResult();
-                    ret.avail = ret.total - used;
-                    ret.used = used;
+                    List<Tuple> uts = cq.getResultList();
+                    calcElementUsedIp(uts, ret);
                     return ret;
                 } else if (msg.getL3NetworkUuids() != null && !msg.getL3NetworkUuids().isEmpty()) {
-                    String sql = "select ipr.startIp, ipr.endIp, ipr.ipVersion from IpRangeVO ipr, L3NetworkVO l3 where ipr.l3NetworkUuid = l3.uuid and l3.uuid in (:uuids)";
+                    reply.setResourceType(L3NetworkVO.class.getSimpleName());
+                    String sql = "select ipr.startIp, ipr.endIp, ipr.ipVersion, l3.uuid from IpRangeVO ipr, L3NetworkVO l3 where ipr.l3NetworkUuid = l3.uuid and l3.uuid in (:uuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("uuids", msg.getL3NetworkUuids());
                     List<Tuple> ts = q.getResultList();
-                    ret.total = calcTotalIp(ts);
+                    calcElementTotalIp(ts, ret);
 
-                    sql = "select count(distinct uip.ip) from UsedIpVO uip where uip.l3NetworkUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
-                    TypedQuery<Long> cq = dbf.getEntityManager().createQuery(sql, Long.class);
+                    sql = "select count(distinct uip.ip), uip.l3NetworkUuid from UsedIpVO uip where uip.l3NetworkUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by uip.l3NetworkUuid";
+                    TypedQuery<Tuple> cq = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     cq.setParameter("uuids", msg.getL3NetworkUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
-                    Long used = cq.getSingleResult();
-                    ret.avail = ret.total - used;
-                    ret.used = used;
+                    List<Tuple> uts = cq.getResultList();
+                    calcElementUsedIp(uts, ret);
                     return ret;
                 } else if (msg.getZoneUuids() != null && !msg.getZoneUuids().isEmpty()) {
-                    String sql = "select ipr.startIp, ipr.endIp, ipr.ipVersion from IpRangeVO ipr, L3NetworkVO l3, ZoneVO zone where ipr.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids)";
+                    reply.setResourceType(ZoneVO.class.getSimpleName());
+                    String sql = "select ipr.startIp, ipr.endIp, ipr.ipVersion, zone.uuid from IpRangeVO ipr, L3NetworkVO l3, ZoneVO zone where ipr.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids)";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("uuids", msg.getZoneUuids());
                     List<Tuple> ts = q.getResultList();
-                    ret.total = calcTotalIp(ts);
+                    calcElementTotalIp(ts, ret);
 
-                    sql = "select count(distinct uip.ip) from UsedIpVO uip, L3NetworkVO l3, ZoneVO zone where uip.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL)";
-                    TypedQuery<Long> cq = dbf.getEntityManager().createQuery(sql, Long.class);
+                    sql = "select count(distinct uip.ip), zone.uuid from UsedIpVO uip, L3NetworkVO l3, ZoneVO zone where uip.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by zone.uuid";
+                    TypedQuery<Tuple> cq = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     cq.setParameter("uuids", msg.getZoneUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
-                    Long used = cq.getSingleResult();
-                    ret.avail = ret.total - used;
-                    ret.used = used;
+                    List<Tuple> uts = cq.getResultList();
+                    calcElementUsedIp(uts, ret);
                     return ret;
                 }
 
                 throw new CloudRuntimeException("should not be here");
             }
         }.call();
+
+        if (ret.elements != null) {
+            List<IpCapacityData> capacityData = new ArrayList<>();
+            ret.elements.forEach((uuid, element) -> {
+                IpCapacityData data = new IpCapacityData();
+                capacityData.add(data);
+                data.setResourceUuid(uuid);
+                data.setTotalCapacity(element.total);
+                data.setAvailableCapacity(element.avail);
+                data.setUsedIpAddressNumber(element.used);
+            });
+            reply.setCapacityData(capacityData);
+        }
 
         reply.setTotalCapacity(ret.total);
         reply.setAvailableCapacity(ret.avail);

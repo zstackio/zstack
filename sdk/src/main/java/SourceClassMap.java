@@ -108,6 +108,8 @@ public class SourceClassMap {
 			put("org.zstack.header.aliyun.oss.OssBucketProperty", "org.zstack.sdk.OssBucketProperty");
 			put("org.zstack.header.aliyun.storage.disk.AliyunDiskInventory", "org.zstack.sdk.AliyunDiskInventory");
 			put("org.zstack.header.aliyun.storage.snapshot.AliyunSnapshotInventory", "org.zstack.sdk.AliyunSnapshotInventory");
+			put("org.zstack.header.appcenter.PublishAppInventory", "org.zstack.sdk.PublishAppInventory");
+			put("org.zstack.header.appcenter.PublishAppResourceStruct", "org.zstack.sdk.PublishAppResourceStruct");
 			put("org.zstack.header.baremetal.BaremetalException", "org.zstack.sdk.BaremetalException");
 			put("org.zstack.header.baremetal.chassis.BaremetalChassisInventory", "org.zstack.sdk.BaremetalChassisInventory");
 			put("org.zstack.header.baremetal.chassis.BaremetalHardwareInfoInventory", "org.zstack.sdk.BaremetalHardwareInfoInventory");
@@ -120,6 +122,10 @@ public class SourceClassMap {
 			put("org.zstack.header.bootstrap.MiniCandidateHostStruct", "org.zstack.sdk.MiniCandidateHostStruct");
 			put("org.zstack.header.bootstrap.MiniHostInfo", "org.zstack.sdk.MiniHostInfo");
 			put("org.zstack.header.bootstrap.MiniNetworkConfigStruct", "org.zstack.sdk.MiniNetworkConfigStruct");
+			put("org.zstack.header.buildapp.BuildAppExportHistoryInventory", "org.zstack.sdk.BuildAppExportHistoryInventory");
+			put("org.zstack.header.buildapp.BuildApplicationInventory", "org.zstack.sdk.BuildApplicationInventory");
+			put("org.zstack.header.buildsystem.AppBuildSystemInventory", "org.zstack.sdk.AppBuildSystemInventory");
+			put("org.zstack.header.buildsystem.AppBuildSystemZoneRefInventory", "org.zstack.sdk.AppBuildSystemZoneRefInventory");
 			put("org.zstack.header.cloudformation.CloudFormationStackEventInventory", "org.zstack.sdk.CloudFormationStackEventInventory");
 			put("org.zstack.header.cloudformation.PreviewResourceStruct", "org.zstack.sdk.PreviewResourceStruct");
 			put("org.zstack.header.cloudformation.ResourceStackInventory", "org.zstack.sdk.ResourceStackInventory");
@@ -198,6 +204,7 @@ public class SourceClassMap {
 			put("org.zstack.header.network.l3.L3NetworkInventory", "org.zstack.sdk.L3NetworkInventory");
 			put("org.zstack.header.network.l3.NormalIpRangeInventory", "org.zstack.sdk.NormalIpRangeInventory");
 			put("org.zstack.header.network.l3.UsedIpInventory", "org.zstack.sdk.UsedIpInventory");
+			put("org.zstack.header.network.l3.datatypes.IpCapacityData", "org.zstack.sdk.IpCapacityData");
 			put("org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory", "org.zstack.sdk.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.header.network.service.NetworkServiceProviderInventory", "org.zstack.sdk.NetworkServiceProviderInventory");
 			put("org.zstack.header.portMirror.MirrorNetworkUsedIpInventory", "org.zstack.sdk.MirrorNetworkUsedIpInventory");
@@ -552,6 +559,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AliyunProxyVpcInventory", "org.zstack.aliyunproxy.vpc.AliyunProxyVpcInventory");
 			put("org.zstack.sdk.AliyunRouterInterfaceInventory", "org.zstack.header.aliyun.network.connection.AliyunRouterInterfaceInventory");
 			put("org.zstack.sdk.AliyunSnapshotInventory", "org.zstack.header.aliyun.storage.snapshot.AliyunSnapshotInventory");
+			put("org.zstack.sdk.AppBuildSystemInventory", "org.zstack.header.buildsystem.AppBuildSystemInventory");
+			put("org.zstack.sdk.AppBuildSystemZoneRefInventory", "org.zstack.header.buildsystem.AppBuildSystemZoneRefInventory");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
 			put("org.zstack.sdk.AttachTagResult", "org.zstack.tag2.AttachTagResult");
 			put("org.zstack.sdk.AutoScalingGroupActivityInventory", "org.zstack.autoscaling.group.activity.AutoScalingGroupActivityInventory");
@@ -576,6 +585,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BaremetalVlanNicInventory", "org.zstack.header.baremetal.network.BaremetalVlanNicInventory");
 			put("org.zstack.sdk.BatchDeleteVolumeSnapshotStruct", "org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotStruct");
 			put("org.zstack.sdk.BillingInventory", "org.zstack.billing.generator.BillingInventory");
+			put("org.zstack.sdk.BuildAppExportHistoryInventory", "org.zstack.header.buildapp.BuildAppExportHistoryInventory");
+			put("org.zstack.sdk.BuildApplicationInventory", "org.zstack.header.buildapp.BuildApplicationInventory");
 			put("org.zstack.sdk.CephBackupStorageInventory", "org.zstack.storage.ceph.backup.CephBackupStorageInventory");
 			put("org.zstack.sdk.CephBackupStorageMonInventory", "org.zstack.storage.ceph.backup.CephBackupStorageMonInventory");
 			put("org.zstack.sdk.CephPrimaryStorageInventory", "org.zstack.storage.ceph.primary.CephPrimaryStorageInventory");
@@ -662,6 +673,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ImageStoreImageStruct", "org.zstack.storage.backup.imagestore.ImageStoreImageStruct");
 			put("org.zstack.sdk.InstallPathRecycleInventory", "org.zstack.header.core.trash.InstallPathRecycleInventory");
 			put("org.zstack.sdk.InstanceOfferingInventory", "org.zstack.header.configuration.InstanceOfferingInventory");
+			put("org.zstack.sdk.IpCapacityData", "org.zstack.header.network.l3.datatypes.IpCapacityData");
 			put("org.zstack.sdk.IpRangeInventory", "org.zstack.header.network.l3.IpRangeInventory");
 			put("org.zstack.sdk.IpRangeType", "org.zstack.header.network.l3.IpRangeType");
 			put("org.zstack.sdk.IpStatisticData", "org.zstack.network.service.flat.IpStatisticData");
@@ -781,6 +793,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PubIpVmNicBandwidthInBillingInventory", "org.zstack.billing.generator.pubip.vmnic.PubIpVmNicBandwidthInBillingInventory");
 			put("org.zstack.sdk.PubIpVmNicBandwidthOutBillingInventory", "org.zstack.billing.generator.pubip.vmnic.PubIpVmNicBandwidthOutBillingInventory");
 			put("org.zstack.sdk.PubIpVmNicBandwidthSpending", "org.zstack.billing.spendingcalculator.vmnic.PubIpVmNicBandwidthSpending");
+			put("org.zstack.sdk.PublishAppInventory", "org.zstack.header.appcenter.PublishAppInventory");
+			put("org.zstack.sdk.PublishAppResourceStruct", "org.zstack.header.appcenter.PublishAppResourceStruct");
 			put("org.zstack.sdk.QuotaInventory", "org.zstack.header.identity.QuotaInventory");
 			put("org.zstack.sdk.QuotaUsage", "org.zstack.header.identity.Quota$QuotaUsage");
 			put("org.zstack.sdk.RaidControllerInventory", "org.zstack.storage.device.localRaid.RaidControllerInventory");

@@ -2,7 +2,16 @@ package org.zstack.sdk;
 
 
 
-public class GetIpAddressCapacityResult {
+public class IpCapacityData  {
+
+    public java.lang.String resourceUuid;
+    public void setResourceUuid(java.lang.String resourceUuid) {
+        this.resourceUuid = resourceUuid;
+    }
+    public java.lang.String getResourceUuid() {
+        return this.resourceUuid;
+    }
+
     public long totalCapacity;
     public void setTotalCapacity(long totalCapacity) {
         this.totalCapacity = totalCapacity;
@@ -25,22 +34,6 @@ public class GetIpAddressCapacityResult {
     }
     public long getUsedIpAddressNumber() {
         return this.usedIpAddressNumber;
-    }
-
-    public java.util.List capacityData;
-    public void setCapacityData(java.util.List capacityData) {
-        this.capacityData = capacityData;
-    }
-    public java.util.List getCapacityData() {
-        return this.capacityData;
-    }
-
-    public java.lang.String resourceType;
-    public void setResourceType(java.lang.String resourceType) {
-        this.resourceType = resourceType;
-    }
-    public java.lang.String getResourceType() {
-        return this.resourceType;
     }
 
 }

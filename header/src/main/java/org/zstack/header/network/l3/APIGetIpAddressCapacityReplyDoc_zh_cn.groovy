@@ -1,6 +1,8 @@
 package org.zstack.header.network.l3
 
 import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.network.l3.datatypes.IpCapacityData
+import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
@@ -29,8 +31,22 @@ doc {
 	field {
 		name "usedIpAddressNumber"
 		desc "已使用IP数量"
-		type "Long"
+		type "long"
 		since "3.1"
+	}
+	ref {
+		name "capacityData"
+		path "org.zstack.header.network.l3.APIGetIpAddressCapacityReply.capacityData"
+		desc "所有被查询的资源的IP地址容量信息"
+		type "List"
+		since "3.9.0"
+		clz IpCapacityData.class
+	}
+	field {
+		name "resourceType"
+		desc "所查询资源的类型（地址范围、三层网络、区域）"
+		type "String"
+		since "3.9.0"
 	}
 	field {
 		name "success"
