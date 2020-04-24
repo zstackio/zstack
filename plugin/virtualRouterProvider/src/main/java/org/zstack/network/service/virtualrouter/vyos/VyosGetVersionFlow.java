@@ -11,6 +11,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.rest.RESTFacade;
@@ -24,6 +25,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -113,22 +115,25 @@ public class VyosGetVersionFlow extends NoRollbackFlow {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         if (!echoSuccess) {
+                            flowData.put(ApplianceVmConstant.Params.rebuildVip.toString(), true);
                             trigger.next();
                             return;
                         }
 
-                        vyosVersionManager.vyosRouterVersionCheck(vrUuid, new Completion(trigger) {
+                        vyosVersionManager.vyosRouterVersionCheck(vrUuid, new ReturnValueCompletion<VyosVersionCheckResult>(trigger) {
                             @Override
-                            public void success() {
-                                logger.debug(String.format("virtual router [uuid:%s] version check successfully", vrUuid));
+                            public void fail(ErrorCode errorCode) {
                                 trigger.next();
                             }
 
                             @Override
-                            public void fail(ErrorCode errorCode) {
-                                logger.warn(String.format("virtual router [uuid:%s] version check failed because %s, need to be reconnect", vrUuid, errorCode.getDetails()));
-                                flowData.put(ApplianceVmConstant.Params.isReconnect.toString(), Boolean.TRUE.toString());
-                                flowData.put(ApplianceVmConstant.Params.managementNicIp.toString(), mgmtNic.getIp());
+                            public void success(VyosVersionCheckResult returnValue) {
+                                if (returnValue.isNeedReconnect()) {
+                                    logger.warn(String.format("virtual router [uuid:%s] need to be reconnect: %s", vrUuid, JSONObjectUtil.toJsonString(returnValue)));
+                                    flowData.put(ApplianceVmConstant.Params.isReconnect.toString(), Boolean.TRUE.toString());
+                                    flowData.put(ApplianceVmConstant.Params.managementNicIp.toString(), mgmtNic.getIp());
+                                    flowData.put(ApplianceVmConstant.Params.rebuildVip.toString(), returnValue.isRebuildVip());
+                                }
                                 trigger.next();
                             }
                         });

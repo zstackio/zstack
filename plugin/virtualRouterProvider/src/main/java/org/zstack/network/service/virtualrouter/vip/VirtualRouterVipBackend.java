@@ -63,7 +63,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 vr.getUuid(), vip.getL3NetworkUuid(), vip.getUuid(), vip.getIp()));
     }
 
-    public void createVipOnVirtualRouterVm(final VirtualRouterVmInventory vr, List<VipInventory> vips, final Completion completion) {
+    public void createVipOnVirtualRouterVm(final VirtualRouterVmInventory vr, List<VipInventory> vips, Boolean rebuildVip, final Completion completion) {
         final List<VipTO> tos = new ArrayList<VipTO>(vips.size());
         for (VipInventory vip : vips) {
             String mac = getOwnerMac(vr, vip);
@@ -72,6 +72,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         }
 
         CreateVipCmd cmd = new CreateVipCmd();
+        cmd.setRebuild(rebuildVip);
         cmd.setVips(tos);
 
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
@@ -142,7 +143,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     }
 
     public void acquireVipOnVirtualRouterVm(final VirtualRouterVmInventory vr, final VipInventory vip, final Completion completion) {
-        createVipOnVirtualRouterVm(vr, list(vip), new Completion(completion) {
+        createVipOnVirtualRouterVm(vr, list(vip), false, new Completion(completion) {
             @Override
             public void success() {
                 proxy.attachNetworkService(vr.getUuid(), VipVO.class.getSimpleName(), asList(vip.getUuid()));
@@ -181,6 +182,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         }
 
         CreateVipCmd cmd = new CreateVipCmd();
+        cmd.setRebuild(false);
         cmd.setVips(vips);
 
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();

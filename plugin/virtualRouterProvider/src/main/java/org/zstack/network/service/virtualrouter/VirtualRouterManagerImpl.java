@@ -74,11 +74,13 @@ import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO_;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
+import org.zstack.network.service.virtualrouter.vyos.VyosVersionCheckResult;
 import org.zstack.network.service.virtualrouter.vyos.VyosVersionManager;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -1834,6 +1836,22 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
     }
 
+    private void reconenctVirtualRouter(String vrUUid) {
+        ReconnectVirtualRouterVmMsg msg = new ReconnectVirtualRouterVmMsg();
+        msg.setVirtualRouterVmUuid(vrUUid);
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrUUid);
+        bus.send(msg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("virtual router[uuid:%s] reconnection failed, because %s", vrUUid, reply.getError()));
+                } else {
+                    logger.debug(String.format("virtual router[uuid:%s] reconnect successfully", vrUUid));
+                }
+            }
+        });
+    }
+
     private void handle(CheckVirtualRouterVmVersionMsg cmsg) {
         CheckVirtualRouterVmVersionReply reply = new CheckVirtualRouterVmVersionReply();
 
@@ -1847,45 +1865,21 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         if (vrVo.getStatus() == ApplianceVmStatus.Connecting) {
-            ReconnectVirtualRouterVmMsg msg = new ReconnectVirtualRouterVmMsg();
-            msg.setVirtualRouterVmUuid(inv.getUuid());
-            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getUuid());
-            bus.send(msg, new CloudBusCallBack(msg) {
-                @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        logger.warn(String.format("virtual router[uuid:%s] reconnection failed, because %s", inv.getUuid(), reply.getError()));
-                    } else {
-                        logger.debug(String.format("virtual router[uuid:%s] reconnect successfully", inv.getUuid()));
-                    }
-                }
-            });
-
+            reconenctVirtualRouter(inv.getUuid());
             return;
         }
 
-        vyosVersionManager.vyosRouterVersionCheck(inv.getUuid(), new Completion(cmsg) {
+        vyosVersionManager.vyosRouterVersionCheck(inv.getUuid(), new ReturnValueCompletion<VyosVersionCheckResult>(cmsg) {
             @Override
-            public void success() {
-                logger.debug(String.format("virtual router[uuid: %s] has same version as management node", inv.getUuid()));
+            public void success(VyosVersionCheckResult returnValue) {
+                if (returnValue.isNeedReconnect()) {
+                    logger.warn(String.format("virtual router[uuid: %s] need to be reconnected", inv.getUuid()));
+                    reconenctVirtualRouter(inv.getUuid());
+                }
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("virtual router[uuid: %s] need to be reconnected because %s", inv.getUuid(), errorCode.getDetails()));
-                ReconnectVirtualRouterVmMsg msg = new ReconnectVirtualRouterVmMsg();
-                msg.setVirtualRouterVmUuid(inv.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getUuid());
-                bus.send(msg, new CloudBusCallBack(msg) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            logger.warn(String.format("virtual router[uuid:%s] reconnection failed, because %s", inv.getUuid(), reply.getError()));
-                        } else {
-                            logger.debug(String.format("virtual router[uuid:%s] reconnect successfully", inv.getUuid()));
-                        }
-                    }
-                });
             }
         });
     }

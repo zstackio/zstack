@@ -95,7 +95,7 @@ public class VirtualRouterSyncVipForNewCreateFlow implements Flow {
 
         List<VipVO> vips = dbf.listByPrimaryKeys(vipUuids, VipVO.class);
         List<VipInventory> invs = VipInventory.valueOf(vips);
-        vipExt.createVipOnVirtualRouterVm(vr, invs, new Completion(chain) {
+        vipExt.createVipOnVirtualRouterVm(vr, invs, false, new Completion(chain) {
             @Override
             public void success() {
                 chain.next();
