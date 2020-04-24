@@ -52,7 +52,7 @@ public class DbEntityListerImpl implements DbEntityLister {
             }
 
             clazz = clazz.getSuperclass();
-        } while (clazz != null & clazz != Object.class);
+        } while (clazz != null && clazz != Object.class);
 
         throw new IllegalArgumentException(String.format("Entity %s doesn't have field 'uuid'", clazz.getName()));
     }
