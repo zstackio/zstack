@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AddDataCenterFromRemoteAction extends AbstractAction {
 
@@ -30,8 +31,8 @@ public class AddDataCenterFromRemoteAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
-    @Param(required = false)
-    public java.lang.Boolean syncZones = false;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean syncZones = false;
 
     @Param(required = false, maxLength = 127, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String endpoint;

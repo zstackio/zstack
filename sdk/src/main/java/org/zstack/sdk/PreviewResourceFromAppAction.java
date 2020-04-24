@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class PreviewResourceFromAppAction extends AbstractAction {
 
@@ -57,7 +58,7 @@ public class PreviewResourceFromAppAction extends AbstractAction {
         }
         
         org.zstack.sdk.PreviewResourceStackResult value = res.getResult(org.zstack.sdk.PreviewResourceStackResult.class);
-        ret.value = value == null ? new org.zstack.sdk.PreviewResourceStackResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.PreviewResourceStackResult() : value; 
 
         return ret;
     }

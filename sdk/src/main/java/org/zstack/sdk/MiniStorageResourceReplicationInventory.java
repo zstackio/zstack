@@ -79,6 +79,14 @@ public class MiniStorageResourceReplicationInventory  {
         return this.diskStatus;
     }
 
+    public long size;
+    public void setSize(long size) {
+        this.size = size;
+    }
+    public long getSize() {
+        return this.size;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

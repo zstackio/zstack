@@ -1,5 +1,7 @@
 package org.zstack.sdk;
 
+
+
 public class PublishAppResourceStruct  {
 
     public java.lang.String appUuid;

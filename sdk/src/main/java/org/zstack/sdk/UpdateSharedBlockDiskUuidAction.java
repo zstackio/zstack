@@ -26,13 +26,13 @@ public class UpdateSharedBlockDiskUuidAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String uuid;
+    public java.lang.String uuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String sharedBlockGroupUuid;
+    public java.lang.String sharedBlockGroupUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String diskUuid;
+    public java.lang.String diskUuid;
 
     @Param(required = false)
     public java.util.List systemTags;

@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class AddZBoxAction extends AbstractAction {
 
@@ -30,8 +31,8 @@ public class AddZBoxAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = false)
-    public java.lang.Boolean skipFormat;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean skipFormat = false;
 
     @Param(required = false)
     public java.util.List systemTags;
