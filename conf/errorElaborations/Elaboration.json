@@ -1408,6 +1408,14 @@
     "message_en": "IP[%1$s] is not available on the L3 network[uuid:%2$s] because: it is used"
   },
   {
+    "category": "VM",
+    "code": "1045",
+    "method": "regex",
+    "regex": "cannot attach the usb device.* to vm.*, possibly reasons include: the device is not enabled or had been attached to a vm, or the device and the vm are not on same host.",
+    "message_cn": "无法挂载USB设备到虚拟机，可能因为USB设备没有启用或已经挂载或者USB设备与虚拟机不在同一台物理机上。",
+    "message_en": "Cannot attach the usb device to vm, possibly reasons include: the device is not enabled or had been attached to a vm, or the device and the vm are not on same host."
+  },
+  {
     "category": "VOLUME",
     "code": "1000",
     "method": "regex",
