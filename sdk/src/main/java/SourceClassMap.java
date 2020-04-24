@@ -108,6 +108,7 @@ public class SourceClassMap {
 			put("org.zstack.header.aliyun.oss.OssBucketProperty", "org.zstack.sdk.OssBucketProperty");
 			put("org.zstack.header.aliyun.storage.disk.AliyunDiskInventory", "org.zstack.sdk.AliyunDiskInventory");
 			put("org.zstack.header.aliyun.storage.snapshot.AliyunSnapshotInventory", "org.zstack.sdk.AliyunSnapshotInventory");
+			put("org.zstack.header.allocator.datatypes.CpuMemoryCapacityData", "org.zstack.sdk.CpuMemoryCapacityData");
 			put("org.zstack.header.appcenter.PublishAppInventory", "org.zstack.sdk.PublishAppInventory");
 			put("org.zstack.header.appcenter.PublishAppResourceStruct", "org.zstack.sdk.PublishAppResourceStruct");
 			put("org.zstack.header.baremetal.BaremetalException", "org.zstack.sdk.BaremetalException");
@@ -607,6 +608,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ConsoleInventory", "org.zstack.header.console.ConsoleInventory");
 			put("org.zstack.sdk.ConsoleProxyAgentInventory", "org.zstack.header.console.ConsoleProxyAgentInventory");
 			put("org.zstack.sdk.ControlStrategy", "org.zstack.loginControl.entity.ControlStrategy");
+			put("org.zstack.sdk.CpuMemoryCapacityData", "org.zstack.header.allocator.datatypes.CpuMemoryCapacityData");
 			put("org.zstack.sdk.CreateDataVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeSnapshotEvent$Failure");
 			put("org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure");
 			put("org.zstack.sdk.DRSAdviceInventory", "org.zstack.drs.entity.DRSAdviceInventory");

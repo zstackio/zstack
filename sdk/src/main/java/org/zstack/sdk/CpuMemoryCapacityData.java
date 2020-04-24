@@ -2,7 +2,16 @@ package org.zstack.sdk;
 
 
 
-public class GetCpuMemoryCapacityResult {
+public class CpuMemoryCapacityData  {
+
+    public java.lang.String resourceUuid;
+    public void setResourceUuid(java.lang.String resourceUuid) {
+        this.resourceUuid = resourceUuid;
+    }
+    public java.lang.String getResourceUuid() {
+        return this.resourceUuid;
+    }
+
     public long totalCpu;
     public void setTotalCpu(long totalCpu) {
         this.totalCpu = totalCpu;
@@ -41,22 +50,6 @@ public class GetCpuMemoryCapacityResult {
     }
     public long getManagedCpuNum() {
         return this.managedCpuNum;
-    }
-
-    public java.util.List capacityData;
-    public void setCapacityData(java.util.List capacityData) {
-        this.capacityData = capacityData;
-    }
-    public java.util.List getCapacityData() {
-        return this.capacityData;
-    }
-
-    public java.lang.String resourceType;
-    public void setResourceType(java.lang.String resourceType) {
-        this.resourceType = resourceType;
-    }
-    public java.lang.String getResourceType() {
-        return this.resourceType;
     }
 
 }

@@ -16,6 +16,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.*;
+import org.zstack.header.allocator.datatypes.CpuMemoryCapacityData;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
@@ -40,6 +41,7 @@ import org.zstack.header.vm.VmAbnormalLifeCycleStruct;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.volume.VolumeFormat;
+import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -52,7 +54,6 @@ import java.util.*;
 import java.util.concurrent.Callable;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class HostAllocatorManagerImpl extends AbstractService implements HostAllocatorManager, VmAbnormalLifeCycleExtensionPoint {
@@ -559,10 +560,66 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     private void handle(final APIGetCpuMemoryCapacityMsg msg) {
         APIGetCpuMemoryCapacityReply reply = new APIGetCpuMemoryCapacityReply();
 
-        Tuple ret = new Callable<Tuple>() {
+        class CpuMemCapacity {
+            Map<String, CpuMemCapacity> elements;
+            long totalCpu;
+            long availCpu;
+            long totalMem;
+            long availMem;
+            long managedCpu;
+        }
+
+        CpuMemCapacity res = new Callable<CpuMemCapacity>() {
+            private void calcElementCap(List<Tuple> tuples, CpuMemCapacity res) {
+                if (res == null) {
+                    return;
+                }
+
+                if (res.elements == null) {
+                    res.elements = new HashMap<>();
+                }
+
+                for (Tuple tuple : tuples) {
+                    Long totalCpu = tuple.get(0, Long.class);
+                    Long availCpu = tuple.get(1, Long.class);
+                    Long availMemory = tuple.get(2, Long.class);
+                    Long totalMemory = tuple.get(3, Long.class);
+                    Long managedCpuNum = tuple.get(4, Long.class);
+                    String elementUuid = tuple.get(5, String.class);
+
+                    CpuMemCapacity element = res.elements.getOrDefault(elementUuid, new CpuMemCapacity());
+                    res.elements.put(elementUuid, element);
+                    element.totalCpu = totalCpu == null ? 0L : totalCpu;
+                    element.availCpu = availCpu == null ? 0L : availCpu;
+                    element.totalMem = totalMemory == null ? 0L : totalMemory;
+                    element.availMem = availMemory == null ? 0L : availMemory;
+                    element.managedCpu = managedCpuNum == null ? 0L : managedCpuNum;
+                }
+
+
+                res.elements.forEach((eUuid, cap) -> {
+                    ReservedHostCapacity rc;
+                    if (msg.getHostUuids() != null) {
+                        rc = reserveMgr.getReservedHostCapacityByHosts(list(eUuid));
+                    } else if (msg.getClusterUuids() != null) {
+                        rc = reserveMgr.getReservedHostCapacityByClusters(list(eUuid));
+                    } else if (msg.getZoneUuids() != null) {
+                        rc = reserveMgr.getReservedHostCapacityByZones(list(eUuid));
+                    } else {
+                        throw new CloudRuntimeException("should not be here");
+                    }
+                    cap.availMem = Math.max(0, cap.availMem - rc.getReservedMemoryCapacity());
+                    res.totalCpu += cap.totalCpu;
+                    res.availCpu += cap.availCpu;
+                    res.totalMem += cap.totalMem;
+                    res.availMem += cap.availMem;
+                    res.managedCpu += cap.managedCpu;
+                });
+            }
+
             @Override
             @Transactional(readOnly = true)
-            public Tuple call() {
+            public CpuMemCapacity call() {
                 boolean checkHypervisor = false;
                 String addHypervisorSqlString = "";
                 if (msg.getHypervisorType() != null) {
@@ -570,91 +627,73 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     addHypervisorSqlString = " and host.hypervisorType = :hhtype";
                 }
 
+                CpuMemCapacity res = new CpuMemCapacity();
+
                 if (msg.getHostUuids() != null && !msg.getHostUuids().isEmpty()) {
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum)" +
-                            " from HostCapacityVO hc, HostVO host" +
-                            " where hc.uuid in (:hostUuids)" +
-                            " and hc.uuid = host.uuid" +
-                            " and host.state = :hstate" +
-                            " and host.status = :hstatus" +
-                            addHypervisorSqlString;
+                    reply.setResourceType(HostVO.class.getSimpleName());
+                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum), host.uuid" + " from HostCapacityVO hc, HostVO host" + " where hc.uuid in (:hostUuids)" + " and hc.uuid = host.uuid" + " and host.state = :hstate" + " and host.status = :hstatus" + addHypervisorSqlString + " group by hc.uuid";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("hostUuids", msg.getHostUuids());
                     q.setParameter("hstate", HostState.Enabled);
                     q.setParameter("hstatus", HostStatus.Connected);
-
                     if (checkHypervisor) {
                         q.setParameter("hhtype", msg.getHypervisorType());
                     }
-
-                    return q.getSingleResult();
+                    List<Tuple> ts = q.getResultList();
+                    calcElementCap(ts, res);
+                    return res;
                 } else if (msg.getClusterUuids() != null && !msg.getClusterUuids().isEmpty()) {
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum)" +
-                            " from HostCapacityVO hc, HostVO host" +
-                            " where hc.uuid = host.uuid" +
-                            " and host.clusterUuid in (:clusterUuids)" +
-                            " and host.state = :hstate" +
-                            " and host.status = :hstatus" +
-                            addHypervisorSqlString;
+                    reply.setResourceType(ClusterVO.class.getSimpleName());
+                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum), host.clusterUuid" + " from HostCapacityVO hc, HostVO host" + " where hc.uuid = host.uuid" + " and host.clusterUuid in (:clusterUuids)" + " and host.state = :hstate" + " and host.status = :hstatus" + addHypervisorSqlString + " group by host.clusterUuid";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("clusterUuids", msg.getClusterUuids());
                     q.setParameter("hstate", HostState.Enabled);
                     q.setParameter("hstatus", HostStatus.Connected);
-
                     if (checkHypervisor) {
                         q.setParameter("hhtype", msg.getHypervisorType());
                     }
-
-                    return q.getSingleResult();
+                    List<Tuple> ts = q.getResultList();
+                    calcElementCap(ts, res);
+                    return res;
                 } else if (msg.getZoneUuids() != null && !msg.getZoneUuids().isEmpty()) {
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum)" +
-                            " from HostCapacityVO hc, HostVO host" +
-                            " where hc.uuid = host.uuid" +
-                            " and host.zoneUuid in (:zoneUuids)" +
-                            " and host.state = :hstate" +
-                            " and host.status = :hstatus" +
-                            addHypervisorSqlString;
+                    reply.setResourceType(ZoneVO.class.getSimpleName());
+                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum), host.zoneUuid" + " from HostCapacityVO hc, HostVO host" + " where hc.uuid = host.uuid" + " and host.zoneUuid in (:zoneUuids)" + " and host.state = :hstate" + " and host.status = :hstatus" + addHypervisorSqlString + " group by host.zoneUuid";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("zoneUuids", msg.getZoneUuids());
                     q.setParameter("hstate", HostState.Enabled);
                     q.setParameter("hstatus", HostStatus.Connected);
-
                     if (checkHypervisor) {
                         q.setParameter("hhtype", msg.getHypervisorType());
                     }
-
-                    return q.getSingleResult();
+                    List<Tuple> ts = q.getResultList();
+                    calcElementCap(ts, res);
+                    return res;
                 }
 
                 throw new CloudRuntimeException("should not be here");
             }
         }.call();
 
-        long totalCpu = ret.get(0, Long.class) == null ? 0 : ret.get(0, Long.class);
-        long availCpu = ret.get(1, Long.class) == null ? 0 : ret.get(1, Long.class);
-        long availMemory = ret.get(2, Long.class) == null ? 0 : ret.get(2, Long.class);
-        long totalMemory = ret.get(3, Long.class) == null ? 0 : ret.get(3, Long.class);
-        long managedCpuNum = ret.get(4, Long.class) == null ? 0 : ret.get(4, Long.class);
-
-        ReservedHostCapacity rc;
-        if (msg.getHostUuids() != null && !msg.getHostUuids().isEmpty()) {
-            rc = reserveMgr.getReservedHostCapacityByHosts(msg.getHostUuids());
-        } else if (msg.getClusterUuids() != null && !msg.getClusterUuids().isEmpty()) {
-            rc = reserveMgr.getReservedHostCapacityByClusters(msg.getClusterUuids());
-        } else if (msg.getZoneUuids() != null && !msg.getZoneUuids().isEmpty()) {
-            rc = reserveMgr.getReservedHostCapacityByZones(msg.getZoneUuids());
-        } else {
-            throw new CloudRuntimeException("should not be here");
+        if (res.elements != null) {
+            List<CpuMemoryCapacityData> dataList = new ArrayList<>();
+            res.elements.forEach((uuid, element) -> {
+                CpuMemoryCapacityData data = new CpuMemoryCapacityData();
+                dataList.add(data);
+                data.setResourceUuid(uuid);
+                data.setTotalCpu(element.totalCpu);
+                data.setAvailableCpu(element.availCpu);
+                data.setTotalMemory(element.totalMem);
+                data.setAvailableMemory(element.availMem);
+                data.setManagedCpuNum(element.managedCpu);
+            });
+            reply.setCapacityData(dataList);
         }
 
-        availMemory = availMemory - rc.getReservedMemoryCapacity();
-        availMemory = availMemory > 0 ? availMemory : 0;
-
-        reply.setTotalCpu(totalCpu);
-        reply.setTotalMemory(totalMemory);
-        reply.setAvailableCpu(availCpu);
-        reply.setAvailableMemory(availMemory);
-        reply.setManagedCpuNum(managedCpuNum);
+        reply.setTotalCpu(res.totalCpu);
+        reply.setTotalMemory(res.totalMem);
+        reply.setAvailableCpu(res.availCpu);
+        reply.setAvailableMemory(res.availMem);
+        reply.setManagedCpuNum(res.managedCpu);
         bus.reply(msg, reply);
     }
 
