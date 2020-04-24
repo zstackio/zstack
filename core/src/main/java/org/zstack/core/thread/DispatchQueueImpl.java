@@ -313,35 +313,31 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     private class ChainTaskQueueWrapper {
         LinkedList pendingQueue = new LinkedList();
-        final Map<String, AtomicInteger> subPendingMap = new HashMap<>();
+        final Map<String, AtomicInteger> subPendingMap = new ConcurrentHashMap<>();
         final LinkedList runningQueue = new LinkedList();
         AtomicInteger counter = new AtomicInteger(0);
         int maxThreadNum = -1;
         String syncSignature;
 
         int addSubPending(String deduplicateStr) {
-            synchronized (subPendingMap) {
-                AtomicInteger currentCount = subPendingMap.get(deduplicateStr);
-                if (currentCount == null) {
-                    subPendingMap.put(deduplicateStr, new AtomicInteger(1));
-                    return 1;
+            subPendingMap.compute(deduplicateStr, (k, v) -> {
+                if (v == null) {
+                    return new AtomicInteger(1);
                 } else {
-                    return currentCount.incrementAndGet();
+                    v.incrementAndGet();
+                    return v;
                 }
-            }
+            });
+            return subPendingMap.get(deduplicateStr).intValue();
         }
 
         void removeSubPending(String deduplicateStr) {
-            synchronized (subPendingMap) {
-                AtomicInteger currentCount = subPendingMap.get(deduplicateStr);
-                if (currentCount == null) {
-                    // do nothing
-                } else if (currentCount.intValue() == 1) {
-                    subPendingMap.remove(deduplicateStr);
-                } else {
-                    currentCount.decrementAndGet();
+            subPendingMap.computeIfPresent(deduplicateStr, (k, v) -> {
+                if (v.decrementAndGet() == 0) {
+                    return null;
                 }
-            }
+                return v;
+            });
         }
 
         void warningAndRemove(ChainFuture task, int length, int queueLength) {
@@ -417,12 +413,13 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                                         k -> new HashSet<>()).add(syncSignature));
                     }
 
-                    synchronized (subPendingMap) {
-                        if (subPendingMap.get(cf.getTask().getDeduplicateString()) != null) {
-                            if (subPendingMap.get(cf.getTask().getDeduplicateString()).decrementAndGet() == 0) {
-                                subPendingMap.remove(cf.getTask().getDeduplicateString());
+                    if (cf.getTask().getDeduplicateString() != null) {
+                        subPendingMap.computeIfPresent(cf.getTask().getDeduplicateString(), (k, v) -> {
+                            if (v.decrementAndGet() == 0) {
+                                return null;
                             }
-                        }
+                            return v;
+                        });
                     }
 
                     cf.run(() -> {
