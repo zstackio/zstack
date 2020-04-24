@@ -324,6 +324,33 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         filter.filter(inventories, filterType.split(":")[1]);
     }
 
+    private boolean addUuidBeforeZQLQuery(APIQueryMessage msg, Class inventoryClass) {
+        if (msg.getFilterName() == null) {
+            return false;
+        }
+        if (msg.getFields() == null) {
+            return false;
+        }
+        if (msg.getFields().contains("uuid")) {
+            return false;
+        }
+        if (!FieldUtils.hasField("uuid", inventoryClass)) {
+            return false;
+        }
+        msg.getFields().add("uuid");
+        return true;
+    }
+
+    private void removeUuidAfterZQLQuery(Object result) {
+        try {
+            Field uuid = result.getClass().getDeclaredField("uuid");
+            uuid.setAccessible(true);
+            uuid.set(result, null);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            logger.warn(e.getLocalizedMessage());
+        }
+    }
+
     private void handle(APIQueryMessage msg) {
         AutoQuery at = autoQueryMap.get(msg.getClass());
         if (at == null) {
@@ -338,6 +365,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
 
         Class replyClass = at.replyClass();
         Class inventoryClass = at.inventoryClass();
+        boolean addUuid = addUuidBeforeZQLQuery(msg, inventoryClass);
 
         try {
             APIQueryReply reply = (APIQueryReply) replyClass.getConstructor().newInstance();
@@ -352,6 +380,11 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                     if (msg.isCount()) {
                         reply.setTotal(result.inventories.size());
                     } else {
+                        if (addUuid) {
+                            result.inventories.forEach(i -> {
+                                removeUuidAfterZQLQuery(i);
+                            });
+                        }
                         replySetter.invoke(reply, result.inventories);
                     }
 
