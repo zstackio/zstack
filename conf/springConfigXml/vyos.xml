@@ -78,6 +78,7 @@
 
         <property name="vyosReconnectFlows">
             <list>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosGetVersionFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosDeployAgentFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosConnectFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosConfigSshFlow</value>
