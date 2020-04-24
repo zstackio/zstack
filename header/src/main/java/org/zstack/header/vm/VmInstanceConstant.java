@@ -15,6 +15,8 @@ public interface VmInstanceConstant {
 
     String KVM_HYPERVISOR_TYPE = "KVM";
 
+    String VIRTUAL_NIC_TYPE = "VNIC";
+
     enum Params {
         VmInstanceSpec,
         AttachingVolumeInventory,

@@ -70,6 +70,9 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
     private String driverType;
 
     @Column
+    private String type;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -241,5 +244,13 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
 
     public void setDriverType(String driverType) {
         this.driverType = driverType;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

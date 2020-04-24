@@ -144,6 +144,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                     nvo.setIpVersion(nic.getIpVersion());
                     nvo.setDriverType(ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization() ?
                             nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
+                    nvo.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
                     persist(nvo);
                     if (nic.getUsedIpUuid() != null) {
                         SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, nic.getUsedIpUuid()).set(UsedIpVO_.vmNicUuid, nvo.getUuid()).update();

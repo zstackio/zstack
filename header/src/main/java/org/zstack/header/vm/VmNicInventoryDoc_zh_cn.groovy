@@ -8,7 +8,7 @@ import java.sql.Timestamp
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "云主机网卡清单"
 
 	field {
 		name "uuid"
@@ -30,25 +30,31 @@ doc {
 	}
 	field {
 		name "ip"
-		desc ""
+		desc "IP地址"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "mac"
-		desc ""
+		desc "MAC地址"
+		type "String"
+		since "0.6"
+	}
+	field {
+		name "hypervisorType"
+		desc "虚拟化类型"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "netmask"
-		desc ""
+		desc "子网掩码"
 		type "String"
 		since "0.6"
 	}
 	field {
 		name "gateway"
-		desc ""
+		desc "网关"
 		type "String"
 		since "0.6"
 	}
@@ -60,9 +66,9 @@ doc {
 	}
 	field {
 		name "ipVersion"
-		desc "ip协议号"
+		desc "IP地址版本"
 		type "Integer"
-		since "3.1"
+		since "0.6"
 	}
 	ref {
 		name "usedIps"
@@ -74,8 +80,14 @@ doc {
 	}
 	field {
 		name "deviceId"
-		desc ""
+		desc "设备ID"
 		type "Integer"
+		since "0.6"
+	}
+	field {
+		name "type"
+		desc "网卡类型"
+		type "String"
 		since "0.6"
 	}
 	field {

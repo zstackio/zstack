@@ -224,6 +224,7 @@ public class SourceClassMap {
 			put("org.zstack.header.scheduler.SchedulerJobSchedulerTriggerInventory", "org.zstack.sdk.SchedulerJobSchedulerTriggerInventory");
 			put("org.zstack.header.scheduler.SchedulerTriggerInventory", "org.zstack.sdk.SchedulerTriggerInventory");
 			put("org.zstack.header.simulator.SimulatorHostInventory", "org.zstack.sdk.SimulatorHostInventory");
+			put("org.zstack.header.sriov.VmVfNicInventory", "org.zstack.sdk.VmVfNicInventory");
 			put("org.zstack.header.storage.backup.BackupMode", "org.zstack.sdk.BackupMode");
 			put("org.zstack.header.storage.backup.BackupStorageInventory", "org.zstack.sdk.BackupStorageInventory");
 			put("org.zstack.header.storage.backup.SyncBackupResult", "org.zstack.sdk.SyncBackupResult");
@@ -915,6 +916,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmPriorityLevel", "org.zstack.header.vm.VmPriorityLevel");
 			put("org.zstack.sdk.VmSpending", "org.zstack.billing.spendingcalculator.vm.VmSpending");
 			put("org.zstack.sdk.VmSpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmSpendingDetails");
+			put("org.zstack.sdk.VmVfNicInventory", "org.zstack.header.sriov.VmVfNicInventory");
 			put("org.zstack.sdk.VniRangeInventory", "org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeInventory");
 			put("org.zstack.sdk.VolumeBackupInventory", "org.zstack.header.storage.backup.VolumeBackupInventory");
 			put("org.zstack.sdk.VolumeBackupStorageRefInventory", "org.zstack.header.storage.backup.VolumeBackupStorageRefInventory");

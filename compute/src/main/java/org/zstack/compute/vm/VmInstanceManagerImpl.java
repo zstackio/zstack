@@ -67,7 +67,10 @@ import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.TagUtils;
+import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
@@ -125,6 +128,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<>();
     private Future<Void> expungeVmTask;
     private Map<Class, VmInstanceBaseExtensionFactory> vmInstanceBaseExtensionFactories = new HashMap<>();
+    private Map<String, VmInstanceNicFactory> vmInstanceNicFactories = new HashMap<>();
 
     static {
         allowedMessageAfterSoftDeletion.add(VmInstanceDeletionMsg.class);
@@ -715,6 +719,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 nicVO.setDeviceId(deviceId);
                 nicVO.setMac(mac);
                 nicVO.setAccountUuid(msg.getSession().getAccountUuid());
+                nicVO.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
 
                 int tries = 5;
                 while (tries-- > 0) {
@@ -1414,6 +1419,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 vmInstanceBaseExtensionFactories.put(clz, ext);
             }
         }
+
+        for (VmInstanceNicFactory ext : pluginRgty.getExtensionList(VmInstanceNicFactory.class)) {
+            VmInstanceNicFactory old = vmInstanceNicFactories.get(ext.getType().toString());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate VmInstanceNicFactory[%s, %s] for type[%s]",
+                        old.getClass().getName(), ext.getClass().getName(), ext.getType()));
+            }
+            vmInstanceNicFactories.put(ext.getType().toString(), ext);
+        }
     }
 
     @Override
@@ -1894,7 +1908,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
         return vmInstanceBaseExtensionFactories.get(msg.getClass());
     }
 
-
+    @Override
+    public VmInstanceNicFactory getVmInstanceNicFactory(VmNicType type) {
+        VmInstanceNicFactory factory = vmInstanceNicFactories.get(type.toString());
+        if (factory == null) {
+            throw new CloudRuntimeException(String.format("No VmInstanceNicFactory of type[%s] found", type));
+        }
+        return factory;
+    }
 
     @Override
     public FlowChain getCreateVmWorkFlowChain(VmInstanceInventory inv) {

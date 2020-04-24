@@ -1,10 +1,8 @@
 package org.zstack.compute.vm;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.orm.jpa.JpaSystemException;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -12,12 +10,10 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowException;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
@@ -25,8 +21,9 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
-import org.zstack.identity.Account;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -38,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
@@ -55,6 +51,8 @@ public class VmAllocateNicFlow implements Flow {
     protected L3NetworkManager l3nm;
     @Autowired
     private VmNicManager nicManager;
+    @Autowired
+    protected VmInstanceManager vmMgr;
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
@@ -99,6 +97,22 @@ public class VmAllocateNicFlow implements Flow {
             }
             final String mac = customMac;
 
+            // choose vnic factory based on enableSRIOV system tag
+            VmInstanceNicFactory vnicFactory;
+            boolean enableSriov = Q.New(SystemTagVO.class)
+                    .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
+                    .eq(SystemTagVO_.resourceUuid, spec.getVmInventory().getUuid())
+                    .eq(SystemTagVO_.tag, String.format("enableSRIOV::%s", nw.getUuid()))
+                    .isExists();
+            logger.debug(String.format("create %s on l3 network[uuid:%s] inside VmAllocateNicFlow",
+                    enableSriov ? "vf nic" : "vnic", nw.getUuid()));
+
+            if (enableSriov) {
+                vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("VF"));
+            } else {
+                vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("VNIC"));
+            }
+
             AllocateIpMsg msg = new AllocateIpMsg();
             msg.setL3NetworkUuid(nw.getUuid());
             msg.setAllocateStrategy(spec.getIpAllocatorStrategy());
@@ -133,6 +147,13 @@ public class VmAllocateNicFlow implements Flow {
                             return;
                         }
 
+                        if (nicSpec.getNicDriverType() != null) {
+                            nic.setDriverType(nicSpec.getNicDriverType());
+                        } else {
+                            nic.setDriverType(ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization() ?
+                                    nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
+                        }
+
                         assert nic.getL3NetworkUuid() != null;
 
                         nic.setDeviceId(deviceId);
@@ -141,61 +162,9 @@ public class VmAllocateNicFlow implements Flow {
                         nic.setInternalName(VmNicVO.generateNicInternalName(spec.getVmInventory().getInternalId(), nic.getDeviceId()));
 
                         new SQLBatch() {
-                            private VmNicVO persistAndRetryIfMacCollision(VmNicVO vo) {
-                                int tries = 5;
-                                while (tries-- > 0) {
-                                    try {
-                                        persist(vo);
-                                        return reload(vo);
-                                    } catch (JpaSystemException e) {
-                                        if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException &&
-                                                e.getRootCause().getMessage().contains("Duplicate entry")) {
-                                            logger.debug(String.format("Concurrent mac allocation. Mac[%s] has been allocated, try allocating another one. " +
-                                                    "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
-                                                    "we will try finding another mac", vo.getMac()));
-                                            logger.trace("", e);
-                                            vo.setMac(NetworkUtils.generateMacWithDeviceId((short) vo.getDeviceId()));
-                                        } else {
-                                            throw e;
-                                        }
-                                    }
-                                }
-                                return null;
-                            }
-
                             @Override
                             protected void scripts() {
-                                String acntUuid = Account.getAccountUuidOfResource(spec.getVmInventory().getUuid());
-
-                                VmNicVO vo = new VmNicVO();
-                                vo.setUuid(nic.getUuid());
-                                vo.setIp(nic.getIp());
-                                vo.setL3NetworkUuid(nic.getL3NetworkUuid());
-                                vo.setUsedIpUuid(nic.getUsedIpUuid());
-                                vo.setVmInstanceUuid(nic.getVmInstanceUuid());
-                                vo.setDeviceId(nic.getDeviceId());
-                                vo.setMac(nic.getMac());
-                                vo.setHypervisorType(nic.getHypervisorType());
-                                vo.setNetmask(nic.getNetmask());
-                                vo.setGateway(nic.getGateway());
-                                vo.setIpVersion(nic.getIpVersion());
-                                vo.setInternalName(nic.getInternalName());
-                                if (nicSpec.getNicDriverType() != null) {
-                                    vo.setDriverType(nicSpec.getNicDriverType());
-                                } else {
-                                    vo.setDriverType(ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization() ?
-                                            nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
-                                }
-                                vo.setAccountUuid(acntUuid);
-                                vo = persistAndRetryIfMacCollision(vo);
-                                if (vo == null) {
-                                    throw new FlowException(err(VmErrors.ALLOCATE_MAC_ERROR, "unable to find an available mac address after re-try 5 times, too many collisions"));
-                                }
-                                /* update usedIpVo */
-                                SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, vo.getUsedIpUuid()).set(UsedIpVO_.vmNicUuid, nic.getUuid()).update();
-
-                                vo = reload(vo);
-                                spec.getDestNics().add(VmNicInventory.valueOf(vo));
+                                vnicFactory.createVmNic(nic, spec);
                                 nics.add(nic);
                             }
                         }.execute();
