@@ -294,7 +294,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     }
 
     private void cancelLongJob(String uuid, Completion completion) {
-        if (Q.New(LongJobVO.class).eq(LongJobVO_.uuid, uuid).select(LongJobVO_.state).findValue() == LongJobState.Canceled) {
+        LongJobState originState = Q.New(LongJobVO.class).eq(LongJobVO_.uuid, uuid).select(LongJobVO_.state).findValue();
+        if (originState == LongJobState.Canceled) {
             logger.info(String.format("longjob [uuid:%s] has been canceled before", uuid));
             completion.success();
             return;
@@ -307,7 +308,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         job.cancel(vo, new ReturnValueCompletion<Boolean>(completion) {
             @Override
             public void success(Boolean cancelled) {
-                if (cancelled) {
+                if (cancelled || originState != LongJobState.Running) {
                     changeState(uuid, LongJobStateEvent.canceled);
                     logger.info(String.format("longjob [uuid:%s, name:%s] has been canceled", vo.getUuid(), vo.getName()));
                 } else {
