@@ -4,6 +4,30 @@ package org.zstack.sdk;
 
 public class HostNetworkInterfaceInventory  {
 
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
+        this.uuid = uuid;
+    }
+    public java.lang.String getUuid() {
+        return this.uuid;
+    }
+
+    public java.lang.String hostUuid;
+    public void setHostUuid(java.lang.String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
+    public java.lang.String getHostUuid() {
+        return this.hostUuid;
+    }
+
+    public java.lang.String bondingUuid;
+    public void setBondingUuid(java.lang.String bondingUuid) {
+        this.bondingUuid = bondingUuid;
+    }
+    public java.lang.String getBondingUuid() {
+        return this.bondingUuid;
+    }
+
     public java.lang.String interfaceName;
     public void setInterfaceName(java.lang.String interfaceName) {
         this.interfaceName = interfaceName;
@@ -66,6 +90,22 @@ public class HostNetworkInterfaceInventory  {
     }
     public java.lang.String getPciDeviceAddress() {
         return this.pciDeviceAddress;
+    }
+
+    public java.sql.Timestamp createDate;
+    public void setCreateDate(java.sql.Timestamp createDate) {
+        this.createDate = createDate;
+    }
+    public java.sql.Timestamp getCreateDate() {
+        return this.createDate;
+    }
+
+    public java.sql.Timestamp lastOpDate;
+    public void setLastOpDate(java.sql.Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
+    }
+    public java.sql.Timestamp getLastOpDate() {
+        return this.lastOpDate;
     }
 
 }

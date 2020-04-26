@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetHostNetworkFactsAction extends AbstractAction {
+public class QueryHostNetworkBondingAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetHostNetworkFactsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetHostNetworkFactsResult value;
+        public org.zstack.sdk.QueryHostNetworkBondingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,6 @@ public class GetHostNetworkFactsAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hostUuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
 
 
     private Result makeResult(ApiResult res) {
@@ -54,8 +34,8 @@ public class GetHostNetworkFactsAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetHostNetworkFactsResult value = res.getResult(org.zstack.sdk.GetHostNetworkFactsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetHostNetworkFactsResult() : value; 
+        org.zstack.sdk.QueryHostNetworkBondingResult value = res.getResult(org.zstack.sdk.QueryHostNetworkBondingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryHostNetworkBondingResult() : value; 
 
         return ret;
     }
@@ -85,7 +65,7 @@ public class GetHostNetworkFactsAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hosts/network-facts/{hostUuid}";
+        info.path = "/hosts/bondings";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
