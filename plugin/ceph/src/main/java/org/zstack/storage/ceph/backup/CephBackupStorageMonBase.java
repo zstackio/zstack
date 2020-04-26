@@ -402,6 +402,10 @@ public class CephBackupStorageMonBase extends CephMonBase {
         q.select(CephBackupStorageVO_.poolName);
         q.add(CephBackupStorageVO_.uuid, Op.EQ, getSelf().getBackupStorageUuid());
         String poolName = q.findValue();
+        if (poolName == null) {
+            completion.fail(operr("Ceph bs[uuid=%s] pool name not found", getSelf().getBackupStorageUuid()));
+            return;
+        }
 
         PingCmd cmd = new PingCmd();
         cmd.monAddr = String.format("%s:%s", getSelf().getMonAddr(), getSelf().getMonPort());

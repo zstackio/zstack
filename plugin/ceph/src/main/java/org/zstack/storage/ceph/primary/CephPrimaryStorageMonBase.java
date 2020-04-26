@@ -412,6 +412,10 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                 .eq(CephPrimaryStoragePoolVO_.type, CephPrimaryStoragePoolType.Root.toString())
                 .limit(1)
                 .findValue();
+        if (poolName == null) {
+            completion.fail(operr("Ceph ps[uuid=%s] root pool name not found", primaryStorageUuid));
+            return;
+        }
 
         PingCmd cmd = new PingCmd();
         cmd.testImagePath = String.format("%s/zshb.ps.%s.%s", poolName, self.getUuid(), self.getMonAddr());
