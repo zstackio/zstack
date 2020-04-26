@@ -575,6 +575,8 @@ public class VirtualRouterCommands {
         private String gateway;
         private String ownerEthernetMac;
         private String vipUuid;
+        private boolean isSystem;
+
         
         public static VipTO valueOf(VipInventory inv, String ownerMac) {
             VipTO to = new VipTO();
@@ -583,6 +585,7 @@ public class VirtualRouterCommands {
             to.setGateway(inv.getGateway());
             to.setOwnerEthernetMac(ownerMac);
             to.setVipUuid(inv.getUuid());
+            to.setSystem(inv.isSystem());
             return to;
         }
         
@@ -629,6 +632,14 @@ public class VirtualRouterCommands {
 
 		public void setVipUuid(String vipUuid) {
 			this.vipUuid = vipUuid;
+		}
+
+		public boolean isSystem() {
+			return isSystem;
+		}
+
+		public void setSystem(boolean system) {
+			isSystem = system;
 		}
 	}
 

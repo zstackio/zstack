@@ -32,6 +32,7 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
@@ -201,7 +202,13 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
 
     public void createVipOnVirtualRouterVm(final VirtualRouterVmInventory vr, List<VipInventory> vips, final Completion completion) {
         final List<VirtualRouterCommands.VipTO> tos = new ArrayList<VirtualRouterCommands.VipTO>(vips.size());
-        for (VipInventory vip : vips) {
+        List<VipInventory> systemVip = vips.stream().filter(v -> v.isSystem()).collect(Collectors.toList());
+        List<VipInventory> notSystemVip = vips.stream().filter(v -> !v.isSystem()).collect(Collectors.toList());
+        List<VipInventory> vipss = new ArrayList<>();
+        vipss.addAll(systemVip);
+        vipss.addAll(notSystemVip);
+
+        for (VipInventory vip : vipss) {
             String mac = getOwnerMac(vr, vip);
             if (mac == null) {
                 throw new CloudRuntimeException(String.format("virtual router vm[uuid:%s] has no nic on l3Network[uuid:%s] for vip[uuid:%s, ip:%s]",
