@@ -36,6 +36,10 @@ public class ValidationFacadeImpl implements ValidationFacade, Component {
 
     @Override
     public ErrorCode validateErrorByErrorCode(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+
         if (obj instanceof ConditionalValidation) {
             ConditionalValidation cond = (ConditionalValidation) obj;
             if (!cond.needValidation()) {
