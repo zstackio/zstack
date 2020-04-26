@@ -112,7 +112,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         heartBeatDBSource = new HeartBeatDBSource();
     }
 
-    private ManagementNodeChangeListener nodeLifeCycle = new ManagementNodeChangeListener() {
+    private final ManagementNodeChangeListener nodeLifeCycle = new ManagementNodeChangeListener() {
         @Override
         public void nodeJoin(ManagementNodeInventory inv) {
             final String nodeId = inv.getUuid();
@@ -135,7 +135,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         @Override
         public void nodeLeft(ManagementNodeInventory inv) {
             final String nodeId = inv.getUuid();
-            if (joinedManagementNodes.remove(nodeId) == null) {
+            if (joinedManagementNodes.remove(nodeId) == null && !destinationMaker.getManagementNodesInHashRing().contains(nodeId)) {
                 logger.debug(String.format("the management node[uuid:%s] is not in our hash ring, ignore this node-left call", nodeId));
                 return;
             }
@@ -600,11 +600,11 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     }
 
     private class HeartBeatDBSource {
-        private Connection conn;
-        private SingleConnectionDataSource source;
+        private final Connection conn;
+        private final SingleConnectionDataSource source;
+        private final AtomicBoolean destroyed = new AtomicBoolean(false);
+        private final ExecutorService connectionTimeoutExecutor;
         JdbcTemplate jdbc;
-        AtomicBoolean destroyed = new AtomicBoolean(false);
-        private ExecutorService connectionTimeoutExecutor;
 
         HeartBeatDBSource() {
             try {
@@ -649,7 +649,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
             // WARNING: NO dbf(DatabaseFacade) used in this task,
             // you MUST USE heartBeatDBSource for any database operation
 
-            private List<ManagementNodeVO> suspects = new ArrayList<>();
+            private final List<ManagementNodeVO> suspects = new ArrayList<>();
             private Timestamp lastHearbeatTime = null;
 
             @Override
@@ -739,7 +739,9 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                 List<ManagementNodeVO> all = heartBeatDBSource.jdbc.query(sql, new BeanPropertyRowMapper(ManagementNodeVO.class));
                 suspects.clear();
 
+                final long delta = TimeUnit.SECONDS.toMillis(PortalGlobalProperty.MAX_HEARTBEAT_FAILURE * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class));
                 List<ManagementNodeVO> nodesInDb = new ArrayList<>();
+
                 for (ManagementNodeVO vo : all) {
                     if (!StringDSL.isZStackUuid(vo.getUuid())) {
                         logger.warn(String.format("found a weird management node, it's UUID not a ZStack uuid, delete it. %s",
@@ -756,13 +758,11 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                         if (lastHearbeatTime != null && lastHearbeatTime.getTime() > curr.getTime()) {
                             new ManagementNodeTimeRegressionCanonicalEvent(vo.getUuid(), vo.getHostName()).fire();
                         }
-                        
+
                         continue;
                     }
 
                     Timestamp lastHeartbeat = vo.getHeartBeat();
-                    final long delta = TimeUnit.SECONDS.toMillis(PortalGlobalProperty.MAX_HEARTBEAT_FAILURE * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class));
-
                     if (lastHeartbeat.getTime() > curr.getTime()) {
                         new ManagementNodeTimeRegressionCanonicalEvent(vo.getUuid(), vo.getHostName()).fire();
                     }
@@ -782,15 +782,9 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                     if (!nodeUuidsInDb.contains(nodeUuid)) {
                         logger.warn(String.format("found that a management node[uuid:%s] had no heartbeat in database but still in our hash ring," +
                                 "notify that it's dead", nodeUuid));
-                        ManagementNodeVO nodeVO = getNode(nodeUuid);
-                        ManagementNodeInventory inv;
-                        if (nodeVO != null) {
-                            inv = ManagementNodeInventory.valueOf(nodeVO);
-                        } else {
-                            inv = new ManagementNodeInventory();
-                            inv.setUuid(nodeUuid);
-                            inv.setHostName(destinationMaker.getNodeInfo(nodeUuid).getNodeIP());
-                        }
+                        ManagementNodeInventory inv = new ManagementNodeInventory();
+                        inv.setUuid(nodeUuid);
+                        inv.setHostName(destinationMaker.getNodeInfo(nodeUuid).getNodeIP());
 
                         nodeLifeCycle.nodeLeft(inv);
                     }
