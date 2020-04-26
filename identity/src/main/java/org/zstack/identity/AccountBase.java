@@ -24,7 +24,10 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
 import org.zstack.header.identity.IdentityCanonicalEvents.UserDeletedData;
+import org.zstack.header.identity.role.RolePolicyStatementVO;
+import org.zstack.header.identity.role.RolePolicyStatementVO_;
 import org.zstack.header.identity.role.RoleVO;
+import org.zstack.header.identity.role.RoleVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.utils.CollectionUtils;
@@ -38,10 +41,7 @@ import static org.zstack.core.Platform.*;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -216,47 +216,48 @@ public class AccountBase extends AbstractAccount {
         });
     }
 
-    @Transactional
     private void deleteRelatedResources() {
-        String sql = "delete from QuotaVO q where q.identityUuid = :uuid and q.identityType = :itype";
-        Query q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("uuid", self.getUuid());
-        q.setParameter("itype", AccountVO.class.getSimpleName());
-        q.executeUpdate();
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                sql(QuotaVO.class)
+                        .eq(QuotaVO_.identityType, AccountVO.class.getSimpleName())
+                        .eq(QuotaVO_.identityUuid, self.getUuid())
+                        .delete();
 
-        sql = "delete from UserVO u where u.accountUuid = :uuid";
-        q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("uuid", self.getUuid());
-        q.executeUpdate();
+                sql(UserVO.class)
+                        .eq(UserVO_.accountUuid, self.getUuid())
+                        .delete();
 
-        sql = "delete from UserGroupVO g where g.accountUuid = :uuid";
-        q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("uuid", self.getUuid());
-        q.executeUpdate();
+                sql(UserGroupVO.class)
+                        .eq(UserGroupVO_.accountUuid, self.getUuid())
+                        .delete();
 
-        sql = "delete from PolicyVO p where p.accountUuid = :uuid";
-        q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("uuid", self.getUuid());
-        q.executeUpdate();
+                sql(PolicyVO.class)
+                        .eq(PolicyVO_.accountUuid, self.getUuid())
+                        .delete();
 
-        sql = "delete from SharedResourceVO s where s.ownerAccountUuid = :uuid or s.receiverAccountUuid = :uuid";
-        q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("uuid", self.getUuid());
-        q.executeUpdate();
+                sql("delete from SharedResourceVO s where s.ownerAccountUuid = :uuid or s.receiverAccountUuid = :uuid")
+                        .param("uuid", self.getUuid())
+                        .execute();
 
-        sql = "delete from RolePolicyStatementVO rp where rp.roleUuid in (select ar.resourceUuid from AccountResourceRefVO" +
-                " ar where ar.ownerAccountUuid = :acntUuid and ar.resourceType = :rtype)";
-        q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("acntUuid", self.getUuid());
-        q.setParameter("rtype", RoleVO.class.getSimpleName());
-        q.executeUpdate();
+                List<String> resourceUuids = q(AccountResourceRefVO.class)
+                        .select(AccountResourceRefVO_.resourceUuid)
+                        .eq(AccountResourceRefVO_.accountUuid, self.getUuid())
+                        .eq(AccountResourceRefVO_.resourceType, RoleVO.class.getSimpleName())
+                        .listValues();
 
-        sql = "delete from RoleVO role where role.uuid in (select ar.resourceUuid from AccountResourceRefVO" +
-                " ar where ar.ownerAccountUuid = :acntUuid and ar.resourceType = :rtype)";
-        q = dbf.getEntityManager().createQuery(sql);
-        q.setParameter("acntUuid", self.getUuid());
-        q.setParameter("rtype", RoleVO.class.getSimpleName());
-        q.executeUpdate();
+                if (!resourceUuids.isEmpty()) {
+                    sql(RolePolicyStatementVO.class)
+                            .in(RolePolicyStatementVO_.roleUuid, resourceUuids)
+                            .delete();
+
+                    sql(RoleVO.class)
+                            .in(RoleVO_.uuid, resourceUuids)
+                            .delete();
+                }
+            }
+        }.execute();
     }
 
     private void handle(AccountDeletionMsg msg) {
