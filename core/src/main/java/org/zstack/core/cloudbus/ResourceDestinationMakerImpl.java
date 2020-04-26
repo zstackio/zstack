@@ -20,8 +20,8 @@ import java.util.*;
  * To change this template use File | Settings | File Templates.
  */
 public class ResourceDestinationMakerImpl implements ManagementNodeChangeListener, ResourceDestinationMaker {
-    private ConsistentHash<String> nodeHash = new ConsistentHash<>(new ApacheHash(), 500, new ArrayList<String>()) ;
-    private Map<String, NodeInfo> nodes = new HashMap<>();
+    private final ConsistentHash<String> nodeHash = new ConsistentHash<>(new ApacheHash(), 500, new ArrayList<String>()) ;
+    private final Map<String, NodeInfo> nodes = new HashMap<>();
 
     @Autowired
     private DatabaseFacade dbf;

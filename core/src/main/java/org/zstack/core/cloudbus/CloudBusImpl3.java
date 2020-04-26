@@ -469,10 +469,10 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     }
 
     class MessageSender {
-        Message msg;
-        String managementNodeId;
-        String serviceId;
-        boolean localSend;
+        private final Message msg;
+        private final String managementNodeId;
+        private final String serviceId;
+        private final boolean localSend;
 
         public MessageSender(Message msg) {
             this.msg = msg;
