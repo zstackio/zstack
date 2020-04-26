@@ -345,7 +345,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 left join (select uuid, name, type from VmInstanceVO) it on nic.vmInstanceUuid = it.uuid
         order by {sortBy} {direction};
          */
-
+        String dhcp = getL3NetworkDhcpIpAddress(msg.getL3NetworkUuid());
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("select uip.ip, vip.uuid as vipUuid, vip.name as vipName, it.uuid as vmUuid, it.name as vmName, it.type, uip.createDate ")
                 .append("from (select uuid, ip, ipInLong, createDate, vmNicUuid from UsedIpVO where l3NetworkUuid = '")
@@ -387,6 +387,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             element.setIp((String) result[0]);
             List<String> resourceTypes = new ArrayList<>();
             element.setResourceTypes(resourceTypes);
+            if (element.getIp().equals(dhcp)) {
+                resourceTypes.add(ResourceType.DHCP);
+            }
             if (isAdmin) {
                 element.setVipUuid((String) result[1]);
                 element.setVipName((String) result[2]);
@@ -399,29 +402,22 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 if (result[1] != null) {
                     resourceTypes.add(ResourceType.VIP);
                 }
-                if (!(result[1] != null || result[3] != null)) {
-                    resourceTypes.add(ResourceType.DHCP);
-                }
             } else {
-                boolean isOther = true;
-                if (result[1] != null)
-                    isOther = false;
-                    if (ownedVips.contains(result[1])) {
-                        element.setVipUuid((String) result[1]);
-                        element.setVipName((String) result[2]);
-                        resourceTypes.add(ResourceType.VIP);
-                    }
-                if (result[3] != null)
-                    isOther = false;
-                    if (ownedVms.contains(result[3])) {
-                        element.setVmInstanceUuid((String) result[3]);
-                        element.setVmInstanceName((String) result[4]);
-                        element.setVmInstanceType((String) result[5]);
-                        vmUuids.add((String) result[3]);
-                    }
-                if (isOther) {
-                    resourceTypes.add(ResourceType.DHCP);
+                if (result[1] != null && ownedVips.contains(result[1])) {
+                    element.setVipUuid((String) result[1]);
+                    element.setVipName((String) result[2]);
+                    resourceTypes.add(ResourceType.VIP);
                 }
+
+                if (result[3] != null && ownedVms.contains(result[3])) {
+                    element.setVmInstanceUuid((String) result[3]);
+                    element.setVmInstanceName((String) result[4]);
+                    element.setVmInstanceType((String) result[5]);
+                    vmUuids.add((String) result[3]);
+                }
+            }
+            if (resourceTypes.isEmpty() && result[3] == null) {
+                resourceTypes.add(ResourceType.OTHER);
             }
         }
 
@@ -707,6 +703,18 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
     }
 
+    private String getL3NetworkDhcpIpAddress(String l3Uuid) {
+        String tag = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTag(l3Uuid);
+        if (tag != null) {
+            Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByTag(tag);
+            String dhcpServerIp = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
+            if (dhcpServerIp != null) {
+                return IPv6NetworkUtils.ipv6TagValueToAddress(dhcpServerIp);
+            }
+        }
+        return null;
+    }
+
     private void handle(APIGetL3NetworkDhcpIpAddressMsg msg) {
         APIGetL3NetworkDhcpIpAddressReply reply = new APIGetL3NetworkDhcpIpAddressReply();
 
@@ -716,15 +724,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             return;
         }
 
-        String tag = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTag(msg.getL3NetworkUuid());
-        if (tag != null) {
-            Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByTag(tag);
-            String dhcpServerIp = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
-            if (dhcpServerIp != null) {
-                reply.setIp(IPv6NetworkUtils.ipv6TagValueToAddress(dhcpServerIp));
-                bus.reply(msg, reply);
-                return;
-            }
+        String ip = getL3NetworkDhcpIpAddress(msg.getL3NetworkUuid());
+        if (ip != null) {
+            reply.setIp(ip);
+            bus.reply(msg, reply);
+            return;
         }
 
         reply.setError(operr("Cannot find DhcpIp for l3 network[uuid:%s]", msg.getL3NetworkUuid()));
