@@ -36,7 +36,9 @@ class ChainTaskWaitListCase extends SubCase {
 
         void execute() {
             task = true
+            logger.debug("start execute task: ${name}")
             sleep 50
+            logger.debug("finish execute task: ${name}")
         }
 
         void lock() {
