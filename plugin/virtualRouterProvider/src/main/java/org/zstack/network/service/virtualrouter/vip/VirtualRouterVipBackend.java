@@ -65,7 +65,15 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
 
     public void createVipOnVirtualRouterVm(final VirtualRouterVmInventory vr, List<VipInventory> vips, final Completion completion) {
         final List<VipTO> tos = new ArrayList<VipTO>(vips.size());
-        for (VipInventory vip : vips) {
+        List<VipInventory> systemVip = vips.stream().filter(v -> v.isSystem()).collect(Collectors.toList());
+        List<VipInventory> notSystemVip = vips.stream().filter(v -> !v.isSystem()).collect(Collectors.toList());
+
+        for (VipInventory vip : systemVip) {
+            String mac = getOwnerMac(vr, vip);
+            VipTO to = VipTO.valueOf(vip, mac);
+            tos.add(to);
+        }
+        for (VipInventory vip : notSystemVip) {
             String mac = getOwnerMac(vr, vip);
             VipTO to = VipTO.valueOf(vip, mac);
             tos.add(to);
@@ -227,8 +235,14 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf((VirtualRouterVmVO)
                 Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, nic.getVmInstanceUuid()).find());
 
+        List<VipVO> systemVip = vips.stream().filter(v -> v.isSystem()).collect(Collectors.toList());
+        List<VipVO> notSystemVip = vips.stream().filter(v -> !v.isSystem()).collect(Collectors.toList());
+        List<VipVO> vipss = new ArrayList<>();
+        vipss.addAll(systemVip);
+        vipss.addAll(notSystemVip);
+
         List<VipTO> vipTOS = new ArrayList<>();
-        for (VipVO vip : vips) {
+        for (VipVO vip : vipss) {
             if (vipTOS.stream().anyMatch(v -> v.getIp().equals(vip.getIp()))) {
                 logger.warn(String.format(
                         "found duplicate vip ip[uuid; %s, uuids: %s] for vr[uuid: %s]",
@@ -249,6 +263,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                     .filter(n -> n.getL3NetworkUuid().equals(vip.getL3NetworkUuid()))
                     .findFirst().get().getMac());
             to.setVipUuid(vip.getUuid());
+            to.setSystem(vip.isSystem());
             vipTOS.add(to);
         }
 
