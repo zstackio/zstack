@@ -5,6 +5,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
@@ -33,10 +34,12 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
     private DatabaseFacade dbf;
 
     @Override
-    public void vyosRouterVersionCheck(String vrUuid, Completion completion) {
+    public void vyosRouterVersionCheck(String vrUuid, ReturnValueCompletion<VyosVersionCheckResult> completion) {
+        VyosVersionCheckResult result = new VyosVersionCheckResult();
+
         String managementVersion = getManagementVersion();
         if (managementVersion == null) {
-            completion.success();
+            completion.success(result);
             return;
         }
 
@@ -47,36 +50,44 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
             @Override
             public void fail(ErrorCode err) {
                 logger.warn(String.format("virtual router[uuid: %s] get version failed because %s", vrUuid, err.getDetails()));
-                completion.success();
+                completion.success(result);
             }
 
             @Override
             public void success(VirtualRouterCommands.PingRsp ret) {
                 if (!ret.isSuccess()){
-                    ErrorCode err = operr("virtual router[uuid: %s] failed to get version because %s ",
-                            vrUuid, ret.getError());
-                    completion.fail(err);
+                    logger.warn(String.format("virtual router[uuid: %s] failed to get version because %s", vrUuid, ret.getError()));
+                    result.setNeedReconnect(true);
+                    completion.success(result);
                     return;
                 }
 
                 if (ret.getVersion() == null) {
-                    ErrorCode err = operr("virtual router[uuid: %s] doesn't have version", vrUuid);
-                    completion.fail(err);
+                    logger.warn(String.format("virtual router[uuid: %s] doesn't have version", vrUuid));
+                    result.setNeedReconnect(true);
+                    completion.success(result);
                     return;
                 }
 
                 if (!versionFormatCheck(ret.getVersion())) {
-                    ErrorCode err = operr("virtual router[uuid: %s] version [%s] format error", vrUuid, ret.getVersion());
-                    completion.fail(err);
+                    logger.warn(String.format("virtual router[uuid: %s] version [%s] format error", vrUuid, ret.getVersion()));
+                    result.setNeedReconnect(true);
+                    completion.success(result);
                     return;
                 }
 
                 if (versionCompare(managementVersion, ret.getVersion()) > 0) {
-                    ErrorCode err = operr("virtual router[uuid: %s] version [%s] is older than management node version [%s]",vrUuid, ret.getVersion(), managementVersion);
-                    completion.fail(err);
+                    logger.warn(String.format("virtual router[uuid: %s] version [%s] is older than management node version [%s]",vrUuid, ret.getVersion(), managementVersion));
+                    result.setNeedReconnect(true);
+                    int oldVersion = versionCompare(ret.getVersion(), VyosConstants.VIP_REBUILD_VERSION);
+                    int newVersion = versionCompare(managementVersion, VyosConstants.VIP_REBUILD_VERSION);
+                    if ((oldVersion < 0) && (newVersion > 0)) {
+                        result.setRebuildVip(true);
+                    }
+                    completion.success(result);
                 } else {
                     logger.debug(String.format("virtual router[uuid: %s] successfully finish the version check", vrUuid));
-                    completion.success();
+                    completion.success(result);
                 }
             }
 
