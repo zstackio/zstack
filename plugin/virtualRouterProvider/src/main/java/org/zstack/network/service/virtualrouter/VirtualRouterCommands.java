@@ -633,9 +633,18 @@ public class VirtualRouterCommands {
 	}
 
 	public static class CreateVipCmd extends AgentCommand {
+		private Boolean rebuild;
 	    private List<VipTO> vips;
 
-        public List<VipTO> getVips() {
+		public Boolean getRebuild() {
+			return rebuild;
+		}
+
+		public void setRebuild(Boolean rebuild) {
+			this.rebuild = rebuild;
+		}
+
+		public List<VipTO> getVips() {
             return vips;
         }
 

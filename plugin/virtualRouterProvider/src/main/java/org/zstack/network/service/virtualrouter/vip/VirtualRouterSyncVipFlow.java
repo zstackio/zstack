@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.zstack.appliancevm.ApplianceVmConstant;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
@@ -30,6 +31,7 @@ public class VirtualRouterSyncVipFlow implements Flow {
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
+        final Boolean rebuildVip = (Boolean) data.get(ApplianceVmConstant.Params.rebuildVip.toString());
 
         List<String> vrVips = proxy.getServiceUuidsByRouterUuid(vr.getUuid(), VipVO.class.getSimpleName());
         List<String> peerL3Vips = null;
@@ -62,7 +64,8 @@ public class VirtualRouterSyncVipFlow implements Flow {
                 .collect(Collectors.toList());
 
         List<VipInventory> invs = VipInventory.valueOf(vips);
-        vipExt.createVipOnVirtualRouterVm(vr, invs, new Completion(chain) {
+
+        vipExt.createVipOnVirtualRouterVm(vr, invs, rebuildVip, new Completion(chain) {
             @Override
             public void success() {
                 proxy.attachNetworkService(vr.getUuid(), VipVO.class.getSimpleName(), vips.stream().map(VipVO::getUuid).collect(Collectors.toList()));
