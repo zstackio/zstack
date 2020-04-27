@@ -12,6 +12,7 @@ public class VmCanonicalEvents {
     public static final String VM_FULL_STATE_CHANGED_PATH = "/vm/state/change";
     public static final String VM_INSTANCE_OFFERING_CHANGED_PATH = "/vm/instanceoffering/change";
     public static final String VM_CONFIG_CHANGED_PATH = "/vm/config/change";
+    public static final String VM_LIBVIRT_REPORT_REBOOT = "/vm/libvirtReportReboot";
 
     @NeedJsonSchema
     public static class VmConfigChangedData {

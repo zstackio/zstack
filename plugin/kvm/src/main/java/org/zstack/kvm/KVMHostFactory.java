@@ -19,6 +19,8 @@ import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
@@ -31,10 +33,7 @@ import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.tag.FormTagExtensionPoint;
-import org.zstack.header.vm.RebootVmInstanceMsg;
-import org.zstack.header.vm.StartVmInstanceMsg;
-import org.zstack.header.vm.StopVmInstanceMsg;
-import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.MaxDataVolumeNumberExtensionPoint;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeFormat;
@@ -85,6 +84,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private CloudBus bus;
     @Autowired
     private RESTFacade restf;
+    @Autowired
+    private EventFacade evf;
 
     @Override
     public HostVO createHost(HostVO vo, AddHostMessage msg) {
@@ -303,6 +304,15 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                     default:
                         logger.warn(String.format("vm operation %s transmitted by kvmagent is not supported", cmd.operation));
                 }
+                return null;
+            }
+        });
+
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_REBOOT_EVENT, KVMAgentCommands.ReportVmRebootEventCmd.class, new SyncHttpCallHandler<KVMAgentCommands.ReportVmRebootEventCmd>() {
+            @Override
+            public String handleSyncHttpCall(KVMAgentCommands.ReportVmRebootEventCmd cmd) {
+                evf.fire(VmCanonicalEvents.VM_LIBVIRT_REPORT_REBOOT, cmd.vmUuid);
+
                 return null;
             }
         });
