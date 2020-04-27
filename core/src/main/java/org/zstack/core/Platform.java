@@ -938,7 +938,7 @@ public class Platform {
         return ts.after(startMnTime);
     }
 
-    private static void addErrorCounter(ErrorCode code) {
+    public static void addErrorCounter(ErrorCode code) {
         errorCounter.compute(code.getCode().split("\\.")[0], (k, v) -> v == null ? 1 : v ++);
     }
 
