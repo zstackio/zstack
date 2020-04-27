@@ -336,9 +336,8 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             }
         }
 
-        removeAccessControlListFromLoadBalancer {
-            aclUuids =[acl.uuid]
-            listenerUuid = lbl2.uuid
+        deleteLoadBalancerListener {
+            uuid = lbl2.uuid
         }
 
         deleteLoadBalancer {

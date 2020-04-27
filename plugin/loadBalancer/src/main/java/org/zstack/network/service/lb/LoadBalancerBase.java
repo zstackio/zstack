@@ -202,7 +202,7 @@ public class LoadBalancerBase {
                 if (!vo.getAclRefs().isEmpty()) {
                     dbf.removeCollection(vo.getAclRefs(), LoadBalancerListenerACLRefVO.class);
                 }
-                dbf.remove(vo);
+                dbf.removeByPrimaryKey(vo.getUuid(), LoadBalancerListenerVO.class);
             });
         }
     }
@@ -960,11 +960,11 @@ public class LoadBalancerBase {
 
         if (!needAction()) {
             /*there is no cascade deleting configure for acl ref in db */
-            for(LoadBalancerListenerACLRefVO acl: vo.getAclRefs()) {
-                dbf.removeByPrimaryKey(acl.getId(), LoadBalancerListenerACLRefVO.class);
+            if (!vo.getAclRefs().isEmpty()) {
+                dbf.removeCollection(vo.getAclRefs(), LoadBalancerListenerACLRefVO.class);
             }
-
-            dbf.remove(vo);
+            /*http://jira.zstack.io/browse/ZSTAC-27065*/
+            dbf.removeByPrimaryKey(vo.getUuid(), LoadBalancerListenerVO.class);
             evt.setInventory(reloadAndGetInventory());
             bus.publish(evt);
             completion.done();
@@ -977,10 +977,10 @@ public class LoadBalancerBase {
             @Override
             public void success() {
                 /*there is no cascade deleting configure for acl ref in db */
-                for(LoadBalancerListenerACLRefVO acl: vo.getAclRefs()) {
-                    dbf.removeByPrimaryKey(acl.getId(), LoadBalancerListenerACLRefVO.class);
+                if (!vo.getAclRefs().isEmpty()) {
+                    dbf.removeCollection(vo.getAclRefs(), LoadBalancerListenerACLRefVO.class);
                 }
-                dbf.remove(vo);
+                dbf.removeByPrimaryKey(vo.getUuid(), LoadBalancerListenerVO.class);
                 evt.setInventory(reloadAndGetInventory());
                 bus.publish(evt);
                 completion.done();
