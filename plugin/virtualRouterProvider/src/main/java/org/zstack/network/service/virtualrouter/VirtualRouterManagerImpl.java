@@ -82,7 +82,6 @@ import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -1657,9 +1656,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                         " and nic.vmInstanceUuid = vm.uuid" +
                         " )"+
                         " and l3.uuid = nic.l3NetworkUuid" +
+                        " and nic.metaData = :metaData" +
                         " and l3.system = :isSystem")
                                               .param("l3NetworkUuid", vipNetwork.getUuid())
                                               .param("isSystem", false)
+                                              .param("metaData", VirtualRouterNicMetaData.GUEST_NIC_MASK.toString())
                                               .list();
 
                 // 3. filter all the l3 networks which are not managed by vrouter or virtual router currently and
