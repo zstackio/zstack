@@ -375,6 +375,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
         void startThreadIfNeeded() {
             if (counter.get() >= maxThreadNum) {
+                logger.debug(String.format("syncSignature: %s is arrived maxThreadNum: %s, it would be thrown!", syncSignature, maxThreadNum));
                 return;
             }
 
@@ -414,12 +415,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                     }
 
                     if (cf.getTask().getDeduplicateString() != null) {
-                        subPendingMap.computeIfPresent(cf.getTask().getDeduplicateString(), (k, v) -> {
-                            if (v.decrementAndGet() == 0) {
-                                return null;
-                            }
-                            return v;
-                        });
+                        removeSubPending(cf.getTask().getDeduplicateString());
                     }
 
                     cf.run(() -> {
