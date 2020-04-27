@@ -898,7 +898,9 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     @Override
     public void logExceptionWithMessageDump(Message msg, Throwable e) {
         if (!(e instanceof OperationFailureException)) {
-            logger.warn(String.format("unhandled throwable happened when dealing with message[%s], dump: %s", msg.getClass().getName(), dumpMessage(msg)), e);
+            String errMsg = String.format("unhandled throwable happened when dealing with message[%s], dump: %s", msg.getClass().getName(), dumpMessage(msg));
+            Platform.addErrorCounter(inerr(errMsg));
+            logger.warn(errMsg, e);
         }
     }
 
