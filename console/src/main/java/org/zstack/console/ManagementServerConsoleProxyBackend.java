@@ -319,6 +319,14 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
 
     private void handle(final ReconnectConsoleProxyMsg msg) {
         final ReconnectConsoleProxyReply reply = new ReconnectConsoleProxyReply();
+
+        // Currently this message only do some local shell operations in management node,
+        // so we skip it during unit test.
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            bus.reply(msg, reply);
+            return;
+        }
+
         doConnectAgent(new Completion(msg) {
             @Override
             public void success() {
@@ -492,27 +500,25 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     }
                 });
 
-                if (!CoreGlobalProperty.UNIT_TEST_ON) {
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "reconnect-console-proxy";
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            ReconnectConsoleProxyMsg rmsg = new ReconnectConsoleProxyMsg();
-                            rmsg.setAgentUuid(msg.getUuid());
-                            bus.makeServiceIdByManagementNodeId(rmsg, ConsoleConstants.SERVICE_ID, msg.getUuid());
-                            bus.send(rmsg, new CloudBusCallBack(trigger) {
-                                @Override
-                                public void run(MessageReply reply) {
-                                    if (!reply.isSuccess()) {
-                                        trigger.fail(operr("failed to reconnect console proxy"));
-                                    } else {
-                                        trigger.next();
-                                    }
+                flow(new NoRollbackFlow() {
+                    String __name__ = "reconnect-console-proxy";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ReconnectConsoleProxyMsg rmsg = new ReconnectConsoleProxyMsg();
+                        rmsg.setAgentUuid(msg.getUuid());
+                        bus.makeServiceIdByManagementNodeId(rmsg, ConsoleConstants.SERVICE_ID, msg.getUuid());
+                        bus.send(rmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(operr("failed to reconnect console proxy"));
+                                } else {
+                                    trigger.next();
                                 }
-                            });
-                        }
-                    });
-                }
+                            }
+                        });
+                    }
+                });
 
                 done(new FlowDoneHandler(msg) {
                     @Override
