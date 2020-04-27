@@ -296,7 +296,8 @@ public class ImageBase implements Image {
     private void handle(final ImageDeletionMsg msg) {
         final ImageDeletionReply reply = new ImageDeletionReply();
         Set<ImageBackupStorageRefVO> bsRefs = self.getBackupStorageRefs();
-        if (bsRefs.isEmpty() || bsRefs.stream().anyMatch(
+
+        if (bsRefs.isEmpty() || bsRefs.stream().allMatch(
                 r -> r.getStatus() == ImageStatus.Creating || r.getStatus() == ImageStatus.Downloading)) {
             // the image is not on any backup storage; mostly likely the image is not in the status of Ready, for example
             // it's still downloading
