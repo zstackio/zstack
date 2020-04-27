@@ -5,6 +5,7 @@ import org.zstack.utils.logging.CLogger;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -161,5 +162,41 @@ public class TimeUtils {
     public static String getCurrentTimeStamp(String dformat) {
         DateFormat dateFormat = new SimpleDateFormat(dformat);
         return dateFormat.format(new Date(System.currentTimeMillis()));
+    }
+
+    public static Calendar roundOff(long timeInMills, int timeUnit) {
+        Calendar time = Calendar.getInstance();
+        time.setTimeInMillis(timeInMills);
+        for (int i = timeUnit + 1; i <= Calendar.MILLISECOND; i++) {
+            time.clear(i);
+        }
+
+        return time;
+    }
+
+    public static Calendar roundOff(Calendar time, int timeUnit) {
+        time = (Calendar) time.clone();
+        for (int i = timeUnit + 1; i <= Calendar.MILLISECOND; i++) {
+            time.clear(i);
+        }
+        return time;
+    }
+
+    public static Calendar roundUp(Calendar time, int timeUnit) {
+        time = (Calendar) time.clone();
+        for (int i = timeUnit + 1; i <= Calendar.MILLISECOND; i++) {
+            time.clear(i);
+        }
+        time.add(timeUnit, 1);
+        return time;
+    }
+
+    public static boolean equalApproximately(Calendar c1, Calendar c2, int roundOffTimeUnit) {
+        for (int i = roundOffTimeUnit; i >= Calendar.YEAR; i--) {
+            if (c1.get(i) != c2.get(i)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

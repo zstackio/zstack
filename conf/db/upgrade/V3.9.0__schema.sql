@@ -349,3 +349,15 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostNetworkInterfaceVO` (
     CONSTRAINT `fkHostNetworkInterfaceVOHostVO` FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkHostNetworkInterfaceVOHostNetworkBondingVO` FOREIGN KEY (`bondingUuid`) REFERENCES `zstack`.`HostNetworkBondingVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`SchedulerJobHistoryVO` CHANGE COLUMN `startTime` `startTime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE `zstack`.`SchedulerJobHistoryVO` ADD COLUMN jobType VARCHAR(255) DEFAULT NULL;
+ALTER TABLE `zstack`.`SchedulerJobHistoryVO` ADD COLUMN fireInstanceId VARCHAR(32) DEFAULT NULL;
+ALTER TABLE `zstack`.`SchedulerJobHistoryVO` ADD INDEX idxSchedulerJobHistoryVOStartTime (`startTime`);
+ALTER TABLE `zstack`.`SchedulerJobHistoryVO` ADD INDEX idxSchedulerJobHistoryVOFireInstanceId (`fireInstanceId`);
+
+UPDATE `zstack`.`SchedulerJobGroupVO` SET `jobClassName` = 'org.zstack.storage.backup.CreateRootVolumeBackupJob' WHERE `jobType` = 'rootVolumeBackup';
+UPDATE `zstack`.`SchedulerJobVO` job, `zstack`.`SchedulerJobGroupVO` jobGroup, `zstack`.`SchedulerJobGroupJobRefVO` ref
+SET job.`jobClassName` = 'org.zstack.storage.backup.CreateRootVolumeBackupJob'
+WHERE jobGroup.jobType = 'rootVolumeBackup' AND ref.schedulerJobGroupUuid = jobGroup.uuid AND ref.schedulerJobUuid = job.uuid;
+
