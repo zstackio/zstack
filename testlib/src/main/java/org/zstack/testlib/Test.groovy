@@ -92,10 +92,14 @@ abstract class Test implements ApiHelper, Retry {
     private final int PHASE_SETUP = 1
     private final int PHASE_ENV = 2
     private final int PHASE_TEST = 3
+    private final int PHASE_CLEAN = 4
 
     // these are global variables
     static EnvSpec currentEnvSpec
     static ComponentLoader componentLoader
+    static long envCreateTime
+    static long testRunTime
+    static long cleanEnvTime
 
     private int phase = PHASE_NONE
     protected BeanConstructor beanConstructor
@@ -476,6 +480,7 @@ abstract class Test implements ApiHelper, Retry {
             prepare()
             nextPhase()
             test()
+            nextPhase()
 
             if ((this instanceof Case) && System.getProperty("clean") != null) {
                 clean()
@@ -511,6 +516,9 @@ abstract class Test implements ApiHelper, Retry {
         Boolean success
         String error
         String name
+        String envCreateSpend
+        String testRunSpend
+        String cleanEnvSpend
         transient Class caseType
     }
 
@@ -654,6 +662,9 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
 
                 def fname = c.class.name.replace(".", "_") + "." + spendTime + "." + (r.success ? "success" : "failure")
                 def rfile = new File([dir.absolutePath, fname].join("/"))
+                r.envCreateSpend = envCreateTime + " ms"
+                r.testRunSpend = testRunTime + " ms"
+                r.cleanEnvSpend = cleanEnvTime + " ms"
                 rfile.write(JSONObjectUtil.toJsonString(r))
 
                 logger.info("write test result of a sub case[${c.class}] of suite[${this.class}] to $fname")
@@ -665,6 +676,9 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         int failure = 0
         int skipped = 0
         int timeout = 0
+        long envSpend = 0
+        long runSpend = 0
+        long cleanSpend = 0
         allCases.each {
             if (it.success == null && isTimeout){
                 if (caseResultShellPath != null){
@@ -686,6 +700,9 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
                 skipped ++
             } else if (it.success) {
                 success ++
+                envSpend += Long.valueOf(it.envCreateSpend.split(" ")[0])
+                runSpend += Long.valueOf(it.testRunSpend.split(" ")[0])
+                cleanSpend += Long.valueOf(it.cleanEnvSpend.split(" ")[0])
             } else {
                 failure ++
             }
@@ -701,7 +718,10 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
                 "skipped": skipped,
                 "timeout": timeout,
                 "passRate": ((float)success / (float)caseTypes.size()) * 100,
-                "spendTime": suiteEndTime - suiteStartTime
+                "spendTime": suiteEndTime - suiteStartTime,
+                "createEnvTotal": envSpend,
+                "runTestTotal": runSpend,
+                "cleanEnvTotal": cleanSpend
         ]))
 
         new File([dir.absolutePath, "done"].join("/")).createNewFile()

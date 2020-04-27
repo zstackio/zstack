@@ -38,13 +38,23 @@ abstract class StabilityTest extends Test implements Case{
 
     @Override
     void run() {
+        envCreateTime = 0
+        testRunTime = 0
+        cleanEnvTime = 0
         try {
+            long startEnvCreateTime = System.currentTimeMillis()
             environment()
+            long endEnvCreateTime = System.currentTimeMillis()
+            envCreateTime += System.currentTimeMillis() - startEnvCreateTime
             test()
+            testRunTime += System.currentTimeMillis() - startEnvCreateTime - envCreateTime
 
             logger.info("start cleanup for case ${this.class}")
+            long startCleanTime = System.currentTimeMillis()
             clean()
             methodsOnClean.each { it() }
+            cleanEnvTime = System.currentTimeMillis() - startCleanTime
+            logger.info("create env spend: ${envCreateTime}, test run spend: ${testRunTime}, clean env spend: ${cleanEnvTime}")
         } catch (Throwable t) {
             logger.warn("a sub case [${this.class}] fails, ${t.message}", t)
             throw t

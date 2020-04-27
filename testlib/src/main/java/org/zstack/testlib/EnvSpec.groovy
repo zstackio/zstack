@@ -27,7 +27,6 @@ import org.zstack.header.image.ImageDeletionPolicyManager
 import org.zstack.header.message.Message
 import org.zstack.header.rest.RESTConstant
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager
-import org.zstack.header.vm.VmPriorityConfigVO
 import org.zstack.header.vo.EO
 import org.zstack.header.volume.VolumeDeletionPolicyManager
 import org.zstack.image.ImageGlobalConfig
@@ -66,7 +65,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
-
 /**
  * Created by xing5 on 2017/2/12.
  */
@@ -582,6 +580,7 @@ class EnvSpec implements Node, ApiHelper {
 
         hasCreated = true
         Test.currentEnvSpec = this
+        def startEnvCreate = System.currentTimeMillis()
 
         adminLogin()
         resetAllGlobalConfig()
@@ -606,6 +605,8 @@ class EnvSpec implements Node, ApiHelper {
         defaultMessageHandlers.putAll(messageHandlers)
         defaultHttpConditionHandlers = [:]
         defaultHttpConditionHandlers.putAll(httpConditionHandlers)
+
+        Test.envCreateTime += System.currentTimeMillis() - startEnvCreate
 
         if (cl != null) {
             cl.delegate = this
