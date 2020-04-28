@@ -473,6 +473,16 @@ abstract class Test implements ApiHelper, Retry {
         return dbf.isExist(primaryKey, clz)
     }
 
+    protected void cleanCase(Case c) {
+        logger.info("start cleanup for case ${this.class}")
+        long startCleanTime = System.currentTimeMillis()
+        c.clean()
+        methodsOnClean.each { it() }
+        cleanEnvTime = System.currentTimeMillis() - startCleanTime
+        logger.info("create env spend: ${envCreateTime}, test run spend: ${testRunTime}, clean env spend: ${cleanEnvTime}")
+
+    }
+
     @org.junit.Test
     final void doTest() {
         try {
@@ -483,7 +493,7 @@ abstract class Test implements ApiHelper, Retry {
             nextPhase()
 
             if ((this instanceof Case) && System.getProperty("clean") != null) {
-                clean()
+                cleanCase((Case)this)
             }
 
             if (System.getProperty("apipath") != null) {
