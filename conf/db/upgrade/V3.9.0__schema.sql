@@ -361,3 +361,11 @@ UPDATE `zstack`.`SchedulerJobVO` job, `zstack`.`SchedulerJobGroupVO` jobGroup, `
 SET job.`jobClassName` = 'org.zstack.storage.backup.CreateRootVolumeBackupJob'
 WHERE jobGroup.jobType = 'rootVolumeBackup' AND ref.schedulerJobGroupUuid = jobGroup.uuid AND ref.schedulerJobUuid = job.uuid;
 
+alter table HybridAccountVO
+    drop foreign key fkHybridAccountVOAccountVO;
+alter table HybridAccountVO
+    drop index uniqAccountUuid;
+alter table HybridAccountVO
+    add constraint uniqAccountUuid unique (accountUuid, akey, type);
+alter table HybridAccountVO
+    add constraint fkHybridAccountVOAccountVO foreign key (accountUuid) references AccountVO (uuid);
