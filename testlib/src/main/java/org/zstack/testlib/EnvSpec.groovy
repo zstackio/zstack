@@ -94,7 +94,7 @@ class EnvSpec implements Node, ApiHelper {
     private static RestTemplate restTemplate
     protected static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
 
-    private Set<Closure> cleanupClosures = []
+    static Set<Closure> cleanupClosures = []
 
     static List deletionMethods = [
             [CreateZoneAction.metaClass, CreateZoneAction.Result.metaClass, DeleteZoneAction.class],
