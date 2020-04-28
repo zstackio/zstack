@@ -3,14 +3,15 @@ package org.zstack.kvm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.KVMAgentCommands.CheckBridgeResponse;
@@ -18,7 +19,6 @@ import org.zstack.kvm.KVMAgentCommands.CreateBridgeCmd;
 import org.zstack.kvm.KVMAgentCommands.CreateBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
 import org.zstack.network.l3.NetworkGlobalProperty;
-import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
@@ -32,13 +32,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     private static final CLogger logger = Utils.getLogger(KVMRealizeL2NoVlanNetworkBackend.class);
 
     @Autowired
-    private ErrorFacade errf;
-    @Autowired
     private CloudBus bus;
-    @Autowired
-    private ApiTimeoutManager timeoutMgr;
-    @Autowired
-    private L2NetworkManager l2Mgr;
 
     private static String makeBridgeName(String physicalInterfaceName) {
         return "br_" + physicalInterfaceName;

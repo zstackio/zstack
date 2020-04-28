@@ -3,7 +3,7 @@ package org.zstack.kvm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
@@ -17,7 +17,6 @@ import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeCmd;
 import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
 import org.zstack.network.l3.NetworkGlobalProperty;
-import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
@@ -31,11 +30,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
     private static final CLogger logger = Utils.getLogger(KVMRealizeL2VlanNetworkBackend.class);
 
     @Autowired
-    private DatabaseFacade dbf;
-    @Autowired
     private CloudBus bus;
-    @Autowired
-    private L2NetworkManager l2Mgr;
 
     private static String makeBridgeName(String physicalInterfaceName, int vlan) {
         physicalInterfaceName = physicalInterfaceName.substring(0, Math.min(physicalInterfaceName.length(), 7));
@@ -156,15 +151,15 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
 
 	@Override
 	public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
-	    L2VlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), L2VlanNetworkVO.class);
+        final Integer vlanId = getVlanId(l2Network.getUuid());
 		NicTO to = new NicTO();
 		to.setMac(nic.getMac());
         to.setUuid(nic.getUuid());
-		to.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface(), vo.getVlan()));
+		to.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface(), vlanId));
         to.setPhysicalInterface(l2Network.getPhysicalInterface());
 		to.setDeviceId(nic.getDeviceId());
 		to.setNicInternalName(nic.getInternalName());
-		to.setMetaData(String.valueOf(vo.getVlan()));
+		to.setMetaData(String.valueOf(vlanId));
         to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
 
 		return to;
@@ -172,7 +167,14 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
 
     @Override
     public String getBridgeName(L2NetworkInventory l2Network) {
-        L2VlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), L2VlanNetworkVO.class);
-        return makeBridgeName(l2Network.getPhysicalInterface(), vo.getVlan());
+        final Integer vlanId = getVlanId(l2Network.getUuid());
+        return makeBridgeName(l2Network.getPhysicalInterface(), vlanId);
+    }
+
+    private Integer getVlanId(String l2NeworkUuid) {
+        return Q.New(L2VlanNetworkVO.class)
+                .eq(L2VlanNetworkVO_.uuid, l2NeworkUuid)
+                .select(L2VlanNetworkVO_.vlan)
+                .findValue();
     }
 }
