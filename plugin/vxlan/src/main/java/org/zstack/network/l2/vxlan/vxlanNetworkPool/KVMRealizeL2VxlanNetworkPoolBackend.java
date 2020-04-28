@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -19,11 +18,13 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.L2NetworkConstant;
+import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.*;
-import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.vxlan.vtep.CreateVtepMsg;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
 import org.zstack.network.l2.vxlan.vtep.VtepVO_;
@@ -52,11 +53,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
-    private ApiTimeoutManager timeoutMgr;
-    @Autowired
     private CloudBus bus;
-    @Autowired
-    private L2NetworkManager l2Mgr;
 
     private static String VTEP_IP = "vtepIp";
     private static String NEED_POPULATE = "needPopulate";
@@ -145,7 +142,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                     /* vtep is not created */
                 } else if (vtepVOS.size() > 1) {
                     throw new CloudRuntimeException(String.format("multiple vteps[ips: %s] found on host[uuid: %s]",
-                            vtepVOS.stream().map(v -> v.getVtepIp()).collect(Collectors.toSet()), hostUuid));
+                            vtepVOS.stream().map(VtepVO::getVtepIp).collect(Collectors.toSet()), hostUuid));
 
                 } else if (vtepVOS.get(0).getVtepIp().equals(data.get(VTEP_IP))) {
                     logger.debug(String.format(
@@ -229,7 +226,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                 cmd.setVtepIp((String) data.get(VTEP_IP));
                 cmd.setL2Networks(l2networks);
                 cmd.setPeers(vteps.stream()
-                        .map(v -> v.getVtepIp())
+                        .map(VtepVO::getVtepIp)
                         .filter(v -> !v.equals(cmd.getVtepIp()))
                         .collect(Collectors.toList()));
 
@@ -298,7 +295,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
 
                 new While<>(vteps).all((vtep, completion1) -> {
                     Set<String> peers = vteps.stream()
-                            .map(v -> v.getVtepIp())
+                            .map(VtepVO::getVtepIp)
                             .collect(Collectors.toSet());
                     peers.remove(vtep.getVtepIp());
 
@@ -361,7 +358,6 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
 
     @Override
     public KVMAgentCommands.NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
-        VxlanNetworkPoolVO vo = dbf.findByUuid(l2Network.getUuid(), VxlanNetworkPoolVO.class);
         KVMAgentCommands.NicTO to = new KVMAgentCommands.NicTO();
         to.setMac(nic.getMac());
         to.setUuid(nic.getUuid());
