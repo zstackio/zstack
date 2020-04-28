@@ -3,7 +3,7 @@ package org.zstack.kvm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
@@ -27,8 +27,6 @@ import static org.zstack.utils.CollectionDSL.map;
 public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExtensionPoint, KVMCompleteNicInformationExtensionPoint {
     private static final CLogger logger = Utils.getLogger(KVMRealizeL2VlanNetworkBackend.class);
 
-    @Autowired
-    private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
 
@@ -150,20 +148,27 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
 
 	@Override
 	public NicTO completeNicInformation(L2NetworkInventory l2Network, VmNicInventory nic) {
-	    L2VlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), L2VlanNetworkVO.class);
+        final Integer vlanId = getVlanId(l2Network.getUuid());
 		NicTO to = new NicTO();
 		to.setMac(nic.getMac());
         to.setUuid(nic.getUuid());
-		to.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface(), vo.getVlan()));
+		to.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface(), vlanId));
 		to.setDeviceId(nic.getDeviceId());
 		to.setNicInternalName(nic.getInternalName());
-		to.setMetaData(String.valueOf(vo.getVlan()));
+		to.setMetaData(String.valueOf(vlanId));
 		return to;
 	}
 
     @Override
     public String getBridgeName(L2NetworkInventory l2Network) {
-        L2VlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), L2VlanNetworkVO.class);
-        return makeBridgeName(l2Network.getPhysicalInterface(), vo.getVlan());
+        final Integer vlanId = getVlanId(l2Network.getUuid());
+        return makeBridgeName(l2Network.getPhysicalInterface(), vlanId);
+    }
+
+    private Integer getVlanId(String l2NeworkUuid) {
+        return Q.New(L2VlanNetworkVO.class)
+                .eq(L2VlanNetworkVO_.uuid, l2NeworkUuid)
+                .select(L2VlanNetworkVO_.vlan)
+                .findValue();
     }
 }

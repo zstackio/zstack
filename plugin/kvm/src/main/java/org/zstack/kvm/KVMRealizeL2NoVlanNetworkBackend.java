@@ -3,8 +3,6 @@ package org.zstack.kvm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
@@ -32,11 +30,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     private static final CLogger logger = Utils.getLogger(KVMRealizeL2NoVlanNetworkBackend.class);
 
     @Autowired
-    private ErrorFacade errf;
-    @Autowired
     private CloudBus bus;
-    @Autowired
-    private ApiTimeoutManager timeoutMgr;
 
     private static String makeBridgeName(String physicalInterfaceName) {
         return "br_" + physicalInterfaceName;
