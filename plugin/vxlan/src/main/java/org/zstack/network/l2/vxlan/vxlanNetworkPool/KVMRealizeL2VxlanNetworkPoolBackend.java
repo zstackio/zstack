@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -51,8 +50,6 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
 
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private ApiTimeoutManager timeoutMgr;
     @Autowired
     private CloudBus bus;
 
@@ -359,7 +356,6 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
 
     @Override
     public KVMAgentCommands.NicTO completeNicInformation(L2NetworkInventory l2Network, VmNicInventory nic) {
-        VxlanNetworkPoolVO vo = dbf.findByUuid(l2Network.getUuid(), VxlanNetworkPoolVO.class);
         KVMAgentCommands.NicTO to = new KVMAgentCommands.NicTO();
         to.setMac(nic.getMac());
         to.setUuid(nic.getUuid());

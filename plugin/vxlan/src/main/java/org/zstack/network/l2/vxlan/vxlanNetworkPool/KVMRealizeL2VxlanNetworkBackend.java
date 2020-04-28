@@ -6,8 +6,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -54,11 +52,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
-    private ErrorFacade errf;
-    @Autowired
     private CloudBus bus;
-    @Autowired
-    private ApiTimeoutManager timeoutMgr;
 
     private static String VTEP_IP = "vtepIp";
     private static String NEED_POPULATE = "needPopulate";
@@ -332,21 +326,28 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
     @Override
     public KVMAgentCommands.NicTO completeNicInformation(L2NetworkInventory l2Network, VmNicInventory nic) {
-        VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class);
+        final Integer vni = getVni(l2Network.getUuid());
         KVMAgentCommands.NicTO to = new KVMAgentCommands.NicTO();
         to.setMac(nic.getMac());
         to.setUuid(nic.getUuid());
-        to.setBridgeName(makeBridgeName(vo.getVni()));
+        to.setBridgeName(makeBridgeName(vni));
         to.setDeviceId(nic.getDeviceId());
         to.setNicInternalName(nic.getInternalName());
-        to.setMetaData(String.valueOf(vo.getVni()));
+        to.setMetaData(String.valueOf(vni));
         return to;
     }
 
     @Override
     public String getBridgeName(L2NetworkInventory l2Network) {
-        VxlanNetworkVO vo = dbf.findByUuid(l2Network.getUuid(), VxlanNetworkVO.class);
-        return makeBridgeName(vo.getVni());
+        final Integer vni = getVni(l2Network.getUuid());
+        return makeBridgeName(vni);
+    }
+
+    private Integer getVni(String l2NetworkUuid) {
+        return Q.New(VxlanNetworkVO.class)
+                .eq(VxlanNetworkVO_.uuid, l2NetworkUuid)
+                .select(VxlanNetworkVO_.vni)
+                .findValue();
     }
 
     public Map<String, String> getAttachedCidrs(String l2NetworkUuid) {
