@@ -1416,6 +1416,14 @@
     "message_en": "Cannot attach the usb device to vm, possibly reasons include: the device is not enabled or had been attached to a vm, or the device and the vm are not on same host."
   },
   {
+    "category": "VM",
+    "code": "1046",
+    "method": "regex",
+    "regex": "the host that the usb device\\[.*] pluged in is not in valid state\\[.*] or status\\[.*]",
+    "message_cn": "接入USB设备的物理机当前不是启用且已连接的状态。",
+    "message_en": "The host which the usb device plugged in is not Enabled and Connected."
+  },
+  {
     "category": "VOLUME",
     "code": "1000",
     "method": "regex",
