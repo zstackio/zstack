@@ -331,9 +331,22 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             return subPendingMap.get(deduplicateStr).intValue();
         }
 
-        void removeSubPending(String deduplicateStr) {
+        void removeSubPending(String deduplicateStr, boolean removeIfZero) {
             subPendingMap.computeIfPresent(deduplicateStr, (k, v) -> {
-                if (v.decrementAndGet() == 0) {
+                int r = v.decrementAndGet();
+                if (r < 0) {
+                    if (removeIfZero) {
+                        return null;
+                    }
+                }
+                return v;
+            });
+        }
+
+        void removeSubPendingZero(String deduplicateStr) {
+            subPendingMap.computeIfPresent(deduplicateStr, (k, v) -> {
+                int r = v.intValue();
+                if (r == 0) {
                     return null;
                 }
                 return v;
@@ -342,16 +355,17 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
         void warningAndRemove(ChainFuture task, int length, int queueLength) {
             logger.warn(String.format("[%s] max pending size: %d, pending now: %d, throw the task: %s!", task.getTask().getDeduplicateString(), length, queueLength, task.getTask().getName()));
-            removeSubPending(task.getTask().getDeduplicateString());
+            removeSubPending(task.getTask().getDeduplicateString(), true);
         }
 
         boolean addTask(ChainFuture task, int length) {
             if (length != -1 && CoreGlobalProperty.CHAIN_TASK_QOS) {
                 DebugUtils.Assert(task.getTask().getDeduplicateString() != null, "deduplicate String must be set if max pending string has been set!");
+                AtomicInteger r = subPendingMap.get(task.getTask().getDeduplicateString());
                 int queueLength = addSubPending(task.getTask().getDeduplicateString());
                 if (queueLength > length) {
                     synchronized (runningQueue) {
-                        if (length != 0 || queueLength != 1 || runningQueue.size() != 0) {
+                        if (length != 0 || queueLength != 1 || r != null) {
                             warningAndRemove(task, length, queueLength);
                             return false;
                         }
@@ -415,7 +429,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                     }
 
                     if (cf.getTask().getDeduplicateString() != null) {
-                        removeSubPending(cf.getTask().getDeduplicateString());
+                        removeSubPending(cf.getTask().getDeduplicateString(), false);
                     }
 
                     cf.run(() -> {
@@ -427,7 +441,12 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                                     }));
                             runningQueue.remove(cf);
                             logger.debug(String.format("Finish executing runningQueue: %s, task name: %s", syncSignature, cf.getTask().getName()));
+
+                            if (cf.getTask().getDeduplicateString() != null) {
+                                removeSubPendingZero(cf.getTask().getDeduplicateString());
+                            }
                         }
+
 
                         runQueue();
                     });
