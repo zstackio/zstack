@@ -76,6 +76,9 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         inv.setInternalName(VmNicVO.generateNicInternalName(vmSpec.getVmInventory().getInternalId(), inv.getDeviceId()));
         inv.setMac(NetworkUtils.generateMacWithDeviceId((short) inv.getDeviceId()));
         inv.setHypervisorType(vmSpec.getVmInventory().getHypervisorType());
+        inv.setDriverType(ImagePlatform.valueOf(vmSpec.getVmInventory().getPlatform()).isParaVirtualization() ?
+                nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
+        inv.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
 
         if (nicSpec.getIp() == null) {
             String strategy = nicSpec.getAllocatorStrategy() == null ? L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY : nicSpec.getAllocatorStrategy();
@@ -142,9 +145,8 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                     nvo.setInternalName(nic.getInternalName());
                     nvo.setAccountUuid(acntUuid);
                     nvo.setIpVersion(nic.getIpVersion());
-                    nvo.setDriverType(ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization() ?
-                            nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
-                    nvo.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
+                    nvo.setDriverType(nic.getDriverType());
+                    nvo.setType(nic.getType());
                     persist(nvo);
                     if (nic.getUsedIpUuid() != null) {
                         SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, nic.getUsedIpUuid()).set(UsedIpVO_.vmNicUuid, nvo.getUuid()).update();
@@ -152,7 +154,6 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                 });
             }
         }.execute();
-
         chain.next();
     }
 

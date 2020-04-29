@@ -120,6 +120,10 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
             if (nic.getDriverType() != null) {
                 return;
             }
+
+            if (nic.getType() != VmInstanceConstant.VIRTUAL_NIC_TYPE) {
+                return;
+            }
             SQL.New(VmNicVO.class)
                     .eq(VmNicVO_.uuid, nic.getUuid())
                     .set(VmNicVO_.driverType, getNicDefaultDriver(nic.getVmInstanceUuid()))

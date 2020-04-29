@@ -2066,6 +2066,11 @@ public class KVMHost extends HostBase implements Host {
             to.setIps(getCleanTrafficIp(nic));
         }
 
+        if (!nic.getType().equals(VmInstanceConstant.VIRTUAL_NIC_TYPE)) {
+            return to;
+        }
+
+        // build vhost addon
         if (to.getDriverType() == null) {
             if (nic.getDriverType() != null) {
                 to.setDriverType(nic.getDriverType());
