@@ -369,3 +369,5 @@ alter table HybridAccountVO
     add constraint uniqAccountUuid unique (accountUuid, akey, type);
 alter table HybridAccountVO
     add constraint fkHybridAccountVOAccountVO foreign key (accountUuid) references AccountVO (uuid);
+
+UPDATE AlarmVO SET period = 60 WHERE uuid = "65e8f1a4892231b692cc7a881581f3da" and period != 60;
