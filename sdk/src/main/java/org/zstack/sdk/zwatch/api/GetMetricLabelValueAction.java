@@ -31,6 +31,12 @@ public class GetMetricLabelValueAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String metricName;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,253402271999L}, noTrim = false)
+    public java.lang.Long startTime;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,253402271999L}, noTrim = false)
+    public java.lang.Long endTime;
+
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List labelNames;
 
