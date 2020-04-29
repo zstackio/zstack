@@ -89,9 +89,13 @@ class ASTNode {
          Condition right
     }
 
+    static class OrderByExpr extends ASTNode {
+        String field
+        String direction
+    }
+
     static class OrderBy extends ASTNode {
-         String field
-         String direction
+        List<OrderByExpr> exprs
     }
 
     static class Limit extends ASTNode {

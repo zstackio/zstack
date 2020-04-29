@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.7
+// Generated from D:/ZStack/zstack/search/src/main/antlr4\ZQL.g4 by ANTLR 4.7
 
 package org.zstack.zql.antlr4;
 
@@ -157,6 +157,12 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitWithFunction(ZQLParser.WithFunctionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#orderByExpr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitOrderByExpr(ZQLParser.OrderByExprContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ZQLParser#orderBy}.
 	 * @param ctx the parse tree

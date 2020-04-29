@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.7
+// Generated from D:/ZStack/zstack/search/src/main/antlr4\ZQL.g4 by ANTLR 4.7
 
 package org.zstack.zql.antlr4;
 
@@ -277,6 +277,18 @@ public class ZQLBaseListener implements ZQLListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitWithFunction(ZQLParser.WithFunctionContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterOrderByExpr(ZQLParser.OrderByExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitOrderByExpr(ZQLParser.OrderByExprContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

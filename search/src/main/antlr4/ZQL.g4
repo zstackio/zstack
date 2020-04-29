@@ -87,8 +87,12 @@ queryTargetWithFunction
     | function '(' queryTargetWithFunction ')' #withFunction
     ;
 
+orderByExpr
+    : ID ORDER_BY_VALUE
+    ;
+
 orderBy
-    : ORDER_BY ID ORDER_BY_VALUE
+    : ORDER_BY orderByExpr (',' orderByExpr)*
     ;
 
 limit

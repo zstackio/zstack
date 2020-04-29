@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.7
+// Generated from D:/ZStack/zstack/search/src/main/antlr4\ZQL.g4 by ANTLR 4.7
 
 package org.zstack.zql.antlr4;
 
@@ -167,6 +167,13 @@ public class ZQLBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements ZQ
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitWithFunction(ZQLParser.WithFunctionContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitOrderByExpr(ZQLParser.OrderByExprContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

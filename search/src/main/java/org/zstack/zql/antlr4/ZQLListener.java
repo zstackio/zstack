@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.7
+// Generated from D:/ZStack/zstack/search/src/main/antlr4\ZQL.g4 by ANTLR 4.7
 
 package org.zstack.zql.antlr4;
 
@@ -255,6 +255,16 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitWithFunction(ZQLParser.WithFunctionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#orderByExpr}.
+	 * @param ctx the parse tree
+	 */
+	void enterOrderByExpr(ZQLParser.OrderByExprContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#orderByExpr}.
+	 * @param ctx the parse tree
+	 */
+	void exitOrderByExpr(ZQLParser.OrderByExprContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ZQLParser#orderBy}.
 	 * @param ctx the parse tree
