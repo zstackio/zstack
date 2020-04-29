@@ -8,9 +8,7 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.asyncbatch.While;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -167,6 +165,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private VipConfigProxy vipProxy;
     @Autowired
     protected VirutalRouterDefaultL3ConfigProxy defaultL3ConfigProxy;
+    @Autowired
+    private EventFacade evf;
+    @Autowired
+    private ResourceDestinationMaker destMaker;
 
 
     @Override
@@ -533,12 +535,36 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 		return bus.makeLocalServiceId(VirtualRouterConstant.SERVICE_ID);
 	}
 
+	private void rebootVirtualRouterVmOnRebootEvent() {
+        evf.on(VmCanonicalEvents.VM_LIBVIRT_REPORT_REBOOT, new EventCallback<Object>() {
+            @Override
+            protected void run(Map<String, String> tokens, Object data) {
+                String vmUuid = (String) data;
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vmUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    return;
+                }
+
+                if (destMaker.isManagedByUs(vmUuid)) {
+                    return;
+                }
+
+                RebootVmInstanceMsg msg = new RebootVmInstanceMsg();
+                msg.setVmInstanceUuid(vmUuid);
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
+                bus.send(msg);
+            }
+        });
+    }
+
 	@Override
 	public boolean start() {
 		populateExtensions();
         deployAnsible();
 		buildWorkFlowBuilder();
         installSystemValidator();
+
+        rebootVirtualRouterVmOnRebootEvent();
 
         VirtualRouterSystemTags.VR_PARALLELISM_DEGREE.installLifeCycleListener(new SystemTagLifeCycleListener() {
             @Override
