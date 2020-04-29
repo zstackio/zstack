@@ -19,6 +19,8 @@ import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import static org.zstack.core.Platform.operr;
+
 /**
  * Created by GuoYi on 3/12/18
  */
@@ -39,7 +41,7 @@ public class UpdateClusterOSJob implements LongJob {
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
                     UpdateClusterOSReply rly = reply.castReply();
-                    job.setJobResultStr(JSONObjectUtil.toJsonString(rly.getResults()));
+                    job.setJobResult(JSONObjectUtil.toJsonString(rly.getResults()));
                     dbf.update(job);
                     completion.success(null);
                 } else {
@@ -53,5 +55,10 @@ public class UpdateClusterOSJob implements LongJob {
     public void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {
         // TODO
         completion.fail(Platform.operr("not supported"));
+    }
+
+    @Override
+    public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
+        completion.fail(operr("not supported"));
     }
 }

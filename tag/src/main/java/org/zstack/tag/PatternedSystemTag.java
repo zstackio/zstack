@@ -130,6 +130,14 @@ public class PatternedSystemTag extends SystemTag {
         return  vo == null ? null : SystemTagInventory.valueOf(vo);
     }
 
+    public List<SystemTagInventory> getTagInventories(List<String> resourceUuids) {
+        SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
+        q.add(SystemTagVO_.resourceUuid, Op.IN, resourceUuids);
+        q.add(SystemTagVO_.resourceType, Op.EQ, getResourceClass().getSimpleName());
+        q.add(SystemTagVO_.tag, Op.LIKE, useTagFormat());
+        return SystemTagInventory.valueOf(q.list());
+    }
+
     public List<SystemTagInventory> getTagInventories(String resourceUuid) {
         return SystemTagInventory.valueOf(Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, getResourceClass().getSimpleName()).
                 eq(SystemTagVO_.resourceUuid, resourceUuid).like(SystemTagVO_.tag, useTagFormat()).list());

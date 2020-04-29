@@ -177,6 +177,17 @@ public class ErrorCode implements Serializable, Cloneable {
     }
 
     public String getReadableDetails() {
+        String rootCauseDetails = getRootCauseDetails();
+        if (rootCauseDetails != null) {
+            return rootCauseDetails;
+        } else if (details != null) {
+            return details;
+        } else {
+            return description;
+        }
+    }
+
+    public String getRootCauseDetails() {
         ErrorCode root = this;
         do {
             if (root.cause != null) {
@@ -186,7 +197,13 @@ public class ErrorCode implements Serializable, Cloneable {
             }
         } while (true);
 
-        return root.getDetails() == null ? root.getDescription() : root.getDetails();
+        if (root == this) {
+            return null;
+        } else if (root.getDetails() == null) {
+            return root.getDescription();
+        } else {
+            return root.getDetails();
+        }
     }
 
     public ErrorCodeElaboration getMessages() {
@@ -214,7 +231,7 @@ public class ErrorCode implements Serializable, Cloneable {
         if (errorCode == null) {
             return null;
         }
-        JobResultError error = new JobResultError(errorCode.messages, errorCode.details);
+        JobResultError error = JobResultError.valueOf(errorCode);
         return JSONObjectUtil.toJsonString(error);
     }
 }

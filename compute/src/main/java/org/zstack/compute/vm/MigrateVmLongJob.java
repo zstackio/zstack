@@ -19,6 +19,8 @@ import org.zstack.header.vm.*;
 import org.zstack.header.longjob.LongJob;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import static org.zstack.core.Platform.operr;
+
 
 /**
  * Created by on camile 2018/3/7.
@@ -72,6 +74,11 @@ public class MigrateVmLongJob implements LongJob {
                 }
             }
         });
+    }
+
+    @Override
+    public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
+        completion.fail(operr("not supported"));
     }
 
     @Override
