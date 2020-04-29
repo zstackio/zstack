@@ -11,6 +11,7 @@ import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.vm.VmPriorityConfigVO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
+import org.zstack.utils.gson.JSONObjectUtil;
 
 import java.util.*;
 
@@ -134,8 +135,32 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class AttachNicResponse extends AgentResponse {
+    public static class PciAddressConfig {
+        public String type;
+        public String domain;
+        public String bus;
+        public String slot;
+        public String function;
 
+        public static PciAddressConfig fromString(String address) {
+            return JSONObjectUtil.toObject(address, PciAddressConfig.class);
+        }
+
+        public String toString() {
+            return JSONObjectUtil.toJsonString(this);
+        }
+    }
+
+    public static class AttachNicResponse extends AgentResponse {
+        private PciAddressConfig pciAddress;
+
+        public PciAddressConfig getPciAddress() {
+            return pciAddress;
+        }
+
+        public void setPciAddress(PciAddressConfig pciAddress) {
+            this.pciAddress = pciAddress;
+        }
     }
 
     public static class UpdateNicCmd extends AgentCommand implements VmAddOnsCmd {
@@ -654,6 +679,7 @@ public class KVMAgentCommands {
         private Integer mtu;
         private String driverType;
         private VHostAddOn vHostAddOn;
+        private PciAddressConfig pci;
 
         // only for vf nic
         private String vlanId;
@@ -777,6 +803,14 @@ public class KVMAgentCommands {
 
         public void setvHostAddOn(VHostAddOn vHostAddOn) {
             this.vHostAddOn = vHostAddOn;
+        }
+
+        public PciAddressConfig getPci() {
+            return pci;
+        }
+
+        public void setPci(PciAddressConfig pci) {
+            this.pci = pci;
         }
     }
 

@@ -5,6 +5,7 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTag;
@@ -51,4 +52,8 @@ public class KVMSystemTags {
     public static PatternedSystemTag VM_PREDEFINED_PCI_BRIDGE_NUM = new PatternedSystemTag(
             String.format("vm::pci::bridge::num::{%s}",
                     VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN), VmInstanceVO.class);
+
+    public static final String VMNIC_PCI_ADDRESS_TOKEN = "pci";
+    public static PatternedSystemTag VMNIC_PCI_ADDRESS = new PatternedSystemTag(
+            String.format("vmnic::{%s}", VMNIC_PCI_ADDRESS_TOKEN), VmNicVO.class);
 }
