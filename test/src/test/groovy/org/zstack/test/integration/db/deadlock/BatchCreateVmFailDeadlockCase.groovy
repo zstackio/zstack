@@ -22,6 +22,8 @@ import org.zstack.testlib.SubCase
 import org.zstack.testlib.Test
 import org.zstack.utils.data.SizeUnit
 import org.zstack.core.db.Q
+
+import javax.persistence.LockTimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 import org.zstack.core.db.SQL
 
@@ -132,7 +134,7 @@ class BatchCreateVmFailDeadlockCase extends SubCase{
 
             dbf = bean(DatabaseFacade.class)
 
-            String num = System.getProperty("num")
+            String num = System.getProperty("resourceVONum")
             int numberOfResources = num == null ? 3000 : Integer.parseInt(num)
             List<ResourceVO> mockResourceVOs = persistResourceVOs(numberOfResources)
 
@@ -177,7 +179,9 @@ class BatchCreateVmFailDeadlockCase extends SubCase{
         AtomicInteger count = new AtomicInteger(0)
         boolean dbDeadlockOccurred = false
         def threads = []
-        for (int i = 0; i < 100; i++) {
+        String num = System.getProperty("vmNum")
+        int vmNum = num == null ? 100 : Integer.parseInt(num)
+        for (int i = 0; i < vmNum; i++) {
             def thread = Thread.start {
                 CreateVmInstanceAction action = new CreateVmInstanceAction(
                         name : "test-" + i,
@@ -190,12 +194,14 @@ class BatchCreateVmFailDeadlockCase extends SubCase{
                 )
 
                 CreateVmInstanceAction.Result ret = action.call()
-                count.incrementAndGet()
                 if (ret.error != null) {
                     if (ret.error.getDetails().contains(LockAcquisitionException.class.simpleName)) {
                         dbDeadlockOccurred = true
+                    } else if (ret.error.getDetails().contains(LockTimeoutException.class.simpleName)) {
+                        dbDeadlockOccurred = true
                     }
                 }
+                count.incrementAndGet()
             }
 
             threads.add(thread)
@@ -203,8 +209,8 @@ class BatchCreateVmFailDeadlockCase extends SubCase{
 
         threads.each { it.join() }
 
-        retryInSecs(40) {
-            assert count.get() >= 100
+        retryInSecs(vmNum, 3) {
+            assert count.get() >= vmNum
         }
         assert !dbDeadlockOccurred
 

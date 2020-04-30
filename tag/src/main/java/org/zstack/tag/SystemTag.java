@@ -248,12 +248,10 @@ public class SystemTag {
                     if (e.getCause() != null && e.getCause() instanceof TransactionException) {
                         if (exceptionCanBeIgnored) {
                             return null;
-                        } else {
-                            throw e;
                         }
-                    } else {
-                        throw e;
                     }
+
+                    throw e;
                 }
             }
 
