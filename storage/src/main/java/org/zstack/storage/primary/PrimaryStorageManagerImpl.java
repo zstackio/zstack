@@ -148,6 +148,11 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             bus.reply(msg, sreply);
             return;
         }
+        if (!PrimaryStorageSystemTags.PRIMARY_STORAGE_VENDOR.hasTag(msg.getUuid())) {
+            bus.reply(msg, sreply);
+            return;
+        }
+
         GetPrimaryStorageLicenseInfoMsg gmsg = new GetPrimaryStorageLicenseInfoMsg();
         gmsg.setPrimaryStorageUuid(msg.getUuid());
         bus.makeTargetServiceIdByResourceUuid(gmsg, PrimaryStorageConstant.SERVICE_ID, msg.getUuid());
