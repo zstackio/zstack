@@ -16,6 +16,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.job.JobQueueFacade;
 import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.MergeQueue;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.trash.StorageTrash;
@@ -57,6 +58,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
@@ -486,7 +488,14 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     protected void handle(RecalculatePrimaryStorageCapacityMsg msg) {
         RecalculatePrimaryStorageCapacityReply reply = new RecalculatePrimaryStorageCapacityReply();
         PrimaryStorageCapacityRecalculator recalculator = new PrimaryStorageCapacityRecalculator();
-        recalculator.psUuids = Arrays.asList(msg.getPrimaryStorageUuid());
+        recalculator.psUuids = Collections.singletonList(msg.getPrimaryStorageUuid());
+        new MergeQueue().addTask(String.format("recalculate primarystorage capacity: %s", msg.getPrimaryStorageUuid()), new Supplier<Void>() {
+            @Override
+            public Void get() {
+                recalculator.recalculate();
+                return null;
+            }
+        }).run();
         recalculator.recalculate();
         bus.reply(msg, reply);
     }

@@ -215,22 +215,29 @@ public class StringSimilarity {
         return false;
     }
 
+    private static void logSearchSpend(String sub, long start) {
+        logger.debug(String.format("spend %s ms to search elaboration \"%s\"", System.currentTimeMillis() - start,
+                sub.length() > 50 ? sub.substring(0 , 50) + "..." : sub));
+    }
+
     public static ErrorCodeElaboration findSimilary(String sub, Object...args) {
         if (sub == null || sub.isEmpty() || isRedundance(sub)) {
             return null;
         }
 
+        long start = System.currentTimeMillis();
         String formatSub = formatSrc(sub);
         if (errors.get(formatSub) != null) {
+            logSearchSpend(sub, start);
             return errors.get(formatSub);
         }
 
         if (missed.get(formatSub) != null) {
+            logSearchSpend(sub, start);
             return null;
         }
 
         ErrorCodeElaboration err = null;
-        long start = System.currentTimeMillis();
         try {
             logger.debug(String.format("start to find similary from: %s", String.format(formatSub, args)));
             err = findMostSimilaryRegex(String.format(formatSub, args));
@@ -252,10 +259,7 @@ public class StringSimilarity {
             missed.put(formatSub, true);
         }
 
-        long end = System.currentTimeMillis();
-        logger.debug(String.format("spend %s ms to search elaboration \"%s\"", end - start,
-                sub.length() > 50 ? sub.substring(0 , 50) + "..." : sub));
-
+        logSearchSpend(sub, start);
         return err;
     }
 

@@ -189,7 +189,14 @@ class CreateVmConcurrentlyCase extends SubCase {
             def flatl3 = env.inventoryByName("l3") as L3NetworkInventory
             def host = env.inventoryByName("host1") as HostInventory
 
-            prepareNewHosts(host.clusterUuid)
+            def startCreateHosts = System.currentTimeMillis()
+            String newHosts = System.getProperty("newHosts")
+            int num = 0
+            if (newHosts != null) {
+                num = Integer.parseInt(newHosts)
+            }
+            prepareNewHosts(host.clusterUuid, num)
+            logger.debug(String.format("create ${num} Hosts spends: %s ms", System.currentTimeMillis() - startCreateHosts))
 
             StopWatch sw = Utils.getStopWatch()
             int n = 50
@@ -213,36 +220,38 @@ class CreateVmConcurrentlyCase extends SubCase {
         }
     }
 
-    void prepareNewHosts(String clusterUuid) {
-        String newHosts = System.getProperty("newHosts")
-        if (newHosts != null) {
-            int nhost = Integer.parseInt(newHosts)
-            def count = new AtomicInteger(0)
-            logger.info(String.format("XXX: additional host: %d", nhost))
-            int c = 0
-            for (int i = 0; i < nhost; i++) {
-                int idx = (i + 2 + 1) % 256
-                if (idx == 0) {
-                    c += 1
+    void prepareNewHosts(String clusterUuid, int num) {
+        int nhost = num
+        def count = new AtomicInteger(0)
+        logger.info(String.format("XXX: additional host: %d", nhost))
+        int c = 0
+        def s1 = System.currentTimeMillis()
+        def s2 = System.currentTimeMillis()
+        for (int i = 0; i < nhost; i++) {
+            int idx = (i + 2 + 1) % 256
+            if (idx == 0) {
+                c += 1
+            }
+            new AddKVMHostAction(
+                    name: "host" + idx,
+                    managementIp: "127.0.$c.$idx",
+                    username: "root",
+                    password: "password",
+                    clusterUuid: clusterUuid,
+                    sessionId: adminSession(),
+            ).call(new Completion<AddKVMHostAction.Result>() {
+                @Override
+                void complete(AddKVMHostAction.Result ret) {
+                    count.incrementAndGet()
+                    logger.info(String.format("add host ${count.intValue()} spend: %s ms", System.currentTimeMillis() - s1))
+                    logger.info(String.format("add host ${count.intValue()} spend from last time: %s ms", System.currentTimeMillis() - s2))
+                    s2 = System.currentTimeMillis()
                 }
-                new AddKVMHostAction(
-                        name: "host" + idx,
-                        managementIp: "127.0.$c.$idx",
-                        username: "root",
-                        password: "password",
-                        clusterUuid: clusterUuid,
-                        sessionId: adminSession(),
-                ).call(new Completion<AddKVMHostAction.Result>() {
-                    @Override
-                    void complete(AddKVMHostAction.Result ret) {
-                        count.incrementAndGet()
-                    }
-                })
-            }
+            })
+        }
 
-            while (count.get() < nhost) {
-                TimeUnit.SECONDS.sleep(1)
-            }
+        while (count.get() < nhost) {
+            TimeUnit.SECONDS.sleep(1)
         }
     }
 
