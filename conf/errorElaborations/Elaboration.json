@@ -248,6 +248,14 @@
     "message_en": "elaboration code must be number"
   },
   {
+    "category": "ELABORATION",
+    "code": "1006",
+    "method": "regex",
+    "regex": "No service deals with message: .*",
+    "message_cn": "内部错误：没有服务处理的消息",
+    "message_en": "Internal Error: No service deals with message"
+  },
+  {
     "category": "HOST",
     "code": "1000",
     "method": "distance",
