@@ -21,6 +21,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -58,6 +60,8 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
             validate((APIDeleteLongJobMsg) msg);
         } else if (msg instanceof APIRerunLongJobMsg) {
             validate((APIRerunLongJobMsg) msg);
+        } else if (msg instanceof APIResumeLongJobMsg) {
+            validate((APIResumeLongJobMsg) msg);
         }
 
         return msg;
@@ -106,7 +110,7 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
         vo.setJobName(msg.getJobName());
         vo.setJobData(msg.getJobData());
         vo.setState(LongJobState.Succeeded);
-        vo.setJobResultStr(LongJobUtils.succeeded);
+        vo.setJobResult(LongJobUtils.succeeded);
         vo.setTargetResourceUuid(msg.getTargetResourceUuid());
         vo.setManagementNodeUuid(Platform.getManagementServerId());
         vo.setAccountUuid(msg.getSession().getAccountUuid());
@@ -169,6 +173,20 @@ public class LongJobApiInterceptor implements ApiMessageInterceptor, Component {
         }
 
         dbf.updateAndRefresh(vo);
+    }
+
+    private void validate(APIResumeLongJobMsg msg) {
+        Tuple t = Q.New(LongJobVO.class)
+                .select(LongJobVO_.state, LongJobVO_.managementNodeUuid)
+                .eq(LongJobVO_.uuid, msg.getUuid())
+                .findTuple();
+
+        if (t.get(0, LongJobState.class) != LongJobState.Suspended) {
+            throw new ApiMessageInterceptionException(argerr("can only resume longjob that is Suspended"));
+        }
+
+        Optional.ofNullable(t.get(1, String.class)).ifPresent(mnId ->
+                bus.makeServiceIdByManagementNodeId(msg, LongJobConstants.SERVICE_ID, mnId));
     }
 
     @Override

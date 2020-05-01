@@ -79,6 +79,16 @@ public class SourceClassMap {
 			put("org.zstack.drs.entity.ClusterDRSInventory", "org.zstack.sdk.ClusterDRSInventory");
 			put("org.zstack.drs.entity.DRSAdviceInventory", "org.zstack.sdk.DRSAdviceInventory");
 			put("org.zstack.drs.entity.DRSVmMigrationActivityInventory", "org.zstack.sdk.DRSVmMigrationActivityInventory");
+			put("org.zstack.externalbackup.BackupStorageExternalBackupInfo", "org.zstack.sdk.BackupStorageExternalBackupInfo");
+			put("org.zstack.externalbackup.ExternalBackupInventory", "org.zstack.sdk.ExternalBackupInventory");
+			put("org.zstack.externalbackup.ExternalBackupState", "org.zstack.sdk.ExternalBackupState");
+			put("org.zstack.externalbackup.ResourceExternalBackupInfo", "org.zstack.sdk.ResourceExternalBackupInfo");
+			put("org.zstack.externalbackup.VmExternalBackupInfo", "org.zstack.sdk.VmExternalBackupInfo");
+			put("org.zstack.externalbackup.VolumeExternalBackupInfo", "org.zstack.sdk.VolumeExternalBackupInfo");
+			put("org.zstack.externalbackup.zbox.ZBoxBackupInventory", "org.zstack.sdk.ZBoxBackupInventory");
+			put("org.zstack.externalbackup.zbox.ZBoxBackupStorageBackupInfo", "org.zstack.sdk.ZBoxBackupStorageBackupInfo");
+			put("org.zstack.externalbackup.zbox.ZBoxVmBackupInfo", "org.zstack.sdk.ZBoxVmBackupInfo");
+			put("org.zstack.externalbackup.zbox.ZBoxVolumeBackupInfo", "org.zstack.sdk.ZBoxVolumeBackupInfo");
 			put("org.zstack.guesttools.GuestToolsInventory", "org.zstack.sdk.GuestToolsInventory");
 			put("org.zstack.header.acl.AccessControlListEntryInventory", "org.zstack.sdk.AccessControlListEntryInventory");
 			put("org.zstack.header.acl.AccessControlListInventory", "org.zstack.sdk.AccessControlListInventory");
@@ -576,6 +586,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AutoScalingTemplateInventory", "org.zstack.autoscaling.template.AutoScalingTemplateInventory");
 			put("org.zstack.sdk.AutoScalingVmTemplateInventory", "org.zstack.autoscaling.template.AutoScalingVmTemplateInventory");
 			put("org.zstack.sdk.BackupMode", "org.zstack.header.storage.backup.BackupMode");
+			put("org.zstack.sdk.BackupStorageExternalBackupInfo", "org.zstack.externalbackup.BackupStorageExternalBackupInfo");
 			put("org.zstack.sdk.BackupStorageInventory", "org.zstack.header.storage.backup.BackupStorageInventory");
 			put("org.zstack.sdk.BaremetalBondingInventory", "org.zstack.header.baremetal.network.BaremetalBondingInventory");
 			put("org.zstack.sdk.BaremetalChassisInventory", "org.zstack.header.baremetal.chassis.BaremetalChassisInventory");
@@ -637,6 +648,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.EmailTriggerActionInventory", "org.zstack.monitoring.actions.EmailTriggerActionInventory");
 			put("org.zstack.sdk.ErrorCode", "org.zstack.header.errorcode.ErrorCode");
 			put("org.zstack.sdk.ErrorCodeList", "org.zstack.header.errorcode.ErrorCodeList");
+			put("org.zstack.sdk.ExternalBackupInventory", "org.zstack.externalbackup.ExternalBackupInventory");
+			put("org.zstack.sdk.ExternalBackupState", "org.zstack.externalbackup.ExternalBackupState");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
 			put("org.zstack.sdk.FiberChannelStorageInventory", "org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory");
 			put("org.zstack.sdk.FirewallRuleState", "org.zstack.vpcfirewall.entity.FirewallRuleState");
@@ -810,6 +823,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ReplicationState", "org.zstack.storage.primary.ministorage.ReplicationState");
 			put("org.zstack.sdk.ResourceBindableConfigStruct", "org.zstack.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct");
 			put("org.zstack.sdk.ResourceConfigInventory", "org.zstack.resourceconfig.ResourceConfigInventory");
+			put("org.zstack.sdk.ResourceExternalBackupInfo", "org.zstack.externalbackup.ResourceExternalBackupInfo");
 			put("org.zstack.sdk.ResourceInventory", "org.zstack.header.vo.ResourceInventory");
 			put("org.zstack.sdk.ResourceSpending", "org.zstack.billing.ResourceSpending");
 			put("org.zstack.sdk.ResourceStackInventory", "org.zstack.header.cloudformation.ResourceStackInventory");
@@ -906,6 +920,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VmCPUBillingInventory", "org.zstack.billing.generator.vm.cpu.VmCPUBillingInventory");
 			put("org.zstack.sdk.VmCPUSpendingDetails", "org.zstack.billing.spendingcalculator.vm.VmCPUSpendingDetails");
 			put("org.zstack.sdk.VmCdRomInventory", "org.zstack.header.vm.cdrom.VmCdRomInventory");
+			put("org.zstack.sdk.VmExternalBackupInfo", "org.zstack.externalbackup.VmExternalBackupInfo");
 			put("org.zstack.sdk.VmInstanceInventory", "org.zstack.header.vm.VmInstanceInventory");
 			put("org.zstack.sdk.VmInstanceMdevDeviceSpecRefInventory", "org.zstack.pciDevice.specification.mdev.VmInstanceMdevDeviceSpecRefInventory");
 			put("org.zstack.sdk.VmInstancePciDeviceSpecRefInventory", "org.zstack.pciDevice.specification.pci.VmInstancePciDeviceSpecRefInventory");
@@ -922,6 +937,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VniRangeInventory", "org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeInventory");
 			put("org.zstack.sdk.VolumeBackupInventory", "org.zstack.header.storage.backup.VolumeBackupInventory");
 			put("org.zstack.sdk.VolumeBackupStorageRefInventory", "org.zstack.header.storage.backup.VolumeBackupStorageRefInventory");
+			put("org.zstack.sdk.VolumeExternalBackupInfo", "org.zstack.externalbackup.VolumeExternalBackupInfo");
 			put("org.zstack.sdk.VolumeFormatReplyStruct", "org.zstack.header.volume.APIGetVolumeFormatReply$VolumeFormatReplyStruct");
 			put("org.zstack.sdk.VolumeInventory", "org.zstack.header.volume.VolumeInventory");
 			put("org.zstack.sdk.VolumeSnapshotBackupStorageRefInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageRefInventory");
@@ -954,10 +970,14 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VtepInventory", "org.zstack.network.l2.vxlan.vtep.VtepInventory");
 			put("org.zstack.sdk.WebhookInventory", "org.zstack.header.core.webhooks.WebhookInventory");
 			put("org.zstack.sdk.XDragonHostInventory", "org.zstack.xdragon.XDragonHostInventory");
+			put("org.zstack.sdk.ZBoxBackupInventory", "org.zstack.externalbackup.zbox.ZBoxBackupInventory");
+			put("org.zstack.sdk.ZBoxBackupStorageBackupInfo", "org.zstack.externalbackup.zbox.ZBoxBackupStorageBackupInfo");
 			put("org.zstack.sdk.ZBoxInventory", "org.zstack.zbox.ZBoxInventory");
 			put("org.zstack.sdk.ZBoxLocationRefInventory", "org.zstack.zbox.ZBoxLocationRefInventory");
 			put("org.zstack.sdk.ZBoxState", "org.zstack.zbox.ZBoxState");
 			put("org.zstack.sdk.ZBoxStatus", "org.zstack.zbox.ZBoxStatus");
+			put("org.zstack.sdk.ZBoxVmBackupInfo", "org.zstack.externalbackup.zbox.ZBoxVmBackupInfo");
+			put("org.zstack.sdk.ZBoxVolumeBackupInfo", "org.zstack.externalbackup.zbox.ZBoxVolumeBackupInfo");
 			put("org.zstack.sdk.ZQLQueryReturn", "org.zstack.zql.ZQLQueryReturn");
 			put("org.zstack.sdk.ZoneInventory", "org.zstack.header.zone.ZoneInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupInventory", "org.zstack.header.storage.database.backup.DatabaseBackupInventory");

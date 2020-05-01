@@ -10,4 +10,9 @@
         <id>1001</id>
         <description>no cancelable running task, please wait for job to cancel itself off or try again later.</description>
     </code>
+
+    <code>
+        <id>1002</id>
+        <description>some error interrupt the job, fix error then resume the job or cancel the job if you dont want to continue.</description>
+    </code>
 </error>

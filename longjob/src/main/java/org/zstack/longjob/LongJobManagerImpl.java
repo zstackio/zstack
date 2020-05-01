@@ -120,6 +120,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             handle((APIUpdateLongJobMsg) msg);
         } else if (msg instanceof APIRerunLongJobMsg) {
             handle((APIRerunLongJobMsg) msg);
+        } else if (msg instanceof APIResumeLongJobMsg) {
+            handle((APIResumeLongJobMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -130,6 +132,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             handle((SubmitLongJobMsg) msg);
         } else if (msg instanceof CancelLongJobMsg) {
             handle((CancelLongJobMsg) msg);
+        } else if (msg instanceof ResumeLongJobMsg) {
+            handle((ResumeLongJobMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -247,7 +251,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                         chain.next();
                     }
                 });
-                chain.next();
             }
 
             @Override
@@ -291,7 +294,8 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     }
 
     private void cancelLongJob(String uuid, Completion completion) {
-        if (Q.New(LongJobVO.class).eq(LongJobVO_.uuid, uuid).select(LongJobVO_.state).findValue() == LongJobState.Canceled) {
+        LongJobState originState = Q.New(LongJobVO.class).eq(LongJobVO_.uuid, uuid).select(LongJobVO_.state).findValue();
+        if (originState == LongJobState.Canceled) {
             logger.info(String.format("longjob [uuid:%s] has been canceled before", uuid));
             completion.success();
             return;
@@ -304,7 +308,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         job.cancel(vo, new ReturnValueCompletion<Boolean>(completion) {
             @Override
             public void success(Boolean cancelled) {
-                if (cancelled) {
+                if (cancelled || originState != LongJobState.Running) {
                     changeState(uuid, LongJobStateEvent.canceled);
                     logger.info(String.format("longjob [uuid:%s, name:%s] has been canceled", vo.getUuid(), vo.getName()));
                 } else {
@@ -319,6 +323,78 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 completion.fail(errorCode);
             }
         });
+    }
+
+    private void handle(APIResumeLongJobMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "longjob-" + msg.getUuid();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                final APIResumeLongJobEvent evt = new APIResumeLongJobEvent(msg.getId());
+                resumeLongJob(msg.getUuid(), new ReturnValueCompletion<LongJobVO>(chain) {
+                    @Override
+                    public void success(LongJobVO vo) {
+                        evt.setInventory(LongJobInventory.valueOf(vo));
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
+    private void handle(ResumeLongJobMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "longjob-" + msg.getUuid();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                final ResumeLongJobReply reply = new ResumeLongJobReply();
+                resumeLongJob(msg.getUuid(), new ReturnValueCompletion<LongJobVO>(chain) {
+                    @Override
+                    public void success(LongJobVO vo) {
+                        reply.setInventory(LongJobInventory.valueOf(vo));
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "resume-longjob-" + msg.getUuid();
+            }
+        });
+    }
+
+    private void resumeLongJob(String uuid, ReturnValueCompletion<LongJobVO> completion) {
+        completion.success(doResumeJob(uuid, null));
     }
 
     private void handle(APISubmitLongJobMsg msg) {
@@ -392,15 +468,11 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             @Override
             public void run(SyncTaskChain chain) {
                 SubmitLongJobReply reply = new SubmitLongJobReply();
-                LongJobVO vo = changeState(msg.getJobUuid(), LongJobStateEvent.start);
                 // launch the long job right now
-                ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
-                LongJob job = longJobFactory.getLongJob(vo.getJobName());
-                ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
-                doStartJob(job, vo, msg);
+                LongJobVO vo = doStartJob(msg.getJobUuid(), msg);
 
                 reply.setInventory(LongJobInventory.valueOf(vo));
-                if (job.getAuditType() != null) {
+                if (longJobFactory.getLongJob(vo.getJobName()).getAuditType() != null) {
                     reply.setNeedAudit(true);
                 }
                 logger.info(String.format("longjob [uuid:%s, name:%s] has been started", vo.getUuid(), vo.getName()));
@@ -416,15 +488,43 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         });
     }
 
-    private void doStartJob(LongJob job, LongJobVO vo, AsyncBackup async) {
+    @Deferred
+    private LongJobVO doResumeJob(String uuid, AsyncBackup async) {
+        LongJobVO vo = changeState(uuid, LongJobStateEvent.resume, jobvo -> jobvo.setManagementNodeUuid(Platform.getManagementServerId()));
+        LongJob job = longJobFactory.getLongJob(vo.getJobName());
+
+        Runnable cleanup = ThreadContextUtils.saveThreadContext();
+        Defer.defer(cleanup);
+        ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
+        ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
+
+        logger.info(String.format("start to resume longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
+        job.resume(vo, buildJobOverCompletion(job, vo, async));
+        return vo;
+    }
+
+    @Deferred
+    private LongJobVO doStartJob(String uuid, AsyncBackup async) {
+        LongJobVO vo = changeState(uuid, LongJobStateEvent.start);
+        LongJob job = longJobFactory.getLongJob(vo.getJobName());
+
+        Runnable cleanup = ThreadContextUtils.saveThreadContext();
+        Defer.defer(cleanup);
+        ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
+        ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
+        job.start(vo, buildJobOverCompletion(job, vo, async));
+        return vo;
+    }
+
+    private ReturnValueCompletion<APIEvent> buildJobOverCompletion(LongJob job, LongJobVO vo, AsyncBackup async) {
         String longJobUuid = vo.getUuid();
-        job.start(vo, new ReturnValueCompletion<APIEvent>(async) {
+        return new ReturnValueCompletion<APIEvent>(async) {
             @Override
             public void success(APIEvent evt) {
                 reportProgress("100");
                 changeState(longJobUuid, LongJobStateEvent.succeed, it -> {
                     if (Strings.isEmpty(it.getJobResult())) {
-                        it.setJobResultStr(LongJobUtils.succeeded);
+                        it.setJobResult(LongJobUtils.succeeded);
                     }
                 });
 
@@ -440,9 +540,14 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             public void fail(ErrorCode errorCode) {
                 LongJobVO vo = changeState(longJobUuid, getEventOnError(errorCode), it -> {
                     if (Strings.isEmpty(it.getJobResult())) {
-                        it.setJobResult(wrapDefaultReuslt(it, errorCode));
+                        it.setJobResult(ErrorCode.getJobResult(wrapDefaultError(it, errorCode)));
                     }
                 });
+
+                if (vo.getState() == LongJobState.Suspended) {
+                    logger.info(String.format("longjob [uuid:%s, name:%s] suspended for some reason. wait to resume.", vo.getUuid(), vo.getName()));
+                    return;
+                }
 
                 APIEvent evt = new APIEvent(ThreadContext.get(Constants.THREAD_CONTEXT_API));
                 evt.setError(errorCode);
@@ -452,7 +557,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
                 logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
             }
-        });
+        };
     }
 
     @Override
@@ -612,26 +717,15 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         doLoadLongJob(vo, null);
     }
 
-    @Deferred
     private void doLoadLongJob(LongJobVO vo, LongJobOperation operation) {
         if (operation == null) {
             operation = getLoadOperation(vo);
         }
 
-        Runnable cleanup = ThreadContextUtils.saveThreadContext();
-        Defer.defer(cleanup);
-        // launch the waiting jobs
-        ThreadContext.put(Constants.THREAD_CONTEXT_API, vo.getApiId());
-        LongJob job = longJobFactory.getLongJob(vo.getJobName());
-        ThreadContext.put(Constants.THREAD_CONTEXT_TASK_NAME, job.getClass().toString());
-
         if (operation == LongJobOperation.Start) {
-            LongJobUtils.changeState(vo.getUuid(), LongJobStateEvent.start);
-            doStartJob(job, vo, null);
+            doStartJob(vo.getUuid(), null);
         } else if (operation == LongJobOperation.Resume) {
-            logger.info(String.format("start to resume longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
-            job.resume(vo);
-            dbf.update(vo);
+            doResumeJob(vo.getUuid(), null);
         } else if (operation == LongJobOperation.Cancel) {
             LongJobUtils.changeState(vo.getUuid(), LongJobStateEvent.canceled);
         }

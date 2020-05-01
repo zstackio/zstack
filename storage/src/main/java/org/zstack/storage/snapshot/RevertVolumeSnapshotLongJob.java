@@ -20,6 +20,8 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import static org.zstack.core.Platform.operr;
+
 /**
  * Created by kayo on 2018/5/9.
  */
@@ -59,6 +61,11 @@ public class RevertVolumeSnapshotLongJob implements LongJob {
     public void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {
         // TODO
         completion.fail(Platform.operr("not supported"));
+    }
+
+    @Override
+    public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
+        completion.fail(operr("not supported"));
     }
 
     private String getRoutedMnId(APIRevertVolumeFromSnapshotMsg msg) {

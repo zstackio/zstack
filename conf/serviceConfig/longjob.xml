@@ -20,6 +20,9 @@
         <name>org.zstack.header.longjob.APIRerunLongJobMsg</name>
     </message>
     <message>
-	<name>org.zstack.header.longjob.APIUpdateLongJobMsg</name>
+	    <name>org.zstack.header.longjob.APIUpdateLongJobMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.longjob.APIResumeLongJobMsg</name>
     </message>
 </service>
