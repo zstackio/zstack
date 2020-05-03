@@ -36,8 +36,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.*;
 
 import static java.util.Arrays.asList;
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class L2NoVlanNetwork implements L2Network {
@@ -334,6 +333,18 @@ public class L2NoVlanNetwork implements L2Network {
         ext.realize(getSelfInventory(), hostUuid, completion);
     }
 
+    protected void afterAttachNetwork(String hostUuid, String htype, Completion completion) {
+        final HypervisorType hvType = HypervisorType.valueOf(htype);
+        final L2NetworkType l2Type = L2NetworkType.valueOf(self.getType());
+
+        L2NetworkAttachClusterExtensionPoint ext = l2Mgr.getAttachClusterExtension(l2Type, hvType);
+        if (ext == null) {
+            completion.success();
+        } else {
+            ext.afterAttach(getSelfInventory(), hostUuid, completion);
+        }
+    }
+
     private void prepareL2NetworkOnHosts(final List<HostInventory> hosts, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("prepare-l2-%s-on-hosts", self.getUuid()));
@@ -392,6 +403,33 @@ public class L2NoVlanNetwork implements L2Network {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 realize(hosts.iterator(), trigger);
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "after-l2-network-attached";
+
+            private void after(final Iterator<HostInventory> it, final FlowTrigger trigger) {
+                if (!it.hasNext()) {
+                    trigger.next();
+                    return;
+                }
+
+                HostInventory host = it.next();
+                afterAttachNetwork(host.getUuid(), host.getHypervisorType(), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        after(it, trigger);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                after(hosts.iterator(), trigger);
             }
         }).done(new FlowDoneHandler(completion) {
             @Override
