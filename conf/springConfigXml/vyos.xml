@@ -22,7 +22,7 @@
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosChangePrivateL3FirewallDefaultActionFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterCreatePublicVipFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
-                <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosRefreshDchpServerFlow</value>
                 <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterSyncVipFlow</value>
                 <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterSyncPortForwardingRulesOnStartFlow</value>
@@ -39,7 +39,7 @@
                 <value>org.zstack.network.service.virtualrouter.ha.VirtualRouterHaSyncConfigToBackendFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosChangePrivateL3FirewallDefaultActionFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
-                <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosRefreshDchpServerFlow</value>
                 <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterSyncVipFlow</value>
                 <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterSyncPortForwardingRulesOnStartFlow</value>
@@ -55,7 +55,7 @@
                 <value>org.zstack.network.service.virtualrouter.ha.VirtualRouterHaSyncConfigToBackendFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosChangePrivateL3FirewallDefaultActionFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
-                <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosRefreshDchpServerFlow</value>
                 <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterSyncVipFlow</value>
                 <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterSyncPortForwardingRulesOnStartFlow</value>
@@ -85,7 +85,7 @@
                 <value>org.zstack.network.service.virtualrouter.ha.VirtualRouterHaSyncConfigToBackendFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vyos.VyosChangePrivateL3FirewallDefaultActionFlow</value>
                 <value>org.zstack.network.service.virtualrouter.dns.VirtualRouterSyncDnsOnStartFlow</value>
-                <value>org.zstack.network.service.virtualrouter.dhcp.VirtualRouterSyncDHCPOnStartFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosRefreshDchpServerFlow</value>
                 <value>org.zstack.network.service.virtualrouter.nat.VirtualRouterSyncSNATOnStartFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterSyncVipFlow</value>
                 <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterSyncPortForwardingRulesOnStartFlow</value>
@@ -106,6 +106,8 @@
     <bean id="VyosDhcpBackend" class="org.zstack.network.service.virtualrouter.vyos.VyosDhcpBackend">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.network.service.NetworkServiceDhcpBackend" />
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint" />
         </zstack:plugin>
     </bean>
 

@@ -23,6 +23,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.*;
@@ -164,6 +165,13 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
                 });
                 if (hostname != null && l3.getDnsDomain() != null) {
                     hostname = String.format("%s.%s", hostname, l3.getDnsDomain());
+                }
+                if (hostname == null && ip.getIp() != null) {
+                    if (ip.getIpVersion() == IPv6Constants.IPv4) {
+                        hostname = ip.getIp().replaceAll("\\.", "-");
+                    } else {
+                        hostname = IPv6NetworkUtils.ipv6AddessToHostname(ip.getIp());
+                    }
                 }
                 struct.setIpVersion(ip.getIpVersion());
                 struct.setHostname(hostname);

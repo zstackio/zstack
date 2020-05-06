@@ -143,14 +143,14 @@ class VirtualrouterMultiNicCase extends SubCase {
             networkServices = ntypes
         }
 
-        VirtualRouterCommands.AddDhcpEntryCmd cmd = null
-        env.afterSimulator(VirtualRouterConstant.VR_ADD_DHCP_PATH) { VirtualRouterCommands.AddDhcpEntryRsp rsp, HttpEntity<String> e ->
-            cmd = json(e.body, VirtualRouterCommands.AddDhcpEntryCmd.class)
-            assert !cmd.dhcpEntries.isEmpty()
-            if (cmd.dhcpEntries.stream().filter({dhcp -> dhcp.ip.equals(earliestNic.ip)}).count()>0) {
-                assert cmd.dhcpEntries.stream().filter({ dhcp -> dhcp.isDefaultL3Network }).count() == 1
-                assert cmd.dhcpEntries.stream().filter({ dhcp -> dhcp.isDefaultL3Network && dhcp.ip.equals(earliestNic.ip) }).count() == 1
-            }
+        VirtualRouterCommands.RefreshDHCPServerCmd cmd = null
+        env.afterSimulator(VirtualRouterConstant.VR_REFRESH_DHCP_SERVER_PATH) { VirtualRouterCommands.RefreshDHCPServerRsp rsp, HttpEntity<String> e ->
+            cmd = json(e.body, VirtualRouterCommands.RefreshDHCPServerCmd.class)
+            assert !cmd.dhcpServers.isEmpty()
+            /*if (cmd.dhcpServers.get(0).dhcpInfos.stream().filter({dhcp -> dhcp.ip.equals(earliestNic.ip)}).count()>0) {
+                assert cmd.dhcpServers.get(0).dhcpInfos.stream().filter({ dhcp -> dhcp.isDefaultL3Network }).count() == 1
+                assert cmd.dhcpServers.get(0).dhcpInfos.stream().filter({ dhcp -> dhcp.isDefaultL3Network && dhcp.ip.equals(earliestNic.ip) }).count() == 1
+            }*/
             return rsp
         }
 

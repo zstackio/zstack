@@ -56,6 +56,18 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
                 return new VirtualRouterCommands.AddDhcpEntryRsp()
             }
 
+            simulator(VirtualRouterConstant.VR_REFRESH_DHCP_SERVER_PATH) {
+                return new VirtualRouterCommands.RefreshDHCPServerRsp()
+            }
+
+            simulator(VirtualRouterConstant.VR_START_DHCP_SERVER_PATH) {
+                return new VirtualRouterCommands.RefreshDHCPServerRsp()
+            }
+
+            simulator(VirtualRouterConstant.VR_STOP_DHCP_SERVER_PATH) {
+                return new VirtualRouterCommands.RefreshDHCPServerRsp()
+            }
+
             simulator(VirtualRouterConstant.VR_REVOKE_PORT_FORWARDING) {
                 return new VirtualRouterCommands.RevokePortForwardingRuleRsp()
             }

@@ -27,6 +27,9 @@ public interface VirtualRouterConstant {
 	public static final String VR_CONFIGURE_NIC_FIREWALL_DEFAULT_ACTION_PATH = "/configurenicdefaultaction";
 	public static final String VR_ADD_DHCP_PATH = "/adddhcp";
 	public static final String VR_REMOVE_DHCP_PATH = "/removedhcp";
+	public static final String VR_REFRESH_DHCP_SERVER_PATH = "/refreshDhcpServer";
+	public static final String VR_START_DHCP_SERVER_PATH = "/startDhcpServer";
+	public static final String VR_STOP_DHCP_SERVER_PATH = "/stopDhcpServer";
 	public static final String VR_SET_SNAT_PATH = "/setsnat";
     public static final String VR_SYNC_SNAT_PATH = "/syncsnat";
 	public static final String VR_REMOVE_SNAT_PATH = "/removesnat";
