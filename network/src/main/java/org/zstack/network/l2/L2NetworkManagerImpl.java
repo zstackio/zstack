@@ -9,7 +9,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
@@ -19,8 +18,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.*;
-import org.zstack.search.GetQuery;
-import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
@@ -47,7 +44,8 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
     private ErrorFacade errf;
 
     private Map<String, L2NetworkFactory> l2NetworkFactories = Collections.synchronizedMap(new HashMap<String, L2NetworkFactory>());
-    private Map<L2NetworkType, Map<HypervisorType, L2NetworkRealizationExtensionPoint>> realizationExts = new HashMap<L2NetworkType, Map<HypervisorType, L2NetworkRealizationExtensionPoint>>();
+    private Map<L2NetworkType, Map<HypervisorType, L2NetworkRealizationExtensionPoint>> realizationExts = new HashMap<>();
+    private Map<L2NetworkType, Map<HypervisorType, L2NetworkAttachClusterExtensionPoint>> attachClusterExts = new HashMap<>();
     private List<L2NetworkCreateExtensionPoint> createExtensions = new ArrayList<L2NetworkCreateExtensionPoint>();
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
 
@@ -207,7 +205,24 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         
         return extp;
     }
-    
+
+    @Override
+    public L2NetworkAttachClusterExtensionPoint getAttachClusterExtension(L2NetworkType l2Type, HypervisorType hvType) {
+        Map<HypervisorType, L2NetworkAttachClusterExtensionPoint> map = attachClusterExts.get(l2Type);
+        if (map == null) {
+            logger.debug(String.format("Cannot find L2NetworkAttachClusterExtensionPoint supporting L2NetworkType[%s]", l2Type));
+            return null;
+        }
+
+        L2NetworkAttachClusterExtensionPoint extp = map.get(hvType);
+        if (extp == null) {
+            logger.debug(String.format("Cannot find L2NetworkAttachClusterExtensionPoint for L2NetworkType[%s] supporting hypervisor[%s]", l2Type, hvType));
+            return null;
+        }
+
+        return extp;
+    }
+
     private void populateExtensions() {
         for (L2NetworkFactory f : pluginRgty.getExtensionList(L2NetworkFactory.class)) {
             L2NetworkFactory old = l2NetworkFactories.get(f.getType().toString());
@@ -224,6 +239,12 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
                 map = new HashMap<HypervisorType, L2NetworkRealizationExtensionPoint>(1);
                 realizationExts.put(extp.getSupportedL2NetworkType(), map);
             }
+            map.put(extp.getSupportedHypervisorType(), extp);
+        }
+
+        for (L2NetworkAttachClusterExtensionPoint extp : pluginRgty.getExtensionList(L2NetworkAttachClusterExtensionPoint.class)) {
+            Map<HypervisorType, L2NetworkAttachClusterExtensionPoint> map =
+                    attachClusterExts.computeIfAbsent(extp.getSupportedL2NetworkType(), k -> new HashMap<>(1));
             map.put(extp.getSupportedHypervisorType(), extp);
         }
 
