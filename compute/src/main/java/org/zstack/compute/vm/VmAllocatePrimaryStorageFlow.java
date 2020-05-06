@@ -27,6 +27,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -117,12 +118,12 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
                         AllocatePrimaryStorageReply ar = reply.castReply();
                         volumeSpec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
                         volumeSpec.setSize(ar.getSize());
-                        volumeSpec.setRoot(msg.getImageUuid() != null);
-                        if (!volumeSpec.isRoot()) {
+                        volumeSpec.setType(msg.getImageUuid() != null ? VolumeType.Root.toString() : VolumeType.Data.toString());
+                        if (VolumeType.Root.toString().equals(volumeSpec.getType())) {
                             volumeSpec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
-                            volumeSpec.setTags(spec.getDataVolumeSystemTags());
-                        } else {
                             volumeSpec.setTags(spec.getRootVolumeSystemTags());
+                        } else {
+                            volumeSpec.setTags(spec.getDataVolumeSystemTags());
                         }
 
                         spec.getVolumeSpecs().add(volumeSpec);

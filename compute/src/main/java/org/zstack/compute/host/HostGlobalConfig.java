@@ -45,5 +45,6 @@ public class HostGlobalConfig {
     public static GlobalConfig HOST_MAINTENANCE_POLICY = new GlobalConfig(CATEGORY, "host.maintenance.policy");
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig AUTO_RECONNECT_ON_ERROR_MAX_ATTEMPT_NUM = new GlobalConfig(CATEGORY, "connection.autoReconnectOnError.maxAttemptsNum");
-
+    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 65535)
+    public static GlobalConfig HOST_PORT_ALLOCATION_START_PORT = new GlobalConfig(CATEGORY, "host.port.allocate.start.port");
 }

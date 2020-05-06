@@ -77,10 +77,13 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
                     VolumeInventory vinv = VolumeInventory.valueOf(vo);
                     if (spec.getDestRootVolume().getUuid().equals(vinv.getUuid())) {
                         spec.setDestRootVolume(vinv);
-                    } else {
+                    } else if (VolumeType.Data.toString().equals(vinv.getType())) {
                         // Delete the original volumeInventory, and then re-add latest volumeInventory, the latest volumeInventory contains more attributes
                         spec.getDestDataVolumes().removeIf(volumeInventory -> msg.getVolumeUuid().equals(volumeInventory.getUuid()));
                         spec.getDestDataVolumes().add(vinv);
+                    } else if (VolumeType.Cache.toString().equals(vinv.getType())) {
+                        spec.getDestCacheVolumes().removeIf(volumeInventory -> msg.getVolumeUuid().equals(volumeInventory.getUuid()));
+                        spec.getDestCacheVolumes().add(vinv);
                     }
 
                     logger.debug(String.format("spec.getDestRootVolume is: %s", spec.getDestRootVolume().getInstallPath()));
@@ -104,6 +107,17 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
 
         List<InstantiateVolumeMsg> msgs = new ArrayList<>();
         for (VolumeInventory volume : spec.getDestDataVolumes()) {
+            InstantiateVolumeMsg msg = new InstantiateVolumeMsg();
+            msg.setVolumeUuid(volume.getUuid());
+            msg.setPrimaryStorageUuid(volume.getPrimaryStorageUuid());
+            msg.setHostUuid(spec.getDestHost().getUuid());
+            msg.setPrimaryStorageAllocated(true);
+            msg.setSkipIfExisting(spec.isInstantiateResourcesSkipExisting());
+            bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, volume.getUuid());
+            msgs.add(msg);
+        }
+
+        for (VolumeInventory volume : spec.getDestCacheVolumes()) {
             InstantiateVolumeMsg msg = new InstantiateVolumeMsg();
             msg.setVolumeUuid(volume.getUuid());
             msg.setPrimaryStorageUuid(volume.getPrimaryStorageUuid());
