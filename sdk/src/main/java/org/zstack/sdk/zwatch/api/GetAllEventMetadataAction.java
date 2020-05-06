@@ -1,8 +1,9 @@
 package org.zstack.sdk.zwatch.api;
 
+import org.zstack.sdk.*;
+
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class GetAllEventMetadataAction extends AbstractAction {
 
@@ -24,6 +25,12 @@ public class GetAllEventMetadataAction extends AbstractAction {
             return this;
         }
     }
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String namespace;
 
     @Param(required = false)
     public java.util.List systemTags;
