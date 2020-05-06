@@ -4,11 +4,12 @@ import com.google.gson.*;
 import org.zstack.core.log.LogSafeGson;
 import org.zstack.header.message.GsonTransient;
 import org.zstack.header.message.Message;
-import org.zstack.header.log.NoLogging;
 import org.zstack.utils.gson.GsonTypeCoder;
 import org.zstack.utils.gson.GsonUtil;
+import org.zstack.utils.gson.OffsetDateTimeGsonTypeCoder;
 
 import java.lang.reflect.Type;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 public class CloudBusGson {
@@ -34,7 +35,7 @@ public class CloudBusGson {
             }
             return (Message) gson.fromJson(entry.getValue(), clazz);
         }
-    }).setExclusionStrategies(new ExclusionStrategy[]{
+    }).setCoder(OffsetDateTime.class, new OffsetDateTimeGsonTypeCoder()).setExclusionStrategies(new ExclusionStrategy[]{
             new ExclusionStrategy() {
                 @Override
                 public boolean shouldSkipField(FieldAttributes fieldAttributes) {
@@ -71,7 +72,7 @@ public class CloudBusGson {
             }
             return (Message) logSafeGson.fromJson(entry.getValue(), clazz);
         }
-    }).setSerializationExclusionStrategy(new ExclusionStrategy() {
+    }).setCoder(OffsetDateTime.class, new OffsetDateTimeGsonTypeCoder()).setSerializationExclusionStrategy(new ExclusionStrategy() {
         @Override
         public boolean shouldSkipField(FieldAttributes f) {
             return f.getAnnotation(GsonTransient.class) != null;
@@ -105,7 +106,7 @@ public class CloudBusGson {
             }
             return (Message) gson.fromJson(entry.getValue(), clazz);
         }
-    }).setExclusionStrategies(new ExclusionStrategy[]{
+    }).setCoder(OffsetDateTime.class, new OffsetDateTimeGsonTypeCoder()).setExclusionStrategies(new ExclusionStrategy[]{
             new ExclusionStrategy() {
                 @Override
                 public boolean shouldSkipField(FieldAttributes fieldAttributes) {
