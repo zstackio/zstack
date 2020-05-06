@@ -51,7 +51,7 @@ class MergeQueueCase extends SubCase {
             new MergeQueue().addTask("test1", s).run()
         }
 
-        sleep 100
+        sleep 300
         assert x.intValue() == 2
     }
 
@@ -100,7 +100,7 @@ class MergeQueueCase extends SubCase {
             new MergeQueue().addTask("test2", s).run()
         }
 
-        sleep 100
+        sleep 300
         assert x.intValue() == 4
     }
 
@@ -123,7 +123,7 @@ class MergeQueueCase extends SubCase {
             new MergeQueue().addTask("test1", s).setSyncLevel(3).run()  // setSyncLevel 3, so run 4 times
         }
 
-        sleep 100
+        sleep 300
         assert x.intValue() == 4
     }
 }
