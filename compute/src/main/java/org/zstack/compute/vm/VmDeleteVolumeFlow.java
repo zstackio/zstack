@@ -24,6 +24,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -57,6 +58,7 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
             return;
         }
 
+        List<String> volumeTypes = Arrays.asList(VolumeType.Root.toString(), VolumeType.Memory.toString(), VolumeType.Cache.toString());
         List<VolumeDeletionStruct> ctx = CollectionUtils.transformToList(spec.getVmInventory().getAllVolumes(), new Function<VolumeDeletionStruct, VolumeInventory>() {
             @Override
             public VolumeDeletionStruct call(VolumeInventory arg) {
@@ -66,7 +68,7 @@ public class VmDeleteVolumeFlow extends NoRollbackFlow {
 
                 VolumeDeletionStruct s = new VolumeDeletionStruct();
                 s.setInventory(arg);
-                if (VolumeType.Root.toString().equals(arg.getType())) {
+                if (volumeTypes.contains(arg.getType())) {
                     s.setDeletionPolicy(deletionPolicy.toString());
                 }
                 // for data volume, use volume's own deletion policy

@@ -281,5 +281,21 @@ class KVMSimulator implements Simulator {
             rsp.availableSize = SizeUnit.GIGABYTE.toByte(80)
             return rsp
         }
+
+        spec.simulator(KVMConstant.KVM_CONFIG_PRIMARY_VM_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_CONFIG_SECONDARY_VM_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_START_COLO_SYNC_PATH) {
+            return new KVMAgentCommands.AgentResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_REGISTER_PRIMARY_VM_HEARTBEAT) {
+            return new KVMAgentCommands.AgentResponse()
+        }
     }
 }

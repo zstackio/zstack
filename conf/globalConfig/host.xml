@@ -105,4 +105,11 @@
         <defaultValue>0</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+    <config>
+        <category>host</category>
+        <name>host.port.allocate.start.port</name>
+        <description>start port for host port allocation</description>
+        <defaultValue>10000</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>

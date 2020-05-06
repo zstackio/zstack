@@ -54,7 +54,11 @@ public interface VmInstanceConstant {
         AttachIso,
         DetachIso,
         Expunge,
-        ChangeImage
+        ChangeImage,
+        ChangePassword,
+        SetBootMode,
+        Update,
+        SetConsolePassword
     }
 
     String USER_VM_REGEX_PASSWORD = "[\\da-zA-Z-`=\\\\\\[\\];',./~!@#$%^&*()_+|{}:\"<>?]{1,}";

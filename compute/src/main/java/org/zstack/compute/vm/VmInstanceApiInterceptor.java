@@ -32,6 +32,7 @@ import org.zstack.header.zone.ZoneVO_;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagUtils;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
@@ -664,17 +665,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         msg.l3Uuid = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).select(VmNicVO_.l3NetworkUuid).findValue();
     }
 
-    private static <T> List<T> getDuplicateElements(List<T> list) {
-        List<T> result = new ArrayList<T>();
-        Set<T> set = new HashSet<T>();
-        for (T e : list) {
-            if (!set.add(e)) {
-                result.add(e);
-            }
-        }
-        return result;
-    }
-
     private void validate(APIGetVmAttachableDataVolumeMsg msg) {
         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
         q.select(VmInstanceVO_.state);
@@ -793,7 +783,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         SimpleQuery<L3NetworkVO> l3q = dbf.createQuery(L3NetworkVO.class);
         l3q.select(L3NetworkVO_.uuid, L3NetworkVO_.system, L3NetworkVO_.state);
         List<String> uuids = new ArrayList<>(msg.getL3NetworkUuids());
-        List<String> duplicateElements = getDuplicateElements(uuids);
+        List<String> duplicateElements = CollectionUtils.getDuplicateElementsOfList(uuids);
         if (duplicateElements.size() > 0) {
             throw new ApiMessageInterceptionException(operr("Can't add same uuid in the l3Network,uuid: %s", duplicateElements.get(0)));
         }

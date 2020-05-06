@@ -67,6 +67,7 @@ public class VmAllocateHostFlow implements Flow {
         diskSize += getTotalDataDiskSize(spec);
         diskOfferings.addAll(spec.getDataDiskOfferings());
         msg.setSoftAvoidHostUuids(spec.getSoftAvoidHostUuids());
+        msg.setAvoidHostUuids(spec.getAvoidHostUuids());
         msg.setDiskOfferings(diskOfferings);
         msg.setDiskSize(diskSize);
         msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
