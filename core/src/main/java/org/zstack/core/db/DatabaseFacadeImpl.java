@@ -1,7 +1,6 @@
 package org.zstack.core.db;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Propagation;
@@ -30,6 +29,7 @@ import javax.sql.DataSource;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -43,6 +43,10 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
     @Autowired
     private PluginRegistry pluginRgty;
+
+    private static AtomicLong dberror = new AtomicLong(0);
+    private static AtomicLong dbdeadlock = new AtomicLong(0);
+    private static AtomicLong dblocktimeout = new AtomicLong(0);
 
     private DataSource dataSource = null;
     private DataSource extraDataSource = null;
@@ -874,5 +878,29 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
 
         info.fireLifeCycleEvent(evt, entity);
+    }
+
+    public static AtomicLong getDberror() {
+        return dberror;
+    }
+
+    public static long increaseDberror() {
+        return dberror.incrementAndGet();
+    }
+
+    public static long increaseDeadlock() {
+        return dbdeadlock.incrementAndGet();
+    }
+
+    public static long increaseLocktimeout() {
+        return dblocktimeout.incrementAndGet();
+    }
+
+    public static AtomicLong getDbdeadlock() {
+        return dbdeadlock;
+    }
+
+    public static AtomicLong getDblocktimeout() {
+        return dblocktimeout;
     }
 }

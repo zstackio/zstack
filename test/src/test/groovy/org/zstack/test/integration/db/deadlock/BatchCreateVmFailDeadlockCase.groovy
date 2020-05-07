@@ -3,9 +3,11 @@ package org.zstack.test.integration.db.deadlock
 import com.google.common.collect.Lists
 import org.hibernate.exception.LockAcquisitionException
 import org.springframework.http.HttpEntity
-import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.DatabaseFacadeImpl
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
@@ -15,20 +17,20 @@ import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.userdata.UserdataConstant
-import org.zstack.sdk.*
+import org.zstack.sdk.CreateVmInstanceAction
+import org.zstack.sdk.DiskOfferingInventory
+import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.L3NetworkInventory
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.Test
 import org.zstack.utils.data.SizeUnit
-import org.zstack.core.db.Q
 
 import javax.persistence.LockTimeoutException
 import java.util.concurrent.atomic.AtomicInteger
-import org.zstack.core.db.SQL
-
 import java.util.stream.Collectors
-
 /**
  * Created by lining on 2020/04/09.
  */
@@ -222,6 +224,8 @@ class BatchCreateVmFailDeadlockCase extends SubCase{
                 uuid = vmUuid
             }
         }
+
+        assert DatabaseFacadeImpl.getDberror().longValue() > 0
     }
 
     private List<ResourceVO> persistResourceVOs(int num) {
