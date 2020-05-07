@@ -255,6 +255,17 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         if (!StringUtils.isEmpty(msg.getVmUuid())) {
             sqlBuilder.append(" and vm.uuid like '%").append(msg.getVmUuid()).append("%\'");
         }
+
+        for (GetEipAttachableVmNicsExtensionPoint ext : pluginRgty.getExtensionList(GetEipAttachableVmNicsExtensionPoint.class)) {
+            String cond = ext.getAdditionalCondition();
+
+            if (StringUtils.isEmpty(cond)) {
+                continue;
+            }
+
+            sqlBuilder.append(cond);
+        }
+
         sqlBuilder.append(" order by nic.vmInstanceUuid")
                 .append(" limit ").append(msg.getLimit()).append(" offset ").append(msg.getStart());
 
@@ -854,6 +865,19 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "pre-create-eip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
+                            ext.preAttachEip(struct);
+                        }
+
+                        trigger.next();
+                    }
+                });
+
                 flow(new Flow() {
                     String __name__ = "prepare-vip";
 
@@ -1006,6 +1030,19 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
+                    String __name__ = "pre-delete-eip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
+                            ext.preAttachEip(struct);
+                        }
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
                     String __name__ = "delete-eip-from-backend";
 
                     @Override
@@ -1108,6 +1145,19 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "pre-create-eip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
+                            ext.preAttachEip(struct);
+                        }
+
+                        trigger.next();
+                    }
+                });
+
                 flow(new Flow() {
                     boolean s = false;
 
