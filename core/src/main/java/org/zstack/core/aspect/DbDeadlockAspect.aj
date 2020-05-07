@@ -4,6 +4,7 @@ import com.mysql.jdbc.exceptions.jdbc4.MySQLTransactionRollbackException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseGlobalProperty;
 import org.zstack.utils.DebugUtils;
+import org.zstack.core.db.DatabaseFacadeImpl;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import java.util.concurrent.ThreadLocalRandom;
@@ -39,6 +40,7 @@ public aspect DbDeadlockAspect {
                     }.call();
                 } catch (RuntimeException re) {
                     int c = refCount.get();
+                    DatabaseFacadeImpl.increaseDberror();
                     if (c > 1) {
                         logger.warn(String.format("ref = %s, ask outer deadlock handler to handle it", c));
                         throw re;
@@ -49,13 +51,16 @@ public aspect DbDeadlockAspect {
                     Throwable root = DebugUtils.getRootCause(re);
                     if (root instanceof MySQLTransactionRollbackException && root.getMessage().contains("Deadlock")) {
                         logger.warn("deadlock happened, retry");
-
+                        DatabaseFacadeImpl.increaseDeadlock();
                         try {
                             TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(400, 600));
                         } catch (InterruptedException e) {
                             logger.warn(e.getMessage(), e);
                         }
                     } else {
+                        if (root.getMessage().contains("Deadlock")) {
+                            DatabaseFacadeImpl.increaseLocktimeout();
+                        }
                         throw re;
                     }
                 }
