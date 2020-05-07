@@ -496,7 +496,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
                 return null;
             }
         }).run();
-        recalculator.recalculate();
         bus.reply(msg, reply);
     }
 
