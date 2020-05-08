@@ -32,6 +32,7 @@ public class VirtualRouterCommands {
     public static class InitCommand extends AgentCommand {
 		private String uuid;
         private int restartDnsmasqAfterNumberOfSIGUSER1;
+        private String mnPeerIp;
 
 		public String getUuid() {
 			return uuid;
@@ -48,7 +49,15 @@ public class VirtualRouterCommands {
         public void setRestartDnsmasqAfterNumberOfSIGUSER1(int restartDnsmasqAfterNumberOfSIGUSER1) {
             this.restartDnsmasqAfterNumberOfSIGUSER1 = restartDnsmasqAfterNumberOfSIGUSER1;
         }
-    }
+
+		public String getMnPeerIp() {
+			return mnPeerIp;
+		}
+
+		public void setMnPeerIp(String mnPeerIp) {
+			this.mnPeerIp = mnPeerIp;
+		}
+	}
 
     public static class InitRsp extends AgentResponse {
     }
