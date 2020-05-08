@@ -12,7 +12,9 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.jsonlabel.JsonLabelInventory;
+import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTask;
+import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
@@ -156,6 +158,30 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
     }
 
     private void handle(final RunAnsibleMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "run-ansible-sync-control";
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doHandle(msg, chain);
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return 35;
+            }
+
+            @Override
+            public String getName() {
+                return String.format("run-ansible-for-%s", msg.getTargetIp());
+            }
+        });
+    }
+
+    private void doHandle(final RunAnsibleMsg msg, SyncTaskChain outter) {
         thdf.syncSubmit(new SyncTask<Object>() {
             @Override
             public String getSyncSignature() {
@@ -239,15 +265,15 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             private String hidePassword(String message) {
                 String errMsg = message;
                 if (errMsg.contains("remote_pass")) {
-                    String[] s = errMsg.trim().split(",");
-                    if (s.length > 1) {
+                    String[] splitted = errMsg.trim().split(",");
+                    if (splitted.length > 1) {
                         List<String> replaces = new ArrayList<>();
                         boolean simple = false;
-                        for (int i = 0; i < s.length; i ++) {
-                            if (s[i].startsWith("\\\"remote_pass\\\":")) {
-                                replaces.add(s[i]);
-                            } else if (s[i].startsWith("\"remote_pass\":")) {
-                                replaces.add(s[i]);
+                        for (String s : splitted) {
+                            if (s.startsWith("\\\"remote_pass\\\":")) {
+                                replaces.add(s);
+                            } else if (s.startsWith("\"remote_pass\":")) {
+                                replaces.add(s);
                                 simple = true;
                             }
                         }
@@ -258,7 +284,6 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                                 } else {
                                     errMsg = errMsg.replaceFirst(replace, "\\\"remote_pass\\\":\\\"******\\\"");
                                 }
-
                             }
                         }
                     }
@@ -269,16 +294,18 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             @Override
             public Object call() {
                 final RunAnsibleReply reply = new RunAnsibleReply();
-                run(new Completion(msg) {
+                run(new Completion(msg, outter) {
                     @Override
                     public void success() {
                         bus.reply(msg, reply);
+                        outter.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
                         reply.setError(errorCode);
                         bus.reply(msg, reply);
+                        outter.next();
                     }
                 });
 
