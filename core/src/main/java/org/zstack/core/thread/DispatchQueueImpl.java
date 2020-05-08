@@ -525,7 +525,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     @Override
     public Map<String, SyncTaskStatistic> getSyncTaskStatistics() {
-        Map<String, SyncTaskStatistic> ret = new HashMap<String, SyncTaskStatistic>();
+        Map<String, SyncTaskStatistic> ret = new ConcurrentHashMap<>();
         for (SyncTaskQueueWrapper wrapper : syncTasks.values()) {
             SyncTaskStatistic statistic = new SyncTaskStatistic(
                     wrapper.syncSignature,
@@ -543,7 +543,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     @Override
     public Map<String, ChainTaskStatistic> getChainTaskStatistics() {
-        Map<String, ChainTaskStatistic> ret = new HashMap<String, ChainTaskStatistic>();
+        Map<String, ChainTaskStatistic> ret =  new ConcurrentHashMap<>();
         for (ChainTaskQueueWrapper wrapper : chainTasks.values()) {
             ChainTaskStatistic statistic = new ChainTaskStatistic(
                     wrapper.syncSignature,
