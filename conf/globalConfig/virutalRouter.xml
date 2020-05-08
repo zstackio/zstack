@@ -31,7 +31,7 @@
     <config>
         <name>ping.parallelismDegree</name>
         <description>The max number of virtual router VMs that management nodes will ping concurrently</description>
-        <defaultValue>500</defaultValue>
+        <defaultValue>60</defaultValue>
         <category>virtualRouter</category>
         <type>java.lang.Integer</type>
     </config>
