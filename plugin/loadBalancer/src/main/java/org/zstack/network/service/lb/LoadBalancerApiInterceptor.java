@@ -5,6 +5,7 @@ import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.net.util.SubnetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
@@ -22,6 +23,8 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.network.l3.AddressPoolVO;
+import org.zstack.header.network.l3.IpRangeVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO;
@@ -40,6 +43,7 @@ import org.zstack.utils.logging.CLoggerImpl;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
+import sun.nio.ch.Net;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -184,6 +188,24 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 throw new ApiMessageInterceptionException(argerr("the vip[uuid:%s] has been occupied other network service entity[%s]", msg.getVipUuid(), useForList.toString()));
             }
         }
+
+        /* the vip can not the first of the last ip of the cidr */
+        VipVO vipVO = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
+        if (NetworkUtils.isIpv4Address(vipVO.getIp())) {
+            AddressPoolVO addressPoolVO = dbf.findByUuid(vipVO.getIpRangeUuid(), AddressPoolVO.class);
+            if (addressPoolVO == null) {
+                return;
+            }
+
+            SubnetUtils utils = new SubnetUtils(addressPoolVO.getNetworkCidr());
+            SubnetUtils.SubnetInfo subnet = utils.getInfo();
+            String firstIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()) - 1);
+            String lastIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()) + 1);
+            if (vipVO.getIp().equals(firstIp) || vipVO.getIp().equals(lastIp)) {
+                throw new ApiMessageInterceptionException(argerr("loadbalancer vip [%s] can not the first of the last ip of the cidr", vipVO.getIp()));
+            }
+        }
+
     }
 
     private boolean validateIpRange(String startIp, String endIp) {
