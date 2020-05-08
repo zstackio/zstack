@@ -41,6 +41,8 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.zsha2.ZSha2Helper;
+import org.zstack.utils.zsha2.ZSha2Info;
 
 import javax.persistence.Query;
 import java.util.ArrayList;
@@ -357,6 +359,12 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         ret.put(BootstrapParams.managementNodeIp.toString(), Platform.getManagementServerIp());
         /* this is only used by ApplianceVmPrepareBootstrapInfoExtensionPoint extension point, will be deleted after extension point */
         ret.put(BootstrapParams.additionalL3Uuids.toString(), additionalNics.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()));
+        try {
+            ZSha2Info info = ZSha2Helper.getInfo();
+            ret.put(BootstrapParams.managementPeerNodeIp.toString(), info.getPeerip());
+        } catch (Exception e) {
+            /* MN is not in HA mode */
+        }
 
         for (ApplianceVmPrepareBootstrapInfoExtensionPoint ext : pluginRgty.getExtensionList(ApplianceVmPrepareBootstrapInfoExtensionPoint.class)) {
             ext.applianceVmPrepareBootstrapInfo(spec, ret);
