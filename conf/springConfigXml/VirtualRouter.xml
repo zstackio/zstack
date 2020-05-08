@@ -114,7 +114,7 @@
 
     <bean id="VirtualRouterPingTracker" class="org.zstack.network.service.virtualrouter.VirtualRouterPingTracker">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.Component" order="-100"/>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
         </zstack:plugin>
