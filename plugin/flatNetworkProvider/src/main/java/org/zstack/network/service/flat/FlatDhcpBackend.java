@@ -294,9 +294,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Deferred
     private String allocateDhcpIp(String l3Uuid, boolean allocate_ip, String requiredIp, String excludedIp) {
-        L3NetworkVO l3 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
-
-        if (!isProvidedByMe(L3NetworkInventory.valueOf(l3))) {
+        if (!isProvidedByMe(l3Uuid)) {
             return null;
         }
 
@@ -349,7 +347,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         );
         creator.create();
 
-        logger.debug(String.format("allocate DHCP server IP[ip:%s, uuid:%s] for l3 network[uuid:%s]", dhcpServerIp, dhcpServerIpUuid, l3Uuid));
+        logger.debug(String.format("allocated DHCP server IP[ip:%s, uuid:%s] for l3 network[uuid:%s]", dhcpServerIp, dhcpServerIpUuid, l3Uuid));
         for (DhcpServerExtensionPoint exp : pluginRgty.getExtensionList(DhcpServerExtensionPoint.class)) {
             exp.afterAllocateDhcpServerIP(l3Uuid, dhcpServerIp);
         }
@@ -427,14 +425,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     public void beforeDeleteL3Network(L3NetworkInventory inventory) {
     }
 
-    private boolean isProvidedByMe(L3NetworkInventory l3) {
-        String providerType = new NetworkProviderFinder().getNetworkProviderTypeByNetworkServiceType(l3.getUuid(), NetworkServiceType.DHCP.toString());
+    private boolean isProvidedByMe(String l3Uuid) {
+        String providerType = new NetworkProviderFinder().getNetworkProviderTypeByNetworkServiceType(l3Uuid, NetworkServiceType.DHCP.toString());
         return FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING.equals(providerType);
     }
 
     @Override
     public void afterDeleteL3Network(L3NetworkInventory inventory) {
-        if (!isProvidedByMe(inventory)) {
+        if (!isProvidedByMe(inventory.getUuid())) {
             return;
         }
 
