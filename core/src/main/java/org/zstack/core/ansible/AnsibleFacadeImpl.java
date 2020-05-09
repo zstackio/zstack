@@ -171,7 +171,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
 
             @Override
             protected int getSyncLevel() {
-                return 35;
+                return maxForks;
             }
 
             @Override
