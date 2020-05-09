@@ -2949,7 +2949,7 @@ public class KVMHost extends HostBase implements Host {
                             sshShell.setPassword(getSelf().getPassword());
                             sshShell.setPort(getSelf().getPort());
                             ShellUtils.run(String.format("arp -d %s || true", getSelf().getManagementIp()));
-                            SshResult ret = sshShell.runCommand(String.format("curl --connect-timeout 10 %s", restf.getCallbackUrl()));
+                            SshResult ret = sshShell.runCommand(String.format("curl --connect-timeout 10 %s|| wget --spider -q --connect-timeout=10 %s|| test $? -eq 8", restf.getCallbackUrl(), restf.getCallbackUrl()));
 
                             if (ret.isSshFailure()) {
                                 throw new OperationFailureException(operr("unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity," +
