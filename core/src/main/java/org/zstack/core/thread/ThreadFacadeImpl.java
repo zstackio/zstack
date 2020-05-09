@@ -122,7 +122,7 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
 
     private int getSyncThreadNum(int totalThreadNum) {
         int n = totalThreadNum / 3;
-        return Math.min(n, 50);
+        return Math.min(totalThreadNum, Math.max(n, 150));
     }
 
     public void init() {
