@@ -108,6 +108,7 @@
             <zstack:extension interface="org.zstack.header.network.service.NetworkServiceDhcpBackend" />
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint" />
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint" />
+            <zstack:extension interface="org.zstack.appliancevm.ApplianceVmSyncConfigToHaGroupExtensionPoint" />
         </zstack:plugin>
     </bean>
 

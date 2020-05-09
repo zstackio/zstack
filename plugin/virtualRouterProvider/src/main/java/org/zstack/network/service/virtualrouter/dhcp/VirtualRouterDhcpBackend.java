@@ -1,6 +1,8 @@
 package org.zstack.network.service.virtualrouter.dhcp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.appliancevm.ApplianceVmHaStatus;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -11,20 +13,28 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.l3.L3NetworkCategory;
+import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.l3.L3NetworkSystemTags;
+import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AddDhcpEntryRsp;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+
+import javax.persistence.TypedQuery;
 
 import static org.zstack.core.Platform.operr;
 
@@ -43,6 +53,8 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
     private VirtualRouterHaBackend haBackend;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    protected NetworkServiceManager nsMgr;
 
     @Override
     public NetworkServiceProviderType getProviderType() {
@@ -166,7 +178,7 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
         VirtualRouterStruct s = new VirtualRouterStruct();
         s.setL3Network(struct.getL3Network());
 
-        acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
+        acquireVirtualRouterVmForDhcp(s, new ReturnValueCompletion<VirtualRouterVmInventory>(completion) {
             @Override
             public void success(final VirtualRouterVmInventory vr) {
                 applyDhcpEntryToVirtualRouter(vr, struct, new Completion(completion) {
@@ -303,13 +315,13 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
         }
 
         final DhcpStruct struct = it.next();
-        if (!vrMgr.isVirtualRouterRunningForL3Network(struct.getL3Network().getUuid())) {
-            logger.debug(String.format("virtual router for l3Network[uuid:%s] is not running, skip releasing DHCP", struct.getL3Network().getUuid()));
+        final VirtualRouterVmInventory vr = getVirtualRouterForVyosDhcp(struct.getL3Network());
+        if (vr == null) {
+            logger.debug(String.format("virtual router for l3Network[uuid:%s] is not found, skip releasing DHCP", struct.getL3Network().getUuid()));
             releaseDhcp(it, spec, completion);
             return;
         }
 
-        final VirtualRouterVmInventory vr = vrMgr.getVirtualRouterVm(struct.getL3Network());
         releaseDhcpFromVirtualRouter(vr, struct, new NoErrorCompletion(completion) {
             @Override
             public void done() {
@@ -331,5 +343,80 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
     @Override
     public void vmDefaultL3NetworkChanged(VmInstanceInventory vm, String previousL3, String nowL3, Completion completion) {
         completion.success();
+    }
+
+    protected boolean isVRouterDhcpEnabled(String l3Uuid) {
+        boolean enableDhcp = false;
+        try {
+            NetworkServiceProviderType providerType = nsMgr.getTypeOfNetworkServiceProviderForService(l3Uuid, NetworkServiceType.DHCP);
+            if (VyosConstants.PROVIDER_TYPE == providerType) {
+                enableDhcp = true;
+            }
+        } catch (Exception e) {
+            enableDhcp = false;
+        }
+
+        return enableDhcp;
+    }
+
+    private VirtualRouterVmInventory getVirtualRouterForVyosDhcp(L3NetworkInventory l3Nw) {
+        /* only public l3 network has systemTag: PUBLIC_NETWORK_DHCP_SERVER_UUID  */
+        String uuid = L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID.getTokenByResourceUuid(l3Nw.getUuid(), L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN);
+        if (uuid == null && l3Nw.getCategory().equals(L3NetworkCategory.Public.toString())) {
+            return null;
+        }
+
+        /* for vyos dhcp, it will not create virtual router, if virtual router not existed return error */
+        String sql = "select vr from VirtualRouterVmVO vr, VmNicVO nic where vr.uuid = nic.vmInstanceUuid and nic.l3NetworkUuid = :l3Uuid and nic.metaData in (:meta)";
+        TypedQuery<VirtualRouterVmVO> q = dbf.getEntityManager().createQuery(sql, VirtualRouterVmVO.class);
+        q.setParameter("l3Uuid", l3Nw.getUuid());
+        if (l3Nw.getCategory().equals(L3NetworkCategory.Public.toString())) {
+            q.setParameter("meta", VirtualRouterNicMetaData.PUBLIC_NIC_MASK_STRING_LIST);
+        } else {
+            q.setParameter("meta", VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST);
+        }
+        List<VirtualRouterVmVO> vrs = q.getResultList();
+
+        VirtualRouterVmVO masterVr = null;
+        if (l3Nw.getCategory().equals(L3NetworkCategory.Public.toString())) {
+            for (VirtualRouterVmVO vr : vrs) {
+                if (vr.getUuid().equals(uuid)) {
+                    return VirtualRouterVmInventory.valueOf(vr);
+                }
+
+                if (uuid.equals(haBackend.getVirutalRouterHaUuid(vr.getUuid()))) {
+                    if (masterVr == null || vr.getHaStatus() == ApplianceVmHaStatus.Master) {
+                        masterVr = vr;
+                    }
+                }
+            }
+        } else {
+            for (VirtualRouterVmVO vr : vrs) {
+                if (masterVr == null || vr.getHaStatus() == ApplianceVmHaStatus.Master) {
+                    masterVr = vr;
+                }
+            }
+        }
+
+        if (masterVr != null) {
+            return VirtualRouterVmInventory.valueOf(masterVr);
+        } else {
+            return null;
+        }
+    }
+
+    private void acquireVirtualRouterVmForDhcp(VirtualRouterStruct dhcpStruct, ReturnValueCompletion<VirtualRouterVmInventory> completion) {
+        L3NetworkInventory l3Nw = dhcpStruct.getL3Network();
+        boolean vyosDhcpOnPublicNetwork = l3Nw.getCategory().equals(L3NetworkCategory.Public.toString()) && isVRouterDhcpEnabled(l3Nw.getUuid());
+        if (vyosDhcpOnPublicNetwork) {
+            VirtualRouterVmInventory vrInv = getVirtualRouterForVyosDhcp(l3Nw);
+            if (vrInv == null) {
+                completion.fail(Platform.operr("no virtual router is condifured for vyos dhcp"));
+            } else {
+                completion.success(vrInv);
+            }
+        }
+
+        acquireVirtualRouterVm(dhcpStruct, completion);
     }
 }

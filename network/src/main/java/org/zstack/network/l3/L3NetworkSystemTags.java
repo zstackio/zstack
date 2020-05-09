@@ -12,4 +12,7 @@ public class L3NetworkSystemTags {
 
     public static String NETWORK_SERVICE_TYPE_TOKEN = "networkservices";
     public static PatternedSystemTag NETWORK_SERVICE_TYPE = new PatternedSystemTag(String.format("networkservices::{%s}", NETWORK_SERVICE_TYPE_TOKEN), L3NetworkVO.class);
+
+    public static String PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN = "dhcpServerUuid";
+    public static PatternedSystemTag PUBLIC_NETWORK_DHCP_SERVER_UUID = new PatternedSystemTag(String.format("dhcpServerUuid::{%s}", PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN), L3NetworkVO.class);
 }
