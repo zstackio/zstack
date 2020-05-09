@@ -973,6 +973,7 @@ public class KVMHost extends HostBase implements Host {
     private void doHandleKvmSyncMsg(final KVMHostSyncHttpCallMsg msg, SyncTaskChain outter) {
         inQueue().name(String.format("execute-sync-http-call-on-kvm-host-%s", self.getUuid()))
                 .asyncBackup(msg)
+                .asyncBackup(outter)
                 .run(chain -> executeSyncHttpCall(msg, new NoErrorCompletion(chain, outter) {
                     @Override
                     public void done() {
@@ -1030,6 +1031,7 @@ public class KVMHost extends HostBase implements Host {
     private void doHandleKvmAsyncMsg(final KVMHostAsyncHttpCallMsg msg, SyncTaskChain outter) {
         inQueue().name(String.format("execute-async-http-call-on-kvm-host-%s", self.getUuid()))
                 .asyncBackup(msg)
+                .asyncBackup(outter)
                 .run(chain -> executeAsyncHttpCall(msg, new NoErrorCompletion(chain, outter) {
                     @Override
                     public void done() {
