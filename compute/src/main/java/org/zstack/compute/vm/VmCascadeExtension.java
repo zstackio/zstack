@@ -451,7 +451,12 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     }
                 }
 
-                msg.setIgnoreResourceReleaseFailure(ignoreResourceReleaseFailure);
+                if (VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct.toString().equals(msg.getDeletionPolicy())) {
+                    msg.setIgnoreResourceReleaseFailure(true);
+                } else {
+                    msg.setIgnoreResourceReleaseFailure(ignoreResourceReleaseFailure);
+                }
+
                 msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
                 msg.setVmInstanceUuid(inv.getInventory().getUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, inv.getInventory().getUuid());
