@@ -15,4 +15,7 @@ public interface L2NetworkConstant {
     public static final String L2_VLAN_NETWORK_TYPE = "L2VlanNetwork";
 
     public static final String DETACH_L2NETWORK_CODE = "l2Network.detach";
+
+    // https://elixir.bootlin.com/linux/v5.6/source/include/uapi/linux/if.h#L33
+    public static final int LINUX_IF_NAME_MAX_SIZE = 15;
 }
