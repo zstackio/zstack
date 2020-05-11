@@ -54,8 +54,19 @@ public class HostCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     private void handleDeletionCleanup(CascadeAction action, Completion completion) {
-        dbf.eoCleanup(HostVO.class);
-        completion.success();
+        try {
+            final List<HostInventory> hinvs = hostFromAction(action);
+            if (hinvs != null) {
+                hinvs.forEach(h -> dbf.eoCleanup(HostVO.class, h.getUuid()));
+            } else {
+                dbf.eoCleanup(HostVO.class);
+            }
+        } catch (NullPointerException e) {
+            logger.warn(e.getLocalizedMessage());
+            dbf.eoCleanup(HostVO.class);
+        } finally {
+            completion.success();
+        }
     }
 
     private void handleDeletion(final CascadeAction action, final Completion completion) {

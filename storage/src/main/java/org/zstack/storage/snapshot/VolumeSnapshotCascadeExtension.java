@@ -52,8 +52,19 @@ public class VolumeSnapshotCascadeExtension extends AbstractAsyncCascadeExtensio
     }
 
     private void handleDeletionCleanup(CascadeAction action, Completion completion) {
-        dbf.eoCleanup(VolumeSnapshotVO.class);
-        completion.success();
+        try {
+            if (VolumeSnapshotVO.class.getSimpleName().equals(action.getParentIssuer())) {
+                List<VolumeSnapshotInventory> sinvs = action.getParentIssuerContext();
+                sinvs.forEach(s -> dbf.eoCleanup(VolumeSnapshotVO.class, s.getUuid()));
+            } else {
+                dbf.eoCleanup(VolumeSnapshotVO.class);
+            }
+        } catch (NullPointerException e) {
+            logger.warn(e.getLocalizedMessage());
+            dbf.eoCleanup(VolumeSnapshotVO.class);
+        } finally {
+            completion.success();
+        }
     }
 
     private NeedReplyMessage makeMsg(final String suuid, boolean volumeDeletion) {
