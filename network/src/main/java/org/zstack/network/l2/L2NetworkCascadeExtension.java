@@ -90,8 +90,19 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     private void handleDeletionCleanup(CascadeAction action, Completion completion) {
-        dbf.eoCleanup(L2NetworkVO.class);
-        completion.success();
+        try {
+            final List<L2NetworkInventory> l2invs = l2NetworkFromAction(action);
+            if (l2invs != null) {
+                l2invs.forEach(l -> dbf.eoCleanup(L2NetworkVO.class, l.getUuid()));
+            } else {
+                dbf.eoCleanup(L2NetworkVO.class);
+            }
+        } catch (NullPointerException e) {
+            logger.warn(e.getLocalizedMessage());
+            dbf.eoCleanup(L2NetworkVO.class);
+        } finally {
+            completion.success();
+        }
     }
 
     private void handleDeletion(final CascadeAction action, final Completion completion) {
