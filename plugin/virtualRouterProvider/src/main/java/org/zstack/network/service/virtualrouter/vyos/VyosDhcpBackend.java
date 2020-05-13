@@ -2,39 +2,48 @@ package org.zstack.network.service.virtualrouter.vyos;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.appliancevm.ApplianceVmInventory;
+import org.zstack.appliancevm.ApplianceVmSyncConfigToHaGroupExtensionPoint;
 import org.zstack.compute.vm.VmHostNameHelper;
-import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.GLock;
 import org.zstack.core.db.Q;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l3.L3Network;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
+import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.dhcp.VirtualRouterDhcpBackend;
+import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created by xing5 on 2016/10/31.
  */
 public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements VirtualRouterAfterAttachNicExtensionPoint,
-        VirtualRouterBeforeDetachNicExtensionPoint {
-    @Autowired
-    protected NetworkServiceManager nsMgr;
+        VirtualRouterBeforeDetachNicExtensionPoint, ApplianceVmSyncConfigToHaGroupExtensionPoint {
     @Autowired
     protected DatabaseFacade dbf;
+    @Autowired
+    protected VirtualRouterHaBackend haBackend;
 
 
     @Override
@@ -51,22 +60,49 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
         super.acquireVirtualRouterVm(struct, completion);
     }
 
-    private boolean isVRouterDhcpEnabled(String l3Uuid) {
-        boolean enableDhcp = false;
-        try {
-            NetworkServiceProviderType providerType = nsMgr.getTypeOfNetworkServiceProviderForService(l3Uuid, NetworkServiceType.DHCP);
-            if (VyosConstants.PROVIDER_TYPE == providerType) {
-                enableDhcp = true;
+    @Deferred
+    private boolean isDhcpEnabledOnVirtualRouter(String l3Uuid, String vrUuid) {
+        // TODO: ui will call APICreateVpcVRouterMsg at same time, we need a lock here
+        GLock lock = new GLock(String.format("set-vpc-uuid-for-vyos-dhcp-%s", l3Uuid), TimeUnit.MINUTES.toSeconds(30));
+        lock.lock();
+        Defer.defer(lock::unlock);
+
+        String uuid = L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID.getTokenByResourceUuid(l3Uuid, L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN);
+        if (uuid != null) {
+            /* this vr is configured as vpc router for l3Uuid */
+            if (uuid.equals(vrUuid)) {
+                return true;
+            } else {
+                /* hagroup of this vr is configured as vpc router for l3Uuid */
+                String haUuid = haBackend.getVirutalRouterHaUuid(vrUuid);
+                return uuid.equals(haUuid);
             }
-        } catch (Exception e) {
-            enableDhcp = false;
         }
 
-        return enableDhcp;
+        String haUuid = haBackend.getVirutalRouterHaUuid(vrUuid);
+        if (haUuid != null) {
+            uuid = haUuid;
+        } else {
+            uuid = vrUuid;
+        }
+
+        SystemTagCreator creator = L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID.newSystemTagCreator(l3Uuid);
+        creator.ignoreIfExisting = false;
+        creator.inherent = false;
+        creator.recreate = true;
+        creator.setTagByTokens(
+                map(
+                        e(L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN, uuid)
+                )
+        );
+        creator.create();
+
+        return true;
     }
 
     protected void refreshDhcpServer(String vrUuid, Completion completion) {
         List<VirtualRouterCommands.DhcpServerInfo> dhcpServerInfos = new ArrayList<>();
+        boolean sendEmptyInfo = false;
 
         VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
         for (VmNicVO vo : vrVO.getVmNics()) {
@@ -74,12 +110,19 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
                 continue;
             }
 
+            if (VirtualRouterNicMetaData.isPublicNic(vo) || VirtualRouterNicMetaData.isAddinitionalPublicNic(vo)) {
+                if (!isDhcpEnabledOnVirtualRouter(vo.getL3NetworkUuid(), vrUuid)) {
+                    sendEmptyInfo = true;
+                    continue;
+                }
+            }
+
             VirtualRouterCommands.DhcpServerInfo serverInfo = getDhcpServerInfo(VmNicInventory.valueOf(vo), false);
             dhcpServerInfos.add(serverInfo);
         }
 
         /* there is no network enable vyos dhcp service, skip the flow */
-        if (dhcpServerInfos.isEmpty()) {
+        if (dhcpServerInfos.isEmpty() && !sendEmptyInfo) {
             completion.success();
             return;
         }
@@ -125,6 +168,8 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
         server.setGateway(nic.getGateway());
         server.setDnsDomain(l3Vo.getDnsDomain());
         server.setMtu(new MtuGetter().getMtu(nic.getL3NetworkUuid()));
+        /* when vyos dhcp is enabled, vm dns request is forwarded by virtual router */
+        server.setDnsServer(nic.getIp());
 
         if (dhcpServerOnly) {
             return server;
@@ -227,11 +272,26 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
         });
     }
 
-    @Override
-    public void afterAttachNic(VmNicInventory nic, Completion completion) {
+    boolean isDhcpEnabledOnNic(VmNicInventory nic) {
         boolean enableDhcp = isVRouterDhcpEnabled(nic.getL3NetworkUuid());
 
         if (!enableDhcp) {
+            return false;
+        }
+
+        if (VirtualRouterNicMetaData.isPublicNic(nic) || VirtualRouterNicMetaData.isAddinitionalPublicNic(nic)) {
+            if (!isDhcpEnabledOnVirtualRouter(nic.getL3NetworkUuid(), nic.getVmInstanceUuid())) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
+    @Override
+    public void afterAttachNic(VmNicInventory nic, Completion completion) {
+        if (!isDhcpEnabledOnNic(nic)) {
             completion.success();
             return;
         }
@@ -241,9 +301,7 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
 
     @Override
     public void afterAttachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
-        boolean enableDhcp = isVRouterDhcpEnabled(nic.getL3NetworkUuid());
-
-        if (!enableDhcp) {
+        if (!isDhcpEnabledOnNic(nic)) {
             completion.done();
             return;
         }
@@ -264,9 +322,7 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
 
     @Override
     public void beforeDetachNic(VmNicInventory nic, Completion completion) {
-        boolean enableDhcp = isVRouterDhcpEnabled(nic.getL3NetworkUuid());
-
-        if (!enableDhcp) {
+        if (!isDhcpEnabledOnNic(nic)) {
             completion.success();
             return;
         }
@@ -276,9 +332,7 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
 
     @Override
     public void beforeDetachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
-        boolean enableDhcp = isVRouterDhcpEnabled(nic.getL3NetworkUuid());
-
-        if (!enableDhcp) {
+        if (!isDhcpEnabledOnNic(nic)) {
             completion.done();
             return;
         }
@@ -294,5 +348,48 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
                 completion.done();
             }
         });
+    }
+
+    @Override
+    public void applianceVmSyncConfigToHa(ApplianceVmInventory inv, String haUuid) {
+        for (VmNicInventory nic : inv.getVmNics()) {
+            boolean enableDhcp = isVRouterDhcpEnabled(nic.getL3NetworkUuid());
+
+            if (!enableDhcp) {
+                continue;
+            }
+
+            String uuid = L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID.getTokenByResourceUuid(nic.getL3NetworkUuid(), L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN);
+            if (!inv.getUuid().equals(uuid)) {
+                continue;
+            }
+
+            L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID.updateTagByToken(nic.getL3NetworkUuid(),
+                    L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN, haUuid);
+        }
+    }
+
+    @Override
+    public void applianceVmSyncConfigToHaRollback(ApplianceVmInventory inv, String haUuid) {
+        for (VmNicInventory nic : inv.getVmNics()) {
+            boolean enableDhcp = isVRouterDhcpEnabled(nic.getL3NetworkUuid());
+
+            if (!enableDhcp) {
+                continue;
+            }
+
+            String uuid = L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID.getTokenByResourceUuid(nic.getL3NetworkUuid(), L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN);
+            if (!haUuid.equals(uuid)) {
+                continue;
+            }
+
+            L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID.updateTagByToken(nic.getL3NetworkUuid(),
+                    L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN, inv.getUuid());
+        }
+    }
+
+    @Override
+    public void applianceVmSyncConfigAfterAddToHaGroup(ApplianceVmInventory inv, String haUuid, NoErrorCompletion completion) {
+        completion.done();
     }
 }

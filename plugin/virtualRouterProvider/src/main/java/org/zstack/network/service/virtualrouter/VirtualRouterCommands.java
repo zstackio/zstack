@@ -287,6 +287,7 @@ public class VirtualRouterCommands {
 		private String 	netmask;
 		private String 	gateway;
 		private String 	dnsDomain;
+		private String 	dnsServer;
 		private Integer mtu;
 		private List<DhcpInfo> dhcpInfos;
 
@@ -344,6 +345,14 @@ public class VirtualRouterCommands {
 
 		public void setDhcpInfos(List<DhcpInfo> dhcpInfos) {
 			this.dhcpInfos = dhcpInfos;
+		}
+
+		public String getDnsServer() {
+			return dnsServer;
+		}
+
+		public void setDnsServer(String dnsServer) {
+			this.dnsServer = dnsServer;
 		}
 	}
 
