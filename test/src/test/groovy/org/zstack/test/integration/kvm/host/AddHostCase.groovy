@@ -5,18 +5,20 @@ import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.header.errorcode.SysErrors
-import org.zstack.header.host.*
-import org.zstack.header.message.MessageReply
+import org.zstack.header.host.AddHostReply
+import org.zstack.header.host.HostConstant
+import org.zstack.header.host.HostStatus
+import org.zstack.header.host.HostVO
+import org.zstack.kvm.APIAddKVMHostMsg
 import org.zstack.kvm.AddKVMHostMsg
 import org.zstack.sdk.AddKVMHostAction
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.GetHypervisorTypesResult
+import org.zstack.sdk.LongJobInventory
 import org.zstack.storage.primary.local.LocalStorageKvmBackend
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
-import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.tester.ZTester
 
@@ -51,12 +53,84 @@ class AddHostCase extends SubCase {
             testInnerAddHostMsg()
             testGetHypervisorTypes()
             testAddHostFailureRollback()
+            testAddHostViaLongJob()
+            testLongJobAddHostFailure()
         }
     }
 
     void prepare() {
         cluster = env.inventoryByName("cluster") as ClusterInventory
         bus = bean(CloudBus.class)
+    }
+
+    void testLongJobAddHostFailure() {
+        env.testter.clearAll()
+
+        AddKVMHostMsg akmsg = new AddKVMHostMsg(
+                accountUuid: loginAsAdmin().accountUuid,
+                name: "kvm",
+                managementIp: "###",
+                clusterUuid: cluster.uuid,
+                password: "password",
+                username: "root"
+        )
+
+        LongJobInventory jobInventory
+        expect(AssertionError.class) {
+            jobInventory = submitLongJob {
+                name = "addHostLongJob"
+                jobName = APIAddKVMHostMsg.class.simpleName
+                jobData = JSONObjectUtil.toJsonString(akmsg)
+            } as LongJobInventory
+        }
+
+        //127.0.0.5 is added in testAddHostViaLongJob
+        akmsg = new AddKVMHostMsg(
+                accountUuid: loginAsAdmin().accountUuid,
+                name: "kvm",
+                managementIp: "127.0.0.5",
+                clusterUuid: cluster.uuid,
+                password: "password",
+                username: "root"
+        )
+
+        expect(AssertionError.class) {
+            jobInventory = submitLongJob {
+                name = "addHostLongJob"
+                jobName = APIAddKVMHostMsg.class.simpleName
+                jobData = JSONObjectUtil.toJsonString(akmsg)
+            } as LongJobInventory
+        }
+    }
+
+    void testAddHostViaLongJob() {
+        env.testter.clearAll()
+
+        AddKVMHostMsg akmsg = new AddKVMHostMsg(
+                accountUuid: loginAsAdmin().accountUuid,
+                name: "kvm",
+                managementIp: "127.0.0.5",
+                clusterUuid: cluster.uuid,
+                password: "password",
+                username: "root"
+        )
+
+        LongJobInventory jobInventory = submitLongJob {
+            name = "addHostLongJob"
+            jobName = APIAddKVMHostMsg.class.simpleName
+            jobData = JSONObjectUtil.toJsonString(akmsg)
+        } as LongJobInventory
+
+        String jobUuid = jobInventory.uuid
+
+        retryInSecs {
+            List list = queryLongJob {
+                conditions = ["uuid=$jobUuid".toString()]
+            } as List
+            assert !list.isEmpty()
+            jobInventory = list.first() as LongJobInventory
+            assert jobInventory.state.toString() == "Succeeded"
+        }
     }
 
     void testAddHostFailureRollback() {
