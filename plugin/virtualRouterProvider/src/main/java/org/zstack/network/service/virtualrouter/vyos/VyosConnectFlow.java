@@ -24,6 +24,8 @@ import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
 import org.zstack.network.service.virtualrouter.VirtualRouterManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.zsha2.ZSha2Helper;
+import org.zstack.utils.zsha2.ZSha2Info;
 
 import static org.zstack.core.Platform.operr;
 
@@ -90,6 +92,12 @@ public class VyosConnectFlow extends NoRollbackFlow {
                     public void run(final FlowTrigger trigger, Map data) {
                         String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_INIT);
                         InitCommand cmd = new InitCommand();
+                        try {
+                            ZSha2Info info = ZSha2Helper.getInfo();
+                            cmd.setMnPeerIp(info.getPeerip());
+                        } catch (Exception e) {
+                            /* MN is not in HA mode */
+                        }
                         cmd.setUuid(vrUuid);
                         restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
                             @Override
