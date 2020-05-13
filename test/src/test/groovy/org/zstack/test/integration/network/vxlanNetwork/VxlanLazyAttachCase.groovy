@@ -314,7 +314,7 @@ class VxlanLazyAttachCase extends SubCase {
             reconnectHost { uuid = host1.uuid }
         }
 
-        createL2VxlanNetwork {
+        L2VxlanNetworkInventory vxlan1 = createL2VxlanNetwork {
             poolUuid = pool.uuid
             name = "TestVxlan1"
             zoneUuid = zone.uuid
@@ -328,14 +328,28 @@ class VxlanLazyAttachCase extends SubCase {
         realizeRecords.clear()
         reconnectHost { uuid = host1.uuid }
 
-        createL2VxlanNetwork {
+        L2VxlanNetworkInventory vxlan2 = createL2VxlanNetwork {
             poolUuid = pool.uuid
             name = "TestVxlan2"
             zoneUuid = zone.uuid
-        } as L2VxlanNetworkInventory
-        
+        }
+
         retryInSecs {
             assert realizeRecords.size() == 2
         }
+
+        VxlanKvmAgentCommands.CreateVxlanBridgesCmd vxlanCmd = null
+        env.afterSimulator(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORKS_PATH) { rsp, HttpEntity<String> e ->
+            vxlanCmd = JSONObjectUtil.toObject(e.body, VxlanKvmAgentCommands.CreateVxlanBridgesCmd.class)
+            return rsp
+        }
+        reconnectHost { uuid = host1.uuid }
+
+        assert vxlanCmd.bridgeCmds.size() == 2
+        for (VxlanKvmAgentCommands.CreateVxlanBridgeCmd bridgeCmd : vxlanCmd.bridgeCmds) {
+            assert bridgeCmd.vni == vxlan2.vni || bridgeCmd.vni == vxlan1.vni
+            assert bridgeCmd.mtu == 1450
+        }
+
     }
 }
