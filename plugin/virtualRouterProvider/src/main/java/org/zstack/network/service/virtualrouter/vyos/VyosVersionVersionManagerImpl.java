@@ -11,6 +11,7 @@ import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.utils.Utils;
+import org.zstack.utils.VersionComparator;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
@@ -76,11 +77,13 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
                     return;
                 }
 
-                if (versionCompare(managementVersion, ret.getVersion()) > 0) {
+                VersionComparator mnVersion = new VersionComparator(managementVersion);
+                VersionComparator remoteVersion = new VersionComparator(ret.getVersion().trim());
+                if (mnVersion.compare(remoteVersion) > 0) {
                     logger.warn(String.format("virtual router[uuid: %s] version [%s] is older than management node version [%s]",vrUuid, ret.getVersion(), managementVersion));
                     result.setNeedReconnect(true);
-                    int oldVersion = versionCompare(ret.getVersion(), VyosConstants.VIP_REBUILD_VERSION);
-                    int newVersion = versionCompare(managementVersion, VyosConstants.VIP_REBUILD_VERSION);
+                    int oldVersion = remoteVersion.compare(VyosConstants.VIP_REBUILD_VERSION);
+                    int newVersion = mnVersion.compare(VyosConstants.VIP_REBUILD_VERSION);
                     if ((oldVersion < 0) && (newVersion > 0)) {
                         result.setRebuildVip(true);
                     }
@@ -125,19 +128,5 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
 
     private boolean versionFormatCheck(String version) {
         return version.split("\\.").length == VyosConstants.VYOS_VERSION_LENGTH;
-    }
-
-    private int versionCompare(String ver1, String ver2) {
-        String array1[] = ver1.split("\\.");
-        String array2[] = ver2.split("\\.");
-
-        for (int i = 0; i < VyosConstants.VYOS_VERSION_LENGTH; i++) {
-            int ret = array1[i].compareTo(array2[i]);
-            if (ret != 0) {
-                return ret;
-            }
-        }
-
-        return 0;
     }
 }
