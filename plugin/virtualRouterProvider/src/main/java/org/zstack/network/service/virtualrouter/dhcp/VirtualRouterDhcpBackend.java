@@ -415,6 +415,7 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
             } else {
                 completion.success(vrInv);
             }
+            return;
         }
 
         acquireVirtualRouterVm(dhcpStruct, completion);
