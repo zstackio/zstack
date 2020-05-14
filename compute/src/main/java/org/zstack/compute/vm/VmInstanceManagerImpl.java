@@ -2296,14 +2296,16 @@ public class VmInstanceManagerImpl extends AbstractService implements
     @Override
     public void afterChangeHostStatus(String hostUuid, HostStatus before, HostStatus next) {
         if(next == HostStatus.Disconnected) {
-            List<String> vmUuids = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid)
+            List<Tuple> vms = Q.New(VmInstanceVO.class).select(VmInstanceVO_.uuid, VmInstanceVO_.state)
                     .eq(VmInstanceVO_.hostUuid, hostUuid)
-                    .listValues();
-            if(vmUuids.isEmpty()){
+                    .listTuple();
+            if(vms.isEmpty()){
                 return;
             }
 
-            new While<>(vmUuids).step((vmUuid, completion) -> {
+            new While<>(vms).step((vm, completion) -> {
+                String vmUuid = vm.get(0, String.class);
+                String vmState = vm.get(1, VmInstanceState.class).toString();
                 VmStateChangedOnHostMsg msg = new VmStateChangedOnHostMsg();
                 msg.setVmInstanceUuid(vmUuid);
                 msg.setHostUuid(hostUuid);
@@ -2315,6 +2317,13 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         if(!reply.isSuccess()){
                             logger.warn(String.format("the host[uuid:%s] disconnected, but the vm[uuid:%s] fails to " +
                                             "change it's state to Unknown, %s", hostUuid, vmUuid, reply.getError()));
+                            logger.warn(String.format("create an unknowngc job for vm[uuid:%s]", vmUuid));
+                            UnknownVmGC gc = new UnknownVmGC();
+                            gc.NAME = UnknownVmGC.getGCName(vmUuid);
+                            gc.vmUuid = vmUuid;
+                            gc.vmState = vmState;
+                            gc.hostUuid = hostUuid;
+                            gc.submit(VmGlobalConfig.UNKNOWN_GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
                         } else {
                             logger.debug(String.format("the host[uuid:%s] disconnected, change the VM[uuid:%s]' state to Unknown", hostUuid, vmUuid));
                         }

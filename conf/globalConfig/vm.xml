@@ -221,4 +221,12 @@
 		<category>vm</category>
 		<type>java.lang.Integer</type>
 	</config>
+
+	<config>
+		<name>set.unknown.gc.interval</name>
+		<description>unknown gc interval, by seconds</description>
+		<defaultValue>30</defaultValue>
+		<category>vm</category>
+		<type>java.lang.Long</type>
+	</config>
 </globalConfig>
