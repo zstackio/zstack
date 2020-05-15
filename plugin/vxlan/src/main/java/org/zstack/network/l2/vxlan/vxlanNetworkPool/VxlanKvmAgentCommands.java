@@ -103,41 +103,14 @@ public class VxlanKvmAgentCommands {
     }
 
     public static class CreateVxlanBridgesCmd extends AgentCommand {
-        private String bridgeName;
-        private String vtepIp;
-        private Map<String, Integer> l2Networks;
-        private List<String> peers;
+        List<CreateVxlanBridgeCmd> bridgeCmds;
 
-        public Map<String, Integer> getL2Networks() {
-            return l2Networks;
+        public List<CreateVxlanBridgeCmd> getBridgeCmds() {
+            return bridgeCmds;
         }
 
-        public void setL2Networks(Map<String, Integer> l2Networks) {
-            this.l2Networks = l2Networks;
-        }
-
-        public String getBridgeName() {
-            return bridgeName;
-        }
-
-        public void setBridgeName(String bridgeName) {
-            this.bridgeName = bridgeName;
-        }
-
-        public String getVtepIp() {
-            return vtepIp;
-        }
-
-        public void setVtepIp(String vtepIp) {
-            this.vtepIp = vtepIp;
-        }
-
-        public List<String> getPeers() {
-            return peers;
-        }
-
-        public void setPeers(List<String> peers) {
-            this.peers = peers;
+        public void setBridgeCmds(List<CreateVxlanBridgeCmd> bridgeCmds) {
+            this.bridgeCmds = bridgeCmds;
         }
     }
 

@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -18,20 +19,19 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkConstant;
-import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
-import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.*;
+import org.zstack.network.l2.L2NetworkDefaultMtu;
+import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.l2.vxlan.vtep.CreateVtepMsg;
 import org.zstack.network.l2.vxlan.vtep.VtepVO;
 import org.zstack.network.l2.vxlan.vtep.VtepVO_;
-import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkGlobalConfig;
-import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
-import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
+import org.zstack.network.l2.vxlan.vxlanNetwork.*;
 import org.zstack.network.service.MtuGetter;
+import org.zstack.network.service.NetworkServiceGlobalConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -54,6 +54,8 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private VxlanNetworkFactory VxlanNetworkFactory;
 
     private static String VTEP_IP = "vtepIp";
     private static String NEED_POPULATE = "needPopulate";
@@ -219,16 +221,21 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                     return;
                 }
 
-                Map<String, Integer> l2networks = vxlanNetworkVOS.stream()
-                        .collect(Collectors.toMap(VxlanNetworkVO::getUuid, VxlanNetworkVO::getVni));
-
                 final VxlanKvmAgentCommands.CreateVxlanBridgesCmd cmd = new VxlanKvmAgentCommands.CreateVxlanBridgesCmd();
-                cmd.setVtepIp((String) data.get(VTEP_IP));
-                cmd.setL2Networks(l2networks);
-                cmd.setPeers(vteps.stream()
-                        .map(VtepVO::getVtepIp)
-                        .filter(v -> !v.equals(cmd.getVtepIp()))
-                        .collect(Collectors.toList()));
+                cmd.setBridgeCmds(new ArrayList<>());
+                List<String> peers = vteps.stream()
+                        .map(VtepVO::getVtepIp).distinct()
+                        .collect(Collectors.toList());
+                for (VxlanNetworkVO vo : vxlanNetworkVOS) {
+                    VxlanKvmAgentCommands.CreateVxlanBridgeCmd bridgeCmd = new VxlanKvmAgentCommands.CreateVxlanBridgeCmd();
+                    bridgeCmd.setVtepIp((String) data.get(VTEP_IP));
+                    bridgeCmd.setBridgeName(KVMRealizeL2VxlanNetworkBackend.makeBridgeName(vo.getVni()));
+                    bridgeCmd.setVni(vo.getVni());
+                    bridgeCmd.setL2NetworkUuid(vo.getUuid());
+                    bridgeCmd.setPeers(peers);
+                    bridgeCmd.setMtu(new MtuGetter().getL2Mtu(L2VxlanNetworkInventory.valueOf(vo)));
+                    cmd.getBridgeCmds().add(bridgeCmd);
+                }
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setHostUuid(hostUuid);
@@ -247,15 +254,15 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                         KVMHostAsyncHttpCallReply hreply = reply.castReply();
                         VxlanKvmAgentCommands.CreateVxlanBridgeResponse rsp = hreply.toResponse(VxlanKvmAgentCommands.CreateVxlanBridgeResponse.class);
                         if (!rsp.isSuccess()) {
-                            ErrorCode err = operr("failed to realize vxlan network pool[uuid:%s, type:%s, vnis:%s] on kvm host[uuid:%s], because %s",
-                                    l2Network.getUuid(), l2Network.getType(), l2networks, hostUuid, rsp.getError());
+                            ErrorCode err = operr("failed to realize vxlan network pool[uuid:%s, type:%s] on kvm host[uuid:%s], because %s",
+                                    l2Network.getUuid(), l2Network.getType(), hostUuid, rsp.getError());
                             trigger.fail(err);
                             return;
                         }
 
                         String info = String.format(
-                                "successfully realize vxlan network pool[uuid:%s, type:%s, vnis:%s] on kvm host[uuid:%s]",
-                                l2Network.getUuid(), l2Network.getType(), l2networks, hostUuid);
+                                "successfully realize vxlan network pool[uuid:%s, type:%s] on kvm host[uuid:%s]",
+                                l2Network.getUuid(), l2Network.getType(), hostUuid);
                         logger.debug(info);
 
                         for (VxlanNetworkVO vo : vxlanNetworkVOS) {
