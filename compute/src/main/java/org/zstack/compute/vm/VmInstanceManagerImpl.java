@@ -96,7 +96,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         L3NetworkDeleteExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint,
         GlobalApiMessageInterceptor,
-        HostAfterConnectedExtensionPoint,
         AfterChangeHostStatusExtensionPoint,
         VmInstanceMigrateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmInstanceManagerImpl.class);
@@ -2331,51 +2330,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     }
                 });
             }, 200).run(new NopeNoErrorCompletion());
-        }
-    }
-
-    @Override
-    public void afterHostConnected(HostInventory inv) {
-        if (inv.getStatus().equals(HostStatus.Connected.toString())){
-            List<Tuple> vmStates = Q.New(VmInstanceVO.class)
-                    .select(VmInstanceVO_.uuid, VmInstanceVO_.state)
-                    .eq(VmInstanceVO_.hostUuid, inv.getUuid())
-                    .listTuple();
-            if(vmStates.isEmpty()){
-                return;
-            }
-
-            Map<String, VmInstanceState> vmStateMap = vmStates.stream().
-                    collect(Collectors.toMap(i -> i.get(0, String.class), i -> i.get(1, VmInstanceState.class)));
-
-            final CheckVmStateOnHypervisorMsg cmsg = new CheckVmStateOnHypervisorMsg();
-            cmsg.setVmInstanceUuids(new ArrayList<>(vmStateMap.keySet()));
-            cmsg.setHostUuid(inv.getUuid());
-            bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, inv.getUuid());
-            bus.send(cmsg, new CloudBusCallBack(cmsg) {
-                @Override
-                public void run(MessageReply r) {
-                    if (!r.isSuccess()) {
-                        logger.warn(String.format("the host[uuid:%s] connected, but the vm states check fails, %s", inv.getUuid(), r.getError()));
-                        return;
-                    }
-
-                    CheckVmStateOnHypervisorReply reply = r.castReply();
-                    for (Map.Entry<String, String> e : reply.getStates().entrySet()) {
-                        VmInstanceState state = VmInstanceState.valueOf(e.getValue());
-                        if (vmStateMap.get(e.getKey()) != state) {
-                            VmStateChangedOnHostMsg vcmsg = new VmStateChangedOnHostMsg();
-                            vcmsg.setHostUuid(inv.getUuid());
-                            vcmsg.setVmInstanceUuid(e.getKey());
-                            vcmsg.setStateOnHost(state);
-                            vcmsg.setVmStateAtTracingMoment(vmStateMap.get(e.getKey()));
-                            vcmsg.setFromSync(true);
-                            bus.makeTargetServiceIdByResourceUuid(vcmsg, VmInstanceConstant.SERVICE_ID, e.getKey());
-                            bus.send(vcmsg);
-                        }
-                    }
-                }
-            });
         }
     }
 
