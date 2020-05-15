@@ -67,4 +67,7 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(inNumberRange = {1, 256})
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig VM_NIC_MULTIQUEUE_NUM = new GlobalConfig(CATEGORY, "nicMultiQueueNum");
+
+    @GlobalConfigValidation(numberGreaterThan = 1)
+    public static GlobalConfig UNKNOWN_GC_INTERVAL = new GlobalConfig(CATEGORY, "set.unknown.gc.interval");
 }
