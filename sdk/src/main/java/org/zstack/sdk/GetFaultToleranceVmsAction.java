@@ -85,7 +85,7 @@ public class GetFaultToleranceVmsAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/vm-instances/fault-tolerance";
+        info.path = "/vm-instances/fault-tolerance/sub-vms";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

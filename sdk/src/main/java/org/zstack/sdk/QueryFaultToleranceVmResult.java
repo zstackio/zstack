@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class QueryShadowVmResult {
+public class QueryFaultToleranceVmResult {
     public java.util.List inventories;
     public void setInventories(java.util.List inventories) {
         this.inventories = inventories;

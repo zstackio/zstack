@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryShadowVmAction extends QueryAction {
+public class QueryFaultToleranceVmAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryShadowVmAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryShadowVmResult value;
+        public org.zstack.sdk.QueryFaultToleranceVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryShadowVmAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryShadowVmResult value = res.getResult(org.zstack.sdk.QueryShadowVmResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryShadowVmResult() : value; 
+        org.zstack.sdk.QueryFaultToleranceVmResult value = res.getResult(org.zstack.sdk.QueryFaultToleranceVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryFaultToleranceVmResult() : value; 
 
         return ret;
     }
@@ -65,7 +65,7 @@ public class QueryShadowVmAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/vm-instances/shadow";
+        info.path = "/vm-instances/fault-tolerance";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
