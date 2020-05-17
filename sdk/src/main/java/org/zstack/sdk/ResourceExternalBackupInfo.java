@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.ResourceBackupState;
 
 public class ResourceExternalBackupInfo  {
 
@@ -20,11 +20,11 @@ public class ResourceExternalBackupInfo  {
         return this.name;
     }
 
-    public java.lang.String state;
-    public void setState(java.lang.String state) {
+    public ResourceBackupState state;
+    public void setState(ResourceBackupState state) {
         this.state = state;
     }
-    public java.lang.String getState() {
+    public ResourceBackupState getState() {
         return this.state;
     }
 

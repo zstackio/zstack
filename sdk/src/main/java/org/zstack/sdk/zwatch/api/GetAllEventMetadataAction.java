@@ -1,9 +1,8 @@
 package org.zstack.sdk.zwatch.api;
 
-import org.zstack.sdk.*;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetAllEventMetadataAction extends AbstractAction {
 

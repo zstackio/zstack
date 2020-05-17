@@ -82,6 +82,7 @@ public class SourceClassMap {
 			put("org.zstack.externalbackup.BackupStorageExternalBackupInfo", "org.zstack.sdk.BackupStorageExternalBackupInfo");
 			put("org.zstack.externalbackup.ExternalBackupInventory", "org.zstack.sdk.ExternalBackupInventory");
 			put("org.zstack.externalbackup.ExternalBackupState", "org.zstack.sdk.ExternalBackupState");
+			put("org.zstack.externalbackup.ResourceBackupState", "org.zstack.sdk.ResourceBackupState");
 			put("org.zstack.externalbackup.ResourceExternalBackupInfo", "org.zstack.sdk.ResourceExternalBackupInfo");
 			put("org.zstack.externalbackup.VmExternalBackupInfo", "org.zstack.sdk.VmExternalBackupInfo");
 			put("org.zstack.externalbackup.VolumeExternalBackupInfo", "org.zstack.sdk.VolumeExternalBackupInfo");
@@ -532,6 +533,8 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.datatype.Label$Operator", "org.zstack.sdk.zwatch.datatype.Operator");
 			put("org.zstack.zwatch.datatype.MetricDatum", "org.zstack.sdk.zwatch.datatype.MetricDatum");
 			put("org.zstack.zwatch.influxdb.InfluxEventData", "org.zstack.sdk.zwatch.influxdb.InfluxEventData");
+			put("org.zstack.zwatch.influxdb.InfluxEventDataV1", "org.zstack.sdk.zwatch.influxdb.InfluxEventDataV1");
+			put("org.zstack.zwatch.influxdb.InfluxEventDataV2", "org.zstack.sdk.zwatch.influxdb.InfluxEventDataV2");
 			put("org.zstack.zwatch.ruleengine.ComparisonOperator", "org.zstack.sdk.zwatch.ruleengine.ComparisonOperator");
         }
     };
@@ -821,6 +824,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ReplicationNetworkStatus", "org.zstack.storage.primary.ministorage.ReplicationNetworkStatus");
 			put("org.zstack.sdk.ReplicationRole", "org.zstack.storage.primary.ministorage.ReplicationRole");
 			put("org.zstack.sdk.ReplicationState", "org.zstack.storage.primary.ministorage.ReplicationState");
+			put("org.zstack.sdk.ResourceBackupState", "org.zstack.externalbackup.ResourceBackupState");
 			put("org.zstack.sdk.ResourceBindableConfigStruct", "org.zstack.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct");
 			put("org.zstack.sdk.ResourceConfigInventory", "org.zstack.resourceconfig.ResourceConfigInventory");
 			put("org.zstack.sdk.ResourceExternalBackupInfo", "org.zstack.externalbackup.ResourceExternalBackupInfo");
@@ -1065,6 +1069,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.datatype.MetricDatum", "org.zstack.zwatch.datatype.MetricDatum");
 			put("org.zstack.sdk.zwatch.datatype.Operator", "org.zstack.zwatch.datatype.Label$Operator");
 			put("org.zstack.sdk.zwatch.influxdb.InfluxEventData", "org.zstack.zwatch.influxdb.InfluxEventData");
+			put("org.zstack.sdk.zwatch.influxdb.InfluxEventDataV1", "org.zstack.zwatch.influxdb.InfluxEventDataV1");
+			put("org.zstack.sdk.zwatch.influxdb.InfluxEventDataV2", "org.zstack.zwatch.influxdb.InfluxEventDataV2");
 			put("org.zstack.sdk.zwatch.ruleengine.ComparisonOperator", "org.zstack.zwatch.ruleengine.ComparisonOperator");
         }
     };

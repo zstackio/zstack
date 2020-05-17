@@ -12,6 +12,14 @@ public class VolumeExternalBackupInfo extends org.zstack.sdk.ResourceExternalBac
         return this.vmInstanceUuid;
     }
 
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
+    }
+
     public long size;
     public void setSize(long size) {
         this.size = size;

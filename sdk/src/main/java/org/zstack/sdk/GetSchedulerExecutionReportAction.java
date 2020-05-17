@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class GetSchedulerExecutionReportAction extends AbstractAction {
 
@@ -11,7 +12,7 @@ public class GetSchedulerExecutionReportAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public GetSchedulerExecutionReportResult value;
+        public org.zstack.sdk.GetSchedulerExecutionReportResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -33,7 +34,7 @@ public class GetSchedulerExecutionReportAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,31L}, noTrim = false)
     public int range = 0;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List schedulerJobTypes;
 
     @Param(required = false)
@@ -62,8 +63,8 @@ public class GetSchedulerExecutionReportAction extends AbstractAction {
             return ret;
         }
         
-        GetSchedulerExecutionReportResult value = res.getResult(GetSchedulerExecutionReportResult.class);
-        ret.value = value == null ? new GetSchedulerExecutionReportResult() : value;
+        org.zstack.sdk.GetSchedulerExecutionReportResult value = res.getResult(org.zstack.sdk.GetSchedulerExecutionReportResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetSchedulerExecutionReportResult() : value; 
 
         return ret;
     }

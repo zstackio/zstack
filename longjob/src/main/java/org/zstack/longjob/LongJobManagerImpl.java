@@ -47,6 +47,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.zstack.core.db.DBSourceUtils.isDBConnected;
@@ -86,7 +87,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
     private List<String> longJobClasses = new ArrayList<String>();
     private Map<String, Class<? extends APIMessage>> useApiTimeout = new HashMap<>();
-    private Map<String, Function<APIEvent, Void>> longJobCallBacks = new ConcurrentHashMap<>();
+    private Map<String, Consumer<APIEvent>> longJobCallBacks = new ConcurrentHashMap<>();
 
     private void collectLongJobs() {
         Set<Class<?>> subs = BeanUtils.reflections.getTypesAnnotatedWith(LongJobFor.class);
@@ -530,7 +531,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
                 if (evt != null) {
                     exts.forEach(ext -> ext.afterJobFinished(job, vo, evt));
-                    Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> it.apply(evt));
+                    Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> it.accept(evt));
                 }
 
                 logger.info(String.format("successfully run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
@@ -553,7 +554,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
                 evt.setError(errorCode);
 
                 exts.forEach(ext -> ext.afterJobFailed(job, vo, evt));
-                Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> it.apply(evt));
+                Optional.ofNullable(longJobCallBacks.remove(vo.getApiId())).ifPresent(it -> it.accept(evt));
 
                 logger.info(String.format("failed to run longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
             }
@@ -561,7 +562,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     }
 
     @Override
-    public void submitLongJob(SubmitLongJobMsg msg, CloudBusCallBack submitCallBack, Function<APIEvent, Void> jobCallBack) {
+    public void submitLongJob(SubmitLongJobMsg msg, CloudBusCallBack submitCallBack, Consumer<APIEvent> jobCallBack) {
         String apiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
         longJobCallBacks.put(apiId, jobCallBack);
         bus.makeLocalServiceId(msg, LongJobConstants.SERVICE_ID);
