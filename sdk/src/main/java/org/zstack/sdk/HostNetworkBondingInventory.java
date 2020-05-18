@@ -68,19 +68,19 @@ public class HostNetworkBondingInventory  {
         return this.ipAddresses;
     }
 
-    public long miimon;
-    public void setMiimon(long miimon) {
+    public java.lang.Long miimon;
+    public void setMiimon(java.lang.Long miimon) {
         this.miimon = miimon;
     }
-    public long getMiimon() {
+    public java.lang.Long getMiimon() {
         return this.miimon;
     }
 
-    public boolean allSlavesActive;
-    public void setAllSlavesActive(boolean allSlavesActive) {
+    public java.lang.Boolean allSlavesActive;
+    public void setAllSlavesActive(java.lang.Boolean allSlavesActive) {
         this.allSlavesActive = allSlavesActive;
     }
-    public boolean getAllSlavesActive() {
+    public java.lang.Boolean getAllSlavesActive() {
         return this.allSlavesActive;
     }
 

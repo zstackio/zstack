@@ -36,6 +36,14 @@ public class SchedulerJobHistoryInventory  {
         return this.schedulerJobGroupUuid;
     }
 
+    public java.lang.String jobType;
+    public void setJobType(java.lang.String jobType) {
+        this.jobType = jobType;
+    }
+    public java.lang.String getJobType() {
+        return this.jobType;
+    }
+
     public java.sql.Timestamp startTime;
     public void setStartTime(java.sql.Timestamp startTime) {
         this.startTime = startTime;
@@ -82,6 +90,14 @@ public class SchedulerJobHistoryInventory  {
     }
     public boolean getSuccess() {
         return this.success;
+    }
+
+    public java.lang.String fireInstanceId;
+    public void setFireInstanceId(java.lang.String fireInstanceId) {
+        this.fireInstanceId = fireInstanceId;
+    }
+    public java.lang.String getFireInstanceId() {
+        return this.fireInstanceId;
     }
 
 }

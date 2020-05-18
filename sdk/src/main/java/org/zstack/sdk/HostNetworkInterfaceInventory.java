@@ -52,19 +52,19 @@ public class HostNetworkInterfaceInventory  {
         return this.speed;
     }
 
-    public boolean slaveActive;
-    public void setSlaveActive(boolean slaveActive) {
+    public java.lang.Boolean slaveActive;
+    public void setSlaveActive(java.lang.Boolean slaveActive) {
         this.slaveActive = slaveActive;
     }
-    public boolean getSlaveActive() {
+    public java.lang.Boolean getSlaveActive() {
         return this.slaveActive;
     }
 
-    public boolean carrierActive;
-    public void setCarrierActive(boolean carrierActive) {
+    public java.lang.Boolean carrierActive;
+    public void setCarrierActive(java.lang.Boolean carrierActive) {
         this.carrierActive = carrierActive;
     }
-    public boolean getCarrierActive() {
+    public java.lang.Boolean getCarrierActive() {
         return this.carrierActive;
     }
 
