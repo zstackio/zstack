@@ -27,6 +27,7 @@ public class SshShell {
     private String password;
     private String privateKeyFile;
     private int port = 22;
+    private Boolean withSudo = true;
 
     private void checkParams() {
         DebugUtils.Assert(hostname != null && !hostname.trim().equals(""), "hostname cannot be null");
@@ -54,7 +55,7 @@ public class SshShell {
                 logger.trace(String.format("[ssh shell]: %s", ssh));
             }
 
-            ShellResult ret = ShellUtils.runAndReturn(ssh);
+            ShellResult ret = ShellUtils.runAndReturn(ssh, withSudo);
             SshResult sret = new SshResult();
             sret.setCommandToExecute(cmd);
             sret.setReturnCode(ret.getRetCode());
@@ -189,5 +190,12 @@ public class SshShell {
 
     public void setPort(int port) {
         this.port = port;
+    }
+    public Boolean getWithSudo() {
+        return withSudo;
+    }
+
+    public void setWithSudo(Boolean withSudo) {
+        this.withSudo = withSudo;
     }
 }
