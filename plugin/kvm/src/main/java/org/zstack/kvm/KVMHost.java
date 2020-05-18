@@ -2945,12 +2945,13 @@ public class KVMHost extends HostBase implements Host {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
+                            ShellUtils.run(String.format("arp -d %s || true", getSelf().getManagementIp()));
                             SshShell sshShell = new SshShell();
                             sshShell.setHostname(getSelf().getManagementIp());
                             sshShell.setUsername(getSelf().getUsername());
                             sshShell.setPassword(getSelf().getPassword());
                             sshShell.setPort(getSelf().getPort());
-                            ShellUtils.run(String.format("arp -d %s || true", getSelf().getManagementIp()));
+                            sshShell.setWithSudo(false);
                             SshResult ret = sshShell.runCommand(String.format("curl --connect-timeout 10 %s|| wget --spider -q --connect-timeout=10 %s|| test $? -eq 8", restf.getCallbackUrl(), restf.getCallbackUrl()));
 
                             if (ret.isSshFailure()) {
