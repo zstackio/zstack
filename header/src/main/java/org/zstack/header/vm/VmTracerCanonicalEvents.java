@@ -10,6 +10,61 @@ public class VmTracerCanonicalEvents {
     public static final String STRANGER_VM_FOUND_PATH = "/vmTracer/strangerVmFound";
     public static final String VM_OPERATE_FAIL_ON_HYPERVISOR_PATH = "/vmTracer/vmOperateFailOnHypervisor";
     public static final String VM_STATE_IN_SHUTDOWN_PATH = "/vmTracer/vmStateInShutdown";
+    public static final String VM_SKIP_TRACE_PATH = "/vmTracer/skipTrace";
+    public static final String VM_CONTINUE_TRACE_PATH = "/vmTrace/continueTrace";
+
+    @NeedJsonSchema
+    public static class VmSkipTraceData {
+        private String vmUuid;
+        private String apiId;
+        private String msgName;
+
+        public String getMsgName() {
+            return msgName;
+        }
+
+        public void setMsgName(String msgName) {
+            this.msgName = msgName;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getApiId() {
+            return apiId;
+        }
+
+        public void setApiId(String apiId) {
+            this.apiId = apiId;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class VmContinueTraceData {
+        private String vmUuid;
+        private String apiId;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getApiId() {
+            return apiId;
+        }
+
+        public void setApiId(String apiId) {
+            this.apiId = apiId;
+        }
+    }
 
     @NeedJsonSchema
     public static class VmStateInShutdownData {

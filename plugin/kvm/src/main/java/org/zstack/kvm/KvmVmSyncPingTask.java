@@ -3,10 +3,7 @@ package org.zstack.kvm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.DeleteVmGC;
 import org.zstack.compute.vm.VmTracer;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.EventFacade;
-import org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -83,19 +80,57 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
                 if (msg instanceof VmInstanceMessage) {
                     final String vmUuid = ((VmInstanceMessage) msg).getVmInstanceUuid();
-                    vmsToSkip.putIfAbsent(vmUuid, true);
-
+                    VmTracerCanonicalEvents.VmSkipTraceData data = new VmTracerCanonicalEvents.VmSkipTraceData();
+                    data.setMsgName(msg.getMessageName());
+                    data.setVmUuid(vmUuid);
                     if (msg instanceof APIMessage) {
                         final String apiId = msg.getId();
-                        if (vmApis.putIfAbsent(apiId, vmUuid) == null) {
-                            logger.info(String.format("Skipping tracing VM[uuid:%s], due to %s, api=%s", vmUuid, msg.getMessageName(), apiId));
-                        }
-                    } else {
-                        logger.info(String.format("Skipping tracing VM[uuid:%s], due to %s", vmUuid, msg.getMessageName()));
+                        data.setApiId(apiId);
                     }
+
+                    evtf.fire(VmTracerCanonicalEvents.VM_SKIP_TRACE_PATH, data);
                 }
             }
         }, skipVmTracerMessages);
+
+        evtf.on(VmTracerCanonicalEvents.VM_SKIP_TRACE_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                VmTracerCanonicalEvents.VmSkipTraceData data1
+                        = (VmTracerCanonicalEvents.VmSkipTraceData) data;
+                if (data1.getVmUuid() != null) {
+                    vmsToSkip.putIfAbsent(data1.getVmUuid(), true);
+                }
+
+                if (data1.getApiId() == null) {
+                    logger.info(String.format("Skipping tracing VM[uuid:%s], due to %s",
+                            data1.getVmUuid(), data1.getMsgName()));
+                    return;
+                }
+
+                if (vmApis.putIfAbsent(data1.getApiId(), data1.getVmUuid()) == null) {
+                    logger.info(String.format("Skipping tracing VM[uuid:%s], due to %s, api=%s", data1.getVmUuid(), data1.getMsgName(), data1.getApiId()));
+                }
+            }
+        });
+
+        evtf.on(VmTracerCanonicalEvents.VM_CONTINUE_TRACE_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                VmTracerCanonicalEvents.VmContinueTraceData data1
+                        = (VmTracerCanonicalEvents.VmContinueTraceData) data;
+                if (data1.getApiId() != null) {
+                    String vmUuid = vmApis.remove(data1.getApiId());
+                    logger.info("Continuing tracing VM: " + data1.getVmUuid());
+                    vmsToSkip.remove(vmUuid);
+                    return;
+                }
+
+                if (data1.getVmUuid() != null) {
+                    vmsToSkip.remove(data1.getVmUuid());
+                }
+            }
+        });
     }
 
     @Override
@@ -116,12 +151,14 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         }
 
         if (apiId != null) {
-            vmUuid = vmApis.remove(apiId);
+            vmUuid = vmApis.get(apiId);
         }
 
-        if (vmUuid != null) {
-            logger.info("Continuing tracing VM: " + vmUuid);
-            vmsToSkip.remove(vmUuid);
+        if (apiId != null || vmUuid != null) {
+            VmTracerCanonicalEvents.VmContinueTraceData data = new VmTracerCanonicalEvents.VmContinueTraceData();
+            data.setApiId(apiId);
+            data.setVmUuid(vmUuid);
+            evtf.fire(VmTracerCanonicalEvents.VM_CONTINUE_TRACE_PATH, data);
         }
     }
 
