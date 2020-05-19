@@ -21,10 +21,10 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l3.NormalIpRangeVO;
-import org.zstack.header.network.l3.NormalIpRangeVO_;
-import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.AfterApplyFlatEipExtensionPoint;
+import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
@@ -32,12 +32,11 @@ import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
 import org.zstack.network.service.NetworkServiceFilter;
-import org.zstack.network.service.eip.EipBackend;
-import org.zstack.network.service.eip.EipConstant;
-import org.zstack.network.service.eip.EipStruct;
-import org.zstack.network.service.eip.EipVO;
+import org.zstack.network.service.NetworkServiceManager;
+import org.zstack.network.service.eip.*;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentCmd;
 import org.zstack.network.service.flat.FlatNetworkServiceConstant.AgentRsp;
+import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
@@ -62,7 +61,7 @@ import static org.zstack.core.Platform.*;
  * Created by xing5 on 2016/4/4.
  */
 public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
-        VmAbnormalLifeCycleExtensionPoint, VmInstanceMigrateExtensionPoint {
+        VmAbnormalLifeCycleExtensionPoint, VmInstanceMigrateExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint {
     private static final CLogger logger = Utils.getLogger(FlatEipBackend.class);
 
     @Autowired
@@ -75,6 +74,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     private DatabaseFacade dbf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    protected NetworkServiceManager nsMgr;
 
     public static class EipTO {
         public String eipUuid;
@@ -707,5 +708,40 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     @Override
     public String getNetworkServiceProviderType() {
         return FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING;
+    }
+
+    @Override
+    public List<VmNicInventory> filterVmNicsForEipInVirtualRouter(VipInventory vip, List<VmNicInventory> vmNics) {
+        /* if vmnic is in flat network, it will be filtered out if it already has eip attached */
+        Map<String, NetworkServiceProviderType> l3Maps = new HashMap<>();
+        List<VmNicInventory> ret = new ArrayList<>();
+        boolean isIpv4 = NetworkUtils.isIpv4Address(vip.getIp());
+        for (VmNicInventory nic : vmNics) {
+            NetworkServiceProviderType l3ProviderType = l3Maps.get(nic.getL3NetworkUuid());
+            if (l3ProviderType == null) {
+                try {
+                    NetworkServiceProviderType providerType = nsMgr.getTypeOfNetworkServiceProviderForService(nic.getL3NetworkUuid(), EipConstant.EIP_TYPE);
+                    l3Maps.put(nic.getL3NetworkUuid(), providerType);
+                } catch (Exception e) {
+                    l3Maps.put(nic.getL3NetworkUuid(), FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE);
+                }
+                l3ProviderType = l3Maps.get(nic.getL3NetworkUuid());
+            }
+
+            /* vmnic in flat network, it can have only 1 eip */
+            if (l3ProviderType == FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE) {
+                String vipIp = Q.New(EipVO.class).eq(EipVO_.vmNicUuid, nic.getUuid()).select(EipVO_.vipIp).findValue();
+                if (vipIp != null) {
+                    boolean isVipIpv4 = NetworkUtils.isIpv4Address(vipIp);
+                    if (isIpv4 == isVipIpv4) {
+                        continue;
+                    }
+                }
+            }
+
+            ret.add(nic);
+        }
+
+        return ret;
     }
 }
