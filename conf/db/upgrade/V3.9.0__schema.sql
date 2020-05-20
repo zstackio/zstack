@@ -396,3 +396,29 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MetricTemplateVO` (
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkMetricTemplateVOMetricDataHttpReceiverVO` FOREIGN KEY (`receiverUuid`) REFERENCES `zstack`.`MetricDataHttpReceiverVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELIMITER $$
+CREATE PROCEDURE enableVnicMultipleQueuesForVirtualRouter()
+BEGIN
+    DECLARE virtualRouterUuid VARCHAR(32);
+    DECLARE ruuid VARCHAR(32);
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur CURSOR FOR SELECT uuid FROM `zstack`.`VirtualRouterVmVO`;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO virtualRouterUuid;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+        #create resource config
+        SET ruuid = REPLACE(UUID(), '-', '');
+        INSERT INTO zstack.ResourceConfigVO (uuid, name, description, category, value, resourceUuid, resourceType, lastOpDate, createDate)
+        values(ruuid, "nicMultiQueueNum", "nicMultiQueueNum", "vm", "4", virtualRouterUuid, "VmInstanceVO", CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+    END LOOP;
+    CLOSE cur;
+END $$
+DELIMITER ;
+
+CALL enableVnicMultipleQueuesForVirtualRouter();
+DROP PROCEDURE IF EXISTS enableVnicMultipleQueuesForVirtualRouter;
