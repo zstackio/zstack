@@ -535,6 +535,9 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.influxdb.InfluxEventData", "org.zstack.sdk.zwatch.influxdb.InfluxEventData");
 			put("org.zstack.zwatch.influxdb.InfluxEventDataV1", "org.zstack.sdk.zwatch.influxdb.InfluxEventDataV1");
 			put("org.zstack.zwatch.influxdb.InfluxEventDataV2", "org.zstack.sdk.zwatch.influxdb.InfluxEventDataV2");
+			put("org.zstack.zwatch.metricpusher.MetricDataHttpReceiverInventory", "org.zstack.sdk.zwatch.metricpusher.MetricDataHttpReceiverInventory");
+			put("org.zstack.zwatch.metricpusher.MetricTemplateInventory", "org.zstack.sdk.zwatch.metricpusher.MetricTemplateInventory");
+			put("org.zstack.zwatch.metricpusher.ReceiverState", "org.zstack.sdk.zwatch.metricpusher.ReceiverState");
 			put("org.zstack.zwatch.ruleengine.ComparisonOperator", "org.zstack.sdk.zwatch.ruleengine.ComparisonOperator");
         }
     };
@@ -1071,6 +1074,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.influxdb.InfluxEventData", "org.zstack.zwatch.influxdb.InfluxEventData");
 			put("org.zstack.sdk.zwatch.influxdb.InfluxEventDataV1", "org.zstack.zwatch.influxdb.InfluxEventDataV1");
 			put("org.zstack.sdk.zwatch.influxdb.InfluxEventDataV2", "org.zstack.zwatch.influxdb.InfluxEventDataV2");
+			put("org.zstack.sdk.zwatch.metricpusher.MetricDataHttpReceiverInventory", "org.zstack.zwatch.metricpusher.MetricDataHttpReceiverInventory");
+			put("org.zstack.sdk.zwatch.metricpusher.MetricTemplateInventory", "org.zstack.zwatch.metricpusher.MetricTemplateInventory");
+			put("org.zstack.sdk.zwatch.metricpusher.ReceiverState", "org.zstack.zwatch.metricpusher.ReceiverState");
 			put("org.zstack.sdk.zwatch.ruleengine.ComparisonOperator", "org.zstack.zwatch.ruleengine.ComparisonOperator");
         }
     };
