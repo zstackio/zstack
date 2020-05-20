@@ -2,6 +2,7 @@ package org.zstack.sdk;
 
 import org.zstack.sdk.VmInstanceInventory;
 import org.zstack.sdk.VmInstanceInventory;
+import org.zstack.sdk.VmInstanceInventory;
 
 public class CreateFaultToleranceVmInstanceResult {
     public VmInstanceInventory primaryVmInventory;
@@ -18,6 +19,14 @@ public class CreateFaultToleranceVmInstanceResult {
     }
     public VmInstanceInventory getSecondaryVmInventory() {
         return this.secondaryVmInventory;
+    }
+
+    public VmInstanceInventory faultToleranceVmGroupInventory;
+    public void setFaultToleranceVmGroupInventory(VmInstanceInventory faultToleranceVmGroupInventory) {
+        this.faultToleranceVmGroupInventory = faultToleranceVmGroupInventory;
+    }
+    public VmInstanceInventory getFaultToleranceVmGroupInventory() {
+        return this.faultToleranceVmGroupInventory;
     }
 
 }
