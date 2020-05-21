@@ -1,8 +1,11 @@
 package org.zstack.storage.ceph;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.resourceconfig.BindResourceConfig;
 
 /**
  * Created by frank on 8/5/2015.
@@ -29,4 +32,8 @@ public class CephGlobalConfig {
     public static GlobalConfig CEPH_BS_ALLOW_PORTS = new GlobalConfig(CATEGORY, "cephbs.allow.ports");
     @GlobalConfigValidation
     public static GlobalConfig CEPH_PS_ALLOW_PORTS = new GlobalConfig(CATEGORY, "cephps.allow.ports");
+
+    @GlobalConfigDef(type = Boolean.class, defaultValue = "true")
+    @GlobalConfigValidation
+    public static GlobalConfig PREVENT_VM_SPLIT_BRAIN = new GlobalConfig(CATEGORY, "checkImageWatcherBeforeStartVm");
 }
