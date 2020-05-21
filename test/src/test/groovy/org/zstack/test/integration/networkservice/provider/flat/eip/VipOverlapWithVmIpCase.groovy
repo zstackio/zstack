@@ -7,7 +7,12 @@ import org.zstack.network.service.flat.FlatNetworkServiceConstant
 import org.zstack.network.service.userdata.UserdataConstant
 import org.zstack.sdk.AttachEipAction
 import org.zstack.sdk.EipInventory
+import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.VipInventory
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.VmNicInventory
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -100,6 +105,28 @@ class VipOverlapWithVmIpCase extends SubCase{
                             gateway = "12.168.100.1"
                         }
                     }
+
+                    l3Network {
+                        name = "pubL3-1"
+
+                        ip {
+                            startIp = "12.168.101.10"
+                            endIp = "12.168.101.100"
+                            netmask = "255.255.255.0"
+                            gateway = "12.168.101.1"
+                        }
+                    }
+
+                    l3Network {
+                        name = "pubL3-2"
+
+                        ip {
+                            startIp = "12.168.102.10"
+                            endIp = "12.168.102.100"
+                            netmask = "255.255.255.0"
+                            gateway = "12.168.102.1"
+                        }
+                    }
                 }
 
                 attachBackupStorage("sftp")
@@ -123,6 +150,7 @@ class VipOverlapWithVmIpCase extends SubCase{
     void test() {
         env.create {
             testVipOverlapWithVmIp()
+            testAttach2EipsToVmNicOfFlatNetwork()
         }
     }
     
@@ -139,6 +167,75 @@ class VipOverlapWithVmIpCase extends SubCase{
         }catch (ApiMessageInterceptionException e){
             //there will throw the other exception "IllegalArgumentException" before fix
             //add "http://dev.zstack.io:9080/zstackio/zstack/merge_requests/1112" to obersve it
+        }
+    }
+
+    void testAttach2EipsToVmNicOfFlatNetwork(){
+        def publ3_1 = env.inventoryByName("pubL3-1") as L3NetworkInventory
+        def publ3_2 = env.inventoryByName("pubL3-2") as L3NetworkInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
+        def image = env.inventoryByName("image") as ImageInventory
+        def offerging = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+
+        VipInventory vip1 = createVip {
+            name = "vip1"
+            l3NetworkUuid = publ3_1.uuid
+        }
+        EipInventory eip1 = createEip{
+            name = "eip1"
+            vipUuid = vip1.uuid
+        }
+
+        VipInventory vip2 = createVip {
+            name = "vip2"
+            l3NetworkUuid = publ3_2.uuid
+        }
+        EipInventory eip2 = createEip{
+            name = "eip2"
+            vipUuid = vip2.uuid
+        }
+
+        List<VmNicInventory> vmnics = getEipAttachableVmNics {
+            eipUuid = eip1.uuid
+        }
+        assert vmnics.size() == 1
+        vmnics = getEipAttachableVmNics {
+            eipUuid = eip2.uuid
+        }
+        assert vmnics.size() == 1
+
+        VmInstanceInventory vm2 = createVmInstance {
+            name = "vm2"
+            instanceOfferingUuid = offerging.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+        }
+        vmnics = getEipAttachableVmNics {
+            eipUuid = eip1.uuid
+        }
+        assert vmnics.size() == 2
+        vmnics = getEipAttachableVmNics {
+            eipUuid = eip2.uuid
+        }
+        assert vmnics.size() == 2
+
+        attachEip {
+            eipUuid = eip1.uuid
+            vmNicUuid = vm2.vmNics.get(0).uuid
+        }
+
+        /* after eip1 attached to vm2, vm2 will not be a candidate for eip2 */
+        vmnics = getEipAttachableVmNics {
+            eipUuid = eip2.uuid
+        }
+        assert vmnics.size() == 1
+
+        /* bound eip2 to vm2 which has already has eip will assert fail */
+        expect(AssertionError.class) {
+            attachEip {
+                eipUuid = eip2.uuid
+                vmNicUuid = vm2.vmNics.get(0).uuid
+            }
         }
     }
 

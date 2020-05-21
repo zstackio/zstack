@@ -12,11 +12,11 @@ import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.NetworkServiceManager;
-import org.zstack.network.service.eip.APIAttachEipMsg;
-import org.zstack.network.service.eip.APICreateEipMsg;
-import org.zstack.network.service.eip.EipConstant;
+import org.zstack.network.service.eip.*;
+import org.zstack.network.service.vip.Vip;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -65,6 +65,7 @@ public class FlatEipApiInterceptor implements GlobalApiMessageInterceptor {
 
         String pubL3Uuid = Q.New(VipVO.class).select(VipVO_.l3NetworkUuid).eq(VipVO_.uuid, msg.getVipUuid()).findValue();
         checkVipPublicL3Network(msg.getVmNicUuid(), pubL3Uuid);
+        checkFlatVmNicAlreadyHasEip(msg.getVmNicUuid(), null, msg.getVipUuid());
     }
 
     @Transactional(readOnly = true)
@@ -81,6 +82,7 @@ public class FlatEipApiInterceptor implements GlobalApiMessageInterceptor {
                 .param("eipUuid", msg.getEipUuid())
                 .find();
         checkVipPublicL3Network(msg.getVmNicUuid(), pubL3Uuid);
+        checkFlatVmNicAlreadyHasEip(msg.getVmNicUuid(), msg.getEipUuid(), null);
     }
 
     @Transactional(readOnly = true)
@@ -98,6 +100,30 @@ public class FlatEipApiInterceptor implements GlobalApiMessageInterceptor {
         if (!isPublicL2NetworkAttachedVmCluster){
             throw new ApiMessageInterceptionException(argerr("L2Network where vip's L3Network based hasn't attached" +
                     " the cluster where vmNic[uuid:%s] located", vmNicUuid));
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private void checkFlatVmNicAlreadyHasEip(String vmNicUuid, String eipUuid, String vipUuid){
+        VipVO newVipVO;
+        if (vipUuid != null) {
+            newVipVO = Q.New(VipVO.class).eq(VipVO_.uuid, vipUuid).find();
+        } else {
+            String uuid = Q.New(EipVO.class).eq(EipVO_.uuid, eipUuid).select(EipVO_.vipUuid).findValue();
+            newVipVO = Q.New(VipVO.class).eq(VipVO_.uuid, uuid).find();
+        }
+        boolean newVipVersion = NetworkUtils.isIpv4Address(newVipVO.getIp());
+
+        String oldVipIp = Q.New(EipVO.class).eq(EipVO_.vmNicUuid, vmNicUuid).select(EipVO_.vipIp).findValue();
+        if (oldVipIp == null) {
+            return;
+        }
+
+        boolean oldVipVersion = NetworkUtils.isIpv4Address(oldVipIp);
+        if (oldVipVersion == newVipVersion){
+            String version = oldVipVersion ? "ipv4" : "ipv6";
+            throw new ApiMessageInterceptionException(argerr("can not bound more than 1 %s eip to a vm nic[uuid:%s] of flat ",
+                    version, vmNicUuid));
         }
     }
 }
