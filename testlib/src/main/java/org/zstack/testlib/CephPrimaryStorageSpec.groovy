@@ -182,6 +182,11 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
+            simulator(CephPrimaryStorageBase.GET_IMAGE_WATCHERS_PATH) {
+                def rsp = new CephPrimaryStorageBase.GetVolumeWatchersRsp()
+                return rsp
+            }
+
             simulator(CephPrimaryStorageBase.ROLLBACK_SNAPSHOT_PATH) {
                 return new CephPrimaryStorageBase.RollbackSnapshotRsp()
             }
