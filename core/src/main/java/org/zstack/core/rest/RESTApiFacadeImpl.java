@@ -1,44 +1,35 @@
 package org.zstack.core.rest;
 
-import org.springframework.beans.factory.annotation.Autowire;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AssignableTypeFilter;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
-import org.zstack.core.db.GLock;
-import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
-import org.zstack.header.allocator.AllocateHostMsg;
-import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.apimediator.ApiMediatorConstant;
-import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.RecalculateHostCapacityMsg;
 import org.zstack.header.message.*;
-import org.zstack.header.rest.*;
+import org.zstack.header.rest.RESTApiFacade;
+import org.zstack.header.rest.RestAPIResponse;
+import org.zstack.header.rest.RestAPIState;
+import org.zstack.header.rest.RestAPIVO;
 import org.zstack.header.search.APISearchMessage;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
-import org.zstack.header.vm.VmInstance;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.*;
-import java.math.BigInteger;
-import java.sql.Time;
-import java.sql.Timestamp;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Query;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -50,6 +41,7 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
     private Set<String> basePkgNames;
     private List<String> processingRequests = Collections.synchronizedList(new ArrayList<String>(100));
     private Future<Void> restAPIVOCleanTask = null;
+    private final static int restResultMaxLength = initMaxRestResultLength();
 
     @Autowired
     private ResourceDestinationMaker destMaker;
@@ -123,6 +115,12 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
         for (APIEvent e : boundEvents) {
             bus.subscribeEvent(this, e);
         }
+    }
+
+    private static int initMaxRestResultLength() {
+        int limit = CoreGlobalProperty.REST_API_RESULT_MAX_LENGTH;
+        limit = Math.min(limit, 64000);
+        return Math.max(limit, 1000);
     }
 
     public void setEntityManagerFactory(EntityManagerFactory entityManagerFactory) {
@@ -224,7 +222,7 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
         try {
             tran.begin();
             Query query = mgr.createQuery(sql);
-            query.setParameter("result", RESTApiDecoder.dump(e));
+            query.setParameter("result", getApiResult(e));
             query.setParameter("state", RestAPIState.Done);
             query.setParameter("uuid", e.getApiId());
             int ret = query.executeUpdate();
@@ -236,6 +234,13 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
         } finally {
             mgr.close();
         }
+    }
+
+    private static String getApiResult(APIEvent e) {
+        String apiResult = RESTApiDecoder.dump(e);
+        apiResult = StringUtils.length(apiResult) > restResultMaxLength ?
+                StringUtils.left(apiResult, restResultMaxLength) : apiResult;
+        return apiResult;
     }
 
     @Override

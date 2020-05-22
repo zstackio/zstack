@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -206,7 +207,14 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddSecurityGroupRuleMsg msg) {
-        SecurityGroupVO sgVo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+        if (msg.getRules().size() > SecurityGroupConstant.ONE_API_RULES_MAX_NUM) {
+            throw new ApiMessageInterceptionException(argerr("the amount of rules exceeds limit, maximum %s rules are allowed in one request", SecurityGroupConstant.ONE_API_RULES_MAX_NUM));
+        }
+
+        Integer ipVer = Q.New(SecurityGroupVO.class).select(SecurityGroupVO_.ipVersion).eq(SecurityGroupVO_.uuid, msg.getSecurityGroupUuid()).findValue();
+        if (ipVer == null) {
+            throw new ApiMessageInterceptionException(argerr("security group[uuid:%s] cannot be found.", msg.getSecurityGroupUuid()));
+        }
 
         // Basic check
         for (SecurityGroupRuleAO ao : msg.getRules()) {
@@ -279,9 +287,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s]. rule dump: %s", ao.getAllowedCidr(), JSONObjectUtil.toJsonString(ao)));
             }
 
-            if (!sgVo.getIpVersion().equals(ao.getIpVersion())) {
+            if (!ipVer.equals(ao.getIpVersion())) {
                 throw new ApiMessageInterceptionException(argerr("security group rule ipVersion [%d] is different from security group version [%d]",
-                        sgVo.getIpVersion(), ao.getIpVersion()));
+                        ipVer, ao.getIpVersion()));
             }
         }
 
@@ -341,9 +349,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         if (msg.getRemoteSecurityGroupUuids() != null) {
             for (String rsgUuid : msg.getRemoteSecurityGroupUuids()) {
                 SecurityGroupVO rsgVo = dbf.findByUuid(rsgUuid, SecurityGroupVO.class);
-                if (!rsgVo.getIpVersion().equals(sgVo.getIpVersion())) {
+                if (!rsgVo.getIpVersion().equals(ipVer)) {
                     throw new ApiMessageInterceptionException(argerr("remote security group ipVersion [%d] is different from security group version [%d]",
-                            rsgVo.getIpVersion(), sgVo.getIpVersion()));
+                            rsgVo.getIpVersion(), ipVer));
                 }
             }
         }
