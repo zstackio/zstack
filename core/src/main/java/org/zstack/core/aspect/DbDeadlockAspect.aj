@@ -58,7 +58,7 @@ public aspect DbDeadlockAspect {
                             logger.warn(e.getMessage(), e);
                         }
                     } else {
-                        if (root.getMessage().contains("Deadlock")) {
+                        if (root.getMessage().contains("Lock wait timeout")) {
                             DatabaseFacadeImpl.increaseLocktimeout();
                         }
                         throw re;
