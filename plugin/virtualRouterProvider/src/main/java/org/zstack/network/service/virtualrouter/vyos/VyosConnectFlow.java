@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.ApplianceVmConstant;
 import org.zstack.appliancevm.ApplianceVmSpec;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -92,12 +94,8 @@ public class VyosConnectFlow extends NoRollbackFlow {
                     public void run(final FlowTrigger trigger, Map data) {
                         String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_INIT);
                         InitCommand cmd = new InitCommand();
-                        try {
-                            ZSha2Info info = ZSha2Helper.getInfo();
-                            cmd.setMnPeerIp(info.getPeerip());
-                        } catch (Exception e) {
-                            /* MN is not in HA mode */
-                        }
+
+                        cmd.setMgtCidr(Platform.getManagementServerCidr());
                         cmd.setUuid(vrUuid);
                         restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
                             @Override
