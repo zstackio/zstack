@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.LocaleUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.net.util.SubnetUtils;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.MessageSource;
@@ -30,6 +31,7 @@ import org.zstack.utils.*;
 import org.zstack.utils.data.StringTemplate;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
+import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.string.ErrorCodeElaboration;
 import org.zstack.utils.string.StringSimilarity;
@@ -582,6 +584,27 @@ public class Platform {
         }
 
         return managementServerIp;
+    }
+
+    public static String getManagementServerCidr() {
+        String mgtIp = getManagementServerIp();
+
+        /*# ip add | grep 10.86.4.132
+            inet 10.86.4.132/23 brd 10.86.5.255 scope global br_eth0*/
+        /* because Linux.shell can not run command with '|', pares the output of ip address in java  */
+        Linux.ShellResult ret = Linux.shell("ip add");
+        for (String line : ret.getStdout().split("\\n")) {
+            if (line.contains(mgtIp)) {
+                line = line.trim();
+                try {
+                    return NetworkUtils.getNetworkAddressFromCidr(line.split(" ")[1]);
+                } catch (RuntimeException e) {
+                    return null;
+                }
+            }
+        }
+
+        return null;
     }
 
     private static String getManagementServerIpInternal() {

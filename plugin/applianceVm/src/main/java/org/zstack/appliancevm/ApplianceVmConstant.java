@@ -23,7 +23,7 @@ public class ApplianceVmConstant {
         sshPort,
         uuid,
         managementNodeIp,
-        managementPeerNodeIp,
+        managementNodeCidr,
         additionalL3Uuids,
     }
 
