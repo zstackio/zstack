@@ -188,7 +188,7 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
                     msg.setImageUuid(paramIn.getImage().getUuid());
                     msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
                     msg.setHypervisorType(hvType.toString());
-                    msg.setPrimaryStorageInstallPath(paramIn.getSnapshot().getPrimaryStorageInstallPath());
+                    msg.setPrimaryStorageInstallPath(ctx.temporaryInstallPath);
                     msg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
                     msg.setBackupStorageInstallPath(bsInstallPath);
                     bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
