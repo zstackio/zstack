@@ -3,6 +3,7 @@ package org.zstack.appliancevm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -29,6 +30,8 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.*;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -58,6 +61,8 @@ public class CreateApplianceVmJob implements Job {
     private EventFacade evtf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     @Override
     public void run(final ReturnValueCompletion<Object> complete) {
@@ -158,6 +163,9 @@ public class CreateApplianceVmJob implements Job {
                         apvf.attachApplianceVmToAffinityGroup(avo.getUuid(), spec.getHaSpec().getAffinityGroupUuid());
                     }
                 }
+
+                ResourceConfig multiQueues = rcf.getResourceConfig(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getIdentity());
+                multiQueues.updateValue(avo.getUuid(), ApplianceVmConstant.APPLIANCEVM_NIC_DEFAULT_QUEUE_NUM);
 
                 trigger.next();
             }
