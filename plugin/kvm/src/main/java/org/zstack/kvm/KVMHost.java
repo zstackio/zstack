@@ -2876,7 +2876,7 @@ public class KVMHost extends HostBase implements Host {
 
                                 private boolean ifTimeout() {
                                     if (System.currentTimeMillis() > timeout) {
-                                        trigger.fail(operr("the host[%s] ssh port[%s] not open after %s seconds, connect timeout", getSelf().getManagementIp(), getSelf().getPort(), sshTimeout));
+                                        trigger.fail(operr("the host[%s] ssh port[%s] not open after %s seconds, connect timeout", getSelf().getManagementIp(), getSelf().getPort(), TimeUnit.MILLISECONDS.toSeconds(sshTimeout)));
                                         return true;
                                     } else {
                                         return false;
