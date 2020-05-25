@@ -1997,9 +1997,9 @@
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisApiInterceptor.java"
   },
   {
-    "raw": "Please check the IPMI connection and make sure the IPMI Address, Port, Username and Password of remote server are correct.",
-    "en_US": "Please check the IPMI connection and make sure the IPMI Address, Port, Username and Password of remote server are correct.",
-    "zh_CN": "请检查IPMI连接，并确认IPMI地址、端口、账号、密码是否正确",
+    "raw": "Failed to reach the bare-metal chassis, please make sure: 1. the IPMI connection is active; 2. the IPMI Address, Port, Username and Password are correct; 3. IPMI Over LAN is enabled in BIOS.",
+    "en_US": "Failed to reach the bare-metal chassis, please make sure: 1. the IPMI connection is active; 2. the IPMI Address, Port, Username and Password are correct; 3. IPMI Over LAN is enabled in BIOS.",
+    "zh_CN": "无法连通裸金属设备，请确认：1，管理节点与裸金属设备远程控制口连通；2，IPMI地址、端口、账号、密码是正确的；3，BIOS中启用LAN上的IPMI功能。",
     "arguments": [],
     "line": 69,
     "fileName": "src/main/java/org/zstack/baremetal/chassis/BaremetalChassisApiInterceptor.java"
