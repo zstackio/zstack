@@ -55,8 +55,6 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
-    @Autowired
-    private L2NetworkManager l2Mgr;
 
     private static String VTEP_IP = "vtepIp";
     private static String NEED_POPULATE = "needPopulate";
@@ -90,7 +88,6 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
                 vtepIp, l2Network.getUuid(), l2Network.getType(), l2vxlan.getVni(), hostUuid);
         logger.debug(info);
 
-        L2NetworkFactory factory = l2Mgr.getL2NetworkFactory(L2NetworkType.valueOf(l2Network.getType()));
         final VxlanKvmAgentCommands.CreateVxlanBridgeCmd cmd = new VxlanKvmAgentCommands.CreateVxlanBridgeCmd();
         cmd.setVtepIp(vtepIp);
         cmd.setBridgeName(makeBridgeName(l2vxlan.getVni()));

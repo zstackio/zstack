@@ -223,16 +223,12 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
 
                 final VxlanKvmAgentCommands.CreateVxlanBridgesCmd cmd = new VxlanKvmAgentCommands.CreateVxlanBridgesCmd();
                 cmd.setBridgeCmds(new ArrayList<>());
-                List<String> peers = vteps.stream()
-                        .map(VtepVO::getVtepIp).distinct()
-                        .collect(Collectors.toList());
                 for (VxlanNetworkVO vo : vxlanNetworkVOS) {
                     VxlanKvmAgentCommands.CreateVxlanBridgeCmd bridgeCmd = new VxlanKvmAgentCommands.CreateVxlanBridgeCmd();
                     bridgeCmd.setVtepIp((String) data.get(VTEP_IP));
                     bridgeCmd.setBridgeName(KVMRealizeL2VxlanNetworkBackend.makeBridgeName(vo.getVni()));
                     bridgeCmd.setVni(vo.getVni());
                     bridgeCmd.setL2NetworkUuid(vo.getUuid());
-                    bridgeCmd.setPeers(peers);
                     bridgeCmd.setMtu(new MtuGetter().getL2Mtu(L2VxlanNetworkInventory.valueOf(vo)));
                     cmd.getBridgeCmds().add(bridgeCmd);
                 }
