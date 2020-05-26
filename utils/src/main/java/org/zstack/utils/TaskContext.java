@@ -1,13 +1,13 @@
 package org.zstack.utils;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TaskContext {
-    private static final Map<Long, Map<Object, Object>> taskContexts = new HashMap<>();
+    private static final ConcurrentHashMap<Long, ConcurrentHashMap<Object, Object>> taskContexts = new ConcurrentHashMap<>();
 
     public static Map<Object, Object> getOrNewTaskContext() {
-        return taskContexts.computeIfAbsent(Thread.currentThread().getId(), x -> new HashMap<>());
+        return taskContexts.computeIfAbsent(Thread.currentThread().getId(), x -> new ConcurrentHashMap<>());
     }
 
     public static Map<Object, Object> getTaskContext() {
@@ -15,7 +15,7 @@ public class TaskContext {
     }
 
     public static void setTaskContext(Map<Object, Object> ctx) {
-        taskContexts.put(Thread.currentThread().getId(), ctx);
+        taskContexts.put(Thread.currentThread().getId(), new ConcurrentHashMap<>(ctx));
     }
 
     public static boolean containsTaskContext(Object key) {
