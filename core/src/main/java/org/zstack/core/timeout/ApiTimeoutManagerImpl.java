@@ -295,6 +295,8 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
         if (TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_DEADLINE)) {
             long deadline = Long.valueOf((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_DEADLINE));
             if (deadline < timer.getCurrentTimeMillis()) {
+                TaskContext.getTaskContext().put(TASK_CONTEXT_MESSAGE_DEADLINE, String.valueOf(deadline + parseTimeout(ApiTimeoutGlobalProperty.INTERNAL_MESSAGE_TIMEOUT)));
+                TaskContext.getTaskContext().put(TASK_CONTEXT_MESSAGE_TIMEOUT, String.valueOf(parseTimeout(ApiTimeoutGlobalProperty.INTERNAL_MESSAGE_TIMEOUT)));
                 return 1L;
             }
         }
