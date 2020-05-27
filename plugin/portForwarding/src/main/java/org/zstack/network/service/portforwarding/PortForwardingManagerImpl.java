@@ -259,8 +259,12 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                             .param("type", PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE)
                             .list();
 
-                    VmNicVO rnic = Q.New(VmNicVO.class).in(VmNicVO_.l3NetworkUuid, guestNetworks)
-                            .notNull(VmNicVO_.metaData).limit(1).find();
+                    VmNicVO rnic = null;
+                    if (guestNetworks != null && !guestNetworks.isEmpty()) {
+                        rnic = Q.New(VmNicVO.class).in(VmNicVO_.l3NetworkUuid, guestNetworks)
+                                .notNull(VmNicVO_.metaData).limit(1).find();
+                    }
+
                     if (rnic == null) {
                         l3Uuids.addAll(guestNetworks);
                     } else {
