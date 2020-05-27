@@ -85,6 +85,8 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
                 handle((APIAddBackupStorageMsg) msg);
             } else if (msg instanceof APIGetBackupStorageCapacityMsg) {
                 handle((APIGetBackupStorageCapacityMsg) msg);
+            } else if (msg instanceof APIGetBackupStorageTypesMsg) {
+                handle((APIGetBackupStorageTypesMsg) msg);
             } else if (msg instanceof BackupStorageMessage) {
                 passThrough((BackupStorageMessage) msg);
             } else {
