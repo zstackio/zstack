@@ -33,7 +33,7 @@ class GetPortForwardingAttachableVmNicsCase extends SubCase{
         env = env {
             instanceOffering {
                 name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
+                memory = SizeUnit.GIGABYTE.toByte(4)
                 cpu = 4
             }
 
@@ -166,6 +166,18 @@ class GetPortForwardingAttachableVmNicsCase extends SubCase{
                     protocolType = "TCP"
                     useVip("pubL3")
                 }
+
+                lb {
+                    name = "lb"
+                    useVip("pubL3")
+
+                    listener {
+                        protocol = "tcp"
+                        loadBalancerPort = 33
+                        instancePort = 33
+                        useVmNic("vm3", "l3-1")
+                    }
+                }
             }
 
             vm {
@@ -189,13 +201,34 @@ class GetPortForwardingAttachableVmNicsCase extends SubCase{
                 useL3Networks("pubL3")
                 useInstanceOffering("instanceOffering")
             }
+
+            vm {
+                name = "vm3"
+                useImage("image")
+                useL3Networks("l3-1")
+                useInstanceOffering("instanceOffering")
+            }
         }
     }
 
     @Override
     void test() {
         env.create {
+            testGetVmNicsWhenSomeVmUnderLoadBalancerListener()
             testGetAttachVmNicsToSamePortForwarding()
+        }
+    }
+
+    void testGetVmNicsWhenSomeVmUnderLoadBalancerListener() {
+        VmInstanceInventory vm3 = env.inventoryByName("vm3")
+        PortForwardingRuleInventory pf = env.inventoryByName("pf-1")
+        List<VmNicInventory> vmnics = getPortForwardingAttachableVmNics {
+            ruleUuid = pf.uuid
+        }
+        assert 3 == vmnics.size()
+
+        destroyVmInstance {
+            uuid = vm3.uuid
         }
     }
 
