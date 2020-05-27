@@ -545,7 +545,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     return;
                 }
 
-                if (destMaker.isManagedByUs(vmUuid)) {
+                if (!destMaker.isManagedByUs(vmUuid)) {
                     return;
                 }
 
