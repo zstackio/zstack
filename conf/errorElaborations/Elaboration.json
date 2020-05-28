@@ -536,6 +536,14 @@
     "message_en": "download from the url failed"
   },
   {
+    "category": "IMAGE",
+    "code": "1004",
+    "method": "regex",
+    "regex": ".*target image not found, Please check whether ImageStore directory is correctly mounted.*",
+    "message_cn": "没有发现目标镜像，请检查镜像仓库数据目录是否正确挂载",
+    "message_en": "target image not found, Please check whether ImageStore directory is correctly mounted."
+  },
+  {
     "category": "ISCSI",
     "code": "1000",
     "method": "regex",
