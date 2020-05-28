@@ -1407,6 +1407,9 @@ public class KVMAgentCommands {
         private boolean coloPrimary;
         private boolean coloSecondary;
 
+        // TODO: only for test
+        private boolean useColoBinary;
+
         public String getChassisAssetTag() {
             return chassisAssetTag;
         }
@@ -1720,6 +1723,14 @@ public class KVMAgentCommands {
 
         public void setVmInstanceUuid(String vmInstanceUuid) {
             this.vmInstanceUuid = vmInstanceUuid;
+        }
+
+        public boolean isUseColoBinary() {
+            return useColoBinary;
+        }
+
+        public void setUseColoBinary(boolean useColoBinary) {
+            this.useColoBinary = useColoBinary;
         }
 
         public long getVmInternalId() {
