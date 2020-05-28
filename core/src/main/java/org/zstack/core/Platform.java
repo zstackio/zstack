@@ -65,6 +65,7 @@ public class Platform {
     private static ComponentLoader loader;
     private static String msId;
     private static String managementServerIp;
+    private static String managementServerCidr;
     private static MessageSource messageSource;
     private static String encryptionKey = EncryptRSA.generateKeyString("ZStack open source");
     private static EncryptRSA rsa = new EncryptRSA();
@@ -586,13 +587,13 @@ public class Platform {
         return managementServerIp;
     }
 
-    public static String getManagementServerCidr() {
+    private static String getManagementServerCidrInternal() {
         String mgtIp = getManagementServerIp();
 
         /*# ip add | grep 10.86.4.132
             inet 10.86.4.132/23 brd 10.86.5.255 scope global br_eth0*/
         /* because Linux.shell can not run command with '|', pares the output of ip address in java  */
-        Linux.ShellResult ret = Linux.shell("ip add");
+        Linux.ShellResult ret = Linux.shell("ip -4 add");
         for (String line : ret.getStdout().split("\\n")) {
             if (line.contains(mgtIp)) {
                 line = line.trim();
@@ -605,6 +606,14 @@ public class Platform {
         }
 
         return null;
+    }
+
+    public static String getManagementServerCidr() {
+        if (managementServerCidr == null) {
+            managementServerCidr = getManagementServerCidrInternal();
+        }
+
+        return managementServerCidr;
     }
 
     private static String getManagementServerIpInternal() {
