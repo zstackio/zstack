@@ -344,6 +344,7 @@
                     <source>${project.java.version}</source>
                     <target>${project.java.version}</target>
                     <debug>true</debug>
+                    <useIncrementalCompilation>false</useIncrementalCompilation>
                 </configuration>
             </plugin>
 
