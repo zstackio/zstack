@@ -4170,7 +4170,7 @@
   {
     "raw": "Expected unicast mac address, found multicast MAC address [%s]",
     "en_US": "Expected unicast mac address, found multicast MAC address [{0}]",
-    "zh_CN": "期望的是一个单播的MAC地址，但找到的是一个多播的MAC地址[{0}]",
+    "zh_CN": "期望的是一个单播的MAC地址，但找到的是一个组播的MAC地址[{0}]",
     "arguments": [
       "mac"
     ],
@@ -11591,7 +11591,7 @@
   {
     "raw": "the IP range[%s ~ %s] contains D class addresses which are for multicast",
     "en_US": "the IP range[{0} ~ {1}] contains D class addresses which are for multicast",
-    "zh_CN": "这个IP段[{0} ~ {1}]包含了D类的多播地址",
+    "zh_CN": "这个IP段[{0} ~ {1}]包含了D类的组播地址",
     "arguments": [
       "ipr.getStartIp()",
       "ipr.getEndIp()"
