@@ -35,10 +35,7 @@ import org.zstack.header.storage.backup.BackupStorageState;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmStateChangedExtensionPoint;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
@@ -63,8 +60,7 @@ import java.util.concurrent.TimeUnit;
 import static org.zstack.core.Platform.operr;
 
 public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint,
-        VolumeDeletionExtensionPoint, VolumeBeforeExpungeExtensionPoint, RecoverDataVolumeExtensionPoint,
-        ResourceOwnerAfterChangeExtensionPoint, VmStateChangedExtensionPoint {
+        ResourceOwnerAfterChangeExtensionPoint, VmStateChangedExtensionPoint, VmDetachVolumeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeManagerImpl.class);
 
     @Autowired
@@ -849,37 +845,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         startExpungeTask();
     }
 
-    public void preDeleteVolume(VolumeInventory volume) {
-
-    }
-
-    public void beforeDeleteVolume(VolumeInventory volume) {
-
-    }
-
-    public void afterDeleteVolume(VolumeInventory volume, Completion completion) {
-        completion.success();
-    }
-
-    public void failedToDeleteVolume(VolumeInventory volume, ErrorCode errorCode) {
-
-    }
-
-    public void volumeBeforeExpunge(VolumeInventory volume, Completion completion) {
-        completion.success();
-    }
-
-    public void preRecoverDataVolume(VolumeInventory volume) {
-
-    }
-
-    public void beforeRecoverDataVolume(VolumeInventory volume) {
-    }
-
-    public void afterRecoverDataVolume(VolumeInventory volume) {
-    }
-
-
     @Override
     public void resourceOwnerAfterChange(AccountResourceRefInventory ref, String newOwnerUuid) {
         if (!VmInstanceVO.class.getSimpleName().equals(ref.getResourceType())) {
@@ -913,5 +878,30 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     .set(VolumeVO_.status, VolumeStatus.Ready)
                     .update();
         }
+    }
+
+    @Override
+    public void preDetachVolume(VmInstanceInventory vm, VolumeInventory volume) {
+
+    }
+
+    @Override
+    public void beforeDetachVolume(VmInstanceInventory vm, VolumeInventory volume) {
+
+    }
+
+    @Override
+    public void afterDetachVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
+        // update Volumevo before exit message queue
+        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
+                .set(VolumeVO_.vmInstanceUuid, null)
+                .set(VolumeVO_.deviceId, null)
+                .update();
+        completion.success();
+    }
+
+    @Override
+    public void failedToDetachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode) {
+
     }
 }
