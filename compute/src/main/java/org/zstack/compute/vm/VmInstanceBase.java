@@ -6293,7 +6293,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void stopVm(final Message msg, final Completion completion) {
+    protected void stopVm(final Message msg, final Completion completion) {
         refreshVO();
         ErrorCode allowed = validateOperationByState(msg, self.getState(), null);
         if (allowed != null) {
@@ -6358,12 +6358,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                         @Override
                         public void done() {
                             completion.fail(errCode);
+                            extEmitter.failedToStopVm(inv, errCode);
                         }
                     });
                 } else {
                     self.setState(HostErrors.HOST_IS_DISCONNECTED.isEqual(errCode.getCode()) ? VmInstanceState.Unknown : originState);
                     self = dbf.updateAndRefresh(self);
                     completion.fail(errCode);
+                    extEmitter.failedToStopVm(inv, errCode);
                 }
             }
         }).start();
