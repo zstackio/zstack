@@ -20,10 +20,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.service.NetworkServiceProviderType;
-import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
-import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
-import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
+import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.NetworkServiceManager;
@@ -46,7 +43,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBackend implements
-        PortForwardingBackend, Component, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint {
+        PortForwardingBackend, Component, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint,
+        VirtualRouterHaGetCallbackExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VirtualRouterPortForwardingBackend.class);
 
     @Autowired
@@ -65,6 +63,10 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
     private PortForwardingConfigProxy proxy;
     @Autowired
     private VirtualRouterHaBackend haBackend;
+
+
+    private String APPLY_PF_TASK = "applyPF";
+    private String REVOKE_PF_TASK = "revokePF";
 
     public static final Set<VmInstanceState> SYNC_PF_VM_STATES = ImmutableSet.<VmInstanceState> of(
             VmInstanceState.Running
@@ -502,45 +504,62 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
 
     protected void revokeRuleOnHaVirtualRouter(final PortForwardingStruct struct, VirtualRouterVmInventory vrInv, Completion completion)  {
         Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "revokePF");
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), REVOKE_PF_TASK);
         data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
-        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
-            @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
-                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-                if (vrVO == null) {
-                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need revokePF on backend", vrUuid));
-                    compl.success();
-                    return;
-                }
-
-                VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
-                PortForwardingStruct s = (PortForwardingStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                revokeRuleOnVirualRouter(s, vrInv, compl);
-            }
-        }, data, completion);
+        haBackend.submitVirutalRouterHaTask(data, completion);
     }
 
     protected void applyRuleOnHaVirtualRouter(final PortForwardingStruct struct, VirtualRouterVmInventory vrInv, Completion completion)  {
         Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "applyPF");
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), APPLY_PF_TASK);
         data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
-        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
+        haBackend.submitVirutalRouterHaTask(data, completion);
+    }
+
+    @Override
+    public List<VirtualRouterHaCallbackStruct> getCallback() {
+        List<VirtualRouterHaCallbackStruct> structs = new ArrayList<>();
+
+        VirtualRouterHaCallbackStruct applyPF = new VirtualRouterHaCallbackStruct();
+        applyPF.type = APPLY_PF_TASK;
+        applyPF.callback = new VirtualRouterHaCallbackInterface() {
             @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
+            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
                 VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
                 if (vrVO == null) {
                     logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need applyVip on backend", vrUuid));
-                    compl.success();
+                    completion.success();
                     return;
                 }
 
                 VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
                 PortForwardingStruct s = (PortForwardingStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                applyRuleToVirtualRouter(s, vrInv, compl);
+                applyRuleToVirtualRouter(s, vrInv, completion);
             }
-        }, data, completion);
+        };
+        structs.add(applyPF);
+
+        VirtualRouterHaCallbackStruct revokePF = new VirtualRouterHaCallbackStruct();
+        revokePF.type = REVOKE_PF_TASK;
+        revokePF.callback = new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need revokePF on backend", vrUuid));
+                    completion.success();
+                    return;
+                }
+
+                VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
+                PortForwardingStruct s = (PortForwardingStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                revokeRuleOnVirualRouter(s, vrInv, completion);
+            }
+        };
+        structs.add(revokePF);
+
+        return structs;
     }
 }

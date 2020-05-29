@@ -63,7 +63,7 @@ import static org.zstack.utils.CollectionDSL.list;
  * Created by frank on 8/9/2015.
  */
 public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBackend
-        implements LoadBalancerBackend, GlobalApiMessageInterceptor, ApiMessageInterceptor,
+        implements LoadBalancerBackend, GlobalApiMessageInterceptor, ApiMessageInterceptor, VirtualRouterHaGetCallbackExtensionPoint,
         VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint {
     private static CLogger logger = Utils.getLogger(VirtualRouterLoadBalancerBackend.class);
 
@@ -90,6 +90,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     private LbConfigProxy proxy;
     @Autowired
     private VirtualRouterHaBackend haBackend;
+
+    private String REFRESH_CERTIFICATE_TASK = "refreshCertificate";
+    private String DELETE_CERTIFICATE_TASK = "deleteCertificate";
+    private String REFRESH_LB_TASK = "refreshLb";
+    private String DESTROY_LB_TASK = "destroyLb";
 
     @Override
     public List<Class> getMessageClassToIntercept() {
@@ -1708,93 +1713,36 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     private void refreshCertificateOnHaRouter(String vrUuid, List<LoadBalancerStruct> struct, Completion completion) {
         VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
         Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "refreshCertificate");
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), REFRESH_CERTIFICATE_TASK);
         data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
-        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
-            @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
-                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-                if (vrVO == null) {
-                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need refresh certificate on backend", vrUuid));
-                    compl.success();
-                    return;
-                }
-
-                List<LoadBalancerStruct> s = (List<LoadBalancerStruct>)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                refreshCertificate(VirtualRouterVmInventory.valueOf(vrVO), false, s, compl);
-            }
-        }, data, completion);
+        haBackend.submitVirutalRouterHaTask(data, completion);
     }
 
     private void rollbackCertificateOnHaRouter(String vrUuid, List<LoadBalancerStruct> struct, Completion completion) {
         VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
         Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "deleteCertificate");
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), DELETE_CERTIFICATE_TASK);
         data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
-        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
-            @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
-                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-                if (vrVO == null) {
-                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need delete certificate on backend", vrUuid));
-                    compl.success();
-                    return;
-                }
-
-                List<LoadBalancerStruct> s = (List<LoadBalancerStruct>)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                rollbackCertificate(VirtualRouterVmInventory.valueOf(vrVO), false, s, new NoErrorCompletion(compl) {
-                    @Override
-                    public void done() {
-                        compl.success();
-                    }
-                });
-            }
-        }, data, completion);
+        haBackend.submitVirutalRouterHaTask(data, completion);
     }
 
     protected void refreshLbToVirtualRouterHa(VirtualRouterVmInventory vrInv, LoadBalancerStruct struct, Completion completion) {
         Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "refreshLb");
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), REFRESH_LB_TASK);
         data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
-        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
-            @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
-                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-                if (vrVO == null) {
-                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need refresh Lb on backend", vrUuid));
-                    compl.success();
-                    return;
-                }
-
-                LoadBalancerStruct s = (LoadBalancerStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                refreshLbToVirtualRouter(VirtualRouterVmInventory.valueOf(vrVO), s, compl);
-            }
-        }, data, completion);
+        haBackend.submitVirutalRouterHaTask(data, completion);
     }
 
     protected void destroyLoadBalancerOnHaRouter(String vrUuid, LoadBalancerStruct struct, Completion completion) {
         VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
         Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "destroyLb");
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), DESTROY_LB_TASK);
         data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
-        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
-            @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
-                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-                if (vrVO == null) {
-                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need d Lb on backend", vrUuid));
-                    compl.success();
-                    return;
-                }
-
-                LoadBalancerStruct s = (LoadBalancerStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                destroyLoadBalancerOnVirtualRouter(VirtualRouterVmInventory.valueOf(vrVO), s, compl);
-            }
-        }, data, completion);
+        haBackend.submitVirutalRouterHaTask(data, completion);
     }
 
     private List<LoadBalancerStruct> getLoadBalancersByL3Networks(String l3Uuid, boolean detach) {
@@ -1919,5 +1867,89 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     @Override
     public void beforeDetachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
         completion.done();
+    }
+
+    @Override
+    public List<VirtualRouterHaCallbackStruct> getCallback() {
+        List<VirtualRouterHaCallbackStruct> structs = new ArrayList<>();
+
+        VirtualRouterHaCallbackStruct refreshCertificate = new VirtualRouterHaCallbackStruct();
+        refreshCertificate.type = REFRESH_CERTIFICATE_TASK;
+        refreshCertificate.callback = new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need refresh certificate on backend", vrUuid));
+                    completion.success();
+                    return;
+                }
+
+                List<LoadBalancerStruct> s = (List<LoadBalancerStruct>)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                refreshCertificate(VirtualRouterVmInventory.valueOf(vrVO), false, s, completion);
+            }
+        };
+        structs.add(refreshCertificate);
+
+        VirtualRouterHaCallbackStruct deleteCertificate = new VirtualRouterHaCallbackStruct();
+        deleteCertificate.type = DELETE_CERTIFICATE_TASK;
+        deleteCertificate.callback = new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need delete certificate on backend", vrUuid));
+                    completion.success();
+                    return;
+                }
+
+                List<LoadBalancerStruct> s = (List<LoadBalancerStruct>)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                rollbackCertificate(VirtualRouterVmInventory.valueOf(vrVO), false, s, new NoErrorCompletion(completion) {
+                    @Override
+                    public void done() {
+                        completion.success();
+                    }
+                });
+            }
+        };
+        structs.add(deleteCertificate);
+
+        VirtualRouterHaCallbackStruct refreshLb = new VirtualRouterHaCallbackStruct();
+        refreshLb.type = REFRESH_LB_TASK;
+        refreshLb.callback = new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need refresh Lb on backend", vrUuid));
+                    completion.success();
+                    return;
+                }
+
+                LoadBalancerStruct s = (LoadBalancerStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                refreshLbToVirtualRouter(VirtualRouterVmInventory.valueOf(vrVO), s, completion);
+            }
+        };
+        structs.add(refreshLb);
+
+        VirtualRouterHaCallbackStruct destroyLb = new VirtualRouterHaCallbackStruct();
+        destroyLb.type = DESTROY_LB_TASK;
+        destroyLb.callback = new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need d Lb on backend", vrUuid));
+                    completion.success();
+                    return;
+                }
+
+                LoadBalancerStruct s = (LoadBalancerStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                destroyLoadBalancerOnVirtualRouter(VirtualRouterVmInventory.valueOf(vrVO), s, completion);
+            }
+        };
+        structs.add(destroyLb);
+
+        return structs;
     }
 }
