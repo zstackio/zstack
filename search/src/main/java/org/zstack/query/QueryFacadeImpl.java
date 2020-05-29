@@ -1,10 +1,12 @@
 package org.zstack.query;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
+import org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.SyncTask;
@@ -17,8 +19,8 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.Message;
+import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.message.*;
 import org.zstack.header.query.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
@@ -34,15 +36,16 @@ import org.zstack.zql.ast.ZQLMetadata;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.argerr;
-import static org.zstack.core.Platform.inerr;
+import static org.zstack.core.Platform.*;
 
-public class QueryFacadeImpl extends AbstractService implements QueryFacade, GlobalApiMessageInterceptor {
+public class QueryFacadeImpl extends AbstractService implements QueryFacade, GlobalApiMessageInterceptor, ReplyMessagePreSendingExtensionPoint {
     private static CLogger logger = Utils.getLogger(QueryFacadeImpl.class);
     private Map<String, QueryBuilderFactory> builerFactories = new HashMap<>();
     private Map<String, QueryBelongFilter> belongfilters = new HashMap<>();
     private String queryBuilderType = MysqlQueryBuilderFactory.type.toString();
+    private List<Class> zqlFilterClasses = Lists.newArrayList();
 
     @Autowired
     private PluginRegistry pluginRgty;
@@ -61,6 +64,10 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             // will throw out IllegalArgumentException if op is invalid
             QueryOp.valueOf(cond.getOp());
         }
+    }
+
+    {
+        zqlFilterClasses.addAll(BeanUtils.reflections.getSubTypesOf(ZQLFilterReply.class));
     }
 
     @Override
@@ -166,6 +173,22 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
     @Override
     @MessageSafe
     public void handleMessage(Message msg) {
+        if (msg instanceof APIMessage) {
+            handleApiMessage((APIMessage) msg);
+        } else {
+            handleLocalMessage(msg);
+        }
+    }
+
+    private void handleLocalMessage(Message msg) {
+        if (msg instanceof ZQLQueryMsg) {
+            handle((ZQLQueryMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIGenerateInventoryQueryDetailsMsg) {
             handle((APIGenerateInventoryQueryDetailsMsg) msg);
         } else if (msg instanceof APIQueryMessage) {
@@ -179,6 +202,54 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(ZQLQueryMsg msg) {
+        thdf.syncSubmit(new SyncTask<Void>() {
+            @Override
+            public Void call() {
+                ZQLQueryReply reply = new ZQLQueryReply();
+                ZQLContext.putAPISession(msg.getSessionInventory());
+
+                // use doCall to make message exception safe
+                doCall(new ReturnValueCompletion<List<ZQLQueryReturn>>(msg) {
+                    @Override
+                    public void success(List<ZQLQueryReturn> returnValue) {
+                        ZQLContext.cleanAPISession();
+                        reply.setResults(returnValue);
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        ZQLContext.cleanAPISession();
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                return null;
+            }
+
+            private void doCall(ReturnValueCompletion<List<ZQLQueryReturn>> completion) {
+                completion.success(ZQL.fromString(msg.getZql()).getResultList());
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return "inner-zql";
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return 3;
+            }
+        });
     }
 
     private void handle(APIZQLQueryMsg msg) {
@@ -568,5 +639,45 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
 
         return msg;
+    }
+
+    @Override
+    public List<Class> getReplyMessageClassForPreSendingExtensionPoint() {
+        return zqlFilterClasses;
+    }
+
+    @Override
+    public void marshalReplyMessageBeforeSending(Message replyOrEvent, NeedReplyMessage msg) {
+        if (replyOrEvent instanceof ZQLFilterReply) {
+            ZQLFilterReply reply = (ZQLFilterReply) replyOrEvent;
+            List<String> resources = reply.getFilterResources();
+            SessionInventory session;
+
+            if (resources == null || resources.isEmpty()) {
+                return;
+            }
+
+            if (msg instanceof APIMessage) {
+                session = ((APIMessage) msg).getSession();
+            } else {
+                return;
+            }
+
+            String queryVOName = StringUtils.removeEnd(reply.getInventoryName(), "Inventory").toLowerCase();
+            ZQLQueryMsg zqlMsg = new ZQLQueryMsg();
+            zqlMsg.setSessionInventory(session);
+            zqlMsg.setZql(String.format("query %s where uuid in (%s)", queryVOName,
+                    resources.stream()
+                            .map(s -> "'" + s + "'")
+                            .collect(Collectors.joining(", "))));
+            bus.makeTargetServiceIdByResourceUuid(zqlMsg, SearchConstant.QUERY_FACADE_SERVICE_ID, session.getUuid());
+            MessageReply re = bus.call(zqlMsg);
+            if (!re.isSuccess()) {
+                throw new OperationFailureException(re.getError());
+            }
+
+            ZQLQueryReply ar = re.castReply();
+            reply.setFilteredResult(ar.getResults().get(0).inventories);
+        }
     }
 }
