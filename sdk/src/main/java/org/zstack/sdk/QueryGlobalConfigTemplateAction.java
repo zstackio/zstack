@@ -65,7 +65,7 @@ public class QueryGlobalConfigTemplateAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/template-configurations";
+        info.path = "/template-configurations/templates";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
