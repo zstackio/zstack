@@ -846,5 +846,15 @@ public class NetworkUtils {
             return false;
         }
     }
+
+    /**
+     * Generate vlan device name like eth0.100
+     * @param ifName interface name
+     * @param vlanId vlan id
+     * @return vlan device name
+     */
+    public static String generateVlanDeviceName(String ifName, Integer vlanId) {
+        return String.format("%s.%s", ifName, vlanId.toString());
+    }
 }
 

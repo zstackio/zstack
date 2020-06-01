@@ -1,25 +1,20 @@
 package org.zstack.network.l2;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
+import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
-
-import javax.persistence.TypedQuery;
-import java.util.List;
 
 /**
  * Created with IntelliJ IDEA.
@@ -44,7 +39,9 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
-        if (msg instanceof APICreateL2NetworkMsg) {
+        if (msg instanceof APICreateL2VlanNetworkMsg) {
+            validate((APICreateL2VlanNetworkMsg) msg);
+        } else if (msg instanceof APICreateL2NetworkMsg) {
             validate((APICreateL2NetworkMsg)msg);
         } else if (msg instanceof APIDeleteL2NetworkMsg) {
             validate((APIDeleteL2NetworkMsg)msg);
@@ -87,6 +84,15 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateL2NetworkMsg msg) {
         if (!L2NetworkType.hasType(msg.getType())) {
             throw new ApiMessageInterceptionException(argerr("unsupported l2Network type[%s]", msg.getType()));
+        }
+    }
+
+    private void validate(APICreateL2VlanNetworkMsg msg) {
+        // check interface name length
+        if (NetworkUtils.generateVlanDeviceName(msg.getPhysicalInterface(), msg.getVlan()).length()
+                > L2NetworkConstant.LINUX_IF_NAME_MAX_SIZE) {
+            throw new ApiMessageInterceptionException(argerr("cannot create vlan-device on %s because it's too long"
+                    , msg.getPhysicalInterface()));
         }
     }
 }
