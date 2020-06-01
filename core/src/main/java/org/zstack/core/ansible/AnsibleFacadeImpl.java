@@ -327,7 +327,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
 
         try {
             File privKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PRIVATE_KEY, true);
-            ShellUtils.run(String.format("chmod 600 %s", privKeyFile.getAbsolutePath()));
+            PathUtil.setFilePosixPermissions(privKeyFile.getAbsolutePath(), "rw-------");
             File pubKeyFile = PathUtil.findFileOnClassPath(AnsibleConstant.RSA_PUBLIC_KEY);
 
             if (pubKeyFile == null) {
