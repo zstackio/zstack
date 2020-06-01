@@ -713,23 +713,17 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     private void _eoCleanup(Class VOClazz) {
         EntityInfo info = getEntityInfo(VOClazz);
-        if (!info.hasEO()) {
-            logger.warn(String.format("Class[%s] doesn't has EO.", VOClazz));
-            return;
-        }
 
         String deleted = info.eoSoftDeleteColumn.getName();
-        String sql = String.format("select eo from %s eo where eo.%s is not null",
+        String sql = String.format("select eo.%s from %s eo where eo.%s is not null", info.voPrimaryKeyField.getName(),
                 info.eoClass.getSimpleName(), deleted);
         Query q = getEntityManager().createQuery(sql);
-        List eoList = q.getResultList();
-        if (eoList.isEmpty()) {
+        List ids = q.getResultList();
+        if (ids.isEmpty()) {
             return;
         }
 
-        for (Object eo : eoList) {
-            info.hardDelete(eo);
-        }
+        info.hardDelete(ids);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -756,6 +750,12 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     @Override
     @DeadlockAutoRestart
     public void eoCleanup(Class VOClazz) {
+        EntityInfo info = getEntityInfo(VOClazz);
+        if (!info.hasEO()) {
+            logger.warn(String.format("Class[%s] doesn't has EO.", VOClazz));
+            return;
+        }
+
         _eoCleanup(VOClazz);
     }
 

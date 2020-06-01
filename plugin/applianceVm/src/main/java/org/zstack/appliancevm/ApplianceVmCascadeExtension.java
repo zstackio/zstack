@@ -12,6 +12,9 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.*;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
@@ -56,6 +59,8 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
     private CloudBus bus;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    protected ThreadFacade thdf;
 
     private static String NAME = ApplianceVmVO.class.getSimpleName();
 
@@ -313,8 +318,25 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     private void handleDeletionCleanup(CascadeAction action, Completion completion) {
-        dbf.eoCleanup(ApplianceVmVO.class);
-        completion.success();
+        String syncSignature = String.format("%s eo cleanup", ApplianceVmVO.class.getSimpleName());
+        thdf.chainSubmit(new ChainTask(completion) {
+            @Override
+            public String getSyncSignature() {
+                return syncSignature;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                dbf.eoCleanup(ApplianceVmVO.class);
+                completion.success();
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return syncSignature;
+            }
+        });
     }
 
     protected void handleDeletion(final CascadeAction action, final Completion completion) {

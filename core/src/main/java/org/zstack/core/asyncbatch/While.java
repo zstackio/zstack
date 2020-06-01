@@ -38,6 +38,7 @@ public class While<T> {
         return this;
     }
 
+    @Deprecated
     public While all(Do<T> consumer) {
         mode = WhileMode.ALL;
         this.consumer = consumer;
