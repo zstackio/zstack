@@ -23,12 +23,6 @@
             <systemPath>${java.home}/../lib/tools.jar</systemPath>
             <version>${project.java.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.zstack</groupId>
-            <artifactId>core-groovy</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 
     <build>

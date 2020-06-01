@@ -45,7 +45,6 @@
         <module>rest</module>
         <module>sdk</module>
         <module>testlib</module>
-        <module>coregroovy</module>
         <module>externalservice</module>
         <module>longjob</module>
         <module>resourceconfig</module>
