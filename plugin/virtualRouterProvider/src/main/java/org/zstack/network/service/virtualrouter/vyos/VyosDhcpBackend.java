@@ -24,6 +24,7 @@ import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.dhcp.VirtualRouterDhcpBackend;
+import org.zstack.network.service.virtualrouter.ha.BeforeCleanUpHaGroupNetworkServiceRefsExtensionPoint;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.network.NetworkUtils;
@@ -39,7 +40,7 @@ import static org.zstack.utils.CollectionDSL.map;
  * Created by xing5 on 2016/10/31.
  */
 public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements VirtualRouterAfterAttachNicExtensionPoint,
-        VirtualRouterBeforeDetachNicExtensionPoint, ApplianceVmSyncConfigToHaGroupExtensionPoint {
+        VirtualRouterBeforeDetachNicExtensionPoint, ApplianceVmSyncConfigToHaGroupExtensionPoint, BeforeCleanUpHaGroupNetworkServiceRefsExtensionPoint {
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -391,5 +392,24 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
     @Override
     public void applianceVmSyncConfigAfterAddToHaGroup(ApplianceVmInventory inv, String haUuid, NoErrorCompletion completion) {
         completion.done();
+    }
+
+    @Override
+    public void beforeCleanUp(VmInstanceInventory vrInv) {
+        String haUuid = haBackend.getVirutalRouterHaUuid(vrInv.getUuid());
+        if (haUuid == null) {
+            return;
+        }
+
+        for (VmNicInventory nic : vrInv.getVmNics()) {
+            String uuid = L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID.getTokenByResourceUuid(nic.getL3NetworkUuid(), L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID_TOKEN);
+            if (uuid == null) {
+                continue;
+            }
+
+            if (haUuid.equals(uuid)) {
+                L3NetworkSystemTags.PUBLIC_NETWORK_DHCP_SERVER_UUID.delete(nic.getL3NetworkUuid());
+            }
+        }
     }
 }

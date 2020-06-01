@@ -71,6 +71,7 @@
                 <value>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterCleanupPortforwardingOnDestroyFlow</value>
                 <value>org.zstack.network.service.virtualrouter.lb.VirtualRouterCleanupLoadBalancerOnDestroyFlow</value>
                 <value>org.zstack.network.service.virtualrouter.vip.VirtualRouterCleanupVipOnDestroyFlow</value>
+                <value>org.zstack.network.service.virtualrouter.vyos.VyosDhcpCleanUpFlow</value>
                 <value>org.zstack.network.service.virtualrouter.ha.VirtualRouterCleanupHaOnDestroyFlow</value>
                 <value>org.zstack.network.service.virtualrouter.lifecycle.UntrackVirtualRouterVmFlow</value>
             </list>
@@ -109,6 +110,7 @@
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint" />
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint" />
             <zstack:extension interface="org.zstack.appliancevm.ApplianceVmSyncConfigToHaGroupExtensionPoint" />
+            <zstack:extension interface="org.zstack.network.service.virtualrouter.ha.BeforeCleanUpHaGroupNetworkServiceRefsExtensionPoint" />
         </zstack:plugin>
     </bean>
 
