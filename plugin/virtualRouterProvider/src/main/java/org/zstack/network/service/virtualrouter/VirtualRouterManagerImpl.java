@@ -67,6 +67,7 @@ import org.zstack.network.service.eip.GetL3NetworkForEipInVirtualRouterExtension
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
+import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.lb.LbConfigProxy;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
 import org.zstack.network.service.virtualrouter.vip.VipConfigProxy;
@@ -104,7 +105,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
         GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint,
         GetPeerL3NetworksForLoadBalancerExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint, ManagementNodeReadyExtensionPoint,
-        VipCleanupExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint {
+        VipCleanupExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint, VirtualRouterHaGetCallbackExtensionPoint {
 	private final static CLogger logger = Utils.getLogger(VirtualRouterManagerImpl.class);
 	
 	private final static List<String> supportedL2NetworkTypes = new ArrayList<String>();
@@ -169,6 +170,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private EventFacade evf;
     @Autowired
     private ResourceDestinationMaker destMaker;
+    @Autowired
+    protected VirtualRouterHaBackend haBackend;
 
 
     @Override
@@ -2100,5 +2103,125 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         return publicNic;
+    }
+
+    private List<VirtualRouterCommands.SNATInfo> getSnatInfo(VirtualRouterVmInventory vrInv) {
+        boolean snatDisable = haBackend.isSnatDisabledOnRouter(vrInv.getUuid());
+        if (snatDisable) {
+            return null;
+        }
+
+        List<String> nwServed = vrInv.getAllL3Networks();
+        nwServed = selectL3NetworksNeedingSpecificNetworkService(nwServed, NetworkServiceType.SNAT);
+        if (nwServed.isEmpty()) {
+            return null;
+        }
+
+        VmNicInventory publicNic = getSnatPubicInventory(vrInv);
+
+        final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<>();
+        for (VmNicInventory vnic : vrInv.getVmNics()) {
+            if (nwServed.contains(vnic.getL3NetworkUuid())) {
+                VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
+                info.setPrivateNicIp(vnic.getIp());
+                info.setPrivateNicMac(vnic.getMac());
+                info.setPublicIp(publicNic.getIp());
+                info.setPublicNicMac(publicNic.getMac());
+                info.setSnatNetmask(vnic.getNetmask());
+                snatInfo.add(info);
+            }
+        }
+
+        return snatInfo;
+    }
+
+    @Transactional
+    protected void changeVirtualRouterNicMetaData(String vrUuid, String newL3Uuid, String oldL3Uuid) {
+        VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+        for (VmNicVO nic : vrVo.getVmNics()) {
+            if (nic.getL3NetworkUuid().equals(oldL3Uuid)) {
+                VirtualRouterNicMetaData.removePublicToNic(nic);
+                VirtualRouterNicMetaData.addAdditionalPublicToNic(nic);
+                dbf.update(nic);
+            } else if (nic.getL3NetworkUuid().equals(newL3Uuid)) {
+                VirtualRouterNicMetaData.removeAdditionalPublicToNic(nic);
+                VirtualRouterNicMetaData.addPublicToNic(nic);
+                dbf.update(nic);
+            }
+        }
+    }
+
+    public void changeVirutalRouterDefaultL3Network(String vrUuid, String newL3Uuid, String oldL3Uuid, Completion completion) {
+        VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+        VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVo);
+
+        VmNicVO newNic = CollectionUtils.find(vrVo.getVmNics(), new Function<VmNicVO, VmNicVO>() {
+            @Override
+            public VmNicVO call(VmNicVO arg) {
+                if (arg.getL3NetworkUuid().equals(newL3Uuid)) {
+                    return arg;
+                }
+                return null;
+            }
+        });
+        DebugUtils.Assert(newNic != null, String.format("cannot find nic for old default network[uuid:%s]", newL3Uuid));
+
+        VirtualRouterCommands.NicInfo newNicInfo  = new VirtualRouterCommands.NicInfo();
+        newNicInfo.setMac(newNic.getMac());
+        newNicInfo.setGateway(newNic.getGateway());
+
+        VirtualRouterCommands.ChangeDefaultNicCmd cmd = new VirtualRouterCommands.ChangeDefaultNicCmd();
+        cmd.setNewNic(newNicInfo);
+
+        List<VirtualRouterCommands.SNATInfo> snatInfos = getSnatInfo(vrInv);
+        if (snatInfos != null) {
+            cmd.setSnats(snatInfos);
+        }
+
+        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+        msg.setVmInstanceUuid(vrUuid);
+        msg.setPath(VirtualRouterConstant.VR_CHANGE_DEFAULT_ROUTE_NETWORK);
+        msg.setCommand(cmd);
+        msg.setCheckStatus(true);
+        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                VirtualRouterAsyncHttpCallReply re = reply.castReply();
+                VirtualRouterCommands.SetSNATRsp ret = re.toResponse(VirtualRouterCommands.SetSNATRsp.class);
+                if (!ret.isSuccess()) {
+                    ErrorCode err = operr("update virtual router [uuid:%s] default network failed, because %s",
+                            vrUuid, ret.getError());
+                    completion.fail(err);
+                } else {
+                    changeVirtualRouterNicMetaData(vrUuid, newL3Uuid, oldL3Uuid);
+                    completion.success();
+                }
+            }
+        });
+    }
+
+    @Override
+    public List<VirtualRouterHaCallbackStruct> getCallback() {
+        List<VirtualRouterHaCallbackStruct> structs = new ArrayList<>();
+
+        VirtualRouterHaCallbackStruct changeDefaultNic = new VirtualRouterHaCallbackStruct();
+        changeDefaultNic.type = VirtualRouterConstant.VR_CHANGE_DEFAULT_ROUTE_JOB;
+        changeDefaultNic.callback = new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
+                String newL3Uuid =  (String) data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                String oldL3Uuid =  (String) data.get(VirtualRouterHaCallbackInterface.Params.Struct1.toString());
+                changeVirutalRouterDefaultL3Network(vrUuid, newL3Uuid, oldL3Uuid, completion);
+            }
+        };
+        structs.add(changeDefaultNic);
+
+        return structs;
     }
 }

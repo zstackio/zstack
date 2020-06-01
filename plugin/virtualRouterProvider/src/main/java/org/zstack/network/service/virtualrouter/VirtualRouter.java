@@ -376,107 +376,6 @@ public class VirtualRouter extends ApplianceVmBase {
         });
     }
 
-    private List<VirtualRouterCommands.SNATInfo> getSnatInfo(VirtualRouterVmInventory vrInv) {
-        boolean snatDisable = haBackend.isSnatDisabledOnRouter(vrInv.getUuid());
-        if (snatDisable) {
-            return null;
-        }
-
-        List<String> nwServed = vrInv.getAllL3Networks();
-        nwServed = vrMgr.selectL3NetworksNeedingSpecificNetworkService(nwServed, NetworkServiceType.SNAT);
-        if (nwServed.isEmpty()) {
-            return null;
-        }
-
-        VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vrInv);
-
-        final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<>();
-        for (VmNicInventory vnic : vrInv.getVmNics()) {
-            if (nwServed.contains(vnic.getL3NetworkUuid())) {
-                VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
-                info.setPrivateNicIp(vnic.getIp());
-                info.setPrivateNicMac(vnic.getMac());
-                info.setPublicIp(publicNic.getIp());
-                info.setPublicNicMac(publicNic.getMac());
-                info.setSnatNetmask(vnic.getNetmask());
-                snatInfo.add(info);
-            }
-        }
-
-        return snatInfo;
-    }
-
-    @Transactional
-    protected void changeVirtualRouterNicMetaData(String vrUuid, String newL3Uuid, String oldL3Uuid) {
-        VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-        for (VmNicVO nic : vrVo.getVmNics()) {
-            if (nic.getL3NetworkUuid().equals(oldL3Uuid)) {
-                VirtualRouterNicMetaData.removePublicToNic(nic);
-                VirtualRouterNicMetaData.addAdditionalPublicToNic(nic);
-                dbf.update(nic);
-            } else if (nic.getL3NetworkUuid().equals(newL3Uuid)) {
-                VirtualRouterNicMetaData.removeAdditionalPublicToNic(nic);
-                VirtualRouterNicMetaData.addPublicToNic(nic);
-                dbf.update(nic);
-            }
-        }
-    }
-
-    private void changeVirutalRouterDefaultL3Network(String vrUuid, String newL3Uuid, String oldL3Uuid, Completion completion) {
-        VirtualRouterVmVO vrVo = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-        VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVo);
-
-        VmNicVO newNic = CollectionUtils.find(vrVo.getVmNics(), new Function<VmNicVO, VmNicVO>() {
-            @Override
-            public VmNicVO call(VmNicVO arg) {
-                if (arg.getL3NetworkUuid().equals(newL3Uuid)) {
-                    return arg;
-                }
-                return null;
-            }
-        });
-        DebugUtils.Assert(newNic != null, String.format("cannot find nic for old default network[uuid:%s]", newL3Uuid));
-
-        VirtualRouterCommands.NicInfo newNicInfo  = new VirtualRouterCommands.NicInfo();
-        newNicInfo.setMac(newNic.getMac());
-        newNicInfo.setGateway(newNic.getGateway());
-
-        VirtualRouterCommands.ChangeDefaultNicCmd cmd = new VirtualRouterCommands.ChangeDefaultNicCmd();
-        cmd.setNewNic(newNicInfo);
-
-        List<VirtualRouterCommands.SNATInfo> snatInfos = getSnatInfo(vrInv);
-        if (snatInfos != null) {
-            cmd.setSnats(snatInfos);
-        }
-
-        VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
-        msg.setVmInstanceUuid(vrUuid);
-        msg.setPath(VirtualRouterConstant.VR_CHANGE_DEFAULT_ROUTE_NETWORK);
-        msg.setCommand(cmd);
-        msg.setCheckStatus(true);
-        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrUuid);
-        bus.send(msg, new CloudBusCallBack(completion) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    completion.fail(reply.getError());
-                    return;
-                }
-
-                VirtualRouterAsyncHttpCallReply re = reply.castReply();
-                VirtualRouterCommands.SetSNATRsp ret = re.toResponse(VirtualRouterCommands.SetSNATRsp.class);
-                if (!ret.isSuccess()) {
-                    ErrorCode err = operr("update virtual router [uuid:%s] default network failed, because %s",
-                            vr.getUuid(), ret.getError());
-                    completion.fail(err);
-                } else {
-                    changeVirtualRouterNicMetaData(vrUuid, newL3Uuid, oldL3Uuid);
-                    completion.success();
-                }
-            }
-        });
-    }
-
     @Transactional
     protected void replaceVirtualRouterDefaultNetwork(String vrUuid, String oldL3Uuid, String newL3Uuud) {
         defaultL3ConfigProxy.detachNetworkService(vrUuid, VirtualRouterConstant.VR_DEFAULT_ROUTE_NETWORK,
@@ -664,7 +563,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                changeVirutalRouterDefaultL3Network(msg.getVmInstanceUuid(), msg.getDefaultRouteL3NetworkUuid(), vrVO.getDefaultRouteL3NetworkUuid(), new Completion(trigger) {
+                vrMgr.changeVirutalRouterDefaultL3Network(msg.getVmInstanceUuid(), msg.getDefaultRouteL3NetworkUuid(), vrVO.getDefaultRouteL3NetworkUuid(), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -684,14 +583,7 @@ public class VirtualRouter extends ApplianceVmBase {
                 haData.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), msg.getVmInstanceUuid());
                 haData.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), msg.getDefaultRouteL3NetworkUuid());
                 haData.put(VirtualRouterHaCallbackInterface.Params.Struct1.toString(), vrVO.getDefaultRouteL3NetworkUuid());
-                haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
-                    @Override
-                    public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
-                        String newL3Uuid =  (String) data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                        String oldL3Uuid =  (String) data.get(VirtualRouterHaCallbackInterface.Params.Struct1.toString());
-                        changeVirutalRouterDefaultL3Network(vrUuid, newL3Uuid, oldL3Uuid, compl);
-                    }
-                }, haData, completion);
+                haBackend.submitVirutalRouterHaTask(haData, completion);
             }
         }).error(new FlowErrorHandler(completion) {
             @Override

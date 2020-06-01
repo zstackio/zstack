@@ -3,6 +3,7 @@ package org.zstack.network.service.virtualrouter.vip;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
@@ -54,6 +55,9 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
     private VipConfigProxy proxy;
     @Autowired
     private VirtualRouterHaBackend haBackend;
+    @Autowired
+    @Qualifier("VirtualRouterVipBackend")
+    private VirtualRouterVipBackend vipBackend;
 
     public VirtualRouterVipBaseBackend(VipVO self) {
         super(self);
@@ -61,46 +65,18 @@ public class VirtualRouterVipBaseBackend extends VipBaseBackend {
 
     protected void releaseVipOnHaHaRouter(VirtualRouterVmInventory vrInv, Completion completion) {
         Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "releaseVip");
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), vipBackend.RELEASE_VIP_TASK);
         data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), asList(getSelfInventory()));
-        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
-            @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
-                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-                if (vrVO == null) {
-                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need releaseVip on backend", vrUuid));
-                    compl.success();
-                    return;
-                }
-
-                VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
-                List<VipInventory> vips = (List<VipInventory>)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                releaseVipOnVirtualRouterVm(vrInv, vips, compl);
-            }
-        }, data, completion);
+        haBackend.submitVirutalRouterHaTask(data, completion);
     }
 
     protected void acquireVipOnHaBackend(VirtualRouterVmInventory vrInv, Completion completion) {
         Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "applyVip");
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), vipBackend.APPLY_VIP_TASK);
         data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), asList(getSelfInventory()));
-        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
-            @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
-                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-                if (vrVO == null) {
-                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need applyVip on backend", vrUuid));
-                    compl.success();
-                    return;
-                }
-
-                VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
-                List<VipInventory> vips = (List<VipInventory>)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                createVipOnVirtualRouterVm(vrInv, vips, compl);
-            }
-        }, data, completion);
+        haBackend.submitVirutalRouterHaTask(data, completion);
     }
 
     @Override

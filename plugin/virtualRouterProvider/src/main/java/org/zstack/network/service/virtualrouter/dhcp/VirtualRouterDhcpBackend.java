@@ -15,7 +15,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkCategory;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceInventory;
@@ -40,7 +39,7 @@ import static org.zstack.core.Platform.operr;
 
 import java.util.*;
 
-public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend implements NetworkServiceDhcpBackend {
+public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend implements NetworkServiceDhcpBackend, VirtualRouterHaGetCallbackExtensionPoint {
     private final CLogger logger = Utils.getLogger(VirtualRouterDhcpBackend.class);
 
     @Autowired
@@ -55,6 +54,9 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
     private DatabaseFacade dbf;
     @Autowired
     protected NetworkServiceManager nsMgr;
+
+    private String APPLY_DHCP_TASK = "applyDHCP";
+    private String RELEASE_DHCP_TASK = "releaseDHCP";
 
     @Override
     public NetworkServiceProviderType getProviderType() {
@@ -94,29 +96,15 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
         });
     }
 
-    private void applyDhcpEntryToHAVirtualRouter(VirtualRouterVmInventory vr, VirtualRouterCommands.DhcpInfo info, Completion completion) {
+    private void applyDhcpEntryToHAVirtualRouter(VirtualRouterVmInventory vr, DhcpStruct struct, Completion completion) {
         Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "applyDHCP");
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), APPLY_DHCP_TASK);
         data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vr.getUuid());
-        data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), info);
-        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
-            @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
-                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-                if (vrVO == null) {
-                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need apply Eip on backend", vrUuid));
-                    compl.success();
-                    return;
-                }
-
-                VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
-                VirtualRouterCommands.DhcpInfo info = (VirtualRouterCommands.DhcpInfo)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                doApplyDhcpEntryToVirtualRouter(vr, info, compl);
-            }
-        }, data, completion);
+        data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
+        haBackend.submitVirutalRouterHaTask(data, completion);
     }
 
-    private void applyDhcpEntryToVirtualRouter(VirtualRouterVmInventory vr, DhcpStruct struct, Completion completion) {
+    private VirtualRouterCommands.DhcpInfo getDhcpInfo(VirtualRouterVmInventory vr, DhcpStruct struct) {
         VirtualRouterCommands.DhcpInfo info = new VirtualRouterCommands.DhcpInfo();
         info.setGateway(struct.getGateway());
         info.setIp(struct.getIp());
@@ -154,10 +142,15 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
             }
         }
 
+        return info;
+    }
+
+    private void applyDhcpEntryToVirtualRouter(VirtualRouterVmInventory vr, DhcpStruct struct, Completion completion) {
+        VirtualRouterCommands.DhcpInfo info = getDhcpInfo(vr, struct);
         doApplyDhcpEntryToVirtualRouter(vr, info, new Completion(completion) {
             @Override
             public void success() {
-                applyDhcpEntryToHAVirtualRouter(vr, info, completion);
+                applyDhcpEntryToHAVirtualRouter(vr, struct, completion);
             }
 
             @Override
@@ -211,31 +204,12 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
         applyDhcpEntry(dhcpStructList.iterator(), spec, completion);
     }
 
-    private void releaseDhcpFromHaVirtualRouter(VirtualRouterVmInventory vr, VirtualRouterCommands.DhcpInfo info, final NoErrorCompletion completion) {
+    private void releaseDhcpFromHaVirtualRouter(VirtualRouterVmInventory vr, DhcpStruct struct, final NoErrorCompletion completion) {
         Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "applyDHCP");
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), RELEASE_DHCP_TASK);
         data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vr.getUuid());
-        data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), info);
-        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
-            @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
-                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-                if (vrVO == null) {
-                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need release Eip on backend", vrUuid));
-                    compl.success();
-                    return;
-                }
-
-                VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
-                VirtualRouterCommands.DhcpInfo info = (VirtualRouterCommands.DhcpInfo) data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                doReleaseDhcpFromVirtualRouter(vr, info, new NoErrorCompletion(compl) {
-                    @Override
-                    public void done() {
-                        compl.success();
-                    }
-                });
-            }
-        }, data, new Completion(completion) {
+        data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
+        haBackend.submitVirutalRouterHaTask(data, new Completion(completion) {
             @Override
             public void success() {
                 completion.done();
@@ -285,25 +259,11 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
     }
 
     private void releaseDhcpFromVirtualRouter(VirtualRouterVmInventory vr, DhcpStruct struct, final NoErrorCompletion completion) {
-        VmNicInventory vrNic = CollectionUtils.find(vr.getVmNics(), new Function<VmNicInventory, VmNicInventory>() {
-            @Override
-            public VmNicInventory call(VmNicInventory arg) {
-                return arg.getL3NetworkUuid().equals(struct.getL3Network().getUuid()) ? arg : null;
-            }
-        });
-
-        VirtualRouterCommands.DhcpInfo info = new VirtualRouterCommands.DhcpInfo();
-        info.setGateway(struct.getGateway());
-        info.setDefaultL3Network(struct.isDefaultL3Network());
-        info.setIp(struct.getIp());
-        info.setMac(struct.getMac());
-        info.setNetmask(struct.getNetmask());
-        info.setVrNicMac(vrNic.getMac());
-
+        VirtualRouterCommands.DhcpInfo info = getDhcpInfo(vr, struct);
         doReleaseDhcpFromVirtualRouter(vr, info, new NoErrorCompletion(completion) {
             @Override
             public void done() {
-                releaseDhcpFromHaVirtualRouter(vr, info, completion);
+                releaseDhcpFromHaVirtualRouter(vr, struct, completion);
             }
         });
     }
@@ -419,5 +379,57 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
         }
 
         acquireVirtualRouterVm(dhcpStruct, completion);
+    }
+
+    @Override
+    public List<VirtualRouterHaCallbackStruct> getCallback() {
+        List<VirtualRouterHaCallbackStruct> structs = new ArrayList<>();
+
+        VirtualRouterHaCallbackStruct applyDhcp = new VirtualRouterHaCallbackStruct();
+        applyDhcp.type = APPLY_DHCP_TASK;
+        applyDhcp.callback = new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need apply Eip on backend", vrUuid));
+                    completion.success();
+                    return;
+                }
+
+                VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
+                DhcpStruct struct = (DhcpStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                VirtualRouterCommands.DhcpInfo info = getDhcpInfo(vr, struct);
+                doApplyDhcpEntryToVirtualRouter(vr, info, completion);
+            }
+        };
+        structs.add(applyDhcp);
+
+        VirtualRouterHaCallbackStruct releaseDhcp = new VirtualRouterHaCallbackStruct();
+        releaseDhcp.type = RELEASE_DHCP_TASK;
+        releaseDhcp.callback = new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need release Eip on backend", vrUuid));
+                    completion.success();
+                    return;
+                }
+
+                VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
+                DhcpStruct struct = (DhcpStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                VirtualRouterCommands.DhcpInfo info = getDhcpInfo(vr, struct);
+                doReleaseDhcpFromVirtualRouter(vr, info, new NoErrorCompletion(completion) {
+                    @Override
+                    public void done() {
+                        completion.success();
+                    }
+                });
+            }
+        };
+        structs.add(releaseDhcp);
+
+        return structs;
     }
 }

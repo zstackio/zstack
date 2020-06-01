@@ -18,7 +18,7 @@ public interface VirtualRouterHaGroupExtensionPoint {
 
     String getPeerUuid(String vrUuid);
 
-    void submitTaskToHaRouter(VirtualRouterHaCallbackInterface callback, Map<String, Object> data, Completion completion);
+    void submitTaskToHaRouter(Map<String, Object> data, Completion completion);
 
     void attachNetworkServiceToHaRouter(String type, List<String> uuids, String vrUuid);
     void attachNetworkServiceToHaRouter(String type, List<String> uuids, String vrUuid, boolean override);

@@ -20,9 +20,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
-import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
-import org.zstack.header.network.service.VirtualRouterHaCallbackInterface;
+import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.eip.*;
@@ -45,7 +43,7 @@ import static org.zstack.core.Platform.*;
 
 /**
  */
-public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implements
+public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implements VirtualRouterHaGetCallbackExtensionPoint,
         EipBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VirtualRouterEipBackend.class);
 
@@ -65,6 +63,9 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
     private EipConfigProxy proxy;
     @Autowired
     private VirtualRouterHaBackend haBackend;
+
+    private String APPLY_EIP_TASK = "applyEip";
+    private String REVOKE_EIP_TASK = "revokeEip";
 
     public static final Set<VmInstanceState> SYNC_EIP_VM_STATES = ImmutableSet.<VmInstanceState> of(
             VmInstanceState.Running
@@ -191,46 +192,19 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
     protected void applyEipOnHaRouter(String vrUuid, EipStruct struct, Completion completion) {
         VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
         Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "applyEip");
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), APPLY_EIP_TASK);
         data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
-        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
-            @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
-                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-                if (vrVO == null) {
-                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need apply Eip on backend", vrUuid));
-                    compl.success();
-                    return;
-                }
-
-                VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
-                EipStruct s = (EipStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                applyEip(vr, s, compl);
-            }
-        }, data, completion);
+        haBackend.submitVirutalRouterHaTask(data, completion);
     }
 
     protected void revokeEipOnHaRouter(String vrUuid, EipStruct struct, Completion completion) {
         VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
         Map<String, Object> data = new HashMap<>();
-        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), "revokeEip");
+        data.put(VirtualRouterHaCallbackInterface.Params.TaskName.toString(), REVOKE_EIP_TASK);
         data.put(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString(), vrInv.getUuid());
         data.put(VirtualRouterHaCallbackInterface.Params.Struct.toString(), struct);
-        haBackend.submitVirutalRouterHaTask(new VirtualRouterHaCallbackInterface() {
-            @Override
-            public void callBack(String vrUuid, Map<String, Object> data, Completion compl) {
-                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-                if (vrVO == null) {
-                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need revoke Eip on backend", vrUuid));
-                    compl.success();
-                    return;
-                }
-
-                EipStruct s = (EipStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
-                revokeEip(vrUuid, s, compl);
-            }
-        }, data, completion);
+        haBackend.submitVirutalRouterHaTask(data, completion);
     }
 
     @Override
@@ -633,5 +607,49 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
     @Override
     public void beforeDetachNicRollback(VmNicInventory nic, NoErrorCompletion completion) {
         completion.done();
+    }
+
+    @Override
+    public List<VirtualRouterHaCallbackStruct> getCallback() {
+        List<VirtualRouterHaCallbackStruct> structs = new ArrayList<>();
+
+        VirtualRouterHaCallbackStruct applyEip = new VirtualRouterHaCallbackStruct();
+        applyEip.type = APPLY_EIP_TASK;
+        applyEip.callback = new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need apply Eip on backend", vrUuid));
+                    completion.success();
+                    return;
+                }
+
+                VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
+                EipStruct s = (EipStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                applyEip(vr, s, completion);
+            }
+        };
+        structs.add(applyEip);
+
+        VirtualRouterHaCallbackStruct revokeEip = new VirtualRouterHaCallbackStruct();
+        revokeEip.type = REVOKE_EIP_TASK;
+        revokeEip.callback = new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need revoke Eip on backend", vrUuid));
+                    completion.success();
+                    return;
+                }
+
+                EipStruct s = (EipStruct)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                revokeEip(vrUuid, s, completion);
+            }
+        };
+        structs.add(revokeEip);
+
+        return structs;
     }
 }

@@ -1,5 +1,6 @@
 package org.zstack.network.service.virtualrouter;
 
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
@@ -51,4 +52,5 @@ public interface VirtualRouterManager {
     int getParallelismDegree(String vrUuid);
 
     VmNicInventory getSnatPubicInventory(VirtualRouterVmInventory vrInv);
+    void changeVirutalRouterDefaultL3Network(String vrUuid, String newL3Uuid, String oldL3Uuid, Completion completion);
 }

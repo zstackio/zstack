@@ -15,8 +15,7 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.service.VirtualRouterAfterAttachNicExtensionPoint;
-import org.zstack.header.network.service.VirtualRouterBeforeDetachNicExtensionPoint;
+import org.zstack.header.network.service.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
@@ -29,13 +28,14 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 
-public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implements
+public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implements VirtualRouterHaGetCallbackExtensionPoint,
         VipBackend, VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint, PreVipReleaseExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VirtualRouterVipBackend.class);
 
@@ -51,6 +51,9 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
     private ApiTimeoutManager apiTimeoutManager;
     @Autowired
     private VipConfigProxy proxy;
+
+    public static String RELEASE_VIP_TASK = "releaseVip";
+    public static String APPLY_VIP_TASK = "applyVip";
 
     private String getOwnerMac(VirtualRouterVmInventory vr, VipInventory vip) {
         for (VmNicInventory nic : vr.getVmNics()) {
@@ -356,5 +359,50 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         /* this ugly */
         SQL.New(VirtualRouterVipVO.class).eq(VirtualRouterVipVO_.uuid, vip.getUuid()).delete();
         completion.success();
+    }
+
+    @Override
+    public List<VirtualRouterHaCallbackStruct> getCallback() {
+        List<VirtualRouterHaCallbackStruct> structs = new ArrayList<>();
+
+        VirtualRouterHaCallbackStruct applyVip = new VirtualRouterHaCallbackStruct();
+        applyVip.type = APPLY_VIP_TASK;
+        applyVip.callback = new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need applyVip on backend", vrUuid));
+                    completion.success();
+                    return;
+                }
+
+                VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
+                List<VipInventory> vips = (List<VipInventory>)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                createVipOnVirtualRouterVm(vrInv, vips, false, completion);
+            }
+        };
+        structs.add(applyVip);
+
+        VirtualRouterHaCallbackStruct releaseVip = new VirtualRouterHaCallbackStruct();
+        releaseVip.type = RELEASE_VIP_TASK;
+        releaseVip.callback = new VirtualRouterHaCallbackInterface() {
+            @Override
+            public void callBack(String vrUuid, Map<String, Object> data, Completion completion) {
+                VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
+                if (vrVO == null) {
+                    logger.debug(String.format("VirtualRouter[uuid:%s] is deleted, no need releaseVip on backend", vrUuid));
+                    completion.success();
+                    return;
+                }
+
+                VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(vrVO);
+                List<VipInventory> vips = (List<VipInventory>)data.get(VirtualRouterHaCallbackInterface.Params.Struct.toString());
+                releaseVipOnVirtualRouterVm(vrInv, vips, completion);
+            }
+        };
+        structs.add(releaseVip);
+
+        return structs;
     }
 }
