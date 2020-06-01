@@ -24,7 +24,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
 import org.zstack.header.rest.RESTFacade;
-import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
@@ -79,10 +78,10 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
             return;
         }
 
-        ShellUtils.run(String.format("mkdir -p %s", AgentConstant.SRC_ANSIBLE_ROOT), false);
+        PathUtil.forceCreateDirectory(AgentConstant.SRC_ANSIBLE_ROOT);
         File srcFolder = PathUtil.findFolderOnClassPath(AgentConstant.ANSIBLE_MODULE_PATH, true);
         srcRootFolder = srcFolder.getAbsolutePath();
-        ShellUtils.run(String.format("yes | cp -r %s/server %s", srcRootFolder, AgentConstant.SRC_ANSIBLE_ROOT), false);
+        PathUtil.copyFolderToFolder(PathUtil.join(srcRootFolder, "server"), AgentConstant.SRC_ANSIBLE_ROOT);
     }
 
     private void handle(final DeployAgentMsg msg) {
@@ -316,11 +315,7 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
 
     @Override
     public void registerAgent(AgentStruct struct) {
-        Map<String, AgentStruct> m = agents.get(struct.getAgentOwner());
-        if (m == null) {
-            m = new HashMap<String, AgentStruct>();
-            agents.put(struct.getAgentOwner(), m);
-        }
+        Map<String, AgentStruct> m = agents.computeIfAbsent(struct.getAgentOwner(), k -> new HashMap<String, AgentStruct>());
 
         AgentStruct old = m.get(struct.getAgentId());
         if (old != null) {
@@ -328,6 +323,6 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
         }
 
         m.put(struct.getAgentId(), struct);
-        ShellUtils.run(String.format("yes | cp -r %s %s", struct.getFileFolder(), AgentConstant.SRC_ANSIBLE_ROOT), false);
+        PathUtil.copyFolderToFolder(struct.getFileFolder(), AgentConstant.SRC_ANSIBLE_ROOT);
     }
 }

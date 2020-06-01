@@ -6,15 +6,21 @@ import org.apache.commons.io.IOUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public class PathUtil {
     private static final CLogger logger = Utils.getLogger(PathUtil.class);
@@ -196,8 +202,33 @@ public class PathUtil {
         try {
             FileUtils.deleteDirectory(new File(path));
             logger.warn(String.format("Deleted directory: %s", path));
-        } catch (IOException ignored) {
-            logger.warn(String.format("Failed in deleting directory: %s", path));
+        } catch (IOException ex) {
+            logger.warn(String.format("Failed in deleting directory: %s: %s", path, ex.getMessage()));
+        }
+    }
+
+    public static void forceCreateDirectory(String path) {
+        try {
+            FileUtils.forceMkdir(new File(path));
+        } catch (IOException ex) {
+            logger.warn(String.format("Failed in creating directory: %s: %s", path, ex.getMessage()));
+        }
+    }
+
+    public static void copyFolderToFolder(String srcFolder, String dstFolder) {
+        try {
+            FileUtils.copyDirectory(new File(srcFolder), new File(dstFolder));
+        } catch (IOException ex) {
+            logger.warn(String.format("Copy directory %s to %s: %s", srcFolder, dstFolder, ex.getMessage()));
+        }
+    }
+
+    public static void setFilePosixPermissions(String path, String perms) {
+        try {
+            Set<PosixFilePermission> s = PosixFilePermissions.fromString(perms);
+            Files.setPosixFilePermissions(new File(path).toPath(), s);
+        } catch (IOException ex) {
+            logger.warn(String.format("set %s permission to %s: %s", path, perms, ex.getMessage()));
         }
     }
 
