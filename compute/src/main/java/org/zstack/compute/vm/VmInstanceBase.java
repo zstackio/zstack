@@ -4941,9 +4941,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                     extEmitter.afterDetachVolume(getSelfInventory(), volume, new Completion(completion) {
                         @Override
                         public void success() {
-                            // update Volumevo before exit message queue
-                            vvo.setVmInstanceUuid(null);
-                            dbf.updateAndRefresh(vvo);
                             bus.reply(msg, reply);
                             completion.done();
                         }
@@ -5818,7 +5815,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private List<VolumeInventory> getAllDataVolumes(VmInstanceInventory inv) {
         List<VolumeInventory> dataVols = inv.getAllVolumes().stream()
-                .filter(it -> it.getType().equals(VolumeType.Data.toString()))
+                .filter(it -> it.getType().equals(VolumeType.Data.toString()) && !it.isShareable())
                 .collect(Collectors.toList());
 
         List<BuildVolumeSpecExtensionPoint> exts = pluginRgty.getExtensionList(BuildVolumeSpecExtensionPoint.class);

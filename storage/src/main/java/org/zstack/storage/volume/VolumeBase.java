@@ -940,8 +940,7 @@ public class VolumeBase implements Volume {
                                         trigger.fail(reply.getError());
                                         return;
                                     }
-                                    self.setVmInstanceUuid(null);
-                                    self = dbf.updateAndRefresh(self);
+                                    self = dbf.reload(self);
                                     trigger.next();
                                 }
                             });
@@ -1807,9 +1806,7 @@ public class VolumeBase implements Volume {
                     public void run(MessageReply reply) {
                         APIDetachDataVolumeFromVmEvent evt = new APIDetachDataVolumeFromVmEvent(msg.getId());
                         if (reply.isSuccess()) {
-                            self.setVmInstanceUuid(null);
-                            self.setDeviceId(null);
-                            self = dbf.updateAndRefresh(self);
+                            refreshVO();
                             evt.setInventory(getSelfInventory());
                         } else {
                             evt.setError(reply.getError());
