@@ -5,6 +5,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
 import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -26,7 +27,12 @@ public class FilterFlow extends AbstractHostAllocatorFlow {
 
         for (HostAllocatorFilterExtensionPoint filter : pluginRgty.getExtensionList(HostAllocatorFilterExtensionPoint.class)) {
             logger.debug(String.format("before being filtered by HostAllocatorFilterExtensionPoint[%s], candidates num: %s", filter.getClass(), candidates.size()));
-            candidates = filter.filterHostCandidates(candidates, spec);
+            try {
+                candidates = filter.filterHostCandidates(candidates, spec);
+            } catch (OperationFailureException e) {
+                fail(e.getErrorCode());
+                return;
+            }
             logger.debug(String.format("after being filtered by HostAllocatorFilterExtensionPoint[%s], candidates num: %s", filter.getClass(), candidates.size()));
 
             if (candidates.isEmpty()) {

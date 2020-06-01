@@ -128,6 +128,8 @@ class CheckOffsetIfFlowSkipCase extends SubCase{
     @Override
     void test() {
         env.create {
+            vm = env.inventoryByName("vm") as VmInstanceInventory
+            testLocalHostFilterPagination()
             /**
              * 1. delete vm nic to skip AttachedL2NetworkAllocatorFlow
              * 2. set pagination and limit
@@ -137,9 +139,19 @@ class CheckOffsetIfFlowSkipCase extends SubCase{
         }
     }
 
-    void detachNicAndGetCandidateHost() {
-        vm = env.inventoryByName("vm") as VmInstanceInventory
+    void testLocalHostFilterPagination() {
+        HostAllocatorGlobalConfig.USE_PAGINATION.updateValue(true)
+        HostAllocatorGlobalConfig.PAGINATION_LIMIT.updateValue(1)
+        stopVmInstance {
+            uuid = vm.uuid
+        }
 
+        startVmInstance {
+            uuid = vm.uuid
+        }
+    }
+
+    void detachNicAndGetCandidateHost() {
         vm = detachL3NetworkFromVm {
             vmNicUuid = vm.vmNics.get(0).uuid
         } as VmInstanceInventory
@@ -155,6 +167,13 @@ class CheckOffsetIfFlowSkipCase extends SubCase{
 
         assert hosts.size() == 3
 
-    }
 
+        HostAllocatorGlobalConfig.PAGINATION_LIMIT.updateValue(1)
+
+        hosts = getVmMigrationCandidateHosts {
+            vmInstanceUuid = vm.uuid
+        } as List<HostInventory>
+
+        assert hosts.size() == 1
+    }
 }
