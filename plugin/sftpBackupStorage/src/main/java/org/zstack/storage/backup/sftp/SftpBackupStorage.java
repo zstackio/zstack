@@ -32,6 +32,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
+import org.zstack.utils.ssh.SshException;
 
 import javax.persistence.Query;
 import java.net.URI;
@@ -424,12 +425,15 @@ public class SftpBackupStorage extends BackupStorageBase {
                             SftpBackupStorageConstant.IPTABLES_COMMENTS,
                             SftpBackupStorageGlobalConfig.SFTP_ALLOW_PORTS.value()));
                 }
-
-                new Ssh().shell(builder.toString())
-                        .setUsername(getSelf().getUsername())
-                        .setPassword(getSelf().getPassword())
-                        .setHostname(getSelf().getHostname())
-                        .setPort(getSelf().getSshPort()).runErrorByExceptionAndClose();
+                try {
+                    new Ssh().shell(builder.toString())
+                            .setUsername(getSelf().getUsername())
+                            .setPassword(getSelf().getPassword())
+                            .setHostname(getSelf().getHostname())
+                            .setPort(getSelf().getSshPort()).runErrorByExceptionAndClose();
+                } catch (SshException ex) {
+                    throw new OperationFailureException(operr(ex.toString()));
+                }
 
                 continueConnect(complete);
             }
