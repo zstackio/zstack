@@ -27,6 +27,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
+import org.zstack.utils.ssh.SshException;
 
 import java.util.List;
 import java.util.Map;
@@ -280,13 +281,15 @@ public class CephBackupStorageMonBase extends CephMonBase {
                                         CephConstants.CEPH_BS_IPTABLES_COMMENTS,
                                         CephGlobalConfig.CEPH_BS_ALLOW_PORTS.value()));
                             }
-
-                            new Ssh().shell(builder.toString())
-                                    .setUsername(self.getSshUsername())
-                                    .setPassword(self.getSshPassword())
-                                    .setHostname(self.getHostname())
-                                    .setPort(self.getSshPort()).runErrorByExceptionAndClose();
-
+                            try {
+                                new Ssh().shell(builder.toString())
+                                        .setUsername(self.getSshUsername())
+                                        .setPassword(self.getSshPassword())
+                                        .setHostname(self.getHostname())
+                                        .setPort(self.getSshPort()).runErrorByExceptionAndClose();
+                            } catch (SshException ex) {
+                                throw new OperationFailureException(operr(ex.toString()));
+                            }
 
                             trigger.next();
                         }

@@ -69,6 +69,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
+import org.zstack.utils.ssh.SshException;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
 import org.zstack.utils.tester.ZTester;
@@ -3083,11 +3084,15 @@ public class KVMHost extends HostBase implements Host {
                                         KVMGlobalConfig.KVMAGENT_ALLOW_PORTS_LIST.value(String.class)));
                             }
 
-                            new Ssh().shell(builder.toString())
-                                    .setUsername(getSelf().getUsername())
-                                    .setPassword(getSelf().getPassword())
-                                    .setHostname(getSelf().getManagementIp())
-                                    .setPort(getSelf().getPort()).runErrorByExceptionAndClose();
+                            try {
+                                new Ssh().shell(builder.toString())
+                                        .setUsername(getSelf().getUsername())
+                                        .setPassword(getSelf().getPassword())
+                                        .setHostname(getSelf().getManagementIp())
+                                        .setPort(getSelf().getPort()).runErrorByExceptionAndClose();
+                            } catch (SshException ex) {
+                                throw new OperationFailureException(operr(ex.toString()));
+                            }
 
                             trigger.next();
                         }
