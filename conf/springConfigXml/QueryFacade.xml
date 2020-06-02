@@ -17,6 +17,7 @@
 			<zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
+			<zstack:extension interface="org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint" />
 		</zstack:plugin>
     </bean>
 

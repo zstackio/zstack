@@ -3,15 +3,17 @@ package org.zstack.network.service.portforwarding;
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.query.ZQLFilterReply;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
 /**
  */
 @RestResponse(allTo = "inventories")
-public class APIGetPortForwardingAttachableVmNicsReply extends APIReply {
+public class APIGetPortForwardingAttachableVmNicsReply extends APIReply implements ZQLFilterReply {
     private List<VmNicInventory> inventories;
 
     public List<VmNicInventory> getInventories() {
@@ -40,4 +42,18 @@ public class APIGetPortForwardingAttachableVmNicsReply extends APIReply {
         return reply;
     }
 
+    @Override
+    public List<String> getFilterResources() {
+        return inventories.stream().map(VmNicInventory::getUuid).collect(Collectors.toList());
+    }
+
+    @Override
+    public void setFilteredResult(List result) {
+        this.inventories = (List<VmNicInventory>) result;
+    }
+
+    @Override
+    public String getInventoryName() {
+        return VmNicInventory.class.getSimpleName();
+    }
 }
