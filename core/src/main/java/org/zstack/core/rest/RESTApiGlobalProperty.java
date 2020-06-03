@@ -12,6 +12,6 @@ public class RESTApiGlobalProperty {
     @GlobalProperty(name="RESTApiVORetentionDay", defaultValue = "10")
     public static long RESTAPIVO_RETENTION_DAY;
 
-    @GlobalProperty(name="cleanIntervalSecond", defaultValue = "86400")
+    @GlobalProperty(name="cleanRestApiIntervalSecond", defaultValue = "86400")
     public static long CLEAN_INTERVAL_SECOND;
 }
