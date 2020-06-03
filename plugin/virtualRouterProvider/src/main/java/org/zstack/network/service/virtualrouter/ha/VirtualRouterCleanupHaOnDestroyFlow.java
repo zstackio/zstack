@@ -12,7 +12,9 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -33,8 +35,8 @@ public class VirtualRouterCleanupHaOnDestroyFlow extends NoRollbackFlow {
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {
-        final String vrUuid = (String) data.get(Param.VR_UUID.toString());
-        haBackend.cleanupHaNetworkService(vrUuid, new Completion(trigger) {
+        final VmInstanceInventory vrInv = (VmInstanceInventory) data.get(Param.VR.toString());
+        haBackend.cleanupHaNetworkService(vrInv, new Completion(trigger) {
             @Override
             public void success() {
                 trigger.next();

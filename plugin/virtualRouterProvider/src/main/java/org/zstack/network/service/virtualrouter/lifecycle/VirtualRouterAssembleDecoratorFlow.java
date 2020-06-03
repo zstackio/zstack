@@ -60,6 +60,7 @@ public class VirtualRouterAssembleDecoratorFlow extends NoRollbackFlow {
         if (spec.getCurrentVmOperation() == VmOperation.Destroy) {
             data.put(Param.VR_UUID.toString(), spec.getVmInventory().getUuid());
             data.put(Param.IS_HA_ROUTER.toString(), vrInv.isHaEnabled());
+            data.put(VirtualRouterConstant.Param.VR.toString(), spec.getVmInventory());
         } else {
             data.put(VirtualRouterConstant.Param.VR.toString(), vrInv);
             data.put(VirtualRouterConstant.Param.VR_NIC.toString(), vrInv.getPublicNic());

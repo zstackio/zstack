@@ -10,6 +10,7 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.network.service.*;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
@@ -113,14 +114,14 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
     }
 
     @Override
-    public void cleanupHaNetworkService(String vrUuid, Completion completion) {
-        List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
+    public void cleanupHaNetworkService(VmInstanceInventory vrInv, Completion completion) {
+        List<VirtualRouterHaGroupCleanupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupCleanupExtensionPoint.class);
         if (exps.isEmpty()) {
             completion.success();
             return ;
         }
 
-        exps.get(0).cleanupHaNetworkService(vrUuid, completion);
+        exps.get(0).afterDeleteAllVirtualRouter(vrInv, completion);
     }
 
     @Override
