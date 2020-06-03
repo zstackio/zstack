@@ -1,5 +1,6 @@
 package org.zstack.core.asyncbatch;
 
+import org.zstack.core.thread.ThreadGlobalProperty;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.WhileCompletion;
 import org.zstack.utils.DebugUtils;
@@ -39,8 +40,17 @@ public class While<T> {
     }
 
     public While all(Do<T> consumer) {
-        mode = WhileMode.ALL;
+        this.mode = WhileMode.STEP;
         this.consumer = consumer;
+
+        int concurrencyLevel = WhileGlobalProperty.CONCURRENCY_LEVEL_OF_ALL_MODE;
+        if (concurrencyLevel <= 0) {
+            this.step = items.size();
+        } else {
+            this.step = ThreadGlobalProperty.MAX_THREAD_NUM * concurrencyLevel / 100;
+        }
+
+        this.step = this.step == 0 ? 1 : this.step;
         return this;
     }
 
@@ -87,10 +97,6 @@ public class While<T> {
                 run(items.iterator(), completion);
             }
             break;
-            case ALL: {
-                runAll(completion);
-            }
-            break;
             case STEP: {
                 runStep(completion);
             }
@@ -135,24 +141,6 @@ public class While<T> {
                 runStep(it, completion);
             }
         });
-    }
-
-    private void runAll(NoErrorCompletion completion) {
-        for (T t : items) {
-            consumer.accept(t, new WhileCompletion(completion) {
-                @Override
-                public void allDone() {
-                    doneCompletion(completion);
-                }
-
-                @Override
-                public void done() {
-                    if (doneCount.decrementAndGet() == 0) {
-                        doneCompletion(completion);
-                    }
-                }
-            });
-        }
     }
 
     private void doneCompletion(NoErrorCompletion completion) {

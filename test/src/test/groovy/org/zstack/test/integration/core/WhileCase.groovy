@@ -1,7 +1,9 @@
 package org.zstack.test.integration.core
 
 import org.zstack.core.asyncbatch.While
+import org.zstack.core.asyncbatch.WhileGlobalProperty
 import org.zstack.core.thread.AsyncThread
+import org.zstack.core.thread.ThreadGlobalProperty
 import org.zstack.header.core.FutureCompletion
 import org.zstack.header.core.NoErrorCompletion
 import org.zstack.header.core.workflow.WhileCompletion
@@ -45,6 +47,8 @@ class WhileCase extends SubCase{
         testRunStepCompletionDone()
         testRunStepComletionAllDone()
         testConcurrentAdd()
+        testRunAll()
+        testRunAllWithConcurrencyCoefficientEqualZero()
     }
 
     void testStepSmallerThanItems() {
@@ -190,6 +194,7 @@ class WhileCase extends SubCase{
                     synchronized (target) {
                         target.add(item)
                     }
+                    completion.done()
                 }).run(new NoErrorCompletion() {
                     @Override
                     void done() {
@@ -206,6 +211,7 @@ class WhileCase extends SubCase{
                     synchronized (target) {
                         target.add(item)
                     }
+                    completion.done()
                 }).run(new NoErrorCompletion() {
                     @Override
                     void done() {
@@ -223,6 +229,66 @@ class WhileCase extends SubCase{
         assert target.size() == 2 * source.size()
         target.each {
             assert it != null
+        }
+    }
+
+    void testRunAll(){
+        WhileGlobalProperty.CONCURRENCY_LEVEL_OF_ALL_MODE = 10
+
+        List<Integer> items = new ArrayList()
+        int size = ThreadGlobalProperty.MAX_THREAD_NUM  * WhileGlobalProperty.CONCURRENCY_LEVEL_OF_ALL_MODE / 100
+        size = size == 0 ? 1 : size
+        for (int i = 0; i <= size + 10; i ++) {
+            items.add(i)
+        }
+
+        AtomicInteger count = new AtomicInteger(0)
+        AtomicInteger successCount = new AtomicInteger()
+
+        new While<>(items).all({item, completion ->
+            logger.debug(String.format("item %s allDone", item))
+            count.addAndGet(1)
+            completion.done()
+        }).run(new NoErrorCompletion(){
+            @Override
+            void done() {
+                successCount.incrementAndGet()
+                logger.debug("While is done")
+            }
+        })
+
+        retryInSecs {
+            assert count.get() == items.size()
+            assert successCount.get() == 1
+        }
+    }
+
+    void testRunAllWithConcurrencyCoefficientEqualZero(){
+        WhileGlobalProperty.CONCURRENCY_LEVEL_OF_ALL_MODE = 0
+
+        List<Integer> items = new ArrayList()
+        for (int i = 0; i <= 10; i ++) {
+            items.add(i)
+        }
+
+        AtomicInteger count = new AtomicInteger(0)
+        AtomicInteger successCount = new AtomicInteger()
+
+        new While<>(items).all({item, completion ->
+            logger.debug(String.format("item %s allDone", item))
+            count.addAndGet(1)
+            completion.done()
+        }).run(new NoErrorCompletion(){
+            @Override
+            void done() {
+                logger.debug("While is done")
+                successCount.incrementAndGet()
+            }
+        })
+
+        retryInSecs {
+            assert count.get() == items.size()
+            assert successCount.get() == 1
         }
     }
 }
