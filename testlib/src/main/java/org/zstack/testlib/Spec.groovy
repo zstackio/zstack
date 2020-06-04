@@ -7,7 +7,7 @@ import org.zstack.header.rest.RESTConstant
 /**
  * Created by xing5 on 2017/2/15.
  */
-abstract class Spec implements Node, CreateAction, Tag, ApiHelper, DeleteAction {
+abstract class Spec extends ApiHelper implements Node, CreateAction, Tag, DeleteAction {
     EnvSpec envSpec
     Closure getSessionUuid
     boolean toPublic

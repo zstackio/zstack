@@ -69,7 +69,7 @@ import java.util.stream.Collectors
  * Created by xing5 on 2017/2/12.
  */
 @AutoClone(includeFields=true)
-class EnvSpec implements Node, ApiHelper {
+class EnvSpec extends ApiHelper implements Node  {
     protected List<ZoneSpec> zones = []
     List<AccountSpec> accounts = []
 

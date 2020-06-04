@@ -14,7 +14,7 @@ import org.zstack.testlib.util.Retry
 import org.zstack.utils.gson.JSONObjectUtil
 
 class VRouterController {
-    class API implements ApiHelper, Retry {
+    class API extends ApiHelper implements Retry {
     }
 
     private EnvSpec env
