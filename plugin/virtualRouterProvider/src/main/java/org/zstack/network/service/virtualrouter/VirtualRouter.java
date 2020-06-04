@@ -857,9 +857,13 @@ public class VirtualRouter extends ApplianceVmBase {
                 FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
                 chain.setName(String.format("apply-services-after-attach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
                 chain.setData(data);
-                chain.then(new virtualRouterAfterAttachNicFlow());
+                if (vrVo.getState() == VmInstanceState.Running && vrVo.getStatus() == ApplianceVmStatus.Connected) {
+                    chain.then(new virtualRouterAfterAttachNicFlow());
+                }
                 chain.then(new VirtualRouterCreatePublicVipFlow());
-                chain.then(new virtualRouterApplyServicesAfterAttachNicFlow());
+                if (vrVo.getState() == VmInstanceState.Running && vrVo.getStatus() == ApplianceVmStatus.Connected) {
+                    chain.then(new virtualRouterApplyServicesAfterAttachNicFlow());
+                }
                 chain.then(haBackend.getAttachL3NetworkFlow());
                 chain.done(new FlowDoneHandler(completion) {
                     @Override
