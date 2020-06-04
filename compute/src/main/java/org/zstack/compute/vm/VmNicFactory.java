@@ -1,6 +1,6 @@
 package org.zstack.compute.vm;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.zstack.core.db.DatabaseFacade;
@@ -64,7 +64,7 @@ public class VmNicFactory implements VmInstanceNicFactory {
             try {
                 return dbf.persistAndRefresh(vo);
             } catch (JpaSystemException e) {
-                if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException &&
+                if (e.getRootCause() instanceof SQLIntegrityConstraintViolationException &&
                         e.getRootCause().getMessage().contains("Duplicate entry")) {
                     logger.debug(String.format("Concurrent mac allocation. Mac[%s] has been allocated, try allocating another one. " +
                             "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +

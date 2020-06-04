@@ -208,7 +208,7 @@ ALTER TABLE `zstack`.`UsedIpVO` ADD CONSTRAINT fkUsedIpVOVmNicVO FOREIGN KEY (vm
 
 ALTER TABLE `zstack`.`L3NetworkEO` ADD COLUMN `ipVersion` int(10) unsigned DEFAULT 4;
 DROP VIEW IF EXISTS `zstack`.`L3NetworkVO`;
-CREATE VIEW `zstack`.`L3NetworkVO` AS SELECT uuid, name, description, state, type, zoneUuid, l2NetworkUuid, system, dnsDomain, createDate, lastOpDate, category, ipVersion FROM `zstack`.`L3NetworkEO` WHERE deleted IS NULL;
+CREATE VIEW `zstack`.`L3NetworkVO` AS SELECT uuid, name, description, state, type, zoneUuid, l2NetworkUuid, `system`, dnsDomain, createDate, lastOpDate, category, ipVersion FROM `zstack`.`L3NetworkEO` WHERE deleted IS NULL;
 
 ALTER TABLE `zstack`.`VmNicVO` ADD COLUMN `ipVersion` int(10) unsigned DEFAULT 4;
 

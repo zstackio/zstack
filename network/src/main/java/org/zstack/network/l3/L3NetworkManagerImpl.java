@@ -1,6 +1,6 @@
 package org.zstack.network.l3;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
@@ -554,7 +554,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             vo = dbf.persistAndRefresh(vo);
             return UsedIpInventory.valueOf(vo);
         } catch (JpaSystemException e) {
-            if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException) {
+            if (e.getRootCause() instanceof SQLIntegrityConstraintViolationException) {
                 logger.debug(String.format("Concurrent ip allocation. " +
                         "Ip[%s] in ip range[uuid:%s] has been allocated, try allocating another one. " +
                         "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +
@@ -586,7 +586,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             vo = dbf.persistAndRefresh(vo);
             return UsedIpInventory.valueOf(vo);
         } catch (JpaSystemException e) {
-            if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException) {
+            if (e.getRootCause() instanceof SQLIntegrityConstraintViolationException) {
                 logger.debug(String.format("Concurrent ip allocation. " +
                         "Ip[%s] in ip range[uuid:%s] has been allocated, try allocating another one. " +
                         "The error[Duplicate entry] printed by jdbc.spi.SqlExceptionHelper is no harm, " +

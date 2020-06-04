@@ -5,7 +5,7 @@ ALTER TABLE `zstack`.`ImageEO` modify column description varchar(2048) DEFAULT N
 
 ALTER TABLE `zstack`.`ImageEO` add column exportUrl varchar(2048) DEFAULT NULL COMMENT 'exported image URL';
 DROP VIEW IF EXISTS `zstack`.`ImageVO`;
-CREATE VIEW `zstack`.`ImageVO` AS SELECT uuid, name, description, status, state, size, actualSize, md5Sum, platform, type, format, url, system, mediaType, createDate, lastOpDate, guestOsType, exportUrl FROM `zstack`.`ImageEO` WHERE deleted IS NULL;
+CREATE VIEW `zstack`.`ImageVO` AS SELECT uuid, name, description, status, state, size, actualSize, md5Sum, platform, type, format, url, `system`, mediaType, createDate, lastOpDate, guestOsType, exportUrl FROM `zstack`.`ImageEO` WHERE deleted IS NULL;
 
 ALTER TABLE `zstack`.`InstanceOfferingEO` modify column description varchar(2048) DEFAULT NULL COMMENT 'instance offering description';
 ALTER TABLE `zstack`.`DiskOfferingEO` modify column description varchar(2048) DEFAULT NULL COMMENT 'disk offering description';

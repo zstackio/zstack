@@ -19,7 +19,6 @@ CREATE TABLE `UsbDeviceVO` (
   CONSTRAINT fkUsbDeviceVOHostEO FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-# add Vip for virtual router pub ip for ZSTAC-4362
 DELIMITER $$
 CREATE PROCEDURE getIpRangeUuidForNetwork(IN networkUuid VARCHAR(32), IN gateway VARCHAR(32), OUT ipRangeUuid VARCHAR(32))
     BEGIN
