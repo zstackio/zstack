@@ -276,10 +276,13 @@ BEGIN
     DECLARE l3Uuid VARCHAR(32);
     DECLARE vRouterProviderUuid VARCHAR(32);
     DECLARE done INT DEFAULT FALSE;
-    DECLARE cur CURSOR FOR SELECT uuid
-        FROM L3NetworkEO l3 LEFT JOIN NetworkServiceL3NetworkRefVO ref
-            on (l3.uuid = ref.l3NetworkUuid and ref.networkServiceType = 'LoadBalancer')
-            where l3.category = 'Private' AND l3.type = 'L3BasicNetwork' AND ref.networkServiceType is NULL;
+    DECLARE cur CURSOR FOR SELECT l3.uuid
+        FROM L3NetworkEO l3
+        LEFT JOIN NetworkServiceL3NetworkRefVO ref ON (l3.uuid = ref.l3NetworkUuid AND ref.networkServiceType = 'LoadBalancer')
+        LEFT JOIN L2NetworkClusterRefVO lcRef ON (lcRef.l2NetworkUuid = l3.l2NetworkUuid)
+        LEFT JOIN ClusterEO cluster ON (lcRef.clusterUuid = cluster.uuid)
+        WHERE l3.category = 'Private' AND l3.type = 'L3BasicNetwork' AND ref.networkServiceType IS NULL
+         AND (cluster.type = 'zstack' OR lcRef.l2NetworkUuid IS NULL);
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
     OPEN cur;
     read_loop: LOOP
