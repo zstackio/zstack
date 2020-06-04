@@ -15,7 +15,7 @@ import org.zstack.testlib.util.Retry
 import org.zstack.testlib.util.TProxy
 
 class BackupStorageController {
-    class API implements ApiHelper, Retry {
+    class API extends ApiHelper implements Retry {
     }
 
     private EnvSpec env

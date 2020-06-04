@@ -71,7 +71,7 @@ class ApiHelperGenerator {
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.core.Platform
 
-trait ApiHelper {
+abstract class ApiHelper {
     def errorOut(res) {
         assert res.error == null : "API failure: \${JSONObjectUtil.toJsonString(res.error)}"
         if (res.value.hasProperty("inventory")) {

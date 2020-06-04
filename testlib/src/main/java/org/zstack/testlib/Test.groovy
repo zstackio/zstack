@@ -35,7 +35,7 @@ import java.util.logging.Logger
 /**
  * Created by xing5 on 2017/2/12.
  */
-abstract class Test implements ApiHelper, Retry {
+abstract class Test extends ApiHelper implements Retry {
     final CLogger logger = Utils.getLogger(this.getClass())
 
     static Object deployer
