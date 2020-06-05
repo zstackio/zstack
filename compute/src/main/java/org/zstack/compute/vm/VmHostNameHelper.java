@@ -13,7 +13,7 @@ public class VmHostNameHelper {
 
         if (hostName == null) {
             for (VmNicInventory nic : vm.getVmNics()) {
-                if (nic.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid())) {
+                if (nic.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid()) && nic.getIp() != null) {
                     if (nic.getIpVersion() == IPv6Constants.IPv4) {
                         hostName = nic.getIp().replaceAll("\\.", "-");
                     } else {
@@ -31,7 +31,7 @@ public class VmHostNameHelper {
 
         if (hostName == null) {
             for (VmNicVO nic : vm.getVmNics()) {
-                if (nic.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid())) {
+                if (nic.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid()) && nic.getIp() != null) {
                     if (nic.getIpVersion() == IPv6Constants.IPv4) {
                         hostName = nic.getIp().replaceAll("\\.", "-");
                     } else {
