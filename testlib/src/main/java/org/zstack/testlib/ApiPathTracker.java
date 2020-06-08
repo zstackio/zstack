@@ -1,6 +1,5 @@
 package org.zstack.testlib;
 
-import com.sun.demo.jvmti.hprof.Tracker;
 import org.apache.logging.log4j.ThreadContext;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -24,7 +23,7 @@ public class ApiPathTracker {
     private CloudBus bus;
     private RESTFacade restf;
 
-    List<Path> paths = new ArrayList<>();
+    final List<Path> paths = new ArrayList<>();
 
     private enum Type {
         Message,
@@ -37,7 +36,9 @@ public class ApiPathTracker {
     }
 
     public List<String> getApiPath() {
-        return paths.stream().map(p -> String.format("(%s) %s", p.type, p.path)).collect(Collectors.toList());
+        synchronized (paths) {
+            return paths.stream().map(p -> String.format("(%s) %s", p.type, p.path)).collect(Collectors.toList());
+        }
     }
 
     public ApiPathTracker(String apiId) {
