@@ -1,8 +1,3 @@
--- Update `schema_version' since we've changed SQL to match the expectation
--- of the newer version MariaDB.
---
--- WARNING: `schema_version' table doesn't exist on a clean environment, thus
--- after 'flyway clean' we prepared an empty table after 'flyway baseline'.
 DELIMITER $$
 
 DROP PROCEDURE IF EXISTS `zstack`.`update_schema_checksum` $$
@@ -19,6 +14,6 @@ BEGIN
 END $$
 
 DELIMITER  ;
-
+DELETE FROM schema_version;
 CALL `zstack`.update_schema_checksum();
 DROP PROCEDURE IF EXISTS `zstack`.update_schema_checksum;

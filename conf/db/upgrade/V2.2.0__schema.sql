@@ -3,7 +3,6 @@ ALTER TABLE `L3NetworkEO` ADD COLUMN `category` varchar(255) NOT NULL DEFAULT 'P
 DROP VIEW IF EXISTS `zstack`.`L3NetworkVO`;
 CREATE VIEW `zstack`.`L3NetworkVO` AS SELECT uuid, name, description, state, type, zoneUuid, l2NetworkUuid, `system`, dnsDomain, createDate, lastOpDate, category FROM `zstack`.`L3NetworkEO` WHERE deleted IS NULL;
 
-# add network category for ZSTAC-6844
 DELIMITER $$
 CREATE PROCEDURE generateNetworkCategory()
     BEGIN

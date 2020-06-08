@@ -537,7 +537,6 @@ ALTER TABLE EcsImageVO MODIFY ossMd5Sum varchar(128) DEFAULT NULL;
 ALTER TABLE EcsImageVO MODIFY ecsImageId varchar(128) NOT NULL;
 SET FOREIGN_KEY_CHECKS = 1;
 
-# add default SecurityGroupRule for ZSTAC-5386
 DELIMITER $$
 CREATE PROCEDURE securityGroupRule()
 BEGIN
