@@ -31,6 +31,8 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     @Autowired
     ThreadFacade _threadFacade;
+    @Autowired
+    private org.zstack.core.timeout.Timer zTimer;
 
     private final HashMap<String, SyncTaskQueueWrapper> syncTasks = new HashMap<String, SyncTaskQueueWrapper>();
     private final Map<String, ChainTaskQueueWrapper> chainTasks = Collections.synchronizedMap(new HashMap<>());
@@ -389,7 +391,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
         void startThreadIfNeeded() {
             if (counter.get() >= maxThreadNum) {
-                logger.debug(String.format("syncSignature: %s is arrived maxThreadNum: %s, it would be thrown!", syncSignature, maxThreadNum));
+                logger.debug(String.format("syncSignature: %s reached maxThreadNum: %s, current: %d", syncSignature, maxThreadNum, counter.get()));
                 return;
             }
 
@@ -419,7 +421,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
                     synchronized (runningQueue) {
                         processTimeoutTask(cf);
-                        cf.startExecutionTimeInMills = System.currentTimeMillis();
+                        cf.startExecutionTimeInMills = zTimer.getCurrentTimeMillis();
                         // add to running queue
                         logger.debug(String.format("Start executing runningQueue: %s, task name: %s", syncSignature, cf.getTask().getName()));
                         runningQueue.offer(cf);
