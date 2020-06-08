@@ -85,7 +85,7 @@ public abstract class TaskTracker {
         if (params != null) {
             this.params.putAll(params);
         }
-        task.parameters = this.params;
+        task.parameters = new HashMap<>(this.params);
 
         consumers.forEach(c -> c.accept(task));
         return this;
