@@ -12,11 +12,8 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.defer.Deferred;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -28,7 +25,9 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint;
+import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -36,15 +35,13 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.vip.*;
-import org.zstack.network.l2.L2NetworkManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterCreatePublicVipFlow;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.function.Function;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -57,6 +54,7 @@ import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VirtualRouter extends ApplianceVmBase {
+    private static final CLogger logger = Utils.getLogger(VirtualRouter.class);
 
     static {
         allowedOperations.addState(VmInstanceState.Running, APIReconnectVirtualRouterMsg.class.getName());
@@ -69,13 +67,7 @@ public class VirtualRouter extends ApplianceVmBase {
     @Autowired
     protected RESTFacade restf;
     @Autowired
-    protected ErrorFacade errf;
-    @Autowired
-    protected ApiTimeoutManager apiTimeoutManager;
-    @Autowired
     protected VirtualRouterHaBackend haBackend;
-    @Autowired
-    protected L2NetworkManager l2Mgr;
     @Autowired
     protected VirutalRouterDefaultL3ConfigProxy defaultL3ConfigProxy;
 
@@ -831,7 +823,6 @@ public class VirtualRouter extends ApplianceVmBase {
             }
 
             @Override
-            @Deferred
             public void run(final SyncTaskChain schain) {
                 VmNicVO vo = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nicInventory.getUuid()).find();
                 L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, vo.getL3NetworkUuid()).find();
@@ -930,7 +921,7 @@ public class VirtualRouter extends ApplianceVmBase {
     }
 
     @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-    private class virtualRouterReleaseVipbeforeDetachNic extends NoRollbackFlow {
+    private static class virtualRouterReleaseVipbeforeDetachNic extends NoRollbackFlow {
         @Autowired
         private VipManager vipMgr;
         String __name__ = "virtualRouter-beforeDetachNic";

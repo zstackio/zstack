@@ -6,11 +6,9 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
@@ -31,8 +29,6 @@ import org.zstack.header.network.service.*;
 import org.zstack.header.network.service.NetworkServiceExtensionPoint.NetworkServiceExtensionPosition;
 import org.zstack.header.vm.*;
 import org.zstack.query.QueryFacade;
-import org.zstack.search.GetQuery;
-import org.zstack.search.SearchQuery;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -56,14 +52,10 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 	@Autowired
 	private DatabaseFacade dbf;
     @Autowired
-    private DbEntityLister dl;
-    @Autowired
     private QueryFacade qf;
-    @Autowired
-    private ErrorFacade errf;
 
-	private Map<String, NetworkServiceProviderFactory> providerFactories = new HashMap<String, NetworkServiceProviderFactory>();
-	private Map<String, ApplyNetworkServiceExtensionPoint> providerExts = new HashMap<String, ApplyNetworkServiceExtensionPoint>();
+	private final Map<String, NetworkServiceProviderFactory> providerFactories = new HashMap<String, NetworkServiceProviderFactory>();
+	private final Map<String, ApplyNetworkServiceExtensionPoint> providerExts = new HashMap<String, ApplyNetworkServiceExtensionPoint>();
     private List<NetworkServiceExtensionPoint> nsExts = new ArrayList<NetworkServiceExtensionPoint>();
 
 
@@ -130,13 +122,8 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 
         List<NetworkServiceTypeVO> types = dbf.listAll(NetworkServiceTypeVO.class);
         for (NetworkServiceTypeVO vo : types) {
-            List<String> providers = ret.get(vo.getType());
-            if (providers == null) {
-                providers = new ArrayList<String>();
-                ret.put(vo.getType(), providers);
-            }
+            List<String> providers = ret.computeIfAbsent(vo.getType(), k -> new ArrayList<String>());
             providers.add(vo.getNetworkServiceProviderUuid());
-
         }
 
         APIGetNetworkServiceTypesReply reply = new APIGetNetworkServiceTypesReply();
@@ -233,7 +220,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 	}
 
 	@Override
-	public void preBeforeInstantiateVmResource(VmInstanceSpec spec) throws VmInstantiateResourceException {
+	public void preBeforeInstantiateVmResource(VmInstanceSpec spec) {
 	}
 
     private void applyNetworkServices(final VmInstanceSpec spec, NetworkServiceExtensionPosition position, final Completion completion) {
@@ -295,7 +282,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
                 @Override
                 public void rollback(final FlowRollback chain, Map data) {
                     logger.debug(String.format("NetworkServiceExtensionPoint[%s] is asking back ends to release network service[%s] if needed", ns.getClass().getName(), ns.getNetworkServiceType()));
-                    ns.releaseNetworkService(spec, data, new NoErrorCompletion() {
+                    ns.releaseNetworkService(spec, data, new NoErrorCompletion(chain) {
                         @Override
                         public void done() {
                             chain.rollback();
