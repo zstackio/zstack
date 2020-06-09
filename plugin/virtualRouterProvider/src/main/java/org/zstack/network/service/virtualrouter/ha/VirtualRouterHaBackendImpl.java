@@ -1,8 +1,9 @@
 package org.zstack.network.service.virtualrouter.ha;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.appliancevm.ApplianceVmHaStatus;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -14,8 +15,8 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterSystemTags;
-import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
+import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_;
 
 import java.util.List;
 import java.util.Map;
@@ -24,10 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Component {
     @Autowired
     protected PluginRegistry pluginRgty;
-    @Autowired
-    protected DatabaseFacade dbf;
 
-    private static Map<String, VirtualRouterHaCallbackStruct> haCallBackMap = new ConcurrentHashMap<>();
+    private final static Map<String, VirtualRouterHaCallbackStruct> haCallBackMap = new ConcurrentHashMap<>();
 
     /* VirtualRouterHaGroupExtensionPoint should */
     @Override
@@ -68,11 +67,18 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
         exps.get(0).VirtualRouterVmHaDetachL3Network(vrUuid, l3NetworkUuid, isRollback, completion);
     }
 
+    private boolean vrHasNoHA(String vrUuid) {
+        ApplianceVmHaStatus status = Q.New(VirtualRouterVmVO.class)
+                .eq(VirtualRouterVmVO_.uuid, vrUuid)
+                .select(VirtualRouterVmVO_.haStatus)
+                .findValue();
+        return status == ApplianceVmHaStatus.NoHa;
+    }
+
     @Override
     public void submitVirutalRouterHaTask(Map<String, Object> data, Completion completion) {
         String vrUuid = (String)data.get(VirtualRouterHaCallbackInterface.Params.OriginRouterUuid.toString());
-        VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuid, VirtualRouterVmVO.class));
-        if (!vrInv.isHaEnabled()) {
+        if (vrHasNoHA(vrUuid)) {
             completion.success();
             return;
         }
@@ -95,8 +101,7 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
 
     @Override
     public boolean isSnatDisabledOnRouter(String vrUuid) {
-        VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
-        if (!vrVO.isHaEnabled()) {
+        if (vrHasNoHA(vrUuid)) {
             return VirtualRouterSystemTags.VR_DISABLE_NETWORK_SERVICE_SNAT.hasTag(vrUuid);
         } else {
             List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
@@ -105,11 +110,7 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
             }
 
             List<String> state = exps.get(0).getNetworkServicesFromHaVrUuid(NetworkServiceType.SNAT.toString(),  vrUuid);
-            if (state == null || state.isEmpty()) {
-                return false;
-            } else {
-                return true;
-            }
+            return state != null && !state.isEmpty();
         }
     }
 

@@ -5,9 +5,11 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.network.service.NetworkServiceCentralizedDnsBackend;
 import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.service.*;
+import org.zstack.header.network.service.ForwardDnsStruct;
+import org.zstack.header.network.service.NetworkServiceCentralizedDnsBackend;
+import org.zstack.header.network.service.NetworkServiceProviderType;
+import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicHelper;
 import org.zstack.header.vm.VmNicInventory;
@@ -16,14 +18,13 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by AlanJager on 2017/7/8.
  */
 public class CentralizedDnsExtension extends AbstractNetworkServiceExtension implements Component {
     private static final CLogger logger = Utils.getLogger(CentralizedDnsExtension.class);
-    private Map<NetworkServiceProviderType, NetworkServiceCentralizedDnsBackend> cDnsBackends = new HashMap<NetworkServiceProviderType, NetworkServiceCentralizedDnsBackend>();
+    private final Map<NetworkServiceProviderType, NetworkServiceCentralizedDnsBackend> cDnsBackends = new HashMap<NetworkServiceProviderType, NetworkServiceCentralizedDnsBackend>();
 
     private final String RESULT = String.format("result.%s", CentralizedDnsExtension.class.getName());
 
@@ -101,7 +102,9 @@ public class CentralizedDnsExtension extends AbstractNetworkServiceExtension imp
 
         ForwardDnsStruct struct = new ForwardDnsStruct();
         struct.setL3Network(l3);
-        struct.setMac(nic.getMac());
+        if (nic != null) {
+            struct.setMac(nic.getMac());
+        }
 
         return struct;
     }

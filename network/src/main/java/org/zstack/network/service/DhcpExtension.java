@@ -1,7 +1,6 @@
 package org.zstack.network.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -40,10 +39,8 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
     @Autowired
     private PluginRegistry pluginRgty;
-    @Autowired
-    private CloudBus bus;
 
-    private Map<NetworkServiceProviderType, NetworkServiceDhcpBackend> dhcpBackends = new HashMap<NetworkServiceProviderType, NetworkServiceDhcpBackend>();
+    private final Map<NetworkServiceProviderType, NetworkServiceDhcpBackend> dhcpBackends = new HashMap<NetworkServiceProviderType, NetworkServiceDhcpBackend>();
 
     private final String RESULT = String.format("result.%s", DhcpExtension.class.getName());
 
@@ -181,7 +178,7 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
                 struct.setDefaultL3Network(spec.getVmInventory().getDefaultL3NetworkUuid() != null &&
                         spec.getVmInventory().getDefaultL3NetworkUuid().equals(l3.getUuid()));
                 /*multi vnic case*/
-                if (struct.isDefaultL3Network() && (defaultNics != null) && (defaultNics.size() > 1)) {
+                if (struct.isDefaultL3Network() && defaultNics.size() > 1) {
                     struct.setDefaultL3Network(nic.equals(VmNicVO.findTheEarliestOne(defaultNics)));
                 }
                 struct.setMac(nic.getMac());
@@ -189,8 +186,8 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
                 struct.setMtu(new MtuGetter().getMtu(l3.getUuid()));
                 if (!iprs.isEmpty()) {
                     struct.setRaMode(iprs.get(0).getAddressMode());
-                    struct.setFirstIp(NetworkUtils.getSmallestIp(iprs.stream().map(r -> r.getStartIp()).collect(Collectors.toList())));
-                    struct.setEndIP(NetworkUtils.getBiggesttIp(iprs.stream().map(r -> r.getEndIp()).collect(Collectors.toList())));
+                    struct.setFirstIp(NetworkUtils.getSmallestIp(iprs.stream().map(IpRangeInventory::getStartIp).collect(Collectors.toList())));
+                    struct.setEndIP(NetworkUtils.getBiggesttIp(iprs.stream().map(IpRangeInventory::getEndIp).collect(Collectors.toList())));
                     struct.setPrefixLength(iprs.get(0).getPrefixLen());
                 }
                 res.add(struct);
