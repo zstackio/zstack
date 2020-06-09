@@ -14,6 +14,7 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.debug.DebugManager;
 import org.zstack.core.defer.Defer;
@@ -34,6 +35,8 @@ import org.zstack.header.managementnode.ManagementNodeCanonicalEvent.LifeCycle;
 import org.zstack.header.managementnode.ManagementNodeCanonicalEvent.ManagementNodeLifeCycleData;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.vo.FindSameNodeExtensionPoint;
+import org.zstack.header.vo.ResourceInventory;
 import org.zstack.portal.apimediator.ApiMediator;
 import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
@@ -53,7 +56,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.utils.ExceptionDSL.throwableSafe;
 
-public class ManagementNodeManagerImpl extends AbstractService implements ManagementNodeManager {
+public class ManagementNodeManagerImpl extends AbstractService implements ManagementNodeManager, FindSameNodeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ManagementNodeManager.class);
 
     private List<ComponentWrapper> components;
@@ -74,6 +77,20 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     private static int NODE_STARTING = 0;
     private static int NODE_RUNNING = 1;
     private static int NODE_FAILED = -1;
+
+    @Override
+    public ResourceInventory findSameNode(String hostname) {
+        String uuid = Q.New(ManagementNodeVO.class).eq(ManagementNodeVO_.hostName, hostname)
+                .select(ManagementNodeVO_.uuid).findValue();
+        if (uuid == null) {
+            return null;
+        } else {
+            ResourceInventory info = new ResourceInventory();
+            info.setUuid(uuid);
+            info.setResourceType(ManagementNodeVO.class.getSimpleName());
+            return info;
+        }
+    }
 
     public static class ManagementNodeTimeRegressionCanonicalEvent extends CanonicalEventEmitter {
         ManagementNodeCanonicalEvent.ManagementNodeTemporalRegressionData data;

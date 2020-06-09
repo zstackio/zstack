@@ -39,6 +39,8 @@ import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
+import org.zstack.header.vo.FindSameNodeExtensionPoint;
+import org.zstack.header.vo.ResourceInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -59,7 +61,7 @@ import static org.zstack.core.Platform.*;
 import static org.zstack.longjob.LongJobUtils.noncancelableErr;
 
 public class HostManagerImpl extends AbstractService implements HostManager, ManagementNodeChangeListener,
-        ManagementNodeReadyExtensionPoint {
+        ManagementNodeReadyExtensionPoint, FindSameNodeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(HostManagerImpl.class);
 
     @Autowired
@@ -840,5 +842,18 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     @Override
     public HostBaseExtensionFactory getHostBaseExtensionFactory(Message msg) {
         return hostBaseExtensionFactories.get(msg.getClass());
+    }
+
+    @Override
+    public ResourceInventory findSameNode(String hostname) {
+        String uuid = Q.New(HostVO.class).eq(HostVO_.managementIp, hostname).select(HostVO_.uuid).findValue();
+        if (uuid == null) {
+            return null;
+        } else {
+            ResourceInventory info = new ResourceInventory();
+            info.setUuid(uuid);
+            info.setResourceType(HostVO.class.getSimpleName());
+            return info;
+        }
     }
 }
