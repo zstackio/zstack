@@ -74,6 +74,11 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
+            <artifactId>external-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
             <artifactId>simulatorImpl</artifactId>
             <version>${project.version}</version>
         </dependency>
