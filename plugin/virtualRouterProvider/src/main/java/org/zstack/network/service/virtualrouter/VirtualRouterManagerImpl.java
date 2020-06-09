@@ -2017,6 +2017,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             return;
         }
 
+        if (vrVo.getHaStatus() == ApplianceVmHaStatus.Backup) {
+            reconenctVirtualRouter(inv.getUuid());
+            return;
+        }
+
         vyosVersionManager.vyosRouterVersionCheck(inv.getUuid(), new ReturnValueCompletion<VyosVersionCheckResult>(cmsg) {
             @Override
             public void success(VyosVersionCheckResult returnValue) {
