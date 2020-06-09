@@ -21,6 +21,7 @@
                 instance-ref="HostExtensionToCluster" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vo.FindSameNodeExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
