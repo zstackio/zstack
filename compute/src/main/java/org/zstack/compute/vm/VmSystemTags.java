@@ -153,4 +153,6 @@ public class VmSystemTags {
     public static String RX_SIZE_TOKEN = "rxBufferSize";
     public static String TX_SIZE_TOKEN = "txBufferSize";
     public static PatternedSystemTag VM_VRING_BUFFER_SIZE = new PatternedSystemTag(String.format("vRingBufferSize::{%s}::{%s}", RX_SIZE_TOKEN, TX_SIZE_TOKEN), VmInstanceVO.class);
+    public static String BIND_HOST_UUID_TOKEN = "bindHostUuid";
+    public static PatternedSystemTag BIND_HOST_UUID = new PatternedSystemTag(String.format("bindHostUuid::{%s}", BIND_HOST_UUID_TOKEN), VmInstanceVO.class);
 }
