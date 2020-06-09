@@ -2317,12 +2317,18 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             logger.warn(String.format("the host[uuid:%s] disconnected, but the vm[uuid:%s] fails to " +
                                             "change it's state to Unknown, %s", hostUuid, vmUuid, reply.getError()));
                             logger.warn(String.format("create an unknowngc job for vm[uuid:%s]", vmUuid));
+
                             UnknownVmGC gc = new UnknownVmGC();
                             gc.NAME = UnknownVmGC.getGCName(vmUuid);
                             gc.vmUuid = vmUuid;
                             gc.vmState = vmState;
                             gc.hostUuid = hostUuid;
-                            gc.submit(VmGlobalConfig.UNKNOWN_GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
+                            if (gc.existedAndNotCompleted()) {
+                                logger.debug(String.format("There is already a UnknownVmGC of vm[uuid:%s] " +
+                                        "on host[uuid:%s], skip.", vmUuid, hostUuid));
+                            } else {
+                                gc.submit(VmGlobalConfig.UNKNOWN_GC_INTERVAL.value(Long.class), TimeUnit.SECONDS);
+                            }
                         } else {
                             logger.debug(String.format("the host[uuid:%s] disconnected, change the VM[uuid:%s]' state to Unknown", hostUuid, vmUuid));
                         }

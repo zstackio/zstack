@@ -7,6 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.SyncThread;
@@ -204,5 +205,13 @@ public abstract class GarbageCollector {
                     " running a GC job[name:%s, id:%s]", NAME, uuid), t);
             fail(inerr(t.getMessage()));
         }
+    }
+
+    public boolean existedAndNotCompleted() {
+        return Q.New(GarbageCollectorVO.class).eq(GarbageCollectorVO_.name, NAME).notEq(GarbageCollectorVO_.status, GCStatus.Done).isExists();
+    }
+
+    public boolean existedAndNotCompletedByLike(String nameExp) {
+        return Q.New(GarbageCollectorVO.class).like(GarbageCollectorVO_.name, nameExp).notEq(GarbageCollectorVO_.status, GCStatus.Done).isExists();
     }
 }
