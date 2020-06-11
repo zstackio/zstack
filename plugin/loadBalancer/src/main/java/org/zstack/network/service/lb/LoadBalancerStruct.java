@@ -2,13 +2,14 @@ package org.zstack.network.service.lb;
 
 import org.zstack.header.vm.VmNicInventory;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Created by frank on 8/8/2015.
  */
-public class LoadBalancerStruct {
+public class LoadBalancerStruct implements Serializable {
     private LoadBalancerInventory lb;
     private Map<String, VmNicInventory> vmNics;
     private List<LoadBalancerListenerInventory> listeners;

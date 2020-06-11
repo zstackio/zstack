@@ -5,11 +5,12 @@ import org.zstack.network.service.virtualrouter.eip.EipTO;
 import org.zstack.network.service.virtualrouter.portforwarding.PortForwardingRuleTO;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 public class VirtualRouterCommands {
-	public static class AgentCommand {
+	public static class AgentCommand implements Serializable {
 	}
 	
 	public static class AgentResponse {

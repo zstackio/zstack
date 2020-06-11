@@ -2,13 +2,15 @@ package org.zstack.header.network.service;
 
 import org.zstack.header.network.l3.L3NetworkInventory;
 
+import java.io.Serializable;
+
 /**
  * Created with IntelliJ IDEA.
  * User: frank
  * Time: 1:47 PM
  * To change this template use File | Settings | File Templates.
  */
-public class DhcpStruct {
+public class DhcpStruct implements Serializable {
     private int    ipVersion;
     private String ip;
     private String mac;
