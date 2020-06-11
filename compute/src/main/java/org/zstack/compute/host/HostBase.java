@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.compute.vm.VmSchedHistoryRecorder;
 import org.zstack.core.upgrade.UpgradeGlobalConfig;
+import org.zstack.core.Platform;
+import org.zstack.authentication.checkfile.*;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -101,6 +103,8 @@ public abstract class HostBase extends AbstractHost {
     @Autowired
     @Qualifier("HostSingleFlight")
     protected TaskSingleFlight<String, ConnectHostReply> singleFlight;
+    @Autowired
+    protected FileVerificationFacadeImpl fvf;
 
     public static class HostDisconnectedCanonicalEvent extends CanonicalEventEmitter {
         HostCanonicalEvents.HostDisconnectedData data;
@@ -1092,6 +1096,22 @@ public abstract class HostBase extends AbstractHost {
         return true;
     }
 
+    private void addDefaultHostFileToCheckList() {
+        for (String path : DefaultFile.ComputeNodeDefaultFileList) {
+            FileVerification fv = new FileVerification();
+            fv.setUuid(Platform.getUuid());
+            fv.setNode(self.getUuid());
+            fv.setPath(path);
+            fv.setHexType("md5");
+            fv.setCategory(DefaultFile.SystemHostFileCategory);
+            fv.setState(FileVerificationState.Enabled.toString());
+            FileVerificationVO fvo = Q.New(FileVerificationVO.class).eq(FileVerificationVO_.node, self.getUuid()).eq(FileVerificationVO_.path, path).find();
+            if (fvo == null){
+                fvf.addHostFileToCheckList(fv);
+            }
+        }
+    }
+
     private void handle(final ConnectHostMsg msg) {
         thdf.singleFlightSubmit(new SingleFlightTask(msg)
                 .setSyncSignature(String.format("connect-host-%s-single-flight", msg.getHostUuid()))
@@ -1246,7 +1266,7 @@ public abstract class HostBase extends AbstractHost {
                             public void handle(Map data) {
                                 changeConnectionState(HostStatusEvent.connected);
                                 tracker.trackHost(self.getUuid());
-
+                                addDefaultHostFileToCheckList();
                                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostAfterConnectedExtensionPoint.class),
                                         ext -> ext.afterHostConnected(getSelfInventory()));
                                 completion.success();

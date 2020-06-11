@@ -45,6 +45,9 @@ import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import static org.zstack.authentication.checkfile.FileVerification.NODE_MANAGEMENT_NODE;
+
+import javax.persistence.Tuple;
+
 import static org.zstack.core.Platform.argerr;
 import static java.nio.file.StandardCopyOption.*;
 
@@ -288,6 +291,22 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
         });
     }
 
+    private void syncDefaultFile(){
+        FileVerificationVO vo = Q.New(FileVerificationVO.class).eq(FileVerificationVO_.category, DefaultFile.SystemLocalFileCategory).limit(1).find();
+        if (vo == null){
+            for (String path : DefaultFile.ManagementNodeDefaultFileList) {
+                FileVerification fv = new FileVerification();
+                fv.setUuid(Platform.getUuid());
+                fv.setNode("mn");
+                fv.setPath(path);
+                fv.setHexType("md5");
+                fv.setCategory(DefaultFile.SystemLocalFileCategory);
+                fv.setState(FileVerificationState.Enabled.toString());
+                addLocalFileToCheckList(fv);
+            }
+        }
+    }
+
     private void addLocalFileToCheckList(FileVerification fv) {
         String path = fv.getPath();
         try {
@@ -302,7 +321,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
         }
     }
 
-    private void addHostFileToCheckList(FileVerification fv){
+    public void addHostFileToCheckList(FileVerification fv){
         fv.addHostFile(true);
     }
 
@@ -332,6 +351,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
 
     @Override
     public boolean start() {
+        syncDefaultFile();
         List<FileVerificationVO> vos = dbf.listAll(FileVerificationVO.class);
         for (FileVerificationVO vo : vos) {
             FileVerification fv = vo.toFile();
