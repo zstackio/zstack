@@ -3,9 +3,11 @@ package org.zstack.network.service.portforwarding;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.network.service.vip.VipInventory;
 
+import java.io.Serializable;
+
 /**
  */
-public class PortForwardingStruct {
+public class PortForwardingStruct implements Serializable {
     private L3NetworkInventory vipL3Network;
     private L3NetworkInventory guestL3Network;
     private VipInventory vip;

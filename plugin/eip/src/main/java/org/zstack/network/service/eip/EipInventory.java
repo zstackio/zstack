@@ -6,6 +6,7 @@ import org.zstack.header.search.Inventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.vip.VipInventory;
 
+import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,7 +25,7 @@ import java.util.List;
         @ExpandedQuery(target = VipInventory.class, expandedField = "eip", inventoryClass = EipInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "vipUuid")
 })
-public class EipInventory {
+public class EipInventory implements Serializable {
     private String uuid;
     private String name;
     private String description;

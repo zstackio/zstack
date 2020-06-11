@@ -5,9 +5,11 @@ import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.vip.VipInventory;
 
+import java.io.Serializable;
+
 /**
  */
-public class EipStruct {
+public class EipStruct implements Serializable {
     private EipInventory eip;
     private VmNicInventory nic;
     private VipInventory vip;

@@ -6,6 +6,7 @@ import org.zstack.header.query.ExpandedQueryAlias;
 import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
 
+import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,7 +27,7 @@ import java.util.List;
 @ExpandedQueryAliases({
         @ExpandedQueryAlias(alias = "vmNic", expandedField = "vmNicRef.vmNic")
 })
-public class LoadBalancerListenerInventory {
+public class LoadBalancerListenerInventory implements Serializable {
     private String uuid;
     private String name;
     private String description;
