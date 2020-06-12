@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateAliyunProxyVpcAction extends AbstractAction {
+public class UpdateAliyunProxyVSwitchAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateAliyunProxyVpcAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateAliyunProxyVpcResult value;
+        public org.zstack.sdk.UpdateAliyunProxyVSwitchResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,17 +28,11 @@ public class UpdateAliyunProxyVpcAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = false, validValues = {"Available","Pending"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String status;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Boolean isDefault;
-
-    @Param(required = false, validValues = {"Available","Pending"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String status;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -72,8 +66,8 @@ public class UpdateAliyunProxyVpcAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateAliyunProxyVpcResult value = res.getResult(org.zstack.sdk.UpdateAliyunProxyVpcResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateAliyunProxyVpcResult() : value; 
+        org.zstack.sdk.UpdateAliyunProxyVSwitchResult value = res.getResult(org.zstack.sdk.UpdateAliyunProxyVSwitchResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateAliyunProxyVSwitchResult() : value; 
 
         return ret;
     }
@@ -103,10 +97,10 @@ public class UpdateAliyunProxyVpcAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/aliyun-proxy/vpcs/{uuid}/actions";
+        info.path = "/aliyun-proxy/vswitches/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateAliyunProxyVpc";
+        info.parameterName = "updateAliyunProxyVSwitch";
         return info;
     }
 
