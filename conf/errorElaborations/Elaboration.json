@@ -760,6 +760,14 @@
     "message_en": "management node is unavailable"
   },
   {
+    "category": "MN",
+    "code": "1001",
+    "method": "regex",
+    "regex": "Message[name: .*, id: .*] timeout after .* seconds",
+    "message_cn": "消息[名称:%1$s, id: %2$s]超时",
+    "message_en": "Message[name:%1$s, id: %2$s] timeout"
+  },
+  {
     "category": "PS",
     "code": "1000",
     "method": "distance",
