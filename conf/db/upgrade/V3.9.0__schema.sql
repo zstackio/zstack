@@ -425,3 +425,28 @@ DELIMITER ;
 
 CALL enableVnicMultipleQueuesForVirtualRouter();
 DROP PROCEDURE IF EXISTS enableVnicMultipleQueuesForVirtualRouter;
+
+DROP PROCEDURE IF EXISTS add_deleted_index_for_eo_table;
+DELIMITER $$
+CREATE PROCEDURE add_deleted_index_for_eo_table() BEGIN
+DECLARE CurrentDatabase VARCHAR(100);
+SELECT DATABASE() INTO CurrentDatabase;
+IF NOT EXISTS (SELECT * FROM information_schema.statistics WHERE table_schema=CurrentDatabase AND table_name = 'VolumeEO' AND index_name = 'idxDeleted') THEN
+   ALTER TABLE `VolumeEO` ADD INDEX idxDeleted ( `deleted` );
+END IF;
+IF NOT EXISTS (SELECT * FROM information_schema.statistics WHERE table_schema=CurrentDatabase AND table_name = 'VmInstanceEO' AND index_name = 'idxDeleted') THEN
+   ALTER TABLE `VmInstanceEO` ADD INDEX idxDeleted ( `deleted` );
+END IF;
+IF NOT EXISTS (SELECT * FROM information_schema.statistics WHERE table_schema=CurrentDatabase AND table_name = 'ImageEO' AND index_name = 'idxDeleted') THEN
+   ALTER TABLE `ImageEO` ADD INDEX idxDeleted ( `deleted` );
+END IF;
+IF NOT EXISTS (SELECT * FROM information_schema.statistics WHERE table_schema=CurrentDatabase AND table_name = 'VolumeSnapshotEO' AND index_name = 'idxDeleted') THEN
+   ALTER TABLE `VolumeSnapshotEO` ADD INDEX idxDeleted ( `deleted` );
+END IF;
+IF NOT EXISTS (SELECT * FROM information_schema.statistics WHERE table_schema=CurrentDatabase AND table_name = 'InstanceOfferingEO' AND index_name = 'idxDeleted') THEN
+   ALTER TABLE `InstanceOfferingEO` ADD INDEX idxDeleted ( `deleted` );
+END IF;
+END $$
+DELIMITER ;
+CALL add_deleted_index_for_eo_table();
+DROP PROCEDURE IF EXISTS add_deleted_index_for_eo_table;
