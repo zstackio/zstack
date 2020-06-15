@@ -10,6 +10,8 @@ import org.zstack.header.vm.VmInstanceEO
 import org.zstack.header.vm.VmInstanceEO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.volume.VolumeEO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.l3.NetworkGlobalProperty
@@ -200,6 +202,11 @@ test a VM's start/stop/reboot/destroy/recover operations
                 .eq(VmInstanceEO_.uuid, vm.uuid)
                 .isExists()
         assert !eoExists
+
+        boolean rootVolumeEoExists = Q.New(VolumeEO.class)
+                .eq(VolumeVO_.uuid, vm.rootVolumeUuid)
+                .isExists()
+        assert !rootVolumeEoExists
 
         Long after = Q.New(VmInstanceEO.class).count()
         assert before == after + 1
