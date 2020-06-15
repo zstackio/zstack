@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import com.google.common.collect.Maps;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -16,7 +17,9 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
+import javax.persistence.Tuple;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
@@ -116,19 +119,57 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
             }
         }
 
-        nics.forEach(nic -> {
-            if (nic.getDriverType() != null) {
-                return;
-            }
+        List<VmNicVO> ns = nics.stream()
+                .filter(v -> v.getDriverType() == null
+                        && v.getType().equals(VmInstanceConstant.VIRTUAL_NIC_TYPE)
+                        && v.getVmInstanceUuid() != null)
+                .collect(Collectors.toList());
 
-            if (nic.getType() != VmInstanceConstant.VIRTUAL_NIC_TYPE) {
-                return;
-            }
+        if (CollectionUtils.isEmpty(ns)) {
+            return;
+        }
+
+        List<String> vmUuids = ns.stream()
+                .map(VmNicVO::getVmInstanceUuid)
+                .collect(Collectors.toList());
+
+        List<Tuple> tupleList = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.uuid, VmInstanceVO_.platform)
+                .in(VmInstanceVO_.uuid, vmUuids)
+                .listTuple();
+
+        Map<String, String> vmPlatforms = Maps.newHashMap();
+        for (Tuple vmTuple : tupleList) {
+            String vmUuid = vmTuple.get(0, String.class);
+            String vmPlatform = vmTuple.get(1, String.class);
+            vmPlatforms.put(vmUuid, ImagePlatform.valueOf(vmPlatform).isParaVirtualization() ?
+                    defaultPVNicDriver : defaultNicDriver);
+        }
+
+        Map<Boolean, List<String>> nicGroups = nics.stream()
+                .filter(v -> vmPlatforms.containsKey(v.getVmInstanceUuid()))
+                .collect(
+                        Collectors.groupingBy(
+                                v -> vmPlatforms.get(v.getVmInstanceUuid()).equals(defaultPVNicDriver),
+                                Collectors.mapping(VmNicVO::getUuid, Collectors.toList()))
+                );
+
+        List<String> pvNics = nicGroups.get(true);
+        List<String> defaultNics = nicGroups.get(false);
+
+        if (CollectionUtils.isNotEmpty(pvNics)) {
             SQL.New(VmNicVO.class)
-                    .eq(VmNicVO_.uuid, nic.getUuid())
-                    .set(VmNicVO_.driverType, getNicDefaultDriver(nic.getVmInstanceUuid()))
+                    .in(VmNicVO_.uuid, pvNics)
+                    .set(VmNicVO_.driverType, defaultPVNicDriver)
                     .update();
-        });
+        }
+
+        if (CollectionUtils.isNotEmpty(defaultNics)) {
+            SQL.New(VmNicVO.class)
+                    .in(VmNicVO_.uuid, defaultNics)
+                    .set(VmNicVO_.driverType, defaultNicDriver)
+                    .update();
+        }
     }
 
     @Override
@@ -153,12 +194,6 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
         }
 
         SQL.New(VmNicVO.class).in(VmNicVO_.uuid, needUpdateNics).set(VmNicVO_.driverType, driverType).update();
-    }
-
-    private String getNicDefaultDriver(String vmUuid) {
-        VmInstanceVO vm = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).find();
-        return ImagePlatform.valueOf(vm.getPlatform()).isParaVirtualization() ?
-                defaultPVNicDriver : defaultNicDriver;
     }
 
     public void setSupportNicDriverTypes(List<String> supportNicDriverTypes) {
