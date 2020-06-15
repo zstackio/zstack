@@ -962,6 +962,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 dbf.remove(self);
                 logger.debug(String.format("successfully expunged the vm[uuid:%s]", self.getUuid()));
                 dbf.eoCleanup(VmInstanceVO.class, self.getUuid());
+                if (inv.getRootVolumeUuid() != null) {
+                    dbf.eoCleanup(VolumeVO.class, inv.getRootVolumeUuid());
+                }
                 completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
