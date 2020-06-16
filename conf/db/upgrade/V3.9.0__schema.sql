@@ -425,3 +425,6 @@ DELIMITER ;
 
 CALL enableVnicMultipleQueuesForVirtualRouter();
 DROP PROCEDURE IF EXISTS enableVnicMultipleQueuesForVirtualRouter;
+
+DELETE FROM `zstack`.`ResourceVO` where uuid in (select uuid from GarbageCollectorVO where runnerClass='org.zstack.vpc.ha.VpcHaGroupGcJob');
+DELETE FROM `zstack`.`GarbageCollectorVO` where runnerClass='org.zstack.vpc.ha.VpcHaGroupGcJob';
