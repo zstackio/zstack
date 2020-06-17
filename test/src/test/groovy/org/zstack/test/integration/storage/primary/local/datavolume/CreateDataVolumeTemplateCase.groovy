@@ -11,6 +11,8 @@ import org.zstack.header.storage.backup.BackupStorageStateEvent
 import org.zstack.header.storage.primary.AllocatePrimaryStorageMsg
 import org.zstack.header.storage.primary.DownloadDataVolumeToPrimaryStorageMsg
 import org.zstack.header.storage.primary.GetInstallPathForDataVolumeDownloadMsg
+import org.zstack.header.volume.VolumeEO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.image.ImageQuotaConstant
 import org.zstack.sdk.*
 import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
@@ -331,6 +333,10 @@ class CreateDataVolumeTemplateCase extends SubCase {
         expungeDataVolume {
             uuid = volume.uuid
         }
+        boolean dataVolumeEoExists = Q.New(VolumeEO.class)
+                .eq(VolumeVO_.uuid, volume.uuid)
+                .isExists()
+        assert !dataVolumeEoExists
 
         deleteImage {
             uuid = image.uuid

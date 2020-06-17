@@ -770,6 +770,7 @@ public class VolumeBase implements Volume {
                 VolumeInventory volumeInventory = getSelfInventory();
                 String accountUuid = acntMgr.getOwnerAccountUuidOfResource(self.getUuid());
                 dbf.remove(self);
+                cleanupVolumeEO(self.getUuid());
                 completion.success();
                 new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Deleted, volumeInventory, accountUuid);
             }
@@ -779,6 +780,17 @@ public class VolumeBase implements Volume {
                 completion.fail(errCode);
             }
         }).start();
+    }
+
+    private void cleanupVolumeEO(String volumeUuid) {
+        boolean exists = Q.New(VolumeSnapshotEO.class)
+                .eq(VolumeSnapshotEO_.volumeUuid, volumeUuid)
+                .isExists();
+        if (exists) {
+            return;
+        }
+
+        dbf.eoCleanup(VolumeVO.class, self.getUuid());
     }
 
     private void handle(final ExpungeVolumeMsg msg) {
