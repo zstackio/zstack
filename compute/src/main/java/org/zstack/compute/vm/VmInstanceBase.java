@@ -59,6 +59,7 @@ import org.zstack.header.vm.cdrom.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.utils.CollectionUtils;
@@ -3572,7 +3573,10 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         q.setParameter("l3State", L3NetworkState.Enabled);
         q.setParameter("uuid", self.getUuid());
+
         List<L3NetworkVO> l3s = q.getResultList();
+        l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty()).collect(Collectors.toList());
+
         return L3NetworkInventory.valueOf(l3s);
     }
 
@@ -3634,6 +3638,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                    l3s = l3s.stream().filter(l3 -> !vmL3Uuids.contains(l3.getUuid())).collect(Collectors.toList());
                }
 
+                l3s = l3s.stream().filter(l3 -> !IpRangeHelper.getNormalIpRanges(l3).isEmpty()).collect(Collectors.toList());
                return L3NetworkInventory.valueOf(l3s);
             }
 

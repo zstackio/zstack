@@ -488,7 +488,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     attachableL3NetworkVOS.remove(l3NetworkVO);
                 }
                 String vmNicCidr = NetworkUtils.getCidrFromIpMask(vmNicVO.getIp(), vmNicVO.getNetmask());
-                if (NetworkUtils.isCidrOverlap(iprs.stream().findFirst().get().getNetworkCidr(), vmNicCidr)) {
+                if (!iprs.isEmpty() && NetworkUtils.isCidrOverlap(iprs.stream().findFirst().get().getNetworkCidr(), vmNicCidr)) {
                     attachableL3NetworkVOS.remove(l3NetworkVO);
                 }
                 attachableL3NetworkVOS.removeAll(attachableL3NetworkVOS.stream()

@@ -124,6 +124,9 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
         }
         List<IpRangeInventory> ipInvs1 = IpRangeHelper.getNormalIpRanges(l3vo1);
         List<IpRangeInventory> ipInvs2 = IpRangeHelper.getNormalIpRanges(l3vo2);
+        if (ipInvs1.isEmpty() || ipInvs2.isEmpty()) {
+            return false;
+        }
 
         if (l3vo1.getIpVersion() == IPv6Constants.IPv4) {
             String netAddr1 = new SubnetUtils(ipInvs1.get(0).getGateway(), ipInvs1.get(0).getNetmask()).getInfo().getNetworkAddress();

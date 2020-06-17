@@ -450,6 +450,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                             msg.getVmInstanceUuid(), state));
         }
 
+        L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        if (l3NetworkVO.getIpRanges().isEmpty()) {
+            throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The L3 network[uuid:%s] doesn't has have ip range",
+                    msg.getL3NetworkUuid()));
+        }
+
         List<String> newAddedL3Uuids = new ArrayList<>(Collections.singletonList(msg.getL3NetworkUuid()));
         Map<String, List<String>> l3Map = new DualStackNicSecondaryNetworksOperator().getSecondaryNetworksFromSystemTags(msg.getSystemTags());
         if (l3Map.get(msg.getL3NetworkUuid()) != null && !l3Map.get(msg.getL3NetworkUuid()).isEmpty()) {
