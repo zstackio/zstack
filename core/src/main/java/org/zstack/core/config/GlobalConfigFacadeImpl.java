@@ -571,7 +571,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                             @Override
                             public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
                                 try {
-                                    long num = Long.valueOf(value);
+                                    long num = Long.parseLong(value);
                                     if (num > at.numberLessThan()) {
                                         throw new GlobalConfigException(String.format("%s should not greater than %s, but got %s",
                                                 config.getCanonicalName(), at.numberLessThan(), num));
@@ -588,7 +588,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                             @Override
                             public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
                                 try {
-                                    long num = Long.valueOf(value);
+                                    long num = Long.parseLong(value);
                                     if (num < at.numberGreaterThan()) {
                                         throw new GlobalConfigException(String.format("%s should not less than %s, but got %s",
                                                 config.getCanonicalName(), at.numberGreaterThan(), num));
@@ -608,7 +608,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                             @Override
                             public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
                                 try {
-                                    long num = Long.valueOf(value);
+                                    long num = Long.parseLong(value);
                                     long lowBound = at.inNumberRange()[0];
                                     long upBound = at.inNumberRange()[1];
                                     if (!(num >= lowBound && num <= upBound)) {

@@ -35,7 +35,7 @@ public class DefaultValidator implements Validator {
             }
             if (at.notZero() && TypeUtils.isTypeOf(value, Integer.TYPE, Integer.class, Long.TYPE, Long.class)) {
                 if (value != null) {
-                    long intValue = Long.valueOf(value.toString());
+                    long intValue = Long.parseLong(value.toString());
                     if (intValue == 0) {
                         return error(obj, f, "field can not be zero");
                     }

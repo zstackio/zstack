@@ -1,13 +1,5 @@
 package org.zstack.header.core.progress;
 
-import org.zstack.utils.DebugUtils;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.util.Collections.max;
-import static java.util.Collections.min;
-
 public class TaskProgressRange {
     private int start, end;
 
@@ -29,8 +21,8 @@ public class TaskProgressRange {
 
     public static TaskProgressRange valueOf(String stage) {
         TaskProgressRange t = new TaskProgressRange();
-        t.start = Integer.valueOf(stage.split("-")[0]);
-        t.end = Integer.valueOf(stage.split("-")[1]);
+        t.start = Integer.parseInt(stage.split("-")[0]);
+        t.end = Integer.parseInt(stage.split("-")[1]);
         return t;
     }
 

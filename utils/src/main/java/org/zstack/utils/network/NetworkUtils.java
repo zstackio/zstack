@@ -119,8 +119,8 @@ public class NetworkUtils {
 
     public static long bytesToLong(byte[] bytes) {
         long value = 0;
-        for (int i = 0; i < bytes.length; i++) {
-            value = (value << 8) + (bytes[i] & 0xff);
+        for (byte b : bytes) {
+            value = (value << 8) + (b & 0xff);
         }
         return value;
     }
@@ -683,7 +683,7 @@ public class NetworkUtils {
         long[] ip = new long[4];
         String[] ipSec = strIP.split("\\.");
         for (int k = 0; k < 4; k++) {
-            ip[k] = Long.valueOf(ipSec[k]);
+            ip[k] = Long.parseLong(ipSec[k]);
         }
 
         return (ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + (last == null ? ip[3] : last);

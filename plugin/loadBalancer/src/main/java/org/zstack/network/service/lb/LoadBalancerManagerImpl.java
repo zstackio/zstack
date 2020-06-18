@@ -402,7 +402,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
                 String s = tokens.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN);
                 try {
-                    Long weight = Long.valueOf(s);
+                    long weight = Long.parseLong(s);
                     if (weight < LoadBalancerConstants.BALANCER_WEIGHT_MIN || weight > LoadBalancerConstants.BALANCER_WEIGHT_MAX) {
                         throw new OperationFailureException(argerr("invalid balancer weight[%s], %s is not in the range [%d, %d]",
                                 systemTag, s, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
@@ -492,7 +492,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         LoadBalancerSystemTags.UNHEALTHY_THRESHOLD_TOKEN);
 
                 try {
-                    Long.valueOf(s);
+                    Long.parseLong(s);
                 } catch (NumberFormatException e) {
                     throw new OperationFailureException(argerr("invalid unhealthy threshold[%s], %s is not a number", systemTag, s));
                 }
@@ -506,7 +506,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         LoadBalancerSystemTags.HEALTHY_THRESHOLD_TOKEN);
 
                 try {
-                    Long.valueOf(s);
+                    Long.parseLong(s);
                 } catch (NumberFormatException e) {
                     throw new OperationFailureException(argerr("invalid healthy threshold[%s], %s is not a number", systemTag, s));
                 }
@@ -520,7 +520,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN);
 
                 try {
-                    Long.valueOf(s);
+                    Long.parseLong(s);
                 } catch (NumberFormatException e) {
                     throw new OperationFailureException(argerr("invalid healthy timeout[%s], %s is not a number", systemTag, s));
                 }
@@ -534,7 +534,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT_TOKEN);
 
                 try {
-                    Long.valueOf(s);
+                    Long.parseLong(s);
                 } catch (NumberFormatException e) {
                     throw new OperationFailureException(argerr("invalid connection idle timeout[%s], %s is not a number", systemTag, s));
                 }
@@ -548,7 +548,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN);
 
                 try {
-                    Long.valueOf(s);
+                    Long.parseLong(s);
                 } catch (NumberFormatException e) {
                     throw new OperationFailureException(argerr("invalid health check interval[%s], %s is not a number", systemTag, s));
                 }
@@ -562,7 +562,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         LoadBalancerSystemTags.MAX_CONNECTION_TOKEN);
 
                 try {
-                    Long.valueOf(s);
+                    Long.parseLong(s);
                 } catch (NumberFormatException e) {
                     throw new OperationFailureException(argerr("invalid max connection[%s], %s is not a number", systemTag, s));
                 }
@@ -589,7 +589,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 String port = ts[1];
                 if (!"default".equals(port)) {
                     try {
-                        int p = Integer.valueOf(port);
+                        int p = Integer.parseInt(port);
                         if (p < 1 || p > 65535) {
                             throw new OperationFailureException(argerr("invalid invalid health target[%s], port[%s] is not in the range of [1, 65535]", systemTag, port));
                         }

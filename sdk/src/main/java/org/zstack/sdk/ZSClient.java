@@ -85,7 +85,7 @@ public class ZSClient {
                 return;
             }
 
-            boolean success = Boolean.valueOf(jobSuccess);
+            boolean success = Boolean.parseBoolean(jobSuccess);
 
             ApiResult res = new ApiResult();
             if (!success) {
@@ -111,19 +111,19 @@ public class ZSClient {
 
 
     static String join(Collection lst, String sep) {
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         boolean first = true;
         for (Object s : lst) {
             if (first) {
-                ret = s.toString();
+                ret = new StringBuilder(s.toString());
                 first = false;
                 continue;
             }
 
-            ret = ret + sep + s.toString();
+            ret.append(sep).append(s.toString());
         }
 
-        return ret;
+        return ret.toString();
     }
 
     static class Api {

@@ -122,7 +122,7 @@ public class ImageQuotaUtil {
                 logger.warn(String.format("cannot get image.  The image url : %s. description: %s.name: %s",
                         url, msg.getDescription(), msg.getName()));
             }
-            imageSizeAsked = len == null ? 0 : Long.valueOf(len);
+            imageSizeAsked = len == null ? 0 : Long.parseLong(len);
         }
         return imageSizeAsked;
     }

@@ -1,6 +1,5 @@
 package org.zstack.core.errorcode;
 
-import org.zstack.core.Platform;
 import org.zstack.core.errorcode.schema.Error;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -24,7 +23,7 @@ import java.util.Map;
 public class ErrorFacadeImpl implements ErrorFacade {
     private static final CLogger logger = Utils.getLogger(ErrorFacadeImpl.class);
     private Map<String, ErrorCodeInfo> codes = new HashMap<>();
-    private boolean dumpOnError = Boolean.valueOf(System.getProperty("ErrorFacade.dumpOnError"));
+    private boolean dumpOnError = Boolean.parseBoolean(System.getProperty("ErrorFacade.dumpOnError"));
 
     @Override
     public ErrorCode instantiateErrorCode(Enum code, ErrorCode cause) {

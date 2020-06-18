@@ -193,7 +193,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                 String vmMultiGateway = VmSystemTags.MULTIPLE_GATEWAY.getTokenByResourceUuid(nic.getVmInstanceUuid(),
                         VmSystemTags.MULTIPLE_GATEWAY_TOKEN);
-                boolean multiGateway = Boolean.valueOf(vmMultiGateway);
+                boolean multiGateway = Boolean.parseBoolean(vmMultiGateway);
                 DhcpInfo info = new DhcpInfo();
                 info.bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
                 info.namespaceName = makeNamespaceName(
@@ -1034,7 +1034,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         String vmMultiGateway = VmSystemTags.MULTIPLE_GATEWAY.getTokenByResourceUuid(vm.getUuid(),
                 VmSystemTags.MULTIPLE_GATEWAY_TOKEN);
-        boolean multiGateway = Boolean.valueOf(vmMultiGateway);
+        boolean multiGateway = Boolean.parseBoolean(vmMultiGateway);
 
         List<DhcpInfo> dhcpInfoList = new ArrayList<DhcpInfo>();
         List<VmNicVO> defaultNics = nics.stream().filter(nic -> nic.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid())).collect(Collectors.toList());
@@ -1562,7 +1562,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                 String vmMultiGateway = VmSystemTags.MULTIPLE_GATEWAY.getTokenByResourceUuid(arg.getVmUuid(),
                         VmSystemTags.MULTIPLE_GATEWAY_TOKEN);
-                boolean multiGateway = Boolean.valueOf(vmMultiGateway);
+                boolean multiGateway = Boolean.parseBoolean(vmMultiGateway);
 
                 DhcpInfo info = new DhcpInfo();
                 info.ipVersion = arg.getIpVersion();

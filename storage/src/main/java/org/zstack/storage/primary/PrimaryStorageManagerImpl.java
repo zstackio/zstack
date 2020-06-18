@@ -708,14 +708,16 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
     private void primaryStorageAutoDeleteTrashTask(String primaryStorageUuid, String newValue){
         logger.debug(String.format("start submit auto delete trash task for primary storage[%s]", primaryStorageUuid != null ? primaryStorageUuid : "globalTrashTask"));
+
+        long period;
         try {
-            Long.valueOf(newValue);
+            period = Long.parseLong(newValue);
         } catch (NumberFormatException e) {
             logger.error(e.getLocalizedMessage());
             return;
         }
-        long period = Long.valueOf(newValue);
-        if(Long.valueOf(newValue) <= 0){
+
+        if (period <= 0){
             return;
         }
 

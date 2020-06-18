@@ -68,10 +68,10 @@ public class SizeUtils {
         String numStr = str.substring(0, str.length() - 1);
         String suffix = str.substring(str.length() - 1);
         if (!validSuffix.contains(suffix)) {
-            return Long.valueOf(str);
+            return Long.parseLong(str);
         }
 
-        Long size = Long.valueOf(numStr);
+        long size = Long.parseLong(numStr);
         if (suffix.equals(T_SUFFIX) || suffix.equals(t_SUFFIX)) {
             return SizeUnit.TERABYTE.toByte(size);
         } else if (suffix.equals(G_SUFFIX) || suffix.equals(g_SUFFIX)) {

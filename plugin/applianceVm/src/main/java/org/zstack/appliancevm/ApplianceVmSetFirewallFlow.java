@@ -51,11 +51,7 @@ public class ApplianceVmSetFirewallFlow extends NoRollbackFlow {
     private Map<String, List<ApplianceVmFirewallRuleInventory>> normalize(List<ApplianceVmFirewallRuleInventory> rules) {
         Map<String, List<ApplianceVmFirewallRuleInventory>> networkFirewallRules = new HashMap<String, List<ApplianceVmFirewallRuleInventory>>();
         for (ApplianceVmFirewallRuleInventory rule : rules) {
-            List<ApplianceVmFirewallRuleInventory> rs = networkFirewallRules.get(rule.getL3NetworkUuid());
-            if (rs == null) {
-                rs = new ArrayList<ApplianceVmFirewallRuleInventory>();
-                networkFirewallRules.put(rule.getL3NetworkUuid(), rs);
-            }
+            List<ApplianceVmFirewallRuleInventory> rs = networkFirewallRules.computeIfAbsent(rule.getL3NetworkUuid(), k -> new ArrayList<ApplianceVmFirewallRuleInventory>());
             rs.add(rule);
         }
         return networkFirewallRules;
@@ -70,7 +66,7 @@ public class ApplianceVmSetFirewallFlow extends NoRollbackFlow {
             return;
         }
 
-        boolean isReconnect = Boolean.valueOf((String) data.get(Params.isReconnect.toString()));
+        boolean isReconnect = Boolean.parseBoolean((String) data.get(Params.isReconnect.toString()));
         Map<String, List<ApplianceVmFirewallRuleInventory>> networkFirewallRules = normalize(rules);
         if (isReconnect) {
             setFirewall((String) data.get(Params.applianceVmUuid.toString()), networkFirewallRules.entrySet().iterator(), trigger);

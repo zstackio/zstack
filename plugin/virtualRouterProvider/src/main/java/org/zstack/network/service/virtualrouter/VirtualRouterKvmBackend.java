@@ -6,8 +6,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
@@ -18,14 +16,16 @@ import org.zstack.header.network.l3.L3NetworkDnsVO_;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.kvm.*;
+import org.zstack.kvm.KVMConstant;
+import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
+import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.network.service.virtualrouter.VirtualRouterKvmBackendCommands.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
 import java.util.List;
+
+import static org.zstack.core.Platform.operr;
 
 public class VirtualRouterKvmBackend implements VirtualRouterHypervisorBackend {
 	private static final CLogger logger = Utils.getLogger(VirtualRouterKvmBackend.class);
@@ -34,10 +34,6 @@ public class VirtualRouterKvmBackend implements VirtualRouterHypervisorBackend {
 	private DatabaseFacade dbf;
 	@Autowired
 	private CloudBus bus;
-	@Autowired
-	private ApiTimeoutManager timeoutMgr;
-    @Autowired
-    private ErrorFacade errf;
 
 	@Override
 	public HypervisorType getVirtualRouterSupportedHypervisorType() {

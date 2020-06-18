@@ -34,7 +34,7 @@ public class PluginDefinitionParser implements BeanDefinitionDecorator {
 				find = true;
 			}
 			if (e.getTagName().equals(EXTENSION_NODE)) {
-				assert find == true;
+				assert find;
 				PluginExtension ext = new PluginExtension();
 				ext.setBeanClassName(bean.getBeanClassName());
 				ext.setBeanName(beanName);
@@ -50,7 +50,7 @@ public class PluginDefinitionParser implements BeanDefinitionDecorator {
 				if (order != null) {
 					order = order.trim();
 					if (!order.equals("")) {
-						ext.setOrder(Integer.valueOf(order));
+						ext.setOrder(Integer.parseInt(order));
 					}
 				}
 
@@ -96,13 +96,9 @@ public class PluginDefinitionParser implements BeanDefinitionDecorator {
 				props.addPropertyValue(prop);
 			} else {
 				Map<String, List<PluginExtension>> extensions = (Map<String, List<PluginExtension>>) prop.getValue();
-				List<PluginExtension> oexts = extensions.get(ext.getBeanClassName());
-				if (oexts == null) {
-					oexts = new ArrayList<>(exts.size());
-					extensions.put(ext.getBeanClassName(), oexts);
-				}
+				List<PluginExtension> oexts = extensions.computeIfAbsent(ext.getBeanClassName(), k -> new ArrayList<>(exts.size()));
 
-                for (PluginExtension e : exts) {
+				for (PluginExtension e : exts) {
                     if (oexts.contains(e)) {
                         throw new CloudRuntimeException(String.format("duplicated extension declaration[interfaceRef:%s, beanName:%s, beanClass:%s]", e.getReferenceInterface(), ext.getBeanName(), ext.getBeanClassName()));
                     }

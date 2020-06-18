@@ -1,6 +1,5 @@
 package org.zstack.search;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
@@ -24,7 +23,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.TransactionalCallback;
@@ -38,11 +36,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.data.Pair;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.path.PathUtil;
-import sun.net.www.content.text.plain;
 
 import javax.persistence.*;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
