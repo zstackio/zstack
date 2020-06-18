@@ -1602,7 +1602,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         } else {
                             L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(l3Vo);
                             List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3Inv);
-                            if (!iprs.get(0).getAddressMode().equals(IPv6Constants.SLAAC)) {
+                            if (!iprs.isEmpty() && !iprs.get(0).getAddressMode().equals(IPv6Constants.SLAAC)) {
                                 statefulIpv6Count++;
                             }
                         }

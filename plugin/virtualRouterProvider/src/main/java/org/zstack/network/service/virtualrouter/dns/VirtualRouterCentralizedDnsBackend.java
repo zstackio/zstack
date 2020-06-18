@@ -243,7 +243,10 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
                 inv.getDefaultL3NetworkUuid()
         ));
 
-        cmd.setDns(IpRangeHelper.getNormalIpRanges(defaultL3Inv).get(0).getGateway());
+        List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(defaultL3Inv);
+        if (!iprs.isEmpty()) {
+            cmd.setDns(iprs.get(0).getGateway());
+        }
         cmd.setWrongDns(defaultL3Inv.getDns());
 
         KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
@@ -321,9 +324,14 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
                 continue;
             }
 
+            List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(inv);
+            if (iprs.isEmpty()) {
+                continue;
+            }
+
             NetworkServiceProviderVO vo = Q.New(NetworkServiceProviderVO.class).eq(NetworkServiceProviderVO_.uuid, ref.getNetworkServiceProviderUuid()).find();
             if (vo.getType().equals(VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE) || vo.getType().equals(VyosConstants.VYOS_ROUTER_PROVIDER_TYPE)) {
-                dns.add(IpRangeHelper.getNormalIpRanges(inv).get(0).getGateway());
+                dns.add(iprs.get(0).getGateway());
             }
         }
 
