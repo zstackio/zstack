@@ -47,6 +47,8 @@ public class CloudBusGlobalProperty {
     public static int MESSAGE_TTL;
     @GlobalProperty(name="CloudBus.httpPort", defaultValue = "8080")
     public static int HTTP_PORT;
+    @GlobalProperty(name="CloudBus.httpMaxConnection", defaultValue = "50")
+    public static int HTTP_MAX_CONN;
     @GlobalProperty(name="CloudBus.alwaysUseHttp", defaultValue = "false")
     public static boolean HTTP_ALWAYS;
     @GlobalProperty(name="CloudBus.httpContextPath", defaultValue = "/zstack")

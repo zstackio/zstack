@@ -10,13 +10,9 @@ import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
-import org.zstack.core.thread.AsyncThread;
-import org.zstack.core.thread.SyncTask;
-import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.thread.ThreadFacadeImpl;
+import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.Constants;
 import org.zstack.header.Service;
@@ -59,8 +55,6 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     @Autowired
     private ThreadFacade thdf;
     @Autowired
-    private ErrorFacade errf;
-    @Autowired
     private ApiTimeoutManager timeoutMgr;
     @Autowired
     private ResourceDestinationMaker destMaker;
@@ -78,28 +72,28 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     private final String TASK_CONTEXT = "task-context";
     final static String SERVICE_ID_SPLITTER = ":::";
 
-    private String SERVICE_ID = makeLocalServiceId("cloudbus.messages");
+    private final String SERVICE_ID = makeLocalServiceId("cloudbus.messages");
 
-    private String EVENT_ID = makeLocalServiceId("cloudbus.events");
+    private final String EVENT_ID = makeLocalServiceId("cloudbus.events");
 
-    private List<Service> services = new ArrayList<>();
-    private Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<Class, List<ReplyMessagePreSendingExtensionPoint>>();
+    private final List<Service> services = new ArrayList<>();
+    private final Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<Class, List<ReplyMessagePreSendingExtensionPoint>>();
 
-    private Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new HashMap<Class, List<BeforeDeliveryMessageInterceptor>>();
-    private Map<Class, List<BeforeSendMessageInterceptor>> beforeSendMessageInterceptors = new HashMap<Class, List<BeforeSendMessageInterceptor>>();
-    private Map<Class, List<BeforePublishEventInterceptor>> beforeEventPublishInterceptors = new HashMap<Class, List<BeforePublishEventInterceptor>>();
+    private final Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new HashMap<Class, List<BeforeDeliveryMessageInterceptor>>();
+    private final Map<Class, List<BeforeSendMessageInterceptor>> beforeSendMessageInterceptors = new HashMap<Class, List<BeforeSendMessageInterceptor>>();
+    private final Map<Class, List<BeforePublishEventInterceptor>> beforeEventPublishInterceptors = new HashMap<Class, List<BeforePublishEventInterceptor>>();
 
-    private List<BeforeDeliveryMessageInterceptor> beforeDeliveryMessageInterceptorsForAll = new ArrayList<BeforeDeliveryMessageInterceptor>();
-    private List<BeforeSendMessageInterceptor> beforeSendMessageInterceptorsForAll = new ArrayList<BeforeSendMessageInterceptor>();
-    private List<BeforePublishEventInterceptor> beforeEventPublishInterceptorsForAll = new ArrayList<BeforePublishEventInterceptor>();
-    private Map<String, Map<String, CloudBusEventListener>> eventListeners = new ConcurrentHashMap<>();
+    private final List<BeforeDeliveryMessageInterceptor> beforeDeliveryMessageInterceptorsForAll = new ArrayList<BeforeDeliveryMessageInterceptor>();
+    private final List<BeforeSendMessageInterceptor> beforeSendMessageInterceptorsForAll = new ArrayList<BeforeSendMessageInterceptor>();
+    private final List<BeforePublishEventInterceptor> beforeEventPublishInterceptorsForAll = new ArrayList<BeforePublishEventInterceptor>();
+    private final Map<String, Map<String, CloudBusEventListener>> eventListeners = new ConcurrentHashMap<>();
 
-    private Set<String> filterMsgNames = new HashSet<>();
+    private final Set<String> filterMsgNames = new HashSet<>();
 
-    private Map<String, EndPoint> endPoints = new HashMap<>();
-    private Map<String, Envelope> envelopes = new ConcurrentHashMap<>();
-    private Map<String, java.util.function.Consumer> messageConsumers = new ConcurrentHashMap<>();
-    private static TimeoutRestTemplate http = RESTFacade.createRestTemplate(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT, CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT);
+    private final Map<String, EndPoint> endPoints = new HashMap<>();
+    private final Map<String, Envelope> envelopes = new ConcurrentHashMap<>();
+    private final Map<String, java.util.function.Consumer> messageConsumers = new ConcurrentHashMap<>();
+    private final static TimeoutRestTemplate http = RESTFacade.createRestTemplate(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT, CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT);
 
     public static final String HTTP_BASE_URL = "/cloudbus";
 
@@ -166,7 +160,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         return () -> messageConsumers.remove(serviceId);
     }
 
-    private Consumer<Event> eventConsumer = new Consumer<Event>() {
+    private final Consumer<Event> eventConsumer = new Consumer<Event>() {
         @ExceptionSafe
         private void callListener(Event e, CloudBusEventListener listener) {
             listener.handleEvent(e);
@@ -186,7 +180,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
     };
 
-    private Consumer<Message> messageConsumer = new Consumer<Message>() {
+    private final Consumer<Message> messageConsumer = new Consumer<Message>() {
         @Override
         @AsyncThread
         public void accept(Message msg) {
@@ -293,10 +287,10 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         evaluateMessageTimeout(msg);
 
         Envelope e = new Envelope() {
-            AtomicBoolean called = new AtomicBoolean(false);
+            final AtomicBoolean called = new AtomicBoolean(false);
 
             final Envelope self = this;
-            ThreadFacadeImpl.TimeoutTaskReceipt timeoutTaskReceipt = thdf.submitTimeoutTask(self::timeout, TimeUnit.MILLISECONDS, msg.getTimeout());
+            final ThreadFacadeImpl.TimeoutTaskReceipt timeoutTaskReceipt = thdf.submitTimeoutTask(self::timeout, TimeUnit.MILLISECONDS, msg.getTimeout());
 
             @Override
             public void ack(MessageReply reply) {
@@ -402,7 +396,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
     @Override
     public void reply(Message request, MessageReply reply) {
-        if (Boolean.valueOf(request.getHeaderEntry(NO_NEED_REPLY_MSG))) {
+        if (Boolean.parseBoolean(request.getHeaderEntry(NO_NEED_REPLY_MSG))) {
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("%s in message%s is set, drop reply%s", NO_NEED_REPLY_MSG,
                         dumpMessage(request), dumpMessage(reply)));
@@ -498,16 +492,41 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             }
         }
 
+        private void httpSendInQueue(String ip) {
+            thdf.chainSubmit(new ChainTask(null) {
+                @Override
+                public String getSyncSignature() {
+                    return "http-send-in-queue";
+                }
+
+                @Override
+                public void run(SyncTaskChain chain) {
+                    httpSend(ip);
+                    chain.next();
+                }
+
+                @Override
+                protected int getSyncLevel() {
+                    return CloudBusGlobalProperty.HTTP_MAX_CONN;
+                }
+
+                @Override
+                public String getName() {
+                    return getSyncSignature();
+                }
+            });
+        }
+
         private void httpSend() {
             buildSchema(msg);
             try {
                 String ip = destMaker.getNodeInfo(managementNodeId).getNodeIP();
-                httpSend(ip);
+                httpSendInQueue(ip);
             } catch (ManagementNodeNotFoundException e) {
                 if (msg instanceof MessageReply) {
                     if (!deadMessageManager.handleManagementNodeNotFoundError(managementNodeId, msg, () -> {
                         String ip = destMaker.getNodeInfo(managementNodeId).getNodeIP();
-                        httpSend(ip);
+                        httpSendInQueue(ip);
                     })) {
                         throw e;
                     }
@@ -569,7 +588,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             localSend();
             destMaker.getAllNodeInfo().forEach(node -> {
                 if (!node.getNodeUuid().equals(Platform.getManagementServerId())) {
-                    httpSend(node.getNodeIP());
+                    httpSendInQueue(node.getNodeIP());
                 }
             });
         }
@@ -677,7 +696,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
         EndPoint endPoint = new EndPoint() {
             ConsumerReceipt registration;
-            Consumer<Message> consumer = msg -> {
+            final Consumer<Message> consumer = msg -> {
                 try {
                     if (logger.isTraceEnabled() && islogMessage(msg)) {
                         logger.trace(String.format("[msg received]: %s", dumpMessage(msg)));
@@ -953,7 +972,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             while (clz != Object.class) {
                 List<BeforeDeliveryMessageInterceptor> is = beforeDeliveryMessageInterceptors.computeIfAbsent(clz, k -> new ArrayList<>());
 
-                synchronized (is) {
+                synchronized (beforeDeliveryMessageInterceptors) {
                     int order = 0;
                     for (BeforeDeliveryMessageInterceptor i : is) {
                         if (i.orderOfBeforeDeliveryMessageInterceptor() <= interceptor.orderOfBeforeDeliveryMessageInterceptor()) {
@@ -995,7 +1014,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             while (clz != Object.class) {
                 List<BeforeSendMessageInterceptor> is = beforeSendMessageInterceptors.computeIfAbsent(clz, k -> new ArrayList<>());
 
-                synchronized (is) {
+                synchronized (beforeSendMessageInterceptors) {
                     int order = 0;
                     for (BeforeSendMessageInterceptor i : is) {
                         if (i.orderOfBeforeSendMessageInterceptor() <= interceptor.orderOfBeforeSendMessageInterceptor()) {
@@ -1028,13 +1047,9 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
         for (Class clz : classes) {
             while (clz != Object.class) {
-                List<BeforePublishEventInterceptor> is = beforeEventPublishInterceptors.get(clz);
-                if (is == null) {
-                    is = new ArrayList<>();
-                    beforeEventPublishInterceptors.put(clz, is);
-                }
+                List<BeforePublishEventInterceptor> is = beforeEventPublishInterceptors.computeIfAbsent(clz, k -> new ArrayList<>());
 
-                synchronized (is) {
+                synchronized (beforeEventPublishInterceptors) {
                     int order = 0;
                     for (BeforePublishEventInterceptor i : is) {
                         if (i.orderOfBeforePublishEventInterceptor() <= interceptor.orderOfBeforePublishEventInterceptor()) {
@@ -1051,7 +1066,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     }
 
     private void populateExtension() {
-        services = pluginRgty.getExtensionList(Service.class);
+        services.addAll(pluginRgty.getExtensionList(Service.class));
         services.forEach(serv->{
             assert serv.getId() != null : String.format("service id can not be null[%s]", serv.getClass().getName());
             registerService(serv);
@@ -1069,11 +1084,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                             clz.getName(), extp.getClass().getName()));
                 }
 
-                List<ReplyMessagePreSendingExtensionPoint> exts = replyMessageMarshaller.get(clz);
-                if (exts == null) {
-                    exts = new ArrayList<>();
-                    replyMessageMarshaller.put(clz, exts);
-                }
+                List<ReplyMessagePreSendingExtensionPoint> exts = replyMessageMarshaller.computeIfAbsent(clz, k -> new ArrayList<>());
                 exts.add(extp);
             }
         }
@@ -1164,8 +1175,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
 
         raw = (Map) raw.values().iterator().next();
-        List<String> paths = new ArrayList<>();
-        paths.addAll(schema.keySet());
+        List<String> paths = new ArrayList<>(schema.keySet());
 
         for (String p : paths) {
             Object dst = getProperty(msg, p);
