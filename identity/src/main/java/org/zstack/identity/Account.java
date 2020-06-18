@@ -90,7 +90,7 @@ public interface Account {
 
                 for (Tuple t : ts) {
                     String rtype = t.get(0, String.class);
-                    long quota = Long.valueOf(t.get(1, String.class));
+                    long quota = Long.parseLong(t.get(1, String.class));
 
                     if (builder.quota != null && builder.quota.containsKey(rtype)) {
                         quota = builder.quota.get(rtype);

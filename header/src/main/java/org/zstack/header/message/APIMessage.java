@@ -293,7 +293,7 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
                 DebugUtils.Assert(at.numberRange().length == 2, String.format("invalid field[%s], APIParam.numberRange must have and only have 2 items", f.getName()));
                 long low = at.numberRange()[0];
                 long high = at.numberRange()[1];
-                long val = Long.valueOf(((Number) value).longValue());
+                long val = ((Number) value).longValue();
                 if (val < low || val > high) {
                     if (at.numberRangeUnit().length > 0) {
                         DebugUtils.Assert(at.numberRangeUnit().length == 2, String.format("invalid field[%s], APIParam.numberRangeUnit must have and only have 2 items", f.getName()));

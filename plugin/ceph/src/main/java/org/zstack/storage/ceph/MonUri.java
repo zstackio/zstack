@@ -2,22 +2,15 @@ package org.zstack.storage.ceph;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.zstack.core.Platform;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.keyvalue.Op;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
-
-import static org.zstack.core.Platform.argerr;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -101,7 +94,7 @@ public class MonUri {
                 ));
             }
             String v = getQueryValue(uri, CephConstants.MON_PARAM_MON_PORT);
-            monPort = v == null ? monPort : Integer.valueOf(v);
+            monPort = v == null ? monPort : Integer.parseInt(v);
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(e);
         }

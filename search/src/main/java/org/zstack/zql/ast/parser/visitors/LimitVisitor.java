@@ -8,7 +8,7 @@ public class LimitVisitor extends ZQLBaseVisitor<ASTNode.Limit> {
     @Override
     public ASTNode.Limit visitLimit(ZQLParser.LimitContext ctx) {
         ASTNode.Limit l = new ASTNode.Limit();
-        l.setLimit(Long.valueOf(ctx.INT().getText()).intValue());
+        l.setLimit(Integer.parseInt(ctx.INT().getText()));
         return l;
     }
 }

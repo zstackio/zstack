@@ -54,44 +54,44 @@ public class TimeUtils {
 
     public static long parseTimeInMillis(String time) {
         try {
-            return Long.valueOf(time);
+            return Long.parseLong(time);
         } catch (NumberFormatException e) {
             if (time.endsWith("s")) {
                 time = StringDSL.stripEnd(time, "s");
-                return TimeUnit.SECONDS.toMillis(Long.valueOf(time));
+                return TimeUnit.SECONDS.toMillis(Long.parseLong(time));
             } else if (time.endsWith("S")) {
                 time = StringDSL.stripEnd(time, "S");
-                return TimeUnit.SECONDS.toMillis(Long.valueOf(time));
+                return TimeUnit.SECONDS.toMillis(Long.parseLong(time));
             } else if (time.endsWith("m")) {
                 time = StringDSL.stripEnd(time, "m");
-                return TimeUnit.MINUTES.toMillis(Long.valueOf(time));
+                return TimeUnit.MINUTES.toMillis(Long.parseLong(time));
             } else if (time.endsWith("M")) {
                 time = StringDSL.stripEnd(time, "M");
-                return TimeUnit.MINUTES.toMillis(Long.valueOf(time));
+                return TimeUnit.MINUTES.toMillis(Long.parseLong(time));
             } else if (time.endsWith("h")) {
                 time = StringDSL.stripEnd(time, "h");
-                return TimeUnit.HOURS.toMillis(Long.valueOf(time));
+                return TimeUnit.HOURS.toMillis(Long.parseLong(time));
             } else if (time.endsWith("H")) {
                 time = StringDSL.stripEnd(time, "H");
-                return TimeUnit.HOURS.toMillis(Long.valueOf(time));
+                return TimeUnit.HOURS.toMillis(Long.parseLong(time));
             } else if (time.endsWith("d")) {
                 time = StringDSL.stripEnd(time, "d");
-                return TimeUnit.DAYS.toMillis(Long.valueOf(time));
+                return TimeUnit.DAYS.toMillis(Long.parseLong(time));
             } else if (time.endsWith("D")) {
                 time = StringDSL.stripEnd(time, "D");
-                return TimeUnit.DAYS.toMillis(Long.valueOf(time));
+                return TimeUnit.DAYS.toMillis(Long.parseLong(time));
             } else if (time.endsWith("w")) {
                 time = StringDSL.stripEnd(time, "w");
-                return TimeUnit.DAYS.toMillis(Long.valueOf(time) * 7);
+                return TimeUnit.DAYS.toMillis(Long.parseLong(time) * 7);
             } else if (time.endsWith("W")) {
                 time = StringDSL.stripEnd(time, "W");
-                return TimeUnit.DAYS.toMillis(Long.valueOf(time) * 7);
+                return TimeUnit.DAYS.toMillis(Long.parseLong(time) * 7);
             } else if (time.endsWith("y")) {
                 time = StringDSL.stripEnd(time, "y");
-                return TimeUnit.DAYS.toMillis(Long.valueOf(time) * 365);
+                return TimeUnit.DAYS.toMillis(Long.parseLong(time) * 365);
             } else if (time.endsWith("Y")) {
                 time = StringDSL.stripEnd(time, "Y");
-                return TimeUnit.DAYS.toMillis(Long.valueOf(time) * 365);
+                return TimeUnit.DAYS.toMillis(Long.parseLong(time) * 365);
             } else {
                 throw new NumberFormatException();
             }
@@ -105,7 +105,7 @@ public class TimeUtils {
         if (time.equals(TimeUtils.TIME_UNIT_MONTHS)) {
             return TimeUnit.DAYS.toSeconds(30);
         }
-        return TimeUnit.valueOf(time).toSeconds((long) 1);
+        return TimeUnit.valueOf(time).toSeconds(1);
     }
 
     public static long parseTimeToMillis(String time){
@@ -115,10 +115,10 @@ public class TimeUtils {
         if (time.equals(TimeUtils.TIME_UNIT_MONTHS)) {
             return TimeUnit.DAYS.toMillis(30);
         }
-        return TimeUnit.valueOf(time).toMillis((long) 1);
+        return TimeUnit.valueOf(time).toMillis(1);
     }
 
-    private static DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public static boolean isValidTimestampFormat(String timestamp) {
         try {
             df.parse(timestamp);

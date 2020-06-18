@@ -131,10 +131,10 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {
-        boolean isReconnect = Boolean.valueOf((String) data.get(Params.isReconnect.toString()));
+        boolean isReconnect = Boolean.parseBoolean((String) data.get(Params.isReconnect.toString()));
         final String apvmUuid;
 
-        String mgmtNicIp;
+        String mgmtNicIp = null;
         if (!isReconnect) {
             VmNicInventory mgmtNic;
             final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
@@ -153,7 +153,9 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
                 mgmtNic = ainv.getManagementNic();
                 apvmUuid = avo.getUuid();
             }
-            mgmtNicIp = mgmtNic.getIp();
+            if (mgmtNic != null) {
+                mgmtNicIp = mgmtNic.getIp();
+            }
         } else {
             mgmtNicIp = (String) data.get(Params.managementNicIp.toString());
             apvmUuid = (String) data.get(Params.applianceVmUuid.toString());

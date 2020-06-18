@@ -12,7 +12,7 @@ import java.util.List;
  * Created by xing5 on 2016/7/8.
  */
 public class ProcessFinder {
-    class Proc {
+    static class Proc {
         File procFolder;
         int pid;
     }
@@ -20,15 +20,19 @@ public class ProcessFinder {
     private List<Proc> getAllProcessFolders() {
         List<Proc> procs = new ArrayList<>();
 
-        File proc = new File("/proc/");
-        for (File f : proc.listFiles()) {
+        File[] files = new File("/proc/").listFiles();
+        if (files == null) {
+            return procs;
+        }
+
+        for (File f : files) {
             if (!f.isDirectory()) {
                 continue;
             }
 
             try {
                 Proc p = new Proc();
-                p.pid = Integer.valueOf(f.getName());
+                p.pid = Integer.parseInt(f.getName());
                 p.procFolder = f;
                 procs.add(p);
             } catch (NumberFormatException e) {

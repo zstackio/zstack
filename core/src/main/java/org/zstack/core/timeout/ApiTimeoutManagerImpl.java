@@ -6,21 +6,15 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.*;
 import org.zstack.core.db.Q;
-import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.thread.TimerTask;
 import org.zstack.header.Component;
-import org.zstack.header.core.StaticInit;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.*;
-import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
-import java.text.DecimalFormat;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -152,7 +146,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
         }
 
         if (TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_TIMEOUT)) {
-            return Long.valueOf((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_TIMEOUT));
+            return Long.parseLong((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_TIMEOUT));
         }
 
         // this is an internal message
@@ -293,7 +287,7 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
     @Override
     public Long getTimeout() {
         if (TaskContext.containsTaskContext(TASK_CONTEXT_MESSAGE_DEADLINE)) {
-            long deadline = Long.valueOf((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_DEADLINE));
+            long deadline = Long.parseLong((String) TaskContext.getTaskContext().get(TASK_CONTEXT_MESSAGE_DEADLINE));
             if (deadline < timer.getCurrentTimeMillis()) {
                 TaskContext.getTaskContext().put(TASK_CONTEXT_MESSAGE_DEADLINE, String.valueOf(deadline + parseTimeout(ApiTimeoutGlobalProperty.INTERNAL_MESSAGE_TIMEOUT)));
                 TaskContext.getTaskContext().put(TASK_CONTEXT_MESSAGE_TIMEOUT, String.valueOf(parseTimeout(ApiTimeoutGlobalProperty.INTERNAL_MESSAGE_TIMEOUT)));

@@ -24,7 +24,6 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.AddressPoolVO;
-import org.zstack.header.network.l3.IpRangeVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO;
@@ -43,7 +42,6 @@ import org.zstack.utils.logging.CLoggerImpl;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
-import sun.nio.ch.Net;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -566,7 +564,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 if (LoadBalancerSystemTags.MAX_CONNECTION.isMatch(tag)) {
                     String s = LoadBalancerSystemTags.MAX_CONNECTION.getTokenByTag(tag,
                             LoadBalancerSystemTags.MAX_CONNECTION_TOKEN);
-                    if (Long.valueOf(s) > LoadBalancerConstants.MAX_CONNECTION_LIMIT) {
+                    if (Long.parseLong(s) > LoadBalancerConstants.MAX_CONNECTION_LIMIT) {
                         throw new OperationFailureException(argerr("invalid max connection[%s], %s is larger than upper threshold %d", tag, s, LoadBalancerConstants.MAX_CONNECTION_LIMIT));
                     }
                 }
@@ -661,7 +659,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (target != null) {
             if (!LoadBalancerConstants.HEALTH_CHECK_TARGET_DEFAULT.equals(target)) {
                 try {
-                    int port = Integer.valueOf(target);
+                    int port = Integer.parseInt(target);
                     if (port < 1 || port > 65535) {
                         throw new ApiMessageInterceptionException(argerr("healthCheck target [%s] error, it must be 'default' or number between[1~65535] ",
                                 target));

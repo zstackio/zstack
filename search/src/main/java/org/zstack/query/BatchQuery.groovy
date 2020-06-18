@@ -342,10 +342,10 @@ class BatchQuery {
                     msg["sortDirection"] = value
                 } else if (word.startsWith("count=")) {
                     def value = lstrip(word, "count=")
-                    count = Boolean.valueOf(value)
+                    count = Boolean.parseBoolean(value)
                 } else if (word.startsWith("replyWithCount=")) {
                     def value = lstrip(word, "replyWithCount=")
-                    replyWithCount = Boolean.valueOf(value)
+                    replyWithCount = Boolean.parseBoolean(value)
                 } else {
                     String OP = null
                     String delimiter = null

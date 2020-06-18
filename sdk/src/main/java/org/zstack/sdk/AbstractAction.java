@@ -206,7 +206,7 @@ public abstract class AbstractAction {
                         && (value instanceof Long || long.class.isAssignableFrom(value.getClass()) || value instanceof Integer || int.class.isAssignableFrom(value.getClass()))) {
                     long low = at.numberRange()[0];
                     long high = at.numberRange()[1];
-                    long val = Long.valueOf(((Number) value).longValue());
+                    long val = ((Number) value).longValue();
                     if (val < low || val > high) {
                         if (at.numberRangeUnit().length > 0) {
                             String lowUnit = at.numberRangeUnit()[0];
@@ -222,7 +222,7 @@ public abstract class AbstractAction {
 
             /* if SuppressCredentialCheck is not set, sessionId or accessKey must be provided */
             if (!isSuppressCredentialCheck && !sessionIdFound && !(accessKeyIdFound && accessKeySecretFound)) {
-                throw new ApiException(String.format("sessionId or accessKey must be provided"));
+                throw new ApiException("sessionId or accessKey must be provided");
             }
         } catch (ApiException e) {
             throw e;

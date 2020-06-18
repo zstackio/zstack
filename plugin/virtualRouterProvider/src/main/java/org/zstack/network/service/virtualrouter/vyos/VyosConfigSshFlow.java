@@ -8,7 +8,6 @@ import org.zstack.appliancevm.ApplianceVmConstant.Params;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -46,8 +45,6 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
     private DatabaseFacade dbf;
     @Autowired
     private ThreadFacade thdf;
-    @Autowired
-    private ErrorFacade errf;
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -56,7 +53,7 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
             return;
         }
 
-        boolean isReconnect = Boolean.valueOf((String) data.get(Params.isReconnect.toString()));
+        boolean isReconnect = Boolean.parseBoolean((String) data.get(Params.isReconnect.toString()));
 
         String mgmtNicIp;
         if (!isReconnect) {

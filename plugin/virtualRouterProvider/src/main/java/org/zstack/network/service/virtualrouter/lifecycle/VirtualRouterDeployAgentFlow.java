@@ -190,7 +190,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
             DebugUtils.Assert(mgmtNic!=null, String.format("cannot find management nic for virtual router[uuid:%s, name:%s]", spec.getVmInventory().getUuid(), spec.getVmInventory().getName()));
         }
 
-        boolean isReconnect = Boolean.valueOf((String) data.get(Param.IS_RECONNECT.toString()));
+        boolean isReconnect = Boolean.parseBoolean((String) data.get(Param.IS_RECONNECT.toString()));
 
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             continueConnect(mgmtNic, data, chain);

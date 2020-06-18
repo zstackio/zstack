@@ -4,7 +4,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.LocaleUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.net.util.SubnetUtils;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.MessageSource;
@@ -215,7 +214,7 @@ public class Platform {
         for (String key : orderedKeys) {
             String index = StringDSL.stripStart(key, name).trim();
             try {
-                Long.valueOf(index);
+                Long.parseLong(index);
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException(String.format("[Illegal List Definition] %s is an invalid list key" +
                         " definition, the last character must be a number, for example %s1. %s is not a number", key, key, index));
@@ -267,7 +266,7 @@ public class Platform {
         if (pidFile.exists()) {
             String pidStr = FileUtils.readFileToString(pidFile);
             try {
-                long pid = Long.valueOf(pidStr);
+                long pid = Long.parseLong(pidStr);
                 String processProcDir = String.format("/proc/%s", pid);
                 File processProcDirFile = new File(processProcDir);
                 if (processProcDirFile.exists()) {
@@ -869,7 +868,7 @@ public class Platform {
                     ErrorCodeElaboration ela = elaborate(errCode, result.getDescription(), fmt, args);
                     if (ela != null) {
                         long end = System.currentTimeMillis();
-                        result.setCost(String.valueOf(end-start) + "ms");
+                        result.setCost((end - start) + "ms");
                         result.setElaboration(StringSimilarity.formatElaboration(ela, args));
                         result.setMessages(new ErrorCodeElaboration(ela.getCode(), ela.getMessage_en(), ela.getMessage_cn(),
                                 ela.getDistance(), ela.getMethod(), args));
@@ -886,9 +885,9 @@ public class Platform {
     }
 
     private static String addTwoCosts(String origin, String increase) {
-        Long c1 = Long.valueOf(origin.substring(0, origin.length() - 2).trim());
-        Long c2 = Long.valueOf(increase.substring(0, increase.length() - 2).trim());
-        return String.valueOf(c1 + c2) + "ms";
+        long c1 = Long.parseLong(origin.substring(0, origin.length() - 2).trim());
+        long c2 = Long.parseLong(increase.substring(0, increase.length() - 2).trim());
+        return (c1 + c2) + "ms";
     }
 
     private static ErrorCode getCoreError(ErrorCode result) {

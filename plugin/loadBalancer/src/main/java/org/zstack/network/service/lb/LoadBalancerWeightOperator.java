@@ -32,7 +32,7 @@ public class LoadBalancerWeightOperator {
     @Autowired
     private TagManager tagMgr;
 
-    public Long getWeight(String listenerUuid, String nicUuid) {
+    public long getWeight(String listenerUuid, String nicUuid) {
         DebugUtils.Assert(listenerUuid != null && nicUuid != null, String.format("invalid parameter listener uuid:%s nicUuid:%s", listenerUuid, nicUuid));
         List<Map<String, String>> tokens = LoadBalancerSystemTags.BALANCER_WEIGHT.getTokensOfTagsByResourceUuid(listenerUuid);
 
@@ -41,7 +41,7 @@ public class LoadBalancerWeightOperator {
                 continue;
             }
             String weight = token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN);
-            return Long.valueOf(weight);
+            return Long.parseLong(weight);
         }
         return LoadBalancerConstants.BALANCER_WEIGHT_default;
     }

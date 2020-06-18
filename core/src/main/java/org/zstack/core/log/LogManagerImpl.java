@@ -26,7 +26,7 @@ public class LogManagerImpl implements Component, ManagementNodeReadyExtensionPo
         LogGlobalConfig.LOG_DELETE_LAST_MODIFIED.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
             @Override
             public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
-                long valueLong = Long.valueOf(value);
+                long valueLong = Long.parseLong(value);
                 if (valueLong == 0) {
                     throw new GlobalConfigException("the value cant not be 0");
                 }
@@ -44,7 +44,7 @@ public class LogManagerImpl implements Component, ManagementNodeReadyExtensionPo
         LogGlobalConfig.LOG_DELETE_ACCUMULATED_FILE_SIZE.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
             @Override
             public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
-                long valueLong = Long.valueOf(value);
+                long valueLong = Long.parseLong(value);
                 if (valueLong == 0) {
                     throw new GlobalConfigException("the value cant not be 0");
                 }

@@ -174,7 +174,7 @@ public class EncryptFacadeImpl implements EncryptFacade, Component {
                 // e.g. use javax.persistence.Query set password to update encrypt password
                 // when PasswordConverter check this value is true the password will be encrypt
                 // again before persist, so this beforeUpdateExtension is necessary
-                if (Boolean.valueOf(newValue)) {
+                if (Boolean.parseBoolean(newValue)) {
                     encryptAllPassword();
                 }
             }

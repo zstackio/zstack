@@ -200,7 +200,7 @@ public class Form<T> {
     private void produceDefaultColumnConsumer(){
         List<String> cols = Arrays.asList(columns);
         for (Field field : FieldUtils.getAllFields(clz)) {
-            if (columnConsumer.keySet().contains(field.getName()) || !cols.contains(field.getName())) {
+            if (columnConsumer.containsKey(field.getName()) || !cols.contains(field.getName())) {
                 continue;
             }
             Consumer<T> setter = getDefaultSetter(field);

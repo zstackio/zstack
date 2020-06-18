@@ -79,7 +79,7 @@ public class RestServer implements Component, CloudBusEventListener {
     private List<RestAPIExtensionPoint> extensions = new ArrayList<>();
 
     private static final OkHttpClient http;
-    private MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
     @Autowired
     private CloudBus bus;
@@ -517,7 +517,7 @@ public class RestServer implements Component, CloudBusEventListener {
     }
 
     private String getMatchPath(String path) {
-        if (apis.keySet().contains(path)) {
+        if (apis.containsKey(path)) {
             return path;
         }
 
@@ -780,7 +780,7 @@ public class RestServer implements Component, CloudBusEventListener {
                 String str = auth.replaceFirst(RestConstants.HEADER_ACCESSKEY, "").trim();
                 String[] res = str.split(":");
                 if (res.length != 2) {
-                    throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("accessKey format is 'ZStack AccessKeyId:Signature'"));
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(), "accessKey format is 'ZStack AccessKeyId:Signature'");
                 }
                 params.authKey = str;
                 params.method = req.getMethod();
@@ -867,7 +867,7 @@ public class RestServer implements Component, CloudBusEventListener {
 
         if (requestInfo.get().headers.containsKey(RestConstants.HEADER_API_TIMEOUT)) {
             String apiTimeout = requestInfo.get().headers.get(RestConstants.HEADER_API_TIMEOUT).get(0);
-            msg.setTimeout(TimeUnit.SECONDS.toMillis(Long.valueOf(apiTimeout)));
+            msg.setTimeout(TimeUnit.SECONDS.toMillis(Long.parseLong(apiTimeout)));
         }
 
         if (session != null) {
@@ -904,7 +904,7 @@ public class RestServer implements Component, CloudBusEventListener {
 
     private void checkTime(String dateStr, boolean checkTimeZone) throws RestException {
         if (dateStr == null) {
-            throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("'Date' must be incuded in request header"));
+            throw new RestException(HttpStatus.BAD_REQUEST.value(), "'Date' must be incuded in request header");
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z");
@@ -912,12 +912,12 @@ public class RestServer implements Component, CloudBusEventListener {
         try {
             date = ZonedDateTime.parse(dateStr, formatter);
         } catch (RuntimeException e) {
-            throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("'Date' format error, correct format is 'EEE, dd MMM yyyy HH:mm:ss '"));
+            throw new RestException(HttpStatus.BAD_REQUEST.value(), "'Date' format error, correct format is 'EEE, dd MMM yyyy HH:mm:ss '");
         }
 
         ZonedDateTime now = ZonedDateTime.now();
         if (!checkTimeSkewing(date, now, checkTimeZone)) {
-            throw new RestException(HttpStatus.FORBIDDEN.value(), String.format("requestTimeTooSkewed"));
+            throw new RestException(HttpStatus.FORBIDDEN.value(), "requestTimeTooSkewed");
         }
     }
 
@@ -996,13 +996,13 @@ public class RestServer implements Component, CloudBusEventListener {
                     throw new RestException(HttpStatus.BAD_REQUEST.value(), "Invalid query parameter. 'start' must be an integer");
                 }
             } else if ("count".equals(varname)) {
-                msg.setCount(Boolean.valueOf(varvalue));
+                msg.setCount(Boolean.parseBoolean(varvalue));
             } else if ("groupBy".equals(varname)) {
                 msg.setGroupBy(varvalue);
             } else if ("replyWithCount".equals(varname)) {
-                msg.setReplyWithCount(Boolean.valueOf(varvalue));
+                msg.setReplyWithCount(Boolean.parseBoolean(varvalue));
             } else if ("filterName".equals(varname)) {
-                msg.setFilterName(String.valueOf(varvalue));
+                msg.setFilterName(varvalue);
             } else if ("sort".equals(varname)) {
                 if (varvalue.startsWith("+")) {
                     msg.setSortDirection("asc");
@@ -1063,8 +1063,8 @@ public class RestServer implements Component, CloudBusEventListener {
                 }
 
                 if (fs.isEmpty()) {
-                    throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format("Invalid query parameter. 'fields'" +
-                            " contains zero field"));
+                    throw new RestException(HttpStatus.BAD_REQUEST.value(), "Invalid query parameter. 'fields'" +
+                            " contains zero field");
                 }
                 msg.setFields(fs);
             }
@@ -1169,9 +1169,7 @@ public class RestServer implements Component, CloudBusEventListener {
             restAuthBackends.put(bkd.getAuthenticationType(), bkd);
         }
 
-        for (RestAPIExtensionPoint ext : pluginRgty.getExtensionList(RestAPIExtensionPoint.class)) {
-            extensions.add(ext);
-        }
+        extensions.addAll(pluginRgty.getExtensionList(RestAPIExtensionPoint.class));
     }
 
     private String substituteUrl(String url, Map<String, String> tokens) {

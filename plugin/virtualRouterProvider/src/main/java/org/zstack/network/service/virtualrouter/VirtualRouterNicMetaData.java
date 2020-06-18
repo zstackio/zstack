@@ -54,7 +54,7 @@ public class VirtualRouterNicMetaData {
             return false;
         }
 
-        int mask = Integer.valueOf(meta);
+        int mask = Integer.parseInt(meta);
         return (mask & PUBLIC_NIC_MASK) != 0;
     }
 
@@ -64,7 +64,7 @@ public class VirtualRouterNicMetaData {
             return false;
         }
 
-        int mask = Integer.valueOf(meta);
+        int mask = Integer.parseInt(meta);
         return (mask & MANAGEMENT_NIC_MASK) != 0;
     }
 
@@ -74,7 +74,7 @@ public class VirtualRouterNicMetaData {
             return false;
         }
 
-        int mask = Integer.valueOf(meta);
+        int mask = Integer.parseInt(meta);
         return (mask & GUEST_NIC_MASK) != 0;
     }
 
@@ -84,7 +84,7 @@ public class VirtualRouterNicMetaData {
             return false;
         }
 
-        int mask = Integer.valueOf(meta);
+        int mask = Integer.parseInt(meta);
         return (mask & PUBLIC_NIC_MASK) != 0;
     }
 
@@ -94,7 +94,7 @@ public class VirtualRouterNicMetaData {
             return false;
         }
 
-        int mask = Integer.valueOf(meta);
+        int mask = Integer.parseInt(meta);
         return (mask & ADDITIONAL_PUBLIC_NIC_MASK) != 0;
     }
 
@@ -104,7 +104,7 @@ public class VirtualRouterNicMetaData {
             return false;
         }
 
-        int mask = Integer.valueOf(meta);
+        int mask = Integer.parseInt(meta);
         return (mask & ADDITIONAL_PUBLIC_NIC_MASK) != 0;
     }
 
@@ -114,7 +114,7 @@ public class VirtualRouterNicMetaData {
             return false;
         }
 
-        int mask = Integer.valueOf(meta);
+        int mask = Integer.parseInt(meta);
         return (mask & MANAGEMENT_NIC_MASK) != 0;
     }
 
@@ -124,7 +124,7 @@ public class VirtualRouterNicMetaData {
             return false;
         }
 
-        int mask = Integer.valueOf(meta);
+        int mask = Integer.parseInt(meta);
         return (mask & GUEST_NIC_MASK) != 0;
     }
 
@@ -134,7 +134,7 @@ public class VirtualRouterNicMetaData {
             return;
         }
 
-        int mask = Integer.valueOf(meta) & ~PUBLIC_NIC_MASK;
+        int mask = Integer.parseInt(meta) & ~PUBLIC_NIC_MASK;
         nic.setMetaData(String.valueOf(mask));
     }
 
@@ -144,7 +144,7 @@ public class VirtualRouterNicMetaData {
             return;
         }
 
-        int mask = Integer.valueOf(meta) | PUBLIC_NIC_MASK;
+        int mask = Integer.parseInt(meta) | PUBLIC_NIC_MASK;
         nic.setMetaData(String.valueOf(mask));
     }
 
@@ -154,7 +154,7 @@ public class VirtualRouterNicMetaData {
             return;
         }
 
-        int mask = Integer.valueOf(meta) & ~ADDITIONAL_PUBLIC_NIC_MASK;
+        int mask = Integer.parseInt(meta) & ~ADDITIONAL_PUBLIC_NIC_MASK;
         nic.setMetaData(String.valueOf(mask));
     }
 
@@ -164,7 +164,7 @@ public class VirtualRouterNicMetaData {
             return;
         }
 
-        int mask = Integer.valueOf(meta) | ADDITIONAL_PUBLIC_NIC_MASK;
+        int mask = Integer.parseInt(meta) | ADDITIONAL_PUBLIC_NIC_MASK;
         nic.setMetaData(String.valueOf(mask));
     }
 }

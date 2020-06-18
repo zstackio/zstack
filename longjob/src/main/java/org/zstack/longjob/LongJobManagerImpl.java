@@ -10,7 +10,10 @@ import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
-import org.zstack.core.db.*;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.EntityEvent;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.progress.ProgressReportService;
@@ -48,7 +51,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static org.zstack.core.db.DBSourceUtils.isDBConnected;
 import static org.zstack.core.db.DBSourceUtils.waitDBConnected;
@@ -592,7 +594,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         LongJobGlobalConfig.LONG_JOB_DEFAULT_TIMEOUT.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
             @Override
             public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
-                Long v = Long.valueOf(newValue);
+                long v = Long.parseLong(newValue);
                 if (v < 10800) {
                     throw new GlobalConfigException("long job timeout must be larger than 10800s");
                 }

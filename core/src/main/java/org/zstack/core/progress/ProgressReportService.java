@@ -391,7 +391,7 @@ public class ProgressReportService extends AbstractService implements Management
             return;
         }
 
-        int percent = Integer.valueOf(fmt);
+        int percent = Integer.parseInt(fmt);
         if (pstage.isOver(percent)) {
             parallelTaskStage.remove(apiId);
             vo.setContent(fmt);

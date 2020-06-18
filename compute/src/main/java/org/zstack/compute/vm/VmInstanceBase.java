@@ -3917,7 +3917,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
                 String releaseNicFlag = msg.getSystemTags() == null ? null : SystemTagUtils.findTagValue(msg.getSystemTags(), VmSystemTags.RELEASE_NIC_AFTER_DETACH_NIC, VmSystemTags.RELEASE_NIC_AFTER_DETACH_NIC_TOKEN);
-                boolean releaseNic = releaseNicFlag == null ? true : Boolean.valueOf(releaseNicFlag);
+                boolean releaseNic = releaseNicFlag == null || Boolean.parseBoolean(releaseNicFlag);
 
                 doDetachNic(VmNicInventory.valueOf(vmNicVO), releaseNic, false, new Completion(chain) {
                     @Override

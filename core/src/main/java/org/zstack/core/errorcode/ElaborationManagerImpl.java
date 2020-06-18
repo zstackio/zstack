@@ -320,7 +320,7 @@ public class ElaborationManagerImpl extends AbstractService {
             } else if (NumberUtils.isNumber(from)) {
                 try {
                     return Q.New(ElaborationVO.class).eq(ElaborationVO_.matched, false).gte(ElaborationVO_.repeats, times).
-                            gte(ElaborationVO_.lastOpDate, new Timestamp(Long.valueOf(from))).list();
+                            gte(ElaborationVO_.lastOpDate, new Timestamp(Long.parseLong(from))).list();
                 } catch (NumberFormatException e) {
                     throw new OperationFailureException(argerr("%s is not a Long value Number", from));
                 }

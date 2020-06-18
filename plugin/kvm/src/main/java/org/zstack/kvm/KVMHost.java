@@ -2130,7 +2130,7 @@ public class KVMHost extends HostBase implements Host {
         }
 
         String tagValue = VmSystemTags.CLEAN_TRAFFIC.getTokenByResourceUuid(nic.getVmInstanceUuid(), VmSystemTags.CLEAN_TRAFFIC_TOKEN);
-        if (Boolean.valueOf(tagValue) || (tagValue == null && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class))) {
+        if (Boolean.parseBoolean(tagValue) || (tagValue == null && VmGlobalConfig.VM_CLEAN_TRAFFIC.value(Boolean.class))) {
             return VmNicHelper.getIpAddresses(nic);
         }
 

@@ -21,7 +21,6 @@ import org.zstack.header.APIIsOpensourceVersionReply;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
-import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -594,7 +593,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
 
                 for (Tuple t : ts) {
                     String rtype = t.get(0, String.class);
-                    long quota = Long.valueOf(t.get(1, String.class));
+                    long quota = Long.parseLong(t.get(1, String.class));
 
                     QuotaVO qvo = new QuotaVO();
                     qvo.setUuid(Platform.getUuid());
