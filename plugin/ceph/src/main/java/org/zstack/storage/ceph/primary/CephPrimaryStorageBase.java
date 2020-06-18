@@ -3656,7 +3656,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             @Override
             public void success(AgentResponse returnValue) {
                 if (returnValue.isSuccess()) {
-                    logger.info(String.format("successfully cancle downloaded bits to primary storage %s", msg.getPrimaryStorageUuid()));
+                    logger.info(String.format("successfully cancel downloaded bits to primary storage %s", msg.getPrimaryStorageUuid()));
                 } else {
                     logger.error(String.format("failed to cancel download bits to primary storage %s",msg.getPrimaryStorageUuid()));
                     reply.setError(Platform.operr("operation error, because:%s", returnValue.getError()));

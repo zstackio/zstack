@@ -641,7 +641,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             return task.getInterval();
         }
 
-        public void cancle() {
+        public void cancel() {
             runnable.cancel(true);
         }
     }
@@ -721,7 +721,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
 
         if (primaryStorageUuid == null) {
             if (globalTrashTask != null) {
-                globalTrashTask.cancle();
+                globalTrashTask.cancel();
             }
             globalTrashTask = new AutoDeleteTrashTask(getTrashPeriodicTask(null, period));
             logger.debug(String.format("submit new globalTrashTask, period: %d", period));
@@ -729,8 +729,8 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             synchronized (autoDeleteTrashTask) {
                 if(autoDeleteTrashTask.containsKey(primaryStorageUuid)) {
                     if (autoDeleteTrashTask.get(primaryStorageUuid).getPeriod() != period) {
-                        autoDeleteTrashTask.get(primaryStorageUuid).cancle();
-                        logger.debug(String.format("cancle trash task for %s, period: %d", primaryStorageUuid, autoDeleteTrashTask.get(primaryStorageUuid).getPeriod()));
+                        autoDeleteTrashTask.get(primaryStorageUuid).cancel();
+                        logger.debug(String.format("cancel trash task for %s, period: %d", primaryStorageUuid, autoDeleteTrashTask.get(primaryStorageUuid).getPeriod()));
                     } else {
                         return;
                     }
