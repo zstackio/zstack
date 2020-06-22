@@ -19,6 +19,7 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RESTFacade;
@@ -78,18 +79,23 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                     return;
                 }
 
-                if (msg instanceof VmInstanceMessage) {
-                    final String vmUuid = ((VmInstanceMessage) msg).getVmInstanceUuid();
-                    VmTracerCanonicalEvents.VmSkipTraceData data = new VmTracerCanonicalEvents.VmSkipTraceData();
-                    data.setMsgName(msg.getMessageName());
-                    data.setVmUuid(vmUuid);
-                    if (msg instanceof APIMessage) {
-                        final String apiId = msg.getId();
-                        data.setApiId(apiId);
-                    }
+                final String vmUuid;
 
-                    evtf.fire(VmTracerCanonicalEvents.VM_SKIP_TRACE_PATH, data);
+                if (msg instanceof VmInstanceMessage) {
+                    vmUuid = ((VmInstanceMessage) msg).getVmInstanceUuid();
+                } else {
+                    throw new OperationFailureException(operr("cannot get vmUuid from msg %s", msg.getMessageName()));
                 }
+
+                VmTracerCanonicalEvents.VmSkipTraceData data = new VmTracerCanonicalEvents.VmSkipTraceData();
+                data.setMsgName(msg.getMessageName());
+                data.setVmUuid(vmUuid);
+                if (msg instanceof APIMessage) {
+                    final String apiId = msg.getId();
+                    data.setApiId(apiId);
+                }
+
+                evtf.fire(VmTracerCanonicalEvents.VM_SKIP_TRACE_PATH, data);
             }
         }, skipVmTracerMessages);
 
@@ -119,14 +125,15 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
             protected void run(Map tokens, Object data) {
                 VmTracerCanonicalEvents.VmContinueTraceData data1
                         = (VmTracerCanonicalEvents.VmContinueTraceData) data;
-                if (data1.getApiId() != null) {
+                if (data1.getApiId() != null && vmApis.containsKey(data1.getApiId())) {
                     String vmUuid = vmApis.remove(data1.getApiId());
-                    logger.info("Continuing tracing VM: " + data1.getVmUuid());
+                    logger.info("Continuing tracing VM: " + vmUuid);
                     vmsToSkip.remove(vmUuid);
                     return;
                 }
 
                 if (data1.getVmUuid() != null) {
+                    logger.info("Continuing tracing VM: " + data1.getVmUuid());
                     vmsToSkip.remove(data1.getVmUuid());
                 }
             }
@@ -154,7 +161,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
             vmUuid = vmApis.get(apiId);
         }
 
-        if (apiId != null || vmUuid != null) {
+        if (vmUuid != null) {
             VmTracerCanonicalEvents.VmContinueTraceData data = new VmTracerCanonicalEvents.VmContinueTraceData();
             data.setApiId(apiId);
             data.setVmUuid(vmUuid);
