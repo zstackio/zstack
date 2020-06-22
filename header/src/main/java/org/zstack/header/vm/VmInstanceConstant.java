@@ -58,7 +58,8 @@ public interface VmInstanceConstant {
         ChangePassword,
         SetBootMode,
         Update,
-        SetConsolePassword
+        SetConsolePassword,
+        SetVmQga
     }
 
     String USER_VM_REGEX_PASSWORD = "[\\da-zA-Z-`=\\\\\\[\\];',./~!@#$%^&*()_+|{}:\"<>?]{1,}";
