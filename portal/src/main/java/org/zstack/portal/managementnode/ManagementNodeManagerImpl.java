@@ -813,15 +813,13 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                         return;
                     }
 
-                    if (!destinationMaker.getManagementNodesInHashRing().contains(n.getUuid())) {
-                        new Runnable() {
-                            @Override
-                            @AsyncThread
-                            public void run() {
-                                nodeLifeCycle.nodeJoin(ManagementNodeInventory.valueOf(n));
-                            }
-                        }.run();
-                    }
+                    new Runnable() {
+                        @Override
+                        @AsyncThread
+                        public void run() {
+                            nodeLifeCycle.nodeJoin(ManagementNodeInventory.valueOf(n));
+                        }
+                    }.run();
                 });
             }
 
