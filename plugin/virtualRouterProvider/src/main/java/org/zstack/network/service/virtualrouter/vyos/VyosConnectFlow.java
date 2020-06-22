@@ -68,6 +68,11 @@ public class VyosConnectFlow extends NoRollbackFlow {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        try {
+                            TimeUnit.SECONDS.sleep(3);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                         String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_ECHO_PATH);
                         restf.echo(url, new Completion(trigger) {
                             @Override
