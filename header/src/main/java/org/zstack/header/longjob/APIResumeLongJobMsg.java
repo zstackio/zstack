@@ -12,7 +12,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.PUT,
         responseClass = APIResumeLongJobEvent.class
 )
-public class APIResumeLongJobMsg extends APIMessage {
+public class APIResumeLongJobMsg extends APIMessage implements LongJobMessage {
     @APIParam(resourceType = LongJobVO.class, checkAccount = true)
     private String uuid;
 
@@ -28,5 +28,10 @@ public class APIResumeLongJobMsg extends APIMessage {
         APIResumeLongJobMsg msg = new APIResumeLongJobMsg();
         msg.setUuid(uuid());
         return msg;
+    }
+
+    @Override
+    public String getLongJobUuid() {
+        return uuid;
     }
 }

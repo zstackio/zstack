@@ -1,8 +1,9 @@
 package org.zstack.longjob;
 
+import com.google.common.collect.Interner;
+import com.google.common.collect.Interners;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
@@ -31,8 +32,7 @@ public class LongJobUtils {
 
     public static String succeeded = "Succeeded";
 
-    @Autowired
-    private ProgressReportService progRpt;
+    private static Interner<String> jobUuids = Interners.newWeakInterner();
 
     private static List<LongJobState> completedStates = Arrays.asList(LongJobState.Failed, LongJobState.Succeeded, LongJobState.Canceled);
     private static List<LongJobState> canceledStates = Arrays.asList(LongJobState.Canceled, LongJobState.Canceling);
@@ -137,14 +137,18 @@ public class LongJobUtils {
     }
 
     static LongJobVO changeState(String uuid, LongJobStateEvent stateEvent) {
-        return updateByUuid(uuid, it -> it.setState(it.getState().nextState(stateEvent)));
+        synchronized (jobUuids.intern(uuid)) {
+            return updateByUuid(uuid, it -> it.setState(it.getState().nextState(stateEvent)));
+        }
     }
 
     static LongJobVO changeState(String uuid, LongJobStateEvent stateEvent, Consumer<LongJobVO> consumer) {
-        return updateByUuid(uuid, it -> {
-            it.setState(it.getState().nextState(stateEvent));
-            consumer.accept(it);
-        });
+        synchronized (jobUuids.intern(uuid)) {
+            return updateByUuid(uuid, it -> {
+                it.setState(it.getState().nextState(stateEvent));
+                consumer.accept(it);
+            });
+        }
     }
 
     static LongJobStateEvent getEventOnError(ErrorCode errorCode) {

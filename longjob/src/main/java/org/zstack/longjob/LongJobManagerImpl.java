@@ -667,6 +667,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             List<String> uuids = Q.New(LongJobVO.class)
                     .select(LongJobVO_.uuid)
                     .isNull(LongJobVO_.managementNodeUuid)
+                    .notIn(LongJobVO_.state, LongJobState.finalStates)
                     .limit(group).start(start).listValues();
             for (String uuid : uuids) {
                 if (destinationMaker.isManagedByUs(uuid)) {
@@ -702,7 +703,9 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         List<LongJobVO> managedByUsJobs = new SQLBatchWithReturn< List<LongJobVO>>() {
             @Override
             protected List<LongJobVO> scripts() {
-                List<LongJobVO> vos = Q.New(LongJobVO.class).isNull(LongJobVO_.managementNodeUuid).list();
+                List<LongJobVO> vos = Q.New(LongJobVO.class).isNull(LongJobVO_.managementNodeUuid)
+                        .notIn(LongJobVO_.state, LongJobState.finalStates)
+                        .list();
                 vos.removeIf(it -> !destinationMaker.isManagedByUs(it.getUuid()));
                 vos.forEach(it -> {
                     it.setManagementNodeUuid(Platform.getManagementServerId());
