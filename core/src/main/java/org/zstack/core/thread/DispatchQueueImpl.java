@@ -528,16 +528,18 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     @Override
     public Map<String, SyncTaskStatistic> getSyncTaskStatistics() {
         Map<String, SyncTaskStatistic> ret = new ConcurrentHashMap<>();
-        for (SyncTaskQueueWrapper wrapper : syncTasks.values()) {
-            SyncTaskStatistic statistic = new SyncTaskStatistic(
-                    wrapper.syncSignature,
-                    wrapper.maxThreadNum,
-                    wrapper.counter.intValue(),
-                    wrapper.queue.size()
-            );
-            ret.put(statistic.getSyncSignature(), statistic);
+        synchronized (syncTasks) {
+            for (SyncTaskQueueWrapper wrapper : syncTasks.values()) {
+                SyncTaskStatistic statistic = new SyncTaskStatistic(
+                        wrapper.syncSignature,
+                        wrapper.maxThreadNum,
+                        wrapper.counter.intValue(),
+                        wrapper.queue.size()
+                );
+                ret.put(statistic.getSyncSignature(), statistic);
 
-            logger.warn(JSONObjectUtil.toJsonString(statistic));
+                logger.warn(JSONObjectUtil.toJsonString(statistic));
+            }
         }
 
         return ret;
@@ -546,14 +548,16 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     @Override
     public Map<String, ChainTaskStatistic> getChainTaskStatistics() {
         Map<String, ChainTaskStatistic> ret =  new ConcurrentHashMap<>();
-        for (ChainTaskQueueWrapper wrapper : chainTasks.values()) {
-            ChainTaskStatistic statistic = new ChainTaskStatistic(
-                    wrapper.syncSignature,
-                    wrapper.maxThreadNum,
-                    wrapper.counter.intValue(),
-                    wrapper.pendingQueue.size()
-            );
-            ret.put(statistic.getSyncSignature(), statistic);
+        synchronized (chainTasks) {
+            for (ChainTaskQueueWrapper wrapper : chainTasks.values()) {
+                ChainTaskStatistic statistic = new ChainTaskStatistic(
+                        wrapper.syncSignature,
+                        wrapper.maxThreadNum,
+                        wrapper.counter.intValue(),
+                        wrapper.pendingQueue.size()
+                );
+                ret.put(statistic.getSyncSignature(), statistic);
+            }
         }
         return ret;
     }
