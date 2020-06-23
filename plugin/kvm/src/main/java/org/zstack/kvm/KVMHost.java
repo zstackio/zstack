@@ -29,6 +29,8 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
+import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.*;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
@@ -478,9 +480,56 @@ public class KVMHost extends HostBase implements Host {
             handle((CancelHostTaskMsg) msg);
         } else if (msg instanceof GetVmFirstBootDeviceOnHypervisorMsg) {
             handle((GetVmFirstBootDeviceOnHypervisorMsg) msg);
+        } else if (msg instanceof CheckHostCapacityMsg) {
+            handle((CheckHostCapacityMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(CheckHostCapacityMsg msg) {
+        CheckHostCapacityReply re = new CheckHostCapacityReply();
+        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+        kmsg.setHostUuid(msg.getHostUuid());
+        kmsg.setPath(KVMConstant.KVM_HOST_CAPACITY_PATH);
+        kmsg.setNoStatusCheck(true);
+        kmsg.setCommand(new HostCapacityCmd());
+        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(kmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                KVMHostAsyncHttpCallReply r = reply.castReply();
+                HostCapacityResponse rsp = r.toResponse(HostCapacityResponse.class);
+                if (!rsp.isSuccess()) {
+                    throw new OperationFailureException(operr("operation error, because:%s", rsp.getError()));
+                }
+
+                long reservedSize = SizeUtils.sizeStringToBytes(rcf.getResourceConfigValue(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY, msg.getHostUuid(), String.class));
+                if (rsp.getTotalMemory() < reservedSize) {
+                    throw new OperationFailureException(operr("The host[uuid:%s]'s available memory capacity[%s] is lower than the reserved capacity[%s]",
+                            msg.getHostUuid(), rsp.getTotalMemory(), reservedSize));
+                }
+
+                ReportHostCapacityMessage rmsg = new ReportHostCapacityMessage();
+                rmsg.setHostUuid(msg.getHostUuid());
+                rmsg.setCpuNum((int) rsp.getCpuNum());
+                rmsg.setUsedCpu(rsp.getUsedCpu());
+                rmsg.setTotalMemory(rsp.getTotalMemory());
+                rmsg.setUsedMemory(rsp.getUsedMemory());
+                rmsg.setCpuSockets(rsp.getCpuSockets());
+                rmsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+                bus.send(rmsg, new CloudBusCallBack(msg) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            re.setError(reply.getError());
+                        }
+
+                        bus.reply(msg, re);
+                    }
+                });
+            }
+        });
     }
 
     private void handle(GetVmFirstBootDeviceOnHypervisorMsg msg) {

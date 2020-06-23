@@ -286,7 +286,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 vo = ext.reportHostCapacity(s);
             }
             dbf.persist(vo);
-        } else {
+        } else if (needUpdateCapacity(vo, msg, totalCpu, availCpu, availMem)) {
             vo.setCpuNum(msg.getCpuNum());
             vo.setTotalCpu(totalCpu);
             vo.setAvailableCpu(availCpu);
@@ -310,6 +310,13 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         }
 
         bus.reply(msg, new MessageReply());
+    }
+
+    private boolean needUpdateCapacity(HostCapacityVO vo, ReportHostCapacityMessage msg, long totalCpu, long avaliCpu, long availMem) {
+        return vo.getCpuNum() != msg.getCpuNum() || vo.getTotalCpu() != totalCpu 
+                || vo.getAvailableCpu() != avaliCpu || vo.getTotalPhysicalMemory() != msg.getTotalMemory()
+                || vo.getAvailablePhysicalMemory() != availMem || vo.getTotalMemory() != msg.getTotalMemory()
+                || vo.getCpuSockets() != msg.getCpuSockets();
     }
 
     private void handle(final AllocateHostMsg msg) {

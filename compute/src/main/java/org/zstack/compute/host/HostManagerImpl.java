@@ -55,6 +55,8 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.util.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
@@ -97,6 +99,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
     private Map<String, HypervisorFactory> hypervisorFactories = Collections.synchronizedMap(new HashMap<String, HypervisorFactory>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
+    private Future reportHostCapacityTask;
 
     static {
         allowedMessageAfterSoftDeletion.add(HostDeletionMsg.class);
@@ -603,7 +606,80 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         setupGlobalConfig();
         populateExtensions();
         setupCanonicalEvents();
+        startPeriodTasks();
         return true;
+    }
+
+    private void startPeriodTasks() {
+        HostGlobalConfig.REPORT_HOST_CAPACITY_INTERVAL.installUpdateExtension((oldConfig, newConfig) -> startReportHostCapacityTask());
+        startReportHostCapacityTask();
+    }
+
+    private void startReportHostCapacityTask() {
+        if (reportHostCapacityTask != null) {
+            reportHostCapacityTask.cancel(true);
+        }
+        reportHostCapacityTask = thdf.submitPeriodicTask(new PeriodicTask() {
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.MINUTES;
+            }
+
+            @Override
+            public long getInterval() {
+                return getReportInterval();
+            }
+
+            @Override
+            public String getName() {
+                return "report-host-capacity-task";
+            }
+
+            @Override
+            public void run() {
+                reportHostCapacity();
+            }
+        });
+    }
+
+    private void reportHostCapacity() {
+        List<String> hostUuids = Q.New(HostVO.class)
+                .select(HostVO_.uuid)
+                .eq(HostVO_.status, HostStatus.Connected)
+                .listValues();
+
+        if (hostUuids.isEmpty()) {
+            return;
+        }
+
+        new While<>(hostUuids).step((hostUuid, completion) -> {
+            CheckHostCapacityMsg msg = new CheckHostCapacityMsg();
+            msg.setHostUuid(hostUuid);
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+            bus.send(msg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply rly) {
+                    if (!rly.isSuccess()) {
+                        logger.warn(String.format("failed to get capacity on the host[uuid:%s], %s",
+                                hostUuid, rly.getError().toString()));
+                    }
+                    RecalculateHostCapacityMsg rmsg = new RecalculateHostCapacityMsg();
+                    rmsg.setHostUuid(hostUuid);
+                    bus.makeLocalServiceId(rmsg, HostAllocatorConstant.SERVICE_ID);
+                    bus.send(rmsg);
+                    completion.done();
+                }
+            });
+        }, 15).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                // do nothing
+            }
+        });
+    }
+
+    private int getReportInterval() {
+        return HostGlobalConfig.REPORT_HOST_CAPACITY_INTERVAL.value(Integer.class);
     }
 
     private void setupCanonicalEvents(){
@@ -680,6 +756,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
 
     @Override
     public boolean stop() {
+        if (reportHostCapacityTask != null) {
+            reportHostCapacityTask.cancel(true);
+        }
+
         return true;
     }
 
