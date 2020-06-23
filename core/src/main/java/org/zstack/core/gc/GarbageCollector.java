@@ -1,5 +1,6 @@
 package org.zstack.core.gc;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -125,6 +126,10 @@ public abstract class GarbageCollector {
             }
         }
         return JSONObjectUtil.toJsonString(context);
+    }
+
+    final protected void cleanThreadContext() {
+        ThreadContext.clearAll();
     }
 
     final protected void saveToDb() {
