@@ -45,5 +45,7 @@ public class HostGlobalConfig {
     public static GlobalConfig HOST_MAINTENANCE_POLICY = new GlobalConfig(CATEGORY, "host.maintenance.policy");
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig AUTO_RECONNECT_ON_ERROR_MAX_ATTEMPT_NUM = new GlobalConfig(CATEGORY, "connection.autoReconnectOnError.maxAttemptsNum");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    public static GlobalConfig REPORT_HOST_CAPACITY_INTERVAL = new GlobalConfig(CATEGORY, "reportHostCapacityInterval");
 
 }

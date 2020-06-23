@@ -5,28 +5,20 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
-import org.zstack.header.allocator.HostAllocatorConstant;
-import org.zstack.header.allocator.UnableToReserveHostCapacityException;
-import org.zstack.header.cluster.ReportHostCapacityMessage;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
-import org.zstack.kvm.KVMAgentCommands.HostCapacityCmd;
-import org.zstack.kvm.KVMAgentCommands.HostCapacityResponse;
 import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.utils.SizeUtils;
 
 import java.util.Map;
 
-import static org.zstack.core.Platform.operr;
-
 public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -36,46 +28,18 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
     @Autowired
     private ResourceConfigFacade rcf;
 
-    private void reportCapacity(HostInventory host, Completion completion) {
-        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+    public void reportCapacity(HostInventory host, Completion completion) {
+        CheckHostCapacityMsg msg = new CheckHostCapacityMsg();
         msg.setHostUuid(host.getUuid());
-        msg.setPath(KVMConstant.KVM_HOST_CAPACITY_PATH);
-        msg.setNoStatusCheck(true);
-        msg.setCommand(new HostCapacityCmd());
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
-            public void run(MessageReply reply) {
-                KVMHostAsyncHttpCallReply r = reply.castReply();
-                HostCapacityResponse rsp = r.toResponse(HostCapacityResponse.class);
-                if (!rsp.isSuccess()) {
-                    throw new OperationFailureException(operr("operation error, because:%s", rsp.getError()));
+            public void run(MessageReply rly) {
+                if (!rly.isSuccess()) {
+                    completion.fail(rly.getError());
+                } else {
+                    completion.success();
                 }
-
-                long reservedSize = SizeUtils.sizeStringToBytes(rcf.getResourceConfigValue(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY, host.getUuid(), String.class));
-                if (rsp.getTotalMemory() < reservedSize) {
-                    throw new OperationFailureException(operr("The host[uuid:%s]'s available memory capacity[%s] is lower than the reserved capacity[%s]",
-                        host.getUuid(), rsp.getTotalMemory(), reservedSize));
-                }
-
-                ReportHostCapacityMessage rmsg = new ReportHostCapacityMessage();
-                rmsg.setHostUuid(host.getUuid());
-                rmsg.setCpuNum((int) rsp.getCpuNum());
-                rmsg.setUsedCpu(rsp.getUsedCpu());
-                rmsg.setTotalMemory(rsp.getTotalMemory());
-                rmsg.setUsedMemory(rsp.getUsedMemory());
-                rmsg.setCpuSockets(rsp.getCpuSockets());
-                rmsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
-                bus.send(rmsg, new CloudBusCallBack(completion) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            completion.fail(reply.getError());
-                        } else {
-                            completion.success();
-                        }
-                    }
-                });
             }
         });
     }

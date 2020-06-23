@@ -105,4 +105,11 @@
         <defaultValue>0</defaultValue>
         <type>java.lang.Integer</type>
     </config>
+    <config>
+        <category>host</category>
+        <name>reportHostCapacityInterval</name>
+        <description>The interval report host capacity, in minutes</description>
+        <defaultValue>30</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>
