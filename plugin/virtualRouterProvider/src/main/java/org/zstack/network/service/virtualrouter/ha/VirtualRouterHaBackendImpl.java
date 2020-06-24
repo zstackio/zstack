@@ -110,7 +110,11 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
             }
 
             List<String> state = exps.get(0).getNetworkServicesFromHaVrUuid(NetworkServiceType.SNAT.toString(),  vrUuid);
-            return state != null && !state.isEmpty();
+            if (state == null || state.isEmpty()) {
+                return false;
+            } else {
+                return Boolean.parseBoolean(state.get(0));
+            }
         }
     }
 
