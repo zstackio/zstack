@@ -100,7 +100,7 @@ public class VirtualRouterHaBackend {
             if (state == null || state.isEmpty()) {
                 return false;
             } else {
-                return true;
+                return Boolean.parseBoolean(state.get(0));
             }
         }
     }
