@@ -271,8 +271,12 @@ public class PathUtil {
         }
     }
 
-    public static boolean moveFile(String source, String target) {
-        return new File(source).renameTo(new File(target));
+    public static void moveFile(String source, String target) {
+        try {
+            FileUtils.moveFile(new File(source), new File(target));
+        } catch (IOException e){
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
     public static String readFileToString(String path, Charset charset) {
