@@ -52,7 +52,6 @@ bash $flyway -user=$user -password=$password -url=$url clean
 
 # create baseline and clean its contents for 'beforeValidate.sql'
 bash $flyway -user=$user -password=$password -url=$url baseline
-echo =======
 mysql_run zstack -e "DELETE FROM schema_version"
 
 bash $flyway -user=$user -password=$password -url=$url migrate
