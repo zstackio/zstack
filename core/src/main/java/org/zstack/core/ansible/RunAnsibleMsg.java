@@ -1,6 +1,5 @@
 package org.zstack.core.ansible;
 
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.NeedReplyMessage;
 
@@ -9,7 +8,7 @@ import java.util.Map;
 
 /**
  */
-public class RunAnsibleMsg extends NeedReplyMessage implements HasSensitiveInfo {
+public class RunAnsibleMsg extends NeedReplyMessage {
     private String targetIp;
     private String targetUuid;
     private String privateKeyFile;

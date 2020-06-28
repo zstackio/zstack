@@ -14,7 +14,7 @@ import java.util.List;
 public class AddImageMsg extends NeedReplyMessage {
     private String name;
     private String description;
-    @NoLogging(type = NoLogging.Type.Uri)
+    @NoLogging
     private String url;
     private String mediaType;
     private String guestOsType;

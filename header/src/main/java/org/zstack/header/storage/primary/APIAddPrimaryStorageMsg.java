@@ -14,7 +14,7 @@ public abstract class APIAddPrimaryStorageMsg extends APICreateMessage implement
      * uses *server_ip:mount_path* as url. Max length of 2048 characters
      */
     @APIParam(maxLength = 2048)
-    @NoLogging(type = NoLogging.Type.Uri)
+    @NoLogging
     private String url;
     /**
      * @desc max length of 255 characters

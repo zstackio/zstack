@@ -1,6 +1,5 @@
 package org.zstack.kvm;
 
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
@@ -1089,7 +1088,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class vdiCmd extends AgentCommand implements HasSensitiveInfo {
+    public static class vdiCmd extends AgentCommand {
         private String consoleMode;
         private String videoType;
         private String soundType;
@@ -2304,7 +2303,7 @@ public class KVMAgentCommands {
     public static class LogoutIscsiTargetRsp extends AgentResponse {
     }
 
-    public static class LoginIscsiTargetCmd extends AgentCommand implements HasSensitiveInfo {
+    public static class LoginIscsiTargetCmd extends AgentCommand {
         private String hostname;
         private int port;
         private String target;

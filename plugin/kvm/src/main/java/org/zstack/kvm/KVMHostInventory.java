@@ -1,11 +1,8 @@
 package org.zstack.kvm;
 
 import org.zstack.header.configuration.PythonClassInventory;
-import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.message.GsonTransient;
-import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;

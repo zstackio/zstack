@@ -43,7 +43,6 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -739,14 +738,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
-    public static class KvmSetupSelfFencerCmd extends AgentCommand implements HasSensitiveInfo {
+    public static class KvmSetupSelfFencerCmd extends AgentCommand {
         public String heartbeatImagePath;
         public String hostUuid;
         public long interval;
         public int maxAttempts;
         public int storageCheckerTimeout;
         public String userKey;
-        @NoLogging(type = NoLogging.Type.Uri)
+        @NoLogging
         public List<String> monUrls;
         public String strategy;
     }
@@ -784,7 +783,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public List<String> watchers;
     }
 
-    public static class CephToCephMigrateVolumeSegmentCmd extends AgentCommand implements HasThreadContext, HasSensitiveInfo {
+    public static class CephToCephMigrateVolumeSegmentCmd extends AgentCommand implements HasThreadContext  {
         String parentUuid;
         String resourceUuid;
         String srcInstallPath;

@@ -21,7 +21,6 @@ import org.zstack.core.cloudbus.CloudBusEventListener;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.header.Component;
@@ -1259,9 +1258,9 @@ public class RestServer implements Component, CloudBusEventListener {
                 api = new Api(clz, at);
                 api.path = path;
 
-                if (LogSafeGson.needMaskLog(api.apiClass)) {
-                    sensitiveRestPaths.add(normalizedPath);
-                }
+//                if (LogSafeGson.needMaskLog(api.apiClass)) {
+//                    sensitiveRestPaths.add(normalizedPath);
+//                }
 
                 if (!apis.containsKey(normalizedPath)) {
                     apis.put(normalizedPath, api);

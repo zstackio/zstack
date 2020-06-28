@@ -1,7 +1,6 @@
 package org.zstack.storage.ceph.backup;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RestRequest;
@@ -27,9 +26,9 @@ import java.util.List;
         parameterName = "params",
         responseClass = APIAddBackupStorageEvent.class
 )
-public class APIAddCephBackupStorageMsg extends APIAddBackupStorageMsg implements HasSensitiveInfo {
+public class APIAddCephBackupStorageMsg extends APIAddBackupStorageMsg {
     @APIParam(nonempty = false, emptyString = false)
-    @NoLogging(type = NoLogging.Type.Uri)
+    @NoLogging
     private List<String> monUrls;
     @APIParam(required = false, maxLength = 255)
     private String poolName;

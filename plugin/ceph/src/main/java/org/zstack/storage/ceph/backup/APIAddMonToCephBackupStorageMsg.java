@@ -25,7 +25,7 @@ public class APIAddMonToCephBackupStorageMsg extends APIMessage implements Backu
     @APIParam(resourceType = CephBackupStorageVO.class)
     private String uuid;
     @APIParam(nonempty = true)
-    @NoLogging(type = NoLogging.Type.Uri)
+    @NoLogging
     private List<String> monUrls;
 
     public String getUuid() {

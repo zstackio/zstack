@@ -1,7 +1,6 @@
 package org.zstack.storage.ceph.primary;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.*;
 import org.zstack.header.rest.RestRequest;
@@ -29,7 +28,7 @@ import java.util.List;
 )
 public class APIAddCephPrimaryStorageMsg extends APIAddPrimaryStorageMsg {
     @APIParam(nonempty = false, emptyString = false)
-    @NoLogging(type = NoLogging.Type.Uri)
+    @NoLogging
     private List<String> monUrls;
     @APIParam(required = false, maxLength = 255)
     private String rootVolumePoolName;

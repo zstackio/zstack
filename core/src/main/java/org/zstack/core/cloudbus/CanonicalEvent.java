@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public class CanonicalEvent extends LocalEvent {
     private String path;
-    @NoLogging(behavior = NoLogging.Behavior.Auto)
+    @NoLogging
     private Object content;
     private String managementNodeId;
 

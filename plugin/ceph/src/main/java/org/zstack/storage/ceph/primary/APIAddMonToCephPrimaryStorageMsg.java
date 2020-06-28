@@ -25,7 +25,7 @@ public class APIAddMonToCephPrimaryStorageMsg extends APIMessage implements Prim
     @APIParam(resourceType = CephPrimaryStorageVO.class)
     private String uuid;
     @APIParam(nonempty = true)
-    @NoLogging(type = NoLogging.Type.Uri)
+    @NoLogging
     private List<String> monUrls;
 
     public String getUuid() {

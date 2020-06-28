@@ -1,6 +1,5 @@
 package org.zstack.storage.ceph.primary;
 
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.search.Inventory;
 
@@ -13,7 +12,7 @@ import java.util.List;
  * Created by frank on 7/28/2015.
  */
 @Inventory(mappingVOClass = CephPrimaryStorageMonVO.class)
-public class CephPrimaryStorageMonInventory implements HasSensitiveInfo {
+public class CephPrimaryStorageMonInventory {
     private String hostname;
     private Integer monPort;
     private Timestamp createDate;

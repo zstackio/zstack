@@ -8,7 +8,7 @@ import org.zstack.header.message.NeedReplyMessage;
  */
 public class GetLocalFileSizeOnBackupStorageMsg extends NeedReplyMessage implements BackupStorageMessage {
     private String backupStorageUuid;
-    @NoLogging(type = NoLogging.Type.Uri)
+    @NoLogging
     private String url;
 
     @Override

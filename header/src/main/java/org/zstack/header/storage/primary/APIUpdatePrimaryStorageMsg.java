@@ -24,7 +24,7 @@ public class APIUpdatePrimaryStorageMsg extends APIMessage implements PrimarySto
     @APIParam(maxLength = 2048, required = false)
     private String description;
     @APIParam(maxLength = 2048, required = false)
-    @NoLogging(type = NoLogging.Type.Uri)
+    @NoLogging
     private String url;
 
     public String getUrl() {
