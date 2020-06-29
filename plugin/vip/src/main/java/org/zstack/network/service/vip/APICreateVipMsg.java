@@ -88,6 +88,9 @@ public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessag
     @APINoSee
     private boolean system;
 
+    @APINoSee
+    private Integer ipVersion;
+
     public String getRequiredIp() {
         return requiredIp;
     }
@@ -136,6 +139,14 @@ public class APICreateVipMsg extends APICreateMessage implements L3NetworkMessag
 
     public void setSystem(boolean system) {
         this.system = system;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 
     @Override

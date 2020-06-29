@@ -125,14 +125,6 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         if (!nq.isExists()) {
             throw new ApiMessageInterceptionException(argerr("the L3 network[uuid:%s] doesn't have the network service type[%s] enabled", msg.getL3NetworkUuid(), SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE));
         }
-
-        L3NetworkVO l3Vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
-        SecurityGroupVO sgVo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
-        if (l3Vo != null && sgVo != null && !sgVo.getIpVersion().equals(l3Vo.getIpVersion())) {
-            throw new ApiMessageInterceptionException(argerr("the L3 network[uuid:%s] ipVersion [%d] is different from securityGroup [uuid:%s] ipVersion [%d]",
-                    msg.getL3NetworkUuid(), l3Vo.getIpVersion(), msg.getSecurityGroupUuid(), sgVo.getIpVersion()));
-
-        }
     }
 
     private void validate(APIAddVmNicToSecurityGroupMsg msg) {
@@ -182,7 +174,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
         if (rule1.getStartPort().equals(rule2.getStartPort()) &&
                 rule1.getEndPort().equals(rule2.getEndPort()) &&
                 rule1.getProtocol().equals(rule2.getProtocol()) &&
-                rule1.getType().equals(rule2.getType())) {
+                rule1.getType().equals(rule2.getType()) &&
+                rule1.getIpVersion().equals(rule2.getIpVersion())) {
             //
             if (rule1.getAllowedCidr() == null) {
                 if (rule2.getAllowedCidr() == null ||
@@ -209,11 +202,6 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIAddSecurityGroupRuleMsg msg) {
         if (msg.getRules().size() > SecurityGroupConstant.ONE_API_RULES_MAX_NUM) {
             throw new ApiMessageInterceptionException(argerr("the amount of rules exceeds limit, maximum %s rules are allowed in one request", SecurityGroupConstant.ONE_API_RULES_MAX_NUM));
-        }
-
-        Integer ipVer = Q.New(SecurityGroupVO.class).select(SecurityGroupVO_.ipVersion).eq(SecurityGroupVO_.uuid, msg.getSecurityGroupUuid()).findValue();
-        if (ipVer == null) {
-            throw new ApiMessageInterceptionException(argerr("security group[uuid:%s] cannot be found.", msg.getSecurityGroupUuid()));
         }
 
         // Basic check
@@ -286,11 +274,6 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             if (ao.getAllowedCidr() != null && !NetworkUtils.isCidr(ao.getAllowedCidr(), ao.getIpVersion())) {
                 throw new ApiMessageInterceptionException(argerr("invalid CIDR[%s]. rule dump: %s", ao.getAllowedCidr(), JSONObjectUtil.toJsonString(ao)));
             }
-
-            if (!ipVer.equals(ao.getIpVersion())) {
-                throw new ApiMessageInterceptionException(argerr("security group rule ipVersion [%d] is different from security group version [%d]",
-                        ipVer, ao.getIpVersion()));
-            }
         }
 
         // Deduplicate in msg
@@ -316,6 +299,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             ao.setProtocol(svo.getProtocol().toString());
             ao.setStartPort(svo.getStartPort());
             ao.setEndPort(svo.getEndPort());
+            ao.setIpVersion(svo.getIpVersion());
             String existRuleRemoteGroupUuid = svo.getRemoteSecurityGroupUuid();
             for (SecurityGroupRuleAO sao : msg.getRules()) {
                 if (checkSecurityGroupRuleEqual(ao, sao) && (
@@ -342,16 +326,6 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
                     ao.setAllowedCidr(SecurityGroupConstant.WORLD_OPEN_CIDR);
                 } else {
                     ao.setAllowedCidr(SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6);
-                }
-            }
-        }
-
-        if (msg.getRemoteSecurityGroupUuids() != null) {
-            for (String rsgUuid : msg.getRemoteSecurityGroupUuids()) {
-                SecurityGroupVO rsgVo = dbf.findByUuid(rsgUuid, SecurityGroupVO.class);
-                if (!rsgVo.getIpVersion().equals(ipVer)) {
-                    throw new ApiMessageInterceptionException(argerr("remote security group ipVersion [%d] is different from security group version [%d]",
-                            rsgVo.getIpVersion(), ipVer));
                 }
             }
         }

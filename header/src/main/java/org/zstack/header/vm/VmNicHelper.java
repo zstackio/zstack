@@ -76,48 +76,12 @@ public class VmNicHelper {
         return false;
     }
 
-    /* where nic ips include all ipuuids input */
-    public static boolean nicIncludeAllIps(VmNicInventory nic, List<String> ipUuids) {
-        List<String> ips = nic.getUsedIps().stream().map(ip -> ip.getUuid()).collect(Collectors.toList());
-        return ips.containsAll(ipUuids);
+    public static List<String> getUsedIpUuids(VmNicInventory nic) {
+        return nic.getUsedIps().stream().map(UsedIpInventory::getUuid).collect(Collectors.toList());
     }
 
-    /* where input l3 include all nic l3 uuids */
-    public static boolean includeAllNicL3s(VmNicInventory nic, List<String> l3Uuids) {
-        List<String> l3s = nic.getUsedIps().stream().map(ip -> ip.getL3NetworkUuid()).collect(Collectors.toList());
-        l3s.add(nic.getL3NetworkUuid());
-        return l3Uuids.containsAll(l3s);
-    }
-
-    public static List<String> getCanAttachL3List(VmNicInventory nic, List<VmNicSpec> nicSpecs) {
-        List<String> res = new ArrayList<>();
-        for (VmNicSpec nicspec : nicSpecs) {
-            List<String> l3s = nicspec.l3Invs.stream().map(L3NetworkInventory::getUuid).collect(Collectors.toList());
-            if (l3s.contains(nic.getL3NetworkUuid())) {
-                /* remove all ready attached l3 */
-                l3s.removeAll(nic.getUsedIps().stream().map(UsedIpInventory::getL3NetworkUuid).collect(Collectors.toList()));
-                l3s.remove(nic.getL3NetworkUuid());
-                res.addAll(l3s);
-                break;
-            }
-        }
-
-        return res;
-    }
-
-    public static List<String> getCanDetachL3List(VmNicInventory nic, List<VmNicSpec> nicSpecs) {
-        List<String> res = new ArrayList<>();
-        for (VmNicSpec nicspec : nicSpecs) {
-            List<String> l3s = nicspec.l3Invs.stream().map(L3NetworkInventory::getUuid).collect(Collectors.toList());
-            if (l3s.contains(nic.getL3NetworkUuid())) {
-                /* detach all usedIP except the nic first l3*/
-                res.addAll(nic.getUsedIps().stream().filter(ip -> !ip.getL3NetworkUuid().equals(nic.getL3NetworkUuid()))
-                        .map(UsedIpInventory::getUuid).collect(Collectors.toList()));
-                break;
-            }
-        }
-
-        return res;
+    public static List<String> getUsedIpUuids(VmNicVO nic) {
+        return nic.getUsedIps().stream().map(UsedIpVO::getUuid).collect(Collectors.toList());
     }
 
     public static boolean isDefaultNic(VmNicInventory nic, VmInstanceInventory vm) {

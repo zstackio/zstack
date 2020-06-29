@@ -7,7 +7,7 @@ import java.util.Map;
 
 public interface VirtualRouterHaGroupExtensionPoint {
 
-    String getPublicIp(String vrUuid, String l3Uuid);
+    List<String> getPublicIp(String vrUuid, String l3Uuid);
     String getPublicIpUuid(String vrUuid, String l3Uuid);
 
     void VirtualRouterVmHaAttachL3Network(String vrUuid, String l3NetworkUuid, Completion completion);

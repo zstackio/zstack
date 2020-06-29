@@ -43,10 +43,12 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  */
@@ -663,19 +665,21 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
                 return new ArrayList<>();
             }
 
+            /* find out applianceVm which nic ip address is in the ip range() */
             List<ApplianceVmVO> vmvos = new Callable<List<ApplianceVmVO>>() {
                 @Override
                 @Transactional(readOnly = true)
                 public List<ApplianceVmVO> call() {
                     String sql = "select vm from ApplianceVmVO vm, VmNicVO nic, UsedIpVO ip, NormalIpRangeVO ipr where vm.uuid = nic.vmInstanceUuid" +
-                            " and nic.usedIpUuid = ip.uuid and ip.ipRangeUuid = ipr.uuid and ipr.uuid in (:uuids)";
+                            " and nic.uuid = ip.vmNicUuid and ip.ipRangeUuid = ipr.uuid and ipr.uuid in (:uuids)";
                     TypedQuery<ApplianceVmVO> q = dbf.getEntityManager().createQuery(sql, ApplianceVmVO.class);
                     q.setParameter("uuids", ipruuids);
                     return q.getResultList();
                 }
             }.call();
+            List<String> vmUuids = vmvos.stream().map(ApplianceVmVO::getUuid).collect(Collectors.toList());
 
-            // find out appliance vm whose ip is gateway of ip range
+            // find out appliance vm whose ip is gateway of ip range (only private network match this selection)
 
             final List<String> iprL3Uuids = CollectionUtils.transformToList((List<IpRangeInventory>) action.getParentIssuerContext(), new Function<String, IpRangeInventory>() {
                 @Override

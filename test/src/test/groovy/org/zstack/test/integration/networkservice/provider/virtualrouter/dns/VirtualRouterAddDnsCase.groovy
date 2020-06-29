@@ -22,6 +22,8 @@ class VirtualRouterAddDnsCase extends SubCase {
     String dns2 = "8.8.4.4"
     String dns3 = "8.8.4.5"
     String dns4 = "8.8.4.6"
+    String dns5 = "1.2.255.666"
+    String dns6 = "1:2:1:1::::::::::a"
 
     @Override
     void clean() {
@@ -50,6 +52,20 @@ class VirtualRouterAddDnsCase extends SubCase {
         addDnsToL3Network {
             delegate.l3NetworkUuid = l3.getUuid()
             delegate.dns = dns1
+        }
+
+        expect(AssertionError.class) {
+            addDnsToL3Network {
+                delegate.l3NetworkUuid = l3.getUuid()
+                delegate.dns = dns5
+            }
+        }
+
+        expect(AssertionError.class)  {
+            addDnsToL3Network {
+                delegate.l3NetworkUuid = l3.getUuid()
+                delegate.dns = dns6
+            }
         }
 
         assert cmd != null

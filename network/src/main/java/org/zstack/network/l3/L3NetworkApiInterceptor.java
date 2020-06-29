@@ -111,7 +111,9 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             return;
         }
 
-        long normaCnt = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).count();
+        /* address pool only related to Ipv4 */
+        long normaCnt = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid())
+                .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).count();
         long addressPoolCnt = Q.New(AddressPoolVO.class).eq(AddressPoolVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).count();
         if (addressPoolCnt > 0 && normaCnt == 1) {
             throw new ApiMessageInterceptionException(argerr("can not delete the last normal ip range because there is still has address pool"));
@@ -156,7 +158,9 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         if (!NetworkUtils.isIpv4Address(msg.getRouterInterfaceIp())) {
             throw new ApiMessageInterceptionException(argerr("invalid IP[%s]", msg.getRouterInterfaceIp()));
         }
-        List<NormalIpRangeVO> ipRangeVOS = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+        /* this API only related ipv4 */
+        List<NormalIpRangeVO> ipRangeVOS = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
         if (ipRangeVOS == null || ipRangeVOS.isEmpty()) {
             throw new ApiMessageInterceptionException(argerr("no ip range in l3[%s]", msg.getL3NetworkUuid()));
         }
@@ -197,15 +201,27 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             msg.setLimit(Integer.MAX_VALUE);
         }
 
-        L3NetworkVO l3Vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        if (msg.getIpVersion() == null) {
+            if (msg.getL3NetworkUuid() != null) {
+                int l3Version = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid())
+                    .select(L3NetworkVO_.ipVersion).findValue();
+                if (l3Version == IPv6Constants.IPv6) {
+                    msg.setIpVersion(IPv6Constants.IPv6);
+                } else {
+                    msg.setIpVersion(IPv6Constants.IPv4);
+                }
+            }else {
+                msg.setIpVersion(IPv6Constants.IPv4);
+            }
+        }
+
         if (msg.getStart() == null) {
-            if (l3Vo.getIpVersion() == IPv6Constants.IPv6) {
+            if (msg.getIpVersion() == IPv6Constants.IPv6) {
                 msg.setStartIp("::");
             } else {
                 msg.setStartIp("0.0.0.0");
             }
         }
-
     }
 
     private void validate(APIAddIpv6RangeByNetworkCidrMsg msg) {
@@ -251,8 +267,9 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getIpRangeType().equals(IpRangeType.AddressPool.toString())) {
-            /* fake gateway */
-            msg.setGateway(msg.getStartIp());
+            throw new ApiMessageInterceptionException(argerr("can not add ip range, because ipv6 address pool is not supported"));
+            /* fake gateway
+            msg.setGateway(msg.getStartIp()); */
         }
 
         IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
@@ -266,11 +283,12 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         }
 
         L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, ipr.getL3NetworkUuid()).find();
-        if (l3Vo.getIpVersion() != IPv6Constants.IPv6) {
-            throw new ApiMessageInterceptionException(argerr("l3 network [uuid %s: name %s] is not a ipv6 network", l3Vo.getUuid(), l3Vo.getName()));
+
+        if (l3Vo.getCategory().equals(L3NetworkCategory.System)) {
+            throw new ApiMessageInterceptionException(argerr("can not add ip range, because system network doesn't support ipv6 yet"));
         }
 
-        List<NormalIpRangeVO> rangeVOS = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).list();
+        List<NormalIpRangeVO> rangeVOS = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
         if (rangeVOS != null && !rangeVOS.isEmpty()) {
             if (!rangeVOS.get(0).getAddressMode().equals(ipr.getAddressMode())) {
                 throw new ApiMessageInterceptionException(argerr("addressMode[%s] is different from L3Netowork address mode[%s]", ipr.getAddressMode(),
@@ -433,9 +451,6 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(IpRangeInventory ipr) {
         L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, ipr.getL3NetworkUuid()).find();
-        if (l3Vo.getIpVersion() != IPv6Constants.IPv4) {
-            throw new ApiMessageInterceptionException(argerr("l3 network [uuid %s: name %s] is not a ipv4 network", l3Vo.getUuid(), l3Vo.getName()));
-        }
 
         if (ipr.getIpRangeType() == IpRangeType.AddressPool && l3Vo.getCategory() != L3NetworkCategory.Public) {
             throw new ApiMessageInterceptionException(argerr("l3 network [uuid %s: name %s] is not a public network, address pool range can not be added", l3Vo.getUuid(), l3Vo.getName()));
@@ -563,31 +578,16 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         validate(ipr);
     }
 
-    private void validateIpAddress(String l3NetworkUuid, String ip, String manner) {
-        L3NetworkVO l3VO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3NetworkUuid).find();
-        if (l3VO == null) {
-            return;
-        }
-
-        if (l3VO.getIpVersion() == IPv6Constants.IPv4) {
-            if (!NetworkUtils.isIpv4Address(ip)) {
-                throw new ApiMessageInterceptionException(argerr("%s[%s] is not a IPv4 address", manner, ip));
-            }
-        } else {
-            if (!IPv6NetworkUtils.isIpv6Address(ip)) {
-                throw new ApiMessageInterceptionException(argerr("%s[%s] is not a IPv6 address", manner, ip));
-            }
-        }
-    }
-
     private void validate(APIAddDnsToL3NetworkMsg msg) {
-        validateIpAddress(msg.getL3NetworkUuid(), msg.getDns(), "DNS");
-
         SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
         q.add(L3NetworkDnsVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
         q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(operr("there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
+        }
+
+        if ( !NetworkUtils.isIpAddress(msg.getDns()) ) {
+            throw new ApiMessageInterceptionException(argerr("dns[%s] is not a IP address", msg.getDns()));
         }
     }
 

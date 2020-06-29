@@ -2,10 +2,13 @@ package org.zstack.network.service.virtualrouter;
 
 import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefInventory;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
@@ -172,5 +175,13 @@ public class VirtualRouterVmInventory extends ApplianceVmInventory {
 
     public void setVirtualRouterVips(List<String> virtualRouterVips) {
         this.virtualRouterVips = virtualRouterVips;
+    }
+
+    public List<UsedIpInventory> getUsedIps() {
+        List<UsedIpInventory> ret = new ArrayList<>();
+        for (VmNicInventory nic : getVmNics()) {
+            ret.addAll(nic.getUsedIps());
+        }
+        return ret;
     }
 }

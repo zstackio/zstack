@@ -15,6 +15,7 @@ public class CreateVipMsg extends NeedReplyMessage {
     private String requiredIp;
     private SessionInventory session;
     private boolean system;
+    private Integer ipVersion;
 
     public String getName() {
         return name;
@@ -70,5 +71,13 @@ public class CreateVipMsg extends NeedReplyMessage {
 
     public void setSystem(boolean system) {
         this.system = system;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 }

@@ -18,21 +18,39 @@ doc {
 	}
 	field {
 		name "totalCapacity"
-		desc "IP地址容量"
+		desc "IPv4地址容量"
 		type "long"
 		since "0.6"
 	}
 	field {
 		name "availableCapacity"
-		desc "可用IP地址容量"
+		desc "可用IPv4地址容量"
 		type "long"
 		since "0.6"
 	}
 	field {
 		name "usedIpAddressNumber"
-		desc "已使用IP数量"
+		desc "已使用IPv4数量"
 		type "long"
 		since "3.1"
+	}
+	field {
+		name "ipv6TotalCapacity"
+		desc "IPv6地址容量"
+		type "long"
+		since "3.10"
+	}
+	field {
+		name "ipv6AvailableCapacity"
+		desc "可用IPv6地址容量"
+		type "long"
+		since "3.10"
+	}
+	field {
+		name "ipv6UsedIpAddressNumber"
+		desc "已使用IPv6数量"
+		type "long"
+		since "3.10"
 	}
 	ref {
 		name "capacityData"

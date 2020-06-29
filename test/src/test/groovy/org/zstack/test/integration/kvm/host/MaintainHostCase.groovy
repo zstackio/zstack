@@ -115,7 +115,7 @@ class MaintainHostCase extends SubCase{
 
                         service {
                             provider = FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING
-                            types = [EipConstant.EIP_NETWORK_SERVICE_TYPE, UserdataConstant.USERDATA_TYPE_STRING]
+                            types = [EipConstant.EIP_NETWORK_SERVICE_TYPE, UserdataConstant.USERDATA_TYPE_STRING, NetworkServiceType.DHCP.toString()]
                         }
 
                         ip {

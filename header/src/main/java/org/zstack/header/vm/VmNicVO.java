@@ -48,6 +48,7 @@ public class VmNicVO extends ResourceVO implements OwnedByAccount {
     @Column
     private String gateway;
 
+    @Deprecated
     @Column
     private Integer ipVersion;
 

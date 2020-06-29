@@ -29,6 +29,7 @@ import org.zstack.network.service.virtualrouter.vyos.VyosOfferingSelector;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -243,7 +244,8 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
                 inv.getDefaultL3NetworkUuid()
         ));
 
-        List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(defaultL3Inv);
+        /* TODO: ipv6 dns doesn't need this api */
+        List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(defaultL3Inv, IPv6Constants.IPv4);
         if (!iprs.isEmpty()) {
             cmd.setDns(iprs.get(0).getGateway());
         }
@@ -324,7 +326,8 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
                 continue;
             }
 
-            List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(inv);
+            /* virtual router doesn't has ipv6 */
+            List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(inv, IPv6Constants.IPv4);
             if (iprs.isEmpty()) {
                 continue;
             }

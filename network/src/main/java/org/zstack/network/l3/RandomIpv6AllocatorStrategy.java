@@ -6,6 +6,7 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.network.l3.*;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.math.BigInteger;
@@ -34,7 +35,8 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
         if (msg.getIpRangeUuid() != null) {
             ranges = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
         } else {
-            ranges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+            ranges = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                    .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
         }
 
         Collections.shuffle(ranges);
@@ -72,7 +74,8 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
             exclude = IPv6NetworkUtils.ipv6AddressToBigInteger(excludeIp);
         }
 
-        List<String> ips = Q.New(UsedIpVO.class).select(UsedIpVO_.ip).eq(UsedIpVO_.ipRangeUuid, vo.getUuid()).listValues();
+        String gateway = Q.New(IpRangeVO.class).select(IpRangeVO_.gateway).eq(IpRangeVO_.uuid, vo.getUuid()).findValue();
+        List<String> ips = Q.New(UsedIpVO.class).select(UsedIpVO_.ip).eq(UsedIpVO_.ipRangeUuid, vo.getUuid()).notEq(UsedIpVO_.ip, gateway).listValues();
         ips = ips.stream().distinct().collect(Collectors.toList());
         BigInteger num = start.add(BigInteger.valueOf(ips.size()));
         if (num.compareTo(end) > 0) {

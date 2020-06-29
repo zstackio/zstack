@@ -44,6 +44,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -113,7 +114,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         "NetworkServiceProviderVO pro, UsedIpVO ip where " +
                         " vm.uuid = nic.vmInstanceUuid and vm.uuid in (:uuids)" +
                         " and nic.uuid = ip.vmNicUuid " +
-                        " and ip.l3NetworkUuid = vm.defaultL3NetworkUuid" +
+                        " and ip.l3NetworkUuid = vm.defaultL3NetworkUuid and ip.ipVersion = :ipversion" +
                         " and ref.networkServiceProviderUuid = pro.uuid" +
                         " and ref.l3NetworkUuid = vm.defaultL3NetworkUuid" +
                         " and pro.type = :proType";
@@ -121,6 +122,8 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("uuids", vmUuids);
                 q.setParameter("proType", FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
+                /* current only ipv4 has userdata */
+                q.setParameter("ipversion", IPv6Constants.IPv4);
                 List<Tuple> ts = q.getResultList();
 
                 Map<String, VmIpL3Uuid> ret = new HashMap<String, VmIpL3Uuid>();
@@ -156,7 +159,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 Map<String, List<String>> userdata = new UserdataBuilder().buildByVmUuids(vmUuids);
                 Set<String> l3Uuids = new HashSet<String>();
                 for (VmIpL3Uuid l : vmipl3.values()) {
-                    String dhcpIp = dhcpBackend.allocateDhcpIp(l.l3Uuid);
+                    String dhcpIp = dhcpBackend.allocateDhcpIp(l.l3Uuid, IPv6Constants.IPv4);
                     if (dhcpIp != null) {
                         l.dhcpServerIp = dhcpIp;
                     }
@@ -533,7 +536,12 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                                     return;
                                 }
 
-                                dhcpServerIp = ((FlatDhcpAcquireDhcpServerIpReply) reply).getIp();
+                                FlatDhcpAcquireDhcpServerIpReply dreply = (FlatDhcpAcquireDhcpServerIpReply) reply;
+                                if (dreply.getDhcpServerList() != null && !dreply.getDhcpServerList().isEmpty()) {
+                                    dhcpServerIp = dreply.getDhcpServerList().get(0).getIp();
+                                }
+
+
                                 trigger.next();
                             }
                         });

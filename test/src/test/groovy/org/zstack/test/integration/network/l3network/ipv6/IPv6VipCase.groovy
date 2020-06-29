@@ -45,6 +45,12 @@ class IPv6VipCase extends SubCase {
         ImageInventory image = env.inventoryByName("image1")
         HostInventory host = env.inventoryByName("kvm-1")
 
+        addIpRangeByNetworkCidr {
+            name = "ipr4-1"
+            l3NetworkUuid = l3_statefull.getUuid()
+            networkCidr = "192.168.110.0/24"
+        }
+
         VmInstanceInventory vm = createVmInstance {
             name = "vm-eip"
             instanceOfferingUuid = offering.uuid
@@ -52,23 +58,17 @@ class IPv6VipCase extends SubCase {
             l3NetworkUuids = asList(l3_statefull.uuid)
             hostUuid = host.uuid
         }
-        VmNicInventory nic = vm.getVmNics()[0]
-        attachL3NetworkToVmNic {
-            vmNicUuid = nic.uuid
-            l3NetworkUuid = l3.uuid
-        }
 
         vm = queryVmInstance {
             conditions=["uuid=${vm.uuid}".toString()]
         } [0]
-        nic = vm.getVmNics()[0]
+        VmNicInventory nic = vm.getVmNics()[0]
         UsedIpInventory ipv6
         for (UsedIpInventory ip : nic.getUsedIps()) {
             if (ip.ipVersion == IPv6Constants.IPv6) {
                 ipv6 = ip
             }
         }
-        assert nic.l3NetworkUuid == l3.uuid
 
         VipInventory vip6 = createVip {
             name = "vip6"

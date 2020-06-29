@@ -7,6 +7,7 @@ import org.zstack.header.query.*;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.zone.ZoneInventory;
+import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.JoinColumn;
 import java.io.Serializable;
@@ -113,6 +114,7 @@ public class L3NetworkInventory implements Serializable {
 
     private String category;
 
+    @Deprecated
     private Integer ipVersion;
 
     /**
@@ -343,11 +345,27 @@ public class L3NetworkInventory implements Serializable {
         this.hostRoute = hostRoute;
     }
 
+    @Deprecated
     public Integer getIpVersion() {
         return ipVersion;
     }
 
+    @Deprecated
     public void setIpVersion(Integer ipVersion) {
         this.ipVersion = ipVersion;
+    }
+
+    public List<Integer> getIpVersions() {
+        List<Integer> ipVersions = new ArrayList<>();
+        if (this.ipVersion == IPv6Constants.IPv4) {
+            ipVersions.add(IPv6Constants.IPv4);
+        } else if (this.ipVersion == IPv6Constants.IPv6) {
+            ipVersions.add(IPv6Constants.IPv6);
+        } else if (this.ipVersion == IPv6Constants.DUAL_STACK) {
+            ipVersions.add(IPv6Constants.IPv4);
+            ipVersions.add(IPv6Constants.IPv6);
+        }
+
+        return ipVersions;
     }
 }

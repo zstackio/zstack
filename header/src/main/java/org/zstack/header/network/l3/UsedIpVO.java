@@ -177,6 +177,10 @@ public class UsedIpVO {
         return ipVersion;
     }
 
+    public long getIpVersionl() {
+        return ipVersion;
+    }
+
     public void setIpVersion(Integer ipVersion) {
         this.ipVersion = ipVersion;
     }

@@ -29,6 +29,8 @@ import org.zstack.utils.RangeSet;
 import org.zstack.utils.Utils;
 import org.zstack.utils.VipUseForList;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
@@ -102,10 +104,21 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
             throw new ApiMessageInterceptionException(operr("no ip ranges attached with l3 network[uuid:%s]", l3NetworkUuid));
         }
 
+        List<IpRangeVO> newIp4RangeVOS = newIpRangeVOS.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
+        List<IpRangeVO> newIp6RangeVOS = newIpRangeVOS.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
         for (VmNicVO vmNicVO: vmNicVOS) {
-            List<IpRangeVO> ipRangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, vmNicVO.getL3NetworkUuid()).limit(1).list();
-            if (ipRangeVOS != null && !ipRangeVOS.isEmpty()) {
-                if (NetworkUtils.isCidrOverlap(ipRangeVOS.get(0).getNetworkCidr(), newIpRangeVOS.get(0).getNetworkCidr())) {
+            List<IpRangeVO> ip4RangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, vmNicVO.getL3NetworkUuid())
+                    .eq(IpRangeVO_.ipVersion, IPv6Constants.IPv4).limit(1).list();
+            List<IpRangeVO> ip6RangeVOS = Q.New(IpRangeVO.class).eq(IpRangeVO_.l3NetworkUuid, vmNicVO.getL3NetworkUuid())
+                    .eq(IpRangeVO_.ipVersion, IPv6Constants.IPv6).limit(1).list();
+            if (!newIp4RangeVOS.isEmpty() && !ip4RangeVOS.isEmpty()) {
+                if (NetworkUtils.isCidrOverlap(newIp4RangeVOS.get(0).getNetworkCidr(), ip4RangeVOS.get(0).getNetworkCidr())) {
+                    throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The cidr of l3[%s] to attach overlapped with l3[%s] already attached to vm", l3NetworkUuid, vmNicVO.getL3NetworkUuid()));
+                }
+            }
+            if (!newIp6RangeVOS.isEmpty() && !ip6RangeVOS.isEmpty()) {
+                if (IPv6NetworkUtils.isIpv6RangeOverlap(ip6RangeVOS.get(0).getStartIp(), ip6RangeVOS.get(0).getEndIp(),
+                        newIp6RangeVOS.get(0).getStartIp(),  newIp6RangeVOS.get(0).getEndIp())) {
                     throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The cidr of l3[%s] to attach overlapped with l3[%s] already attached to vm", l3NetworkUuid, vmNicVO.getL3NetworkUuid()));
                 }
             }

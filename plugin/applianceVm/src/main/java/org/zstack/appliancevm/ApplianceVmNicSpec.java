@@ -1,6 +1,8 @@
 package org.zstack.appliancevm;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -17,7 +19,7 @@ public class ApplianceVmNicSpec implements Serializable {
     private boolean acquireOnNetwork;
     private String allocatorStrategy;
     private String metaData;
-    private String staticIp;
+    private Map<Integer, String> staticIp = new HashMap<>();
     private boolean allowDuplicatedAddress = false;
 
     public String getL3NetworkUuid() {
@@ -84,11 +86,11 @@ public class ApplianceVmNicSpec implements Serializable {
         this.metaData = metaData;
     }
 
-    public String getStaticIp() {
+    public Map<Integer, String> getStaticIp() {
         return staticIp;
     }
 
-    public void setStaticIp(String staticIp) {
+    public void setStaticIp(Map<Integer, String> staticIp) {
         this.staticIp = staticIp;
     }
 

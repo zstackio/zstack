@@ -71,6 +71,9 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -759,7 +762,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void changeVmIp(final String l3Uuid, final String ip, final Completion completion) {
+    private void changeVmIp(final String l3Uuid, final Map<Integer, String> staticIpMap, final Completion completion) {
         final VmNicVO targetNic = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
             @Override
             public VmNicVO call(VmNicVO arg) {
@@ -777,28 +780,29 @@ public class VmInstanceBase extends AbstractVmInstance {
             throw new OperationFailureException(operr("the vm[uuid:%s] has no nic on the L3 network[uuid:%s]", self.getUuid(), l3Uuid));
         }
 
-        if (ip.equals(targetNic.getIp())) {
+        /* if static ip is same to nic, do nothing */
+        if (targetNic.getUsedIps().stream().map(UsedIpVO::getIp).collect(Collectors.toList()).containsAll(staticIpMap.values())) {
             completion.success();
             return;
         }
 
-        final UsedIpInventory oldIp = new UsedIpInventory();
+        final Map<Integer, UsedIpInventory> oldIpMap = new HashMap<>();
+        final Map<Integer, UsedIpInventory> newIpMap = new HashMap<>();
         for (UsedIpVO ipvo : targetNic.getUsedIps()) {
-            if (ipvo.getL3NetworkUuid().equals(l3Uuid)) {
+            if (staticIpMap.get(ipvo.getIpVersion()) != null) {
+                UsedIpInventory oldIp = new UsedIpInventory();
                 oldIp.setIp(ipvo.getIp());
                 oldIp.setGateway(ipvo.getGateway());
                 oldIp.setNetmask(ipvo.getNetmask());
                 oldIp.setL3NetworkUuid(ipvo.getL3NetworkUuid());
                 oldIp.setUuid(ipvo.getUuid());
+                oldIpMap.put(ipvo.getIpVersion(), oldIp);
             }
         }
 
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("change-vm-ip-to-%s-l3-%s-vm-%s", ip, l3Uuid, self.getUuid()));
+        chain.setName(String.format("change-vm-ip-l3-%s-vm-%s", l3Uuid, self.getUuid()));
         chain.then(new ShareFlow() {
-            UsedIpInventory newIp;
-            String oldIpUuid = oldIp.getUuid();
-
             @Override
             public void setup() {
                 flow(new Flow() {
@@ -806,18 +810,32 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        AllocateIpMsg amsg = new AllocateIpMsg();
-                        amsg.setL3NetworkUuid(l3Uuid);
-                        amsg.setRequiredIp(ip);
-                        bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, l3Uuid);
-                        bus.send(amsg, new CloudBusCallBack(trigger) {
+                        List<ErrorCode> errs = new ArrayList<>();
+                        new While<>(staticIpMap.entrySet()).each((entry, wcomp) -> {
+                            AllocateIpMsg amsg = new AllocateIpMsg();
+                            amsg.setL3NetworkUuid(l3Uuid);
+                            amsg.setRequiredIp(entry.getValue());
+                            amsg.setIpVersion(entry.getKey());
+                            bus.makeTargetServiceIdByResourceUuid(amsg, L3NetworkConstant.SERVICE_ID, l3Uuid);
+                            bus.send(amsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        errs.add(reply.getError());
+                                        wcomp.allDone();
+                                    } else {
+                                        AllocateIpReply r = reply.castReply();
+                                        newIpMap.put(entry.getKey(), r.getIpInventory());
+                                        wcomp.done();
+                                    }
+                                }
+                            });
+                        }).run(new NoErrorCompletion(trigger) {
                             @Override
-                            public void run(MessageReply reply) {
-                                if (!reply.isSuccess()) {
-                                    trigger.fail(reply.getError());
+                            public void done() {
+                                if (errs.size() > 0) {
+                                    trigger.fail(errs.get(0));
                                 } else {
-                                    AllocateIpReply r = reply.castReply();
-                                    newIp = r.getIpInventory();
                                     trigger.next();
                                 }
                             }
@@ -826,17 +844,26 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (newIp != null) {
-                            ReturnIpMsg rmsg = new ReturnIpMsg();
-                            rmsg.setL3NetworkUuid(newIp.getL3NetworkUuid());
-                            rmsg.setUsedIpUuid(newIp.getUuid());
-                            bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, newIp.getL3NetworkUuid());
-                            bus.send(rmsg, new CloudBusCallBack(trigger) {
+                        if (!newIpMap.isEmpty()) {
+                            new While<>(newIpMap.entrySet()).each((entry, wcomp) -> {
+                                UsedIpInventory ip = entry.getValue();
+                                ReturnIpMsg rmsg = new ReturnIpMsg();
+                                rmsg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                                rmsg.setUsedIpUuid(ip.getUuid());
+                                bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+                                bus.send(rmsg, new CloudBusCallBack(wcomp) {
+                                    @Override
+                                    public void run(MessageReply reply) {
+                                        wcomp.done();
+                                    }
+                                });
+                            }).run(new NoErrorCompletion() {
                                 @Override
-                                public void run(MessageReply reply) {
+                                public void done() {
                                     trigger.rollback();
                                 }
                             });
+
                         } else {
                             trigger.rollback();
                         }
@@ -850,7 +877,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                     public void run(FlowTrigger trigger, Map data) {
                         /* for multiple IP address, change nic.ip ONLY when set static ip of of default IP */
                         for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
-                            ext.afterAddIpAddress(targetNic.getUuid(), newIp.getUuid());
+                            for (UsedIpInventory ip : newIpMap.values()) {
+                                ext.afterAddIpAddress(targetNic.getUuid(), ip.getUuid());
+                            }
                         }
                         trigger.next();
                     }
@@ -861,19 +890,27 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        ReturnIpMsg rmsg = new ReturnIpMsg();
-                        rmsg.setUsedIpUuid(oldIpUuid);
-                        rmsg.setL3NetworkUuid(oldIp.getL3NetworkUuid());
-                        bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, oldIp.getL3NetworkUuid());
-                        bus.send(rmsg, new CloudBusCallBack(trigger) {
-                            @Override
-                            public void run(MessageReply reply) {
-                                for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
-                                    ext.afterDelIpAddress(targetNic.getUuid(), oldIpUuid);
+                        new While<>(oldIpMap.values()).each((ip, wcomp) -> {
+                            ReturnIpMsg rmsg = new ReturnIpMsg();
+                            rmsg.setUsedIpUuid(ip.getUuid());
+                            rmsg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                            bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+                            bus.send(rmsg, new CloudBusCallBack(wcomp) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
+                                        ext.afterDelIpAddress(targetNic.getUuid(), ip.getUuid());
+                                    }
+                                    wcomp.done();
                                 }
+                            });
+                        }).run(new NoErrorCompletion(trigger) {
+                            @Override
+                            public void done() {
                                 trigger.next();
                             }
                         });
+
                     }
                 });
 
@@ -886,7 +923,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 new ForEachFunction<VmIpChangedExtensionPoint>() {
                                     @Override
                                     public void run(VmIpChangedExtensionPoint ext) {
-                                        ext.vmIpChanged(vm, nic, oldIp, newIp);
+                                        ext.vmIpChanged(vm, nic, oldIpMap, newIpMap);
                                     }
                                 });
 
@@ -1816,7 +1853,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 class SetStaticIp {
                     private boolean isSet = false;
                     private boolean allowDupicatedAddress = false;
-                    Map<String, String> staticIpMap = null;
+                    Map<String, List<String>> staticIpMap = null;
 
                     void set() {
                         if (msg instanceof APIAttachL3NetworkToVmMsg) {
@@ -1832,8 +1869,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                             return;
                         }
 
-                        for (Map.Entry<String, String> e : staticIpMap.entrySet()) {
-                            new StaticIpOperator().setStaticIp(self.getUuid(), e.getKey(), e.getValue());
+                        for (Map.Entry<String, List<String>> e : staticIpMap.entrySet()) {
+                            List<String> ips = e.getValue();
+                            String l3Uuid = e.getKey();
+                            for (String ip : ips) {
+                                new StaticIpOperator().setStaticIp(self.getUuid(), l3Uuid, ip);
+                            }
                         }
 
                         isSet = true;
@@ -1841,7 +1882,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     void rollback() {
                         if (isSet) {
-                            for (Map.Entry<String, String> e : staticIpMap.entrySet()) {
+                            for (Map.Entry<String, List<String>> e : staticIpMap.entrySet()) {
                                 new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), e.getKey());
                             }
                         }
@@ -1897,7 +1938,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
                 flowChain.getData().put(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString(), setStaticIp.allowDupicatedAddress);
                 flowChain.then(new VmAllocateNicFlow());
-                flowChain.then(new VmAttachL3NetworkToNicFlow());
                 flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());
                 if (self.getState() == VmInstanceState.Running) {
                     flowChain.then(new VmInstantiateResourceOnAttachingNicFlow());
@@ -2993,7 +3033,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void run(SyncTaskChain chain) {
                 APIDeleteVmStaticIpEvent evt = new APIDeleteVmStaticIpEvent(msg.getId());
-                new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), msg.getL3NetworkUuid());
+                if (msg.getStaticIp() == null) {
+                    new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), msg.getL3NetworkUuid());
+                } else {
+                    new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(self.getUuid(), msg.getL3NetworkUuid(), IPv6NetworkUtils.ipv6AddessToTagValue(msg.getStaticIp()));
+                }
                 bus.publish(evt);
                 chain.next();
             }
@@ -3037,10 +3081,27 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         final APISetVmStaticIpEvent evt = new APISetVmStaticIpEvent(msg.getId());
-        changeVmIp(msg.getL3NetworkUuid(), msg.getIp(), new Completion(msg, completion) {
+        Map<Integer, String> staticIpMap = new HashMap<>();
+        if (msg.getIp() != null) {
+            if (NetworkUtils.isIpv4Address(msg.getIp())) {
+                staticIpMap.put(IPv6Constants.IPv4, msg.getIp());
+            } else {
+                staticIpMap.put(IPv6Constants.IPv6, msg.getIp());
+            }
+        }
+        if (msg.getIp6() != null) {
+            staticIpMap.put(IPv6Constants.IPv6, msg.getIp6());
+        }
+
+        changeVmIp(msg.getL3NetworkUuid(), staticIpMap, new Completion(msg, completion) {
             @Override
             public void success() {
-                new StaticIpOperator().setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp());
+                if (msg.getIp() != null) {
+                    new StaticIpOperator().setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp());
+                }
+                if (msg.getIp6() != null) {
+                    new StaticIpOperator().setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp6());
+                }
                 bus.publish(evt);
                 completion.done();
             }
@@ -3409,9 +3470,11 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void checkIpConflict(final String vmUuid) {
         StaticIpOperator ipo = new StaticIpOperator();
 
-        for (Map.Entry<String, String> entry : ipo.getStaticIpbyVmUuid(vmUuid).entrySet()) {
-            if (ipExists(entry.getKey(), entry.getValue())) {
-                ipo.deleteStaticIpByVmUuidAndL3Uuid(vmUuid, entry.getKey());
+        for (Map.Entry<String, List<String>> entry : ipo.getStaticIpbyVmUuid(vmUuid).entrySet()) {
+            for (String ip : entry.getValue()) {
+                if (ipExists(entry.getKey(), ip)) {
+                    ipo.deleteStaticIpByVmUuidAndL3Uuid(vmUuid, entry.getKey());
+                }
             }
         }
     }
@@ -6048,16 +6111,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                 L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
                 if (l3Vo != null) {
                     l3Invs.add(L3NetworkInventory.valueOf(l3Vo));
-                }
-
-                List<String> secondaryNetworksList = new DualStackNicSecondaryNetworksOperator().getSecondaryNetworksByVmUuidNic(inv.getUuid(), nic.getL3NetworkUuid());
-                if (secondaryNetworksList != null && !secondaryNetworksList.isEmpty()) {
-                    for (String uuid : secondaryNetworksList) {
-                        l3Vo = dbf.findByUuid(uuid, L3NetworkVO.class);
-                        if (l3Vo != null) {
-                            l3Invs.add(L3NetworkInventory.valueOf(l3Vo));
-                        }
-                    }
                 }
             }
             nicSpecs.add(new VmNicSpec(l3Invs));
