@@ -46,17 +46,17 @@ class ResumeVmInstanceCase extends SubCase {
         ImageInventory image = env.inventoryByName("image1")
         L2NetworkInventory l2  = env.inventoryByName("vlan-200")
 
+        addIpRangeByNetworkCidr {
+            name = "ipr4-1"
+            l3NetworkUuid = l3_vlan_ipv6.getUuid()
+            networkCidr = "192.168.110.0/24"
+        }
+
         VmInstanceInventory vm = createVmInstance {
             name = "vm"
             instanceOfferingUuid = offering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = asList(l3_vlan_ipv6.uuid)
-        }
-        VmNicInventory nic = vm.getVmNics()[0]
-
-        attachL3NetworkToVmNic {
-            vmNicUuid = nic.uuid
-            l3NetworkUuid = l3_vlan_ipv4.uuid
         }
 
         destroyVmInstance {

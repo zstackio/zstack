@@ -36,6 +36,7 @@ import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
@@ -177,6 +178,7 @@ public class L3BasicNetwork implements L3Network {
 
 
                 dbf.remove(iprvo);
+                IpRangeHelper.updateL3NetworkIpversion(iprvo);
 
                 CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
                     @Override
@@ -228,8 +230,7 @@ public class L3BasicNetwork implements L3Network {
             return IpAllocatorType.valueOf(msg.getAllocatorStrategy());
         }
 
-        L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
-        if (l3Vo.getIpVersion() == IPv6Constants.IPv4) {
+        if (msg.getIpVersion() == IPv6Constants.IPv4) {
             return RandomIpAllocatorStrategy.type;
         }
 
@@ -301,9 +302,14 @@ public class L3BasicNetwork implements L3Network {
 
     protected CheckIpAvailabilityReply checkIpAvailability(String ip) {
         CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
+        int ipversion = IPv6Constants.IPv4;
+        if (IPv6NetworkUtils.isIpv6Address(ip)) {
+            ipversion = IPv6Constants.IPv6;
+        }
         SimpleQuery<IpRangeVO> rq = dbf.createQuery(IpRangeVO.class);
         rq.select(IpRangeVO_.startIp, IpRangeVO_.endIp, IpRangeVO_.gateway);
         rq.add(IpRangeVO_.l3NetworkUuid, Op.EQ, self.getUuid());
+        rq.add(IpRangeVO_.ipVersion, Op.EQ, ipversion);
         List<Tuple> ts = rq.listTuple();
 
         boolean inRange = false;
@@ -472,14 +478,17 @@ public class L3BasicNetwork implements L3Network {
             if (msg.getIpRangeType() == null) {
                 SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
                 q.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+                q.add(IpRangeVO_.ipVersion, Op.EQ, msg.getIpVersion());
                 iprs = q.list();
             } else if (msg.getIpRangeType().equals(IpRangeType.Normal.toString())){
                 SimpleQuery<NormalIpRangeVO> q = dbf.createQuery(NormalIpRangeVO.class);
                 q.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+                q.add(NormalIpRangeVO_.ipVersion, Op.EQ, msg.getIpVersion());
                 iprs = q.list();
             } else {
                 SimpleQuery<AddressPoolVO> q = dbf.createQuery(AddressPoolVO.class);
                 q.add(AddressPoolVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+                q.add(AddressPoolVO_.ipVersion, Op.EQ, msg.getIpVersion());
                 iprs = q.list();
             }
 

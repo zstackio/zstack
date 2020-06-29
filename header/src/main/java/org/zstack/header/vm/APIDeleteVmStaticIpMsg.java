@@ -22,6 +22,8 @@ public class APIDeleteVmStaticIpMsg extends APIDeleteMessage implements VmInstan
     private String vmInstanceUuid;
     @APIParam
     private String l3NetworkUuid;
+    @APIParam(required = false)
+    private String staticIp;   /* staticIp is not set, delete all static ip of this nic */
 
     @Override
     public String getVmInstanceUuid() {
@@ -39,7 +41,15 @@ public class APIDeleteVmStaticIpMsg extends APIDeleteMessage implements VmInstan
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
     }
- 
+
+    public String getStaticIp() {
+        return staticIp;
+    }
+
+    public void setStaticIp(String staticIp) {
+        this.staticIp = staticIp;
+    }
+
     public static APIDeleteVmStaticIpMsg __example__() {
         APIDeleteVmStaticIpMsg msg = new APIDeleteVmStaticIpMsg();
         msg.vmInstanceUuid = uuid();

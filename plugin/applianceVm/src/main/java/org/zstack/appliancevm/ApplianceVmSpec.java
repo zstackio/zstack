@@ -7,7 +7,9 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -35,7 +37,7 @@ public class ApplianceVmSpec implements Serializable {
     private String sshUsername = "root";
     private int sshPort = 22;
     private int agentPort = 7759;
-    private String staticVip;
+    private Map<Integer, String> staticVip = new HashMap<>();
     private ApplianceVmHaSpec haSpec;
     private String requiredZoneUuid;
     private String requiredClusterUuid;
@@ -199,11 +201,11 @@ public class ApplianceVmSpec implements Serializable {
         this.haSpec = haSpec;
     }
 
-    public String getStaticVip() {
+    public Map<Integer, String> getStaticVip() {
         return staticVip;
     }
 
-    public void setStaticVip(String staticVip) {
+    public void setStaticVip(Map<Integer, String> staticVip) {
         this.staticVip = staticVip;
     }
 

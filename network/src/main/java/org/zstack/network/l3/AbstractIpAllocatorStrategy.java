@@ -12,6 +12,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -39,7 +40,8 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
         if (msg.getIpRangeUuid() != null) {
             iprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
         } else {
-            iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+            iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                    .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
         }
         final long rip = NetworkUtils.ipv4StringToLong(msg.getRequiredIp());
 
@@ -76,7 +78,8 @@ public abstract class AbstractIpAllocatorStrategy implements IpAllocatorStrategy
         if (msg.getIpRangeUuid() != null) {
             iprs = Q.New(IpRangeVO.class).eq(IpRangeVO_.uuid, msg.getIpRangeUuid()).list();
         } else {
-            iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+            iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                    .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
         }
 
         IpRangeVO ipr = CollectionUtils.find(iprs, new Function<IpRangeVO, IpRangeVO>() {

@@ -22,6 +22,12 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "ip6"
+		desc "IPv6地址"
+		type "String"
+		since "0.6"
+	}
+	field {
 		name "success"
 		desc "成功"
 		type "boolean"

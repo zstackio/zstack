@@ -99,26 +99,6 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
     @Override
     public void prepareDbInitialValue() {
         List<VmNicVO> nics = Q.New(VmNicVO.class).notNull(VmNicVO_.vmInstanceUuid).list();
-        for (VmNicVO nic : nics) {
-            if (nic.getUsedIps().size() <= 1) {
-                continue;
-            }
-
-            /* systemTags for dualStack nic existed */
-            List<String> secondaryL3Uuids = new DualStackNicSecondaryNetworksOperator().getSecondaryNetworksByVmUuidNic(nic.getVmInstanceUuid(), nic.getL3NetworkUuid());
-            if (secondaryL3Uuids != null) {
-                continue;
-            }
-
-            for (UsedIpVO ip : nic.getUsedIps()) {
-                if (ip.getL3NetworkUuid().equals(nic.getL3NetworkUuid())) {
-                    continue;
-                }
-
-                new DualStackNicSecondaryNetworksOperator().createSecondaryNetworksByVmNic(VmNicInventory.valueOf(nic), ip.getL3NetworkUuid());
-            }
-        }
-
         List<VmNicVO> ns = nics.stream()
                 .filter(v -> v.getDriverType() == null
                         && v.getType().equals(VmInstanceConstant.VIRTUAL_NIC_TYPE)

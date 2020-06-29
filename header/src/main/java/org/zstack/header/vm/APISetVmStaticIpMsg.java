@@ -25,6 +25,8 @@ public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage
     private String l3NetworkUuid;
     @APIParam
     private String ip;
+    @APIParam(required = false)
+    private String ip6;
 
     public String getIp() {
         return ip;
@@ -50,7 +52,15 @@ public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
     }
- 
+
+    public String getIp6() {
+        return ip6;
+    }
+
+    public void setIp6(String ip6) {
+        this.ip6 = ip6;
+    }
+
     public static APISetVmStaticIpMsg __example__() {
         APISetVmStaticIpMsg msg = new APISetVmStaticIpMsg();
         msg.vmInstanceUuid = uuid();

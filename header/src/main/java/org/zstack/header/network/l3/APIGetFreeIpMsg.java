@@ -37,6 +37,8 @@ public class APIGetFreeIpMsg extends APISyncCallMessage implements L3NetworkMess
     private String start;
     @APIParam(required = false, validValues = {"Normal", "AddressPool"})
     private String ipRangeType;
+    @APIParam(required = false, validValues = {"4", "6"})
+    private Integer ipVersion;
 
     private int limit = 100;
 
@@ -78,6 +80,14 @@ public class APIGetFreeIpMsg extends APISyncCallMessage implements L3NetworkMess
 
     public void setIpRangeType(String ipRangeType) {
         this.ipRangeType = ipRangeType;
+    }
+
+    public Integer getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(Integer ipVersion) {
+        this.ipVersion = ipVersion;
     }
 
     public static APIGetFreeIpMsg __example__() {

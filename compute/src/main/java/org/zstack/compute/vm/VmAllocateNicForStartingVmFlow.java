@@ -10,20 +10,25 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -55,6 +60,7 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
         final List<VmNicInventory> usedIpNics = new ArrayList<VmNicInventory>();
         for (VmNicInventory nic : vm.getVmNics()) {
             if (nic.getUsedIpUuid() == null) {
+                nic.getUsedIps().clear();
                 nicsNeedNewIp.add(nic);
             } else {
                 usedIpNics.add(nic);
@@ -65,6 +71,8 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
         // however, ill database foreign keys (developers' fault) may cause usedIpUuid not to
         // be cleaned; so in addition to check NULL usedIpUuid, we double check if IP range for every
         // nic is still alive.
+        // another case, there is new ipv4(or ipv6) range attached th3 of the nic, when vm stop/start,
+        // allocate a ip address for the nic
         if (!usedIpNics.isEmpty()) {
             nicsNeedNewIp.addAll(findNicsNeedNewIps(usedIpNics));
         }
@@ -74,40 +82,59 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
             return;
         }
 
-        final Map<String, String> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(vm.getUuid());
-        List<AllocateIpMsg> amsgs = CollectionUtils.transformToList(nicsNeedNewIp, new Function<AllocateIpMsg, VmNicInventory>() {
-            @Override
-            public AllocateIpMsg call(VmNicInventory arg) {
+        final Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(vm.getUuid());
+        List<AllocateIpMsg> amsgs = new ArrayList<>();
+        for (VmNicInventory nic : nicsNeedNewIp) {
+            L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class));
+            List<Integer> ipVersions = l3Inv.getIpVersions();
+            Map<Integer, String> nicStaticIpMap = new StaticIpOperator().getNicStaticIpMap(vmStaticIps.get(nic.getL3NetworkUuid()));
+            for (int ipversion: ipVersions) {
+                boolean existed = false;
+                for (UsedIpInventory ip : nic.getUsedIps()) {
+                    if (ip.getIpVersion() == ipversion) {
+                        existed = true;
+                        break;
+                    }
+                }
+                if (existed) {
+                    continue;
+                }
+
                 AllocateIpMsg msg = new AllocateIpMsg();
-                msg.setL3NetworkUuid(arg.getL3NetworkUuid());
+                msg.setL3NetworkUuid(nic.getL3NetworkUuid());
                 msg.setAllocateStrategy(spec.getIpAllocatorStrategy());
 
-                String staticIp = vmStaticIps.get(arg.getL3NetworkUuid());
+                String staticIp = nicStaticIpMap.get(ipversion);
                 if (staticIp != null) {
                     msg.setRequiredIp(staticIp);
                 } else {
-                    l3nm.updateIpAllocationMsg(msg, arg.getMac());
+                    if (ipversion == IPv6Constants.IPv6) {
+                        l3nm.updateIpAllocationMsg(msg, nic.getMac());
+                    }
                 }
-                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, arg.getL3NetworkUuid());
-                return msg;
+                msg.setIpVersion(ipversion);
+                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
+                amsgs.add(msg);
             }
-        });
+        }
 
 
         final List<UsedIpInventory> allocatedIPs = new ArrayList<UsedIpInventory>();
         data.put(VmAllocateNicForStartingVmFlow.class, allocatedIPs);
 
-        bus.send(amsgs, new CloudBusListCallBack(trigger) {
-            @Override
-            public void run(List<MessageReply> replies) {
-                for (MessageReply reply : replies) {
+        List<ErrorCode> errs = new ArrayList<>();
+        new While<>(amsgs).each((msg, wcompl) -> {
+            bus.send(msg, new CloudBusCallBack(wcompl) {
+                @Override
+                public void run(MessageReply reply) {
                     if (!reply.isSuccess()) {
-                        trigger.fail(reply.getError());
-                        return;
+                        errs.add(reply.getError());
+                        wcompl.allDone();
                     }
 
                     final AllocateIpReply ar = reply.castReply();
                     final UsedIpInventory ip = ar.getIpInventory();
+                    allocatedIPs.add(ip);
 
                     String nicUuid = CollectionUtils.find(nicsNeedNewIp, new Function<String, VmNicInventory>() {
                         @Override
@@ -119,33 +146,42 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
                     for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
                         ext.afterAddIpAddress(nicUuid, ip.getUuid());
                     }
-                    allocatedIPs.add(UsedIpInventory.valueOf(dbf.findByUuid(ip.getUuid(), UsedIpVO.class)));
+                    wcompl.done();
                 }
-
-                VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
-                spec.setVmInventory(VmInstanceInventory.valueOf(vmvo));
-                spec.setDestNics(spec.getVmInventory().getVmNics());
-                trigger.next();
+            });
+        }).run(new NoErrorCompletion(trigger) {
+            @Override
+            public void done() {
+                if (errs.size() > 0) {
+                    trigger.fail(errs.get(0));
+                } else {
+                    VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
+                    spec.setVmInventory(VmInstanceInventory.valueOf(vmvo));
+                    spec.setDestNics(spec.getVmInventory().getVmNics());
+                    trigger.next();
+                }
             }
         });
     }
 
     @Transactional(readOnly = true)
     private List<VmNicInventory> findNicsNeedNewIps(List<VmNicInventory> nics) {
-        List<String> usedIpUuids = nics.stream().map(VmNicInventory::getUsedIpUuid).collect(Collectors.toList());
-
-        String sql = "select nic.uuid from VmNicVO nic, UsedIpVO ip, NormalIpRangeVO r where nic.usedIpUuid = ip.uuid and ip.ipRangeUuid = r.uuid and ip.uuid in (:uuids)";
-        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("uuids", usedIpUuids);
-        List<String> nicUuids = q.getResultList();
-
+        /* for vmnic, its network upgrade from ipv4 or ipv6 only to dual stack network  */
         List<VmNicInventory> needIps = new ArrayList<VmNicInventory>();
+
         for (VmNicInventory nic : nics) {
-            if (!nicUuids.contains(nic.getUuid())) {
+            L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
+            if (nic.getUsedIps().size() < l3Vo.getIpVersions().size()) {
                 needIps.add(nic);
             }
-        }
 
+            /* this case should not happend */
+            for (UsedIpInventory ip : nic.getUsedIps()) {
+                if (!Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ip.getIpRangeUuid()).isExists()) {
+                    needIps.add(nic);
+                }
+            }
+        }
         return needIps;
     }
 

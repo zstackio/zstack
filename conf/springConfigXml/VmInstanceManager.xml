@@ -25,7 +25,6 @@
                 <value>org.zstack.compute.vm.VmAllocatePrimaryStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicFlow</value>
-                <value>org.zstack.compute.vm.VmAttachL3NetworkToNicFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateCdRomFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
                 <value>org.zstack.compute.vm.VmCreateOnHypervisorFlow</value>
@@ -46,6 +45,7 @@
                 <value>org.zstack.compute.vm.VmStopOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmReleaseResourceFlow</value>
                 <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
+                <value>org.zstack.compute.vm.VmAllocateNicForStartingVmFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
                 <value>org.zstack.compute.vm.VmStartOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
@@ -56,7 +56,6 @@
                 <value>org.zstack.compute.vm.VmAllocateHostForStoppedVmFlow</value>
                 <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicForStartingVmFlow</value>
-                <value>org.zstack.compute.vm.VmAttachL3NetworkToNicFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
                 <value>org.zstack.compute.vm.VmStartOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>

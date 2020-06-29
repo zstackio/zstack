@@ -81,6 +81,7 @@ public class VirtualRouterCreatePublicVipFlow implements Flow {
             return;
         }
 
+        /* TODO: for ipv6 */
         CreateVipMsg cmsg = new CreateVipMsg();
         cmsg.setName(String.format("vip-for-%s", vr.getName()));
         cmsg.setL3NetworkUuid(nic.getL3NetworkUuid());

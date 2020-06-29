@@ -3,6 +3,7 @@ package org.zstack.test.integration.network.l3network.ipv6
 import com.googlecode.ipv6.IPv6Address
 import org.zstack.compute.vm.StaticIpOperator
 import org.zstack.network.service.flat.FlatNetworkSystemTags
+import org.zstack.sdk.GetL3NetworkDhcpIpAddressResult
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
@@ -14,6 +15,7 @@ import org.zstack.test.integration.network.NetworkTest
 import org.zstack.test.integration.network.l3network.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.network.IPv6Constants
 import org.zstack.utils.network.IPv6NetworkUtils
 
 import java.util.stream.Collectors
@@ -49,43 +51,6 @@ class SetStaticIpv6AddressCase extends SubCase {
         }
     }
 
-    void assertVmNicAfterSetStaticIp(String vmUuid, VmNicInventory oldNic) {
-        L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
-        L3NetworkInventory l3 = env.inventoryByName("l3")
-
-        UsedIpInventory ip4 = null
-        UsedIpInventory ip6 = null
-        for (UsedIpInventory ip : oldNic.getUsedIps()) {
-            if (ip.l3NetworkUuid == l3.uuid) {
-                ip4 = ip
-            } else if (ip.l3NetworkUuid == l3_statefull.uuid) {
-                ip6 = ip
-            }
-        }
-
-        VmInstanceInventory vm = queryVmInstance {
-            conditions=["uuid=${vmUuid}"]
-        } [0]
-        VmNicInventory nic = vm.getVmNics().stream().filter{n -> n.getUuid() == oldNic.uuid}.collect(Collectors.toList()).get(0)
-        UsedIpInventory ip41 = null
-        UsedIpInventory ip61 = null
-        for (UsedIpInventory ip : nic.getUsedIps()) {
-            if (ip.l3NetworkUuid == l3.uuid) {
-                ip41 = ip
-            } else if (ip.l3NetworkUuid == l3_statefull.uuid) {
-                ip61 = ip
-            }
-        }
-        assert ip41 != null
-        assert ip41.ipVersion == ip4.ipVersion
-        assert ip41.l3NetworkUuid == ip4.l3NetworkUuid
-        assert ip61 != null
-        assert ip61.ipVersion == ip6.ipVersion
-        assert ip61.l3NetworkUuid == ip6.l3NetworkUuid
-        assert nic.ipVersion == ip4.ipVersion
-        assert nic.l3NetworkUuid == ip4.l3NetworkUuid
-    }
-
     void testCreateVmOfPrivateIPv6Network() {
         L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
         L3NetworkInventory l3 = env.inventoryByName("l3")
@@ -93,6 +58,7 @@ class SetStaticIpv6AddressCase extends SubCase {
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
 
+        /* create vm with 2 nic: 1 nic with ipv4, the other with ipv6 */
         VmInstanceInventory vm = createVmInstance {
             name = "vm-static-ip"
             instanceOfferingUuid = offering.uuid
@@ -114,95 +80,124 @@ class SetStaticIpv6AddressCase extends SubCase {
         }
         assert nic != null
 
+        /* add ipv4 to the ipv6 nic */
+        addIpRangeByNetworkCidr {
+            name = "ipr4-1"
+            l3NetworkUuid = l3_statefull.getUuid()
+            networkCidr = "192.168.110.0/24"
+        }
+
+        /* reboot the vm to allocate ipv6 address */
+        rebootVmInstance {
+            uuid = vm.uuid
+        }
+
         UsedIpInventory ip4 = null
         UsedIpInventory ip6 = null
-        nic = attachL3NetworkToVmNic {
-            vmNicUuid = nic.uuid
-            l3NetworkUuid = l3.uuid
-        }
         vm = queryVmInstance {
             conditions=["uuid=${vm.uuid}"]
         } [0]
-        nic = vm.getVmNics().stream().filter{n -> n.getUuid() == nic.uuid}.collect(Collectors.toList()).get(0)
+        nic = queryVmNic {conditions = ["uuid=${nic.uuid}"]} [0]
         for (UsedIpInventory ip : nic.getUsedIps()) {
-            if (ip.l3NetworkUuid == l3.uuid) {
+            if (ip.ipVersion == IPv6Constants.IPv4) {
                 ip4 = ip
-            } else if (ip.l3NetworkUuid == l3_statefull.uuid) {
+            } else if (ip.ipVersion == IPv6Constants.IPv6) {
                 ip6 = ip
             }
         }
-
-        stopVmInstance {
-            uuid = vm.uuid
-        }
-
-        /* static ip should not be dhcp server ip or other used ip */
-        String dhcpserverIp = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokenByResourceUuid(l3_statefull.uuid,
-                FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN)
-
-        List<String> ips = new ArrayList<>()
-        ips.add(IPv6Address.fromString("2001:2003::02").toString())
-        ips.add(IPv6Address.fromString("2001:2003::03").toString())
-        ips.add(IPv6Address.fromString("2001:2003::04").toString())
-        ips.remove(ip6.ip)
-        ips.remove(dhcpserverIp)
-        String ip6Str = ips.get(0)
-
-        setVmStaticIp {
-            vmInstanceUuid = vm.uuid
-            l3NetworkUuid = l3_statefull.uuid
-            ip = ip6Str
-        }
-
-        startVmInstance {
-            uuid = vm.uuid
-        }
-        assertVmNicAfterSetStaticIp(vm.uuid, nic)
-
-        stopVmInstance {
-            uuid = vm.uuid
-        }
-
-        dhcpserverIp = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokenByResourceUuid(l3.uuid,
-                FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN)
-
-        ips = new ArrayList<>()
-        ips.add("192.168.100.11")
-        ips.add("192.168.100.12")
-        ips.add("192.168.100.13")
-        ips.remove(ip4.ip)
-        ips.remove(dhcpserverIp)
-        String ip4Str = ips.get(0)
-
-        setVmStaticIp {
-            vmInstanceUuid = vm.uuid
-            l3NetworkUuid = l3.uuid
-            ip = ip4Str
-        }
-
-        startVmInstance {
-            uuid = vm.uuid
-        }
-        assertVmNicAfterSetStaticIp(vm.uuid, nic)
-
-        vm = queryVmInstance {
-            conditions=["uuid=${vm.uuid}"]
-        } [0]
-        nic = vm.getVmNics().stream().filter{n -> n.getUuid() == nic.uuid}.collect(Collectors.toList()).get(0)
-        for (UsedIpInventory ip : nic.getUsedIps()) {
-            if (ip.l3NetworkUuid == l3.uuid) {
-                ip4 = ip
-            } else if (ip.l3NetworkUuid == l3_statefull.uuid) {
-                ip6 = ip
-            } else {
-                assert false
-            }
-        }
-
+        nic.getUsedIps().size() == 2
         assert ip4 != null
         assert ip6 != null
-        assert ip4.ip == ip4Str
-        assert ip6.ip == ip6Str
+
+        /* static ip should not be dhcp server ip or other used ip */
+        GetL3NetworkDhcpIpAddressResult ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l3_statefull.uuid
+        }
+        assert ret.ip != null
+        assert ret.ip6 != null
+        assert ret.ip != ret.ip6
+
+        List<String> ip6s = new ArrayList<>()
+        ip6s.add(IPv6Address.fromString("2001:2003::02").toString())
+        ip6s.add(IPv6Address.fromString("2001:2003::03").toString())
+        ip6s.add(IPv6Address.fromString("2001:2003::04").toString())
+        ip6s.add(IPv6Address.fromString("2001:2003::05").toString())
+        ip6s.remove(ip6.ip)
+        ip6s.remove(ret.ip6)
+        String ip6Str = ip6s.get(0)
+
+        List<String> ip4s = new ArrayList<>()
+        ip4s.add("192.168.110.11")
+        ip4s.add("192.168.110.12")
+        ip4s.add("192.168.110.13")
+        ip4s.add("192.168.110.14")
+        ip4s.remove(ip4.ip)
+        ip4s.remove(ret.ip)
+        String ip4Str = ip4s.get(0)
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
+        setVmStaticIp {
+            delegate.vmInstanceUuid = vm.uuid
+            delegate.l3NetworkUuid = l3_statefull.uuid
+            delegate.ip = ip4Str
+            delegate.ip6 = ip6Str
+        }
+
+        nic = queryVmNic {conditions = ["uuid=${nic.uuid}"]} [0]
+        for (UsedIpInventory ip : nic.getUsedIps()) {
+            if (ip.ipVersion == IPv6Constants.IPv4) {
+                assert ip.ip == ip4Str
+            } else if (ip.ipVersion == IPv6Constants.IPv6) {
+                assert ip.ip == ip6Str
+            }
+        }
+
+        Map<String, List<String>> staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        assert staticIpMap.get(l3_statefull.uuid) != null
+        assert staticIpMap.get(l3_statefull.uuid).size() == 2
+        assert staticIpMap.get(l3_statefull.uuid).contains(ip4Str)
+        assert staticIpMap.get(l3_statefull.uuid).contains(ip6Str)
+
+        deleteVmStaticIp {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = l3_statefull.uuid
+        }
+        staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        assert staticIpMap.get(l3_statefull.uuid) == null
+
+        ip4Str = ip4s.get(1)
+        ip6Str = ip6s.get(1)
+        setVmStaticIp {
+            delegate.vmInstanceUuid = vm.uuid
+            delegate.l3NetworkUuid = l3_statefull.uuid
+            delegate.ip = ip4Str
+            delegate.ip6 = ip6Str
+        }
+
+        deleteVmStaticIp {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = l3_statefull.uuid
+            staticIp = ip4Str
+        }
+        staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        assert staticIpMap.get(l3_statefull.uuid) != null
+        assert staticIpMap.get(l3_statefull.uuid).size() == 1
+        assert staticIpMap.get(l3_statefull.uuid).contains(ip6Str)
+
+        deleteVmStaticIp {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = l3_statefull.uuid
+            staticIp = ip6Str
+        }
+        staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        assert staticIpMap.get(l3_statefull.uuid) == null
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
     }
 
     void testCreateVmWithStaticIpv6() {
@@ -210,24 +205,54 @@ class SetStaticIpv6AddressCase extends SubCase {
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
 
-        String static_ip = "2001:2003--10"
+        /* static ip should not be dhcp server ip or other used ip */
+        GetL3NetworkDhcpIpAddressResult ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l3_statefull.uuid
+        }
+        assert ret.ip != null
+        assert ret.ip6 != null
+        assert ret.ip != ret.ip6
+
+        List<String> ip6s = new ArrayList<>()
+        ip6s.add(IPv6Address.fromString("2001:2003::12").toString())
+        ip6s.add(IPv6Address.fromString("2001:2003::13").toString())
+        ip6s.add(IPv6Address.fromString("2001:2003::14").toString())
+        ip6s.remove(ret.ip6)
+        String ip6Str = ip6s.get(0)
+
+        List<String> ip4s = new ArrayList<>()
+        ip4s.add("192.168.110.21")
+        ip4s.add("192.168.110.22")
+        ip4s.add("192.168.110.23")
+        ip4s.remove(ret.ip)
+        String ip4Str = ip4s.get(0)
+
         VmInstanceInventory vm = createVmInstance {
             name = "vm"
             instanceOfferingUuid = offering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = [l3_statefull.uuid]
             defaultL3NetworkUuid = l3_statefull.uuid
-            systemTags = [String.format("staticIp::%s::%s", l3_statefull.uuid, static_ip)]
+            systemTags = [String.format("staticIp::%s::%s", l3_statefull.uuid, ip4Str),
+                          String.format("staticIp::%s::%s", l3_statefull.uuid, IPv6NetworkUtils.ipv6AddessToTagValue(ip6Str))]
         }
         vm = queryVmInstance {
             conditions=["uuid=${vm.uuid}"]
         } [0]
         VmNicInventory nic = vm.getVmNics().get(0)
-        assert nic.usedIps.size() == 1
-        UsedIpInventory ip6 = nic.getUsedIps().get(0)
-        assert ip6.ip == IPv6NetworkUtils.ipv6TagValueToAddress(static_ip)
-        Map<String, String> ips = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
-        assert ips.get(l3_statefull.uuid) == IPv6NetworkUtils.ipv6TagValueToAddress(static_ip)
+        assert nic.usedIps.size() == 2
+        for (UsedIpInventory ip : nic.usedIps) {
+            if (ip.ipVersion == IPv6Constants.IPv4) {
+                assert ip.ip == ip4Str
+            } else if (ip.ipVersion == IPv6Constants.IPv6){
+                assert ip.ip == ip6Str
+            }
+        }
+        Map<String, List<String>> staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        assert staticIpMap.get(l3_statefull.uuid) != null
+        assert staticIpMap.get(l3_statefull.uuid).size() == 2
+        assert staticIpMap.get(l3_statefull.uuid).contains(ip4Str)
+        assert staticIpMap.get(l3_statefull.uuid).contains(ip6Str)
 
         expect(AssertionError.class) {
             deleteVmStaticIp {
@@ -239,20 +264,16 @@ class SetStaticIpv6AddressCase extends SubCase {
         deleteVmStaticIp {
             vmInstanceUuid = vm.uuid
             l3NetworkUuid = l3_statefull.uuid
+            staticIp = ip6Str
         }
-        ips = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
-        assert ips.get(l3_statefull.uuid) == null
+        staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        assert staticIpMap.get(l3_statefull.uuid) != null
+        assert staticIpMap.get(l3_statefull.uuid).size() == 1
+        assert staticIpMap.get(l3_statefull.uuid).contains(ip4Str)
 
-        rebootVmInstance {
+        destroyVmInstance {
             uuid = vm.uuid
         }
-        vm = queryVmInstance {
-            conditions=["uuid=${vm.uuid}"]
-        } [0]
-        nic = vm.getVmNics().get(0)
-        assert nic.usedIps.size() == 1
-        ip6 = nic.getUsedIps().get(0)
-        assert ip6.ip == IPv6NetworkUtils.ipv6TagValueToAddress(static_ip)
     }
 
     void testAttachL3NetworkToVmNicWithStaticIpv6() {
@@ -268,25 +289,73 @@ class SetStaticIpv6AddressCase extends SubCase {
             l3NetworkUuids = [l3.uuid]
             defaultL3NetworkUuid = l3.uuid
         }
+
+        /* static ip should not be dhcp server ip or other used ip */
+        GetL3NetworkDhcpIpAddressResult ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l3_statefull.uuid
+        }
+        assert ret.ip != null
+        assert ret.ip6 != null
+        assert ret.ip != ret.ip6
+
+        List<String> ip6s = new ArrayList<>()
+        ip6s.add(IPv6Address.fromString("2001:2003::22").toString())
+        ip6s.add(IPv6Address.fromString("2001:2003::23").toString())
+        ip6s.add(IPv6Address.fromString("2001:2003::24").toString())
+        ip6s.remove(ret.ip6)
+        String ip6Str = ip6s.get(0)
+
+        List<String> ip4s = new ArrayList<>()
+        ip4s.add("192.168.110.31")
+        ip4s.add("192.168.110.32")
+        ip4s.add("192.168.110.33")
+        ip4s.remove(ret.ip)
+        String ip4Str = ip4s.get(0)
+
+        attachL3NetworkToVm {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = l3_statefull.uuid
+            systemTags = [String.format("staticIp::%s::%s", l3_statefull.uuid, ip4Str),
+                          String.format("staticIp::%s::%s", l3_statefull.uuid, IPv6NetworkUtils.ipv6AddessToTagValue(ip6Str))]
+        }
         vm = queryVmInstance {
             conditions=["uuid=${vm.uuid}"]
         } [0]
-        VmNicInventory nic = vm.getVmNics().get(0)
 
-        String static_ip = "2001:2003::0110"
-        nic = attachL3NetworkToVmNic {
-            vmNicUuid = nic.uuid
-            l3NetworkUuid = l3_statefull.uuid
-            staticIp = static_ip
-        }
-
-        UsedIpInventory ip6 = null
-        for (UsedIpInventory ip : nic.getUsedIps()) {
-            if (ip.l3NetworkUuid == l3_statefull.uuid) {
-                ip6 = ip
+        for (VmNicInventory nic : vm.vmNics) {
+            if (nic.l3NetworkUuid == l3_statefull.uuid) {
+                for (UsedIpInventory ip : nic.getUsedIps()) {
+                    if (ip.ipVersion == IPv6Constants.IPv4) {
+                        assert ip.ip == ip4Str
+                    } else if (ip.ipVersion == IPv6Constants.IPv6){
+                        assert ip.ip == ip6Str
+                    }
+                }
             }
         }
-        assert ip6.ip == "2001:2003::110"
+
+        Map<String, List<String>> staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        assert staticIpMap.get(l3_statefull.uuid) != null
+        assert staticIpMap.get(l3_statefull.uuid).size() == 2
+        assert staticIpMap.get(l3_statefull.uuid).contains(ip4Str)
+        assert staticIpMap.get(l3_statefull.uuid).contains(ip6Str)
+
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+        ip6Str = ip6s.get(1)
+        ip4Str = ip4s.get(1)
+        setVmStaticIp {
+            delegate.vmInstanceUuid = vm.uuid
+            delegate.l3NetworkUuid = l3_statefull.uuid
+            delegate.ip = ip4Str
+            delegate.ip6 = ip6Str
+        }
+        staticIpMap = new StaticIpOperator().getStaticIpbyVmUuid(vm.uuid)
+        assert staticIpMap.get(l3_statefull.uuid) != null
+        assert staticIpMap.get(l3_statefull.uuid).size() == 2
+        assert staticIpMap.get(l3_statefull.uuid).contains(ip4Str)
+        assert staticIpMap.get(l3_statefull.uuid).contains(ip6Str)
     }
 }
 

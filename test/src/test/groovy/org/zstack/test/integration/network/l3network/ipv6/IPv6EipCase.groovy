@@ -51,6 +51,11 @@ class IPv6EipCase extends SubCase {
         ImageInventory image = env.inventoryByName("image1")
         HostInventory host = env.inventoryByName("kvm-1")
 
+        addIpRangeByNetworkCidr {
+            name = "ipr4-1"
+            l3NetworkUuid = l3_statefull.getUuid()
+            networkCidr = "192.168.110.0/24"
+        }
         VmInstanceInventory vm = createVmInstance {
             name = "vm-eip"
             instanceOfferingUuid = offering.uuid
@@ -59,15 +64,6 @@ class IPv6EipCase extends SubCase {
             hostUuid = host.uuid
         }
         VmNicInventory nic = vm.getVmNics()[0]
-        attachL3NetworkToVmNic {
-            vmNicUuid = nic.uuid
-            l3NetworkUuid = l3.uuid
-        }
-
-        vm = queryVmInstance {
-            conditions=["uuid=${vm.uuid}".toString()]
-        } [0]
-        nic = vm.getVmNics()[0]
         UsedIpInventory ipv4
         UsedIpInventory ipv6
         for (UsedIpInventory ip : nic.getUsedIps()) {
@@ -160,15 +156,17 @@ class IPv6EipCase extends SubCase {
         }
 
         /* static ip should not be dhcp server ip or other used ip */
-        String dhcpserverIp = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokenByResourceUuid(l3_statefull.uuid,
-                FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN)
+        /* static ip should not be dhcp server ip or other used ip */
+        GetL3NetworkDhcpIpAddressResult ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l3_statefull.uuid
+        }
 
         List<String> ips = new ArrayList<>()
         ips.add(IPv6Address.fromString("2001:2003::02").toString())
         ips.add(IPv6Address.fromString("2001:2003::03").toString())
         ips.add(IPv6Address.fromString("2001:2003::04").toString())
         ips.remove(ipv6.ip)
-        ips.remove(dhcpserverIp)
+        ips.remove(ret.ip6)
 
         setVmStaticIp {
             vmInstanceUuid = vm.uuid
@@ -181,14 +179,12 @@ class IPv6EipCase extends SubCase {
 
     void testIPv6EipApplyNetworkService() {
         HostInventory host = env.inventoryByName("kvm-1")
-        L3NetworkInventory l3 = env.inventoryByName("l3")
 
         VmInstanceInventory vm = queryVmInstance {
             conditions=["name=vm-eip"]
         } [0]
         assert vm.getVmNics().size() == 1
         VmNicInventory nic = vm.getVmNics().get(0)
-        assert nic.getL3NetworkUuid() == l3.uuid
 
         FlatEipBackend.ApplyEipCmd cmd = new FlatEipBackend.ApplyEipCmd()
         env.afterSimulator(FlatEipBackend.APPLY_EIP_PATH) { rsp, HttpEntity<String> entity ->

@@ -34,6 +34,9 @@ public class SetVmStaticIpAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ip;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ip6;
+
     @Param(required = false)
     public java.util.List systemTags;
 

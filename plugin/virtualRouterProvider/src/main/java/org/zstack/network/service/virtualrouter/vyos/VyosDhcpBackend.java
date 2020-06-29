@@ -164,7 +164,7 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
         L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
         VirtualRouterCommands.DhcpServerInfo server = new VirtualRouterCommands.DhcpServerInfo();
         server.setNicMac(nic.getMac());
-        server.setSubnet(NetworkUtils.getCidrFromIpMask(nic.getIp(), nic.getNetmask()));
+        //TODO: shixin ipv6 server.setSubnet(NetworkUtils.getCidrFromIpMask(nic.getIp(), nic.getNetmask()));
         server.setNetmask(nic.getNetmask());
         server.setGateway(nic.getGateway());
         server.setDnsDomain(l3Vo.getDnsDomain());

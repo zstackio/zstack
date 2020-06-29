@@ -54,6 +54,11 @@ class IPv6ConcurrentDeleteL3NPECase extends SubCase {
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
 
+        addIpRangeByNetworkCidr {
+            name = "ipr4-1"
+            l3NetworkUuid = l3_statefull.getUuid()
+            networkCidr = "192.168.110.0/24"
+        }
         VmInstanceInventory vm = createVmInstance {
             name = "test-vm"
             instanceOfferingUuid = offering.uuid
@@ -61,14 +66,6 @@ class IPv6ConcurrentDeleteL3NPECase extends SubCase {
             l3NetworkUuids = asList(l3_statefull.uuid)
         }
         VmNicInventory nic = vm.getVmNics()[0]
-        attachL3NetworkToVmNic {
-            vmNicUuid = nic.uuid
-            l3NetworkUuid = l3.uuid
-        }
-        vm = queryVmInstance {
-            conditions=["uuid=${vm.uuid}".toString()]
-        } [0]
-        nic = vm.getVmNics()[0]
 
         /* when detach l3, wait until deletion of l3_statefull is done */
         long ipRangeCount = Q.New(IpRangeEO.class).count()

@@ -61,10 +61,11 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
     private String staticIp;
 
     @APINoSee
+    @Deprecated
     private List<String> secondaryL3Uuids;
 
     @APINoSee
-    private Map<String, String> staticIpMap;
+    private Map<String, List<String>> staticIpMap;
 
     public String getStaticIp() {
         return staticIp;
@@ -99,11 +100,11 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
         this.secondaryL3Uuids = secondaryL3Uuids;
     }
 
-    public Map<String, String> getStaticIpMap() {
+    public Map<String, List<String>> getStaticIpMap() {
         return staticIpMap;
     }
 
-    public void setStaticIpMap(Map<String, String> staticIpMap) {
+    public void setStaticIpMap(Map<String, List<String>> staticIpMap) {
         this.staticIpMap = staticIpMap;
     }
 

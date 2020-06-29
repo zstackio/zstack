@@ -15,6 +15,7 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.network.service.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.util.HashSet;
 import java.util.List;
@@ -74,6 +75,11 @@ public class FlatHostRouteBackend implements NetworkServiceHostRouteBackend, Dhc
 
     @Override
     public void afterAllocateDhcpServerIP(String L3NetworkUuid, String dhcpSererIp) {
+        /* only ipv4 network need a static route for userdata service */
+        if (!NetworkUtils.isIpv4Address(dhcpSererIp)) {
+            return;
+        }
+
         /* skip adding host route for network without host route service */
         boolean refExists = Q.New(NetworkServiceL3NetworkRefVO.class).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, L3NetworkUuid)
                 .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, NetworkServiceType.HostRoute.toString())

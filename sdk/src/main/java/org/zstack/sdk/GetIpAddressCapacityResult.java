@@ -27,6 +27,30 @@ public class GetIpAddressCapacityResult {
         return this.usedIpAddressNumber;
     }
 
+    public long ipv6TotalCapacity;
+    public void setIpv6TotalCapacity(long ipv6TotalCapacity) {
+        this.ipv6TotalCapacity = ipv6TotalCapacity;
+    }
+    public long getIpv6TotalCapacity() {
+        return this.ipv6TotalCapacity;
+    }
+
+    public long ipv6AvailableCapacity;
+    public void setIpv6AvailableCapacity(long ipv6AvailableCapacity) {
+        this.ipv6AvailableCapacity = ipv6AvailableCapacity;
+    }
+    public long getIpv6AvailableCapacity() {
+        return this.ipv6AvailableCapacity;
+    }
+
+    public long ipv6UsedIpAddressNumber;
+    public void setIpv6UsedIpAddressNumber(long ipv6UsedIpAddressNumber) {
+        this.ipv6UsedIpAddressNumber = ipv6UsedIpAddressNumber;
+    }
+    public long getIpv6UsedIpAddressNumber() {
+        return this.ipv6UsedIpAddressNumber;
+    }
+
     public java.util.List capacityData;
     public void setCapacityData(java.util.List capacityData) {
         this.capacityData = capacityData;

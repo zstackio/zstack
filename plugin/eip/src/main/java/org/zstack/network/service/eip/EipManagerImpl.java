@@ -39,6 +39,8 @@ import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -176,6 +178,17 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
         List<String> l3Uuids;
 
+        int vipVersion = IPv6Constants.IPv6;
+        List<Integer> l3Versions = new ArrayList<>();
+        if (NetworkUtils.isIpv4Address(vip.getIp())) {
+            vipVersion = IPv6Constants.IPv4;
+            l3Versions.add(IPv6Constants.IPv4);
+            l3Versions.add(IPv6Constants.DUAL_STACK);
+        } else {
+            vipVersion = IPv6Constants.IPv6;
+            l3Versions.add(IPv6Constants.IPv6);
+            l3Versions.add(IPv6Constants.DUAL_STACK);
+        }
         if (providerType != null) {
             // the eip is created on the backend
             l3Uuids = SQL.New("select l3.uuid" +
@@ -183,7 +196,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     " where l3.system = :system" +
                     " and l3.uuid != :vipL3NetworkUuid" +
                     " and l3.uuid = ref.l3NetworkUuid" +
-                    " and l3.ipVersion = :ipVersion" +
+                    " and l3.ipVersion in (:l3Versions)" +
                     " and ref.networkServiceType = :nsType" +
                     " and l3.zoneUuid = :zoneUuid" +
                     " and np.uuid = ref.networkServiceProviderUuid" +
@@ -194,7 +207,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     .param("npType", providerType)
                     .param("vipL3NetworkUuid", vip.getL3NetworkUuid())
                     .param("clusterUuids", clusterUuids)
-                    .param("ipVersion", l3Vo.getIpVersion())
+                    .param("l3Versions", l3Versions)
                     .list();
         } else {
             // the eip is not created on the backend
@@ -203,7 +216,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     " where l3.system = :system" +
                     " and l3.uuid != :vipL3NetworkUuid" +
                     " and l3.uuid = ref.l3NetworkUuid" +
-                    " and l3.ipVersion = :ipVersion" +
+                    " and l3.ipVersion in (:l3Versions)" +
                     " and ref.networkServiceType = :nsType" +
                     " and l3.zoneUuid = :zoneUuid and l3.l2NetworkUuid = l2ref.l2NetworkUuid and l2ref.clusterUuid in :clusterUuids")
                     .param("system", false)
@@ -211,7 +224,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     .param("nsType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
                     .param("vipL3NetworkUuid", vip.getL3NetworkUuid())
                     .param("clusterUuids", clusterUuids)
-                    .param("ipVersion", l3Vo.getIpVersion())
+                    .param("l3Versions", l3Versions)
                     .list();
         }
 
@@ -242,7 +255,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("select distinct nic.uuid from VmNicVO nic, VmInstanceVO vm, UsedIpVO ip where nic.uuid = ip.vmNicUuid")
                 .append(" and ip.l3NetworkUuid in ").append(sqlStringJoin(l3Uuids))
-                .append(" and nic.vmInstanceUuid = vm.uuid and ip.ipVersion = ").append(l3Vo.getIpVersion())
+                .append(" and nic.vmInstanceUuid = vm.uuid and ip.ipVersion = ").append(vipVersion)
                 .append(" and vm.type = '").append(VmInstanceConstant.USER_VM_TYPE).append("'")
                 .append(" and vm.state in ").append(sqlStringJoin(attachableVmStates))
                 .append(" and nic.ip is not null and vm.clusterUuid is not null");
@@ -1337,21 +1350,24 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     }
 
     @Override
-    public void vmIpChanged(VmInstanceInventory vm, VmNicInventory nic, UsedIpInventory oldIp, UsedIpInventory newIp) {
-        SimpleQuery<EipVO> q = dbf.createQuery(EipVO.class);
-        q.add(EipVO_.vmNicUuid, Op.EQ, nic.getUuid());
-        q.add(EipVO_.guestIp, Op.EQ, oldIp.getIp());
-        EipVO eip = q.find();
+    public void vmIpChanged(VmInstanceInventory vm, VmNicInventory nic, Map<Integer, UsedIpInventory> oldIpMap, Map<Integer, UsedIpInventory> newIpMap) {
+        for (Map.Entry<Integer, UsedIpInventory> oldIp : oldIpMap.entrySet()) {
+            SimpleQuery<EipVO> q = dbf.createQuery(EipVO.class);
+            q.add(EipVO_.vmNicUuid, Op.EQ, nic.getUuid());
+            q.add(EipVO_.guestIp, Op.EQ, oldIp.getValue().getIp());
+            EipVO eip = q.find();
 
-        if (eip == null) {
-            return;
+            if (eip == null) {
+                return;
+            }
+
+            UsedIpInventory newIp = newIpMap.get(oldIp.getKey());
+            eip.setGuestIp(newIp.getIp());
+            dbf.update(eip);
+
+            logger.debug(String.format("update the EIP[uuid:%s, name:%s]'s guest IP from %s to %s for the nic[uuid:%s]",
+                    eip.getUuid(), eip.getName(), oldIp.getValue().getIp(), newIp.getIp(), nic.getUuid()));
         }
-
-        eip.setGuestIp(newIp.getIp());
-        dbf.update(eip);
-
-        logger.debug(String.format("update the EIP[uuid:%s, name:%s]'s guest IP from %s to %s for the nic[uuid:%s]",
-                eip.getUuid(), eip.getName(), oldIp.getIp(), newIp.getIp(), nic.getUuid()));
     }
 
 
