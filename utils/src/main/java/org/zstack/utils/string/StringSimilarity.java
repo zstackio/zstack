@@ -27,7 +27,7 @@ public class StringSimilarity {
     private static final int mapLength = 1500;
 
     // matched errors
-    private static Map<String, ErrorCodeElaboration> errors = new LinkedHashMap<String, ErrorCodeElaboration>(mapLength, 0.9f, true) {
+    private static final Map<String, ErrorCodeElaboration> errors = new LinkedHashMap<String, ErrorCodeElaboration>(mapLength, 0.9f, true) {
         @Override
         protected boolean removeEldestEntry(Map.Entry eldest) {
             if (this.size() > mapLength) {
@@ -38,7 +38,7 @@ public class StringSimilarity {
     };
 
     // missed errors
-    private static Map<String, Boolean> missed = new LinkedHashMap<String, Boolean>(mapLength, 0.9f, true) {
+    private static final Map<String, Boolean> missed = new LinkedHashMap<String, Boolean>(mapLength, 0.9f, true) {
         @Override
         protected boolean removeEldestEntry(Map.Entry eldest) {
             if (this.size() > mapLength) {
@@ -48,7 +48,7 @@ public class StringSimilarity {
         }
     };
 
-    private static Map<String, Pattern> patterns = new ConcurrentHashMap<>();
+    private static final Map<String, Pattern> patterns = new ConcurrentHashMap<>();
 
     // initial errors from json files
     private static List<ErrorCodeElaboration> elaborations = initialElaborations();
@@ -92,7 +92,7 @@ public class StringSimilarity {
             if (ElaborationSearchMethod.distance == e.getMethod()) {
                 continue;
             }
-            patterns.put(e.getRegex(), Pattern.compile(e.getRegex(), Pattern.DOTALL));
+            patterns.put(e.getRegex(), Pattern.compile(e.getRegex(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE));
         }
     }
 
@@ -118,10 +118,10 @@ public class StringSimilarity {
                         ArrayList.class,
                         ErrorCodeElaboration.class
                 ));
-                Collections.sort(els, new Comparator<ErrorCodeElaboration>() {
+                els.sort(new Comparator<ErrorCodeElaboration>() {
                     @Override
                     public int compare(ErrorCodeElaboration o1, ErrorCodeElaboration o2) {
-                        return Integer.valueOf(o1.getCode()) - Integer.valueOf(o2.getCode());
+                        return Integer.parseInt(o1.getCode()) - Integer.parseInt(o2.getCode());
                     }
                 });
             } catch (IOException e) {
@@ -204,7 +204,7 @@ public class StringSimilarity {
         return str;
     }
 
-    private static List<String> redundanceStrs = CollectionDSL.list("unhandled exception happened when calling");
+    private static final List<String> redundanceStrs = CollectionDSL.list("unhandled exception happened when calling");
 
     private static boolean isRedundance(String sub) {
         for (String redundanceStr: redundanceStrs) {
