@@ -483,8 +483,16 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         return null;
     }
 
+    private String formatDeduplicateEipFlowName(String vmInstanceUuid, String hostUuid) {
+        return String.format("%s-%s", vmInstanceUuid, hostUuid);
+    }
+
     private List<Flow> getAdditionalApplyEipForAttachFlow(EipStruct eipStruct, String providerType) {
         List<Flow> flows = new ArrayList<>();
+        List<String> deduplicateFlowsName = new ArrayList<>();
+        String flowName = formatDeduplicateEipFlowName(eipStruct.getNic().getVmInstanceUuid(), eipStruct.getHostUuid());
+        logger.debug("flow name " + flowName);
+        deduplicateFlowsName.add(flowName);
         for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
             EipStruct as = ext.getAdditionalEipStruct(eipStruct);
 
@@ -492,8 +500,18 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 continue;
             }
 
+            flowName = formatDeduplicateEipFlowName(as.getNic().getVmInstanceUuid(), as.getHostUuid());
+            logger.debug("flow name " + flowName);
+            if (deduplicateFlowsName.contains(flowName)) {
+                continue;
+            }
+
+            deduplicateFlowsName.add(flowName);
+
+            String temp = flowName;
+
             flows.add(new Flow() {
-                String __name__ = "additional-create-eip-on-backend-for-attach-eip";
+                String __name__ = String.format("additional-create-eip-on-backend-for-attach-eip-%s", temp);
 
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
@@ -536,6 +554,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
     private List<Flow> getAdditionalApplyEipFlow(EipStruct eipStruct, NetworkServiceProviderType providerType) {
         List<Flow> flows = new ArrayList<>();
+        List<String> deduplicateFlowsName = new ArrayList<>();
+        String flowName = formatDeduplicateEipFlowName(eipStruct.getNic().getVmInstanceUuid(), eipStruct.getHostUuid());
+        logger.debug("flow name " + flowName);
+        deduplicateFlowsName.add(flowName);
         for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
             EipStruct as = ext.getAdditionalEipStruct(eipStruct);
 
@@ -543,8 +565,18 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 continue;
             }
 
+            flowName = formatDeduplicateEipFlowName(as.getNic().getVmInstanceUuid(), as.getHostUuid());
+            logger.debug("flow name " + flowName);
+            if (deduplicateFlowsName.contains(flowName)) {
+                continue;
+            }
+
+            deduplicateFlowsName.add(flowName);
+
+
+            String temp = flowName;
             flows.add(new NoRollbackFlow() {
-                String __name__ = "additional-apply-eip-on-backend";
+                String __name__ = String.format("additional-apply-eip-on-backend-%s", temp);
 
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
@@ -569,6 +601,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
     private List<Flow> getAdditionalDeleteEipFlow(EipStruct eipStruct, NetworkServiceProviderType providerType) {
         List<Flow> flows = new ArrayList<>();
+        List<String> deduplicateFlowsName = new ArrayList<>();
+        String flowName = formatDeduplicateEipFlowName(eipStruct.getNic().getVmInstanceUuid(), eipStruct.getHostUuid());
+        logger.debug("flow name " + flowName);
+        deduplicateFlowsName.add(flowName);
         for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
             EipStruct as = ext.getAdditionalEipStruct(eipStruct);
 
@@ -576,8 +612,18 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 continue;
             }
 
+            flowName = formatDeduplicateEipFlowName(as.getNic().getVmInstanceUuid(), as.getHostUuid());
+            logger.debug("flow name " + flowName);
+            if (deduplicateFlowsName.contains(flowName)) {
+                continue;
+            }
+
+            deduplicateFlowsName.add(flowName);
+
+            String temp = flowName;
+
             flows.add(new NoRollbackFlow() {
-                String __name__ = "additional-delete-eip-from-backend";
+                String __name__ = String.format("additional-delete-eip-from-backend-%s", temp);
 
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
@@ -645,6 +691,19 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "pre-delete-eip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
+                            ext.preAttachEip(struct);
+                        }
+
+                        trigger.next();
+                    }
+                });
+
                 flow(new NoRollbackFlow() {
                     String __name__ = "delete-eip-from-backend";
 
