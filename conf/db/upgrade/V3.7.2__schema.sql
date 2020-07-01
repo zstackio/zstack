@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PriceTableVO` (
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`) VALUES ("12a087c058cc45d5bf80a605f17c0083", "global_default", 'PriceTableVO');
+INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`, `concreteResourceType`) VALUES ("12a087c058cc45d5bf80a605f17c0083", "global_default", 'PriceTableVO', "org.zstack.billing.table.PriceTableVO");
 INSERT INTO PriceTableVO (`uuid`, `name`, `lastOpDate`, `createDate`) VALUES ("12a087c058cc45d5bf80a605f17c0083", "global_default", CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
 ALTER TABLE PriceVO ADD COLUMN tableUuid VARCHAR(32) DEFAULT NULL;

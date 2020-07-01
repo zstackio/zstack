@@ -251,9 +251,9 @@
                 <version>20170516</version>
             </dependency>
             <dependency>
-                <groupId>net.schmizz</groupId>
-                <artifactId>sshj</artifactId>
-                <version>0.8.1</version>
+                <groupId>com.jcraft</groupId>
+                <artifactId>jsch</artifactId>
+                <version>0.1.55</version>
             </dependency>
             <dependency>
                 <groupId>com.mchange</groupId>
@@ -264,11 +264,6 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>19.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk16</artifactId>
-                <version>1.46</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>

@@ -1,6 +1,7 @@
 package org.zstack.utils.path;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -242,8 +243,12 @@ public class PathUtil {
         }
     }
 
-    public static boolean moveFile(String source, String target) {
-        return new File(source).renameTo(new File(target));
+    public static void moveFile(String source, String target) {
+        try {
+            FileUtils.moveFile(new File(source), new File(target));
+        } catch (IOException e){
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
     public static String readFileToString(String path, Charset charset) {
