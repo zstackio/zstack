@@ -12,7 +12,7 @@ CREATE TABLE  `zstack`.`SchedulerVO` (
     `triggerName` varchar(255),
     `triggerGroup` varchar(255),
     `jobClassName` varchar(255),
-    `jobData` varchar(65535),
+    `jobData` text,
     `status` varchar(255),
     `managementNodeUuid` varchar(32) DEFAULT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP COMMENT 'last operation date',
