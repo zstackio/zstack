@@ -88,8 +88,8 @@ CREATE TABLE `zstack`.`IAM2TicketFlowVO` (
 	CONSTRAINT fkIAM2TicketFlowVOTicketFlowVO FOREIGN KEY (uuid) REFERENCES TicketFlowVO (uuid) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "TicketFlowVO" FROM TicketFlowVO t;
-INSERT INTO ResourceVO (uuid, resourceName, resourceType) SELECT t.uuid, t.name, "TicketFlowCollectionVO" FROM TicketFlowCollectionVO t;
+INSERT INTO ResourceVO (uuid, resourceName, resourceType, concreteResourceType) SELECT t.uuid, t.name, "TicketFlowVO", "org.zstack.ticket.entity.TicketFlowVO" FROM TicketFlowVO t;
+INSERT INTO ResourceVO (uuid, resourceName, resourceType, concreteResourceType) SELECT t.uuid, t.name, "TicketFlowCollectionVO", "org.zstack.ticket.entity.TicketFlowCollectionVO" FROM TicketFlowCollectionVO t;
 
 CREATE TABLE IF NOT EXISTS `DatabaseBackupVO` (
     `uuid`        VARCHAR(32)     NOT NULL,
