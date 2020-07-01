@@ -83,7 +83,7 @@ public class StringSimilarity {
             if (ElaborationSearchMethod.distance == e.getMethod()) {
                 continue;
             }
-            patterns.put(e.getRegex(), Pattern.compile(e.getRegex(), Pattern.DOTALL));
+            patterns.put(e.getRegex(), Pattern.compile(e.getRegex(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE));
         }
     }
 
