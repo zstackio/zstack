@@ -22,6 +22,7 @@ import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
+import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
@@ -41,9 +42,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent.PrimaryStorageStatusChangedData;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.StopVmInstanceMsg;
-import org.zstack.header.vm.VmAttachVolumeValidatorMethod;
-import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageMsg;
 import org.zstack.header.volume.VolumeReportPrimaryStorageCapacityUsageReply;
@@ -655,11 +654,24 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
     }
 
+    protected void check(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
+        String volUuid = msg.getVolumeInventory().getUuid();
+        VmInstanceState vmState = SQL.New("select vm.state from VmInstanceVO vm, VolumeVO volume" +
+                " where volume.uuid = :volUuid" +
+                " and volume.vmInstanceUuid = vm.uuid", VmInstanceState.class)
+                .param("volUuid", volUuid)
+                .find();
+        if (vmState != null && vmState != VmInstanceState.Stopped) {
+            throw new ApiMessageInterceptionException(operr("volume[uuid:%s] has been attached a %s VM. VM should be Stopped.", volUuid, vmState));
+        }
+    }
+
     private void handleBase(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
         checkIfBackupStorageAttachedToMyZone(msg.getBackupStorageUuid());
         new PrimaryStorageValidater().disable().maintenance()
                 .validate();
-            handle(msg);
+        check(msg);
+        handle(msg);
     }
 
     private void handle(final DetachPrimaryStorageFromClusterMsg msg) {

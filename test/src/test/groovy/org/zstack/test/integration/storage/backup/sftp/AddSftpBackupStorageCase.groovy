@@ -166,6 +166,10 @@ class AddSftpBackupStorageCase extends SubCase {
             return new SftpBackupStorageCommands.DumpImageInfoToMetaDataFileRsp()
         }
 
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
         createRootVolumeTemplateFromRootVolume {
             name = "image-name"
             rootVolumeUuid = vm.rootVolumeUuid
