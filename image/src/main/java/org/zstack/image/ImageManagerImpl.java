@@ -5,6 +5,7 @@ import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.host.HostExtensionManager;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -24,6 +25,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -113,6 +115,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
 
     private Map<String, ImageFactory> imageFactories = Collections.synchronizedMap(new HashMap<>());
+    private List<ImageExtensionManager> imageExtensionManagers = new ArrayList<>();
     private static final Set<Class> allowedMessageAfterDeletion = new HashSet<>();
     private Future<Void> expungeTask;
 
@@ -123,6 +126,21 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     @Override
     @MessageSafe
     public void handleMessage(Message msg) {
+        ImageExtensionManager extensionManager = imageExtensionManagers.stream().filter(it -> it.getMessageClasses()
+                .stream().anyMatch(clz -> clz.isAssignableFrom(msg.getClass()))).findFirst().orElse(null);
+        if (extensionManager == null) {
+            handleMessageBase(msg);
+            return;
+        }
+
+        try {
+            extensionManager.handleMessage(msg);
+        } catch (StopRoutingException e) {
+            handleMessageBase(msg);
+        }
+    }
+
+    private void handleMessageBase(Message msg) {
         if (msg instanceof ImageMessage) {
             passThrough((ImageMessage) msg);
         } else if (msg instanceof APIMessage) {
@@ -486,6 +504,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             }
             imageFactories.put(f.getType().toString(), f);
         }
+
+        imageExtensionManagers.addAll(pluginRgty.getExtensionList(ImageExtensionManager.class));
     }
 
     @Override

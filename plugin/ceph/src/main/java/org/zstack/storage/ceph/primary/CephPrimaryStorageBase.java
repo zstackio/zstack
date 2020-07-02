@@ -2350,6 +2350,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void check(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
+    }
+
+    @Override
     protected void handle(final CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
         final CreateTemplateFromVolumeOnPrimaryStorageReply reply = new CreateTemplateFromVolumeOnPrimaryStorageReply();
         final TaskProgressRange parentStage = getTaskStage();

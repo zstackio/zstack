@@ -201,6 +201,10 @@ class CreateDataVolumeTemplateCase extends SubCase {
             vmInstanceUuid = vm.uuid
         }
 
+        stopVmInstance {
+            uuid = vm.uuid
+        }
+
         image = createDataVolumeTemplateFromVolume {
             name = "data-volume-1"
             volumeUuid = dataVolume.uuid
@@ -357,10 +361,12 @@ class CreateDataVolumeTemplateCase extends SubCase {
             }
         }
 
-        GetPrimaryStorageCapacityResult currentPsCapacity = getPrimaryStorageCapacity {
-            primaryStorageUuids = [psUuid]
-        } as GetPrimaryStorageCapacityResult
+        retryInSecs {
+            GetPrimaryStorageCapacityResult currentPsCapacity = getPrimaryStorageCapacity {
+                primaryStorageUuids = [psUuid]
+            } as GetPrimaryStorageCapacityResult
 
-        assert old.availableCapacity == currentPsCapacity.availableCapacity
+            assert old.availableCapacity == currentPsCapacity.availableCapacity
+        }
     }
 }
