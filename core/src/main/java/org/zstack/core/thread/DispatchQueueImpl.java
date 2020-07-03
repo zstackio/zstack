@@ -34,7 +34,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     private final HashMap<String, SyncTaskQueueWrapper> syncTasks = new HashMap<String, SyncTaskQueueWrapper>();
     private final Map<String, ChainTaskQueueWrapper> chainTasks = Collections.synchronizedMap(new HashMap<>());
-    private final Map<String, Set<String>> apiRunningSignature = new ConcurrentHashMap<>();
+    private final Map<String, List<String>> apiRunningSignature = new ConcurrentHashMap<>();
     private static final CLogger _logger = CLoggerImpl.getLogger(DispatchQueueImpl.class);
 
     @Override
@@ -99,7 +99,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     @Override
     public Set<String> getApiRunningTaskSignature(String apiId) {
-        return apiRunningSignature.get(apiId);
+        return new HashSet<>(apiRunningSignature.get(apiId));
     }
 
     public DispatchQueueImpl() {
@@ -410,7 +410,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                         runningQueue.offer(cf);
                         Optional.ofNullable(getApiId(cf))
                                 .ifPresent(apiId -> apiRunningSignature.computeIfAbsent(apiId,
-                                        k -> new HashSet<>()).add(syncSignature));
+                                        k -> Collections.synchronizedList(new ArrayList<>())).add(syncSignature));
                     }
 
                     cf.run(() -> {
