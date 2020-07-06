@@ -4,6 +4,7 @@ import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.network.service.vip.VipVO;
@@ -43,7 +44,7 @@ public class LoadBalancerVO extends ResourceVO implements OwnedByAccount {
     private LoadBalancerState state;
 
     @Column
-    @ForeignKey(parentEntityClass = VipVO.class, parentKey = "uuid")
+    @ForeignKey(parentEntityClass = VipVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String vipUuid;
 
     @OneToMany(fetch=FetchType.EAGER)
