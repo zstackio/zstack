@@ -1,6 +1,6 @@
 package org.zstack.tag;
 
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -334,7 +334,7 @@ public class SystemTag {
                     dbf.getEntityManager().flush();
                     dbf.getEntityManager().refresh(vo);
                 } catch (JpaSystemException e) {
-                    if (e.getRootCause() instanceof MySQLIntegrityConstraintViolationException &&
+                    if (e.getRootCause() instanceof SQLIntegrityConstraintViolationException &&
                             e.getRootCause().getMessage().contains("Duplicate entry")) {
 
                         // tag exists

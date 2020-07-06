@@ -94,9 +94,6 @@ CREATE TABLE  `zstack`.`HistoricalPasswordVO` (
     PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- -----------------------------------------------------------------------------------
---  to create AccountResourceRefVO for PciDeviceSpecVO that are created before 3.5.0.1
--- -----------------------------------------------------------------------------------
 DELIMITER $$
 CREATE PROCEDURE generatePciDeviceSpecVOAccountRef()
     BEGIN
