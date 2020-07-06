@@ -414,6 +414,55 @@ public class VolumeSnapshotTreeBase {
 
             boolean needMerge = onCurrentTree && ancestorOfLatest && currentRoot.getPrimaryStorageUuid() != null && VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString().equals(currentRoot.getType());
             if (needMerge) {
+                chain.then(new Flow() {
+                    String __name__ = "allocate-primary-storage";
+
+                    boolean success;
+                    Long requiredSize = (currentLeaf.getParent() == null ? currentLeaf.getInventory() : currentLeaf.getParent().getInventory()).getSize();
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(currentRoot.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+                        if (primaryStorageVO.getState() ==  PrimaryStorageState.Disabled) {
+                            if (primaryStorageVO.getCapacity().getAvailablePhysicalCapacity() < requiredSize) {
+                                trigger.fail(operr("primaryStorage[uuid:%s] has no enough space to rebase snapshot[uuid:%s], please free more than %s bytes storage space",
+                                        currentRoot.getPrimaryStorageUuid(), currentLeaf.getUuid(), Math.abs(requiredSize - primaryStorageVO.getCapacity().getAvailablePhysicalCapacity())));
+                            } else {
+                                trigger.next();
+                            }
+                            return;
+                        }
+                        AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                        amsg.setRequiredPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
+                        amsg.setSize(requiredSize);
+                        amsg.setNoOverProvisioning(true);
+                        bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, currentRoot.getPrimaryStorageUuid());
+                        bus.send(amsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                } else {
+                                    success = true;
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (success) {
+                            IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                            imsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
+                            imsg.setDiskSize(requiredSize);
+                            imsg.setNoOverProvisioning(true);
+                            bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, currentRoot .getPrimaryStorageUuid());
+                            bus.send(imsg);
+                        }
+
+                        trigger.rollback();
+                    }
+                });
                 chain.then(new NoRollbackFlow() {
                     String __name__ = "merge-volume-snapshots-to-volume";
 
@@ -429,6 +478,12 @@ public class VolumeSnapshotTreeBase {
                         bus.send(mmsg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
+                                IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
+                                imsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
+                                imsg.setDiskSize(from.getSize());
+                                imsg.setNoOverProvisioning(true);
+                                bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, currentRoot.getPrimaryStorageUuid());
+                                bus.send(imsg);
                                 if (!reply.isSuccess()) {
                                     trigger.fail(reply.getError());
                                 } else {

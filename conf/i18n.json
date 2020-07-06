@@ -21274,6 +21274,18 @@
     "fileName": "src/main/java/org/zstack/ticket/iam2/api/IAM2TicketApiInterceptor.java"
   },
   {
+    "raw": "primaryStorage[uuid:%s] has no enough space to rebase snapshot[uuid:%s], please free more than %s bytes storage space",
+    "en_US": "primaryStorage[uuid:{0}] has no enough space to rebase snapshot[uuid:{1}], please free more than {2} bytes storage space",
+    "zh_CN": "主存储[uuid:{0}]没有足够的空间合并快照，请释放大于{2}字节的存储空间。",
+    "arguments": [
+      "currentRoot.getPrimaryStorageUuid()",
+      "currentLeaf.getUuid()",
+      "Math.abs(requiredSize - primaryStorageVO.getCapacity().getAvailablePhysicalCapacity())"
+    ],
+    "line": 427,
+    "fileName": "src/main/java/org/zstack/storage/snapshot/VolumeSnapshotTreeBase.java"
+  },
+  {
     "raw": "one ticket type can only have one matches flow collection",
     "en_US": "one ticket type can only have one matches flow collection",
     "zh_CN": "",
