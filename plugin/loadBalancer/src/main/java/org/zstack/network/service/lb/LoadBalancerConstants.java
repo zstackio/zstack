@@ -18,11 +18,27 @@ public class LoadBalancerConstants {
     public static final String BALANCE_ALGORITHM_ROUND_ROBIN = "roundrobin";
     public static final String BALANCE_ALGORITHM_LEAST_CONN = "leastconn";
     public static final String BALANCE_ALGORITHM_LEAST_SOURCE = "source";
+    public static final String BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN = "weightroundrobin";
 
     public static final List<String> BALANCE_ALGORITHMS = new ArrayList<String>();
 
     public static final String HEALTH_CHECK_TARGET_PROTOCL_TCP = "tcp";
     public static final String HEALTH_CHECK_TARGET_PROTOCL_UDP = "udp";
+    public static final String HEALTH_CHECK_TARGET_PROTOCL_HTTP = "http";
+
+    public static enum HealthCheckMothod {
+        GET,
+        HEAD
+    }
+
+    public static enum HealthCheckStatusCode {
+        http_2xx,
+        http_3xx,
+        http_4xx,
+        http_5xx
+    }
+
+    public static final String HEALTH_CHECK_URI_REGEX = "^/[A-Za-z0-9-/.%?#&]+";
 
     public static final List<String> HEALTH_CHECK_TARGET_PROTOCOLS = new ArrayList<String>();
 
@@ -39,14 +55,18 @@ public class LoadBalancerConstants {
 
     /*max concurrent connect no more than MAX_CONNECTION_LIMIT per listener*/
     public static final long MAX_CONNECTION_LIMIT = 100000;
-
+    public static final long BALANCER_WEIGHT_MAX = 100;
+    public static final long BALANCER_WEIGHT_MIN = 0;
+    public static final long BALANCER_WEIGHT_default = 100;
     static {
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_ROUND_ROBIN);
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_LEAST_CONN);
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_LEAST_SOURCE);
+        BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN);
 
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_TCP);
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_UDP);
+        HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_HTTP);
     }
 
     public static enum Param {
