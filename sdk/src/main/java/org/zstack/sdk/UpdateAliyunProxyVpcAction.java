@@ -37,6 +37,9 @@ public class UpdateAliyunProxyVpcAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Boolean isDefault;
 
+    @Param(required = false, validValues = {"Available","Pending"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String status;
+
     @Param(required = false)
     public java.util.List systemTags;
 
