@@ -128,6 +128,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private Future<Void> expungeVmTask;
     private Map<Class, VmInstanceBaseExtensionFactory> vmInstanceBaseExtensionFactories = new HashMap<>();
     private Map<String, VmInstanceNicFactory> vmInstanceNicFactories = new HashMap<>();
+    private Map<String, VmNicQosConfigBackend> vmNicQosConfigMap = new HashMap<>();
 
     static {
         allowedMessageAfterSoftDeletion.add(VmInstanceDeletionMsg.class);
@@ -1427,6 +1428,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
             }
             vmInstanceNicFactories.put(ext.getType().toString(), ext);
         }
+
+        for (VmNicQosConfigBackend ext : pluginRgty.getExtensionList(VmNicQosConfigBackend.class)) {
+            VmNicQosConfigBackend old = vmNicQosConfigMap.get(ext.getVmInstanceType());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("can not add VmNicQosConfigBackend, because duplicate VmNicQosConfigBackend [%s, %s] for type[%s]",
+                        old.getClass().getName(), ext.getClass().getName(), ext.getVmInstanceType()));
+            }
+            vmNicQosConfigMap.put(ext.getVmInstanceType(), ext);
+        }
     }
 
     @Override
@@ -2377,5 +2387,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
     @Override
     public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
 
+    }
+
+    @Override
+    public VmNicQosConfigBackend getVmNicQosConfigBackend(String type) {
+        return vmNicQosConfigMap.get(type);
     }
 }
