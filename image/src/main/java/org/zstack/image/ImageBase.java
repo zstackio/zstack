@@ -129,6 +129,8 @@ public class ImageBase implements Image {
             handle((SyncSystemTagFromVolumeMsg) msg);
         } else if (msg instanceof SyncSystemTagFromTagMsg) {
             handle((SyncSystemTagFromTagMsg) msg);
+        } else if (msg instanceof UpdateImageMsg) {
+            handle((UpdateImageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -765,7 +767,7 @@ public class ImageBase implements Image {
         });
     }
 
-    private void handle(APIUpdateImageMsg msg) {
+    private void updateImage(UpdateImageMsg msg) {
         boolean update = false;
         if (msg.getName() != null) {
             self.setName(msg.getName());
@@ -798,6 +800,17 @@ public class ImageBase implements Image {
         if (update) {
             self = dbf.updateAndRefresh(self);
         }
+    }
+
+    private void handle(UpdateImageMsg msg) {
+        updateImage(msg);
+        UpdateImageReply reply = new UpdateImageReply();
+        reply.setInventory(getSelfInventory());
+        bus.reply(msg, reply);
+    }
+
+    private void handle(APIUpdateImageMsg msg) {
+        updateImage(UpdateImageMsg.valueOf(msg));
 
         APIUpdateImageEvent evt = new APIUpdateImageEvent(msg.getId());
         evt.setInventory(getSelfInventory());
