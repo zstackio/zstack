@@ -13,6 +13,7 @@ public interface AnsibleConstant {
     public static String CONFIGURATION_FILE = PathUtil.getFilePathUnderZStackHomeFolder("ansible/ansible.cfg");
     public static String LOG_PATH = PathUtil.getFilePathUnderZStackHomeFolder("ansible/log");
     public static String IMPORT_PUBLIC_KEY_SCRIPT_PATH = "ansible/import_public_key.sh";
+    public static String PRIVATE_ANSIBLE_MODULE_PATH = PathUtil.getFolderUnderZStackHomeFolder("libs/ansible/");
     public static String RSA_PUBLIC_KEY = "ansible/rsaKeys/id_rsa.pub";
     public static String RSA_PRIVATE_KEY = "ansible/rsaKeys/id_rsa";
 
