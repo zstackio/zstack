@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -476,6 +477,11 @@ public class RESTFacadeImpl implements RESTFacade {
     @Override
     public <T> T syncJsonGet(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
         return syncJson(url, body, headers, HttpMethod.GET, returnClass, unit, timeout);
+    }
+
+    @Override
+    public HttpHeaders syncHead(String url) {
+        return template.headForHeaders(URI.create(url));
     }
 
     protected  <T> T syncJson(String url, String body, Map<String, String> headers, HttpMethod method, Class<T> returnClass, TimeUnit unit, long timeout) {

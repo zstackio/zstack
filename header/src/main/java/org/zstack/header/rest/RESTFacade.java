@@ -3,6 +3,7 @@ package org.zstack.header.rest;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.HttpClients;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
@@ -52,6 +53,8 @@ public interface RESTFacade {
     <T> T syncJsonGet(String url, String body, Map<String, String> headers, Class<T> returnClass);
 
     <T> T syncJsonGet(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout);
+
+    HttpHeaders syncHead(String url);
 
     HttpEntity<String> httpServletRequestToHttpEntity(HttpServletRequest req);
 
