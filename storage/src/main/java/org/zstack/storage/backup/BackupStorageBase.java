@@ -1,13 +1,10 @@
 package org.zstack.storage.backup;
 
-import org.apache.http.impl.client.HttpClients;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
@@ -23,7 +20,6 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -32,13 +28,13 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.trash.CleanTrashResult;
+import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
-import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.CancelDownloadImageMsg;
-import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -53,7 +49,6 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -139,6 +134,22 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     public void changeStateHook(BackupStorageStateEvent evt, BackupStorageState nextState) {
     }
 
+    private long getContentLength(String url) {
+        HttpHeaders header;
+
+        try {
+            header = restf.syncHead(url);
+        } catch (Exception e) {
+            throw new OperationFailureException(operr("failed to get header of image url %s: %s", url, e.toString()));
+        }
+
+        if (header == null) {
+            throw new OperationFailureException(operr("failed to get header of image url %s", url));
+        }
+
+        return header.getContentLength();
+    }
+
     protected void exceptionIfImageSizeGreaterThanAvailableCapacity(String url) {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             return;
@@ -149,24 +160,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             return;
         }
 
-        HttpHeaders header;
-        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
-        factory.setReadTimeout(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT);
-        factory.setConnectTimeout(CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT);
-        factory.setHttpClient(HttpClients.createDefault());
-        RestTemplate template = new RestTemplate(factory);
-        try {
-            header = template.headForHeaders(URI.create(url));
-            logger.debug(String.format("get header from %s: %s", url, header));
-        } catch (Exception e) {
-            throw new OperationFailureException(operr("failed to get header of image url %s: %s", url, e.toString()));
-        }
-
-        if (header == null) {
-            throw new OperationFailureException(operr("failed to get header of image url %s", url));
-        }
-
-        long size = header.getContentLength();
+        long size = getContentLength(url);
         if (size == -1) {
             logger.error(String.format("failed to get image size from url %s, but ignore this error and proceed", url));
         } else if (size < ImageConstant.MINI_IMAGE_SIZE_IN_BYTE) {
@@ -388,7 +382,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     protected void changeStatus(final BackupStorageStatus status, final NoErrorCompletion completion) {
         thdf.syncSubmit(new SyncTask<Void>() {
-            private String name = String.format("backupstorage-%s-change-status", self.getUuid());
+            private final String name = String.format("backupstorage-%s-change-status", self.getUuid());
 
             @Override
             public String getSyncSignature() {
@@ -406,7 +400,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             }
 
             @Override
-            public Void call() throws Exception {
+            public Void call() {
                 if (status == self.getStatus()) {
                     completion.done();
                     return null;
@@ -444,13 +438,13 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
 
     private void doScanImages() {
         try {
-            List<ImageInventory> images = this.scanImages();
+            this.scanImages();
         } catch (Exception e) {
             logger.warn(String.format("Unhandled exception happened while scanning backup storage[uuid:%s]", self.getUuid()), e);
         }
     }
 
-    private void handle(ScanBackupStorageMsg msg) {
+    private void handle(ScanBackupStorageMsg unused) {
         doScanImages();
     }
 
@@ -512,7 +506,6 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
         String details = trash.makeSureInstallPathNotUsed(inv);
         if (details != null) {
             result.getDetails().add(details);
-//            completion.fail(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
             completion.success(result);
             return;
         }
@@ -564,7 +557,6 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             String details = trash.makeSureInstallPathNotUsed(inv);
             if (details != null) {
                 result.getDetails().add(details);
-//                errs.add(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
                 coml.done();
                 return;
             }
@@ -607,7 +599,7 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
     private void handle(final APICleanUpTrashOnBackupStorageMsg msg) {
         APICleanUpTrashOnBackupStorageEvent evt = new APICleanUpTrashOnBackupStorageEvent(msg.getId());
         thdf.chainSubmit(new ChainTask(msg) {
-            private String name = String.format("cleanup-trash-on-%s", self.getUuid());
+            private final String name = String.format("cleanup-trash-on-%s", self.getUuid());
 
             @Override
             public String getSyncSignature() {
