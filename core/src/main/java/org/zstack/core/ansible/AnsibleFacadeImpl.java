@@ -139,7 +139,8 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     "else echo \"Warning: can't remove ansible from unknown platform\"; " +
                     "fi; " +
                     "sudo pip install -i file://%s --trusted-host localhost -I ansible==1.9.6; " +
-                    "fi", AnsibleConstant.PYPI_REPO), false);
+                    "sudo pip install -i file://%s --trusted-host localhost -I ansible==1.9.6 --target=%s; " +
+                    "fi", AnsibleConstant.PYPI_REPO, AnsibleConstant.PYPI_REPO, AnsibleConstant.PRIVATE_ANSIBLE_MODULE_PATH), false);
 
             deployModule("ansible/zstacklib", "zstacklib.py");
         } catch (IOException e) {
@@ -244,8 +245,8 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                                 AnsibleConstant.ZSTACKLIB_ROOT, timeout, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.dumpPretty(arguments)),
                                 AnsibleConstant.ROOT_DIR);
                     } else {
-                        output = ShellUtils.run(String.format("PYTHONPATH=%s timeout %d %s %s -i %s --private-key %s -e '%s'",
-                                AnsibleConstant.ZSTACKLIB_ROOT, timeout, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.dumpPretty(arguments)),
+                        output = ShellUtils.run(String.format("PYTHONPATH=%s:%s timeout %d %s %s -i %s --private-key %s -e '%s'",
+                                AnsibleConstant.ZSTACKLIB_ROOT, AnsibleConstant.PRIVATE_ANSIBLE_MODULE_PATH, timeout, executable, playBookPath, AnsibleConstant.INVENTORY_FILE, msg.getPrivateKeyFile(), JSONObjectUtil.dumpPretty(arguments)),
                                 AnsibleConstant.ROOT_DIR);
                     }
 
