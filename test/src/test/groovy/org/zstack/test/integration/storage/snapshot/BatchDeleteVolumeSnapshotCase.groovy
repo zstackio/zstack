@@ -1,7 +1,14 @@
 package org.zstack.test.integration.storage.snapshot
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
+import org.zstack.header.storage.primary.PrimaryStorageStateEvent
+import org.zstack.header.storage.primary.PrimaryStorageVO
+import org.zstack.header.storage.primary.PrimaryStorageVO_
 import org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotReply
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
@@ -10,9 +17,11 @@ import org.zstack.sdk.BatchDeleteVolumeSnapshotAction
 import org.zstack.sdk.BatchDeleteVolumeSnapshotResult
 import org.zstack.sdk.CreateVolumeSnapshotResult
 import org.zstack.sdk.DestroyVmInstanceResult
+import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeSnapshotInventory
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
+import org.zstack.storage.snapshot.VolumeSnapshot
 import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -26,10 +35,12 @@ import org.zstack.storage.primary.local.LocalStorageKvmBackend
  * Create by weiwang at 2018-12-22
  */
 public class BatchDeleteVolumeSnapshotCase extends SubCase {
+    DatabaseFacade dbf
     EnvSpec env
     VmInstanceInventory cephVm
     VmInstanceInventory localVm
     VmInstanceInventory localVm2
+    VmInstanceInventory localVm3
 
     @Override
     void clean() {
@@ -80,6 +91,12 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
                 image {
                     name = "sftp-image1"
                     url  = "http://zstack.org/download/test.qcow2"
+                }
+
+                image {
+                    actualSize = SizeUnit.GIGABYTE.toByte(60)
+                    name = "sftp-image2"
+                    url  = "http://zstack.org/download/test2.qcow2"
                 }
             }
 
@@ -175,15 +192,25 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
                 useInstanceOffering("instanceOffering")
                 useImage("sftp-image1")
             }
+
+            vm {
+                name = "localVm3"
+                useCluster("local-cluster")
+                useL3Networks("l3")
+                useInstanceOffering("instanceOffering")
+                useImage("sftp-image2")
+            }
         }
     }
 
     @Override
     void test() {
+        dbf = bean(DatabaseFacade.class)
         env.create {
             cephVm = env.inventoryByName("cephVm") as VmInstanceInventory
             localVm = env.inventoryByName("localVm") as VmInstanceInventory
             localVm2 = env.inventoryByName("localVm2") as VmInstanceInventory
+            localVm3 = env.inventoryByName("localVm3") as VmInstanceInventory
 
             updateGlobalConfig {
                 category= VolumeSnapshotGlobalConfig.CATEGORY
@@ -195,7 +222,58 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
             testBatchDeleteVolumeSnapshotOnCeph()
             testBatchDeleteVolumeSnapshotOnLocalWhenVmDestroyed()
             testBatchDeleteVolumeSnapshotOnCephWhenVmDestroyed()
+            testDeleteVolumeSnapshotOnLocalWhenHasNoEnoughSpace()
             testBatchDeleteVolumeSnapshotTimeout()
+        }
+    }
+
+    void testDeleteVolumeSnapshotOnLocalWhenHasNoEnoughSpace() {
+        PrimaryStorageInventory local = env.inventoryByName("local")
+        def snap = createVolumeSnapshot {
+            name = "snapshot"
+            volumeUuid = localVm3.rootVolumeUuid
+        } as VolumeSnapshotInventory
+        def volumeSnapshotVO = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, snap.uuid).find() as VolumeSnapshotVO
+        volumeSnapshotVO.size = SizeUnit.TERABYTE.toByte(10)
+        dbf.update(volumeSnapshotVO)
+        deleteVolumeSnapshot {
+            uuid = snap.uuid
+        }
+        def localPrimaryStorageVO = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, local.uuid).find() as PrimaryStorageVO
+        assert local.getAvailableCapacity() - 1 == localPrimaryStorageVO.getCapacity().getAvailableCapacity()
+
+        def snap1 = createVolumeSnapshot {
+            name = "snapshot1"
+            volumeUuid = localVm3.rootVolumeUuid
+        } as VolumeSnapshotInventory
+        def volumeSnapshotVO1 = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, snap1.uuid).find() as VolumeSnapshotVO
+        volumeSnapshotVO1.size = SizeUnit.TERABYTE.toByte(120)
+        dbf.update(volumeSnapshotVO1)
+        changePrimaryStorageState {
+            uuid = local.uuid
+            stateEvent = PrimaryStorageStateEvent.disable.toString()
+        }
+        expectError {
+            deleteVolumeSnapshot {
+                uuid = snap1.uuid
+            }
+        }
+
+        changePrimaryStorageState {
+            uuid = local.uuid
+            stateEvent = PrimaryStorageStateEvent.enable.toString()
+        }
+        def snap2 = createVolumeSnapshot {
+            name = "snapshot2"
+            volumeUuid = localVm3.rootVolumeUuid
+        } as VolumeSnapshotInventory
+        def volumeSnapshotVO2 = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, snap2.uuid).find() as VolumeSnapshotVO
+        volumeSnapshotVO2.size = SizeUnit.TERABYTE.toByte(120)
+        dbf.update(volumeSnapshotVO2)
+        expectError {
+            deleteVolumeSnapshot {
+                uuid = snap2.uuid
+            }
         }
     }
 
