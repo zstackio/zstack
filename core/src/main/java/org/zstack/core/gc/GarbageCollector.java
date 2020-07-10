@@ -15,6 +15,7 @@ import org.zstack.core.thread.SyncThread;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.FieldUtils;
+import org.zstack.utils.TaskContext;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -130,6 +131,7 @@ public abstract class GarbageCollector {
 
     final protected void cleanThreadContext() {
         ThreadContext.clearAll();
+        TaskContext.removeTaskContext();
     }
 
     final protected void saveToDb() {
