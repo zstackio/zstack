@@ -34,10 +34,7 @@ import org.zstack.header.storage.backup.BackupStorageState;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmStateChangedExtensionPoint;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
@@ -63,7 +60,8 @@ import static org.zstack.core.Platform.operr;
 
 public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint,
         VolumeDeletionExtensionPoint, VolumeBeforeExpungeExtensionPoint, RecoverDataVolumeExtensionPoint,
-        ResourceOwnerAfterChangeExtensionPoint, VmStateChangedExtensionPoint {
+        ResourceOwnerAfterChangeExtensionPoint, VmStateChangedExtensionPoint,
+        VmAttachVolumeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeManagerImpl.class);
 
     @Autowired
@@ -876,5 +874,35 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     .set(VolumeVO_.status, VolumeStatus.Ready)
                     .update();
         }
+    }
+
+    @Override
+    public void preAttachVolume(VmInstanceInventory vm, VolumeInventory volume) {
+        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
+                .set(VolumeVO_.vmInstanceUuid, vm.getUuid())
+                .update();
+    }
+
+    @Override
+    public void beforeAttachVolume(VmInstanceInventory vm, VolumeInventory volume, Map data) {}
+
+    @Override
+    public void afterInstantiateVolume(VmInstanceInventory vm, VolumeInventory volume) {}
+
+    @Override
+    public void afterAttachVolume(VmInstanceInventory vm, VolumeInventory volume) {
+        String format = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid()).select(VolumeVO_.format).findValue();
+        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
+                .set(VolumeVO_.vmInstanceUuid, volume.isShareable() ? null : vm.getUuid())
+                .set(VolumeVO_.format, format != null ? format :
+                        VolumeFormat.getVolumeFormatByMasterHypervisorType(vm.getHypervisorType()))
+                .update();
+    }
+
+    @Override
+    public void failedToAttachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode, Map data) {
+        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
+                .set(VolumeVO_.vmInstanceUuid, null)
+                .update();
     }
 }
