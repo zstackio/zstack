@@ -667,6 +667,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
 
             final VmInstanceSpec spec = new VmInstanceSpec();
             spec.setVmInventory(msg.getVmInstanceInventory());
+            spec.setRequiredHostUuid(smsg.getApplianceVmSpec().getRequiredHostUuid());
             List<VmNicSpec> nicSpecs = new ArrayList<>();
             if (msg.getL3NetworkUuids() != null && !msg.getL3NetworkUuids().isEmpty()) {
                 SimpleQuery<L3NetworkVO> nwquery = dbf.createQuery(L3NetworkVO.class);
