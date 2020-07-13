@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`FaultToleranceVmInstanceGroupHostPortRefVO`
     `blockReplicationPortId` bigint unsigned NOT NULL,
     `primaryVmMonitorPortId` bigint unsigned NOT NULL,
     `secondaryVmMonitorPortId` bigint unsigned NOT NULL,
+    `reservedVmMigrationPortId` bigint unsigned DEFAULT 0,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY (`id`),
