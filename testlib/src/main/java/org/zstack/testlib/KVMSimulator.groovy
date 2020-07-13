@@ -213,7 +213,9 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.CreateVlanBridgeResponse()
         }
 
-        spec.simulator(KVMConstant.KVM_START_VM_PATH) {
+        spec.simulator(KVMConstant.KVM_START_VM_PATH) { HttpEntity<String> e ->
+            KVMAgentCommands.StartVmCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
+            assert new HashSet<>(cmd.dataVolumes.deviceId).size() == cmd.dataVolumes.size()
             return new KVMAgentCommands.StartVmResponse()
         }
 

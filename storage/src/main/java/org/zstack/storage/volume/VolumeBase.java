@@ -1751,10 +1751,6 @@ public class VolumeBase implements Volume {
 
             @Override
             public void run(SyncTaskChain chain) {
-                self = dbf.reload(self);
-                self.setVmInstanceUuid(msg.getVmInstanceUuid());
-                self = dbf.updateAndRefresh(self);
-
                 AttachDataVolumeToVmMsg amsg = new AttachDataVolumeToVmMsg();
                 amsg.setVolume(getSelfInventory());
                 amsg.setVmInstanceUuid(msg.getVmInstanceUuid());
@@ -1765,16 +1761,13 @@ public class VolumeBase implements Volume {
                         final APIAttachDataVolumeToVmEvent evt = new APIAttachDataVolumeToVmEvent(msg.getId());
                         self = dbf.reload(self);
                         if (reply.isSuccess()) {
-                            AttachDataVolumeToVmReply ar = reply.castReply();
-                            self.setVmInstanceUuid(self.isShareable() ? null : msg.getVmInstanceUuid());
-                            self.setFormat(self.getFormat() != null ? self.getFormat() :
-                                    VolumeFormat.getVolumeFormatByMasterHypervisorType(ar.getHypervisorType()).toString());
-                            self = dbf.updateAndRefresh(self);
-
                             evt.setInventory(getSelfInventory());
                         } else {
-                            self.setVmInstanceUuid(null);
-                            dbf.update(self);
+                            if (self.getVmInstanceUuid() != null) {
+                                self.setVmInstanceUuid(null);
+                                dbf.update(self);
+                            }
+
                             evt.setError(reply.getError());
                         }
 
