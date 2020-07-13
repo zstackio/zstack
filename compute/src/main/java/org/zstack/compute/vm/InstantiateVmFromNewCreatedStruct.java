@@ -87,7 +87,7 @@ public class InstantiateVmFromNewCreatedStruct {
     public static InstantiateVmFromNewCreatedStruct fromMessage(CreateVmInstanceMsg msg) {
         InstantiateVmFromNewCreatedStruct struct = new InstantiateVmFromNewCreatedStruct();
         struct.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
-        struct.setL3NetworkUuids(msg.getL3NetworkUuids());
+        struct.setL3NetworkUuids(msg.getL3NetworkSpecs());
         struct.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
         struct.setPrimaryStorageUuidForDataVolume(msg.getPrimaryStorageUuidForDataVolume());
