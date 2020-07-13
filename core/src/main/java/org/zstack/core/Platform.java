@@ -298,6 +298,7 @@ public class Platform {
                     url = ln(dbUrl).formatByMap(
                             map(e("database", "zstack"))
                     );
+                    url = url.trim();
                 } else {
                     url = String.format("%s/zstack", dbUrl);
                 }
@@ -311,6 +312,7 @@ public class Platform {
                     url = ln(dbUrl).formatByMap(
                             map(e("database", "zstack_rest"))
                     );
+                    url = url.trim();
                 } else {
                     url = String.format("%s/zstack_rest", dbUrl);
                 }
