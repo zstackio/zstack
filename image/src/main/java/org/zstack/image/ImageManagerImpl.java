@@ -5,6 +5,7 @@ import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.host.HostExtensionManager;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -112,6 +113,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
 
     private Map<String, ImageFactory> imageFactories = Collections.synchronizedMap(new HashMap<>());
+    private List<ImageExtensionManager> imageExtensionManagers = new ArrayList<>();
     private static final Set<Class> allowedMessageAfterDeletion = new HashSet<>();
     private Future<Void> expungeTask;
 
@@ -122,7 +124,11 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     @Override
     @MessageSafe
     public void handleMessage(Message msg) {
-        if (msg instanceof ImageMessage) {
+        ImageExtensionManager extensionManager = imageExtensionManagers.stream().filter(it -> it.getMessageClasses()
+                .stream().anyMatch(clz -> clz.isAssignableFrom(msg.getClass()))).findFirst().orElse(null);
+        if (extensionManager != null) {
+            extensionManager.handleMessage(msg);
+        } else if (msg instanceof ImageMessage) {
             passThrough((ImageMessage) msg);
         } else if (msg instanceof APIMessage) {
             handleApiMessage(msg);
@@ -485,6 +491,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             }
             imageFactories.put(f.getType().toString(), f);
         }
+
+        imageExtensionManagers.addAll(pluginRgty.getExtensionList(ImageExtensionManager.class));
     }
 
     @Override
