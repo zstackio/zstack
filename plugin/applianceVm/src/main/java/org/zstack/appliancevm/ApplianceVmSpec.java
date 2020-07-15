@@ -37,6 +37,9 @@ public class ApplianceVmSpec implements Serializable {
     private int agentPort = 7759;
     private String staticVip;
     private ApplianceVmHaSpec haSpec;
+    private String requiredZoneUuid;
+    private String requiredClusterUuid;
+    private String requiredHostUuid;
 
     public int getAgentPort() {
         return agentPort;
@@ -211,4 +214,16 @@ public class ApplianceVmSpec implements Serializable {
     public void setDefaultL3Network(L3NetworkInventory defaultL3Network) {
         this.defaultL3Network = defaultL3Network;
     }
+
+    public String getRequiredZoneUuid() { return requiredZoneUuid; }
+
+    public void setRequiredZoneUuid(String requiredZoneUuid) { this.requiredZoneUuid = requiredZoneUuid; }
+
+    public String getRequiredClusterUuid() { return requiredClusterUuid; }
+
+    public void setRequiredClusterUuid(String requiredClusterUuid) { this.requiredClusterUuid = requiredClusterUuid; }
+
+    public String getRequiredHostUuid() { return requiredHostUuid; }
+
+    public void setRequiredHostUuid(String requiredHostUuid) { this.requiredHostUuid = requiredHostUuid; }
 }

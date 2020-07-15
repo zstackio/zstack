@@ -92,6 +92,8 @@ public class CreateApplianceVmJob implements Job {
                 } else {
                     avo.setUuid(Platform.getUuid());
                 }
+                avo.setZoneUuid(spec.getRequiredZoneUuid());
+                avo.setClusterUuid(spec.getRequiredClusterUuid());
                 avo.setManagementNetworkUuid(spec.getManagementNic().getL3NetworkUuid());
                 String defaultRouteL3NetworkUuid = spec.getDefaultRouteL3Network() != null ? spec.getDefaultRouteL3Network().getUuid() : spec.getManagementNic().getL3NetworkUuid();
                 avo.setDefaultRouteL3NetworkUuid(defaultRouteL3NetworkUuid);
