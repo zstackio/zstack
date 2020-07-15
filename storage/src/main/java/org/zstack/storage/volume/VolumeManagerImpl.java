@@ -60,7 +60,8 @@ import java.util.concurrent.TimeUnit;
 import static org.zstack.core.Platform.operr;
 
 public class VolumeManagerImpl extends AbstractService implements VolumeManager, ManagementNodeReadyExtensionPoint,
-        ResourceOwnerAfterChangeExtensionPoint, VmStateChangedExtensionPoint, VmDetachVolumeExtensionPoint {
+        ResourceOwnerAfterChangeExtensionPoint, VmStateChangedExtensionPoint, VmDetachVolumeExtensionPoint,
+        VmAttachVolumeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeManagerImpl.class);
 
     @Autowired
@@ -882,12 +883,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     @Override
     public void preDetachVolume(VmInstanceInventory vm, VolumeInventory volume) {
-
     }
 
     @Override
     public void beforeDetachVolume(VmInstanceInventory vm, VolumeInventory volume) {
-
     }
 
     @Override
@@ -902,6 +901,35 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     @Override
     public void failedToDetachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode) {
+    }
 
+    @Override
+    public void preAttachVolume(VmInstanceInventory vm, VolumeInventory volume) {
+        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
+                .set(VolumeVO_.vmInstanceUuid, vm.getUuid())
+                .update();
+    }
+
+    @Override
+    public void beforeAttachVolume(VmInstanceInventory vm, VolumeInventory volume, Map data) {}
+
+    @Override
+    public void afterInstantiateVolume(VmInstanceInventory vm, VolumeInventory volume) {}
+
+    @Override
+    public void afterAttachVolume(VmInstanceInventory vm, VolumeInventory volume) {
+        String format = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid()).select(VolumeVO_.format).findValue();
+        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
+                .set(VolumeVO_.vmInstanceUuid, volume.isShareable() ? null : vm.getUuid())
+                .set(VolumeVO_.format, format != null ? format :
+                        VolumeFormat.getVolumeFormatByMasterHypervisorType(vm.getHypervisorType()))
+                .update();
+    }
+
+    @Override
+    public void failedToAttachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode, Map data) {
+        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.getUuid())
+                .set(VolumeVO_.vmInstanceUuid, null)
+                .update();
     }
 }
