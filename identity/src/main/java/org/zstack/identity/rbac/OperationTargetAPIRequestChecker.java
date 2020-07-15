@@ -9,10 +9,13 @@ import org.zstack.header.identity.*;
 import org.zstack.header.identity.rbac.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APISyncCallMessage;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.identity.APIRequestChecker;
 
 import javax.persistence.Tuple;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
@@ -117,6 +120,8 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                         checkIfTheAccountOperationItSelf(param);
                     } else if (info.getTargetResources().stream().anyMatch( it -> resourceType.isAssignableFrom(it))) {
                         checkIfTheAccountOwnTheResource(param);
+                    } else if (resourceType.equals(SystemTagVO.class)) {
+                        checkIfTheAccountOwnTheTaggedResource(param);
                     } else {
                         checkIfTheAccountCanAccessTheResource(param);
                     }
@@ -126,7 +131,6 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                     throw new CloudRuntimeException(e);
                 }
             }
-
 
             private List<String> getResourceUuids(APIMessage.FieldParam param) throws IllegalAccessException {
                 List<String> uuids = new ArrayList<>();
@@ -169,6 +173,17 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                 }
 
                 Class resourceType = param.param.resourceType();
+                Collection<AccountResourceBundle> bundles = getAccountResourceBundles(uuids);
+                uuids.forEach(uuid -> {
+                    Optional<AccountResourceBundle> opt = bundles.stream().filter(b -> b.accountUuid.equals(rbacEntity.getApiMessage().getSession().getAccountUuid()) && b.resourceUuid.equals(uuid)).findFirst();
+                    if (!opt.isPresent()) {
+                        throw new OperationFailureException(operr("permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
+                                rbacEntity.getApiMessage().getSession().getAccountUuid(), uuid, resourceType.getSimpleName()));
+                    }
+                });
+            }
+
+            private Collection<AccountResourceBundle> getAccountResourceBundles(List<String> uuids) {
                 List<Tuple> ts = q(AccountResourceRefVO.class).select(AccountResourceRefVO_.accountUuid, AccountResourceRefVO_.resourceUuid)
                         .in(AccountResourceRefVO_.resourceUuid, uuids)
                         //.eq(AccountResourceRefVO_.resourceType, acntMgr.getBaseResourceType(resourceType).getSimpleName())
@@ -183,12 +198,35 @@ public class OperationTargetAPIRequestChecker implements APIRequestChecker {
                                 .listTuple()
                 );
 
-                Collection<AccountResourceBundle> bundles = toAccountResourceBundles(uuids, ts);
-                uuids.forEach(uuid -> {
-                    Optional<AccountResourceBundle> opt = bundles.stream().filter(b -> b.accountUuid.equals(rbacEntity.getApiMessage().getSession().getAccountUuid()) && b.resourceUuid.equals(uuid)).findFirst();
+                return toAccountResourceBundles(uuids, ts);
+            }
+
+            private void checkIfTheAccountOwnTheTaggedResource(APIMessage.FieldParam param) throws IllegalAccessException {
+                List<String> uuids = getResourceUuids(param);
+                if (uuids.isEmpty()) {
+                    return;
+                }
+
+                List<Tuple> taggedResource = q(SystemTagVO.class).select(SystemTagVO_.resourceUuid, SystemTagVO_.resourceType)
+                        .in(SystemTagVO_.uuid, uuids).listTuple();
+                if (taggedResource.isEmpty()) {
+                    return;
+                }
+
+                List<String> taggedResUuids = taggedResource.stream()
+                        .map(ts -> ts.get(0, String.class))
+                        .collect(Collectors.toList());
+                Collection<AccountResourceBundle> bundles = getAccountResourceBundles(taggedResUuids);
+
+                taggedResource.forEach(tuple -> {
+                    String uuid = tuple.get(0, String.class);
+                    String type = tuple.get(1, String.class);
+                    Optional<AccountResourceBundle> opt = bundles.stream()
+                            .filter(b -> b.accountUuid.equals(rbacEntity.getApiMessage().getSession().getAccountUuid()) && b.resourceUuid.equals(uuid))
+                            .findFirst();
                     if (!opt.isPresent()) {
-                        throw new OperationFailureException(operr("permission denied, the account[uuid:%s] is not the owner of the resource[uuid:%s, type:%s]",
-                                rbacEntity.getApiMessage().getSession().getAccountUuid(), uuid, resourceType.getSimpleName()));
+                        throw new OperationFailureException(operr("permission denied, the account[uuid:%s] is not the owner of the tagged resource[uuid:%s, type:%s]",
+                                rbacEntity.getApiMessage().getSession().getAccountUuid(), uuid, type));
                     }
                 });
             }
