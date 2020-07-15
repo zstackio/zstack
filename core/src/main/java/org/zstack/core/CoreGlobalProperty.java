@@ -30,7 +30,7 @@ public class CoreGlobalProperty {
     public static boolean EXIT_JVM_ON_STOP;
     @GlobalProperty(name = "locale", defaultValue = "zh_CN")
     public static String LOCALE;
-    @GlobalProperty(name = "user.home")
+    @GlobalProperty(name = "user.home", defaultValue = "/usr/local/astack")
     public static String USER_HOME;
     @GlobalProperty(name = "RESTFacade.readTimeout", defaultValue = "300000")
     public static int REST_FACADE_READ_TIMEOUT;
@@ -50,7 +50,7 @@ public class CoreGlobalProperty {
     public static int CONSOLE_PROXY_PORT;
     @GlobalProperty(name = "consoleProxyCertFile", defaultValue = "")
     public static String CONSOLE_PROXY_CERT_FILE;
-    @GlobalProperty(name = "dataDir", defaultValue = "/var/lib/zstack/")
+    @GlobalProperty(name = "dataDir", defaultValue = "/var/lib/astack/")
     public static String DATA_DIR;
     @GlobalProperty(name = "logDir", defaultValue = "{catalina.home}/logs/")
     public static String LOG_DIR;

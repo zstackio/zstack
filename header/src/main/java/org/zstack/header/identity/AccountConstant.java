@@ -12,7 +12,7 @@ public interface AccountConstant {
     String INITIAL_SYSTEM_ADMIN_NAME = "admin";
     // 'password' SHA512 hex coding
     @PythonClass
-    String INITIAL_SYSTEM_ADMIN_PASSWORD = "b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86";
+    String INITIAL_SYSTEM_ADMIN_PASSWORD = "93085405989dd64b7e665ce09dd0df0d33e9051442951b798ce548f5faded82da1d4f31798651048ec650f284b83ac5530113bb0a5247a69e0db0a73abcd7080";
 
     String SYSTEM_ADMIN_ROLE = ".*";
 
