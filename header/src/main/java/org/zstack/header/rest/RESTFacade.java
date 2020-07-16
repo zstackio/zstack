@@ -5,6 +5,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.zstack.header.core.Completion;
@@ -12,6 +13,7 @@ import org.zstack.header.core.Completion;
 import javax.net.ssl.SSLContext;
 import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -82,11 +84,25 @@ public interface RESTFacade {
 
     Runnable installBeforeAsyncJsonPostInterceptor(BeforeAsyncJsonPostInterceptor interceptor);
 
+    static void setMessageConverter(List<HttpMessageConverter<?>> converters) {
+        StringHttpMessageConverter stringHttpMessageConverter = new StringHttpMessageConverter(StandardCharsets.UTF_8);
+        stringHttpMessageConverter.setWriteAcceptCharset(true);
+
+        for (int i = 0; i < converters.size(); i++) {
+            if (converters.get(i) instanceof StringHttpMessageConverter) {
+                converters.remove(i);
+                converters.add(i, stringHttpMessageConverter);
+                break;
+            }
+        }
+    }
+
     // timeout are in milliseconds
     static TimeoutRestTemplate createRestTemplate(int readTimeout, int connectTimeout) {
         HttpComponentsClientHttpRequestFactory factory = new TimeoutHttpComponentsClientHttpRequestFactory();
         factory.setReadTimeout(readTimeout);
         factory.setConnectTimeout(connectTimeout);
+        factory.setConnectionRequestTimeout(connectTimeout * 2);
 
         SSLContext sslContext = DefaultSSLVerifier.getSSLContext(DefaultSSLVerifier.trustAllCerts);
 
@@ -98,16 +114,7 @@ public interface RESTFacade {
         }
 
         TimeoutRestTemplate template = new TimeoutRestTemplate(factory);
-
-        StringHttpMessageConverter stringHttpMessageConverter = new StringHttpMessageConverter(StandardCharsets.UTF_8);
-        stringHttpMessageConverter.setWriteAcceptCharset(true);
-        for (int i = 0; i < template.getMessageConverters().size(); i++) {
-            if (template.getMessageConverters().get(i) instanceof StringHttpMessageConverter) {
-                template.getMessageConverters().remove(i);
-                template.getMessageConverters().add(i, stringHttpMessageConverter);
-                break;
-            }
-        }
+        setMessageConverter(template.getMessageConverters());
 
         return template;
     }
