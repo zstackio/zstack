@@ -31,13 +31,12 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
-import org.zstack.header.volume.VolumeFormat;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
+import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.volume.VolumeSystemTags;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -50,6 +49,9 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
+
 /**
  * Created by xing5 on 2016/3/26.
  */
@@ -233,6 +235,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         bkd.handle(msg, new ReturnValueCompletion<DownloadDataVolumeToPrimaryStorageReply>(msg) {
             @Override
             public void success(DownloadDataVolumeToPrimaryStorageReply reply) {
+                saveVolumeProvisioningStrategy(msg.getVolumeUuid(), VolumeProvisioningStrategy.ThinProvisioning);
                 bus.reply(msg, reply);
             }
 
@@ -355,6 +358,7 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
         bkd.handle(msg, new ReturnValueCompletion<SyncVolumeSizeOnPrimaryStorageReply>(msg) {
             @Override
             public void success(SyncVolumeSizeOnPrimaryStorageReply returnValue) {
+                saveVolumeProvisioningStrategy(msg.getVolumeUuid(), returnValue.getActualSize() < returnValue.getSize() ? VolumeProvisioningStrategy.ThinProvisioning : VolumeProvisioningStrategy.ThickProvisioning);
                 bus.reply(msg, returnValue);
             }
 
@@ -365,6 +369,17 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    protected void saveVolumeProvisioningStrategy(String volumeUuid, VolumeProvisioningStrategy strategy) {
+        if (!VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.hasTag(volumeUuid)) {
+            SystemTagCreator tagCreator = VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.newSystemTagCreator(volumeUuid);
+            tagCreator.setTagByTokens(
+                    map(e(VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY_TOKEN, strategy))
+            );
+            tagCreator.inherent = false;
+            tagCreator.create();
+        }
     }
 
     protected void hookToKVMHostConnectedEventToChangeStatusToConnected(){
