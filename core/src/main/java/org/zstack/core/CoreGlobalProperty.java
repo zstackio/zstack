@@ -38,6 +38,10 @@ public class CoreGlobalProperty {
     public static int REST_FACADE_CONNECT_TIMEOUT;
     @GlobalProperty(name = "RESTFacade.echoTimeout", defaultValue = "60")
     public static int REST_FACADE_ECHO_TIMEOUT;
+    @GlobalProperty(name = "RESTFacade.maxPerRoute", defaultValue = "2")
+    public static int REST_FACADE_MAX_PER_ROUTE;
+    @GlobalProperty(name = "RESTFacade.maxTotal", defaultValue = "128")
+    public static int REST_FACADE_MAX_TOTAL;
     @GlobalProperty(name = "upgradeStartOn", defaultValue = "false")
     public static boolean IS_UPGRADE_START;
     @GlobalProperty(name = "shadowEntityOn", defaultValue = "false")

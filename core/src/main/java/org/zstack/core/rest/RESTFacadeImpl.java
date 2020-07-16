@@ -3,6 +3,7 @@ package org.zstack.core.rest;
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.client.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
@@ -58,6 +59,7 @@ public class RESTFacadeImpl implements RESTFacade {
     private String path;
     private String callbackUrl;
     private TimeoutRestTemplate template;
+    private AsyncRestTemplate asyncRestTemplate;
     private String baseUrl;
     private String sendCommandUrl;
     private String callbackHostName;
@@ -110,6 +112,11 @@ public class RESTFacadeImpl implements RESTFacade {
 
         logger.debug(String.format("RESTFacade built callback url: %s", callbackUrl));
         template = RESTFacade.createRestTemplate(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT, CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT);
+        asyncRestTemplate = RESTFacade.createAsyncRestTemplate(
+                CoreGlobalProperty.REST_FACADE_READ_TIMEOUT,
+                CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT,
+                CoreGlobalProperty.REST_FACADE_MAX_PER_ROUTE,
+                CoreGlobalProperty.REST_FACADE_MAX_TOTAL);
     }
 
     void notifyCallback(HttpServletRequest req, HttpServletResponse rsp) {
@@ -259,14 +266,6 @@ public class RESTFacadeImpl implements RESTFacade {
 
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
 
-        Retry<ResponseEntity<String>> retry = new Retry<ResponseEntity<String>>() {
-            @Override
-            @RetryCondition(onExceptions = {ResourceAccessException.class, RestClientException.class, HttpClientErrorException.class})
-            protected ResponseEntity<String> call() {
-                return template.exchange(url, method, req, String.class, taskUuid, unit.toMillis(timeout), unit.toMillis(timeout));
-            }
-        };
-
         AsyncHttpWrapper wrapper = new AsyncHttpWrapper() {
             final AtomicBoolean called = new AtomicBoolean(false);
 
@@ -286,7 +285,6 @@ public class RESTFacadeImpl implements RESTFacade {
             }
 
             public void fail(ErrorCode err) {
-                retry.stop();
                 if (!called.compareAndSet(false, true)) {
                     logger.warn(String.format("Failed callback many times, taskId=%s, currentTimeMillis=%s", taskUuid, System.currentTimeMillis()));
                     return;
@@ -329,7 +327,7 @@ public class RESTFacadeImpl implements RESTFacade {
                 }
 
                 if (callback instanceof JsonAsyncRESTCallback) {
-                    JsonAsyncRESTCallback jcallback = (JsonAsyncRESTCallback)callback;
+                    JsonAsyncRESTCallback<Object> jcallback = (JsonAsyncRESTCallback)callback;
                     try {
                         Object obj = JSONObjectUtil.toObject(responseEntity.getBody(), jcallback.getReturnClass());
                         ErrorCode err = vf.validateErrorByErrorCode(obj);
@@ -351,31 +349,9 @@ public class RESTFacadeImpl implements RESTFacade {
 
         try {
             wrappers.put(taskUuid, wrapper);
-
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("json %s [%s], %s", method.toString(), url, req.toString()));
-            }
-
-            ResponseEntity<String> rsp;
-
-            try {
-                if (CoreGlobalProperty.UNIT_TEST_ON && !CoreGlobalProperty.SIMULATORS_ON) {
-                    rsp = template.exchange(url, HttpMethod.POST, req, String.class);
-                } else {
-                    rsp = retry.run();
-                }
-            } catch (HttpClientErrorException e) {
-                wrapper.fail(err(SysErrors.HTTP_ERROR, "http status: %s, response body:%s", e.getStatusCode(), e.getResponseBodyAsString()));
-                return;
-            }
-
-            if (rsp.getStatusCode() != org.springframework.http.HttpStatus.OK) {
-                String err = String.format("http status: %s, response body:%s", rsp.getStatusCode().toString(), rsp.getBody());
-                logger.warn(err);
-                wrapper.fail(err(SysErrors.HTTP_ERROR, "http status: %s, response body:%s", rsp.getStatusCode().toString(), rsp.getBody()));
-            }
-        } catch (Throwable e) {
-            logger.warn(String.format("Unable to post to %s", url), e);
+            ListenableFuture<ResponseEntity<String>> f = asyncRestTemplate.exchange(url, HttpMethod.POST, req, String.class);
+            f.addCallback(rsp -> {}, e -> wrapper.fail(err(SysErrors.HTTP_ERROR, e.getLocalizedMessage())));
+        } catch (RestClientException e) {
             wrapper.fail(ExceptionDSL.isCausedBy(e, ResourceAccessException.class) ? err(SysErrors.IO_ERROR, e.getMessage()) : inerr(e.getMessage()));
         }
     }
@@ -410,7 +386,7 @@ public class RESTFacadeImpl implements RESTFacade {
             }
 
             HttpHeaders header = new HttpHeaders();
-            for (Enumeration e = req.getHeaderNames() ; e.hasMoreElements() ;) {
+            for (Enumeration<?> e = req.getHeaderNames() ; e.hasMoreElements() ;) {
                 String name = e.nextElement().toString();
                 header.add(name, req.getHeader(name));
             }
