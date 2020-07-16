@@ -42,6 +42,7 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
+import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
@@ -2089,6 +2090,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     @Override
                     public void handle(Map data) {
                         createResourceRefVO(msg.getVolumeUuid(), VolumeVO.class.getSimpleName(), msg.getImage().getSize(), msg.getHostUuid());
+                        saveVolumeProvisioningStrategy(msg.getVolumeUuid(), VolumeProvisioningStrategy.ThinProvisioning);
                         bus.reply(msg, reply);
                     }
                 });
@@ -2418,6 +2420,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         bkd.handle(msg, huuid, new ReturnValueCompletion<SyncVolumeSizeOnPrimaryStorageReply>(msg) {
             @Override
             public void success(SyncVolumeSizeOnPrimaryStorageReply returnValue) {
+                saveVolumeProvisioningStrategy(msg.getVolumeUuid(), returnValue.getActualSize() < returnValue.getSize() ? VolumeProvisioningStrategy.ThinProvisioning : VolumeProvisioningStrategy.ThickProvisioning);
                 bus.reply(msg, returnValue);
             }
 
@@ -2428,6 +2431,17 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    protected void saveVolumeProvisioningStrategy(String volumeUuid, VolumeProvisioningStrategy strategy) {
+        if (!VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.hasTag(volumeUuid)) {
+            SystemTagCreator tagCreator = VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.newSystemTagCreator(volumeUuid);
+            tagCreator.setTagByTokens(
+                    map(e(VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY_TOKEN, strategy))
+            );
+            tagCreator.inherent = false;
+            tagCreator.create();
+        }
     }
 
     protected void setCapacity(Long total, Long avail, Long totalPhysical, Long availPhysical) {

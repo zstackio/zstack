@@ -25,6 +25,8 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.backup.*;
@@ -34,10 +36,7 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.VolumeFormat;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
+import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.ChangePrimaryStorageStatusMsg;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
@@ -58,7 +57,7 @@ import java.util.concurrent.Callable;
 import static org.zstack.utils.CollectionDSL.*;
 
 public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, PrimaryStorageFactory, Component, CreateTemplateFromVolumeSnapshotExtensionPoint, RecalculatePrimaryStorageCapacityExtensionPoint,
-        PrimaryStorageDetachExtensionPoint, PrimaryStorageAttachExtensionPoint, HostDeleteExtensionPoint, PostMarkRootVolumeAsSnapshotExtension, ClusterUpdateOSExtensionPoint {
+        PrimaryStorageDetachExtensionPoint, PrimaryStorageAttachExtensionPoint, HostDeleteExtensionPoint, PostMarkRootVolumeAsSnapshotExtension, ClusterUpdateOSExtensionPoint, AfterInstantiateVolumeExtensionPoint {
     private static CLogger logger = Utils.getLogger(NfsPrimaryStorageFactory.class);
 
     @Autowired
@@ -758,5 +757,32 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     @Override
     public void afterUpdateClusterOS(ClusterVO cls) {
 
+    }
+
+    @Override
+    public void afterInstantiateVolume(InstantiateVolumeOnPrimaryStorageMsg msg) {
+        if (msg instanceof InstantiateMemoryVolumeOnPrimaryStorageMsg) {
+            return;
+        }
+
+        String psType = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class).getType();
+        if (!type.toString().equals(psType)) {
+            return;
+        }
+
+        boolean hasBackingFile = false;
+        if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg imsg = (InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg;
+            ImageInventory image = imsg.getTemplateSpec().getInventory();
+            if (ImageConstant.ImageMediaType.RootVolumeTemplate.toString().equals(image.getMediaType())) {
+                hasBackingFile = true;
+            }
+        }
+
+        VolumeInventory volume = msg.getVolume();
+        volume.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        for (CreateQcow2VolumeProvisioningStrategyExtensionPoint exp : pluginRgty.getExtensionList(CreateQcow2VolumeProvisioningStrategyExtensionPoint.class)) {
+            exp.saveQcow2VolumeProvisioningStrategy(volume, hasBackingFile);
+        }
     }
 }

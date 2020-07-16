@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmExpungeRootVolumeValidator;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -16,6 +17,8 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageAskInstallPathMsg;
 import org.zstack.header.storage.backup.BackupStorageAskInstallPathReply;
@@ -24,9 +27,7 @@ import org.zstack.header.storage.backup.DeleteBitsOnBackupStorageMsg;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtensionPoint;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
-import org.zstack.header.volume.VolumeFormat;
-import org.zstack.header.volume.VolumeVO;
-import org.zstack.header.volume.VolumeVO_;
+import org.zstack.header.volume.*;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -43,7 +44,7 @@ import static org.zstack.core.Platform.operr;
  */
 public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTemplateFromVolumeSnapshotExtensionPoint,
         HostDeleteExtensionPoint, PrimaryStorageDetachExtensionPoint,
-        PostMarkRootVolumeAsSnapshotExtension, PrimaryStorageAttachExtensionPoint{
+        PostMarkRootVolumeAsSnapshotExtension, PrimaryStorageAttachExtensionPoint, AfterInstantiateVolumeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SMPPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(SMPConstants.SMP_TYPE);
@@ -59,6 +60,8 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
     private CloudBus bus;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     @Override
     public PrimaryStorageType getPrimaryStorageType() {
@@ -391,6 +394,33 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
             msg.setPrimaryStorageUuid(inventory.getUuid());
             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, inventory.getUuid());
             bus.send(msg);
+        }
+    }
+
+    @Override
+    public void afterInstantiateVolume(InstantiateVolumeOnPrimaryStorageMsg msg) {
+        if (msg instanceof InstantiateMemoryVolumeOnPrimaryStorageMsg) {
+            return;
+        }
+
+        String psType = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class).getType();
+        if (!type.toString().equals(psType)) {
+            return;
+        }
+
+        boolean hasBackingFile = false;
+        if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg imsg = (InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg;
+            ImageInventory image = imsg.getTemplateSpec().getInventory();
+            if (ImageConstant.ImageMediaType.RootVolumeTemplate.toString().equals(image.getMediaType())) {
+                hasBackingFile = true;
+            }
+        }
+
+        VolumeInventory volume = msg.getVolume();
+        volume.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        for (CreateQcow2VolumeProvisioningStrategyExtensionPoint exp : pluginRgty.getExtensionList(CreateQcow2VolumeProvisioningStrategyExtensionPoint.class)) {
+            exp.saveQcow2VolumeProvisioningStrategy(volume, hasBackingFile);
         }
     }
 }
