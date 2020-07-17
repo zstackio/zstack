@@ -24,6 +24,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImageConstant;
+import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
@@ -67,7 +68,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         AddExpandedQueryExtensionPoint, VolumeGetAttachableVmExtensionPoint, RecoverDataVolumeExtensionPoint,
         RecoverVmExtensionPoint, VmPreMigrationExtensionPoint, CreateTemplateFromVolumeSnapshotExtensionPoint, HostAfterConnectedExtensionPoint,
         InstantiateDataVolumeOnCreationExtensionPoint, PrimaryStorageAttachExtensionPoint, PostMarkRootVolumeAsSnapshotExtension,
-        AfterTakeLiveSnapshotsOnVolumes, VmCapabilitiesExtensionPoint, PrimaryStorageDetachExtensionPoint, CreateRecycleExtensionPoint {
+        AfterTakeLiveSnapshotsOnVolumes, VmCapabilitiesExtensionPoint, PrimaryStorageDetachExtensionPoint, CreateRecycleExtensionPoint, AfterInstantiateVolumeExtensionPoint {
     private final static CLogger logger = Utils.getLogger(LocalStorageFactory.class);
     public static PrimaryStorageType type = new PrimaryStorageType(LocalStorageConstants.LOCAL_STORAGE_TYPE) {
         @Override
@@ -246,6 +247,33 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     @Override
     public PrimaryStorageType getPrimaryStorageType() {
         return type;
+    }
+
+    @Override
+    public void afterInstantiateVolume(InstantiateVolumeOnPrimaryStorageMsg msg) {
+        if (msg instanceof InstantiateMemoryVolumeOnPrimaryStorageMsg) {
+            return;
+        }
+
+        String psType = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class).getType();
+        if (!type.toString().equals(psType)) {
+            return;
+        }
+
+        boolean hasBackingFile = false;
+        if (msg instanceof InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) {
+            InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg imsg = (InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg) msg;
+            ImageInventory image = imsg.getTemplateSpec().getInventory();
+            if (ImageConstant.ImageMediaType.RootVolumeTemplate.toString().equals(image.getMediaType())) {
+                hasBackingFile = true;
+            }
+        }
+        
+        VolumeInventory volume = msg.getVolume();
+        volume.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
+        for (CreateQcow2VolumeProvisioningStrategyExtensionPoint exp : pluginRgty.getExtensionList(CreateQcow2VolumeProvisioningStrategyExtensionPoint.class)) {
+            exp.saveQcow2VolumeProvisioningStrategy(volume, hasBackingFile);
+        }
     }
 
     @Override
@@ -1020,6 +1048,10 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
                 if (!reply.isSuccess()) {
                     completion.fail(reply.getError());
                 } else {
+                    List<AfterInstantiateVolumeExtensionPoint> exts = pluginRgty.getExtensionList(AfterInstantiateVolumeExtensionPoint.class);
+                    for (AfterInstantiateVolumeExtensionPoint ext : exts) {
+                        ext.afterInstantiateVolume(imsg);
+                    }
                     completion.success(((InstantiateVolumeOnPrimaryStorageReply) reply).getVolume());
                 }
             }
