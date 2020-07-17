@@ -48,6 +48,8 @@ import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
+import org.zstack.storage.volume.VolumeSystemTags;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -65,6 +67,8 @@ import java.util.concurrent.TimeUnit;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 public class NfsPrimaryStorage extends PrimaryStorageBase {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryStorage.class);
@@ -1005,6 +1009,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     @Override
                     public void success() {
                         reply.setInstallPath(installPath);
+                        saveVolumeProvisioningStrategy(msg.getVolumeUuid(), VolumeProvisioningStrategy.ThinProvisioning);
                         bus.reply(msg, reply);
                     }
 
@@ -1176,6 +1181,7 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<SyncVolumeSizeOnPrimaryStorageReply>(msg) {
             @Override
             public void success(SyncVolumeSizeOnPrimaryStorageReply reply) {
+                saveVolumeProvisioningStrategy(msg.getVolumeUuid(), reply.getActualSize() < reply.getSize() ? VolumeProvisioningStrategy.ThinProvisioning : VolumeProvisioningStrategy.ThickProvisioning);
                 bus.reply(msg, reply);
             }
 
@@ -1186,6 +1192,17 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    protected void saveVolumeProvisioningStrategy(String volumeUuid, VolumeProvisioningStrategy strategy) {
+        if (!VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.hasTag(volumeUuid)) {
+            SystemTagCreator tagCreator = VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY.newSystemTagCreator(volumeUuid);
+            tagCreator.setTagByTokens(
+                    map(e(VolumeSystemTags.VOLUME_PROVISIONING_STRATEGY_TOKEN, strategy))
+            );
+            tagCreator.inherent = false;
+            tagCreator.create();
+        }
     }
 
     private void handle(NfsToNfsMigrateBitsMsg msg) {
