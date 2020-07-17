@@ -539,6 +539,11 @@ public class VolumeBase implements Volume {
                                 InstantiateVolumeOnPrimaryStorageReply ir = reply.castReply();
                                 installPath = ir.getVolume().getInstallPath();
                                 format = ir.getVolume().getFormat();
+
+                                List<AfterInstantiateVolumeExtensionPoint> exts = pluginRgty.getExtensionList(AfterInstantiateVolumeExtensionPoint.class);
+                                for (AfterInstantiateVolumeExtensionPoint ext : exts) {
+                                    ext.afterInstantiateVolume(imsg);
+                                }
                                 trigger.next();
                             }
                         });
