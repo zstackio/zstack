@@ -2,22 +2,13 @@ package org.zstack.header.rest;
 
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
-import org.apache.http.impl.nio.client.HttpAsyncClients;
-import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
-import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
-import org.apache.http.impl.nio.reactor.IOReactorConfig;
-import org.apache.http.nio.reactor.IOReactorException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.client.HttpComponentsAsyncClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
-import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.RestTemplate;
 import org.zstack.header.core.Completion;
-import org.zstack.header.exception.CloudRuntimeException;
 
 import javax.net.ssl.SSLContext;
 import javax.servlet.http.HttpServletRequest;
@@ -126,32 +117,5 @@ public interface RESTFacade {
         setMessageConverter(template.getMessageConverters());
 
         return template;
-    }
-
-    // timeout are in milliseconds
-    static AsyncRestTemplate createAsyncRestTemplate(int readTimeout, int connectTimeout, int maxPerRoute, int maxTotal) {
-        PoolingNHttpClientConnectionManager connectionManager;
-        try {
-             connectionManager = new PoolingNHttpClientConnectionManager(new DefaultConnectingIOReactor(IOReactorConfig.DEFAULT));
-        } catch (IOReactorException ex) {
-            throw new CloudRuntimeException(ex);
-        }
-
-        connectionManager.setDefaultMaxPerRoute(maxPerRoute);
-        connectionManager.setMaxTotal(maxTotal);
-
-        CloseableHttpAsyncClient httpAsyncClient = HttpAsyncClients.custom()
-                .setConnectionManager(connectionManager)
-                .build();
-
-        HttpComponentsAsyncClientHttpRequestFactory cf = new HttpComponentsAsyncClientHttpRequestFactory(httpAsyncClient);
-        cf.setConnectTimeout(connectTimeout);
-        cf.setReadTimeout(readTimeout);
-        cf.setConnectionRequestTimeout(connectTimeout * 2);
-
-        AsyncRestTemplate asyncRestTemplate = new AsyncRestTemplate(cf);
-        setMessageConverter(asyncRestTemplate.getMessageConverters());
-
-        return asyncRestTemplate;
     }
 }
