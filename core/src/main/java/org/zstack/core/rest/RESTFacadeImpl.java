@@ -1,8 +1,15 @@
 package org.zstack.core.rest;
 
 import org.apache.http.HttpStatus;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.HttpAsyncClients;
+import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
+import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+import org.apache.http.impl.nio.reactor.IOReactorConfig;
+import org.apache.http.nio.reactor.IOReactorException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.http.client.HttpComponentsAsyncClientHttpRequestFactory;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.client.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -112,11 +119,38 @@ public class RESTFacadeImpl implements RESTFacade {
 
         logger.debug(String.format("RESTFacade built callback url: %s", callbackUrl));
         template = RESTFacade.createRestTemplate(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT, CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT);
-        asyncRestTemplate = RESTFacade.createAsyncRestTemplate(
+        asyncRestTemplate = createAsyncRestTemplate(
                 CoreGlobalProperty.REST_FACADE_READ_TIMEOUT,
                 CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT,
                 CoreGlobalProperty.REST_FACADE_MAX_PER_ROUTE,
                 CoreGlobalProperty.REST_FACADE_MAX_TOTAL);
+    }
+
+    // timeout are in milliseconds
+    private static AsyncRestTemplate createAsyncRestTemplate(int readTimeout, int connectTimeout, int maxPerRoute, int maxTotal) {
+        PoolingNHttpClientConnectionManager connectionManager;
+        try {
+            connectionManager = new PoolingNHttpClientConnectionManager(new DefaultConnectingIOReactor(IOReactorConfig.DEFAULT));
+        } catch (IOReactorException ex) {
+            throw new CloudRuntimeException(ex);
+        }
+
+        connectionManager.setDefaultMaxPerRoute(maxPerRoute);
+        connectionManager.setMaxTotal(maxTotal);
+
+        CloseableHttpAsyncClient httpAsyncClient = HttpAsyncClients.custom()
+                .setConnectionManager(connectionManager)
+                .build();
+
+        HttpComponentsAsyncClientHttpRequestFactory cf = new HttpComponentsAsyncClientHttpRequestFactory(httpAsyncClient);
+        cf.setConnectTimeout(connectTimeout);
+        cf.setReadTimeout(readTimeout);
+        cf.setConnectionRequestTimeout(connectTimeout * 2);
+
+        AsyncRestTemplate asyncRestTemplate = new AsyncRestTemplate(cf);
+        RESTFacade.setMessageConverter(asyncRestTemplate.getMessageConverters());
+
+        return asyncRestTemplate;
     }
 
     void notifyCallback(HttpServletRequest req, HttpServletResponse rsp) {
