@@ -200,7 +200,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             String firstIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getLowAddress()) - 1);
             String lastIp = NetworkUtils.longToIpv4String(NetworkUtils.ipv4StringToLong(subnet.getHighAddress()) + 1);
             if (vipVO.getIp().equals(firstIp) || vipVO.getIp().equals(lastIp)) {
-                throw new ApiMessageInterceptionException(argerr("loadbalancer vip [%s] can not the first of the last ip of the cidr", vipVO.getIp()));
+                throw new ApiMessageInterceptionException(argerr("Load balancer VIP [%s] cannot be the first or the last IP of the CIDR with the public address pool type", vipVO.getIp()));
             }
         }
 
