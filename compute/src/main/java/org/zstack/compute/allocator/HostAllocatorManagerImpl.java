@@ -841,7 +841,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     @Override
                     public void run() {
                         long cpu = struct.getVmInstance().getCpuNum();
-                        reserveMgr.reserveCapacity(struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
+                        reserveMgr.reserveCapacity(struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize(), false);
                     }
                 };
                 trigger.next();
@@ -868,7 +868,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 try {
                     final long cpu = struct.getVmInstance().getCpuNum();
                     reserveMgr.reserveCapacity(
-                            struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
+                            struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize(), false);
                     returnComputeCapacity(struct.getOriginalHostUuid());
 
                     rollback = new Runnable() {
@@ -876,7 +876,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                         public void run() {
                             returnComputeCapacity(struct.getCurrentHostUuid());
                             reserveMgr.reserveCapacity(
-                                    struct.getOriginalHostUuid(), cpu, struct.getVmInstance().getMemorySize());
+                                    struct.getOriginalHostUuid(), cpu, struct.getVmInstance().getMemorySize(), false);
                         }
                     };
 
@@ -888,10 +888,13 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
             private void vmRunningOnHost(FlowTrigger trigger) {
                 // allocate capacity on the current host
+                // vm already in running state
+                // do not need to check the reservation
+                // just update capacity.
                 try {
                     long cpu = struct.getVmInstance().getCpuNum();
-                    reserveMgr.reserveCapacity(
-                            struct.getCurrentHostUuid(), cpu, struct.getVmInstance().getMemorySize());
+                    reserveMgr.reserveCapacity(struct.getCurrentHostUuid(),
+                            cpu, struct.getVmInstance().getMemorySize(), true);
 
                     rollback = new Runnable() {
                         @Override

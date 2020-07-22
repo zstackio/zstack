@@ -1,14 +1,8 @@
 package org.zstack.compute.allocator;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.compute.cluster.ClusterSystemTags;
-import org.zstack.compute.host.HostSystemTags;
-import org.zstack.compute.zone.ZoneSystemTags;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfigVO;
-import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.Component;
@@ -19,14 +13,12 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.util.*;
-import java.util.Map.Entry;
 
 /**
  */
@@ -228,7 +220,15 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
     }
 
     @Override
-    public void reserveCapacity(final String hostUuid, final long requestCpu, final long requestMemory) {
+    public void reserveCapacity(final String hostUuid, final long requestCpu, final long requestMemory, boolean skipCheck) {
+        if (skipCheck) {
+            updateCapacityWithoutChecking(hostUuid, requestCpu, requestMemory);
+        } else {
+            reserveCapacityWithChecking(hostUuid, requestCpu, requestMemory);
+        }
+    }
+
+    private void reserveCapacityWithChecking(String hostUuid, long requestCpu, long requestMemory) {
         HostCapacityUpdater updater = new HostCapacityUpdater(hostUuid);
         HostVO host = dbf.findByUuid(hostUuid, HostVO.class);
         HostReservedCapacityExtensionPoint ext = exts.get(host.getHypervisorType());
@@ -260,6 +260,17 @@ public class HostCapacityReserveManagerImpl implements HostCapacityReserveManage
 
             cap.setAvailableMemory(availMemory);
 
+            return cap;
+        });
+    }
+
+    private void updateCapacityWithoutChecking(String hostUuid, long cpuNum, long memorySize) {
+        HostCapacityUpdater updater = new HostCapacityUpdater(hostUuid);
+        updater.run(cap -> {
+            long availCpu = cap.getAvailableCpu() - cpuNum;
+            cap.setAvailableCpu(availCpu);
+            long availMemory = cap.getAvailableMemory() - ratioMgr.calculateMemoryByRatio(hostUuid, memorySize);
+            cap.setAvailableMemory(availMemory);
             return cap;
         });
     }
