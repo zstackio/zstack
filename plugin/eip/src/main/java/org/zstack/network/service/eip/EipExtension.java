@@ -2,6 +2,7 @@ package org.zstack.network.service.eip;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.db.SQL;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -28,7 +29,7 @@ import java.util.*;
 
 /**
  */
-public class EipExtension extends AbstractNetworkServiceExtension implements Component {
+public class EipExtension extends AbstractNetworkServiceExtension implements Component, ReleaseNetworkServiceOnDeletingNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(EipExtension.class);
 
     @Autowired
@@ -67,6 +68,20 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
 
         struct.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
         return struct;
+    }
+
+    private EipStruct workOutEipStruct(VmNicInventory vmNic) {
+        EipVO eipVO = SQL.New("select eip from EipVO eip, VmNicVO nic, UsedIpVO ip" +
+                " where nic.uuid = ip.vmNicUuid " +
+                " and ip.l3NetworkUuid = :l3uuid " +
+                " and nic.uuid = eip.vmNicUuid and nic.uuid = :nicUuid")
+                .param("l3uuid", vmNic.getL3NetworkUuid())
+                .param("nicUuid", vmNic.getUuid())
+                .find();
+        if (eipVO == null) {
+            return null;
+        }
+        return eipVOtoEipStruct(eipVO);
     }
 
     private Map<String, List<EipStruct>> workOutEipStruct(VmInstanceSpec spec) {
@@ -264,5 +279,23 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
 
         boolean updateDb = spec.getCurrentVmOperation() == VmOperation.Destroy || spec.getCurrentVmOperation() == VmOperation.DetachNic;
         releaseNetworkService(map.entrySet().iterator(), updateDb, completion);
+    }
+
+    @Override
+    public void releaseNetworkServiceOnDeletingNic(VmNicInventory nic, Completion completion) {
+        String networkServiceProviderType = SQL.New("select provider.type from NetworkServiceProviderVO provider, NetworkServiceL3NetworkRefVO ref" +
+                " where ref.l3NetworkUuid = :l3Uuid" +
+                " and ref.networkServiceProviderUuid = provider.uuid" +
+                " and ref.networkServiceType = :networkServiceType")
+                .param("l3Uuid", nic.getL3NetworkUuid())
+                .param("networkServiceType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
+                .find();
+        EipStruct struct = workOutEipStruct(nic);
+        if (struct == null) {
+            logger.debug(String.format("vmNic[%s] dont need release eip",nic.getUuid()));
+            completion.success();
+            return;
+        }
+        eipMgr.detachEipAndUpdateDb(struct, networkServiceProviderType, DetachEipOperation.FORCE_DB_UPDATE, completion);
     }
 }
