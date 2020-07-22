@@ -511,9 +511,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
         amsg.setZoneUuid(msg.getZoneUuid());
         amsg.setClusterUuid(msg.getClusterUuid());
 
-        InstanceOfferingVO insvo = dbf.findByUuid(msg.getInstanceOfferingUuid(), InstanceOfferingVO.class);
-        amsg.setCpuCapacity(insvo.getCpuNum());
-        amsg.setMemoryCapacity(insvo.getMemorySize());
+        InstanceOfferingVO insvo = null;
+        if (msg.getInstanceOfferingUuid() == null) {
+            amsg.setCpuCapacity(msg.getCpuNum());
+            amsg.setMemoryCapacity(msg.getMemorySize());
+        } else {
+            insvo = dbf.findByUuid(msg.getInstanceOfferingUuid(), InstanceOfferingVO.class);
+            amsg.setCpuCapacity(insvo.getCpuNum());
+            amsg.setMemoryCapacity(insvo.getMemorySize());
+        }
 
         long diskSize = 0;
         List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
@@ -555,10 +561,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
         VmInstanceInventory vm = new VmInstanceInventory();
         vm.setUuid(Platform.FAKE_UUID);
-        vm.setInstanceOfferingUuid(insvo.getUuid());
         vm.setImageUuid(image.getUuid());
-        vm.setCpuNum(insvo.getCpuNum());
-        vm.setMemorySize(insvo.getMemorySize());
+        if (insvo == null) {
+            vm.setCpuNum(msg.getCpuNum());
+            vm.setMemorySize(msg.getMemorySize());
+        } else {
+            vm.setInstanceOfferingUuid(insvo.getUuid());
+            vm.setCpuNum(insvo.getCpuNum());
+            vm.setMemorySize(insvo.getMemorySize());
+        }
         vm.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid() == null ? msg.getL3NetworkUuids().get(0) : msg.getDefaultL3NetworkUuid());
         vm.setName("for-getting-candidates-zones-clusters-hosts");
         amsg.setVmInstance(vm);

@@ -25,7 +25,7 @@ public class GetCandidateZonesClustersHostsForCreatingVmAction extends AbstractA
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String instanceOfferingUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -39,6 +39,12 @@ public class GetCandidateZonesClustersHostsForCreatingVmAction extends AbstractA
 
     @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List dataDiskOfferingUuids;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L, 1024L}, noTrim = false)
+    public java.lang.Integer cpuNum;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L, 9223372036854775807L}, numberRangeUnit = {"byte", "bytes"}, noTrim = false)
+    public java.lang.Long memorySize;
 
     @Param(required = false)
     public java.lang.String zoneUuid;

@@ -27,7 +27,7 @@ doc {
 					desc "计算规格UUID"
 					location "query"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 					
 				}
@@ -100,6 +100,26 @@ doc {
 					optional true
 					since "0.6"
 					
+				}
+				column {
+					name "cpuNum"
+					enclosedIn ""
+					desc "CPU数目"
+					location "body"
+					type "int"
+					optional true
+					since "3.10.0"
+
+				}
+				column {
+					name "memorySize"
+					enclosedIn ""
+					desc "内存大小, 单位Byte"
+					location "body"
+					type "long"
+					optional true
+					since "3.10.0"
+
 				}
 				column {
 					name "systemTags"
