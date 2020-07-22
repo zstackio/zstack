@@ -24,7 +24,7 @@ import static java.util.Arrays.asList;
         responseClass = APIGetCandidateZonesClustersHostsForCreatingVmReply.class
 )
 public class APIGetCandidateZonesClustersHostsForCreatingVmMsg extends APISyncCallMessage {
-    @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true)
+    @APIParam(resourceType = InstanceOfferingVO.class, checkAccount = true, required = false)
     private String instanceOfferingUuid;
     @APIParam(resourceType = ImageVO.class, checkAccount = true)
     private String imageUuid;
@@ -34,6 +34,10 @@ public class APIGetCandidateZonesClustersHostsForCreatingVmMsg extends APISyncCa
     private String rootDiskOfferingUuid;
     @APIParam(required = false, nonempty = true, resourceType = DiskOfferingVO.class, checkAccount = true)
     private List<String> dataDiskOfferingUuids;
+    @APIParam(numberRange = {1, 1024}, required = false)
+    private Integer cpuNum;
+    @APIParam(numberRange = {1, Long.MAX_VALUE}, numberRangeUnit = {"byte", "bytes"}, required = false)
+    private Long memorySize;
     private String zoneUuid;
     private String clusterUuid;
     private String defaultL3NetworkUuid;
@@ -101,7 +105,23 @@ public class APIGetCandidateZonesClustersHostsForCreatingVmMsg extends APISyncCa
     public void setDataDiskOfferingUuids(List<String> dataDiskOfferingUuids) {
         this.dataDiskOfferingUuids = dataDiskOfferingUuids;
     }
- 
+
+    public Integer getCpuNum() {
+        return cpuNum;
+    }
+
+    public void setCpuNum(Integer cpuNum) {
+        this.cpuNum = cpuNum;
+    }
+
+    public Long getMemorySize() {
+        return memorySize;
+    }
+
+    public void setMemorySize(Long memorySize) {
+        this.memorySize = memorySize;
+    }
+
     public static APIGetCandidateZonesClustersHostsForCreatingVmMsg __example__() {
         APIGetCandidateZonesClustersHostsForCreatingVmMsg msg = new APIGetCandidateZonesClustersHostsForCreatingVmMsg();
         msg.setClusterUuid(uuid());
