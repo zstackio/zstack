@@ -1204,6 +1204,7 @@ public class KVMAgentCommands {
         private String targetHostIp;
         private boolean coloPrimary;
         private Integer redirectNum;
+        private List<VolumeTO> volumes;
 
         public Integer getRedirectNum() {
             return redirectNum;
@@ -1252,6 +1253,14 @@ public class KVMAgentCommands {
         public void setColoPrimary(boolean coloPrimary) {
             this.coloPrimary = coloPrimary;
         }
+
+        public List<VolumeTO> getVolumes() {
+            return volumes;
+        }
+
+        public void setVolumes(List<VolumeTO> volumes) {
+            this.volumes = volumes;
+        }
     }
 
     public static class StartColoSyncCmd extends AgentCommand {
@@ -1261,6 +1270,7 @@ public class KVMAgentCommands {
         private String secondaryVmHostIp;
         private Long checkpointDelay;
         private boolean fullSync;
+        private List<VolumeTO> volumes = new ArrayList<>();
 
         public String getVmInstanceUuid() {
             return vmInstanceUuid;
@@ -1308,6 +1318,14 @@ public class KVMAgentCommands {
 
         public void setFullSync(boolean fullSync) {
             this.fullSync = fullSync;
+        }
+
+        public List<VolumeTO> getVolumes() {
+            return volumes;
+        }
+
+        public void setVolumes(List<VolumeTO> volumes) {
+            this.volumes = volumes;
         }
     }
 

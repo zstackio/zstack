@@ -579,6 +579,12 @@ public class KVMHost extends HostBase implements Host {
         cmd.setTargetHostIp(msg.getTargetHostIp());
         cmd.setColoPrimary(msg.isColoPrimary());
         cmd.setRedirectNum(msg.getRedirectNum());
+
+        VmInstanceVO vm = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+        List<VolumeInventory> volumes = vm.getAllVolumes().stream().filter(v -> v.getType() == VolumeType.Data || v.getType() == VolumeType.Root).map(VolumeInventory::valueOf).collect(Collectors.toList());
+        cmd.setVolumes(VolumeTO.valueOf(volumes, KVMHostInventory.valueOf(getSelf())));
+        cmd.getVolumes().forEach(v -> v.setDeviceType(VolumeTO.QUORUM));
+
         new Http<>(registerPrimaryVmHeartbeatPath, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(msg, completion) {
             @Override
             public void success(AgentResponse ret) {
@@ -623,6 +629,11 @@ public class KVMHost extends HostBase implements Host {
         cmd.setSecondaryVmHostIp(msg.getSecondaryVmHostIp());
         cmd.setCheckpointDelay(msg.getCheckpointDelay());
         cmd.setFullSync(msg.isFullSync());
+
+        VmInstanceVO vm = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+        List<VolumeInventory> volumes = vm.getAllVolumes().stream().filter(v -> v.getType() == VolumeType.Data || v.getType() == VolumeType.Root).map(VolumeInventory::valueOf).collect(Collectors.toList());
+        cmd.setVolumes(VolumeTO.valueOf(volumes, KVMHostInventory.valueOf(getSelf())));
+        cmd.getVolumes().forEach(v -> v.setDeviceType(VolumeTO.QUORUM));
         new Http<>(startColoSyncPath, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(msg, completion) {
             @Override
             public void success(AgentResponse ret) {
