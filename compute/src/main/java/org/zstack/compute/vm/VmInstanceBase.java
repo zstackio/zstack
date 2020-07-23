@@ -6080,9 +6080,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setRequiredPrimaryStorageUuidForRootVolume(it.getPrimaryStorageUuid());
         });
         spec.setDestDataVolumes(getAllDataVolumes(inv));
-        spec.setDestCacheVolumes(inv.getAllVolumes().stream()
-                .filter(it -> it.getType().equals(VolumeType.Cache.toString()))
-                .collect(Collectors.toList()));
 
         // When starting an imported VM, we might not have an image UUID.
         if (inv.getImageUuid() != null) {
