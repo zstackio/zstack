@@ -30,6 +30,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.VipUseForList;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
@@ -116,7 +117,8 @@ public class ApiValidator implements GlobalApiMessageInterceptor {
                 }
             }
             if (!newIp6RangeVOS.isEmpty() && !ip6RangeVOS.isEmpty()) {
-                if (NetworkUtils.isCidrOverlap(ip6RangeVOS.get(0).getNetworkCidr(), newIp6RangeVOS.get(0).getNetworkCidr())) {
+                if (IPv6NetworkUtils.isIpv6RangeOverlap(ip6RangeVOS.get(0).getStartIp(), ip6RangeVOS.get(0).getEndIp(),
+                        newIp6RangeVOS.get(0).getStartIp(),  newIp6RangeVOS.get(0).getEndIp())) {
                     throw new ApiMessageInterceptionException(operr("unable to attach a L3 network. The cidr of l3[%s] to attach overlapped with l3[%s] already attached to vm", l3NetworkUuid, vmNicVO.getL3NetworkUuid()));
                 }
             }

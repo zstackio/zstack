@@ -1,10 +1,20 @@
 package org.zstack.test.integration.network.l3network.ipv6
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.vm.VmNicExtensionPoint
+import org.zstack.compute.vm.VmNicManager
+import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.db.Q
+import org.zstack.header.message.MessageReply
+import org.zstack.header.network.l3.AllocateIpMsg
+import org.zstack.header.network.l3.AllocateIpReply
+import org.zstack.header.network.l3.L3NetworkConstant
 import org.zstack.header.network.l3.UsedIpVO
 import org.zstack.header.network.l3.UsedIpVO_
 import org.zstack.network.service.flat.FlatDhcpBackend
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.network.NetworkTest
@@ -12,6 +22,7 @@ import org.zstack.test.integration.network.l3network.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.utils.network.IPv6Constants
 
 import static java.util.Arrays.asList
 
@@ -20,6 +31,8 @@ import static java.util.Arrays.asList
  */
 class IPv6DhcpCase extends SubCase {
     EnvSpec env
+    CloudBus bus
+    PluginRegistry pluginRgty
 
     @Override
     void clean() {
@@ -30,7 +43,6 @@ class IPv6DhcpCase extends SubCase {
     void setup() {
         useSpring(NetworkTest.springSpec)
         useSpring(KvmTest.springSpec)
-
     }
     @Override
     void environment() {
@@ -39,23 +51,30 @@ class IPv6DhcpCase extends SubCase {
 
     @Override
     void test() {
+        bus = bean(CloudBus.class)
+        pluginRgty = bean(PluginRegistry.class)
         env.create {
-            //testAttachDetachL3ToVmNic() TODO shixin
+            testAttachDetachL3ToVmNic()
         }
     }
 
     void testAttachDetachL3ToVmNic() {
         L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
-        L3NetworkInventory l3_stateless = env.inventoryByName("l3-Stateless-DHCP")
-        L3NetworkInventory l3_slaac = env.inventoryByName("l3-SLAAC")
         L3NetworkInventory l3 = env.inventoryByName("l3")
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
-        HostInventory host = env.inventoryByName("kvm-1")
 
-        FlatDhcpBackend.ApplyDhcpCmd cmd = null
+        List<FlatDhcpBackend.PrepareDhcpCmd> pcmds = new ArrayList<>()
+        env.afterSimulator(FlatDhcpBackend.PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            FlatDhcpBackend.PrepareDhcpCmd pcmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.PrepareDhcpCmd.class)
+            pcmds.add(pcmd)
+            return rsp
+        }
+
+        List<FlatDhcpBackend.ApplyDhcpCmd> cmds = new ArrayList<>()
         env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
-            cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+            FlatDhcpBackend.ApplyDhcpCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+            cmds.add(cmd)
             return rsp
         }
 
@@ -65,141 +84,153 @@ class IPv6DhcpCase extends SubCase {
             imageUuid = image.uuid
             l3NetworkUuids = asList(l3_statefull.uuid)
         }
+
+        GetL3NetworkDhcpIpAddressResult ret = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l3_statefull.uuid
+        }
+        assert ret.ip != null
+        assert ret.ip6 != null
+        assert ret.ip6 == ret.ip
         VmNicInventory nic = vm.getVmNics()[0]
         IpRangeInventory ipr = l3_statefull.getIpRanges().get(0)
-        assert cmd != null
+        assert cmds.size() == 1
+        FlatDhcpBackend.ApplyDhcpCmd cmd = cmds.get(0)
         assert cmd.dhcp.size() == 1
         FlatDhcpBackend.DhcpInfo dhcpInfo = cmd.dhcp.get(0)
         assert dhcpInfo.l3NetworkUuid == l3_statefull.uuid
-        assert dhcpInfo.ip == nic.ip
+        assert dhcpInfo.ip6 == nic.ip
+        assert dhcpInfo.gateway6 == ipr.getGateway()
         assert dhcpInfo.mac == nic.mac
         assert dhcpInfo.firstIp == ipr.getStartIp()
         assert dhcpInfo.endIp == ipr.getEndIp()
         assert dhcpInfo.ipVersion == nic.getIpVersion()
+        assert pcmds.size() == 1
+        FlatDhcpBackend.PrepareDhcpCmd pcmd = pcmds.get(0)
+        assert pcmd.ipVersion == IPv6Constants.IPv6
+        assert pcmd.dhcp6ServerIp == ret.ip6
+        assert pcmd.prefixLen == 64
+        assert pcmd.addressMode == IPv6Constants.Stateful_DHCP
+        assert pcmd.dhcpServerIp == null
+        assert pcmd.dhcpNetmask == null
 
-        cmd = null
-        attachL3NetworkToVmNic {
-            vmNicUuid = nic.uuid
-            l3NetworkUuid = l3_stateless.uuid
-        }
-        vm = queryVmInstance {
-            conditions=["uuid=${vm.uuid}".toString()]
-        } [0]
-        nic = vm.getVmNics()[0]
-        UsedIpInventory ip2 = null
-        for (UsedIpInventory ip : nic.getUsedIps()) {
-            if (ip.l3NetworkUuid == l3_stateless.uuid) {
-                ip2 = ip
-                break;
-            }
-        }
-        ipr = l3_stateless.getIpRanges().get(0)
-        assert cmd != null
-        assert cmd.dhcp.size() == 1
-        dhcpInfo = cmd.dhcp.get(0)
-        assert dhcpInfo.l3NetworkUuid == ip2.l3NetworkUuid
-        assert dhcpInfo.ip == ip2.ip
-        assert dhcpInfo.mac == nic.mac
-        assert dhcpInfo.firstIp == ipr.getStartIp()
-        assert dhcpInfo.endIp == ipr.getEndIp()
-        assert dhcpInfo.ipVersion == ip2.ipVersion
-
-        cmd = null
-        attachL3NetworkToVmNic {
-            vmNicUuid = nic.uuid
-            l3NetworkUuid = l3_slaac.uuid
-        }
-        assert cmd == null
-
-        attachL3NetworkToVmNic {
-            vmNicUuid = nic.uuid
-            l3NetworkUuid = l3.uuid
+        /* simulate an old dual stack nic */
+        AllocateIpMsg msg = new AllocateIpMsg()
+        msg.setL3NetworkUuid(l3.uuid)
+        bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3.uuid);
+        MessageReply reply = bus.call(msg);
+        AllocateIpReply r = reply.castReply();
+        org.zstack.header.network.l3.UsedIpInventory ip = r.getIpInventory();
+        for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
+            ext.afterAddIpAddress(nic.uuid, ip.getUuid())
         }
 
         vm = queryVmInstance {
             conditions=["uuid=${vm.uuid}".toString()]
         } [0]
         nic = vm.getVmNics()[0]
-        UsedIpInventory ip3 = null
-        for (UsedIpInventory ip : nic.getUsedIps()) {
-            if (ip.l3NetworkUuid == l3.uuid) {
-                ip3 = ip
-                break
+        assert nic.getUsedIps().size() == 2
+        UsedIpInventory ip4 = null
+        UsedIpInventory ip6 = null
+        for (UsedIpInventory ipAddress : nic.getUsedIps()) {
+            if (ipAddress.l3NetworkUuid == l3.uuid) {
+                ip4 = ipAddress
+            } else if (ipAddress.l3NetworkUuid == l3_statefull.uuid){
+                ip6 = ipAddress
             }
         }
-        ipr = l3.getIpRanges().get(0)
-        assert cmd != null
-        assert cmd.dhcp.size() == 1
-        dhcpInfo = cmd.dhcp.get(0)
-        assert dhcpInfo.l3NetworkUuid == ip3.l3NetworkUuid
-        assert dhcpInfo.ip == ip3.ip
-        assert dhcpInfo.mac == nic.mac
-        assert dhcpInfo.firstIp == ipr.getStartIp()
-        assert dhcpInfo.endIp == ipr.getEndIp()
-        assert dhcpInfo.ipVersion == ip3.ipVersion
 
+        pcmds = new ArrayList<>()
+        cmds = new ArrayList<>()
         rebootVmInstance {
             uuid = vm.uuid
         }
+        GetL3NetworkDhcpIpAddressResult ret4 = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l3.uuid
+        }
+        assert ret4.ip6 == null
+        assert ret4.ip != null
+        assert pcmds.size() == 2
+        for (FlatDhcpBackend.PrepareDhcpCmd pc : pcmds) {
+            if (pc.ipVersion == IPv6Constants.IPv6) {
+                assert pc.dhcp6ServerIp == ret.ip6
+                assert pc.prefixLen == 64
+                assert pc.addressMode == IPv6Constants.Stateful_DHCP
+                assert pc.dhcpServerIp == null
+                assert pc.dhcpNetmask == null
+            } else {
+                assert pc.dhcp6ServerIp == null
+                assert pc.prefixLen == null
+                assert pc.addressMode == null
+                assert pc.dhcpServerIp == ret4.ip
+                assert pc.dhcpNetmask == "255.255.255.0"
+            }
+        }
+        assert cmds.size() == 2
+        for (FlatDhcpBackend.ApplyDhcpCmd c : cmds) {
+            assert c.dhcp.size() == 1
+            dhcpInfo = c.dhcp.get(0)
+            if (dhcpInfo.ipVersion == IPv6Constants.IPv6) {
+                assert dhcpInfo.l3NetworkUuid == l3_statefull.uuid
+                assert dhcpInfo.ip6 == ip6.ip
+                assert dhcpInfo.gateway6 == ip6.getGateway()
+                assert dhcpInfo.mac == nic.mac
+                assert dhcpInfo.firstIp == ipr.getStartIp()
+                assert dhcpInfo.endIp == ipr.getEndIp()
+                assert dhcpInfo.ip == null
+                assert dhcpInfo.gateway == null
+            } else {
+                assert dhcpInfo.l3NetworkUuid == l3.uuid
+                assert dhcpInfo.ip6 == null
+                assert dhcpInfo.gateway6 == null
+                assert dhcpInfo.mac == nic.mac
+                assert dhcpInfo.ip == ip4.ip
+                assert dhcpInfo.gateway == ip4.gateway
+            }
+        }
 
+        pcmds = new ArrayList<>()
+        cmds = new ArrayList<>()
         reconnectHost {
-            uuid = host.uuid
+            uuid = vm.hostUuid
         }
-
-        FlatDhcpBackend.ReleaseDhcpCmd rcmd = null
-        env.afterSimulator(FlatDhcpBackend.RELEASE_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
-            rcmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.ReleaseDhcpCmd.class)
-            return rsp
+        assert pcmds.size() == 2
+        for (FlatDhcpBackend.PrepareDhcpCmd pc : pcmds) {
+            if (pc.ipVersion == IPv6Constants.IPv6) {
+                assert pc.dhcp6ServerIp == ret.ip6
+                assert pc.prefixLen == 64
+                assert pc.addressMode == IPv6Constants.Stateful_DHCP
+                assert pc.dhcpServerIp == null
+                assert pc.dhcpNetmask == null
+            } else {
+                assert pc.dhcp6ServerIp == null
+                assert pc.prefixLen == null
+                assert pc.addressMode == null
+                assert pc.dhcpServerIp == ret4.ip
+                assert pc.dhcpNetmask == "255.255.255.0"
+            }
         }
-
-        /*
-        UsedIpVO ipVO1 = Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, l3_statefull.uuid).eq(UsedIpVO_.vmNicUuid, nic.uuid).find();
-        detachIpAddressFromVmNic {
-            vmNicUuid = nic.uuid
-            usedIpUuid = ipVO1.uuid
+        assert cmds.size() == 2
+        for (FlatDhcpBackend.ApplyDhcpCmd c : cmds) {
+            assert c.dhcp.size() == 1
+            dhcpInfo = c.dhcp.get(0)
+            if (dhcpInfo.ipVersion == IPv6Constants.IPv6) {
+                assert dhcpInfo.l3NetworkUuid == l3_statefull.uuid
+                assert dhcpInfo.ip6 == ip6.ip
+                assert dhcpInfo.gateway6 == ip6.getGateway()
+                assert dhcpInfo.mac == nic.mac
+                assert dhcpInfo.firstIp == ipr.getStartIp()
+                assert dhcpInfo.endIp == ipr.getEndIp()
+                assert dhcpInfo.ip == null
+                assert dhcpInfo.gateway == null
+            } else {
+                assert dhcpInfo.l3NetworkUuid == l3.uuid
+                assert dhcpInfo.ip6 == null
+                assert dhcpInfo.gateway6 == null
+                assert dhcpInfo.mac == nic.mac
+                assert dhcpInfo.ip == ip4.ip
+                assert dhcpInfo.gateway == ip4.gateway
+            }
         }
-        assert rcmd != null
-        assert rcmd.dhcp.size() == 1
-        dhcpInfo = rcmd.dhcp.get(0)
-        assert dhcpInfo.l3NetworkUuid == ipVO1.l3NetworkUuid
-        assert dhcpInfo.ip == ipVO1.ip
-        assert dhcpInfo.mac == nic.mac
-        assert dhcpInfo.ipVersion == ipVO1.ipVersion
-
-        rcmd = null
-        UsedIpVO ipVO2 = Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, l3_stateless.uuid).eq(UsedIpVO_.vmNicUuid, nic.uuid).find();
-        detachIpAddressFromVmNic {
-            vmNicUuid = nic.uuid
-            usedIpUuid = ipVO2.uuid
-        }
-        assert rcmd != null
-        assert rcmd.dhcp.size() == 1
-        dhcpInfo = rcmd.dhcp.get(0)
-        assert dhcpInfo.l3NetworkUuid == ipVO2.l3NetworkUuid
-        assert dhcpInfo.ip == ipVO2.ip
-        assert dhcpInfo.mac == nic.mac
-        assert dhcpInfo.ipVersion == ipVO2.ipVersion
-
-        rcmd = null
-        UsedIpVO ipVO3 = Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, l3_slaac.uuid).eq(UsedIpVO_.vmNicUuid, nic.uuid).find();
-        detachIpAddressFromVmNic {
-            vmNicUuid = nic.uuid
-            usedIpUuid = ipVO3.uuid
-        }
-        assert rcmd == null
-
-        UsedIpVO ipVO4 = Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, l3.uuid).eq(UsedIpVO_.vmNicUuid, nic.uuid).find();
-        detachIpAddressFromVmNic {
-            vmNicUuid = nic.uuid
-            usedIpUuid = ipVO4.uuid
-        }
-        assert rcmd != null
-        assert rcmd.dhcp.size() == 1
-        dhcpInfo = rcmd.dhcp.get(0)
-        assert dhcpInfo.l3NetworkUuid == ipVO4.l3NetworkUuid
-        assert dhcpInfo.ip == ipVO4.ip
-        assert dhcpInfo.mac == nic.mac
-        assert dhcpInfo.ipVersion == ipVO4.ipVersion*/
     }
 
 

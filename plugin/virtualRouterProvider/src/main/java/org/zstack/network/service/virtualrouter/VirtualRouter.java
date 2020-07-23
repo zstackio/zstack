@@ -42,6 +42,7 @@ import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterCreatePublicVipFlow;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -700,6 +701,19 @@ public class VirtualRouter extends ApplianceVmBase {
             info.setGateway(nicInventory.getGateway());
             info.setMac(nicInventory.getMac());
             info.setNetmask(nicInventory.getNetmask());
+            for (UsedIpInventory ip : nicInventory.getUsedIps()) {
+                if (ip.getIpVersion() == IPv6Constants.IPv4) {
+                    info.setIp(ip.getIp());
+                    info.setGateway(ip.getGateway());
+                    info.setNetmask(ip.getNetmask());
+                } else {
+                    info.setIp6(ip.getIp());
+                    info.setGateway6(ip.getGateway());
+                    NormalIpRangeVO ipr = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ip.getIpRangeUuid()).find();
+                    info.setPrefixLength(ipr.getPrefixLen());
+                    info.setAddressMode(ipr.getAddressMode());
+                }
+            }
 
             L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3NetworkVO.getL2NetworkUuid()).find();
             info.setCategory(l3NetworkVO.getCategory().toString());

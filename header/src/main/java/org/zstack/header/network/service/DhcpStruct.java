@@ -13,9 +13,11 @@ import java.io.Serializable;
 public class DhcpStruct implements Serializable {
     private int    ipVersion;
     private String ip;
+    private String ip6;
     private String mac;
     private String netmask;
     private String gateway;
+    private String gateway6;
     private String hostname;
     private L3NetworkInventory l3Network;
     private boolean isDefaultL3Network;
@@ -32,9 +34,11 @@ public class DhcpStruct implements Serializable {
         StringBuilder sb = new StringBuilder("[");
         sb.append(String.format("version: %d,", ipVersion));
         sb.append(String.format("ip: %s,", ip));
+        sb.append(String.format("ip6: %s,", ip6));
         sb.append(String.format("mac: %s,", mac));
         sb.append(String.format("netmask: %s,", netmask));
         sb.append(String.format("gateway: %s,", gateway));
+        sb.append(String.format("gateway6: %s,", gateway6));
         sb.append(String.format("hostname: %s,", hostname));
         sb.append(String.format("l3NetworkUuid: %s,", l3Network.getUuid()));
         sb.append(String.format("dnsDomain: %s", dnsDomain));
@@ -166,5 +170,21 @@ public class DhcpStruct implements Serializable {
 
     public void setVmUuid(String vmUuid) {
         this.vmUuid = vmUuid;
+    }
+
+    public String getIp6() {
+        return ip6;
+    }
+
+    public void setIp6(String ip6) {
+        this.ip6 = ip6;
+    }
+
+    public String getGateway6() {
+        return gateway6;
+    }
+
+    public void setGateway6(String gateway6) {
+        this.gateway6 = gateway6;
     }
 }
