@@ -1,14 +1,11 @@
 package org.zstack.sdk;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.util.Arrays.asList;
 
 /**
  * Created by xing5 on 2016/12/9.
@@ -154,13 +151,12 @@ public abstract class AbstractAction {
                 }
 
                 if (value != null && at.validValues().length > 0) {
-                    List<String> vals = new ArrayList<>();
-                    for (String val: at.validValues()) {
-                        vals.add(val.toLowerCase());
-                    }
-                    if (!vals.contains(value.toString().toLowerCase())) {
-                        throw new ApiException(String.format("invalid value of the field[%s], valid values are %s",
-                                p.field.getName(), vals));
+                    if (value instanceof Collection) {
+                        for (Object v : (Collection) value) {
+                            validateValue(at.validValues(), v.toString(), p.field.getName());
+                        }
+                    } else {
+                        validateValue(at.validValues(), value.toString(), p.field.getName());
                     }
                 }
 
@@ -228,6 +224,17 @@ public abstract class AbstractAction {
             throw e;
         } catch (Exception e) {
             throw new ApiException(e);
+        }
+    }
+
+    private static void validateValue(String[] validValues, String value, String fieldName) {
+        List<String> vals = new ArrayList<>();
+        for (String val: validValues) {
+            vals.add(val.toLowerCase());
+        }
+        if (!vals.contains(value.toLowerCase())) {
+            throw new ApiException(String.format("invalid value of the field[%s], valid values are %s",
+                    fieldName, vals));
         }
     }
 }

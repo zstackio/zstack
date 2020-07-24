@@ -58,6 +58,25 @@ class KVMSimulator implements Simulator {
             return new KVMAgentCommands.AgentResponse()
         }
 
+        spec.simulator(KVMConstant.GET_VM_DEVICE_ADDRESS_PATH) { HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.GetVmDeviceAddressCmd.class)
+            def rsp = new KVMAgentCommands.GetVmDeviceAddressRsp()
+            if (cmd.deviceTOs.keySet().contains(VolumeVO.class.simpleName)) {
+                rsp.addresses = ["VolumeVO": []]
+                for (Object o : cmd.deviceTOs.get(VolumeVO.class.simpleName)) {
+                    VolumeTO to = JSONObjectUtil.rehashObject(o, VolumeTO.class)
+                    rsp.addresses[VolumeVO.class.simpleName].add(new KVMAgentCommands.VmDeviceAddressTO(
+                            addressType: "pci",
+                            address: String.format("0000:%02d:00:0", to.deviceId),
+                            deviceType: "disk",
+                            uuid: to.volumeUuid
+                    ))
+                }
+            }
+
+            return rsp
+        }
+
         spec.simulator(KVMConstant.KVM_VM_UPDATE_PRIORITY_PATH) {
             return new KVMAgentCommands.UpdateVmPriorityRsp()
         }

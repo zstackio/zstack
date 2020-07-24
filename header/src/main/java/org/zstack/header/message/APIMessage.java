@@ -237,17 +237,12 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
             }
 
             if (value != null && at.validValues().length > 0) {
-                boolean found = false;
-                for (String val : at.validValues()) {
-                    if (val.equals(value.toString())) {
-                        found = true;
-                        break;
+                if (value instanceof Collection) {
+                    for (Object v : (Collection) value) {
+                        validateValue(at.validValues(), v.toString(), f.getName(), getClass().getName());
                     }
-                }
-
-                if (!found) {
-                    throw new InvalidApiMessageException("valid value for field[%s] of message[%s] are %s, but %s found", f.getName(),
-                            getClass().getName(), asList(at.validValues()), value);
+                } else {
+                    validateValue(at.validValues(), value.toString(), f.getName(), getClass().getName());
                 }
             }
 
@@ -309,6 +304,13 @@ public abstract class APIMessage extends NeedReplyMessage implements Configurabl
             if (validator != null) {
                 validator.validate(this, f, value, at);
             }
+        }
+    }
+
+    private static void validateValue(String[] validValues, String value, String fieldName, String msgName) {
+        if (Arrays.stream(validValues).noneMatch(it -> it.equals(value))) {
+            throw new InvalidApiMessageException("valid value for field[%s] of message[%s] are %s, but %s found",
+                    fieldName, msgName, Arrays.toString(validValues), value);
         }
     }
 

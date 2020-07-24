@@ -34,9 +34,7 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.tag.FormTagExtensionPoint;
 import org.zstack.header.vm.*;
-import org.zstack.header.volume.MaxDataVolumeNumberExtensionPoint;
-import org.zstack.header.volume.VolumeConstant;
-import org.zstack.header.volume.VolumeFormat;
+import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMAgentCommands.ReconnectMeCmd;
 import org.zstack.kvm.KVMAgentCommands.TransmitVmOperationToMnCmd;
 import org.zstack.utils.CollectionUtils;
@@ -238,6 +236,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public boolean start() {
         deployAnsibleModule();
         populateExtensions();
+        configKVMDeviceType();
 
         maxDataVolumeNum = KVMGlobalConfig.MAX_DATA_VOLUME_NUM.value(int.class);
         KVMGlobalConfig.MAX_DATA_VOLUME_NUM.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
@@ -355,6 +354,16 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         }));
 
         return true;
+    }
+
+    private void configKVMDeviceType() {
+        KVMVmDeviceType.New(VolumeVO.class.getSimpleName(), Collections.singletonList("disk"), (inventories, host) -> {
+            List tos = new ArrayList();
+            for (Object inventory : inventories) {
+                tos.add(VolumeTO.valueOf((VolumeInventory) inventory, host));
+            }
+            return tos;
+        });
     }
 
     private Map<String, String> getHostsWithDiffModel(String clusterUuid) {
