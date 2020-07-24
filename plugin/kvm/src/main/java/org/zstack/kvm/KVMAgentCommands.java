@@ -1930,6 +1930,86 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class GetVmDeviceAddressCmd extends AgentCommand {
+        private String uuid;
+        private Map<String, List> deviceTOs = new HashMap<>();
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void putDevice(String type, List deviceTOs) {
+            this.deviceTOs.put(type, deviceTOs);
+        }
+
+        public Map<String, List> getDeviceTOs() {
+            return deviceTOs;
+        }
+
+        public void setDeviceTOs(Map<String, List> deviceTOs) {
+            this.deviceTOs = deviceTOs;
+        }
+    }
+
+    public static class GetVmDeviceAddressRsp extends AgentResponse {
+        private Map<String, List<VmDeviceAddressTO>> addresses;
+
+        public Map<String, List<VmDeviceAddressTO>> getAddresses() {
+            return addresses;
+        }
+
+        public List<VmDeviceAddressTO> getAddresses(String resourceType) {
+            return addresses.get(resourceType);
+        }
+
+        public void setAddresses(Map<String, List<VmDeviceAddressTO>> addresses) {
+            this.addresses = addresses;
+        }
+    }
+
+    public static class VmDeviceAddressTO {
+        private String addressType;
+        private String address;
+        private String deviceType;
+        private String uuid;
+
+        public String getAddress() {
+            return address;
+        }
+
+        public void setAddress(String address) {
+            this.address = address;
+        }
+
+        public String getAddressType() {
+            return addressType;
+        }
+
+        public void setAddressType(String addressType) {
+            this.addressType = addressType;
+        }
+
+        public String getDeviceType() {
+            return deviceType;
+        }
+
+        public void setDeviceType(String deviceType) {
+            this.deviceType = deviceType;
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+    }
+
     public static class VmSyncCmd extends AgentCommand {
     }
 

@@ -2772,6 +2772,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmQxlMemoryMsg) msg);
         } else if (msg instanceof APIGetVmBootOrderMsg) {
             handle((APIGetVmBootOrderMsg) msg);
+        } else if (msg instanceof APIGetVmDeviceAddressMsg) {
+            handle((APIGetVmDeviceAddressMsg) msg);
         } else if (msg instanceof APIDeleteVmConsolePasswordMsg) {
             handle((APIDeleteVmConsolePasswordMsg) msg);
         } else if (msg instanceof APIGetVmConsolePasswordMsg) {
@@ -3078,6 +3080,37 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         bus.reply(msg, reply);
+    }
+
+    private void handle(APIGetVmDeviceAddressMsg msg) {
+        APIGetVmDeviceAddressReply reply = new APIGetVmDeviceAddressReply();
+        GetVmDeviceAddressMsg gmsg = new GetVmDeviceAddressMsg();
+        if (self.getHostUuid() == null || self.getState() != VmInstanceState.Running) {
+            reply.setError(operr("VM[uuid:%s] state is not Running.", msg.getUuid()));
+        }
+
+        gmsg.setHostUuid(self.getHostUuid());
+        for (String resourceType : msg.getResourceTypes()) {
+            if (resourceType.equals(VolumeVO.class.getSimpleName())) {
+                List<VolumeInventory> vols = new ArrayList<>(getAllDataVolumes(getSelfInventory()));
+                vols.add(VolumeInventory.valueOf(self.getRootVolume()));
+                gmsg.putInventories(resourceType, vols);
+            }
+        }
+        gmsg.setVmInstanceUuid(self.getUuid());
+        bus.makeLocalServiceId(gmsg, HostConstant.SERVICE_ID);
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                } else {
+                    reply.setAddresses(((GetVmDeviceAddressReply) r).getAddresses());
+                }
+
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(APISetVmBootOrderMsg msg) {

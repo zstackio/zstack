@@ -55,6 +55,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
+import org.zstack.header.vm.VmDeviceAddress;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
@@ -154,6 +155,7 @@ public class KVMHost extends HostBase implements Host {
     private String updateSpiceChannelConfigPath;
     private String cancelJob;
     private String getVmFirstBootDevicePath;
+    private String getVmDeviceAddressPath;
     private String scanVmPortPath;
     private String getDevCapacityPath;
 
@@ -296,6 +298,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_GET_VM_FIRST_BOOT_DEVICE_PATH);
         getVmFirstBootDevicePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.GET_VM_DEVICE_ADDRESS_PATH);
+        getVmDeviceAddressPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_SCAN_VM_PORT_STATUS);
@@ -480,6 +486,8 @@ public class KVMHost extends HostBase implements Host {
             handle((CancelHostTaskMsg) msg);
         } else if (msg instanceof GetVmFirstBootDeviceOnHypervisorMsg) {
             handle((GetVmFirstBootDeviceOnHypervisorMsg) msg);
+        } else if (msg instanceof GetVmDeviceAddressMsg) {
+            handle((GetVmDeviceAddressMsg) msg);
         } else if (msg instanceof CheckHostCapacityMsg) {
             handle((CheckHostCapacityMsg) msg);
         } else {
@@ -568,6 +576,57 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void fail(ErrorCode err) {
                 final GetVmFirstBootDeviceOnHypervisorReply reply = new GetVmFirstBootDeviceOnHypervisorReply();
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(GetVmDeviceAddressMsg msg) {
+        inQueue().name(String.format("get-device-address-of-vm-%s-on-kvm-%s", msg.getVmInstanceUuid(), self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> getVmDeviceAddress(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void getVmDeviceAddress(final GetVmDeviceAddressMsg msg, final NoErrorCompletion completion) {
+        checkStatus();
+
+        GetVmDeviceAddressReply reply = new GetVmDeviceAddressReply();
+        GetVmDeviceAddressCmd cmd = new GetVmDeviceAddressCmd();
+        cmd.setUuid(msg.getVmInstanceUuid());
+        for (Map.Entry<String, List> e : msg.getInventories().entrySet()) {
+            String resourceType = e.getKey();
+            cmd.putDevice(resourceType, KVMVmDeviceType.fromResourceType(resourceType)
+                    .getDeviceTOs(e.getValue(), KVMHostInventory.valueOf(getSelf()))
+            );
+        }
+        new Http<>(getVmDeviceAddressPath, cmd, GetVmDeviceAddressRsp.class).call(new ReturnValueCompletion<GetVmDeviceAddressRsp>(msg, completion) {
+            @Override
+            public void success(GetVmDeviceAddressRsp rsp) {
+                for (String resourceType : msg.getInventories().keySet()) {
+                    reply.putAddresses(resourceType, rsp.getAddresses(resourceType).stream().map(it -> {
+                        VmDeviceAddress address = new VmDeviceAddress();
+                        address.setAddress(it.getAddress());
+                        address.setAddressType(it.getAddressType());
+                        address.setDeviceType(it.getDeviceType());
+                        address.setResourceUuid(it.getUuid());
+                        address.setResourceType(resourceType);
+                        return address;
+                    }).collect(Collectors.toList()));
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
                 reply.setError(err);
                 bus.reply(msg, reply);
                 completion.done();
