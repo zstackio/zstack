@@ -44,6 +44,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -156,7 +157,7 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 Map<String, List<String>> userdata = new UserdataBuilder().buildByVmUuids(vmUuids);
                 Set<String> l3Uuids = new HashSet<String>();
                 for (VmIpL3Uuid l : vmipl3.values()) {
-                    String dhcpIp = dhcpBackend.allocateDhcpIp(l.l3Uuid);
+                    String dhcpIp = dhcpBackend.allocateDhcpIp(l.l3Uuid, IPv6Constants.IPv4);
                     if (dhcpIp != null) {
                         l.dhcpServerIp = dhcpIp;
                     }
@@ -533,7 +534,12 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                                     return;
                                 }
 
-                                dhcpServerIp = ((FlatDhcpAcquireDhcpServerIpReply) reply).getIp();
+                                FlatDhcpAcquireDhcpServerIpReply dreply = (FlatDhcpAcquireDhcpServerIpReply) reply;
+                                if (dreply.getDhcpServerList() != null && !dreply.getDhcpServerList().isEmpty()) {
+                                    dhcpServerIp = dreply.getDhcpServerList().get(0).getIp();
+                                }
+
+
                                 trigger.next();
                             }
                         });

@@ -55,6 +55,16 @@ doc {
 					
 				}
 				column {
+					name "ip6"
+					enclosedIn "setVmStaticIp"
+					desc "指定IPv6地址"
+					location "body"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc ""

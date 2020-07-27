@@ -47,12 +47,13 @@ public class ApplianceVmAllocateNicFlow implements Flow {
     @Autowired
     private VmNicManager nicManager;
 
-    private UsedIpInventory acquireIp(String l3NetworkUuid, String mac, String staticIp, String stratgey, boolean allowDuplicatedAddress) {
+    private UsedIpInventory acquireIp(String l3NetworkUuid, String mac, Integer version, String staticIp, String stratgey, boolean allowDuplicatedAddress) {
         AllocateIpMsg msg = new AllocateIpMsg();
         msg.setL3NetworkUuid(l3NetworkUuid);
         if (staticIp != null) {
             msg.setRequiredIp(staticIp);
         }
+        msg.setIpVersion(version);
         msg.setDuplicatedIpAllowed(allowDuplicatedAddress);
         l3nm.updateIpAllocationMsg(msg, mac);
         bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3NetworkUuid);
@@ -79,16 +80,34 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         inv.setDriverType(ImagePlatform.valueOf(vmSpec.getVmInventory().getPlatform()).isParaVirtualization() ?
                 nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
         inv.setType(VmInstanceConstant.VIRTUAL_NIC_TYPE);
+        inv.setUsedIps(new ArrayList<>());
 
         if (nicSpec.getIp() == null) {
-            String strategy = nicSpec.getAllocatorStrategy() == null ? L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY : nicSpec.getAllocatorStrategy();
-            UsedIpInventory ip = acquireIp(nicSpec.getL3NetworkUuid(), inv.getMac(), nicSpec.getStaticIp(), strategy, nicSpec.isAllowDuplicatedAddress());
-            inv.setGateway(ip.getGateway());
-            inv.setIp(ip.getIp());
-            inv.setNetmask(ip.getNetmask());
-            inv.setUsedIpUuid(ip.getUuid());
-            inv.setIpVersion(ip.getIpVersion());
+            /* for vpc router, code comes here */
+            L3NetworkVO l3NetworkVO = dbf.findByUuid(nicSpec.getL3NetworkUuid(), L3NetworkVO.class);
+            List<Integer> ipVersions = l3NetworkVO.getIpVersions();
+            for (Integer version : ipVersions) {
+                String strategy = nicSpec.getAllocatorStrategy();
+                if (strategy == null) {
+                    if (version == IPv6Constants.IPv4) {
+                        strategy = L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY;
+                    } else {
+                        strategy = L3NetworkConstant.RANDOM_IPV6_ALLOCATOR_STRATEGY;
+                    }
+                }
+                UsedIpInventory ip = acquireIp(nicSpec.getL3NetworkUuid(), inv.getMac(), version, nicSpec.getStaticIp().get(version), strategy, nicSpec.isAllowDuplicatedAddress());
+                /* save first ip to nic */
+                if (inv.getGateway() == null) {
+                    inv.setGateway(ip.getGateway());
+                    inv.setIp(ip.getIp());
+                    inv.setNetmask(ip.getNetmask());
+                    inv.setUsedIpUuid(ip.getUuid());
+                    inv.setIpVersion(ip.getIpVersion());
+                }
+                inv.getUsedIps().add(ip);
+            }
         } else {
+            /* for virtual router, code comes here */
             inv.setGateway(nicSpec.getGateway());
             inv.setIp(nicSpec.getIp());
             inv.setNetmask(nicSpec.getNetmask());
@@ -148,8 +167,8 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                     nvo.setDriverType(nic.getDriverType());
                     nvo.setType(nic.getType());
                     persist(nvo);
-                    if (nic.getUsedIpUuid() != null) {
-                        SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, nic.getUsedIpUuid()).set(UsedIpVO_.vmNicUuid, nvo.getUuid()).update();
+                    for (UsedIpInventory ip : nic.getUsedIps()) {
+                        SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, ip.getUuid()).set(UsedIpVO_.vmNicUuid, nvo.getUuid()).update();
                     }
                 });
             }
@@ -168,15 +187,17 @@ public class ApplianceVmAllocateNicFlow implements Flow {
 
             List<ReturnIpMsg> rmsgs = new ArrayList<>();
             for (VmNicInventory nic : nics) {
-                if (nic.getUsedIpUuid() == null) {
+                if (nic.getUsedIps() == null || nic.getUsedIps().isEmpty()) {
                     continue;
                 }
 
-                ReturnIpMsg msg = new ReturnIpMsg();
-                msg.setL3NetworkUuid(nic.getL3NetworkUuid());
-                msg.setUsedIpUuid(nic.getUsedIpUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
-                rmsgs.add(msg);
+                for (UsedIpInventory ip : nic.getUsedIps()) {
+                    ReturnIpMsg msg = new ReturnIpMsg();
+                    msg.setL3NetworkUuid(nic.getL3NetworkUuid());
+                    msg.setUsedIpUuid(ip.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
+                    rmsgs.add(msg);
+                }
             }
 
             if (!rmsgs.isEmpty()) {

@@ -46,13 +46,14 @@ public class VmNicAllocateIpFlow implements Flow {
 
         VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nic.getUuid()).find();
 
-        Map<String, String> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(vmNicVO.getVmInstanceUuid());
+        Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(vmNicVO.getVmInstanceUuid());
         AllocateIpMsg msg = new AllocateIpMsg();
         msg.setL3NetworkUuid(l3.getUuid());
-        String staticIp = vmStaticIps.get(l3.getUuid());
-        if (staticIp != null) {
-            msg.setRequiredIp(staticIp);
-        } else if (l3.getIpVersion() == IPv6Constants.IPv6){
+        List<String> staticIps = vmStaticIps.get(l3.getUuid());
+        /* TODO: this flow is not used any more */
+        if (staticIps != null && !staticIps.isEmpty()) {
+            msg.setRequiredIp(staticIps.get(0));
+        } else if (l3.getIpVersions().contains(IPv6Constants.IPv6)){
             l3nm.updateIpAllocationMsg(msg, nic.getMac());
         }
         bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3.getUuid());
@@ -68,8 +69,6 @@ public class VmNicAllocateIpFlow implements Flow {
                     }
 
                     data.put(VmInstanceConstant.Params.UsedIPInventory.toString(), ipInventory);
-                    VmNicInventory nicInv = VmNicInventory.valueOf(dbf.findByUuid(nic.getUuid(), VmNicVO.class));
-                    new DualStackNicSecondaryNetworksOperator().createSecondaryNetworksByVmNic(nicInv, l3.getUuid());
                     trigger.next();
                 } else {
                     trigger.fail(reply.getError());
@@ -98,8 +97,6 @@ public class VmNicAllocateIpFlow implements Flow {
                 for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
                     ext.afterDelIpAddress(nic.getUuid(), ipInventory.getUuid());
                 }
-                VmNicInventory nicInv = VmNicInventory.valueOf(dbf.findByUuid(nic.getUuid(), VmNicVO.class));
-                new DualStackNicSecondaryNetworksOperator().deleteSecondaryNetworksByVmNic(nicInv, l3.getUuid());
                 chain.rollback();
             }
         });

@@ -95,8 +95,8 @@ class AddSecurityGroupRulesCase extends SubCase{
             vm2 = env.inventoryByName("vm2") as VmInstanceInventory // vm2 in host2
             vm3 = env.inventoryByName("vm3") as VmInstanceInventory // vm3 in host3
             vm4 = env.inventoryByName("vm4") as VmInstanceInventory // vm4 in host3
-            testCreateSecurityGroup()
-            testAddMultiRulesToSecurityGroup(1000)
+            //testCreateSecurityGroup()
+            //testAddMultiRulesToSecurityGroup(1000)
         }
     }
 }

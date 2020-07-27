@@ -469,11 +469,16 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         return factory;
     }
 
-    private UsedIpInventory reserveIpv6(IpRangeVO ipRange, String ip) {
+    private UsedIpInventory reserveIpv6(IpRangeVO ipRange, String ip, boolean allowDuplicatedAddress) {
         try {
             UsedIpVO vo = new UsedIpVO();
             //vo.setIpInLong(NetworkUtils.ipv4StringToLong(ip));
-            String uuid = ipRange.getUuid() + ip;
+            String uuid;
+            if (allowDuplicatedAddress) {
+                uuid = Platform.getUuid();
+            } else {
+                uuid = ipRange.getUuid() + ip;
+            }
             uuid = UUID.nameUUIDFromBytes(uuid.getBytes()).toString().replaceAll("-", "");
             vo.setUuid(uuid);
             vo.setIpRangeUuid(ipRange.getUuid());
@@ -540,7 +545,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         if (NetworkUtils.isIpv4Address(ip)) {
             return reserveIpv4(ipRange, ip, allowDuplicatedAddress);
         } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
-            return reserveIpv6(ipRange, ip);
+            return reserveIpv6(ipRange, ip, allowDuplicatedAddress);
         } else {
             return null;
         }
@@ -586,13 +591,15 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             return;
         }
 
-        List<NormalIpRangeVO> iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
-        if (iprs.get(0).getIpVersion() == IPv6Constants.IPv4) {
+        List<NormalIpRangeVO> iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6)
+                .eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+        if (iprs.isEmpty()) {
             return;
         }
 
         if (!iprs.get(0).getAddressMode().equals(IPv6Constants.Stateful_DHCP)) {
             msg.setRequiredIp(IPv6NetworkUtils.getIPv6AddresFromMac(iprs.get(0).getNetworkCidr(), mac));
+            msg.setIpVersion(IPv6Constants.IPv6);
         }
     }
 

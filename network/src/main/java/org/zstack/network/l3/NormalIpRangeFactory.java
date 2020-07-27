@@ -4,11 +4,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.network.l3.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.ForEachFunction;
+import org.zstack.utils.network.IPv6Constants;
+
+import java.util.List;
 
 public class NormalIpRangeFactory implements IpRangeFactory {
     @Autowired
@@ -47,6 +51,8 @@ public class NormalIpRangeFactory implements IpRangeFactory {
                 return vo;
             }
         }.execute();
+
+        IpRangeHelper.updateL3NetworkIpversion(ipr);
 
         final IpRangeInventory finalIpr = NormalIpRangeInventory.valueOf1(vo);
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAddIpRangeExtensionPoint.class), new ForEachFunction<AfterAddIpRangeExtensionPoint>() {

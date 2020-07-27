@@ -15,6 +15,9 @@ public class APIGetIpAddressCapacityReply extends APIReply {
     private long totalCapacity;
     private long availableCapacity;
     private long usedIpAddressNumber;
+    private long ipv6TotalCapacity;
+    private long ipv6AvailableCapacity;
+    private long ipv6UsedIpAddressNumber;
     private List<IpCapacityData> capacityData;
     private String resourceType;
 
@@ -56,6 +59,30 @@ public class APIGetIpAddressCapacityReply extends APIReply {
 
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
+    }
+
+    public long getIpv6TotalCapacity() {
+        return ipv6TotalCapacity;
+    }
+
+    public void setIpv6TotalCapacity(long ipv6TotalCapacity) {
+        this.ipv6TotalCapacity = ipv6TotalCapacity;
+    }
+
+    public long getIpv6AvailableCapacity() {
+        return ipv6AvailableCapacity;
+    }
+
+    public void setIpv6AvailableCapacity(long ipv6AvailableCapacity) {
+        this.ipv6AvailableCapacity = ipv6AvailableCapacity;
+    }
+
+    public long getIpv6UsedIpAddressNumber() {
+        return ipv6UsedIpAddressNumber;
+    }
+
+    public void setIpv6UsedIpAddressNumber(long ipv6UsedIpAddressNumber) {
+        this.ipv6UsedIpAddressNumber = ipv6UsedIpAddressNumber;
     }
 
     public static APIGetIpAddressCapacityReply __example__() {

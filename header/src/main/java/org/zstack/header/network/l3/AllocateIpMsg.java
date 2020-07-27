@@ -1,6 +1,7 @@
 package org.zstack.header.network.l3;
 
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.utils.network.IPv6Constants;
 
 public class AllocateIpMsg extends NeedReplyMessage implements L3NetworkMessage, IpAllocateMessage {
     private String allocateStrategy;
@@ -9,6 +10,7 @@ public class AllocateIpMsg extends NeedReplyMessage implements L3NetworkMessage,
     private String excludedIp;
     private boolean duplicatedIpAllowed = false;
     private String ipRangeUuid;
+    private int ipVersion = IPv6Constants.IPv4;
 
     public String getRequiredIp() {
         return requiredIp;
@@ -60,5 +62,13 @@ public class AllocateIpMsg extends NeedReplyMessage implements L3NetworkMessage,
 
     public void setIpRangeUuid(String ipRangeUuid) {
         this.ipRangeUuid = ipRangeUuid;
+    }
+
+    public int getIpVersion() {
+        return ipVersion;
+    }
+
+    public void setIpVersion(int ipVersion) {
+        this.ipVersion = ipVersion;
     }
 }

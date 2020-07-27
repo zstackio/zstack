@@ -10,6 +10,7 @@ import java.util.Map;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class VmNicSpec implements Serializable {
+    /* due to the design changed, single nic will only has 1 l3 network */
     public List<L3NetworkInventory> l3Invs;
     public String nicDriverType;
 

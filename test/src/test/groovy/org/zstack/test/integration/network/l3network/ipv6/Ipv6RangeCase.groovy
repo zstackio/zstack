@@ -62,13 +62,11 @@ class Ipv6RangeCase extends SubCase {
             name = "public-ipv4"
         }
 
-        expect(AssertionError.class) {
-            addIpv6RangeByNetworkCidr {
-                name = "ipr-6"
-                l3NetworkUuid = l3_pub_ipv4.getUuid()
-                networkCidr = "2002:2001::/64"
-                addressMode = IPv6Constants.Stateful_DHCP
-            }
+        addIpv6RangeByNetworkCidr {
+            name = "ipr-6"
+            l3NetworkUuid = l3_pub_ipv4.getUuid()
+            networkCidr = "2002:2001::/64"
+            addressMode = IPv6Constants.Stateful_DHCP
         }
 
         L3NetworkInventory l3_pub_ipv6 = createL3Network {
@@ -78,15 +76,13 @@ class Ipv6RangeCase extends SubCase {
             ipVersion = 6
         }
 
-        expect(AssertionError.class) {
-            addIpRange {
-                name = "ipr-4"
-                l3NetworkUuid = l3_pub_ipv6.getUuid()
-                startIp = "192.168.101.101"
-                endIp = "192.168.101.200"
-                gateway = "192.168.101.1"
-                netmask = "255.255.255.0"
-            }
+        addIpRange {
+            name = "ipr-4"
+            l3NetworkUuid = l3_pub_ipv6.getUuid()
+            startIp = "192.168.101.101"
+            endIp = "192.168.101.200"
+            gateway = "192.168.101.1"
+            netmask = "255.255.255.0"
         }
 
         expect(AssertionError.class) {
@@ -133,9 +129,9 @@ class Ipv6RangeCase extends SubCase {
         addIpv6Range {
             name = "ipr-6"
             l3NetworkUuid = l3_pub_ipv6.getUuid()
-            startIp = "2002:2001::02"
-            endIp = "2002:2001::ff"
-            gateway = "2002:2001::01"
+            startIp = "2002:2002::02"
+            endIp = "2002:2002::ff"
+            gateway = "2002:2002::01"
             prefixLen = 120
             addressMode = IPv6Constants.Stateful_DHCP
         }
@@ -144,9 +140,9 @@ class Ipv6RangeCase extends SubCase {
             addIpv6Range {
                 name = "ipr-6"
                 l3NetworkUuid = l3_pub_ipv6.getUuid()
-                startIp = "2002:2001::02"
-                endIp = "2002:2001::fe"
-                gateway = "2002:2001::fe"
+                startIp = "2002:2002::02"
+                endIp = "2002:2002::fe"
+                gateway = "2002:2002::fe"
                 prefixLen = 120
                 addressMode = IPv6Constants.Stateful_DHCP
             }

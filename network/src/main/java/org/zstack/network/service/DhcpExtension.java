@@ -116,16 +116,15 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
         }
     }
 
-    private List<DhcpStruct> makeDhcpStruct(VmInstanceSpec spec, final L3NetworkInventory l3) {
+    private List<DhcpStruct> makeDhcpStructInternal(VmInstanceSpec spec, final L3NetworkInventory l3, int ipVersion) {
         List<DhcpStruct> res = new ArrayList<>();
         List<VmNicVO> nics = new ArrayList<>();
 
         /* SLACC mode doesn't need DHCP service */
-        List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3);
-        if (!iprs.isEmpty()) {
-            NormalIpRangeVO ipr = dbf.findByUuid(iprs.get(0).getUuid(), NormalIpRangeVO.class);
-            if (ipr.getIpVersion() == IPv6Constants.IPv6 &&
-                    (ipr.getAddressMode().equals(IPv6Constants.SLAAC))) {
+        List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3).stream()
+                .filter(ipr -> ipr.getIpVersion() == ipVersion).collect(Collectors.toList());
+        if (!iprs.isEmpty() && ipVersion == IPv6Constants.IPv6) {
+            if (iprs.get(0).getAddressMode().equals(IPv6Constants.SLAAC)) {
                 return res;
             }
         }
@@ -133,7 +132,7 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
         for (VmNicInventory inv : spec.getDestNics()) {
             VmNicVO vmNicVO = dbf.findByUuid(inv.getUuid(), VmNicVO.class);
             for (UsedIpVO ip : vmNicVO.getUsedIps()) {
-                if (ip.getL3NetworkUuid().equals(l3.getUuid())) {
+                if (ip.getL3NetworkUuid().equals(l3.getUuid()) && ip.getIpVersion() == ipVersion) {
                     nics.add(vmNicVO);
                 }
             }
@@ -147,7 +146,7 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
         for (VmNicVO nic : nics) {
             for (UsedIpInventory ip : VmNicInventory.valueOf(nic).getUsedIps()) {
-                if (!ip.getL3NetworkUuid().equals(l3.getUuid())) {
+                if (ip.getIpVersion() != ipVersion || !ip.getL3NetworkUuid().equals(l3.getUuid())) {
                     continue;
                 }
 
@@ -192,6 +191,16 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
                 }
                 res.add(struct);
             }
+        }
+
+        return res;
+    }
+
+    private List<DhcpStruct> makeDhcpStruct(VmInstanceSpec spec, final L3NetworkInventory l3) {
+        List<DhcpStruct> res = new ArrayList<>();
+
+        for (int ipVersion : l3.getIpVersions()) {
+            res.addAll(makeDhcpStructInternal(spec, l3, ipVersion));
         }
 
         return res;

@@ -34,6 +34,7 @@ import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.list;
@@ -134,6 +135,14 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             return netAddr1.equals(netAddr2);
         } else if (l3vo1.getIpVersion() == IPv6Constants.IPv6) {
             return IPv6NetworkUtils.isIpv6CidrEqual(ipInvs1.get(0).getNetworkCidr(), ipInvs2.get(0).getNetworkCidr());
+        } else if (l3vo1.getIpVersion() == IPv6Constants.DUAL_STACK) {
+            List<IpRangeInventory> ip4Invs1 = ipInvs1.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
+            List<IpRangeInventory> ip4Invs2 = ipInvs2.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
+            String netAddr1 = new SubnetUtils(ip4Invs1.get(0).getGateway(), ip4Invs1.get(0).getNetmask()).getInfo().getNetworkAddress();
+            String netAddr2 = new SubnetUtils(ip4Invs2.get(0).getGateway(), ip4Invs2.get(0).getNetmask()).getInfo().getNetworkAddress();
+            List<IpRangeInventory> ip6Invs1 = ipInvs1.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
+            List<IpRangeInventory> ip6Invs2 = ipInvs2.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
+            return netAddr1.equals(netAddr2) && IPv6NetworkUtils.isIpv6CidrEqual(ip6Invs1.get(0).getNetworkCidr(), ip6Invs2.get(0).getNetworkCidr());
         }
         return false;
     }
@@ -150,23 +159,24 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             msg.setPublicNetworkUuid(msg.getManagementNetworkUuid());
         }
 
-        SimpleQuery<L3NetworkVO> q = dbf.createQuery(L3NetworkVO.class);
-        q.select(L3NetworkVO_.zoneUuid);
-        q.add(L3NetworkVO_.uuid, Op.EQ, msg.getManagementNetworkUuid());
-        String zoneUuid = q.findValue();
-        if (!zoneUuid.equals(msg.getZoneUuid()))  {
+        L3NetworkVO mgtL3 = dbf.findByUuid(msg.getManagementNetworkUuid(), L3NetworkVO.class);
+        if (!mgtL3.getZoneUuid().equals(msg.getZoneUuid()))  {
             throw new ApiMessageInterceptionException(argerr("management network[uuid:%s] is not in the same zone[uuid:%s] this offering is going to create",
                             msg.getManagementNetworkUuid(), msg.getZoneUuid()));
+        }
+        /* mgt network does not support ipv6 yet, TODO, will be implemented soon */
+        if (mgtL3.getIpVersions().contains(IPv6Constants.IPv6)) {
+            throw new ApiMessageInterceptionException(argerr("can not create virtual router offering, because management network doesn't support ipv6 yet"));
         }
 
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
             checkIfManagementNetworkReachable(msg.getManagementNetworkUuid());
         }
 
-        q = dbf.createQuery(L3NetworkVO.class);
+        SimpleQuery<L3NetworkVO> q = dbf.createQuery(L3NetworkVO.class);
         q.select(L3NetworkVO_.zoneUuid);
         q.add(L3NetworkVO_.uuid, Op.EQ, msg.getPublicNetworkUuid());
-        zoneUuid = q.findValue();
+        String zoneUuid = q.findValue();
         if (!zoneUuid.equals(msg.getZoneUuid()))  {
             throw new ApiMessageInterceptionException(argerr("public network[uuid:%s] is not in the same zone[uuid:%s] this offering is going to create",
                             msg.getManagementNetworkUuid(), msg.getZoneUuid()));

@@ -54,18 +54,13 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("unsupported ip allocation strategy[%s]", msg.getAllocatorStrategy()));
         }
 
+        L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         if (msg.getRequiredIp() != null) {
-            L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
-            if (l3NetworkVO.getIpVersion() == IPv6Constants.IPv4) {
-                if (!NetworkUtils.isIpv4Address(msg.getRequiredIp())) {
-                    throw new ApiMessageInterceptionException(argerr("requiredIp[%s] is not in valid IPv4 mediaType", msg.getRequiredIp()));
-                }
-            } else {
-                if (!IPv6NetworkUtils.isIpv6UnicastAddress(msg.getRequiredIp())) {
-                    if (!NetworkUtils.isIpv4Address(msg.getRequiredIp())) {
-                        throw new ApiMessageInterceptionException(argerr("requiredIp[%s] is not in valid IPv6 mediaType", msg.getRequiredIp()));
-                    }
-                }
+            if (NetworkUtils.isIpv4Address(msg.getRequiredIp()) && !l3NetworkVO.getIpVersions().contains(IPv6Constants.IPv4)) {
+                throw new ApiMessageInterceptionException(argerr("requiredIp[%s] is not in valid IPv4 mediaType", msg.getRequiredIp()));
+            }
+            if (IPv6NetworkUtils.isIpv6Address(msg.getRequiredIp()) && !l3NetworkVO.getIpVersions().contains(IPv6Constants.IPv6)) {
+                throw new ApiMessageInterceptionException(argerr("requiredIp[%s] is not in valid IPv4 mediaType", msg.getRequiredIp()));
             }
 
             SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
@@ -81,6 +76,28 @@ public class VipApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(operr("required ip address [%s] is already used", msg.getRequiredIp()));
             }
 
+            if (NetworkUtils.isIpv4Address(msg.getRequiredIp())) {
+                msg.setIpVersion(IPv6Constants.IPv4);
+            } else if (IPv6NetworkUtils.isIpv6Address(msg.getRequiredIp())) {
+                msg.setIpVersion(IPv6Constants.IPv6);
+            }
+        }
+
+        if (msg.getIpVersion() == null) {
+            if (msg.getIpRangeUuid() != null) {
+                IpRangeVO ipr = dbf.findByUuid(msg.getIpRangeUuid(), IpRangeVO.class);
+                msg.setIpVersion(ipr.getIpVersion());
+            } else {
+                if (l3NetworkVO.getIpVersions().contains(IPv6Constants.IPv4)) {
+                    msg.setIpVersion(IPv6Constants.IPv4);
+                } else {
+                    msg.setIpVersion(IPv6Constants.IPv6);
+                }
+            }
+        }
+
+        if (msg.getIpVersion() == null) {
+            throw new ApiMessageInterceptionException(operr("could not create vip, because can not determine the vip version"));
         }
     }
 }

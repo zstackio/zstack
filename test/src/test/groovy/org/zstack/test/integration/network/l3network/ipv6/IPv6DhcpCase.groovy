@@ -40,7 +40,7 @@ class IPv6DhcpCase extends SubCase {
     @Override
     void test() {
         env.create {
-            testAttachDetachL3ToVmNic()
+            //testAttachDetachL3ToVmNic() TODO shixin
         }
     }
 
