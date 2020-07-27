@@ -696,9 +696,7 @@ public class VirtualRouter extends ApplianceVmBase {
 
             VirtualRouterCommands.ConfigureNicCmd cmd = new VirtualRouterCommands.ConfigureNicCmd();
             VirtualRouterCommands.NicInfo info = new VirtualRouterCommands.NicInfo();
-            info.setIp(nicInventory.getIp());
             info.setDefaultRoute(false);
-            info.setGateway(nicInventory.getGateway());
             info.setMac(nicInventory.getMac());
             info.setNetmask(nicInventory.getNetmask());
             for (UsedIpInventory ip : nicInventory.getUsedIps()) {
@@ -785,6 +783,11 @@ public class VirtualRouter extends ApplianceVmBase {
         public void run(FlowTrigger trigger, Map data) {
             VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC.toString());
 
+            if (nicInv.isIpv6OnlyNic()) {
+                trigger.next();
+                return;
+            }
+            
             Iterator<VirtualRouterAfterAttachNicExtensionPoint> it = pluginRgty.getExtensionList(VirtualRouterAfterAttachNicExtensionPoint.class).iterator();
             virtualRouterApplyServicesAfterAttachNic(it, nicInv,  new Completion(trigger) {
                 @Override

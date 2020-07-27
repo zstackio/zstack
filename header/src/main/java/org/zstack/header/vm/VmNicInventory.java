@@ -6,6 +6,7 @@ import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
+import org.zstack.utils.network.IPv6Constants;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -222,5 +223,9 @@ public class VmNicInventory implements Serializable {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public boolean isIpv6OnlyNic() {
+        return this.usedIps.size() == 1 && this.usedIps.get(0).getIpVersion() == IPv6Constants.IPv6;
     }
 }

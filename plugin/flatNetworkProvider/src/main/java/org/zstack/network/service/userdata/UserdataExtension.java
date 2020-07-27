@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -14,14 +15,13 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
 import org.zstack.header.network.service.NetworkServiceProviderInventory;
 import org.zstack.header.network.service.NetworkServiceProviderVO;
 import org.zstack.header.network.service.NetworkServiceType;
-import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.header.vm.VmNicHelper;
-import org.zstack.header.vm.VmNicSpec;
+import org.zstack.header.vm.*;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 
 import java.util.HashMap;
 import java.util.List;
@@ -113,6 +113,11 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
             return;
         }
 
+        if (!defaultL3.getIpVersions().contains(IPv6Constants.IPv4)) {
+            // userdata depends on the ipv4 address
+            completion.success();
+            return;
+        }
 
         NetworkServiceProviderInventory provider = findProvider(servedVm);
         if (provider == null) {
@@ -141,6 +146,12 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
 
         if (defaultL3 == null) {
             // the L3 for operation is not the default L3
+            completion.done();
+            return;
+        }
+
+        if (!defaultL3.getIpVersions().contains(IPv6Constants.IPv4)) {
+            // userdata depends on the ipv4 address
             completion.done();
             return;
         }

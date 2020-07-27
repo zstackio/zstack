@@ -175,7 +175,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
                 rule1.getEndPort().equals(rule2.getEndPort()) &&
                 rule1.getProtocol().equals(rule2.getProtocol()) &&
                 rule1.getType().equals(rule2.getType()) &&
-                rule1.getIpVersion() == rule2.getIpVersion()) {
+                rule1.getIpVersion().equals(rule2.getIpVersion())) {
             //
             if (rule1.getAllowedCidr() == null) {
                 if (rule2.getAllowedCidr() == null ||
@@ -299,6 +299,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             ao.setProtocol(svo.getProtocol().toString());
             ao.setStartPort(svo.getStartPort());
             ao.setEndPort(svo.getEndPort());
+            ao.setIpVersion(svo.getIpVersion());
             String existRuleRemoteGroupUuid = svo.getRemoteSecurityGroupUuid();
             for (SecurityGroupRuleAO sao : msg.getRules()) {
                 if (checkSecurityGroupRuleEqual(ao, sao) && (

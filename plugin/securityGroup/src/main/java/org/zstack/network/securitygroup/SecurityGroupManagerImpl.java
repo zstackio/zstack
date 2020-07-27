@@ -310,12 +310,10 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             List<RuleTO> ret = new ArrayList<>();
 
             for (String sgUuid : sgUuids) {
-                List<SecurityGroupRuleVO> rules = new ArrayList<>();
-                SecurityGroupVO sg = Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, sgUuid).in(SecurityGroupVO_.state, sgStates).find();
-                if (sg == null) {
+                if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, sgUuid).in(SecurityGroupVO_.state, sgStates).isExists()) {
                     continue;
                 }
-                rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid)
+                List<SecurityGroupRuleVO> rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid)
                         .eq(SecurityGroupRuleVO_.ipVersion, ipVersion)
                         .isNull(SecurityGroupRuleVO_.remoteSecurityGroupUuid).list();
                 if (rules.isEmpty()) {
@@ -565,19 +563,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 sgUuids = sgUuids.stream().distinct().collect(Collectors.toList());
                 l3Uuids = l3Uuids.stream().distinct().collect(Collectors.toList());
                 if (!sgUuids.isEmpty()) {
-                    List<RuleTO> rtos = calculateRuleTOBySecurityGroup(sgUuids, l3Uuids, IPv6Constants.IPv4);
-                    List<RuleTO> securityGroupBaseRules = calculateSecurityGroupBaseRule(sgUuids, l3Uuids, IPv6Constants.IPv4);
-                    SecurityGroupRuleTO sgto = new SecurityGroupRuleTO();
-                    sgto.setEgressDefaultPolicy(SecurityGroupGlobalConfig.EGRESS_RULE_DEFAULT_POLICY.value(String.class));
-                    sgto.setIngressDefaultPolicy(SecurityGroupGlobalConfig.INGRESS_RULE_DEFAULT_POLICY.value(String.class));
-                    sgto.setRules(rtos);
-                    sgto.setVmNicUuid(nicUuid);
-                    sgto.setVmNicInternalName(nicName);
-                    sgto.setVmNicMac(mac);
-                    sgto.setVmNicIp(ips);
-                    sgto.setSecurityGroupBaseRules(securityGroupBaseRules);
-                    sgto.setIpVersion(IPv6Constants.IPv4);
-
                     HostRuleTO hto = hostRuleMap.get(hostUuid);
                     if (hto == null) {
                         hto = new HostRuleTO();
@@ -586,23 +571,39 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                         hostRuleMap.put(hto.getHostUuid(), hto);
                     }
 
-                    hto.getRules().add(sgto);
+                    if (!ips.isEmpty()) {
+                        List<RuleTO> rtos = calculateRuleTOBySecurityGroup(sgUuids, l3Uuids, IPv6Constants.IPv4);
+                        List<RuleTO> securityGroupBaseRules = calculateSecurityGroupBaseRule(sgUuids, l3Uuids, IPv6Constants.IPv4);
+                        SecurityGroupRuleTO sgto = new SecurityGroupRuleTO();
+                        sgto.setEgressDefaultPolicy(SecurityGroupGlobalConfig.EGRESS_RULE_DEFAULT_POLICY.value(String.class));
+                        sgto.setIngressDefaultPolicy(SecurityGroupGlobalConfig.INGRESS_RULE_DEFAULT_POLICY.value(String.class));
+                        sgto.setRules(rtos);
+                        sgto.setVmNicUuid(nicUuid);
+                        sgto.setVmNicInternalName(nicName);
+                        sgto.setVmNicMac(mac);
+                        sgto.setVmNicIp(ips);
+                        sgto.setSecurityGroupBaseRules(securityGroupBaseRules);
+                        sgto.setIpVersion(IPv6Constants.IPv4);
+                        hto.getRules().add(sgto);
+                    }
 
                     /* caculate ipv6 rules */
-                    List<RuleTO> rtos6 = calculateRuleTOBySecurityGroup(sgUuids, l3Uuids, IPv6Constants.IPv6);
-                    List<RuleTO> securityGroupBaseRules6 =  calculateSecurityGroupBaseRule(sgUuids, l3Uuids, IPv6Constants.IPv6);
-                    SecurityGroupRuleTO sgto6 = new SecurityGroupRuleTO();
-                    sgto6.setEgressDefaultPolicy(SecurityGroupGlobalConfig.EGRESS_RULE_DEFAULT_POLICY.value(String.class));
-                    sgto6.setIngressDefaultPolicy(SecurityGroupGlobalConfig.INGRESS_RULE_DEFAULT_POLICY.value(String.class));
-                    sgto6.setRules(rtos6);
-                    sgto6.setVmNicUuid(nicUuid);
-                    sgto6.setVmNicInternalName(nicName);
-                    sgto6.setVmNicMac(mac);
-                    sgto6.setVmNicIp(ip6s);
-                    sgto6.setSecurityGroupBaseRules(securityGroupBaseRules6);
-                    sgto6.setIpVersion(IPv6Constants.IPv6);
+                    if (!ip6s.isEmpty()) {
+                        List<RuleTO> rtos6 = calculateRuleTOBySecurityGroup(sgUuids, l3Uuids, IPv6Constants.IPv6);
+                        List<RuleTO> securityGroupBaseRules6 = calculateSecurityGroupBaseRule(sgUuids, l3Uuids, IPv6Constants.IPv6);
+                        SecurityGroupRuleTO sgto6 = new SecurityGroupRuleTO();
+                        sgto6.setEgressDefaultPolicy(SecurityGroupGlobalConfig.EGRESS_RULE_DEFAULT_POLICY.value(String.class));
+                        sgto6.setIngressDefaultPolicy(SecurityGroupGlobalConfig.INGRESS_RULE_DEFAULT_POLICY.value(String.class));
+                        sgto6.setRules(rtos6);
+                        sgto6.setVmNicUuid(nicUuid);
+                        sgto6.setVmNicInternalName(nicName);
+                        sgto6.setVmNicMac(mac);
+                        sgto6.setVmNicIp(ip6s);
+                        sgto6.setSecurityGroupBaseRules(securityGroupBaseRules6);
+                        sgto6.setIpVersion(IPv6Constants.IPv6);
 
-                    hto.getIpv6Rules().add(sgto);
+                        hto.getIpv6Rules().add(sgto6);
+                    }
                 }
             }
 

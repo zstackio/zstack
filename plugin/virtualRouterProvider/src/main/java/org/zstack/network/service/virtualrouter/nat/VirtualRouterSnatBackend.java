@@ -286,7 +286,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vr);
         final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<VirtualRouterCommands.SNATInfo>();
         for (VmNicInventory vnic : vr.getVmNics()) {
-            if (nwServed.contains(vnic.getL3NetworkUuid())) {
+            if (nwServed.contains(vnic.getL3NetworkUuid()) && !vnic.isIpv6OnlyNic()) {
                 VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
                 info.setPrivateNicIp(vnic.getIp());
                 info.setPrivateNicMac(vnic.getMac());
