@@ -42,6 +42,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.storage.snapshot.APIShrinkVolumeSnapshotMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.storage.snapshot.group.APIQueryVolumeSnapshotGroupMsg</name>
         <serviceId>query</serviceId>
     </message>

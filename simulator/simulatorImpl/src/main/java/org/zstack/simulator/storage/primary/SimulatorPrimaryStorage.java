@@ -8,6 +8,7 @@ import org.zstack.header.host.HostStatus;
 import org.zstack.header.simulator.SimulatorConstant;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
+import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMsg;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.utils.Utils;
@@ -194,6 +195,11 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
         usage.availablePhysicalSize = self.getCapacity().getAvailablePhysicalCapacity();
         usage.totalPhysicalSize = self.getCapacity().getTotalPhysicalCapacity();
         completion.success(usage);
+    }
+
+    @Override
+    protected void handle(ShrinkVolumeSnapshotOnPrimaryStorageMsg msg) {
+        bus.dealWithUnknownMessage(msg);
     }
 
     @Override
