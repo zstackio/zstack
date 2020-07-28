@@ -15,6 +15,7 @@ public class ErrorCode implements Serializable, Cloneable {
     private String description;
     private String details;
     private String elaboration;
+    private String location;
     @APINoSee
     private ErrorCodeElaboration messages;
     private String cost;
@@ -63,6 +64,7 @@ public class ErrorCode implements Serializable, Cloneable {
         this.elaboration = other.elaboration;
         this.messages = other.messages;
         this.cause = other.cause;
+        this.location = other.location;
     }
 
     public void setCode(String code) {
@@ -220,6 +222,14 @@ public class ErrorCode implements Serializable, Cloneable {
 
     public void setCost(String cost) {
         this.cost = cost;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 
     public static String getDeduplicateError(String operationName) {
