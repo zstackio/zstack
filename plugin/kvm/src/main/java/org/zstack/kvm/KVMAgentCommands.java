@@ -2042,6 +2042,7 @@ public class KVMAgentCommands {
         private boolean useNuma;
         private boolean migrateFromDestination;
         private boolean autoConverge;
+        private boolean xbzrle;
         private Long timeout; // in seconds
 
         public boolean isUseNuma() {
@@ -2090,6 +2091,14 @@ public class KVMAgentCommands {
 
         public void setAutoConverge(boolean autoConverge) {
             this.autoConverge = autoConverge;
+        }
+
+        public boolean isXbzrle() {
+            return xbzrle;
+        }
+
+        public void setXbzrle(boolean xbzrle) {
+            this.xbzrle = xbzrle;
         }
 
         public boolean isMigrateFromDestination() {

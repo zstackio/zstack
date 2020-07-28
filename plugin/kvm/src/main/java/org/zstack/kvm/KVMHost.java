@@ -1404,6 +1404,8 @@ public class KVMHost extends HostBase implements Host {
                             autoConverage = s.strategy != null && s.strategy.equals("auto-converge");
                         }
 
+                        boolean xbzrle = KVMGlobalConfig.MIGRATE_XBZRLE.value(Boolean.class);
+
                         MigrateVmCmd cmd = new MigrateVmCmd();
                         cmd.setDestHostIp(dstHostMigrateIp);
                         cmd.setSrcHostIp(srcHostMigrateIp);
@@ -1411,6 +1413,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setStorageMigrationPolicy(storageMigrationPolicy == null ? null : storageMigrationPolicy.toString());
                         cmd.setVmUuid(vmUuid);
                         cmd.setAutoConverge(autoConverage);
+                        cmd.setXbzrle(xbzrle);
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
                         cmd.setTimeout(timeoutManager.getTimeout());
 
