@@ -1,9 +1,10 @@
 package org.zstack.utils.ssh;
 
-import com.jcraft.jsch.*;
-import org.apache.commons.io.Charsets;
+import net.schmizz.sshj.SSHClient;
+import net.schmizz.sshj.common.IOUtils;
+import net.schmizz.sshj.connection.channel.direct.Session;
+import net.schmizz.sshj.transport.verification.HostKeyVerifier;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.zstack.utils.CollectionUtils;
@@ -15,7 +16,7 @@ import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+import java.security.PublicKey;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -34,15 +35,16 @@ public class Ssh {
     private String privateKey;
     private String password;
     private int port = 22;
-    private int timeout = 0;
+    private int timeout = Integer.MAX_VALUE;
     private List<SshRunner> commands = new ArrayList<SshRunner>();
-    private Session session;
+    private SSHClient ssh;
     private File privateKeyFile;
     private boolean closed = false;
     private boolean suppressException = false;
     private ScriptRunner script;
 
     private boolean init = false;
+
 
     private interface SshRunner {
         SshResult run();
@@ -128,9 +130,7 @@ public class Ssh {
 
         void cleanup() {
             if (scriptFile != null) {
-                if (!scriptFile.delete()) {
-                    logger.warn("delete file failed: " +scriptFile.getAbsolutePath());
-                }
+                scriptFile.delete();
             }
         }
     }
@@ -204,32 +204,28 @@ public class Ssh {
                String cmdWithoutPassword = getCommandWithoutPassword();
                ret.setCommandToExecute(cmdWithoutPassword);
 
+               Session.Command sshCmd = null;
                try {
-                   ChannelExec channel = null;
+                   Session session = null;
                    try {
-                       channel = (ChannelExec) session.openChannel("exec");
-                       channel.setPty(true);
-                       channel.setCommand(cmd);
+                       session = ssh.startSession();
+                       session.allocateDefaultPTY();
                        if (logger.isTraceEnabled()) {
                            logger.trace(String.format("[start SSH] %s", cmdWithoutPassword));
                        }
-
-                       try (InputStream ins = channel.getInputStream();
-                            InputStream errs = channel.getErrStream()) {
-                           channel.connect(getTimeoutInMilli(timeout));
-
-                           String output = IOUtils.toString(ins, Charsets.UTF_8);
-                           String stderr = IOUtils.toString(errs, Charsets.UTF_8);
-                           ret.setReturnCode(channel.getExitStatus());
-                           ret.setStderr(stderr);
-                           ret.setStdout(output);
-                           if (logger.isTraceEnabled()) {
-                               logger.trace(String.format("[end SSH] %s, return code: %d", cmdWithoutPassword, ret.getReturnCode()));
-                           }
+                       sshCmd = session.exec(cmd);
+                       sshCmd.join(timeout, TimeUnit.SECONDS);
+                       String output = IOUtils.readFully(sshCmd.getInputStream()).toString();
+                       String stderr = IOUtils.readFully(sshCmd.getErrorStream()).toString();
+                       ret.setReturnCode(sshCmd.getExitStatus());
+                       ret.setStderr(stderr);
+                       ret.setStdout(output);
+                       if (logger.isTraceEnabled()) {
+                           logger.trace(String.format("[end SSH] %s, return code: %d", cmdWithoutPassword, ret.getReturnCode()));
                        }
                    } finally {
-                       if (channel != null) {
-                           channel.disconnect();
+                       if (session != null) {
+                           session.close();
                        }
                    }
                } catch (Exception e) {
@@ -244,6 +240,14 @@ public class Ssh {
                    }
                    ret.setExitErrorMessage(e.getMessage());
                    ret.setReturnCode(1);
+               } finally {
+                   if (sshCmd != null) {
+                       try {
+                           sshCmd.close();
+                       } catch (Exception e) {
+                           logger.warn(String.format("failed close ssh channel for command[%s, host:%s, port:%s]", cmdWithoutPassword, hostname, port), e);
+                       }
+                   }
                }
 
                return ret;
@@ -280,23 +284,16 @@ public class Ssh {
                 ret.setCommandToExecute(cmd);
 
                 try {
-                    ChannelSftp channel = null;
-                    try {
-                        channel = (ChannelSftp) session.openChannel("sftp");
-                        channel.connect(getTimeoutInMilli(timeout));
-
-                        if (download) {
-                            channel.get(src, dst);
-                        } else {
-                            channel.put(src, dst);
-                        }
-                        ret.setReturnCode(0);
-                    } finally {
-                        if (channel != null) {
-                            channel.disconnect();
-                        }
+                    if (download) {
+                        ssh.newSCPFileTransfer().download(src, dst);
+                    } else {
+                        ssh.newSCPFileTransfer().upload(src, dst);
                     }
-                } catch (JSchException | SftpException e) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(String.format("[SCP done]: %s", cmd));
+                    }
+                    ret.setReturnCode(0);
+                } catch (IOException e) {
                     if (!suppressException) {
                         logger.warn(String.format("[SCP failed]: %s", cmd), e);
                     }
@@ -331,13 +328,13 @@ public class Ssh {
     }
 
     public Ssh shell(String script) {
-        DebugUtils.Assert(this.script==null, "every Ssh object can only specify one script");
+        DebugUtils.Assert(this.script==null, String.format("every Ssh object can only specify one script"));
         this.script = new ScriptRunner(script);
         return this;
     }
 
     public Ssh script(String scriptName, String parameters, Map token) {
-        DebugUtils.Assert(script==null, "every Ssh object can only specify one script");
+        DebugUtils.Assert(script==null, String.format("every Ssh object can only specify one script"));
         script = new ScriptRunner(scriptName, parameters, token);
         return this;
     }
@@ -354,38 +351,25 @@ public class Ssh {
         return script(scriptName, null, null);
     }
 
-    private static int getTimeoutInMilli(int seconds) {
-        if (seconds <= 0) {
-            return 0;
-        }
-
-        long timeo = TimeUnit.SECONDS.toMillis(seconds);
-        if (timeo < Integer.MAX_VALUE) {
-            return (int)timeo;
-        }
-
-        return Integer.MAX_VALUE;
-    }
-
     private void build() throws IOException {
         if (init) {
             return;
         }
 
-        try {
-            JSch jSch = new JSch();
-            if (privateKey != null) {
-                privateKeyFile = File.createTempFile("zstack", "tmp");
-                FileUtils.writeStringToFile(privateKeyFile, privateKey);
-                jSch.addIdentity(privateKeyFile.getAbsolutePath());
+        ssh = new SSHClient();
+        ssh.addHostKeyVerifier(new HostKeyVerifier() {
+            @Override
+            public boolean verify(String arg0, int arg1, PublicKey arg2) {
+                return true;
             }
-
-            session = jSch.getSession(username, hostname, port);
-            session.setConfig("StrictHostKeyChecking", "no");
-            session.setPassword(password);
-            session.connect(getTimeoutInMilli(timeout));
-        } catch (JSchException ex) {
-            throw new IOException(ex);
+        });
+        ssh.connect(hostname, port);
+        if (privateKey != null) {
+            privateKeyFile = File.createTempFile("zstack", "tmp");
+            FileUtils.writeStringToFile(privateKeyFile, privateKey);
+            ssh.authPublickey(username, privateKeyFile.getAbsolutePath());
+        } else {
+            ssh.authPassword(username, password);
         }
 
         init = true;
@@ -398,17 +382,20 @@ public class Ssh {
 
         closed = true;
 
-        if (privateKeyFile != null) {
-            if (!privateKeyFile.delete()) {
-                logger.warn("delete file failed: " + privateKeyFile.getAbsolutePath());
+        try {
+            ssh.disconnect();
+
+            if (privateKeyFile != null) {
+                privateKeyFile.delete();
             }
+            if (script != null) {
+                script.cleanup();
+            }
+        } catch (IOException e) {
+            StringBuilder sb = new StringBuilder(String.format("failed to close connection"));
+            sb.append(String.format("[host:%s, port:%s, user:%s, timeout:%s]\n", hostname, port, username, timeout));
+            logger.warn(sb.toString(), e);
         }
-
-        if (script != null) {
-            script.cleanup();
-        }
-
-        session.disconnect();
     }
 
     public SshResult run() {
@@ -421,23 +408,23 @@ public class Ssh {
         try {
             build();
             if (commands.isEmpty() && script == null) {
-                throw new IllegalArgumentException("no command or scp command or script specified");
+                throw new IllegalArgumentException(String.format("no command or scp command or script specified"));
             }
 
             if (!commands.isEmpty() && script != null) {
-                throw new IllegalArgumentException("you cannot use script with command or scp");
+                throw new IllegalArgumentException(String.format("you cannot use script with command or scp"));
             }
 
             if (privateKey == null && password == null) {
-                throw new IllegalArgumentException("no password and private key specified");
+                throw new IllegalArgumentException(String.format("no password and private key specified"));
             }
 
             if (username == null) {
-                throw new IllegalArgumentException("no username specified");
+                throw new IllegalArgumentException(String.format("no username specified"));
             }
 
             if (hostname == null) {
-                throw new IllegalArgumentException("no hostname specified");
+                throw new IllegalArgumentException(String.format("no hostname specified"));
             }
 
             if (script != null) {
@@ -458,7 +445,7 @@ public class Ssh {
             }
 
         } catch (IOException e) {
-            StringBuilder sb = new StringBuilder("ssh exception\n");
+            StringBuilder sb = new StringBuilder(String.format("ssh exception\n"));
             sb.append(String.format("[host:%s, port:%s, user:%s, timeout:%s]\n", hostname, port, username, timeout));
             if (!suppressException) {
                 logger.warn(sb.toString(), e);
