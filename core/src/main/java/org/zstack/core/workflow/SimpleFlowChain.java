@@ -41,6 +41,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private List<Flow> flows = new ArrayList<>();
     private Stack<Flow> rollBackFlows = new Stack<>();
     private Map data = new HashMap();
+    private int currentLoop = 0;
     private Iterator<Flow> it;
     private boolean isStart = false;
     private boolean isRollbackStart = false;
@@ -69,7 +70,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         void start(Flow flow) {
             long btime = System.currentTimeMillis();
             if (currentFlow != null) {
-                String cname = getFlowName(currentFlow);
+                String cname = getFlowNameWithoutLocation(currentFlow);
                 long stime = beginTime.get(cname);
                 WorkFlowStatistic stat = statistics.get(cname);
                 stat.addStatistic(btime - stime);
@@ -78,7 +79,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                         id, name, cname, stat.getTotalTime()));
             }
 
-            String fname = getFlowName(flow);
+            String fname = getFlowNameWithoutLocation(flow);
             beginTime.put(fname, btime);
             WorkFlowStatistic stat = statistics.get(fname);
             if (stat == null) {
@@ -91,7 +92,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         void stop() {
             long etime = System.currentTimeMillis();
             if (currentFlow != null) {
-                String fname = getFlowName(currentFlow);
+                String fname = getFlowNameWithoutLocation(currentFlow);
                 long stime = beginTime.get(fname);
                 WorkFlowStatistic stat = statistics.get(fname);
                 stat.addStatistic(etime - stime);
@@ -361,6 +362,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
     private void rollbackFlow(Flow flow) {
         try {
             logger.debug(String.format("[FlowChain(%s): %s] start to rollback flow[%s]", id, name, getFlowName(flow)));
+            currentLoop --;
             flow.rollback(this, data);
         } catch (Throwable t) {
             logger.warn(String.format("unhandled exception when rollback, call backtrace %s", DebugUtils.getStackTrace(t)));
@@ -402,13 +404,24 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
         callFinallyHandler();
     }
 
+    private String getFlowNameWithoutLocation(Flow flow) {
+        String name = getFlowName(flow);
+        if (name.indexOf(" (location:") > 0) {
+            return name.substring(0, name.indexOf(" (location:"));
+        }
+        return name;
+    }
+
     private String getFlowName(Flow flow) {
-        String name = FieldUtils.getFieldValue("__name__", flow);
-        if (name == null) {
-            name = flow.getClass().getSimpleName();
-            if (name.equals("")) {
-                name = flow.getClass().getName();
+        StringBuilder name = new StringBuilder();
+        String innerName = FieldUtils.getFieldValue("__name__", flow);
+        if (innerName == null) {
+            name.append(flow.getClass().getSimpleName());
+            if (name.length() == 0) {
+                name.append(flow.getClass().getName());
             }
+        } else {
+            name.append(innerName);
         }
 
         if (logger.isTraceEnabled()) {
@@ -419,11 +432,11 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
                 int index = filename.indexOf("$");
                 filename = filename.substring(0, index);
             }
-
-            name = String.format("%s.java:%s", filename, name);
+            name.insert(0, String.format("%s.java: ", filename));
         }
+        name.append(String.format(" (location:%d/%d)", currentLoop, flows.size()));
 
-        return name;
+        return name.toString();
     }
 
     @Override
@@ -558,6 +571,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     private void runFlowOrComplete() {
         if (it.hasNext()) {
+            currentLoop ++;
             runFlow(it.next());
         } else {
             if (getErrorCode() == null) {
@@ -620,7 +634,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
             List<String> names = CollectionUtils.transformToList(flows, new Function<String, Flow>() {
                 @Override
                 public String call(Flow arg) {
-                    return String.format("%s[%s]", arg.getClass(), getFlowName(arg));
+                    return String.format("%s[%s]", arg.getClass(), getFlowNameWithoutLocation(arg));
                 }
             });
             logger.trace(String.format("execution path:\n%s", StringUtils.join(names, " -->\n")));
@@ -644,6 +658,7 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     private void setErrorCode(ErrorCode errorCode) {
         this.errorCode = errorCode;
+        this.errorCode.setLocation(getFlowName(currentFlow));
     }
 
     public static Map<String, WorkFlowStatistic> getStatistics() {
