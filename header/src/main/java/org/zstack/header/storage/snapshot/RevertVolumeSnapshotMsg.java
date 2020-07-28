@@ -1,5 +1,6 @@
 package org.zstack.header.storage.snapshot;
 
+import net.schmizz.sshj.connection.channel.direct.Session;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.NeedReplyMessage;
 

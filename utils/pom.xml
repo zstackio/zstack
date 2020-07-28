@@ -73,10 +73,15 @@
             <artifactId>gentyref</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.jcraft</groupId>
-            <artifactId>jsch</artifactId>
-            <version>0.1.55</version>
+            <groupId>net.schmizz</groupId>
+            <artifactId>sshj</artifactId>
         </dependency>
+        <dependency>
+            <!-- needed by sshj -->
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk16</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>commons-net</groupId>
             <artifactId>commons-net</artifactId>
