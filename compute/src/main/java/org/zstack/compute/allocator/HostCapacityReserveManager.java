@@ -16,5 +16,5 @@ public interface HostCapacityReserveManager {
 
     ReservedHostCapacity getReservedHostCapacityByHosts(List<String> hostUuids);
 
-    void reserveCapacity(String hostUuid, long requiredCpu, long requiredMemory);
+    void reserveCapacity(String hostUuid, long requiredCpu, long requiredMemory, boolean skipCheck);
 }

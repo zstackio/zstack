@@ -1,5 +1,6 @@
 package org.zstack.test.integration.network.l3network.ipv6
 
+import org.zstack.header.apimediator.ApiMessageInterceptionException
 import org.zstack.header.image.ImageConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.kvm.KvmTest
@@ -102,6 +103,29 @@ class GetCandidateZonesClustersHostsForCreatingVmCase extends SubCase {
             imageUuid = iso.uuid
             l3NetworkUuids = [l3_statefull.uuid, l3.uuid]
         }
+        assert res.hosts.stream().map{h -> h.getUuid()}.collect(Collectors.toList()).contains(h1.uuid)
+        assert res.hosts.stream().map{h -> h.getUuid()}.collect(Collectors.toList()).contains(h2.uuid)
+        assert res.zones.size() == 1
+        assert res.clusters.size() == 1
+
+        expect(AssertionError.class) {
+            res = getCandidateZonesClustersHostsForCreatingVm {
+                zoneUuid = zone.uuid
+                rootDiskOfferingUuid = diskOffering.uuid
+                imageUuid = iso.uuid
+                l3NetworkUuids = [l3_statefull.uuid, l3.uuid]
+            }
+        }
+
+        getCandidateZonesClustersHostsForCreatingVm {
+            zoneUuid = zone.uuid
+            rootDiskOfferingUuid = diskOffering.uuid
+            imageUuid = iso.uuid
+            l3NetworkUuids = [l3_statefull.uuid, l3.uuid]
+            cpuNum = offering.cpuNum
+            memorySize = offering.memorySize
+        }
+
         assert res.hosts.stream().map{h -> h.getUuid()}.collect(Collectors.toList()).contains(h1.uuid)
         assert res.hosts.stream().map{h -> h.getUuid()}.collect(Collectors.toList()).contains(h2.uuid)
         assert res.zones.size() == 1

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetCandidateZonesClustersHostsForCreatingVmAction extends AbstractAction {
+public class DeleteVmUserDefinedXmlAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetCandidateZonesClustersHostsForCreatingVmAction extends AbstractA
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetCandidateZonesClustersHostsForCreatingVmResult value;
+        public org.zstack.sdk.DeleteVmUserDefinedXmlResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,35 +25,11 @@ public class GetCandidateZonesClustersHostsForCreatingVmAction extends AbstractA
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String instanceOfferingUuid;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String imageUuid;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List l3NetworkUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String rootDiskOfferingUuid;
-
-    @Param(required = false, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List dataDiskOfferingUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,1024L}, noTrim = false)
-    public java.lang.Integer cpuNum;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, numberRangeUnit = {"byte", "bytes"}, noTrim = false)
-    public java.lang.Long memorySize;
+    public java.lang.String vmInstanceUuid;
 
     @Param(required = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = false)
-    public java.lang.String clusterUuid;
-
-    @Param(required = false)
-    public java.lang.String defaultL3NetworkUuid;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -73,6 +49,12 @@ public class GetCandidateZonesClustersHostsForCreatingVmAction extends AbstractA
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -81,8 +63,8 @@ public class GetCandidateZonesClustersHostsForCreatingVmAction extends AbstractA
             return ret;
         }
         
-        org.zstack.sdk.GetCandidateZonesClustersHostsForCreatingVmResult value = res.getResult(org.zstack.sdk.GetCandidateZonesClustersHostsForCreatingVmResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetCandidateZonesClustersHostsForCreatingVmResult() : value; 
+        org.zstack.sdk.DeleteVmUserDefinedXmlResult value = res.getResult(org.zstack.sdk.DeleteVmUserDefinedXmlResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteVmUserDefinedXmlResult() : value; 
 
         return ret;
     }
@@ -111,10 +93,10 @@ public class GetCandidateZonesClustersHostsForCreatingVmAction extends AbstractA
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/vm-instances/candidate-destinations";
+        info.httpMethod = "DELETE";
+        info.path = "/vm-instances/{vmInstanceUuid}/xml";
         info.needSession = true;
-        info.needPoll = false;
+        info.needPoll = true;
         info.parameterName = "";
         return info;
     }

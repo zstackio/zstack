@@ -123,10 +123,22 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateVmCdRomMsg) msg);
         } else if (msg instanceof APIUpdateVmNicDriverMsg) {
             validate((APIUpdateVmNicDriverMsg) msg);
+        } else if (msg instanceof APIGetCandidateZonesClustersHostsForCreatingVmMsg) {
+            validate((APIGetCandidateZonesClustersHostsForCreatingVmMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIGetCandidateZonesClustersHostsForCreatingVmMsg msg) {
+        final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
+
+        if (instanceOfferingUuid == null) {
+            if (msg.getCpuNum() == null || msg.getMemorySize() == null) {
+                throw new ApiMessageInterceptionException(operr("Missing CPU/memory settings"));
+            }
+        }
     }
 
     private void validate(final APICreateVmCdRomMsg msg) {
