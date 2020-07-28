@@ -18,6 +18,14 @@
 
     <config>
         <category>kvm</category>
+        <name>migrate.xbzrle</name>
+        <description>Enable xbzrle compress will speed up live migration under write-frequently workload.</description>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <category>kvm</category>
         <name>reservedCpu</name>
         <description>The CPU capacity reserved on all KVM hosts. ZStack KVM agent is a python web server that needs some CPU capacity to run, this value reserve a portion of CPU for the agent as well as other host applications. The value can be overriden by system tag on individual host, cluster and zone level</description>
         <defaultValue>0</defaultValue>

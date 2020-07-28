@@ -253,6 +253,7 @@ class MigrateVmFromDestitonHostCase extends SubCase {
         }
 
         KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.updateValue(false)
+        KVMGlobalConfig.MIGRATE_XBZRLE.updateValue(false)
         cmd = null
         migrateVm {
             vmInstanceUuid = vm1.uuid
@@ -263,6 +264,7 @@ class MigrateVmFromDestitonHostCase extends SubCase {
         assert cmd != null
         assert !cmd.migrateFromDestination
         assert cmd.autoConverge
+        assert !cmd.xbzrle
         assert cmd.destHostIp == host1.managementIp
         assert cmd.srcHostIp == host.managementIp
 
