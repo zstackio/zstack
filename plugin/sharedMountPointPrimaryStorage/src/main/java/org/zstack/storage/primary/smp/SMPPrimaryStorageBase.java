@@ -30,6 +30,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
+import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.volume.*;
 import org.zstack.kvm.KVMConstant;
@@ -510,6 +511,11 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     @Override
     protected void syncPhysicalCapacity(ReturnValueCompletion<PhysicalCapacityUsage> completion) {
         completion.fail(operr("not supported operation"));
+    }
+
+    @Override
+    protected void handle(ShrinkVolumeSnapshotOnPrimaryStorageMsg msg) {
+        bus.dealWithUnknownMessage(msg);
     }
 
     @Override

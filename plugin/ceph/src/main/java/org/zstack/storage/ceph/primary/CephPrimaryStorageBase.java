@@ -3236,6 +3236,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(ShrinkVolumeSnapshotOnPrimaryStorageMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
+    @Override
     protected void handle(APIReconnectPrimaryStorageMsg msg) {
         final APIReconnectPrimaryStorageEvent evt = new APIReconnectPrimaryStorageEvent(msg.getId());
 
