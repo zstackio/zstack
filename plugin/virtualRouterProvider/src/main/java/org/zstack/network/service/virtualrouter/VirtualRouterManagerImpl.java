@@ -85,6 +85,7 @@ import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
@@ -473,8 +474,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     private void handle(APIGetAttachablePublicL3ForVRouterMsg msg) {
 	    APIGetAttachablePublicL3ForVRouterReply reply = new APIGetAttachablePublicL3ForVRouterReply();
-	    List<L3NetworkVO> l3NetworkVOS = Q.New(L3NetworkVO.class).notEq(L3NetworkVO_.category, L3NetworkCategory.Private).list();
-	    List<VmNicVO> vmNicVOS = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
+        List<VmNicVO> vmNicVOS = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
+        List<String> nicL3Uuids = vmNicVOS.stream().map(VmNicVO::getL3NetworkUuid).collect(Collectors.toList());
+	    List<L3NetworkVO> l3NetworkVOS = Q.New(L3NetworkVO.class).notEq(L3NetworkVO_.category, L3NetworkCategory.Private)
+                .notIn(L3NetworkVO_.uuid, nicL3Uuids).list();
 
 	    if (l3NetworkVOS == null || l3NetworkVOS.isEmpty()) {
 	        reply.setInventories(new ArrayList<L3NetworkInventory>());
@@ -485,18 +488,26 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         Set<L3NetworkVO> attachableL3NetworkVOS = new HashSet<>(l3NetworkVOS);
 
         for (L3NetworkVO l3NetworkVO : l3NetworkVOS) {
-            List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3NetworkVO);
+            List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3NetworkVO, IPv6Constants.IPv4);
+            List<IpRangeInventory> ip6rs = IpRangeHelper.getNormalIpRanges(l3NetworkVO, IPv6Constants.IPv6);
+            if (iprs.isEmpty() && ip6rs.isEmpty()) {
+                attachableL3NetworkVOS.remove(l3NetworkVO);
+            }
+
 	        for (VmNicVO vmNicVO : vmNicVOS) {
-	            if (iprs.isEmpty()) {
-                    attachableL3NetworkVOS.remove(l3NetworkVO);
+	            for (UsedIpVO ipVO : vmNicVO.getUsedIps()) {
+	                NormalIpRangeVO ipRangeVO = dbf.findByUuid(ipVO.getIpRangeUuid(), NormalIpRangeVO.class);
+	                if (ipRangeVO.getIpVersion() == IPv6Constants.IPv4 && !iprs.isEmpty()) {
+	                    if (NetworkUtils.isCidrOverlap(ipRangeVO.getNetworkCidr(), iprs.get(0).getNetworkCidr())) {
+                            attachableL3NetworkVOS.remove(l3NetworkVO);
+                        }
+                    } else if (ipRangeVO.getIpVersion() == IPv6Constants.IPv6 && !ip6rs.isEmpty()) {
+                        if (IPv6NetworkUtils.isIpv6RangeOverlap(ipRangeVO.getStartIp(), ipRangeVO.getEndIp(),
+                                ip6rs.get(0).getStartIp(), ip6rs.get(0).getEndIp())) {
+                            attachableL3NetworkVOS.remove(l3NetworkVO);
+                        }
+                    }
                 }
-                String vmNicCidr = NetworkUtils.getCidrFromIpMask(vmNicVO.getIp(), vmNicVO.getNetmask());
-                if (!iprs.isEmpty() && NetworkUtils.isCidrOverlap(iprs.stream().findFirst().get().getNetworkCidr(), vmNicCidr)) {
-                    attachableL3NetworkVOS.remove(l3NetworkVO);
-                }
-                attachableL3NetworkVOS.removeAll(attachableL3NetworkVOS.stream()
-                        .filter(vo -> vo.getUuid().equals(vmNicVO.getL3NetworkUuid()))
-                        .collect(Collectors.toSet()));
             }
         }
         reply.setInventories(L3NetworkInventory.valueOf(attachableL3NetworkVOS));

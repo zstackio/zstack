@@ -38,6 +38,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KvmCommandSender.SteppingSendCallback;
 import org.zstack.network.l3.IpRangeHelper;
+import org.zstack.network.service.DhcpExtension;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkProviderFinder;
 import org.zstack.network.service.NetworkServiceProviderLookup;
@@ -87,6 +88,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private PluginRegistry pluginRgty;
     @Autowired
     private AccountManager acntMgr;
+    @Autowired
+    private DhcpExtension dhcpExtension;
 
     public static final String APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/apply";
     public static final String PREPARE_DHCP_PATH = "/flatnetworkprovider/dhcp/prepare";
@@ -101,148 +104,48 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Transactional(readOnly = true)
     private List<DhcpInfo> getDhcpInfoForConnectedKvmHost(KVMHostConnectedContext context) {
-        String sql = "select vm.uuid, vm.defaultL3NetworkUuid from VmInstanceVO vm where vm.hostUuid = :huuid and vm.state in (:states) and vm.type = :vtype";
-        TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+        String sql = "select vm from VmInstanceVO vm where vm.hostUuid = :huuid and vm.state in (:states) and vm.type = :vtype";
+        TypedQuery<VmInstanceVO> q = dbf.getEntityManager().createQuery(sql, VmInstanceVO.class);
         q.setParameter("huuid", context.getInventory().getUuid());
         q.setParameter("states", list(VmInstanceState.Running, VmInstanceState.Unknown, VmInstanceState.Starting,
                 VmInstanceState.Rebooting, VmInstanceState.Resuming, VmInstanceState.Migrating, VmInstanceState.VolumeMigrating));
         q.setParameter("vtype", VmInstanceConstant.USER_VM_TYPE);
-        List<Tuple> ts = q.getResultList();
-        if (ts.isEmpty()) {
+        List<VmInstanceVO> vmVos = q.getResultList();
+        if (vmVos.isEmpty()) {
             return null;
         }
 
-        Map<String, String> vmDefaultL3 = new HashMap<String, String>();
-        for (Tuple t : ts) {
-            vmDefaultL3.put(t.get(0, String.class), t.get(1, String.class));
-        }
-
-        sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider, UsedIpVO ip" +
+        List<String> vmUuids = vmVos.stream().map(VmInstanceVO::getUuid).collect(Collectors.toList());
+        sql = "select nic.uuid from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider, UsedIpVO ip" +
                 " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid" +
                 " and ref.l3NetworkUuid = l3.uuid and ref.networkServiceProviderUuid = provider.uuid " +
                 " and ref.networkServiceType = :dhcpType " +
                 " and provider.type = :ptype and nic.vmInstanceUuid in (:vmUuids) group by nic.uuid";
 
-        TypedQuery<VmNicVO> nq = dbf.getEntityManager().createQuery(sql, VmNicVO.class);
+        TypedQuery<String> nq = dbf.getEntityManager().createQuery(sql, String.class);
         nq.setParameter("ptype", FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING);
         nq.setParameter("dhcpType", NetworkServiceType.DHCP.toString());
-        nq.setParameter("vmUuids", vmDefaultL3.keySet());
-        List<VmNicVO> nics = nq.getResultList();
-        if (nics.isEmpty()) {
+        nq.setParameter("vmUuids", vmUuids);
+        List<String> nicUuids = nq.getResultList();
+        if (nicUuids.isEmpty()) {
             return null;
         }
 
-        List<String> l3Uuids = new ArrayList<>();
-        for (VmNicVO nic : nics) {
-            for (UsedIpVO ip : nic.getUsedIps()) {
-                l3Uuids.add(ip.getL3NetworkUuid());
-            }
-        }
-        l3Uuids = l3Uuids.stream().distinct().collect(Collectors.toList());
-
-        sql = "select t.tag, l3.uuid from SystemTagVO t, L3NetworkVO l3 where t.resourceType = :ttype and t.tag like :tag" +
-                " and t.resourceUuid = l3.l2NetworkUuid and l3.uuid in (:l3Uuids)";
-        TypedQuery<Tuple> tq = dbf.getEntityManager().createQuery(sql, Tuple.class);
-        tq.setParameter("tag", TagUtils.tagPatternToSqlPattern(KVMSystemTags.L2_BRIDGE_NAME.getTagFormat()));
-        tq.setParameter("l3Uuids", l3Uuids);
-        tq.setParameter("ttype", L2NetworkVO.class.getSimpleName());
-        ts = tq.getResultList();
-
-        Map<String, String> bridgeNames = new HashMap<String, String>();
-        for (Tuple t : ts) {
-            bridgeNames.put(t.get(1, String.class), t.get(0, String.class));
-        }
-
-        sql = "select t.tag, vm.uuid from SystemTagVO t, VmInstanceVO vm where t.resourceType = :ttype" +
-                " and t.tag like :tag and t.resourceUuid = vm.uuid and vm.uuid in (:vmUuids)";
-        tq = dbf.getEntityManager().createQuery(sql, Tuple.class);
-        tq.setParameter("tag", TagUtils.tagPatternToSqlPattern(VmSystemTags.HOSTNAME.getTagFormat()));
-        tq.setParameter("ttype", VmInstanceVO.class.getSimpleName());
-        tq.setParameter("vmUuids", vmDefaultL3.keySet());
-        ts = tq.getResultList();
-        Map<String, String> hostnames = new HashMap<String, String>();
-        for (Tuple t : ts) {
-            hostnames.put(t.get(1, String.class), VmSystemTags.HOSTNAME.getTokenByTag(t.get(0, String.class), VmSystemTags.HOSTNAME_TOKEN));
-        }
-
-        sql = "select l3 from L3NetworkVO l3 where l3.uuid in (:l3Uuids)";
-        TypedQuery<L3NetworkVO> l3q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
-        l3q.setParameter("l3Uuids", l3Uuids);
-        List<L3NetworkVO> l3s = l3q.getResultList();
-        Map<String, L3NetworkVO> l3Map = new HashMap<String, L3NetworkVO>();
-        for (L3NetworkVO l3 : l3s) {
-            l3Map.put(l3.getUuid(), l3);
-        }
-
-        Map<String, List<VmNicVO>> defaultNicMap = new HashMap<>();
-        for (VmNicVO nic : nics) {
-            if (!nic.getL3NetworkUuid().equals(vmDefaultL3.get(nic.getVmInstanceUuid()))) {
-                continue;
-            }
-            List<VmNicVO> value = defaultNicMap.get(nic.getVmInstanceUuid());
-            if (value == null) {
-                value = new ArrayList<>();
-            }
-            value.add(nic);
-            defaultNicMap.put(nic.getVmInstanceUuid(), value);
-        }
-
         List<DhcpInfo> dhcpInfoList = new ArrayList<DhcpInfo>();
-        for (VmNicVO nic : nics) {
-            for (UsedIpVO ip : nic.getUsedIps()) {
+        for (VmInstanceVO vm : vmVos) {
+            List<VmNicVO> dhcpNics = vm.getVmNics().stream().filter(nic -> nicUuids.contains(nic.getUuid())).collect(Collectors.toList());
 
-                String vmMultiGateway = VmSystemTags.MULTIPLE_GATEWAY.getTokenByResourceUuid(nic.getVmInstanceUuid(),
-                        VmSystemTags.MULTIPLE_GATEWAY_TOKEN);
-                boolean multiGateway = Boolean.parseBoolean(vmMultiGateway);
-                DhcpInfo info = new DhcpInfo();
-                info.bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(nic.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
-                info.namespaceName = makeNamespaceName(
-                        info.bridgeName,
-                        ip.getL3NetworkUuid()
-                );
-                DebugUtils.Assert(info.bridgeName != null, "bridge name cannot be null");
-                info.mtu = new MtuGetter().getMtu(ip.getL3NetworkUuid());
-                info.mac = nic.getMac();
-                info.netmask = ip.getNetmask();
-                info.isDefaultL3Network = ip.getL3NetworkUuid().equals(vmDefaultL3.get(nic.getVmInstanceUuid()));
-                /*multi vnic case*/
-                if (info.isDefaultL3Network && defaultNicMap.get(nic.getVmInstanceUuid()) != null && defaultNicMap.get(nic.getVmInstanceUuid()).size() > 1) {
-                    info.isDefaultL3Network = nic.equals(VmNicVO.findTheEarliestOne(defaultNicMap.get(nic.getVmInstanceUuid())));
-                }
-
-                info.ip = ip.getIp();
-                info.gateway = ip.getGateway();
-                info.ipVersion = ip.getIpVersion();
-
-                L3NetworkVO l3 = l3Map.get(ip.getL3NetworkUuid());
-                info.dnsDomain = l3.getDnsDomain();
-                info.dns = getL3NetworkDns(ip.getL3NetworkUuid());
-                List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3).stream().filter(ipr -> ipr.getIpVersion() == ip.getIpVersion()).collect(Collectors.toList());
-                info.firstIp = NetworkUtils.getSmallestIp(iprs.stream().map(IpRangeInventory::getStartIp).collect(Collectors.toList()));
-                info.endIp = NetworkUtils.getBiggesttIp(iprs.stream().map(IpRangeInventory::getEndIp).collect(Collectors.toList()));
-                info.prefixLength = iprs.stream().map(IpRangeInventory::getPrefixLen).findAny().orElse(null);
-
-                if (info.isDefaultL3Network) {
-                    info.hostname = hostnames.get(nic.getVmInstanceUuid());
-                    if (info.hostname == null && ip.getIp() != null) {
-                        if (ip.getIpVersion() == IPv6Constants.IPv4) {
-                            info.hostname = ip.getIp().replaceAll("\\.", "-");
-                        } else {
-                            info.hostname = IPv6NetworkUtils.ipv6AddessToHostname(ip.getIp());
-                        }
-                    }
-
-                    if (info.dnsDomain != null) {
-                        info.hostname = String.format("%s.%s", info.hostname, info.dnsDomain);
-                    }
-                }
-
-                info.l3NetworkUuid = l3.getUuid();
-                info.hostRoutes = getL3NetworkHostRoute(ip.getL3NetworkUuid());
-                info.vmMultiGateway = multiGateway;
-
-                dhcpInfoList.add(info);
+            List<VmInstanceSpec.HostName> hostNames = new ArrayList<>();
+            String hostName = VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.HOSTNAME_TOKEN);
+            if (hostName != null) {
+                VmInstanceSpec.HostName hostNameSpec = new VmInstanceSpec.HostName();
+                hostNameSpec.setL3NetworkUuid(vm.getDefaultL3NetworkUuid());
+                hostNameSpec.setHostname(hostName);
+                hostNames.add(hostNameSpec);
             }
+
+            List<DhcpStruct> structs = dhcpExtension.makeDhcpStruct(VmInstanceInventory.valueOf(vm), hostNames, dhcpNics);
+            dhcpInfoList.addAll(toDhcpInfo(structs));
         }
 
         return dhcpInfoList;
@@ -997,6 +900,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Transactional(readOnly = true)
     private List<DhcpInfo> getVmDhcpInfo(VmInstanceInventory vm, String l3Uuid) {
+        List<DhcpInfo> dhcpInfoList = new ArrayList<>();
         String sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider, UsedIpVO ip" +
                 " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid" +
                 " and ref.l3NetworkUuid = l3.uuid and ref.networkServiceProviderUuid = provider.uuid " +
@@ -1014,106 +918,29 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         if (nics.isEmpty()) {
-            return new ArrayList<>();
+            return dhcpInfoList;
         }
 
-        List<String> l3Uuids = new ArrayList<>();
-        for (VmNicVO nic : nics) {
-            for (UsedIpVO ip : nic.getUsedIps()) {
-                l3Uuids.add(ip.getL3NetworkUuid());
+        String hostName = VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.getUuid(), VmSystemTags.HOSTNAME_TOKEN);
+        List<VmInstanceSpec.HostName> hostNames = new ArrayList<>();
+        if (hostName != null) {
+            VmInstanceSpec.HostName hostNameSpec = new VmInstanceSpec.HostName();
+            hostNameSpec.setL3NetworkUuid(vm.getDefaultL3NetworkUuid());
+            hostNameSpec.setHostname(hostName);
+            hostNames.add(hostNameSpec);
+        }
+
+        List<VmNicVO> dhcpNics = new ArrayList<>();
+        for (VmNicInventory nic : vm.getVmNics()) {
+            if (l3Uuid != null && !VmNicHelper.getL3Uuids(nic).contains(l3Uuid)) {
+                continue;
             }
+
+            VmNicVO nicVO = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
+            dhcpNics.add(nicVO);
         }
-        l3Uuids = l3Uuids.stream().distinct().collect(Collectors.toList());
-
-        sql = "select t.tag, l3.uuid from SystemTagVO t, L3NetworkVO l3 where t.resourceType = :ttype and t.tag like :tag" +
-                " and t.resourceUuid = l3.l2NetworkUuid and l3.uuid in (:l3Uuids)";
-        TypedQuery<Tuple> tq = dbf.getEntityManager().createQuery(sql, Tuple.class);
-        tq.setParameter("tag", TagUtils.tagPatternToSqlPattern(KVMSystemTags.L2_BRIDGE_NAME.getTagFormat()));
-        tq.setParameter("l3Uuids", l3Uuids);
-        tq.setParameter("ttype", L2NetworkVO.class.getSimpleName());
-        List<Tuple> ts = tq.getResultList();
-
-        Map<String, String> bridgeNames = new HashMap<String, String>();
-        for (Tuple t : ts) {
-            bridgeNames.put(t.get(1, String.class), t.get(0, String.class));
-        }
-
-        sql = "select t.tag, vm.uuid from SystemTagVO t, VmInstanceVO vm where t.resourceType = :ttype" +
-                " and t.tag like :tag and t.resourceUuid = vm.uuid and vm.uuid = :vmUuid";
-        tq = dbf.getEntityManager().createQuery(sql, Tuple.class);
-        tq.setParameter("tag", TagUtils.tagPatternToSqlPattern(VmSystemTags.HOSTNAME.getTagFormat()));
-        tq.setParameter("ttype", VmInstanceVO.class.getSimpleName());
-        tq.setParameter("vmUuid", vm.getUuid());
-        Map<String, String> hostnames = new HashMap<String, String>();
-        for (Tuple t : ts) {
-            hostnames.put(t.get(1, String.class), VmSystemTags.HOSTNAME.getTokenByTag(t.get(0, String.class), VmSystemTags.HOSTNAME_TOKEN));
-        }
-
-        sql = "select l3 from L3NetworkVO l3 where l3.uuid in (:l3Uuids)";
-        TypedQuery<L3NetworkVO> l3q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
-        l3q.setParameter("l3Uuids", l3Uuids);
-        List<L3NetworkVO> l3s = l3q.getResultList();
-        Map<String, L3NetworkVO> l3Map = new HashMap<String, L3NetworkVO>();
-        for (L3NetworkVO l3 : l3s) {
-            l3Map.put(l3.getUuid(), l3);
-        }
-
-        String vmMultiGateway = VmSystemTags.MULTIPLE_GATEWAY.getTokenByResourceUuid(vm.getUuid(),
-                VmSystemTags.MULTIPLE_GATEWAY_TOKEN);
-        boolean multiGateway = Boolean.parseBoolean(vmMultiGateway);
-
-        List<DhcpInfo> dhcpInfoList = new ArrayList<DhcpInfo>();
-        List<VmNicVO> defaultNics = nics.stream().filter(nic -> nic.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid())).collect(Collectors.toList());
-        for (VmNicVO nic : nics) {
-            for (UsedIpVO ip : nic.getUsedIps()) {
-                DhcpInfo info = new DhcpInfo();
-                info.bridgeName = KVMSystemTags.L2_BRIDGE_NAME.getTokenByTag(bridgeNames.get(ip.getL3NetworkUuid()), KVMSystemTags.L2_BRIDGE_NAME_TOKEN);
-                info.namespaceName = makeNamespaceName(
-                        info.bridgeName,
-                        ip.getL3NetworkUuid()
-                );
-                DebugUtils.Assert(info.bridgeName != null, "bridge name cannot be null");
-                info.mac = nic.getMac();
-                info.netmask = ip.getNetmask();
-                info.isDefaultL3Network = ip.getL3NetworkUuid().equals(vm.getDefaultL3NetworkUuid());
-                /*multi vnic case*/
-                if (info.isDefaultL3Network && (defaultNics != null) && (defaultNics.size() > 1)) {
-                    info.isDefaultL3Network = nic.equals(VmNicVO.findTheEarliestOne(defaultNics));
-                }
-                info.ip = ip.getIp();
-                info.ipVersion = ip.getIpVersion();
-                info.gateway = ip.getGateway();
-
-                L3NetworkVO l3 = l3Map.get(ip.getL3NetworkUuid());
-                List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3, ip.getIpVersion());
-                info.dnsDomain = l3.getDnsDomain();
-                info.dns = getL3NetworkDns(ip.getL3NetworkUuid());
-                info.firstIp = NetworkUtils.getSmallestIp(iprs.stream().map(IpRangeInventory::getStartIp).collect(Collectors.toList()));
-                info.endIp = NetworkUtils.getBiggesttIp(iprs.stream().map(IpRangeInventory::getEndIp).collect(Collectors.toList()));
-                info.prefixLength = iprs.stream().findAny().map(IpRangeInventory::getPrefixLen).orElse(null);
-
-                if (info.isDefaultL3Network) {
-                    info.hostname = hostnames.get(nic.getVmInstanceUuid());
-                    if (info.hostname == null && ip.getIp() != null) {
-                        if (ip.getIpVersion() == IPv6Constants.IPv4) {
-                            info.hostname = ip.getIp().replaceAll("\\.", "-");
-                        } else {
-                            info.hostname = IPv6NetworkUtils.ipv6AddessToHostname(ip.getIp());
-                        }
-                    }
-
-                    if (info.dnsDomain != null) {
-                        info.hostname = String.format("%s.%s", info.hostname, info.dnsDomain);
-                    }
-                }
-
-                info.l3NetworkUuid = l3.getUuid();
-                info.hostRoutes = getL3NetworkHostRoute(ip.getL3NetworkUuid());
-                info.vmMultiGateway = multiGateway;
-
-                dhcpInfoList.add(info);
-            }
-        }
+        List<DhcpStruct> structs = dhcpExtension.makeDhcpStruct(vm, hostNames, dhcpNics);
+        dhcpInfoList.addAll(toDhcpInfo(structs));
 
         return dhcpInfoList;
     }
@@ -1440,16 +1267,19 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public int ipVersion;
         public String raMode;
         public String ip;
+        public String ip6;
         public String mac;
         public String netmask;
         public String firstIp;
         public String endIp;
         public Integer prefixLength;
         public String gateway;
+        public String gateway6;
         public String hostname;
         public boolean isDefaultL3Network;
         public String dnsDomain;
         public List<String> dns;
+        public List<String> dns6;
         public String bridgeName;
         public String namespaceName;
         public String l3NetworkUuid;
@@ -1572,7 +1402,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         return CollectionUtils.transformToList(structs, new Function<DhcpInfo, DhcpStruct>() {
             @Override
             public DhcpInfo call(DhcpStruct arg) {
-                if (arg.getIp() == null) {
+                if (arg.getIp() == null && arg.getIp6() == null) {
                     return null;
                 }
 
@@ -1594,10 +1424,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                 if (info.isDefaultL3Network) {
                     if (info.hostname == null && arg.getIp() != null) {
-                        if (info.ipVersion == IPv6Constants.IPv4) {
-                            info.hostname = arg.getIp().replaceAll("\\.", "-");
-                        } else {
+                        if (info.ipVersion == IPv6Constants.IPv6) {
                             info.hostname = IPv6NetworkUtils.ipv6AddessToHostname(arg.getIp());
+                        } else {
+                            info.hostname = arg.getIp().replaceAll("\\.", "-");
                         }
                     }
 
@@ -1606,19 +1436,34 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     }
                 }
 
+                List<String> dns = new ArrayList<>();
+                List<String> dns6 = new ArrayList<>();
+                for (String dnsIp : getL3NetworkDns(arg.getL3Network().getUuid())) {
+                    if (NetworkUtils.isIpv4Address(dnsIp)) {
+                        dns.add(dnsIp);
+                    } else {
+                        dns6.add(dnsIp);
+                    }
+                }
                 info.ip = arg.getIp();
                 info.netmask = arg.getNetmask();
-                info.firstIp = arg.getFirstIp();
-                info.endIp = arg.getEndIP();
-                info.prefixLength = arg.getPrefixLength();
                 info.mac = arg.getMac();
-                info.dns = getL3NetworkDns(arg.getL3Network().getUuid());
+                info.dns = dns;
                 info.l3NetworkUuid = arg.getL3Network().getUuid();
                 info.bridgeName = l3Bridges.get(arg.getL3Network().getUuid());
                 info.namespaceName = makeNamespaceName(info.bridgeName, arg.getL3Network().getUuid());
                 info.mtu = arg.getMtu();
                 info.hostRoutes = getL3NetworkHostRoute(arg.getL3Network().getUuid());
                 info.vmMultiGateway = multiGateway;
+                if ((arg.getIpVersion() == IPv6Constants.DUAL_STACK  || arg.getIpVersion() == IPv6Constants.IPv6)
+                        && !IPv6Constants.SLAAC.equals(arg.getRaMode())) {
+                    info.ip6 = arg.getIp6();
+                    info.gateway6 = arg.getGateway6();
+                    info.dns6 = dns6;
+                    info.firstIp = arg.getFirstIp();
+                    info.endIp = arg.getEndIP();
+                    info.prefixLength = arg.getPrefixLength();
+                }
                 return info;
             }
         });
