@@ -29,12 +29,8 @@ public class CallBackNetworkChecker implements AnsibleChecker {
     private String callbackIp = Platform.getManagementServerIp();
     private int callBackPort = 8080;
 
-    private static StringDSL.StringWrapper ncScript = ln(
-            "nc -z {0} {1}"
-    );
-
     private static StringDSL.StringWrapper script = ln(
-            "echo {0} | sudo -S nmap -sS -P0 -n -p {1} {2} 2>/dev/null | grep \"1 host up\""
+            "cat /dev/null | nc {2} {1} || echo {0} | sudo -S nmap -sS -P0 -n -p {1} {2} 2>/dev/null | grep \"1 host up\""
     );
 
     @Override
@@ -47,24 +43,15 @@ public class CallBackNetworkChecker implements AnsibleChecker {
 
     }
 
-    private ErrorCode useNcatToTestConnection(Ssh ssh) {
-        String srcScript = ncScript.format(callbackIp, callBackPort);
-
-        SshResult ret = ssh.shell(srcScript).setTimeout(5).runAndClose();
-        ret.raiseExceptionIfFailed();
-
-        logger.debug(String.format("nc test host connection to %s:%s success", callbackIp, callBackPort));
-
-        return null;
-    }
-
-    private ErrorCode useNmapToTestConnection(Ssh ssh) {
+    /*
+     * use nc to test connection between agent and callback,
+     * if failed, use nmap to try again.
+     */
+    private ErrorCode useNcatAndNmapToTestConnection(Ssh ssh) {
         String srcScript = script.format(password, callBackPort, callbackIp);
 
         SshResult ret = ssh.shell(srcScript).setTimeout(5).runAndClose();
         ret.raiseExceptionIfFailed();
-
-        logger.debug(String.format("nmap return: %s", ret.toString()));
 
         if (StringUtils.isEmpty(ret.getStdout())) {
             return operr("cannot nmap from agent: %s to callback address: %s:%s", targetIp, callbackIp, callBackPort);
@@ -84,15 +71,7 @@ public class CallBackNetworkChecker implements AnsibleChecker {
                 .setHostname(targetIp);
 
         try {
-            ErrorCode errorCode = useNcatToTestConnection(ssh);
-
-            if (errorCode == null) {
-                return null;
-            }
-
-            errorCode = useNmapToTestConnection(ssh);
-
-            return errorCode;
+            return useNcatAndNmapToTestConnection(ssh);
         } catch (SshException e) {
             return operr(e.getMessage());
         }

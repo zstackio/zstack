@@ -73,7 +73,6 @@ public class Ssh {
                 scriptContent = s(contents).formatByMap(token);
 
                 String remoteScript = ln(
-                        "/bin/bash << EOF",
                         "cat << EOF1 > {remotePath}",
                         "{scriptContent}",
                         "EOF1",
@@ -84,8 +83,7 @@ public class Ssh {
                         "rm -f {remotePath}",
                         "rm -f {stdout}",
                         "rm -f {stderr}",
-                        "exit $ret",
-                        "EOF"
+                        "exit $ret"
                 ).formatByMap(map(e("remotePath", String.format("/tmp/%s", UUID.randomUUID().toString())),
                         e("scriptContent", scriptContent),
                         e("parameters", parameters),
@@ -101,7 +99,6 @@ public class Ssh {
 
         ScriptRunner(String script) {
             String remoteScript = ln(
-                    "/bin/bash << EOF",
                     "cat << EOF1 > {remotePath}",
                     "{scriptContent}",
                     "EOF1",
@@ -112,8 +109,7 @@ public class Ssh {
                     "rm -f {remotePath}",
                     "rm -f {stdout}",
                     "rm -f {stderr}",
-                    "exit $ret",
-                    "EOF"
+                    "exit $ret"
             ).formatByMap(map(e("remotePath", String.format("/tmp/%s", UUID.randomUUID().toString())),
                     e("scriptContent", script),
                     e("stdout", String.format("/tmp/%s", UUID.randomUUID().toString())),
