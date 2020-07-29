@@ -1271,6 +1271,7 @@ public class KVMAgentCommands {
         private Long checkpointDelay;
         private boolean fullSync;
         private List<VolumeTO> volumes = new ArrayList<>();
+        private Integer nicNumber;
 
         public String getVmInstanceUuid() {
             return vmInstanceUuid;
@@ -1326,6 +1327,14 @@ public class KVMAgentCommands {
 
         public void setVolumes(List<VolumeTO> volumes) {
             this.volumes = volumes;
+        }
+
+        public Integer getNicNumber() {
+            return nicNumber;
+        }
+
+        public void setNicNumber(Integer nicNumber) {
+            this.nicNumber = nicNumber;
         }
     }
 

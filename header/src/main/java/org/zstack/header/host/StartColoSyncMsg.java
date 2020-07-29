@@ -10,6 +10,7 @@ public class StartColoSyncMsg extends NeedReplyMessage implements HostMessage {
     private String secondaryVmHostIp;
     private long checkpointDelay;
     private boolean fullSync;
+    private Integer nicNumber;
 
     @Override
     public String getHostUuid() {
@@ -66,5 +67,13 @@ public class StartColoSyncMsg extends NeedReplyMessage implements HostMessage {
 
     public void setFullSync(boolean fullSync) {
         this.fullSync = fullSync;
+    }
+
+    public Integer getNicNumber() {
+        return nicNumber;
+    }
+
+    public void setNicNumber(Integer nicNumber) {
+        this.nicNumber = nicNumber;
     }
 }

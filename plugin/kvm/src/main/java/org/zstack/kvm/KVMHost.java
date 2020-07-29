@@ -628,6 +628,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setSecondaryVmHostIp(msg.getSecondaryVmHostIp());
         cmd.setCheckpointDelay(msg.getCheckpointDelay());
         cmd.setFullSync(msg.isFullSync());
+        cmd.setNicNumber(msg.getNicNumber());
 
         VmInstanceVO vm = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
         List<VolumeInventory> volumes = vm.getAllVolumes().stream().filter(v -> v.getType() == VolumeType.Data || v.getType() == VolumeType.Root).map(VolumeInventory::valueOf).collect(Collectors.toList());
