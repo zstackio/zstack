@@ -406,7 +406,7 @@ public class AnsibleRunner {
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             logger.debug("skip restartAgent as it's unittest");
         } else {
-            new Ssh().shell(script).setTimeout(30).setPrivateKey(asf.getPrivateKey()).setUsername(username).setHostname(targetIp)
+            new Ssh().shell(script).setTimeout(60).setPrivateKey(asf.getPrivateKey()).setUsername(username).setHostname(targetIp)
                     .setPort(sshPort).setPassword(password).runErrorByExceptionAndClose();
         }
         completion.success();
