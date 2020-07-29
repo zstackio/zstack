@@ -9,7 +9,7 @@ import java.util.List;
 /**
  */
 public class ShareFlowChain extends SimpleFlowChain {
-    private List<ShareFlow> shareFlows = new ArrayList<ShareFlow>();
+    private final List<ShareFlow> shareFlows = new ArrayList<>();
 
     @Override
     public ShareFlowChain then(Flow flow) {
@@ -28,7 +28,7 @@ public class ShareFlowChain extends SimpleFlowChain {
     @Override
     public void start() {
         if (shareFlows.isEmpty()) {
-            throw new CloudRuntimeException(String.format("you must call then() to install ShareFlow before start()"));
+            throw new CloudRuntimeException("you must call then() to install ShareFlow before start()");
         }
 
         for (ShareFlow shareFlow : shareFlows) {
