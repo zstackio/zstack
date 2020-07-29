@@ -901,6 +901,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     @Transactional(readOnly = true)
     private List<DhcpInfo> getVmDhcpInfo(VmInstanceInventory vm, String l3Uuid) {
         List<DhcpInfo> dhcpInfoList = new ArrayList<>();
+        if (!vm.getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
+            return dhcpInfoList;
+        }
+
         String sql = "select nic from VmNicVO nic, L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider, UsedIpVO ip" +
                 " where nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid" +
                 " and ref.l3NetworkUuid = l3.uuid and ref.networkServiceProviderUuid = provider.uuid " +
@@ -1423,10 +1427,11 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.isDefaultL3Network = arg.isDefaultL3Network();
 
                 if (info.isDefaultL3Network) {
-                    if (info.hostname == null && arg.getIp() != null) {
-                        if (info.ipVersion == IPv6Constants.IPv6) {
-                            info.hostname = IPv6NetworkUtils.ipv6AddessToHostname(arg.getIp());
-                        } else {
+                    if (info.hostname == null) {
+                        /* ipVersion can be ipv4, ipv6, ip46. used ip address as hostName iif ipVersion is ipv6 */
+                        if (info.ipVersion == IPv6Constants.IPv6 && arg.getIp6() != null) {
+                            info.hostname = IPv6NetworkUtils.ipv6AddessToHostname(arg.getIp6());
+                        } else if (arg.getIp() != null) {
                             info.hostname = arg.getIp().replaceAll("\\.", "-");
                         }
                     }

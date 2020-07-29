@@ -84,7 +84,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
         VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vr);
         final List<SNATInfo> snatInfo = new ArrayList<SNATInfo>();
         for (VmNicInventory nic : vr.getVmNics()) {
-            if (nwServed.contains(nic.getL3NetworkUuid())) {
+            if (nwServed.contains(nic.getL3NetworkUuid()) && !nic.isIpv6OnlyNic()) {
                 SNATInfo info = new SNATInfo();
                 info.setPrivateNicIp(nic.getIp());
                 info.setPrivateNicMac(nic.getMac());
