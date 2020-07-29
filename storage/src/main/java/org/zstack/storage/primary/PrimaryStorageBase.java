@@ -155,6 +155,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void syncPhysicalCapacity(ReturnValueCompletion<PhysicalCapacityUsage> completion);
 
+    protected abstract void handle(ShrinkVolumeSnapshotOnPrimaryStorageMsg msg);
+
     public PrimaryStorageBase(PrimaryStorageVO self) {
         this.self = self;
     }
@@ -368,6 +370,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((GetPrimaryStorageResourceLocationMsg) msg);
         } else if (msg instanceof CheckVolumeSnapshotOperationOnPrimaryStorageMsg) {
             handleBase((CheckVolumeSnapshotOperationOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof ShrinkVolumeSnapshotOnPrimaryStorageMsg) {
+            handle((ShrinkVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }

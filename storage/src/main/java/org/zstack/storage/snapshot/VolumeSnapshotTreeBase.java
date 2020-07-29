@@ -957,6 +957,8 @@ public class VolumeSnapshotTreeBase {
             handle((APIUpdateVolumeSnapshotMsg) msg);
         } else if (msg instanceof APIGetVolumeSnapshotSizeMsg ) {
             handle((APIGetVolumeSnapshotSizeMsg) msg);
+        } else if (msg instanceof APIShrinkVolumeSnapshotMsg) {
+            handle((APIShrinkVolumeSnapshotMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -981,6 +983,36 @@ public class VolumeSnapshotTreeBase {
         APIUpdateVolumeSnapshotEvent evt = new APIUpdateVolumeSnapshotEvent(msg.getId());
         evt.setInventory(VolumeSnapshotInventory.valueOf(self));
         bus.publish(evt);
+    }
+
+    private void handle(APIShrinkVolumeSnapshotMsg msg) {
+        APIShrinkVolumeSnapshotEvent event = new APIShrinkVolumeSnapshotEvent(msg.getId());
+        ShrinkVolumeSnapshotOnPrimaryStorageMsg smsg = new ShrinkVolumeSnapshotOnPrimaryStorageMsg();
+        smsg.setSnapshotUuid(currentRoot.getUuid());
+        smsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
+        bus.makeTargetServiceIdByResourceUuid(smsg, PrimaryStorageConstant.SERVICE_ID, currentRoot.getPrimaryStorageUuid());
+        bus.send(smsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply rly) {
+                if (!rly.isSuccess()) {
+                    event.setError(rly.getError());
+                    bus.publish(event);
+                    return;
+                }
+
+                ShrinkVolumeSnapshotOnPrimaryStorageReply reply = (ShrinkVolumeSnapshotOnPrimaryStorageReply) rly;
+                ShrinkResult shrinkResult = reply.getShrinkResult();
+                if (shrinkResult.getDeltaSize() != 0) {
+                    currentRoot.setSize(shrinkResult.getSize());
+                    dbf.updateAndRefresh(currentRoot);
+                    PrimaryStorageCapacityUpdater updater =
+                            new PrimaryStorageCapacityUpdater(currentRoot.getPrimaryStorageUuid());
+                    updater.increaseAvailableCapacity(shrinkResult.getDeltaSize());
+                }
+                event.setShrinkResult(shrinkResult);
+                bus.publish(event);
+            }
+        });
     }
 
     private void handle(APIGetVolumeSnapshotSizeMsg msg) {

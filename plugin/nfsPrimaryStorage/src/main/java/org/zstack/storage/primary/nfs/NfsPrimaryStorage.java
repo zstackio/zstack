@@ -38,6 +38,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
+import org.zstack.header.storage.snapshot.ShrinkVolumeSnapshotOnPrimaryStorageMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
@@ -1435,6 +1436,11 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         } else {
             bkd.ping(getSelfInventory(), completion);
         }
+    }
+
+    @Override
+    protected void handle(ShrinkVolumeSnapshotOnPrimaryStorageMsg msg) {
+        bus.dealWithUnknownMessage(msg);
     }
 
     @Override
