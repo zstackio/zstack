@@ -658,7 +658,9 @@ public class SimpleFlowChain implements FlowTrigger, FlowRollback, FlowChain, Fl
 
     private void setErrorCode(ErrorCode errorCode) {
         this.errorCode = errorCode;
-        this.errorCode.setLocation(getFlowName(currentFlow));
+        if (errorCode != null) {
+            this.errorCode.setLocation(getFlowName(currentFlow));
+        }
     }
 
     public static Map<String, WorkFlowStatistic> getStatistics() {
