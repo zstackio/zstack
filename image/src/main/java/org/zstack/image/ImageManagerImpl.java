@@ -1775,6 +1775,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             List<BackupStorageInventory> backupStorages = new ArrayList<>();
             ImageVO image;
             long actualSize;
+            String volumePsUuid;
 
             @Override
             public void setup() {
@@ -1796,6 +1797,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                                 SyncVolumeSizeReply sr = reply.castReply();
                                 actualSize = sr.getActualSize();
+                                volumePsUuid = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msgData.getVolumeUuid())
+                                        .select(VolumeVO_.primaryStorageUuid)
+                                        .findValue();
                                 trigger.next();
                             }
                         });
@@ -1866,6 +1870,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         if (msgData.getBackupStorageUuids() == null) {
                             AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
                             amsg.setRequiredZoneUuid(zoneUuid);
+                            amsg.setRequiredPrimaryStorageUuid(volumePsUuid);
                             amsg.setSize(actualSize);
                             bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
                             bus.send(amsg, new CloudBusCallBack(trigger) {

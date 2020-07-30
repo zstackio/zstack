@@ -2757,29 +2757,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         PrimaryStorageType psType = PrimaryStorageType.valueOf(ps.getType());
         List<String> bsUuids = psType.findBackupStorage(psUuid);
 
-        if (bsUuids == null) {
-            String sql = "select img" +
-                    " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs, BackupStorageZoneRefVO bsRef" +
-                    " where ref.imageUuid = img.uuid" +
-                    " and img.mediaType = :imgType" +
-                    " and img.state = :state" +
-                    " and img.status = :status" +
-                    " and img.system = :system" +
-                    " and bs.uuid = ref.backupStorageUuid" +
-                    " and bs.type in (:bsTypes)" +
-                    " and bs.uuid = bsRef.backupStorageUuid" +
-                    " and bsRef.zoneUuid = :zoneUuid";
-            TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
-            q.setParameter("zoneUuid", getSelfInventory().getZoneUuid());
-            if (type != null) {
-                q.setParameter("imgType", type);
-            }
-            q.setParameter("state", ImageState.Enabled);
-            q.setParameter("status", ImageStatus.Ready);
-            q.setParameter("system", false);
-            q.setParameter("bsTypes", hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType()));
-            return ImageInventory.valueOf(q.getResultList());
-        } else if (!bsUuids.isEmpty()) {
+        if (!bsUuids.isEmpty()) {
             String sql = "select img" +
                     " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs, BackupStorageZoneRefVO bsRef" +
                     " where ref.imageUuid = img.uuid" +
@@ -4097,21 +4075,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         PrimaryStorageVO psvo = dbf.getEntityManager().find(PrimaryStorageVO.class, psUuid);
         PrimaryStorageType type = PrimaryStorageType.valueOf(psvo.getType());
         List<String> bsUuids = type.findBackupStorage(psUuid);
-        if (bsUuids == null) {
-            List<String> possibleBsTypes = hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(psvo.getType());
-            sql = "select count(bs)" +
-                    " from BackupStorageVO bs, ImageBackupStorageRefVO ref" +
-                    " where bs.uuid = ref.backupStorageUuid" +
-                    " and ref.imageUuid = :imgUuid" +
-                    " and bs.type in (:bsTypes)";
-            q = dbf.getEntityManager().createQuery(sql, Long.class);
-            q.setParameter("imgUuid", isoUuid);
-            q.setParameter("bsTypes", possibleBsTypes);
-            count = q.getSingleResult();
-            if (count > 0) {
-                return;
-            }
-        } else if (!bsUuids.isEmpty()) {
+        if (!bsUuids.isEmpty()) {
             sql = "select count(bs)" +
                     " from BackupStorageVO bs, ImageBackupStorageRefVO ref" +
                     " where bs.uuid = ref.backupStorageUuid" +
