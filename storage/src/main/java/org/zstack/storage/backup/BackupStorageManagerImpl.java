@@ -262,6 +262,7 @@ public class BackupStorageManagerImpl extends AbstractService implements BackupS
         spec.setRequiredBackupStorageUuid(msg.getBackupStorageUuid());
         spec.setSize(msg.getSize());
         spec.setRequiredZoneUuid(msg.getRequiredZoneUuid());
+        spec.setRequiredPrimaryStorageUuid(msg.getRequiredPrimaryStorageUuid());
         AllocateBackupStorageReply reply = new AllocateBackupStorageReply();
         try {
             List<BackupStorageInventory> invs = strategy.allocateAllCandidates(spec);

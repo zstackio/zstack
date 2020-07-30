@@ -116,8 +116,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             public List<String> findBackupStorage(String primaryStorageUuid) {
                 List<String> psUuids = new ArrayList<>();
                 psUuids.addAll(getExtensionBSUuids(primaryStorageUuid));
-                // return null because the usage would do some null-processes
-                return psUuids.size() == 0 ? null : psUuids;
+                return psUuids;
             }
         });
     }

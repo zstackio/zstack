@@ -7,7 +7,11 @@ import org.zstack.header.image.*
 import org.zstack.header.storage.backup.BackupStorageVO
 import org.zstack.header.storage.backup.BackupStorageVO_
 import org.zstack.sdk.BackupStorageInventory
+import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.VolumeInventory
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
 import org.zstack.storage.ceph.backup.CephBackupStorageMonVO
 import org.zstack.test.integration.storage.StorageTest
@@ -32,6 +36,11 @@ class CephBSAddImageCase extends SubCase{
     @Override
     void environment() {
         env = env {
+            diskOffering {
+                name = "diskOffering"
+                diskSize = SizeUnit.GIGABYTE.toByte(10)
+            }
+
             zone{
                 name = "zone"
                 cluster {
@@ -91,6 +100,7 @@ class CephBSAddImageCase extends SubCase{
             simulatorEnv()
             testImageBackupStorageRefVOWhenAddImage()
             testUploadImage()
+            testCreateTemplateFromVolume()
             testAddImageButBSHasNoAvailableCapacity()
         }
     }
@@ -225,6 +235,27 @@ class CephBSAddImageCase extends SubCase{
         BackupStorageInventory bs_now = env.inventoryByName("ceph-bk")
         assert bs.totalCapacity == bs_now.totalCapacity
         assert bs.availableCapacity == bs_now.availableCapacity + inv.actualSize
+    }
+
+    void testCreateTemplateFromVolume() {
+        def diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
+        def ps = env.inventoryByName("ceph-pri") as PrimaryStorageInventory
+        def bs = env.inventoryByName("ceph-bk") as BackupStorageInventory
+
+        def dataVol = createDataVolume {
+            name = "test"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = ps.uuid
+        } as VolumeInventory
+
+        def image = createDataVolumeTemplateFromVolume {
+            name = "vol-image"
+            volumeUuid = dataVol.uuid
+        } as ImageInventory
+
+        assert Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, image.uuid)
+                .select(ImageBackupStorageRefVO_.backupStorageUuid)
+                .findValue() == bs.uuid
     }
 
     @Override

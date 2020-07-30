@@ -51,6 +51,7 @@
         <property name="allocatorFlowNames">
             <list>
                 <value>org.zstack.storage.backup.BackupStorageMainAllocatorFlow</value>
+                <value>org.zstack.storage.backup.BackupStoragePrimaryStorageAllocatorFlow</value>
                 <value>org.zstack.storage.backup.BackupStorageReservedCapacityAllocatorFlow</value>
             </list>
         </property>

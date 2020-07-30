@@ -38,6 +38,8 @@ import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagCreateMessageValidator;
 import org.zstack.header.tag.SystemTagValidator;
@@ -529,6 +531,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         installResourceConfigValidator();
         installGlobalConfigValidator();
         installPrimaryStorageCidrValidator();
+        installPrimaryStorageTypeDefaultField();
         return true;
     }
 
@@ -599,6 +602,17 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
                 startPrimaryStorageAutoDeleteTrashTask(newConfig.value());
+            }
+        });
+    }
+
+    private void installPrimaryStorageTypeDefaultField() {
+        PrimaryStorageFindBackupStorage finder = primaryStorageUuid -> Q.New(BackupStorageVO.class)
+                .select(BackupStorageVO_.uuid).listValues();
+
+        PrimaryStorageType.getAllTypes().forEach(it -> {
+            if (it.getPrimaryStorageFindBackupStorage() == null) {
+                it.setPrimaryStorageFindBackupStorage(finder);
             }
         });
     }
