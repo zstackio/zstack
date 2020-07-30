@@ -1,6 +1,5 @@
 package org.zstack.core.ansible;
 
-import org.apache.commons.lang.StringUtils;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.header.errorcode.ErrorCode;
@@ -52,10 +51,6 @@ public class CallBackNetworkChecker implements AnsibleChecker {
 
         SshResult ret = ssh.shell(srcScript).setTimeout(5).runAndClose();
         ret.raiseExceptionIfFailed();
-
-        if (StringUtils.isEmpty(ret.getStdout())) {
-            return operr("cannot nmap from agent: %s to callback address: %s:%s", targetIp, callbackIp, callBackPort);
-        }
 
         return null;
     }
