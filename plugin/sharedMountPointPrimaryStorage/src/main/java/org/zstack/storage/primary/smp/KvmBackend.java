@@ -461,6 +461,8 @@ public class KvmBackend extends HypervisorBackend {
             volPath = makeRootVolumeInstallUrl(vol);
         } else if (VolumeType.Memory.toString().equals(vol.getType())) {
             volPath = makeMemoryVolumeInstallUrl(vol);
+        } else if (VolumeType.Cache.toString().equals(vol.getType())) {
+            volPath = makeDataVolumeInstallUrl(vol.getUuid());
         }
 
         File volDir = new File(volPath).getParentFile();

@@ -792,6 +792,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             volPath = makeRootVolumeInstallUrl(vol);
         } else if (VolumeType.Memory.toString().equals(vol.getType())) {
             volPath = makeMemoryVolumeInstallUrl(vol);
+        } else if (VolumeType.Cache.toString().equals(vol.getType())) {
+            volPath = makeDataVolumeInstallUrl(vol.getUuid());
         }
 
         DebugUtils.Assert(!StringUtils.isEmpty(volPath), "volPath should not be null");
@@ -1082,8 +1084,10 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 cmd.setInstallUrl(makeRootVolumeInstallUrl(volume));
             } else if (VolumeType.Data.toString().equals(volume.getType())) {
                 cmd.setInstallUrl(makeDataVolumeInstallUrl(volume.getUuid()));
-            } else {
+            } else if (VolumeType.Memory.toString().equals(volume.getType())) {
                 cmd.setInstallUrl(makeMemoryVolumeInstallUrl(volume));
+            } else if (VolumeType.Cache.toString().equals(volume.getType())) {
+                cmd.setInstallUrl(makeDataVolumeInstallUrl(volume.getUuid()));
             }
         }
         cmd.setName(volume.getName());

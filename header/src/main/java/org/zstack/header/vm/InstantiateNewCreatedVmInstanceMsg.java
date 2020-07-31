@@ -15,6 +15,16 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
     private String strategy;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
+    private List<String> softAvoidHostUuids;
+    private List<String> avoidHostUuids;
+
+    public List<String> getSoftAvoidHostUuids() {
+        return softAvoidHostUuids;
+    }
+
+    public void setSoftAvoidHostUuids(List<String> softAvoidHostUuids) {
+        this.softAvoidHostUuids = softAvoidHostUuids;
+    }
 
     public VmInstanceInventory getVmInstanceInventory() {
         return vmInstanceInventory;
@@ -99,5 +109,13 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
+    }
+
+    public List<String> getAvoidHostUuids() {
+        return avoidHostUuids;
+    }
+
+    public void setAvoidHostUuids(List<String> avoidHostUuids) {
+        this.avoidHostUuids = avoidHostUuids;
     }
 }

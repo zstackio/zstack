@@ -10,7 +10,9 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
@@ -26,6 +28,7 @@ import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
 import java.util.*;
@@ -63,7 +66,10 @@ public class VmAllocateVolumeFlow implements Flow {
             if (vspec != null && vspec.getTags() != null) {
                 tags.addAll(vspec.getTags());
             }
-            if (vspec.isRoot()) {
+
+            DebugUtils.Assert(vspec.getType() != null, "VolumeType can not be null!");
+
+            if (VolumeType.Root.toString().equals(vspec.getType())) {
             	msg.setResourceUuid((String) ctx.get("uuid"));
                 msg.setName("ROOT-for-" + spec.getVmInventory().getName());
                 msg.setDescription(String.format("Root volume for VM[uuid:%s]", spec.getVmInventory().getUuid()));
@@ -77,13 +83,15 @@ public class VmAllocateVolumeFlow implements Flow {
                     VolumeFormat imageFormat = VolumeFormat.valueOf(spec.getImageSpec().getInventory().getFormat());
                     msg.setFormat(imageFormat.getOutputFormat(spec.getDestHost().getHypervisorType()));
                 }
-            } else {
+            } else if (VolumeType.Data.toString().equals(vspec.getType())) {
                 msg.setName(String.format("DATA-for-%s", spec.getVmInventory().getName()));
                 msg.setDescription(String.format("DataVolume-%s", spec.getVmInventory().getUuid()));
                 msg.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getDestHost().getHypervisorType()).toString());
                 if (spec.getDataVolumeSystemTags() != null) {
                     tags.addAll(spec.getDataVolumeSystemTags());
                 }
+            } else {
+                continue;
             }
 
             msg.setSystemTags(new ArrayList<>(tags));
@@ -91,7 +99,7 @@ public class VmAllocateVolumeFlow implements Flow {
             msg.setSize(vspec.getSize());
             msg.setPrimaryStorageUuid(vspec.getPrimaryStorageInventory().getUuid());
             msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
-            msg.setVolumeType(vspec.isRoot() ? VolumeType.Root.toString() : VolumeType.Data.toString());
+            msg.setVolumeType(vspec.getType());
             msg.setAccountUuid(accountUuid);
 
             bus.makeLocalServiceId(msg, VolumeConstant.SERVICE_ID);
