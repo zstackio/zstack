@@ -26,6 +26,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -124,7 +125,7 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
                         AllocatePrimaryStorageReply ar = reply.castReply();
                         volumeSpec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
                         volumeSpec.setSize(ar.getSize());
-                        volumeSpec.setRoot(msg.getImageUuid() != null);
+                        volumeSpec.setType(msg.getImageUuid() != null ? VolumeType.Root.toString() : VolumeType.Data.toString());
                         spec.getVolumeSpecs().add(volumeSpec);
 
                         completion.success();

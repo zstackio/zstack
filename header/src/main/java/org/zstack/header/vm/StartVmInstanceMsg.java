@@ -28,6 +28,8 @@ public class StartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMe
         this.startPaused = startPaused;
     }
 
+    private List<String> avoidHostUuids;
+
     public AllocationScene getAllocationScene() {
         return allocationScene;
     }
@@ -59,5 +61,13 @@ public class StartVmInstanceMsg extends NeedReplyMessage implements VmInstanceMe
 
     public void setSoftAvoidHostUuids(List<String> softAvoidHostUuids) {
         this.softAvoidHostUuids = softAvoidHostUuids;
+    }
+
+    public List<String> getAvoidHostUuids() {
+        return avoidHostUuids;
+    }
+
+    public void setAvoidHostUuids(List<String> avoidHostUuids) {
+        this.avoidHostUuids = avoidHostUuids;
     }
 }

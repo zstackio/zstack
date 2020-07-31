@@ -59,6 +59,12 @@ public class VmAllocateNicFlow implements Flow {
         taskProgress("create nics");
 
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+
+        if (spec.isSkipIpAllocation()) {
+            trigger.next();
+            return;
+        }
+
         Boolean allowDuplicatedAddress = (Boolean)data.get(VmInstanceConstant.Params.VmAllocateNicFlow_allowDuplicatedAddress.toString());
 
         // it's unlikely a vm having more than 512 nics

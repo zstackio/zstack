@@ -28,6 +28,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.test.Api;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
@@ -132,7 +133,7 @@ public class TestVmAllocatePrimaryStorageFlow2 {
                     VmInstanceSpec ret = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
                     List<VolumeSpec> vspecs = ret.getVolumeSpecs();
                     for (VolumeSpec vspec : vspecs) {
-                        if (!vspec.isRoot()) {
+                        if (!vspec.getType().equals(VolumeType.Root.toString())) {
                             /* data disk */
                             if (vspec.getSize() == dinv1.getDiskSize()) {
                                 Assert.assertEquals(pvo1.getUuid(), vspec.getPrimaryStorageInventory().getUuid());

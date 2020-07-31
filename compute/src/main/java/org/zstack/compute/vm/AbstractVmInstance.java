@@ -51,6 +51,7 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIDetachL3NetworkFromVmMsg.class.getName(),
                 DetachNicFromVmMsg.class.getName(),
                 APIAttachIsoToVmInstanceMsg.class.getName(),
+                AttachIsoToVmInstanceMsg.class.getName(),
                 APIDetachIsoFromVmInstanceMsg.class.getName(),
                 APIGetVmConsoleAddressMsg.class.getName(),
                 APIDeleteVmStaticIpMsg.class.getName(),
@@ -77,6 +78,7 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIDetachL3NetworkFromVmMsg.class.getName(),
                 DetachNicFromVmMsg.class.getName(),
                 APIAttachIsoToVmInstanceMsg.class.getName(),
+                AttachIsoToVmInstanceMsg.class.getName(),
                 APIDetachIsoFromVmInstanceMsg.class.getName(),
                 APISetVmStaticIpMsg.class.getName(),
                 APIDeleteVmStaticIpMsg.class.getName(),
@@ -121,7 +123,8 @@ public abstract class AbstractVmInstance implements VmInstance {
         allowedOperations.addState(VmInstanceState.Destroyed,
                 ExpungeVmMsg.class.getName(),
                 APIExpungeVmInstanceMsg.class.getName(),
-                APIRecoverVmInstanceMsg.class.getName());
+                APIRecoverVmInstanceMsg.class.getName(),
+                RecoverVmInstanceMsg.class.getName());
 
         allowedOperations.addState(VmInstanceState.Paused,
                 APIResumeVmInstanceMsg.class.getName(),
@@ -144,6 +147,7 @@ public abstract class AbstractVmInstance implements VmInstance {
                 APIDetachL3NetworkFromVmMsg.class.getName(),
                 DetachNicFromVmMsg.class.getName(),
                 APIAttachIsoToVmInstanceMsg.class.getName(),
+                AttachIsoToVmInstanceMsg.class.getName(),
                 APIDetachIsoFromVmInstanceMsg.class.getName(),
                 CreateTemplateFromVmRootVolumeMsg.class.getName(),
                 APIDeleteVmStaticIpMsg.class.getName());

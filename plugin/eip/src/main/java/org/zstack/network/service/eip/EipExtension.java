@@ -2,6 +2,7 @@ package org.zstack.network.service.eip;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SQL;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
@@ -34,6 +35,8 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
 
     @Autowired
     private EipManager eipMgr;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private static final String SUCCESS = EipExtension.class.getName();
 
@@ -137,6 +140,10 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
                 }
             }
             ret.put(e.getKey().toString(), structs);
+        }
+
+        for (WorkOutEipStructureExtensionPoint ext : pluginRgty.getExtensionList(WorkOutEipStructureExtensionPoint.class)) {
+            ext.afterWorkOutEipStruct(spec, ret);
         }
 
         return ret;

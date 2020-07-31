@@ -25,6 +25,7 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private List<String> excludePrimaryStorageUuids;
     private List<String> excludeAllocatorStrategies;
     private String imageUuid;
+    private String volumeUuid;
     private boolean noOverProvisioning;
     private String purpose;
 
@@ -200,5 +201,13 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
 
     public void setTotalSize(Long totalSize) {
         this.totalSize = totalSize;
+    }
+
+    public String getVolumeUuid() {
+        return volumeUuid;
+    }
+
+    public void setVolumeUuid(String volumeUuid) {
+        this.volumeUuid = volumeUuid;
     }
 }

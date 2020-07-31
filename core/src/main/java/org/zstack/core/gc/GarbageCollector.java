@@ -1,5 +1,6 @@
 package org.zstack.core.gc;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -14,6 +15,7 @@ import org.zstack.core.thread.SyncThread;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.FieldUtils;
+import org.zstack.utils.TaskContext;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -125,6 +127,11 @@ public abstract class GarbageCollector {
             }
         }
         return JSONObjectUtil.toJsonString(context);
+    }
+
+    final protected void cleanThreadContext() {
+        ThreadContext.clearAll();
+        TaskContext.removeTaskContext();
     }
 
     final protected void saveToDb() {

@@ -13,6 +13,7 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.JsonWrapper;
 
 import java.io.Serializable;
@@ -26,7 +27,7 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
 
     public static class VolumeSpec {
         private PrimaryStorageInventory primaryStorageInventory;
-        private boolean isRoot;
+        private String type;
         private long size;
         private String diskOfferingUuid;
         private boolean isVolumeCreated;
@@ -40,9 +41,6 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
             this.isVolumeCreated = isVolumeCreated;
         }
 
-        public void setIsRoot(boolean isRoot) {
-            this.isRoot = isRoot;
-        }
 
         public PrimaryStorageInventory getPrimaryStorageInventory() {
             return primaryStorageInventory;
@@ -60,12 +58,12 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
             this.diskOfferingUuid = diskOfferingUuid;
         }
 
-        public boolean isRoot() {
-            return isRoot;
+        public String getType() {
+            return type;
         }
 
-        public void setRoot(boolean isRoot) {
-            this.isRoot = isRoot;
+        public void setType(String type) {
+            this.type = type;
         }
 
         public long getSize() {
@@ -82,6 +80,10 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
 
         public void setTags(List<String> tags) {
             this.tags = tags;
+        }
+
+        public boolean isRoot() {
+            return VolumeType.Root.toString().equals(type);
         }
     }
 
@@ -244,15 +246,18 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
     private String requiredClusterUuid;
     private String requiredHostUuid;
     private List<String> softAvoidHostUuids;
+    private List<String> avoidHostUuids;
     private String memorySnapshotUuid;
     private String requiredPrimaryStorageUuidForRootVolume;
     private String requiredPrimaryStorageUuidForDataVolume;
+    private String bootMode;
 
     private List<HostName> hostnames = new ArrayList<>();
     private HostInventory srcHost;
     private HostInventory destHost;
     private List<VmNicInventory> destNics = new ArrayList<>();
     private List<VolumeInventory> destDataVolumes = new ArrayList<>();
+    private List<VolumeInventory> destCacheVolumes = new ArrayList<>();
     private VolumeInventory destRootVolume;
     private VmOperation currentVmOperation;
     @NoJsonSchema
@@ -277,6 +282,15 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
 
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
+    private boolean skipIpAllocation = false;
+
+    public boolean isSkipIpAllocation() {
+        return skipIpAllocation;
+    }
+
+    public void setSkipIpAllocation(boolean skipIpAllocation) {
+        this.skipIpAllocation = skipIpAllocation;
+    }
 
     public AllocationScene getAllocationScene() {
         return allocationScene;
@@ -348,6 +362,14 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
 
     public void setSoftAvoidHostUuids(List<String> softAvoidHostUuids) {
         this.softAvoidHostUuids = softAvoidHostUuids;
+    }
+
+    public List<String> getAvoidHostUuids() {
+        return avoidHostUuids;
+    }
+
+    public void setAvoidHostUuids(List<String> avoidHostUuids) {
+        this.avoidHostUuids = avoidHostUuids;
     }
 
     public boolean isGcOnStopFailure() {
@@ -513,6 +535,14 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
         this.destDataVolumes = destDataVolumes;
     }
 
+    public List<VolumeInventory> getDestCacheVolumes() {
+        return destCacheVolumes;
+    }
+
+    public void setDestCacheVolumes(List<VolumeInventory> destCacheVolumes) {
+        this.destCacheVolumes = destCacheVolumes;
+    }
+
     public VolumeInventory getDestRootVolume() {
         return destRootVolume;
     }
@@ -627,5 +657,13 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
 
     public void setInstantiateResourcesSkipExisting(boolean instantiateResourcesSkipExisting) {
         this.instantiateResourcesSkipExisting = instantiateResourcesSkipExisting;
+    }
+
+    public String getBootMode() {
+        return bootMode;
+    }
+
+    public void setBootMode(String bootMode) {
+        this.bootMode = bootMode;
     }
 }
