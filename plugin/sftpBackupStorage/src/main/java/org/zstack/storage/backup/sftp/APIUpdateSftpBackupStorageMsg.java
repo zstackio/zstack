@@ -1,7 +1,6 @@
 package org.zstack.storage.backup.sftp;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -17,7 +16,7 @@ import org.zstack.header.storage.backup.APIUpdateBackupStorageMsg;
         method = HttpMethod.PUT,
         isAction = true
 )
-public class APIUpdateSftpBackupStorageMsg extends APIUpdateBackupStorageMsg implements HasSensitiveInfo {
+public class APIUpdateSftpBackupStorageMsg extends APIUpdateBackupStorageMsg {
     @APIParam(maxLength = 255, required = false)
     private String username;
     @APIParam(maxLength = 255, required = false, password = true)

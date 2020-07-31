@@ -27,7 +27,6 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.*;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -273,8 +272,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
     }
 
-    public static class DownloadCmd extends AgentCommand implements HasThreadContext, HasSensitiveInfo {
-        @NoLogging(type = NoLogging.Type.Uri)
+    public static class DownloadCmd extends AgentCommand implements HasThreadContext {
+        @NoLogging
         String url;
         String installPath;
         String imageUuid;
@@ -542,7 +541,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
     }
 
-    public static class CephToCephMigrateImageCmd extends AgentCommand implements HasSensitiveInfo {
+    public static class CephToCephMigrateImageCmd extends AgentCommand {
         String imageUuid;
         long imageSize;
         String srcInstallPath;

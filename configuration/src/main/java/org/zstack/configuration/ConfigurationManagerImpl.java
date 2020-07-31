@@ -3,7 +3,6 @@ package org.zstack.configuration;
 import javassist.Modifier;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.util.Strings;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -23,7 +22,6 @@ import org.zstack.core.db.DbEntityLister;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.rest.RESTApiJsonTemplateGenerator;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.HostAllocatorConstant;
@@ -449,7 +447,7 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
 
         StringBuilder sb = new StringBuilder();
         List<Field> fs = FieldUtils.getAllFields(clazz);
-        Map<String, NoLogging.Type> sensitiveFields = new HashMap<>();
+        Map<String, NoLogging> sensitiveFields = new HashMap<>();
         for (Field f : fs) {
             APINoSee nosee = f.getAnnotation(APINoSee.class);
             if (nosee != null && !f.getName().equals("timeout") && !f.getName().equals("session")) {
@@ -467,10 +465,10 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                 }
             }
 
-            NoLogging noLogging = f.getAnnotation(NoLogging.class);
-            if (noLogging != null) {
-                sensitiveFields.put(f.getName(), noLogging.type());
-            }
+//            NoLogging noLogging = f.getAnnotation(NoLogging.class);
+//            if (noLogging != null) {
+//                sensitiveFields.put(f.getName(), noLogging.type());
+//            }
 
             if (at != null && at.required()) {
                 sb.append(String.format("\n%s#mandatory field", whiteSpace(8)));
@@ -525,16 +523,16 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
     }
 
     private String classToApiEventPythonClass(Class<?> clazz) {
-        Map<String, NoLogging.Type> sensitiveFields = LogSafeGson.getSensitiveFields(clazz);
-        if (sensitiveFields.isEmpty()) {
-            return "";
-        }
+//        Map<String, NoLogging> sensitiveFields = LogSafeGson.getSensitiveFields(clazz);
+//        if (sensitiveFields.isEmpty()) {
+//            return "";
+//        }
 
         StringBuilder result = new StringBuilder();
         result.append(String.format("\nclass %s(object):", clazz.getSimpleName()));
         result.append(String.format("\n%sFULL_NAME='%s'", whiteSpace(4), clazz.getName()));
-        result.append(String.format("\n%s@log.sensitive_fields(\"%s\")", whiteSpace(4),
-                String.join("\", \"", sensitiveFields.keySet())));
+       /* result.append(String.format("\n%s@log.sensitive_fields(\"%s\")", whiteSpace(4),
+                String.join("\", \"", sensitiveFields.keySet())));*/
         result.append(String.format("\n%sdef __init__(self):", whiteSpace(4)));
         result.append(String.format("\n%spass", whiteSpace(8)));
         result.append("\n\n");

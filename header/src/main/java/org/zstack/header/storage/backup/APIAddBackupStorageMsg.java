@@ -14,7 +14,7 @@ public abstract class APIAddBackupStorageMsg extends APICreateMessage implements
      * max length of 2048 characters
      */
     @APIParam(maxLength = 2048, emptyString = false)
-    @NoLogging(type = NoLogging.Type.Uri)
+    @NoLogging
     private String url;
     /**
      * @desc max length of 255 characters

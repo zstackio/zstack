@@ -10,35 +10,4 @@ import java.lang.annotation.Target;
 @Target({java.lang.annotation.ElementType.FIELD})
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 public @interface NoLogging {
-    enum Behavior {
-        Auto,
-        Mask;
-
-        public boolean auto() {
-            return this == Auto;
-        }
-
-        public boolean mask() {
-            return this == Mask;
-        }
-    }
-
-    enum Type {
-        Simple,
-        Uri;
-
-        public boolean simple() {
-            return this == Simple;
-        }
-
-        public boolean uri() {
-            return this == Uri;
-        }
-    }
-
-    Behavior behavior() default Behavior.Mask;
-
-    Type type() default Type.Simple;
-
-    String classNameField() default "";
 }

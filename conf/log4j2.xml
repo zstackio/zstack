@@ -3,9 +3,13 @@
     <Appenders>
         <RollingFile name="RollingFile" fileName="${sys:catalina.home}/logs/management-server.log"
                      filePattern="${sys:catalina.home}/logs/management-server-%d{yyyy-MM-dd}-%i.log.gz">
-            <PatternLayout>
+            <Masksensitivepatternlayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] %X{api,} (%t) %m%n</pattern>
-            </PatternLayout>
+                <replaces>
+                    <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />
+                    <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                </replaces>
+            </Masksensitivepatternlayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="450 MB"/>
             </Policies>
@@ -21,9 +25,13 @@
 
 	    <RollingFile name="ApiRequestLogger" fileName="${sys:catalina.home}/logs/zstack-api.log"
             filePattern="${sys:catalina.home}/logs/zstack-api-%d{yyyy-MM-dd}-%i.log.gz" >
-            <PatternLayout>
+            <Masksensitivepatternlayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
-            </PatternLayout>
+                <replaces>
+                    <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />
+                    <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                </replaces>
+            </Masksensitivepatternlayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB" />
             </Policies>
@@ -39,9 +47,13 @@
 
         <RollingFile name="DiskCapacityLogger" fileName="${sys:catalina.home}/logs/zstack-disk-capacity.log"
                      filePattern="${sys:catalina.home}/logs/zstack-disk-capacity-%d{yyyy-MM-dd}-%i.log.gz">
-            <PatternLayout>
+            <Masksensitivepatternlayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
-            </PatternLayout>
+                <replaces>
+                    <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />
+                    <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                </replaces>
+            </Masksensitivepatternlayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB"/>
             </Policies>
@@ -51,9 +63,13 @@
         <RollingFile name="DiskCapacityLoggerDetails"
                      fileName="${sys:catalina.home}/logs/zstack-disk-capacity-details.log"
                      filePattern="${sys:catalina.home}/logs/zstack-disk-capacity-details-%d{yyyy-MM-dd}-%i.log.gz">
-            <PatternLayout>
+            <Masksensitivepatternlayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
-            </PatternLayout>
+                <replaces>
+                    <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "| )(.*?)(\\"|"| )' replacement="$1$2*****$4" />
+                    <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                </replaces>
+            </Masksensitivepatternlayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB"/>
             </Policies>
@@ -63,10 +79,10 @@
         <Async name="Async" ignoreExceptions="false" bufferSize="512">
             <AppenderRef ref="RollingFile"/>
         </Async>
-        <Rewrite name="Rewrite">
+       <!-- <Rewrite name="Rewrite">
             <MaskSensitiveInfoRewritePolicy />
             <AppenderRef ref="Async" />
-        </Rewrite>
+        </Rewrite>-->
     </Appenders>
 
     <Loggers>
@@ -105,7 +121,7 @@
         <Logger name="org.zstack.storage.primary" level="TRACE" />
 
         <Root level="warn" additivity="false">
-            <AppenderRef ref="Rewrite"/>
+            <AppenderRef ref="Async"/>
         </Root>
     </Loggers>
 </Configuration>

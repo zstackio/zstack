@@ -1,11 +1,10 @@
 package org.zstack.kvm;
 
 import org.zstack.header.host.AddHostMsg;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.utils.verify.Param;
 
-public class AddKVMHostMsg extends AddHostMsg implements AddKVMHostMessage, HasSensitiveInfo {
+public class AddKVMHostMsg extends AddHostMsg implements AddKVMHostMessage {
     @Param
     private String username;
     @Param

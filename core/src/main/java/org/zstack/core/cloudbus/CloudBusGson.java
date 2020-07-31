@@ -1,7 +1,7 @@
 package org.zstack.core.cloudbus;
 
 import com.google.gson.*;
-import org.zstack.core.log.LogSafeGson;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.GsonTransient;
 import org.zstack.header.message.Message;
 import org.zstack.utils.gson.GsonTypeCoder;
@@ -53,9 +53,8 @@ public class CloudBusGson {
 
         @Override
         public JsonElement serialize(Message message, Type type, JsonSerializationContext jsonSerializationContext) {
-            JsonObject msg = LogSafeGson.toJsonElement(message).getAsJsonObject();
             JsonObject jObj = new JsonObject();
-            jObj.add(message.getClass().getName(), msg);
+            jObj.add(message.getClass().getName(), logSafeGson.toJsonTree(message));
             return jObj;
         }
 
@@ -75,7 +74,7 @@ public class CloudBusGson {
     }).setCoder(OffsetDateTime.class, new OffsetDateTimeGsonTypeCoder()).setSerializationExclusionStrategy(new ExclusionStrategy() {
         @Override
         public boolean shouldSkipField(FieldAttributes f) {
-            return f.getAnnotation(GsonTransient.class) != null;
+            return f.getAnnotation(GsonTransient.class) != null || f.getAnnotation(NoLogging.class) != null;
         }
 
         @Override
