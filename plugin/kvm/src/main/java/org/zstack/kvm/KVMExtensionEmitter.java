@@ -5,6 +5,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.host.CheckVmStateOnHypervisorMsg;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.TakeSnapshotOnHypervisorMsg;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -37,6 +39,7 @@ public class KVMExtensionEmitter implements Component {
     private List<KVMDetachVolumeExtensionPoint> detachVolumeExts = new ArrayList<>();
     private List<KVMTakeSnapshotExtensionPoint> takeSnapshotExts = new ArrayList<>();
     private List<KVMMergeSnapshotExtensionPoint> mergeSnapshotExts = new ArrayList<>();
+    private List<KVMCheckVmStateExtensionPoint> checkVmStateExts = new ArrayList<>();
 
     private void populateExtensions() {
         startVmExts = pluginRgty.getExtensionList(KVMStartVmExtensionPoint.class);
@@ -48,6 +51,7 @@ public class KVMExtensionEmitter implements Component {
         detachVolumeExts = pluginRgty.getExtensionList(KVMDetachVolumeExtensionPoint.class);
         takeSnapshotExts = pluginRgty.getExtensionList(KVMTakeSnapshotExtensionPoint.class);
         mergeSnapshotExts = pluginRgty.getExtensionList(KVMMergeSnapshotExtensionPoint.class);
+        checkVmStateExts = pluginRgty.getExtensionList(KVMCheckVmStateExtensionPoint.class);
     }
 
     public void beforeStartVmOnKvm(final KVMHostInventory host, final VmInstanceSpec spec, final StartVmCmd cmd) {
@@ -74,9 +78,15 @@ public class KVMExtensionEmitter implements Component {
         });
     }
 
-    public void beforeDestroyVmOnKvm(KVMHostInventory host, VmInstanceInventory vm) throws KVMException {
+    public void beforeDestroyVmOnKvm(KVMHostInventory host, VmInstanceInventory vm, KVMAgentCommands.DestroyVmCmd cmd) throws KVMException {
         for (KVMDestroyVmExtensionPoint extp : destroyVmExts) {
-            extp.beforeDestroyVmOnKvm(host, vm);
+            extp.beforeDestroyVmOnKvm(host, vm, cmd);
+        }
+    }
+
+    public void beforeDirectlyDestroyVmOnKvm(KVMAgentCommands.DestroyVmCmd cmd) {
+        for (KVMDestroyVmExtensionPoint extp : destroyVmExts) {
+            extp.beforeDirectlyDestroyVmOnKvm(cmd);
         }
     }
 
@@ -98,9 +108,9 @@ public class KVMExtensionEmitter implements Component {
         });
     }
 
-    public void beforeStopVmOnKvm(KVMHostInventory host, VmInstanceInventory vm) throws KVMException {
+    public void beforeStopVmOnKvm(KVMHostInventory host, VmInstanceInventory vm, KVMAgentCommands.StopVmCmd cmd) throws KVMException {
         for (KVMStopVmExtensionPoint extp : stopVmExts) {
-            extp.beforeStopVmOnKvm(host, vm);
+            extp.beforeStopVmOnKvm(host, vm, cmd);
         }
     }
 
@@ -198,6 +208,18 @@ public class KVMExtensionEmitter implements Component {
     public void beforeMergeSnapshot(KVMHostInventory host, MergeVolumeSnapshotOnKvmMsg msg, KVMAgentCommands.MergeSnapshotCmd cmd) {
         for (KVMMergeSnapshotExtensionPoint ext : mergeSnapshotExts) {
             ext.beforeMergeSnapshot(host, msg, cmd);
+        }
+    }
+
+    public void beforeCheckVmState(KVMHostInventory host, CheckVmStateOnHypervisorMsg msg, KVMAgentCommands.CheckVmStateCmd cmd) {
+        for (KVMCheckVmStateExtensionPoint ext : checkVmStateExts) {
+            ext.beforeCheckVmState(host, msg, cmd);
+        }
+    }
+
+    public void afterCheckVmState(HostInventory host, Map<String, String> vmStateMap) {
+        for (KVMCheckVmStateExtensionPoint ext : checkVmStateExts) {
+            ext.afterCheckVmState(host, vmStateMap);
         }
     }
 

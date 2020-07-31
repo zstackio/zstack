@@ -156,6 +156,10 @@ public class KVMHost extends HostBase implements Host {
     private String getVmFirstBootDevicePath;
     private String scanVmPortPath;
     private String getDevCapacityPath;
+    private String configPrimaryVmPath;
+    private String configSecondaryVmPath;
+    private String startColoSyncPath;
+    private String registerPrimaryVmHeartbeatPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -304,6 +308,22 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.GET_DEV_CAPACITY);
         getDevCapacityPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_CONFIG_PRIMARY_VM_PATH);
+        configPrimaryVmPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_CONFIG_SECONDARY_VM_PATH);
+        configSecondaryVmPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_START_COLO_SYNC_PATH);
+        startColoSyncPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_REGISTER_PRIMARY_VM_HEARTBEAT);
+        registerPrimaryVmHeartbeatPath = ub.build().toString();
     }
 
     class Http<T> {
@@ -482,6 +502,14 @@ public class KVMHost extends HostBase implements Host {
             handle((GetVmFirstBootDeviceOnHypervisorMsg) msg);
         } else if (msg instanceof CheckHostCapacityMsg) {
             handle((CheckHostCapacityMsg) msg);
+        } else if (msg instanceof ConfigPrimaryVmMsg) {
+            handle((ConfigPrimaryVmMsg) msg);
+        } else if (msg instanceof ConfigSecondaryVmMsg) {
+            handle((ConfigSecondaryVmMsg) msg);
+        } else if (msg instanceof StartColoSyncMsg) {
+            handle((StartColoSyncMsg) msg);
+        } else if (msg instanceof RegisterColoPrimaryCheckMsg) {
+            handle((RegisterColoPrimaryCheckMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -495,7 +523,7 @@ public class KVMHost extends HostBase implements Host {
         kmsg.setNoStatusCheck(true);
         kmsg.setCommand(new HostCapacityCmd());
         bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
-        bus.send(kmsg, new CloudBusCallBack(msg) {
+        bus.send(kmsg, new CloudBusCallBack(kmsg) {
             @Override
             public void run(MessageReply reply) {
                 KVMHostAsyncHttpCallReply r = reply.castReply();
@@ -528,6 +556,191 @@ public class KVMHost extends HostBase implements Host {
                         bus.reply(msg, re);
                     }
                 });
+            }
+        });
+    }
+
+    private void handle(RegisterColoPrimaryCheckMsg msg) {
+        inQueue().name(String.format("register-vm-heart-beat-on-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> registerPrimaryVmHeartbeat(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void registerPrimaryVmHeartbeat(RegisterColoPrimaryCheckMsg msg, NoErrorCompletion completion) {
+        RegisterPrimaryVmHeartbeatCmd cmd = new RegisterPrimaryVmHeartbeatCmd();
+        cmd.setHostUuid(msg.getHostUuid());
+        cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
+        cmd.setHeartbeatPort(msg.getHeartbeatPort());
+        cmd.setTargetHostIp(msg.getTargetHostIp());
+        cmd.setColoPrimary(msg.isColoPrimary());
+        cmd.setRedirectNum(msg.getRedirectNum());
+
+        VmInstanceVO vm = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+        List<VolumeInventory> volumes = vm.getAllVolumes().stream().filter(v -> v.getType() == VolumeType.Data || v.getType() == VolumeType.Root).map(VolumeInventory::valueOf).collect(Collectors.toList());
+        cmd.setVolumes(VolumeTO.valueOf(volumes, KVMHostInventory.valueOf(getSelf())));
+
+        new Http<>(registerPrimaryVmHeartbeatPath, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(msg, completion) {
+            @Override
+            public void success(AgentResponse ret) {
+                final StartColoSyncReply reply = new StartColoSyncReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("unable to register colo heartbeat for vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+                            msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
+                } else {
+                    logger.debug(String.format("unable to register colo heartbeat for vm[uuid:%s] on kvm host[uuid:%s] success", msg.getVmInstanceUuid(), self.getUuid()));
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                final StartColoSyncReply reply = new StartColoSyncReply();
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(StartColoSyncMsg msg) {
+        inQueue().name(String.format("start-colo-sync-vm-%s-on-%s", msg.getVmInstanceUuid(), self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> startColoSync(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void startColoSync(StartColoSyncMsg msg, NoErrorCompletion completion) {
+        StartColoSyncCmd cmd = new StartColoSyncCmd();
+        cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
+        cmd.setBlockReplicationPort(msg.getBlockReplicationPort());
+        cmd.setNbdServerPort(msg.getNbdServerPort());
+        cmd.setSecondaryVmHostIp(msg.getSecondaryVmHostIp());
+        cmd.setCheckpointDelay(msg.getCheckpointDelay());
+        cmd.setFullSync(msg.isFullSync());
+        cmd.setNicNumber(msg.getNicNumber());
+
+        VmInstanceVO vm = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+        List<VolumeInventory> volumes = vm.getAllVolumes().stream().filter(v -> v.getType() == VolumeType.Data || v.getType() == VolumeType.Root).map(VolumeInventory::valueOf).collect(Collectors.toList());
+        cmd.setVolumes(VolumeTO.valueOf(volumes, KVMHostInventory.valueOf(getSelf())));
+        new Http<>(startColoSyncPath, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(msg, completion) {
+            @Override
+            public void success(AgentResponse ret) {
+                final StartColoSyncReply reply = new StartColoSyncReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("unable to start colo sync vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+                            msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
+                } else {
+                    logger.debug(String.format("unable to start colo sync vm[uuid:%s] on kvm host[uuid:%s] success", msg.getVmInstanceUuid(), self.getUuid()));
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                final StartColoSyncReply reply = new StartColoSyncReply();
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+
+    }
+
+    private void handle(ConfigSecondaryVmMsg msg) {
+        inQueue().name(String.format("config-secondary-vm-%s-on-%s", msg.getVmInstanceUuid(), self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> configSecondaryVm(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void handle(ConfigPrimaryVmMsg msg) {
+        inQueue().name(String.format("config-primary-vm-%s-on-%s", msg.getVmInstanceUuid(), self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> configPrimaryVm(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void configSecondaryVm(ConfigSecondaryVmMsg msg, NoErrorCompletion completion) {
+        checkStatus();
+
+        ConfigSecondaryVmCmd cmd = new ConfigSecondaryVmCmd();
+        cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
+        cmd.setPrimaryVmHostIp(msg.getPrimaryVmHostIp());
+        cmd.setNbdServerPort(msg.getNbdServerPort());
+        new Http<>(configSecondaryVmPath, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(msg, completion) {
+            @Override
+            public void success(AgentResponse ret) {
+                final ConfigPrimaryVmReply reply = new ConfigPrimaryVmReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("unable to config secondary vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+                            msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
+                } else {
+                    logger.debug(String.format("config secondary vm[uuid:%s] on kvm host[uuid:%s] success", msg.getVmInstanceUuid(), self.getUuid()));
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                final ConfigPrimaryVmReply reply = new ConfigPrimaryVmReply();
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
+            }
+        });
+    }
+
+    private void configPrimaryVm(ConfigPrimaryVmMsg msg, NoErrorCompletion completion) {
+        checkStatus();
+
+        ConfigPrimaryVmCmd cmd = new ConfigPrimaryVmCmd();
+        cmd.setConfigs(msg.getConfigs().stream().sorted(Comparator.comparing(VmNicRedirectConfig::getDeviceId)).collect(Collectors.toList()));
+        cmd.setHostIp(msg.getHostIp());
+        cmd.setVmInstanceUuid(msg.getVmInstanceUuid());
+        new Http<>(configPrimaryVmPath, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(msg, completion) {
+            @Override
+            public void success(AgentResponse ret) {
+                final ConfigPrimaryVmReply reply = new ConfigPrimaryVmReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("unable to config primary vm[uuid:%s] on kvm host [uuid:%s, ip:%s], because %s",
+                            msg.getVmInstanceUuid(), self.getUuid(), self.getManagementIp(), ret.getError()));
+                } else {
+                    logger.debug(String.format("config primary vm[uuid:%s] on kvm host[uuid:%s] success", msg.getVmInstanceUuid(), self.getUuid()));
+                }
+
+                bus.reply(msg, reply);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                final ConfigPrimaryVmReply reply = new ConfigPrimaryVmReply();
+                reply.setError(err);
+                bus.reply(msg, reply);
+                completion.done();
             }
         });
     }
@@ -670,6 +883,8 @@ public class KVMHost extends HostBase implements Host {
         final VmDirectlyDestroyOnHypervisorReply reply = new VmDirectlyDestroyOnHypervisorReply();
         DestroyVmCmd cmd = new DestroyVmCmd();
         cmd.setUuid(msg.getVmUuid());
+
+        extEmitter.beforeDirectlyDestroyVmOnKvm(cmd);
         new Http<>(destroyVmPath, cmd, DestroyVmResponse.class).call(new ReturnValueCompletion<DestroyVmResponse>(completion) {
             @Override
             public void success(DestroyVmResponse ret) {
@@ -860,6 +1075,9 @@ public class KVMHost extends HostBase implements Host {
         CheckVmStateCmd cmd = new CheckVmStateCmd();
         cmd.vmUuids = msg.getVmInstanceUuids();
         cmd.hostUuid = self.getUuid();
+
+        extEmitter.beforeCheckVmState((KVMHostInventory) getSelfInventory(), msg, cmd);
+
         new Http<>(checkVmStatePath, cmd, CheckVmStateRsp.class).call(new ReturnValueCompletion<CheckVmStateRsp>(msg) {
             @Override
             public void success(CheckVmStateRsp ret) {
@@ -870,6 +1088,9 @@ public class KVMHost extends HostBase implements Host {
                     for (Map.Entry<String, String> e : ret.states.entrySet()) {
                         m.put(e.getKey(), KvmVmState.valueOf(e.getValue()).toVmInstanceState().toString());
                     }
+
+                    extEmitter.afterCheckVmState((KVMHostInventory) getSelfInventory(), m);
+
                     reply.setStates(m);
                 }
 
@@ -1870,16 +2091,17 @@ public class KVMHost extends HostBase implements Host {
 
         final VmInstanceInventory vminv = msg.getVmInventory();
 
+        DestroyVmCmd cmd = new DestroyVmCmd();
+        cmd.setUuid(vminv.getUuid());
+
         try {
-            extEmitter.beforeDestroyVmOnKvm(KVMHostInventory.valueOf(getSelf()), vminv);
+            extEmitter.beforeDestroyVmOnKvm(KVMHostInventory.valueOf(getSelf()), vminv, cmd);
         } catch (KVMException e) {
             ErrorCode err = operr("failed to destroy vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(), vminv.getName(),
                     self.getUuid(), self.getManagementIp(), e.getMessage());
             throw new OperationFailureException(err);
         }
 
-        DestroyVmCmd cmd = new DestroyVmCmd();
-        cmd.setUuid(vminv.getUuid());
         new Http<>(destroyVmPath, cmd, DestroyVmResponse.class).call(new ReturnValueCompletion<DestroyVmResponse>(msg, completion) {
             @Override
             public void success(DestroyVmResponse ret) {
@@ -1999,18 +2221,19 @@ public class KVMHost extends HostBase implements Host {
         checkStatus();
         final VmInstanceInventory vminv = msg.getVmInventory();
 
+        StopVmCmd cmd = new StopVmCmd();
+        cmd.setUuid(vminv.getUuid());
+        cmd.setType(msg.getType());
+        cmd.setTimeout(120);
+
         try {
-            extEmitter.beforeStopVmOnKvm(KVMHostInventory.valueOf(getSelf()), vminv);
+            extEmitter.beforeStopVmOnKvm(KVMHostInventory.valueOf(getSelf()), vminv, cmd);
         } catch (KVMException e) {
             ErrorCode err = operr("failed to stop vm[uuid:%s name:%s] on kvm host[uuid:%s, ip:%s], because %s", vminv.getUuid(), vminv.getName(),
                     self.getUuid(), self.getManagementIp(), e.getMessage());
             throw new OperationFailureException(err);
         }
 
-        StopVmCmd cmd = new StopVmCmd();
-        cmd.setUuid(vminv.getUuid());
-        cmd.setType(msg.getType());
-        cmd.setTimeout(120);
         new Http<>(stopVmPath, cmd, StopVmResponse.class).call(new ReturnValueCompletion<StopVmResponse>(msg, completion) {
             @Override
             public void success(StopVmResponse ret) {
@@ -2249,7 +2472,7 @@ public class KVMHost extends HostBase implements Host {
             cmd.setSoundType(VmSystemTags.SOUND_TYPE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class, VmSystemTags.SOUND_TYPE_TOKEN));
         }
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
-        cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getDestHost().getClusterUuid(), Boolean.class));
+        cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
         cmd.setEmulateHyperV(rcf.getResourceConfigValue(VmGlobalConfig.EMULATE_HYPERV, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setAdditionalQmp(VmGlobalConfig.ADDITIONAL_QMP.value(Boolean.class));
@@ -2304,6 +2527,17 @@ public class KVMHost extends HostBase implements Host {
         }
         dataVolumes.sort(Comparator.comparing(VolumeTO::getDeviceId));
         cmd.setDataVolumes(dataVolumes);
+
+        List<VolumeTO> cacheVolumes = new ArrayList<>(spec.getDestCacheVolumes().size());
+        for (VolumeInventory data : spec.getDestCacheVolumes()) {
+            VolumeTO v = VolumeTO.valueOfWithOutExtension(data, (KVMHostInventory) getSelfInventory(), spec.getVmInventory().getPlatform());
+            // always use virtio driver for data volume
+            // set bug https://github.com/zxwing/premium/issues/1050
+            v.setUseVirtio(true);
+            cacheVolumes.add(v);
+        }
+        cmd.setCacheVolumes(cacheVolumes);
+
         cmd.setVmInternalId(spec.getVmInventory().getInternalId());
 
         List<NicTO> nics = new ArrayList<>(spec.getDestNics().size());

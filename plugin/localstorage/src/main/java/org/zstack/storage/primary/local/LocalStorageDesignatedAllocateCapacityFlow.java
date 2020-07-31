@@ -24,6 +24,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
@@ -88,12 +89,12 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
                         if (msg == rootVolumeAllocationMsg) {
                             vspec.setSize(ar.getSize());
                             vspec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
-                            vspec.setRoot(true);
+                            vspec.setType(VolumeType.Root.toString());
                         } else {
                             vspec.setSize(ar.getSize());
                             vspec.setPrimaryStorageInventory(ar.getPrimaryStorageInventory());
                             vspec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
-                            vspec.setRoot(false);
+                            vspec.setType(VolumeType.Data.toString());
                         }
                         spec.getVolumeSpecs().add(vspec);
 

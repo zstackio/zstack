@@ -1,5 +1,7 @@
 package org.zstack.kvm;
 
+import org.zstack.compute.host.HostPortGetter;
+import org.zstack.header.host.VmNicRedirectConfig;
 import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
@@ -1165,6 +1167,225 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class ConfigPrimaryVmCmd extends AgentCommand {
+        private List<VmNicRedirectConfig> configs;
+        private String vmInstanceUuid;
+        private String hostIp;
+
+        public String getVmInstanceUuid() {
+            return vmInstanceUuid;
+        }
+
+        public void setVmInstanceUuid(String vmInstanceUuid) {
+            this.vmInstanceUuid = vmInstanceUuid;
+        }
+
+        public List<VmNicRedirectConfig> getConfigs() {
+            return configs;
+        }
+
+        public void setConfigs(List<VmNicRedirectConfig> configs) {
+            this.configs = configs;
+        }
+
+        public String getHostIp() {
+            return hostIp;
+        }
+
+        public void setHostIp(String hostIp) {
+            this.hostIp = hostIp;
+        }
+    }
+
+    public static class RegisterPrimaryVmHeartbeatCmd extends AgentCommand {
+        private String hostUuid;
+        private String vmInstanceUuid;
+        private Integer heartbeatPort;
+        private String targetHostIp;
+        private boolean coloPrimary;
+        private Integer redirectNum;
+        private List<VolumeTO> volumes;
+
+        public Integer getRedirectNum() {
+            return redirectNum;
+        }
+
+        public void setRedirectNum(Integer redirectNum) {
+            this.redirectNum = redirectNum;
+        }
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getVmInstanceUuid() {
+            return vmInstanceUuid;
+        }
+
+        public void setVmInstanceUuid(String vmInstanceUuid) {
+            this.vmInstanceUuid = vmInstanceUuid;
+        }
+
+        public Integer getHeartbeatPort() {
+            return heartbeatPort;
+        }
+
+        public void setHeartbeatPort(Integer heartbeatPort) {
+            this.heartbeatPort = heartbeatPort;
+        }
+
+        public String getTargetHostIp() {
+            return targetHostIp;
+        }
+
+        public void setTargetHostIp(String targetHostIp) {
+            this.targetHostIp = targetHostIp;
+        }
+
+        public boolean isColoPrimary() {
+            return coloPrimary;
+        }
+
+        public void setColoPrimary(boolean coloPrimary) {
+            this.coloPrimary = coloPrimary;
+        }
+
+        public List<VolumeTO> getVolumes() {
+            return volumes;
+        }
+
+        public void setVolumes(List<VolumeTO> volumes) {
+            this.volumes = volumes;
+        }
+    }
+
+    public static class StartColoSyncCmd extends AgentCommand {
+        private String vmInstanceUuid;
+        private Integer blockReplicationPort;
+        private Integer nbdServerPort;
+        private String secondaryVmHostIp;
+        private Long checkpointDelay;
+        private boolean fullSync;
+        private List<VolumeTO> volumes = new ArrayList<>();
+        private Integer nicNumber;
+
+        public String getVmInstanceUuid() {
+            return vmInstanceUuid;
+        }
+
+        public void setVmInstanceUuid(String vmInstanceUuid) {
+            this.vmInstanceUuid = vmInstanceUuid;
+        }
+
+        public Integer getBlockReplicationPort() {
+            return blockReplicationPort;
+        }
+
+        public void setBlockReplicationPort(Integer blockReplicationPort) {
+            this.blockReplicationPort = blockReplicationPort;
+        }
+
+        public Integer getNbdServerPort() {
+            return nbdServerPort;
+        }
+
+        public void setNbdServerPort(Integer nbdServerPort) {
+            this.nbdServerPort = nbdServerPort;
+        }
+
+        public String getSecondaryVmHostIp() {
+            return secondaryVmHostIp;
+        }
+
+        public void setSecondaryVmHostIp(String secondaryVmHostIp) {
+            this.secondaryVmHostIp = secondaryVmHostIp;
+        }
+
+        public Long getCheckpointDelay() {
+            return checkpointDelay;
+        }
+
+        public void setCheckpointDelay(Long checkpointDelay) {
+            this.checkpointDelay = checkpointDelay;
+        }
+
+        public boolean isFullSync() {
+            return fullSync;
+        }
+
+        public void setFullSync(boolean fullSync) {
+            this.fullSync = fullSync;
+        }
+
+        public List<VolumeTO> getVolumes() {
+            return volumes;
+        }
+
+        public void setVolumes(List<VolumeTO> volumes) {
+            this.volumes = volumes;
+        }
+
+        public Integer getNicNumber() {
+            return nicNumber;
+        }
+
+        public void setNicNumber(Integer nicNumber) {
+            this.nicNumber = nicNumber;
+        }
+    }
+
+    public static class ConfigSecondaryVmCmd extends AgentCommand {
+        private String vmInstanceUuid;
+        private Integer mirrorPort;
+        private Integer secondaryInPort;
+        private Integer nbdServerPort;
+        private String primaryVmHostIp;
+
+        public Integer getMirrorPort() {
+            return mirrorPort;
+        }
+
+        public void setMirrorPort(Integer mirrorPort) {
+            this.mirrorPort = mirrorPort;
+        }
+
+        public Integer getSecondaryInPort() {
+            return secondaryInPort;
+        }
+
+        public void setSecondaryInPort(Integer secondaryInPort) {
+            this.secondaryInPort = secondaryInPort;
+        }
+
+        public String getVmInstanceUuid() {
+            return vmInstanceUuid;
+        }
+
+        public void setVmInstanceUuid(String vmInstanceUuid) {
+            this.vmInstanceUuid = vmInstanceUuid;
+        }
+
+        public String getPrimaryVmHostIp() {
+            return primaryVmHostIp;
+        }
+
+        public void setPrimaryVmHostIp(String primaryVmHostIp) {
+            this.primaryVmHostIp = primaryVmHostIp;
+        }
+
+        public Integer getNbdServerPort() {
+            return nbdServerPort;
+        }
+
+        public void setNbdServerPort(Integer nbdServerPort) {
+            this.nbdServerPort = nbdServerPort;
+        }
+    }
+
     public static class StartVmCmd extends vdiCmd implements VmAddOnsCmd {
         private String vmInstanceUuid;
         private long vmInternalId;
@@ -1181,6 +1402,8 @@ public class KVMAgentCommands {
         private List<IsoTO> bootIso = new ArrayList<>();
         private List<CdRomTO> cdRoms = new ArrayList<>();
         private List<VolumeTO> dataVolumes;
+        private List<VolumeTO> cacheVolumes;
+        private List<VolumeTO> Volumes;
         private List<NicTO> nics;
         private long timeout;
         private Map<String, Object> addons;
@@ -1208,6 +1431,11 @@ public class KVMAgentCommands {
         private String chassisAssetTag;
         private PriorityConfigStruct priorityConfigStruct;
         private String memorySnapshotPath;
+        private boolean coloPrimary;
+        private boolean coloSecondary;
+
+        // TODO: only for test
+        private boolean useColoBinary;
 
         public String getChassisAssetTag() {
             return chassisAssetTag;
@@ -1491,6 +1719,14 @@ public class KVMAgentCommands {
             this.dataVolumes = dataVolumes;
         }
 
+        public List<VolumeTO> getCacheVolumes() {
+            return cacheVolumes;
+        }
+
+        public void setCacheVolumes(List<VolumeTO> cacheVolumes) {
+            this.cacheVolumes = cacheVolumes;
+        }
+
         public List<NicTO> getNics() {
             return nics;
         }
@@ -1516,6 +1752,14 @@ public class KVMAgentCommands {
             this.vmInstanceUuid = vmInstanceUuid;
         }
 
+        public boolean isUseColoBinary() {
+            return useColoBinary;
+        }
+
+        public void setUseColoBinary(boolean useColoBinary) {
+            this.useColoBinary = useColoBinary;
+        }
+
         public long getVmInternalId() {
             return vmInternalId;
         }
@@ -1538,6 +1782,22 @@ public class KVMAgentCommands {
 
         public void setMemorySnapshotPath(String memorySnapshotPath) {
             this.memorySnapshotPath = memorySnapshotPath;
+        }
+
+        public boolean isColoPrimary() {
+            return coloPrimary;
+        }
+
+        public void setColoPrimary(boolean coloPrimary) {
+            this.coloPrimary = coloPrimary;
+        }
+
+        public boolean isColoSecondary() {
+            return coloSecondary;
+        }
+
+        public void setColoSecondary(boolean coloSecondary) {
+            this.coloSecondary = coloSecondary;
         }
 
         @Override
@@ -2424,6 +2684,13 @@ public class KVMAgentCommands {
         public List<String> psUuids;
         public String reason;
         public String vmUuidsString;
+    }
+
+    public static class ReportFailoverCmd {
+        public String vmInstanceUuid;
+        public String hostUuid;
+        public String reason;
+        public boolean primaryVmFailure;
     }
 
     public static class ReportHostDeviceEventCmd {

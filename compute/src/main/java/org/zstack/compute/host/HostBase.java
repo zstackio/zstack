@@ -193,6 +193,10 @@ public abstract class HostBase extends AbstractHost {
                 .notEq(VmInstanceVO_.state, VmInstanceState.Unknown)
                 .listValues();
 
+        for (HostMaintenanceExtensionPoint ext : pluginRgty.getExtensionList(HostMaintenanceExtensionPoint.class)) {
+            ext.beforeCheckMaintenancePolicy(operateVmUuids);
+        }
+
         Map<HostMaintenancePolicy, Set<String>> policyVmMap = map(
                 e(HostMaintenancePolicy.MigrateVm, new HashSet<>(operateVmUuids)),
                 e(HostMaintenancePolicy.StopVm, new HashSet<>()));

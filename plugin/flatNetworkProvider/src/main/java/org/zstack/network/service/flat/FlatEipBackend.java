@@ -95,6 +95,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         public String nicName;
         public String vmBridgeName;
         public String publicBridgeName;
+        public boolean skipArpCheck;
     }
 
     public static class ApplyEipCmd extends AgentCmd {
@@ -586,6 +587,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         to.nicUuid = struct.getNic().getUuid();
         to.nicName = struct.getNic().getInternalName();
         to.nicMac = struct.getNic().getMac();
+        to.skipArpCheck = struct.isSkipArpCheck();
         if (struct.getGuestIp() != null) {
             /* for attachEip */
             to.nicIp = struct.getGuestIp().getIp();

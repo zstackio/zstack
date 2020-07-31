@@ -32,6 +32,8 @@ public abstract class VmTracer {
     private ThreadFacade thdf;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private VmTracerHelper vmTracerHelper;
 
     private static final int strangeVmNumberInCache = 1500;
 
@@ -53,9 +55,19 @@ public abstract class VmTracer {
             mgmtSideStates = new HashMap<>();
             String sql = "select vm.uuid, vm.state from VmInstanceVO vm where vm.hostUuid = :huuid or (vm.hostUuid is null and vm.lastHostUuid = :huuid)" +
                     " and vm.state not in (:vmstates)";
+
+            if (!vmTracerHelper.getVmTracerUnsupportedVmInstanceTypeSet().isEmpty()) {
+                sql += "and vm.type not in (:vmtypes)";
+            }
+
             TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
             q.setParameter("huuid", hostUuid);
             q.setParameter("vmstates", list(VmInstanceState.Destroyed, VmInstanceState.Destroying));
+
+            if (!vmTracerHelper.getVmTracerUnsupportedVmInstanceTypeSet().isEmpty()) {
+                q.setParameter("vmtypes", vmTracerHelper.getVmTracerUnsupportedVmInstanceTypeSet());
+            }
+
             List<Tuple> ts = q.getResultList();
 
             for (Tuple t : ts) {

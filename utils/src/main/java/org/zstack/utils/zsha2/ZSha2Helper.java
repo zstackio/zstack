@@ -19,9 +19,16 @@ public class ZSha2Helper {
     }
 
     public static ZSha2Info getInfo() {
-        ShellResult result = ShellUtils.runAndReturn("sudo -i /usr/local/bin/zsha2 status", false);
-        if (!result.isReturnCode(0)) {
-            throw new RuntimeException(String.format("cannot get zsha2 status, because %s", result.getStderr()));
+        return getInfo(true);
+    }
+
+    public static ZSha2Info getInfo(boolean checkZSha2Status) {
+        ShellResult result;
+        if (checkZSha2Status) {
+            result = ShellUtils.runAndReturn("sudo -i /usr/local/bin/zsha2 status", false);
+            if (!result.isReturnCode(0)) {
+                throw new RuntimeException(String.format("cannot get zsha2 status, because %s", result.getStderr()));
+            }
         }
 
         result = ShellUtils.runAndReturn("/usr/local/bin/zsha2 show-config");
@@ -35,5 +42,4 @@ public class ZSha2Helper {
                 "ip addr show %s | grep -q '[^0-9]%s[^0-9]'", info.getNic(), info.getDbvip())).isReturnCode(0));
         return info;
     }
-
 }

@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -24,6 +25,8 @@ public class VmStopOnHypervisorFlow extends NoRollbackFlow {
     protected CloudBus bus;
     @Autowired
     protected ErrorFacade errf;
+    @Autowired
+    protected PluginRegistry pluginRegistry;
 
     @Override
     public void run(final FlowTrigger chain, Map data) {
@@ -33,6 +36,10 @@ public class VmStopOnHypervisorFlow extends NoRollbackFlow {
         msg.setVmInventory(spec.getVmInventory());
         if (spec.getMessage() instanceof StopVmMessage) {
            msg.setType(((StopVmMessage)spec.getMessage()).getType());
+        }
+
+        for (BeforeStopVmOnHypervisorExtensionPoint ext : pluginRegistry.getExtensionList(BeforeStopVmOnHypervisorExtensionPoint.class)) {
+            ext.beforeStopVmOnHypervisor(spec, msg);
         }
 
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getVmInventory().getHostUuid());
