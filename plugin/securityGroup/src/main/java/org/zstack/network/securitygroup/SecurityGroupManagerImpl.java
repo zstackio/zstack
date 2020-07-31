@@ -964,15 +964,21 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         List<String> nicsUuidsCopy = new ArrayList<String>();
         nicsUuidsCopy.addAll(vmNicUuids);
         nicsUuidsCopy.removeAll(nicUuidsIn);
-        Collection<HostRuleTO> htos2 = new ArrayList<HostRuleTO>();
         if (!nicsUuidsCopy.isEmpty()) {
-            htos2 = cal.createRulePlaceHolder(nicsUuidsCopy, sgvo.getIpVersion());
-            for (HostRuleTO hto : htos2) {
+            Collection<HostRuleTO> toDeleted = cal.createRulePlaceHolder(nicsUuidsCopy, IPv6Constants.IPv4);
+            for (HostRuleTO hto : toDeleted) {
                 hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
             }
+            htos1 = cal.mergeMultiHostRuleTO(htos1, toDeleted);
+
+            toDeleted = cal.createRulePlaceHolder(nicsUuidsCopy, IPv6Constants.IPv6);
+            for (HostRuleTO hto : toDeleted) {
+                hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
+            }
+            htos1 = cal.mergeMultiHostRuleTO(htos1, toDeleted);
         }
 
-        List<HostRuleTO> finalHtos = cal.mergeMultiHostRuleTO(htos1, htos2);
+        List<HostRuleTO> finalHtos = htos1;
 
         applyRules(finalHtos);
 
@@ -1011,11 +1017,17 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             vmNicUuids.removeAll(nicUuidsIn);
             if (!vmNicUuids.isEmpty()) {
                 // these vm nics are no longer in any security group, delete their chains on host
-                Collection<HostRuleTO> toRemove = cal.createRulePlaceHolder(vmNicUuids, sgvo.getIpVersion());
+                Collection<HostRuleTO> toRemove = cal.createRulePlaceHolder(vmNicUuids, IPv6Constants.IPv4);
                 for (HostRuleTO hto : toRemove) {
                     hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
                 }
 
+                htos = cal.mergeMultiHostRuleTO(htos, toRemove);
+
+                toRemove = cal.createRulePlaceHolder(vmNicUuids, IPv6Constants.IPv6);
+                for (HostRuleTO hto : toRemove) {
+                    hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
+                }
                 htos = cal.mergeMultiHostRuleTO(htos, toRemove);
             }
             applyRules(htos);
@@ -1063,7 +1075,13 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             vmNicUuids.removeAll(nicUuidsIn);
             if (!vmNicUuids.isEmpty()) {
                 // these vm nics are no longer in any security group, delete their chains on host
-                Collection<HostRuleTO> toRemove = cal.createRulePlaceHolder(vmNicUuids, sgVo.getIpVersion());
+                Collection<HostRuleTO> toRemove = cal.createRulePlaceHolder(vmNicUuids, IPv6Constants.IPv4);
+                for (HostRuleTO hto : toRemove) {
+                    hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
+                }
+                htos = cal.mergeMultiHostRuleTO(htos, toRemove);
+
+                toRemove = cal.createRulePlaceHolder(vmNicUuids, IPv6Constants.IPv6);
                 for (HostRuleTO hto : toRemove) {
                     hto.setActionCodeForAllSecurityGroupRuleTOs(SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN);
                 }
@@ -1330,7 +1348,6 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         } else {
             vo.setUuid(Platform.getUuid());
         }
-        vo.setIpVersion(msg.getIpVersion());
         vo.setName(msg.getName());
         vo.setDescription(msg.getDescription());
         vo.setState(SecurityGroupState.Enabled);

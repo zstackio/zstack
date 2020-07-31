@@ -30,6 +30,7 @@ public class SecurityGroupVO extends ResourceVO implements OwnedByAccount {
     private SecurityGroupState state;
 
     @Column
+    @Deprecated
     private Integer ipVersion;
 
     @Column
@@ -128,10 +129,12 @@ public class SecurityGroupVO extends ResourceVO implements OwnedByAccount {
         this.state = state;
     }
 
+    @Deprecated
     public Integer getIpVersion() {
         return ipVersion;
     }
 
+    @Deprecated
     public void setIpVersion(Integer ipVersion) {
         this.ipVersion = ipVersion;
     }
