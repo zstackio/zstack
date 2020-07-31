@@ -378,11 +378,12 @@ public class Ssh {
                 privateKeyFile = File.createTempFile("zstack", "tmp");
                 FileUtils.writeStringToFile(privateKeyFile, privateKey);
                 jSch.addIdentity(privateKeyFile.getAbsolutePath());
+            } else {
+                session.setConfig("PreferredAuthentications", "password");
             }
 
             session = jSch.getSession(username, hostname, port);
             session.setConfig("StrictHostKeyChecking", "no");
-            session.setConfig("PreferredAuthentications", "password");
             session.setPassword(password);
             session.connect(getTimeoutInMilli(timeout));
         } catch (JSchException ex) {
