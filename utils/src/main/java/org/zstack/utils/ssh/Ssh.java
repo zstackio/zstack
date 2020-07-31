@@ -383,6 +383,9 @@ public class Ssh {
             session = jSch.getSession(username, hostname, port);
             session.setConfig("StrictHostKeyChecking", "no");
             session.setPassword(password);
+            if (privateKey == null) {
+                session.setConfig("PreferredAuthentications", "password");
+            }
             session.connect(getTimeoutInMilli(timeout));
         } catch (JSchException ex) {
             throw new IOException(ex);
