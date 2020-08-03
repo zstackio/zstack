@@ -3,16 +3,17 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.db.UpdateQuery;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.workflow.SimpleFlowChain;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
@@ -32,6 +33,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
@@ -183,9 +185,27 @@ public class VmAllocateVolumeFlow implements Flow {
             return;
         }
 
-        bus.send(msgs, new CloudBusListCallBack(chain) {
+        new While<>(msgs).each((msg, compl) -> {
+            bus.send(msg, new CloudBusCallBack(compl) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (reply.isSuccess()) {
+                        compl.done();
+                        return;
+                    }
+
+                    DeleteVolumeGC gc = new DeleteVolumeGC();
+                    gc.NAME = String.format("gc-volume-%s", msg.getVolumeUuid());
+                    gc.deletionPolicy = VolumeDeletionPolicy.Direct.toString();
+                    gc.volumeUuid = msg.getVolumeUuid();
+                    gc.submit(TimeUnit.HOURS.toSeconds(8), TimeUnit.SECONDS);
+
+                    compl.done();
+                }
+            });
+        }).run(new NoErrorCompletion() {
             @Override
-            public void run(List<MessageReply> replies) {
+            public void done() {
                 // if ChangeImage, resume rootVolumeUuid
                 if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.ChangeImage) {
                     VmInstanceVO vm = dbf.findByUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class);
