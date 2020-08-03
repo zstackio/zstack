@@ -50,7 +50,7 @@ public abstract class CephMonBase {
         Ssh ssh = new Ssh();
         try {
             ssh.setHostname(self.getHostname()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword()).setPort(self.getSshPort())
-                    .checkTool("ceph", "rbd").setTimeout(5).runErrorByException();
+                    .checkTool("ceph", "rbd").setTimeout(60).runErrorByException();
         } catch (SshException e) {
             throw new OperationFailureException(operr("The problem may be caused by an incorrect user name or password or SSH port or unstable network environment"));
         }
@@ -61,7 +61,7 @@ public abstract class CephMonBase {
         SshResult ret = null;
         try {
             ret = ssh.setHostname(self.getHostname()).setUsername(self.getSshUsername()).setPassword(self.getSshPassword()).setPort(self.getSshPort())
-                    .shell("ceph health").setTimeout(15).runAndClose();
+                    .shell("ceph health").setTimeout(60).runAndClose();
         } catch (SshException e) {
             throw new OperationFailureException(operr("The problem may be caused by an incorrect user name or password or SSH port or unstable network environment"));
         }
