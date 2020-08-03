@@ -113,7 +113,7 @@ public class ApplianceVmConnectFlow extends NoRollbackFlow {
                 while (true) {
                    try {
                        new Ssh().setHostname(mgmtIp).setUsername(username).setPrivateKey(privKey).setPort(sshPort).setSuppressException(!connectVerbose)
-                               .command("echo 'hello'").setTimeout(5).runErrorByExceptionAndClose();
+                               .command("echo 'hello'").setTimeout(60).runErrorByExceptionAndClose();
                        return;
                    } catch (SshException e) {
                        se = e;
@@ -150,7 +150,7 @@ public class ApplianceVmConnectFlow extends NoRollbackFlow {
 
             private void checkError() {
                 SshResult ret = new Ssh().setHostname(mgmtIp).setUsername(username).setPrivateKey(privKey).setPort(sshPort)
-                        .command(String.format("if [ -f %s ]; then cat %s; exit 1; else exit 0; fi", ERROR_LOG_PATH, ERROR_LOG_PATH)).setTimeout(5).runAndClose();
+                        .command(String.format("if [ -f %s ]; then cat %s; exit 1; else exit 0; fi", ERROR_LOG_PATH, ERROR_LOG_PATH)).setTimeout(60).runAndClose();
                 if (ret.getReturnCode() != 0) {
                     throw new OperationFailureException(err(ApplianceVmErrors.UNABLE_TO_START, ret.getStdout()));
                 }
