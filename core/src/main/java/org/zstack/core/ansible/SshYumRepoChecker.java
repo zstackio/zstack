@@ -40,7 +40,7 @@ public class SshYumRepoChecker implements AnsibleChecker {
                     "echo %s | sudo -S sed -i '/baseurl/s/\\([0-9]\\{1,3\\}\\.\\)\\{3\\}[0-9]\\{1,3\\}:\\([0-9]\\+\\)/%s/g' /etc/yum.repos.d/{zstack,qemu-kvm-ev}-mn.repo",
                     password, restf.getHostName() + ":" + restf.getPort()
             ));
-            SshResult ret = ssh.setTimeout(5).runAndClose();
+            SshResult ret = ssh.setTimeout(60).runAndClose();
             if (ret.getReturnCode() != 0) {
                 return true;
             }
