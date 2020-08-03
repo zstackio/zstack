@@ -155,6 +155,12 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             Map<String, IpCapacity> elements;
             long total;
             long avail;
+            long ipv4TotalCapacity;
+            long ipv4AvailableCapacity;
+            long ipv4UsedIpAddressNumber;
+            long ipv6TotalCapacity;
+            long ipv6AvailableCapacity;
+            long ipv6UsedIpAddressNumber;
             long used = 0L;
         }
 
@@ -184,6 +190,8 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                 }
                 Map<String, IpCapacity> elements = capacity.elements;
                 long total = 0;
+                long ipv4TotalCapacity = 0;
+                long ipv6TotalCapacity = 0;
 
                 for (Tuple tuple : tuples) {
                     String sip = tuple.get(0, String.class);
@@ -196,18 +204,34 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     if (ipVersion == IPv6Constants.IPv4) {
                         int t = NetworkUtils.getTotalIpInRange(sip, eip);
                         element.total += t;
+                        element.total = Math.min(element.total, Integer.MAX_VALUE);
                         element.avail = element.total;
+                        element.ipv4TotalCapacity += t;
+                        element.ipv4TotalCapacity = Math.min(element.ipv4TotalCapacity, Integer.MAX_VALUE);
+                        element.ipv4AvailableCapacity = element.ipv4TotalCapacity;
+                        ipv4TotalCapacity += t;
                         total += t;
+                        ipv4TotalCapacity = Math.min(ipv4TotalCapacity, (long)Integer.MAX_VALUE);
+                        total = Math.min(total, (long)Integer.MAX_VALUE);
                     } else {
                         long t = IPv6NetworkUtils.getIpv6RangeSize(sip, eip);
                         element.total += t;
                         element.total = Math.min(element.total, Integer.MAX_VALUE);
                         element.avail = element.total;
+                        element.ipv6TotalCapacity += t;
+                        element.ipv6TotalCapacity = Math.min(element.ipv6TotalCapacity, Integer.MAX_VALUE);
+                        element.ipv6AvailableCapacity = element.ipv6TotalCapacity;
+                        ipv6TotalCapacity += t;
                         total += t;
+                        ipv6TotalCapacity = Math.min(ipv6TotalCapacity, (long)Integer.MAX_VALUE);
                         total = Math.min(total, (long)Integer.MAX_VALUE);
                     }
 
                 }
+                capacity.ipv4TotalCapacity = ipv4TotalCapacity;
+                capacity.ipv4AvailableCapacity = ipv4TotalCapacity;
+                capacity.ipv6AvailableCapacity = ipv6TotalCapacity;
+                capacity.ipv6TotalCapacity = ipv6TotalCapacity;
                 capacity.total = total;
                 capacity.avail = total;
             }
@@ -216,22 +240,40 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                 if (capacity == null) {
                     return;
                 }
+                if (capacity.elements == null) {
+                    capacity.elements = new HashMap<>();
+                }
+                Map<String, IpCapacity> elements = capacity.elements;
                 long total = 0;
-
+                long ipv4UsedIpAddressNumber = 0;
+                long ipv6UsedIpAddressNumber = 0;
                 for (Tuple tuple : tuples) {
                     long used = tuple.get(0, Long.class);
                     String elementUuid = tuple.get(1, String.class);
+                    int ipVersion = tuple.get(2, Integer.class);
+
+                    IpCapacity element = elements.getOrDefault(elementUuid, new IpCapacity());
+                    elements.put(elementUuid, element);
+                    if (ipVersion == IPv6Constants.IPv4) {
+                       element.ipv4UsedIpAddressNumber += used;
+                       element.ipv4AvailableCapacity -= used;
+                       ipv4UsedIpAddressNumber += used;
+                       ipv4UsedIpAddressNumber = Math.min(ipv4UsedIpAddressNumber, Integer.MAX_VALUE);
+                    } else {
+                        element.ipv6UsedIpAddressNumber += used;
+                        element.ipv6AvailableCapacity -= used;
+                        ipv6UsedIpAddressNumber += used;
+                        ipv6UsedIpAddressNumber = Math.min(ipv6UsedIpAddressNumber, Integer.MAX_VALUE);
+                    }
+                    element.used += used;
+                    element.avail -= used;
                     total += used;
                     total = Math.min(total, Integer.MAX_VALUE);
-                    if (capacity.elements != null) {
-                        IpCapacity element = capacity.elements.get(elementUuid);
-                        if (element == null) {
-                            continue;
-                        }
-                        element.used += used;
-                        element.avail -= used;
-                    }
                 }
+                capacity.ipv4AvailableCapacity -= ipv4UsedIpAddressNumber;
+                capacity.ipv4UsedIpAddressNumber = ipv4UsedIpAddressNumber;
+                capacity.ipv6AvailableCapacity -= ipv6UsedIpAddressNumber;
+                capacity.ipv6UsedIpAddressNumber = ipv6UsedIpAddressNumber;
                 capacity.used = total;
                 capacity.avail -= total;
             }
@@ -252,7 +294,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     List<Tuple> ts = q.getResultList();
                     calcElementTotalIp(ts, ret);
 
-                    sql = "select count(distinct uip.ip), uip.ipRangeUuid from UsedIpVO uip where uip.ipRangeUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by uip.ipRangeUuid";
+                    sql = "select count(distinct uip.ip), uip.ipRangeUuid, uip.ipVersion from UsedIpVO uip where uip.ipRangeUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by uip.ipRangeUuid, uip.ipVersion";
                     TypedQuery<Tuple> cq = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     cq.setParameter("uuids", msg.getIpRangeUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
@@ -267,7 +309,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     List<Tuple> ts = q.getResultList();
                     calcElementTotalIp(ts, ret);
 
-                    sql = "select count(distinct uip.ip), uip.l3NetworkUuid from UsedIpVO uip where uip.l3NetworkUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by uip.l3NetworkUuid";
+                    sql = "select count(distinct uip.ip), uip.l3NetworkUuid, uip.ipVersion from UsedIpVO uip where uip.l3NetworkUuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by uip.l3NetworkUuid, uip.ipVersion";
                     TypedQuery<Tuple> cq = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     cq.setParameter("uuids", msg.getL3NetworkUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
@@ -282,7 +324,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     List<Tuple> ts = q.getResultList();
                     calcElementTotalIp(ts, ret);
 
-                    sql = "select count(distinct uip.ip), zone.uuid from UsedIpVO uip, L3NetworkVO l3, ZoneVO zone where uip.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by zone.uuid";
+                    sql = "select count(distinct uip.ip), zone.uuid, uip.ipVersion from UsedIpVO uip, L3NetworkVO l3, ZoneVO zone where uip.l3NetworkUuid = l3.uuid and l3.zoneUuid = zone.uuid and zone.uuid in (:uuids) and (uip.metaData not in (:notAccountMetaData) or uip.metaData IS NULL) group by zone.uuid, uip.ipVersion";
                     TypedQuery<Tuple> cq = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     cq.setParameter("uuids", msg.getZoneUuids());
                     cq.setParameter("notAccountMetaData", notAccountMetaDatas);
@@ -304,10 +346,19 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                 data.setTotalCapacity(element.total);
                 data.setAvailableCapacity(element.avail);
                 data.setUsedIpAddressNumber(element.used);
+                data.setIpv4TotalCapacity(element.ipv4TotalCapacity);
+                data.setIpv4AvailableCapacity(element.ipv4AvailableCapacity);
+                data.setIpv4UsedIpAddressNumber(element.ipv4UsedIpAddressNumber);
+                data.setIpv6TotalCapacity(element.ipv6TotalCapacity);
+                data.setIpv6AvailableCapacity(element.ipv6AvailableCapacity);
+                data.setIpv6UsedIpAddressNumber(element.ipv6UsedIpAddressNumber);
             });
             reply.setCapacityData(capacityData);
         }
 
+        reply.setIpv6TotalCapacity(ret.ipv6TotalCapacity);
+        reply.setIpv6UsedIpAddressNumber(ret.ipv6UsedIpAddressNumber);
+        reply.setIpv6AvailableCapacity(ret.ipv6AvailableCapacity);
         reply.setTotalCapacity(ret.total);
         reply.setAvailableCapacity(ret.avail);
         reply.setUsedIpAddressNumber(ret.used);
