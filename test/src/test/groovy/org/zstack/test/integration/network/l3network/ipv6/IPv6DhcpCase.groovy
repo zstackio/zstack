@@ -103,7 +103,7 @@ class IPv6DhcpCase extends SubCase {
         assert dhcpInfo.mac == nic.mac
         assert dhcpInfo.firstIp == ipr.getStartIp()
         assert dhcpInfo.endIp == ipr.getEndIp()
-        assert dhcpInfo.ipVersion == nic.getIpVersion()
+        assert dhcpInfo.ipVersion == IPv6Constants.IPv6
         assert pcmds.size() == 1
         FlatDhcpBackend.PrepareDhcpCmd pcmd = pcmds.get(0)
         assert pcmd.ipVersion == IPv6Constants.IPv6
