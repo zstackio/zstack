@@ -204,10 +204,12 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
     @Override
     public void registerHook(ThreadAroundHook hook) {
         _pool.registerHook(hook);
+        _syncpool.registerHook(hook);
     }
 
     @Override
     public void unregisterHook(ThreadAroundHook hook) {
+        _pool.unregisterHook(hook);
         _pool.unregisterHook(hook);
     }
 
