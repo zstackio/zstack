@@ -32,10 +32,7 @@ import org.zstack.query.QueryFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
@@ -56,6 +53,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 
 	private final Map<String, NetworkServiceProviderFactory> providerFactories = new HashMap<String, NetworkServiceProviderFactory>();
 	private final Map<String, ApplyNetworkServiceExtensionPoint> providerExts = new HashMap<String, ApplyNetworkServiceExtensionPoint>();
+	private Set<String> supportedVmTypes = new HashSet<>();
     private List<NetworkServiceExtensionPoint> nsExts = new ArrayList<NetworkServiceExtensionPoint>();
 
 
@@ -211,8 +209,17 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 	@Override
 	public boolean start() {
 		populateExtensions();
+		collectSupportedVmTypes();
 		return true;
 	}
+
+	private void collectSupportedVmTypes() {
+	    for (CollectVmTypeNeedToApplyNetworkServiceExtensionPoint ext : pluginRgty.getExtensionList(CollectVmTypeNeedToApplyNetworkServiceExtensionPoint.class)) {
+	        supportedVmTypes.add(ext.getVmTypeNeedApplyNetworkService());
+        }
+
+	    supportedVmTypes.add(VmInstanceConstant.USER_VM_TYPE);
+    }
 
 	@Override
 	public boolean stop() {
@@ -224,7 +231,7 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 	}
 
     private void applyNetworkServices(final VmInstanceSpec spec, NetworkServiceExtensionPosition position, final Completion completion) {
-        if (!spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
+        if (!supportedVmTypes.contains(spec.getVmInventory().getType())) {
             completion.success();
             return;
         }

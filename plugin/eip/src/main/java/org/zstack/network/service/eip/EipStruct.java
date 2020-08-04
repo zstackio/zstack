@@ -17,6 +17,7 @@ public class EipStruct implements Serializable {
     private UsedIpInventory guestIp;
     private IpRangeInventory guestIpRange;
     private String hostUuid;
+    private boolean skipArpCheck = false;
 
     public boolean isSnatInboundTraffic() {
         return snatInboundTraffic;
@@ -72,5 +73,13 @@ public class EipStruct implements Serializable {
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
+    }
+
+    public boolean isSkipArpCheck() {
+        return skipArpCheck;
+    }
+
+    public void setSkipArpCheck(boolean skipArpCheck) {
+        this.skipArpCheck = skipArpCheck;
     }
 }

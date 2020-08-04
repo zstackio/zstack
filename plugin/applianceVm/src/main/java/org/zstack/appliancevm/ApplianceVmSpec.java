@@ -29,7 +29,7 @@ public class ApplianceVmSpec implements Serializable {
     private ApplianceVmType applianceVmType;
     private String accountUuid;
     private boolean syncCreate;
-    private List<ApplianceVmFirewallRuleInventory> firewallRules;
+    private List<ApplianceVmFirewallRuleInventory> firewallRules = new ArrayList<ApplianceVmFirewallRuleInventory>();
     private List<String> inherentSystemTags;
     private List<String> nonInherentSystemTags;
     private String sshUsername = "root";
@@ -82,9 +82,6 @@ public class ApplianceVmSpec implements Serializable {
     }
 
     public List<ApplianceVmFirewallRuleInventory> getFirewallRules() {
-        if (firewallRules == null) {
-            firewallRules = new ArrayList<ApplianceVmFirewallRuleInventory>();
-        }
         return firewallRules;
     }
 

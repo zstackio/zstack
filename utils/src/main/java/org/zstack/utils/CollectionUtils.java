@@ -27,6 +27,17 @@ public class CollectionUtils {
         return ret;
     }
 
+    public static <T> List<T> getDuplicateElementsOfList(List<T> list) {
+        List<T> result = new ArrayList<T>();
+        Set<T> set = new HashSet<T>();
+        for (T e : list) {
+            if (!set.add(e)) {
+                result.add(e);
+            }
+        }
+        return result;
+    }
+
     public static <K, V> List<K> transformToList(Collection<V> from, Function<K, V> func) {
         List<K> ret = new ArrayList<K>();
         for (V v : from) {

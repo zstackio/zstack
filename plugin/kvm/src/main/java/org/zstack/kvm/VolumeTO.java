@@ -19,6 +19,7 @@ public class VolumeTO {
     public static final String SCSILUN = "scsilun";
     public static final String BLOCK = "block";
     public static final String MINISTORAGE = "mini";
+    public static final String QUORUM = "quorum";
     public static List<KVMConvertVolumeExtensionPoint> exts;
 
     private String installPath;
@@ -93,7 +94,7 @@ public class VolumeTO {
         }
         for (KVMConvertVolumeExtensionPoint ext : exts) {
             to = ext.convertVolumeIfNeed(host, vol, to);
-        }
+        }   
         return  to;
     }
 

@@ -1,6 +1,7 @@
 package org.zstack.network.service.eip;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -20,6 +21,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.Quota.QuotaOperator;
 import org.zstack.header.identity.Quota.QuotaPair;
+import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedQuotaCheckMessage;
@@ -52,7 +54,8 @@ import static org.zstack.utils.CollectionDSL.list;
  */
 public class EipManagerImpl extends AbstractService implements EipManager, VipReleaseExtensionPoint,
         AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VmPreAttachL3NetworkExtensionPoint,
-        VmIpChangedExtensionPoint, ResourceOwnerAfterChangeExtensionPoint, VipGetServiceReferencePoint {
+        VmIpChangedExtensionPoint, ResourceOwnerAfterChangeExtensionPoint, VipGetServiceReferencePoint,
+        ManagementNodeReadyExtensionPoint {
     private static final CLogger logger = Utils.getLogger(EipManagerImpl.class);
 
     @Autowired
@@ -69,6 +72,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     private TagManager tagMgr;
 
     private Map<String, EipBackend> backends = new HashMap<>();
+
+    private static List<String> eipAttachableVmTypes = new ArrayList<>();
 
     @Override
     @MessageSafe
@@ -239,11 +244,12 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         vmInPublicL3s = vmInPublicL3s.stream().distinct().filter(Objects::nonNull).collect(Collectors.toList());
 
         List<String> attachableVmStates = EipConstant.attachableVmStates.stream().map(VmInstanceState::toString).collect(Collectors.toList());
+
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("select distinct nic.uuid from VmNicVO nic, VmInstanceVO vm, UsedIpVO ip where nic.uuid = ip.vmNicUuid")
                 .append(" and ip.l3NetworkUuid in ").append(sqlStringJoin(l3Uuids))
                 .append(" and nic.vmInstanceUuid = vm.uuid and ip.ipVersion = ").append(l3Vo.getIpVersion())
-                .append(" and vm.type = '").append(VmInstanceConstant.USER_VM_TYPE).append("'")
+                .append(" and vm.type in ('").append(StringUtils.join(eipAttachableVmTypes, "','")).append("')")
                 .append(" and vm.state in ").append(sqlStringJoin(attachableVmStates))
                 .append(" and nic.ip is not null and vm.clusterUuid is not null");
         if (!vmInPublicL3s.isEmpty()) {
@@ -255,8 +261,11 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         if (!StringUtils.isEmpty(msg.getVmUuid())) {
             sqlBuilder.append(" and vm.uuid like '%").append(msg.getVmUuid()).append("%\'");
         }
+
         sqlBuilder.append(" order by nic.vmInstanceUuid")
                 .append(" limit ").append(msg.getLimit()).append(" offset ").append(msg.getStart());
+
+        logger.debug("sql is " + sqlBuilder.toString());
 
         Query q = dbf.getEntityManager().createNativeQuery(sqlBuilder.toString());
         List<String> nicUuids = q.getResultList();
@@ -474,6 +483,172 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         return null;
     }
 
+    private String formatDeduplicateEipFlowName(String vmInstanceUuid, String hostUuid) {
+        return String.format("%s-%s", vmInstanceUuid, hostUuid);
+    }
+
+    private List<Flow> getAdditionalApplyEipForAttachFlow(EipStruct eipStruct, String providerType) {
+        List<Flow> flows = new ArrayList<>();
+        List<String> deduplicateFlowsName = new ArrayList<>();
+        String flowName = formatDeduplicateEipFlowName(eipStruct.getNic().getVmInstanceUuid(), eipStruct.getHostUuid());
+        logger.debug("flow name " + flowName);
+        deduplicateFlowsName.add(flowName);
+        for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
+            EipStruct as = ext.getAdditionalEipStruct(eipStruct);
+
+            if (as == null) {
+                continue;
+            }
+
+            flowName = formatDeduplicateEipFlowName(as.getNic().getVmInstanceUuid(), as.getHostUuid());
+            logger.debug("flow name " + flowName);
+            if (deduplicateFlowsName.contains(flowName)) {
+                continue;
+            }
+
+            deduplicateFlowsName.add(flowName);
+
+            String temp = flowName;
+
+            flows.add(new Flow() {
+                String __name__ = String.format("additional-create-eip-on-backend-for-attach-eip-%s", temp);
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    EipBackend bkd = getEipBackend(providerType);
+                    bkd.applyEip(as, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+
+                @Override
+                public void rollback(FlowRollback trigger, Map data) {
+                    EipBackend bkd = getEipBackend(providerType);
+                    bkd.revokeEip(as, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.rollback();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            logger.warn(String.format("failed to detach eip[uuid:%s, ip:%s, vm nic uuid:%s] on service provider[%s], service provider will garbage collect. %s",
+                                    as.getEip().getUuid(), as.getVip().getIp(), as.getNic().getUuid(), providerType, errorCode));
+                            trigger.rollback();
+                        }
+                    });
+                }
+            });
+        }
+
+        return flows;
+    }
+
+    private List<Flow> getAdditionalApplyEipFlow(EipStruct eipStruct, NetworkServiceProviderType providerType) {
+        List<Flow> flows = new ArrayList<>();
+        List<String> deduplicateFlowsName = new ArrayList<>();
+        String flowName = formatDeduplicateEipFlowName(eipStruct.getNic().getVmInstanceUuid(), eipStruct.getHostUuid());
+        logger.debug("flow name " + flowName);
+        deduplicateFlowsName.add(flowName);
+        for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
+            EipStruct as = ext.getAdditionalEipStruct(eipStruct);
+
+            if (as == null) {
+                continue;
+            }
+
+            flowName = formatDeduplicateEipFlowName(as.getNic().getVmInstanceUuid(), as.getHostUuid());
+            logger.debug("flow name " + flowName);
+            if (deduplicateFlowsName.contains(flowName)) {
+                continue;
+            }
+
+            deduplicateFlowsName.add(flowName);
+
+
+            String temp = flowName;
+            flows.add(new NoRollbackFlow() {
+                String __name__ = String.format("additional-apply-eip-on-backend-%s", temp);
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    EipBackend bkd = getEipBackend(providerType.toString());
+                    bkd.applyEip(as, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            });
+        }
+
+        return flows;
+    }
+
+    private List<Flow> getAdditionalDeleteEipFlow(EipStruct eipStruct, NetworkServiceProviderType providerType) {
+        List<Flow> flows = new ArrayList<>();
+        List<String> deduplicateFlowsName = new ArrayList<>();
+        String flowName = formatDeduplicateEipFlowName(eipStruct.getNic().getVmInstanceUuid(), eipStruct.getHostUuid());
+        logger.debug("flow name " + flowName);
+        deduplicateFlowsName.add(flowName);
+        for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
+            EipStruct as = ext.getAdditionalEipStruct(eipStruct);
+
+            if (as == null) {
+                continue;
+            }
+
+            flowName = formatDeduplicateEipFlowName(as.getNic().getVmInstanceUuid(), as.getHostUuid());
+            logger.debug("flow name " + flowName);
+            if (deduplicateFlowsName.contains(flowName)) {
+                continue;
+            }
+
+            deduplicateFlowsName.add(flowName);
+
+            String temp = flowName;
+
+            flows.add(new NoRollbackFlow() {
+                String __name__ = String.format("additional-delete-eip-from-backend-%s", temp);
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    EipBackend bkd = getEipBackend(providerType.toString());
+                    bkd.revokeEip(as, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            //TODO: add GC instead of failing the API
+                            logger.warn(String.format("failed to detach eip[uuid:%s, ip:%s, vm nic uuid:%s] on service provider[%s], service provider will garbage collect. %s",
+                                    as.getEip().getUuid(), as.getVip().getIp(), as.getNic().getUuid(), providerType, errorCode));
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            });
+        }
+
+        return flows;
+    }
+
     private void deleteEip(String eipUuid, Completion completion) {
         final EipVO vo = dbf.findByUuid(eipUuid, EipVO.class);
         VipVO vipvo = dbf.findByUuid(vo.getVipUuid(), VipVO.class);
@@ -517,6 +692,19 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
+                    String __name__ = "pre-delete-eip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
+                            ext.preAttachEip(struct);
+                        }
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
                     String __name__ = "delete-eip-from-backend";
 
                     @Override
@@ -538,6 +726,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                         });
                     }
                 });
+
+                for (Flow f : getAdditionalDeleteEipFlow(struct, providerType)) {
+                    flow(f);
+                }
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "release-vip";
@@ -730,6 +922,19 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "pre-create-eip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
+                            ext.preAttachEip(struct);
+                        }
+
+                        trigger.next();
+                    }
+                });
+
                 flow(new Flow() {
                     String __name__ = "prepare-vip";
 
@@ -805,6 +1010,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     }
                 });
 
+                for (Flow f : getAdditionalApplyEipFlow(struct, providerType)) {
+                    flow(f);
+                }
+
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
@@ -878,6 +1087,19 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
+                    String __name__ = "pre-delete-eip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
+                            ext.preAttachEip(struct);
+                        }
+
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
                     String __name__ = "delete-eip-from-backend";
 
                     @Override
@@ -899,6 +1121,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                         });
                     }
                 });
+
+                for (Flow f : getAdditionalDeleteEipFlow(struct, NetworkServiceProviderType.valueOf(providerType))) {
+                    flow(f);
+                }
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "remove-l3network-from-vip";
@@ -976,6 +1202,19 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "pre-create-eip";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (AdditionalEipOperationExtensionPoint ext : pluginRgty.getExtensionList(AdditionalEipOperationExtensionPoint.class)) {
+                            ext.preAttachEip(struct);
+                        }
+
+                        trigger.next();
+                    }
+                });
+
                 flow(new Flow() {
                     boolean s = false;
 
@@ -1068,6 +1307,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                         });
                     }
                 });
+
+                for (Flow f : getAdditionalApplyEipForAttachFlow(struct, providerType)) {
+                    flow(f);
+                }
 
                 done(new FlowDoneHandler(completion) {
                     @Override
@@ -1404,5 +1647,14 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             return new VipGetServiceReferencePoint.ServiceReference(EipConstant.EIP_NETWORK_SERVICE_TYPE, 0, new ArrayList<>());
         }
         return new VipGetServiceReferencePoint.ServiceReference(EipConstant.EIP_NETWORK_SERVICE_TYPE, uuids.size(), uuids);
+    }
+
+    @Override
+    public void managementNodeReady() {
+        eipAttachableVmTypes.add(VmInstanceConstant.USER_VM_TYPE);
+
+        for (GetEipAttachableVmNicsExtensionPoint ext : pluginRgty.getExtensionList(GetEipAttachableVmNicsExtensionPoint.class)) {
+            eipAttachableVmTypes.add(ext.getAdditionalVmState());
+        }
     }
 }

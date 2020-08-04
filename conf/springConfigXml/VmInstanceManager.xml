@@ -105,6 +105,7 @@
             <list>
                 <value>org.zstack.compute.vm.VmExpungeRootVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeMemoryVolumeFlow</value>
+                <value>org.zstack.compute.vm.VmExpungeCacheVolumeFlow</value>
             </list>
         </property>
         <property name="pauseVmWorkFlowElements">
@@ -162,6 +163,12 @@
     </bean>
 
     <bean id="VmInstanceDeletionPolicyManager" class="org.zstack.compute.vm.VmInstanceDeletionPolicyManagerImpl" />
+
+    <bean id="VmTracerHelper" class="org.zstack.compute.vm.VmTracerHelperImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+        </zstack:plugin>
+    </bean>
 
     <util:list id="SupportNicDriverTypes">
         <value>virtio</value>

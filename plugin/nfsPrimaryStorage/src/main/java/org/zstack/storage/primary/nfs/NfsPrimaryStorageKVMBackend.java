@@ -952,6 +952,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             cmd.setInstallUrl(NfsPrimaryStorageKvmHelper.makeRootVolumeInstallUrl(pinv, volume));
         } else if (volume.getType().equals(VolumeType.Data.toString())) {
             cmd.setInstallUrl(NfsPrimaryStorageKvmHelper.makeDataVolumeInstallUrl(pinv, volume.getUuid()));
+        } else if (volume.getType().equals(VolumeType.Cache.toString())) {
+            cmd.setInstallUrl(NfsPrimaryStorageKvmHelper.makeDataVolumeInstallUrl(pinv, volume.getUuid()));
         } else {
             throw new CloudRuntimeException(String.format("unknown volume type %s", volume.getType()));
         }

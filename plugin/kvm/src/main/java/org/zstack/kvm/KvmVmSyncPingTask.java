@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.DeleteVmGC;
 import org.zstack.compute.vm.VmTracer;
 import org.zstack.core.cloudbus.*;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -52,6 +53,8 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     private ThreadFacade thdf;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     // A map from apiId to VM instance uuid
     private ConcurrentHashMap<String, String> vmApis = new ConcurrentHashMap<>();
@@ -205,6 +208,10 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
                             states.put(e.getKey(), state);
                         }
 
+                    }
+
+                    for (KvmVmSyncExtensionPoint ext : pluginRgty.getExtensionList(KvmVmSyncExtensionPoint.class)) {
+                        ext.afterVmSync(host, states, vmsToSkipSetHostSide);
                     }
 
                     checkVmInShutdown(ret.getVmInShutdowns(), states);

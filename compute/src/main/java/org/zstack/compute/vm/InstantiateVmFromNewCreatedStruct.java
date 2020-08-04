@@ -2,6 +2,7 @@ package org.zstack.compute.vm;
 
 import org.zstack.header.vm.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -17,6 +18,8 @@ public class InstantiateVmFromNewCreatedStruct {
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
     private String requiredHostUuid;
+    private List<String> softAvoidHostUuids;
+    private List<String> avoidHostUuids;
 
     public List<String> getRootVolumeSystemTags() {
         return rootVolumeSystemTags;
@@ -81,6 +84,8 @@ public class InstantiateVmFromNewCreatedStruct {
         struct.setRootVolumeSystemTags(msg.getRootVolumeSystemTags());
         struct.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
         struct.setRequiredHostUuid(msg.getHostUuid());
+        struct.setSoftAvoidHostUuids(msg.getSoftAvoidHostUuids());
+        struct.setAvoidHostUuids(msg.getAvoidHostUuids());
         return struct;
     }
 
@@ -121,5 +126,21 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setRequiredHostUuid(String requiredHostUuid) {
         this.requiredHostUuid = requiredHostUuid;
+    }
+
+    public List<String> getSoftAvoidHostUuids() {
+        return softAvoidHostUuids;
+    }
+
+    public void setSoftAvoidHostUuids(List<String> softAvoidHostUuids) {
+        this.softAvoidHostUuids = softAvoidHostUuids;
+    }
+
+    public List<String> getAvoidHostUuids() {
+        return avoidHostUuids;
+    }
+
+    public void setAvoidHostUuids(List<String> avoidHostUuids) {
+        this.avoidHostUuids = avoidHostUuids;
     }
 }

@@ -55,6 +55,10 @@ public interface KVMConstant {
     String KVM_GET_VM_FIRST_BOOT_DEVICE_PATH = "/vm/getfirstbootdevice";
     String KVM_SCAN_VM_PORT_STATUS = "/host/vm/scanport";
     String GET_DEV_CAPACITY = "/host/dev/capacity";
+    String KVM_CONFIG_PRIMARY_VM_PATH = "/primary/vm/config";
+    String KVM_CONFIG_SECONDARY_VM_PATH = "/secondary/vm/config";
+    String KVM_START_COLO_SYNC_PATH = "/start/colo/sync";
+    String KVM_REGISTER_PRIMARY_VM_HEARTBEAT = "/register/primary/vm/heartbeat";
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";

@@ -61,7 +61,7 @@ public class ApplianceVmSetFirewallFlow extends NoRollbackFlow {
     public void run(final FlowTrigger trigger, Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         List<ApplianceVmFirewallRuleInventory> rules = (List<ApplianceVmFirewallRuleInventory>) data.get(ApplianceVmConstant.Params.applianceVmFirewallRules.toString());
-        if (rules.isEmpty()) {
+        if (rules == null || rules.isEmpty()) {
             trigger.next();
             return;
         }

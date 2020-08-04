@@ -63,6 +63,8 @@ public class NfsPrimaryStorageKvmHelper {
             volPath = makeRootVolumeInstallUrl(pinv, vol);
         } else if (VolumeType.Memory.toString().equals(vol.getType())) {
             volPath = makeMemoryVolumeInstallUrl(pinv, vol);
+        } else if (VolumeType.Cache.toString().equals(vol.getType())) {
+            volPath = makeDataVolumeInstallUrl(pinv, vol.getUuid());
         }
 
         DebugUtils.Assert(!StringUtils.isEmpty(volPath), "volPath should not be null");

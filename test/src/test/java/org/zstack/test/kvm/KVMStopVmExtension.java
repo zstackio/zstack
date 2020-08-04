@@ -2,6 +2,7 @@ package org.zstack.test.kvm;
 
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMException;
 import org.zstack.kvm.KVMHostInventory;
 import org.zstack.kvm.KVMStopVmExtensionPoint;
@@ -12,7 +13,7 @@ public class KVMStopVmExtension implements KVMStopVmExtensionPoint {
     boolean failCalled;
 
     @Override
-    public void beforeStopVmOnKvm(KVMHostInventory host, VmInstanceInventory vm) throws KVMException {
+    public void beforeStopVmOnKvm(KVMHostInventory host, VmInstanceInventory vm, KVMAgentCommands.StopVmCmd cmd) throws KVMException {
         beforecalled = true;
     }
 
