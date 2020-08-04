@@ -92,16 +92,26 @@ public class EipApiInterceptor implements ApiMessageInterceptor {
         }
 
         boolean isAddressPool = false;
+        boolean isIpv6 = false;
         if (msg.getVipUuid() != null) {
             VipVO vip = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
             isAddressPool = Q.New(AddressPoolVO.class).eq(AddressPoolVO_.uuid, vip.getIpRangeUuid()).isExists();
+            if (IPv6NetworkUtils.isIpv6Address(vip.getIp())) {
+                isIpv6 = true;
+            }
         } else if (msg.getEipUuid() != null) {
             EipVO eipVO = dbf.findByUuid(msg.getEipUuid(), EipVO.class);
             VipVO vip = dbf.findByUuid(eipVO.getVipUuid(), VipVO.class);
             isAddressPool = Q.New(AddressPoolVO.class).eq(AddressPoolVO_.uuid, vip.getIpRangeUuid()).isExists();
+            if (IPv6NetworkUtils.isIpv6Address(vip.getIp())) {
+                isIpv6 = true;
+            }
         }
         if (isAddressPool) {
             msg.setNetworkServiceProvider("vrouter");
+        } else if (isIpv6) {
+            /* TODO, temp hard code */
+            msg.setNetworkServiceProvider("Flat");
         }
     }
 

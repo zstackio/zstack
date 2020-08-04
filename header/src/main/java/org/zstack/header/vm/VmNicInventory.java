@@ -228,4 +228,8 @@ public class VmNicInventory implements Serializable {
     public boolean isIpv6OnlyNic() {
         return this.usedIps.size() == 1 && this.usedIps.get(0).getIpVersion() == IPv6Constants.IPv6;
     }
+
+    public boolean isIpv4OnlyNic() {
+        return this.usedIps.size() == 1 && this.usedIps.get(0).getIpVersion() == IPv6Constants.IPv4;
+    }
 }

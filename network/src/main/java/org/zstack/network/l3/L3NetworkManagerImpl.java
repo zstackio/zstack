@@ -30,6 +30,7 @@ import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.l3.datatypes.IpCapacityData;
+import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.zone.ZoneVO;
@@ -691,5 +692,23 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         if (!ips.isEmpty()) {
             dbf.updateCollection(ips);
         }
+    }
+
+    @Override
+    public List<VmNicInventory> filterVmNicByIpVersion(List<VmNicInventory> vmNics, int ipVersion) {
+        List<VmNicInventory> ret = new ArrayList<>();
+        for (VmNicInventory nic : vmNics) {
+            if (ipVersion == IPv6Constants.IPv4) {
+                if (!nic.isIpv6OnlyNic()) {
+                    ret.add(nic);
+                }
+            } else if (ipVersion == IPv6Constants.IPv6) {
+                if (!nic.isIpv4OnlyNic()) {
+                    ret.add(nic);
+                }
+            }
+        }
+
+        return ret;
     }
 }
