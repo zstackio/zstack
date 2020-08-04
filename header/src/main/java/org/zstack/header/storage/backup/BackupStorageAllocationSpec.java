@@ -6,6 +6,7 @@ public class BackupStorageAllocationSpec {
     private long size;
     private String requiredBackupStorageUuid;
     private String requiredZoneUuid;
+    private String requiredPrimaryStorageUuid;
     private AllocateBackupStorageMsg allocationMessage;
 
     public long getSize() {
@@ -38,5 +39,13 @@ public class BackupStorageAllocationSpec {
 
     public void setRequiredZoneUuid(String requiredZoneUuid) {
         this.requiredZoneUuid = requiredZoneUuid;
+    }
+
+    public String getRequiredPrimaryStorageUuid() {
+        return requiredPrimaryStorageUuid;
+    }
+
+    public void setRequiredPrimaryStorageUuid(String requiredPrimaryStorageUuid) {
+        this.requiredPrimaryStorageUuid = requiredPrimaryStorageUuid;
     }
 }

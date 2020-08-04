@@ -8,6 +8,7 @@ public class AllocateBackupStorageMsg extends NeedReplyMessage {
     private String backupStorageUuid;
     private String allocatorStrategy;
     private String requiredZoneUuid;
+    private String requiredPrimaryStorageUuid;
     private long size;
 
 
@@ -41,5 +42,13 @@ public class AllocateBackupStorageMsg extends NeedReplyMessage {
 
     public void setSize(long size) {
         this.size = size;
+    }
+
+    public String getRequiredPrimaryStorageUuid() {
+        return requiredPrimaryStorageUuid;
+    }
+
+    public void setRequiredPrimaryStorageUuid(String requiredPrimaryStorageUuid) {
+        this.requiredPrimaryStorageUuid = requiredPrimaryStorageUuid;
     }
 }

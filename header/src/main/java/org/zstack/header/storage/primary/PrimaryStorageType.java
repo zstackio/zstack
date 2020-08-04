@@ -119,6 +119,10 @@ public class PrimaryStorageType {
         });
     }
 
+    public static List<PrimaryStorageType> getAllTypes() {
+        return getExposedTypes();
+    }
+
     public boolean isSupportHeartbeatFile() {
         return supportHeartbeatFile;
     }
@@ -168,6 +172,6 @@ public class PrimaryStorageType {
     }
 
     public List<String> findBackupStorage(String psUuid) {
-        return primaryStorageFindBackupStorage == null ? null : primaryStorageFindBackupStorage.findBackupStorage(psUuid);
+        return primaryStorageFindBackupStorage.findBackupStorage(psUuid);
     }
 }
