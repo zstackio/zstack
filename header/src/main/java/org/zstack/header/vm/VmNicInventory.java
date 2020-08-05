@@ -35,6 +35,7 @@ public class VmNicInventory implements Serializable {
     private String netmask;
     private String gateway;
     private String metaData;
+    @Deprecated
     private Integer ipVersion;
     private String driverType;
     private List<UsedIpInventory> usedIps;
@@ -63,7 +64,6 @@ public class VmNicInventory implements Serializable {
         this.setMetaData(vo.getMetaData());
         this.setNetmask(vo.getNetmask());
         this.setGateway(vo.getGateway());
-        this.setIpVersion(vo.getIpVersion());
         this.setUsedIps(UsedIpInventory.valueOf(vo.getUsedIps()));
         this.setDriverType(vo.getDriverType());
         this.setType(vo.getType());
@@ -193,10 +193,12 @@ public class VmNicInventory implements Serializable {
         this.internalName = internalName;
     }
 
+    @Deprecated
     public Integer getIpVersion() {
         return ipVersion;
     }
 
+    @Deprecated
     public void setIpVersion(Integer ipVersion) {
         this.ipVersion = ipVersion;
     }

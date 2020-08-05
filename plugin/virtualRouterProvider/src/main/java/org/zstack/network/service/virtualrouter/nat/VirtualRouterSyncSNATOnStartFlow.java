@@ -23,6 +23,7 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.ModifyVipAttributesStruct;
 import org.zstack.network.service.vip.Vip;
+import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SNATInfo;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SyncSNATRsp;
@@ -30,6 +31,7 @@ import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -145,16 +147,27 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
     }
 
     Vip getVipWithSnatService(Map data){
-        String vipUuid = (String)data.get(VirtualRouterConstant.Param.PUB_VIP_UUID.toString());
-        if (vipUuid == null){
+        List<VipInventory> vips = (List<VipInventory>)data.get(VirtualRouterConstant.Param.PUB_VIP_UUID.toString());
+        if (vips == null || vips.isEmpty()){
+            return null;
+        }
+
+        /* only ipv4 has snat */
+        VipInventory ipv4Vip = null;
+        for (VipInventory vip : vips) {
+            if (NetworkUtils.isIpv4Address(vip.getIp())) {
+                ipv4Vip = vip;
+            }
+        }
+        if (ipv4Vip == null) {
             return null;
         }
 
         ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
         struct.setUseFor(NetworkServiceType.SNAT.toString());
-        struct.setServiceUuid(vipUuid);
+        struct.setServiceUuid(ipv4Vip.getUuid());
 
-        Vip vip = new Vip(vipUuid);
+        Vip vip = new Vip(ipv4Vip.getUuid());
         VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
         if (!vr.getGuestL3Networks().isEmpty()){
             String l3NetworkUuuid = vr.getGuestL3Networks().get(0);

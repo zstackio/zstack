@@ -1,6 +1,7 @@
 package org.zstack.network.service.vip;
 
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.rest.APINoSee;
@@ -45,7 +46,9 @@ import java.util.stream.Collectors;
         @ExpandedQuery(expandedField = "peerL3Network", inventoryClass = VipPeerL3NetworkRefInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "vipUuid"),
         @ExpandedQuery(expandedField = "NetworkServicesRef", inventoryClass = VipNetworkServicesRefInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "vipUuid")
+                foreignKey = "uuid", expandedInventoryKey = "vipUuid"),
+        @ExpandedQuery(expandedField = "usedIp", inventoryClass = UsedIpInventory.class,
+                foreignKey = "usedIpUuid", expandedInventoryKey = "uuid")
 })
 public class VipInventory implements Serializable {
     /**

@@ -2214,28 +2214,38 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         VmNicInventory publicNic = new VmNicInventory();
 
         for (VmNicInventory vnic : vrInv.getVmNics()) {
-            if (VmNicHelper.getL3Uuids(vnic).contains(vrInv.getDefaultRouteL3NetworkUuid())) {
-                publicNic.setDeviceId(vnic.getDeviceId());
-                publicNic.setGateway(vnic.getGateway());
-                publicNic.setHypervisorType(vnic.getHypervisorType());
-                publicNic.setInternalName(vnic.getInternalName());
-                publicNic.setIp(vnic.getIp());
-                publicNic.setIpVersion(vnic.getIpVersion());
-                publicNic.setL3NetworkUuid(vnic.getL3NetworkUuid());
-                publicNic.setMac(vnic.getMac());
-                publicNic.setMetaData(vnic.getMetaData());
-                publicNic.setNetmask(vnic.getNetmask());
-                publicNic.setUuid(vnic.getUuid());
-                publicNic.setVmInstanceUuid(vnic.getVmInstanceUuid());
+            if (vnic.getL3NetworkUuid().equals(vrInv.getDefaultRouteL3NetworkUuid())) {
+                publicNic = vnic;
             }
         }
 
-        String publicIp = null;
-        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
-            publicIp = ext.getPublicIp(vrInv.getUuid(), vrInv.getDefaultRouteL3NetworkUuid());
+        /* this code is ugly because when mgt network is same to public network,
+        * for ha router, the vip is different from nic ip */
+        UsedIpInventory ip4 = null, ip6 = null;
+        for (UsedIpInventory ip : publicNic.getUsedIps()) {
+            if (ip.getIpVersion() == IPv6Constants.IPv4) {
+                ip4 = ip;
+            } else if (ip.getIpVersion() == IPv6Constants.IPv6) {
+                ip6 = ip;
+            }
         }
-        if (publicIp != null) {
-            publicNic.setIp(publicIp);
+        List<String> publicIps = null;
+        for (VirtualRouterHaGroupExtensionPoint ext : pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class)) {
+            publicIps = ext.getPublicIp(vrInv.getUuid(), vrInv.getDefaultRouteL3NetworkUuid());
+        }
+        if (publicIps != null && !publicIps.isEmpty()) {
+            for (String ip : publicIps) {
+                if (NetworkUtils.isIpv4Address(ip)) {
+                    publicNic.setIp(ip);
+                    if (ip4 != null) {
+                        ip4.setIp(ip);
+                    }
+                } else {
+                    if (ip6 != null) {
+                        ip6.setIp(ip);
+                    }
+                }
+            }
         }
 
         return publicNic;
@@ -2372,7 +2382,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             return;
         }
 
-        Map<String, String> ipMap = new HashMap<>();
+        Map<String, String> haIpMap = new HashMap<>();
         /* for ha router, same ip maybe allocated twice */
         for (VmNicVO nic : vnics) {
             boolean allocated = false;
@@ -2387,17 +2397,16 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 continue;
             }
 
+            String haGroupUuid = haBackend.getVirutalRouterHaUuid(nic.getVmInstanceUuid());
             AllocateIpMsg msg = new AllocateIpMsg();
             msg.setL3NetworkUuid(ipr.getL3NetworkUuid());
             if (VirtualRouterNicMetaData.isGuestNic(nic)) {
                 msg.setRequiredIp(ipr.getGateway());
             }
             msg.setIpVersion(ipr.getIpVersion());
-            if (ipMap.get(ipr.getL3NetworkUuid()) == null) {
-                msg.setDuplicatedIpAllowed(false);
-                ipMap.put(ipr.getL3NetworkUuid(), nic.getUuid());
-            } else {
+            if (haGroupUuid != null && haIpMap.get(haGroupUuid) != null) {
                 msg.setDuplicatedIpAllowed(true);
+                msg.setRequiredIp(haIpMap.get(haGroupUuid));
             }
             bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, ipr.getL3NetworkUuid());
             MessageReply reply = bus.call(msg);
@@ -2406,6 +2415,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             }
 
             AllocateIpReply areply = (AllocateIpReply) reply;
+            if (haGroupUuid != null) {
+                haIpMap.put(haGroupUuid, areply.getIpInventory().getIp());
+            }
             for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
                 ext.afterAddIpAddress(nic.getUuid(), areply.getIpInventory().getUuid());
             }

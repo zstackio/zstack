@@ -197,6 +197,8 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
             } else if (IPv6NetworkUtils.isIpv6Address(msg.getRequiredIp())) {
                 amsg.setIpVersion(IPv6Constants.IPv6);
             }
+        } else if (msg.getIpVersion() != null) {
+            amsg.setIpVersion(msg.getIpVersion());
         } else {
             L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
             if (l3NetworkVO.getIpVersions().contains(IPv6Constants.IPv4)) {
