@@ -2688,7 +2688,6 @@ public class VmInstanceBase extends AbstractVmInstance {
                     " and img.system = :system" +
                     " and bs.uuid = ref.backupStorageUuid" +
                     " and bs.uuid in (:bsUuids)" +
-                    " and bs.type in (:bsTypes)" +
                     " and bs.uuid = bsRef.backupStorageUuid" +
                     " and bsRef.zoneUuid = :zoneUuid";
             TypedQuery<ImageVO> q = dbf.getEntityManager().createQuery(sql, ImageVO.class);
@@ -2700,8 +2699,6 @@ public class VmInstanceBase extends AbstractVmInstance {
             q.setParameter("status", ImageStatus.Ready);
             q.setParameter("system", false);
             q.setParameter("bsUuids", bsUuids);
-            // TODO: move all like it into PsType.finder
-            q.setParameter("bsTypes", hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType()));
             return ImageInventory.valueOf(q.getResultList());
         } else {
             return new ArrayList<>();
@@ -3825,17 +3822,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         PrimaryStorageType type = PrimaryStorageType.valueOf(psvo.getType());
         List<String> bsUuids = type.findBackupStorage(psUuid);
         if (!bsUuids.isEmpty()) {
-            List<String> possibleBsTypes = hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(psvo.getType());
             sql = "select count(bs)" +
                     " from BackupStorageVO bs, ImageBackupStorageRefVO ref" +
                     " where bs.uuid = ref.backupStorageUuid" +
                     " and ref.imageUuid = :imgUuid" +
-                    " and bs.uuid in (:bsUuids)" +
-                    " and bs.type in (:bsTypes)";
+                    " and bs.uuid in (:bsUuids)";
             q = dbf.getEntityManager().createQuery(sql, Long.class);
             q.setParameter("imgUuid", isoUuid);
             q.setParameter("bsUuids", bsUuids);
-            q.setParameter("bsTypes", possibleBsTypes);
             count = q.getSingleResult();
             if (count > 0) {
                 return;

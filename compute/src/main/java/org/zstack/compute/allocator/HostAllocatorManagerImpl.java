@@ -31,10 +31,9 @@ import org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageReply
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.backup.BackupStorageState;
-import org.zstack.header.storage.backup.BackupStorageStatus;
-import org.zstack.header.storage.backup.BackupStorageVO;
+import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.primary.PrimaryStorageFindBackupStorage;
+import org.zstack.header.storage.primary.PrimaryStorageType;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct;
@@ -724,6 +723,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     public boolean start() {
         populateHostAllocatorStrategyFactory();
         populatePrimaryStorageBackupStorageMetrics();
+        installPrimaryStorageTypeDefaultField();
         return true;
     }
 
@@ -740,6 +740,19 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 bsTypes.add(bsType);
             }
         }
+    }
+
+    private void installPrimaryStorageTypeDefaultField() {
+        // TODO: move all like it into storage module.
+        PrimaryStorageType.getAllTypes().forEach(it -> {
+            if (it.getPrimaryStorageFindBackupStorage() == null) {
+                List<String> types = primaryStorageBackupStorageMetrics.get(it.toString());
+                it.setPrimaryStorageFindBackupStorage(primaryStorageUuid -> Q.New(BackupStorageVO.class)
+                        .in(BackupStorageVO_.type, types)
+                        .select(BackupStorageVO_.uuid)
+                        .listValues());
+            }
+        });
     }
 
     @Override

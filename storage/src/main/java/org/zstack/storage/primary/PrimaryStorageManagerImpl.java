@@ -531,7 +531,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         installResourceConfigValidator();
         installGlobalConfigValidator();
         installPrimaryStorageCidrValidator();
-        installPrimaryStorageTypeDefaultField();
         return true;
     }
 
@@ -602,17 +601,6 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
                 startPrimaryStorageAutoDeleteTrashTask(newConfig.value());
-            }
-        });
-    }
-
-    private void installPrimaryStorageTypeDefaultField() {
-        PrimaryStorageFindBackupStorage finder = primaryStorageUuid -> Q.New(BackupStorageVO.class)
-                .select(BackupStorageVO_.uuid).listValues();
-
-        PrimaryStorageType.getAllTypes().forEach(it -> {
-            if (it.getPrimaryStorageFindBackupStorage() == null) {
-                it.setPrimaryStorageFindBackupStorage(finder);
             }
         });
     }
