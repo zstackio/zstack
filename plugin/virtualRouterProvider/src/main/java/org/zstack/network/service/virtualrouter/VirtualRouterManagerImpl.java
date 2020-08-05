@@ -2264,10 +2264,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         VmNicInventory publicNic = getSnatPubicInventory(vrInv);
+        if (publicNic.isIpv6OnlyNic()) {
+            return null;
+        }
 
         final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<>();
         for (VmNicInventory vnic : vrInv.getVmNics()) {
-            if (nwServed.contains(vnic.getL3NetworkUuid())) {
+            if (nwServed.contains(vnic.getL3NetworkUuid()) && !vnic.isIpv6OnlyNic()) {
                 VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
                 info.setPrivateNicIp(vnic.getIp());
                 info.setPrivateNicMac(vnic.getMac());
@@ -2314,7 +2317,15 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
         VirtualRouterCommands.NicInfo newNicInfo  = new VirtualRouterCommands.NicInfo();
         newNicInfo.setMac(newNic.getMac());
-        newNicInfo.setGateway(newNic.getGateway());
+        for (UsedIpVO ip : newNic.getUsedIps()) {
+            if (ip.getIpVersion() == IPv6Constants.IPv4) {
+                newNicInfo.setGateway(ip.getGateway());
+                newNicInfo.setIp(ip.getIp());
+            } else {
+                newNicInfo.setGateway6(ip.getGateway());
+                newNicInfo.setIp6(ip.getIp());
+            }
+        }
 
         VirtualRouterCommands.ChangeDefaultNicCmd cmd = new VirtualRouterCommands.ChangeDefaultNicCmd();
         cmd.setNewNic(newNicInfo);
