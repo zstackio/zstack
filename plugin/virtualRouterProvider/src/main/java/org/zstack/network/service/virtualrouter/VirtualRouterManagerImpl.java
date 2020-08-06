@@ -279,8 +279,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 String pubEndIp;
 
                 L3NetworkVO pubL3Network = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid,msg.getOffering().getPublicNetworkUuid()).find();
-                List<IpRangeInventory> priIpranges = IpRangeHelper.getNormalIpRanges(l3Network);
-                List<IpRangeInventory> pubIpranges = IpRangeHelper.getNormalIpRanges(pubL3Network);
+                /* virtual router only has ipv4 address */
+                List<IpRangeInventory> priIpranges = IpRangeHelper.getNormalIpRanges(l3Network, IPv6Constants.IPv4);
+                List<IpRangeInventory> pubIpranges = IpRangeHelper.getNormalIpRanges(pubL3Network, IPv6Constants.IPv4);
 
 
                 for(IpRangeInventory priIprange : priIpranges){
@@ -369,8 +370,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     ApplianceVmNicSpec nicSpec = new ApplianceVmNicSpec();
                     nicSpec.setL3NetworkUuid(l3Network.getUuid());
                     if ((L3NetworkSystemTags.ROUTER_INTERFACE_IP.hasTag(l3Network.getUuid()) || neededService.contains(NetworkServiceType.SNAT.toString())) && !msg.isNotGatewayForGuestL3Network()) {
-                        DebugUtils.Assert(!IpRangeHelper.getNormalIpRanges(l3Network).isEmpty(), String.format("how can l3Network[uuid:%s] doesn't have ip range", l3Network.getUuid()));
-                        IpRangeInventory ipr = IpRangeHelper.getNormalIpRanges(l3Network).get(0);
+                        DebugUtils.Assert(!IpRangeHelper.getNormalIpRanges(l3Network, IPv6Constants.IPv4).isEmpty(), String.format("how can l3Network[uuid:%s] doesn't have ip range", l3Network.getUuid()));
+                        IpRangeInventory ipr = IpRangeHelper.getNormalIpRanges(l3Network, IPv6Constants.IPv4).get(0);
                         nicSpec.setL3NetworkUuid(l3Network.getUuid());
                         nicSpec.setAcquireOnNetwork(false);
                         nicSpec.setNetmask(ipr.getNetmask());
@@ -692,7 +693,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
                 L3NetworkInventory vipL3 = L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class));
                 IpRangeInventory ipRange = null;
-                for (IpRangeInventory ipr : IpRangeHelper.getNormalIpRanges(vipL3)) {
+                for (IpRangeInventory ipr : IpRangeHelper.getNormalIpRanges(vipL3, IPv6Constants.IPv4)) {
                     if (NetworkUtils.isIpv4InRange(nic.getIp(), ipr.getStartIp(), ipr.getEndIp())) {
                         ipRange = ipr;
                         break;
