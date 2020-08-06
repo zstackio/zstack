@@ -249,11 +249,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         order by {sortBy} {direction};
          */
         /* TODO: shixin, hardcode ipv4 */
-        Map<String, String> dhcpMap = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4);
-        String dhcp = null;
-        if (!dhcpMap.isEmpty()) {
-            dhcp = dhcpMap.entrySet().iterator().next().getKey();
-        }
+        Map<String, String> dhcpMap = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.DUAL_STACK);
+        Set<String> dhcp = dhcpMap.keySet();
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("select uip.ip, vip.uuid as vipUuid, vip.name as vipName, it.uuid as vmUuid, it.name as vmName, it.type, uip.createDate ")
                 .append("from (select uuid, ip, ipInLong, createDate, vmNicUuid from UsedIpVO where l3NetworkUuid = '")
@@ -295,7 +292,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             element.setIp((String) result[0]);
             List<String> resourceTypes = new ArrayList<>();
             element.setResourceTypes(resourceTypes);
-            if (element.getIp().equals(dhcp)) {
+            if (dhcp.contains(element.getIp())) {
                 resourceTypes.add(ResourceType.DHCP);
             }
             if (isAdmin) {
