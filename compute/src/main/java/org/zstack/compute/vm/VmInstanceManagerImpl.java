@@ -371,10 +371,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                 if (!bsUuids.isEmpty()) {
                     // the primary storage has bound backup storage, e.g. ceph
-                    sql = "select bs from BackupStorageVO bs where bs.uuid in (:uuids) and bs.type in (:types)";
+                    sql = "select bs from BackupStorageVO bs where bs.uuid in (:uuids)";
                     TypedQuery<BackupStorageVO> bq = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
                     bq.setParameter("uuids", bsUuids);
-                    bq.setParameter("types", hostAllocatorMgr.getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType()));
                     lst.addAll(bq.getResultList());
                 } else {
                     logger.warn(String.format("the primary storage[uuid:%s, type:%s] needs a bound backup storage," +
