@@ -34,4 +34,6 @@ public interface VmInstanceManager {
     VmInstanceBaseExtensionFactory getVmInstanceBaseExtensionFactory(Message msg);
 
     VmInstanceNicFactory getVmInstanceNicFactory(VmNicType type);
+
+    VmNicQosConfigBackend getVmNicQosConfigBackend(String type);
 }
