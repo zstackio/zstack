@@ -2201,8 +2201,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             return SQL.New("select distinct l3.uuid" +
                     " from  L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider" +
                     " where l3.uuid = ref.l3NetworkUuid and ref.networkServiceProviderUuid = provider.uuid" +
-                    " and provider.type = :providerType" +
+                    " and ref.networkServiceType = :serviceType and provider.type = :providerType" +
                     " and l3.ipVersion in (:ipVersions)")
+                    .param("serviceType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
                     .param("providerType", VYOS_ROUTER_PROVIDER_TYPE)
                     .param("ipVersions", vip.getCandidateIpversion())
                     .list();

@@ -33,6 +33,7 @@ import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
+import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
@@ -40,6 +41,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Query;
@@ -69,6 +71,8 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     private AccountManager acntMgr;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private L3NetworkManager l3Mgr;
 
     private Map<String, EipBackend> backends = new HashMap<>();
 
@@ -290,7 +294,13 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         }
 
         List<VmNicVO> nics = Q.New(VmNicVO.class).in(VmNicVO_.uuid, nicUuids).list();
-        return VmNicInventory.valueOf(nics);
+        List<VmNicInventory> ret;
+        if (IPv6NetworkUtils.isIpv6Address(vip.getIp())) {
+            ret = l3Mgr.filterVmNicByIpVersion(VmNicInventory.valueOf(nics), IPv6Constants.IPv6);
+        } else {
+            ret = l3Mgr.filterVmNicByIpVersion(VmNicInventory.valueOf(nics), IPv6Constants.IPv4);
+        }
+        return ret;
     }
 
     private List<VmNicInventory> filterVmNicsForEipInVirtualRouterExtensionPoint(VipInventory vip, List<VmNicInventory> vmNics) {
@@ -353,6 +363,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         if (nics != null && msg.getNetworkServiceProvider() != null) {
             nics = filterVmNicsOnFlatNetworkForEip(msg.getNetworkServiceProvider(), vipInv, nics);
         }
+
         return nics;
     }
 
