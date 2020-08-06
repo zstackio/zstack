@@ -25,6 +25,7 @@ import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,11 +73,19 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         List<VipInventory> notSystemVip = vips.stream().filter(v -> !v.isSystem()).collect(Collectors.toList());
 
         for (VipInventory vip : systemVip) {
+            /* TODO: not support ipv6 vip */
+            if (!NetworkUtils.isIpv4Address(vip.getIp())) {
+                continue;
+            }
             String mac = getOwnerMac(vr, vip);
             VipTO to = VipTO.valueOf(vip, mac);
             tos.add(to);
         }
         for (VipInventory vip : notSystemVip) {
+            /* TODO: not support ipv6 vip */
+            if (!NetworkUtils.isIpv4Address(vip.getIp())) {
+                continue;
+            }
             String mac = getOwnerMac(vr, vip);
             VipTO to = VipTO.valueOf(vip, mac);
             tos.add(to);
