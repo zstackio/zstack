@@ -404,7 +404,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     .eq(SecurityGroupL3NetworkRefVO_.securityGroupUuid, sgUuid).listValues();
             for (String uuid: l3Uuids) {
                 L3NetworkInventory inv = L3NetworkInventory.valueOf(dbf.findByUuid(uuid, L3NetworkVO.class));
-                List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(inv).stream().filter(ipr -> ipr.getIpVersion() == ipVersion).collect(Collectors.toList());
+                List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(inv, ipVersion);
                 if (!iprs.isEmpty()) {
                     ret.add(iprs.get(0).getGateway());
                 }
