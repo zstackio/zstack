@@ -55,7 +55,9 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         }
         msg.setIpVersion(version);
         msg.setDuplicatedIpAllowed(allowDuplicatedAddress);
-        l3nm.updateIpAllocationMsg(msg, mac);
+        if (version == IPv6Constants.IPv6) {
+            l3nm.updateIpAllocationMsg(msg, mac);
+        }
         bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3NetworkUuid);
         msg.setAllocateStrategy(stratgey);
         MessageReply reply = bus.call(msg);
