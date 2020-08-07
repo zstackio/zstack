@@ -1200,6 +1200,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }).done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {
+                pluginRgty.getExtensionList(CreateVmFromVolumeExtensionPoint.class).forEach(ext ->
+                        ext.afterCreateVmFromVolume(event.getInventory()));
                 bus.publish(event);
             }
         }).error(new FlowErrorHandler(msg) {
