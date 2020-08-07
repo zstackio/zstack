@@ -26,6 +26,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -99,7 +100,8 @@ public class VolumeSnapshotTreeBase {
                 RevertVolumeFromSnapshotGroupMsg.class.getName(),
                 RevertVolumeSnapshotMsg.class.getName(),
                 APIDeleteVolumeSnapshotFromBackupStorageMsg.class.getName(),
-                APIBackupVolumeSnapshotMsg.class.getName()
+                APIBackupVolumeSnapshotMsg.class.getName(),
+                APIShrinkVolumeSnapshotMsg.class.getName()
         );
 
         allowedStatus.addState(VolumeSnapshotStatus.Deleting,
@@ -985,8 +987,14 @@ public class VolumeSnapshotTreeBase {
         bus.publish(evt);
     }
 
-    private void handle(APIShrinkVolumeSnapshotMsg msg) {
-        APIShrinkVolumeSnapshotEvent event = new APIShrinkVolumeSnapshotEvent(msg.getId());
+    private void shrinkSnapshot(APIShrinkVolumeSnapshotMsg msg, final ReturnValueCompletion<ShrinkResult> completion) {
+        refreshVO();
+        final ErrorCode err = isOperationAllowed(msg);
+        if (err != null) {
+            completion.fail(err);
+            return;
+        }
+
         ShrinkVolumeSnapshotOnPrimaryStorageMsg smsg = new ShrinkVolumeSnapshotOnPrimaryStorageMsg();
         smsg.setSnapshotUuid(currentRoot.getUuid());
         smsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
@@ -995,8 +1003,7 @@ public class VolumeSnapshotTreeBase {
             @Override
             public void run(MessageReply rly) {
                 if (!rly.isSuccess()) {
-                    event.setError(rly.getError());
-                    bus.publish(event);
+                    completion.fail(rly.getError());
                     return;
                 }
 
@@ -1009,8 +1016,42 @@ public class VolumeSnapshotTreeBase {
                             new PrimaryStorageCapacityUpdater(currentRoot.getPrimaryStorageUuid());
                     updater.increaseAvailableCapacity(shrinkResult.getDeltaSize());
                 }
-                event.setShrinkResult(shrinkResult);
-                bus.publish(event);
+                completion.success(shrinkResult);
+            }
+        });
+    }
+
+    private void handle(APIShrinkVolumeSnapshotMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncSignature;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                APIShrinkVolumeSnapshotEvent event = new APIShrinkVolumeSnapshotEvent(msg.getId());
+
+                shrinkSnapshot(msg, new ReturnValueCompletion<ShrinkResult>(msg) {
+                    @Override
+                    public void success(ShrinkResult returnValue) {
+                        event.setShrinkResult(returnValue);
+                        bus.publish(event);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        event.setError(errorCode);
+                        bus.publish(event);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("shrink-snapshot-%s-for-volume-%s", currentRoot.getUuid(), currentRoot.getVolumeUuid());
             }
         });
     }
