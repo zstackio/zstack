@@ -27,6 +27,30 @@ public class GetIpAddressCapacityResult {
         return this.usedIpAddressNumber;
     }
 
+    public long ipv4TotalCapacity;
+    public void setIpv4TotalCapacity(long ipv4TotalCapacity) {
+        this.ipv4TotalCapacity = ipv4TotalCapacity;
+    }
+    public long getIpv4TotalCapacity() {
+        return this.ipv4TotalCapacity;
+    }
+
+    public long ipv4AvailableCapacity;
+    public void setIpv4AvailableCapacity(long ipv4AvailableCapacity) {
+        this.ipv4AvailableCapacity = ipv4AvailableCapacity;
+    }
+    public long getIpv4AvailableCapacity() {
+        return this.ipv4AvailableCapacity;
+    }
+
+    public long ipv4UsedIpAddressNumber;
+    public void setIpv4UsedIpAddressNumber(long ipv4UsedIpAddressNumber) {
+        this.ipv4UsedIpAddressNumber = ipv4UsedIpAddressNumber;
+    }
+    public long getIpv4UsedIpAddressNumber() {
+        return this.ipv4UsedIpAddressNumber;
+    }
+
     public long ipv6TotalCapacity;
     public void setIpv6TotalCapacity(long ipv6TotalCapacity) {
         this.ipv6TotalCapacity = ipv6TotalCapacity;
