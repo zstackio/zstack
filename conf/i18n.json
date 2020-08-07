@@ -11509,7 +11509,7 @@
   {
     "raw": "new network CIDR [%s] is different from old network cidr [%s]",
     "en_US": "new network CIDR [{0}] is different from old network cidr [{1}]",
-    "zh_CN": "新的IP地址段[{0}]和旧的IP地址段冲突[{1}]",
+    "zh_CN": "同一L3网络上不能加载多个CIDR。",
     "arguments": [
       "r.getNetworkCidr()",
       "ipr.getNetworkCidr()"
