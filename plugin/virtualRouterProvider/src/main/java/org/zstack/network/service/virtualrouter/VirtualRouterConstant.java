@@ -72,6 +72,7 @@ public interface VirtualRouterConstant {
 		SERVICE_PROVIDER_TYPE,
 		BACKEND,
 		SNAT,
-		IS_HA_ROUTER
+		IS_HA_ROUTER,
+		SKIP_APPLY_TO_VIRTUALROUTER,
     }
 }

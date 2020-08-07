@@ -39,6 +39,12 @@ public class ApplianceVmNicTO {
                 addressMode = ipRangeVO.getAddressMode();
             }
         }
+        /* for virtual router, gateway ip is in the usedIpVO */
+        if (inv.getUsedIps().size() == 0) {
+            ip = inv.getIp();
+            netmask = inv.getNetmask();
+            gateway = inv.getGateway();
+        }
         mac = inv.getMac();
     }
 
