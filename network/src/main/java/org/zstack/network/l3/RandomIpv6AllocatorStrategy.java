@@ -74,7 +74,8 @@ public class RandomIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy {
             exclude = IPv6NetworkUtils.ipv6AddressToBigInteger(excludeIp);
         }
 
-        List<String> ips = Q.New(UsedIpVO.class).select(UsedIpVO_.ip).eq(UsedIpVO_.ipRangeUuid, vo.getUuid()).listValues();
+        String gateway = Q.New(IpRangeVO.class).select(IpRangeVO_.gateway).eq(IpRangeVO_.uuid, vo.getUuid()).findValue();
+        List<String> ips = Q.New(UsedIpVO.class).select(UsedIpVO_.ip).eq(UsedIpVO_.ipRangeUuid, vo.getUuid()).notEq(UsedIpVO_.ip, gateway).listValues();
         ips = ips.stream().distinct().collect(Collectors.toList());
         BigInteger num = start.add(BigInteger.valueOf(ips.size()));
         if (num.compareTo(end) > 0) {
