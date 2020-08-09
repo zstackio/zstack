@@ -581,6 +581,10 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(operr("there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
         }
+
+        if ( !NetworkUtils.isIpAddress(msg.getDns()) ) {
+            throw new ApiMessageInterceptionException(argerr("dns[%s] is not a IP address", msg.getDns()));
+        }
     }
 
     private void validate(APIAddHostRouteToL3NetworkMsg msg) {

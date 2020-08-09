@@ -22746,6 +22746,16 @@
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
+    "raw": "dns[%s] is not a IP address",
+    "en_US": "dns[{0}] is not a IP address",
+    "zh_CN": "dns地址[{0}]不是有效的IP地址",
+    "arguments": [
+      "msg.getDns()"
+    ],
+    "line": 335,
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
     "raw": "dns address [%s] is not added to vpc router [uuid:%s]",
     "en_US": "dns address [{0}] is not added to vpc router [uuid:{1}]",
     "zh_CN": "dns地址[{0}]未添加到vpc路由[uuid:{1}]",
