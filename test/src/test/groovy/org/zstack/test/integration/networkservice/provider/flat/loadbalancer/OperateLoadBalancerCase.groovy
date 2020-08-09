@@ -124,10 +124,10 @@ class OperateLoadBalancerCase extends SubCase {
                         }
 
                         ip {
-                            startIp = "11.168.0.3"
-                            endIp = "11.168.1.200"
+                            startIp = "12.168.0.3"
+                            endIp = "12.168.1.200"
                             netmask = "255.255.0.0"
-                            gateway = "11.168.0.1"
+                            gateway = "12.168.0.1"
                         }
                     }
                 }

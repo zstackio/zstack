@@ -17,4 +17,5 @@ public interface VirtualRouterHaBackend {
     String getVirutalRouterHaName(String vrUuid);
     String getVirutalRouterHaUuid(String vrUuid);
     VirtualRouterHaCallbackInterface getCallback(String type);
+    String getVirutalRouterPeerUuid(String vrUuid);
 }

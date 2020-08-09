@@ -691,6 +691,12 @@ public class VirtualRouter extends ApplianceVmBase {
     private class virtualRouterAfterAttachNicFlow extends NoRollbackFlow {
         @Override
         public void run(FlowTrigger trigger, Map data) {
+            boolean skipOnVirtualRouter = (boolean)data.get(Param.SKIP_APPLY_TO_VIRTUALROUTER.toString());
+            if (skipOnVirtualRouter) {
+                trigger.next();
+                return;
+            }
+
             VmNicInventory nicInventory = (VmNicInventory) data.get(Param.VR_NIC.toString());
             L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, nicInventory.getL3NetworkUuid()).find();
 
@@ -782,6 +788,11 @@ public class VirtualRouter extends ApplianceVmBase {
         @Override
         public void run(FlowTrigger trigger, Map data) {
             VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC.toString());
+            boolean skipOnVirtualRouter = (boolean)data.get(Param.SKIP_APPLY_TO_VIRTUALROUTER.toString());
+            if (skipOnVirtualRouter) {
+                trigger.next();
+                return;
+            }
 
             if (nicInv.isIpv6OnlyNic()) {
                 trigger.next();
@@ -839,6 +850,33 @@ public class VirtualRouter extends ApplianceVmBase {
                 return syncThreadName;
             }
 
+            private boolean skipAttachOnVirtualRouter(VirtualRouterVmVO vrVo) {
+                if (!vrVo.isHaEnabled()) {
+                    if (vrVo.getState() == VmInstanceState.Stopped) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    /* ha router, both vrouter stopped, will skip; or it make 2 router has different nic */
+                    String peerUuid = haBackend.getVirutalRouterPeerUuid(vrVo.getUuid());
+                    if (peerUuid == null) {
+                        if (vrVo.getState() == VmInstanceState.Stopped) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        VirtualRouterVmVO peerVo = dbf.findByUuid(peerUuid, VirtualRouterVmVO.class);
+                        if (vrVo.getState() == VmInstanceState.Stopped || peerVo.getState() == VmInstanceState.Stopped) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            }
+
             @Override
             public void run(final SyncTaskChain schain) {
                 VmNicVO vo = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nicInventory.getUuid()).find();
@@ -857,21 +895,19 @@ public class VirtualRouter extends ApplianceVmBase {
                 logger.debug(String.format("updated metadata of vmnic[uuid: %s]", vo.getUuid()));
 
                 VirtualRouterVmVO vrVo = dbf.findByUuid(self.getUuid(), VirtualRouterVmVO.class);
+                boolean skipOnVRouter = skipAttachOnVirtualRouter(vrVo);
                 Map<String, Object> data = new HashMap();
                 data.put(Param.VR_NIC.toString(), VmNicInventory.valueOf(vo));
                 data.put(Param.SNAT.toString(), Boolean.FALSE);
                 data.put(Param.VR.toString(), VirtualRouterVmInventory.valueOf(vrVo));
+                data.put(Param.SKIP_APPLY_TO_VIRTUALROUTER.toString(), skipOnVRouter);
 
                 FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
                 chain.setName(String.format("apply-services-after-attach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
                 chain.setData(data);
-                if (vrVo.getState() == VmInstanceState.Running && vrVo.getStatus() == ApplianceVmStatus.Connected) {
-                    chain.then(new virtualRouterAfterAttachNicFlow());
-                }
+                chain.then(new virtualRouterAfterAttachNicFlow());
                 chain.then(new VirtualRouterCreatePublicVipFlow());
-                if (vrVo.getState() == VmInstanceState.Running && vrVo.getStatus() == ApplianceVmStatus.Connected) {
-                    chain.then(new virtualRouterApplyServicesAfterAttachNicFlow());
-                }
+                chain.then(new virtualRouterApplyServicesAfterAttachNicFlow());
                 chain.then(haBackend.getAttachL3NetworkFlow());
                 chain.done(new FlowDoneHandler(completion) {
                     @Override

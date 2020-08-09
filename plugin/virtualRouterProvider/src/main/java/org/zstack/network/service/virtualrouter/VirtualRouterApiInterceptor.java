@@ -114,37 +114,35 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
             }
         }
     }
-    private Boolean isNetworkAddressEqual(String networkUuid1, String networkUuid2) {
-        if (networkUuid1.equals(networkUuid2)) {
-            return true;
-        }
-        L3NetworkVO l3vo1 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, networkUuid1).find();
-        L3NetworkVO l3vo2 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, networkUuid2).find();
-        if (!l3vo1.getIpVersion().equals(l3vo2.getIpVersion())) {
-            return false;
-        }
-        List<IpRangeInventory> ipInvs1 = IpRangeHelper.getNormalIpRanges(l3vo1);
-        List<IpRangeInventory> ipInvs2 = IpRangeHelper.getNormalIpRanges(l3vo2);
-        if (ipInvs1.isEmpty() || ipInvs2.isEmpty()) {
+
+    private boolean isIpv4RangeInSameCidr(List<IpRangeInventory> ipr1, List<IpRangeInventory> ipr2) {
+        /* both has no ipv4 */
+        if (ipr1.isEmpty() || ipr2.isEmpty()) {
             return false;
         }
 
-        if (l3vo1.getIpVersion() == IPv6Constants.IPv4) {
-            String netAddr1 = new SubnetUtils(ipInvs1.get(0).getGateway(), ipInvs1.get(0).getNetmask()).getInfo().getNetworkAddress();
-            String netAddr2 = new SubnetUtils(ipInvs2.get(0).getGateway(), ipInvs2.get(0).getNetmask()).getInfo().getNetworkAddress();
-            return netAddr1.equals(netAddr2);
-        } else if (l3vo1.getIpVersion() == IPv6Constants.IPv6) {
-            return IPv6NetworkUtils.isIpv6CidrEqual(ipInvs1.get(0).getNetworkCidr(), ipInvs2.get(0).getNetworkCidr());
-        } else if (l3vo1.getIpVersion() == IPv6Constants.DUAL_STACK) {
-            List<IpRangeInventory> ip4Invs1 = ipInvs1.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
-            List<IpRangeInventory> ip4Invs2 = ipInvs2.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
-            String netAddr1 = new SubnetUtils(ip4Invs1.get(0).getGateway(), ip4Invs1.get(0).getNetmask()).getInfo().getNetworkAddress();
-            String netAddr2 = new SubnetUtils(ip4Invs2.get(0).getGateway(), ip4Invs2.get(0).getNetmask()).getInfo().getNetworkAddress();
-            List<IpRangeInventory> ip6Invs1 = ipInvs1.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
-            List<IpRangeInventory> ip6Invs2 = ipInvs2.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
-            return netAddr1.equals(netAddr2) && IPv6NetworkUtils.isIpv6CidrEqual(ip6Invs1.get(0).getNetworkCidr(), ip6Invs2.get(0).getNetworkCidr());
+        return NetworkUtils.isCidrOverlap(ipr1.get(0).getNetworkCidr(), ipr2.get(0).getNetworkCidr());
+    }
+
+    private boolean isIpv6RangeInSameCidr(List<IpRangeInventory> ipr1, List<IpRangeInventory> ipr2) {
+        if (ipr1.isEmpty() || ipr2.isEmpty()) {
+            return false;
         }
-        return false;
+
+        return IPv6NetworkUtils.isIpv6CidrEqual(ipr1.get(0).getNetworkCidr(), ipr2.get(0).getNetworkCidr());
+    }
+
+    private boolean isNetworkAddressInCidr(String networkUuid1, String networkUuid2) {
+        L3NetworkVO l3vo1 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, networkUuid1).find();
+        L3NetworkVO l3vo2 = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, networkUuid2).find();
+        List<IpRangeInventory> ipInvs1 = IpRangeHelper.getNormalIpRanges(l3vo1);
+        List<IpRangeInventory> ipInvs2 = IpRangeHelper.getNormalIpRanges(l3vo2);
+        List<IpRangeInventory> ip4Invs1 = ipInvs1.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
+        List<IpRangeInventory> ip4Invs2 = ipInvs2.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
+        List<IpRangeInventory> ip6Invs1 = ipInvs1.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
+        List<IpRangeInventory> ip6Invs2 = ipInvs2.stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
+
+        return isIpv4RangeInSameCidr(ip4Invs1, ip4Invs2) || isIpv6RangeInSameCidr(ip6Invs1, ip6Invs2);
     }
     private void validate(APICreateVirtualRouterOfferingMsg msg) {
         if (msg.isDefault() != null) {
@@ -212,7 +210,7 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (!msg.getManagementNetworkUuid().equals(msg.getPublicNetworkUuid())) {
-            if (isNetworkAddressEqual(msg.getManagementNetworkUuid(), msg.getPublicNetworkUuid())) {
+            if (isNetworkAddressInCidr(msg.getManagementNetworkUuid(), msg.getPublicNetworkUuid())) {
      throw new ApiMessageInterceptionException(argerr("the L3 network[uuid: %s] is same network address with [uuid: %s], it cannot be used for virtual router", msg.getManagementNetworkUuid(),msg.getPublicNetworkUuid()));
             }
         }

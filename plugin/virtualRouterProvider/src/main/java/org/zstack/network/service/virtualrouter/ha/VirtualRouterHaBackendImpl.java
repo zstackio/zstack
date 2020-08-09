@@ -150,6 +150,16 @@ public class VirtualRouterHaBackendImpl implements VirtualRouterHaBackend, Compo
     }
 
     @Override
+    public String getVirutalRouterPeerUuid(String vrUuid) {
+        List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
+        if (exps.isEmpty()) {
+            return null;
+        }
+
+        return exps.get(0).getPeerUuid(vrUuid);
+    }
+
+    @Override
     public VirtualRouterHaCallbackInterface getCallback(String type) {
         VirtualRouterHaCallbackStruct struct = haCallBackMap.get(type);
         if (struct == null) {
