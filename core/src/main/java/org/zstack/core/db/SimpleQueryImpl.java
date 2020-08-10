@@ -266,6 +266,9 @@ public class SimpleQueryImpl<T> implements SimpleQuery<T> {
             if (limit != null) {
                 q.setMaxResults(limit);
             }
+            if (start != null) {
+                q.setFirstResult(start);
+            }
             value = (K)q.getSingleResult();
         } catch (NoResultException e) {
         } catch (EmptyResultDataAccessException e) {

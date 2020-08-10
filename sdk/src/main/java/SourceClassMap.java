@@ -541,6 +541,8 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.metricpusher.MetricTemplateInventory", "org.zstack.sdk.zwatch.metricpusher.MetricTemplateInventory");
 			put("org.zstack.zwatch.metricpusher.ReceiverState", "org.zstack.sdk.zwatch.metricpusher.ReceiverState");
 			put("org.zstack.zwatch.ruleengine.ComparisonOperator", "org.zstack.sdk.zwatch.ruleengine.ComparisonOperator");
+			put("org.zstack.zwatch.thirdparty.entity.ThirdpartyOriginalAlertInventory", "org.zstack.sdk.zwatch.thirdparty.entity.ThirdpartyOriginalAlertInventory");
+			put("org.zstack.zwatch.thirdparty.entity.ThirdpartyPlatformInventory", "org.zstack.sdk.zwatch.thirdparty.entity.ThirdpartyPlatformInventory");
         }
     };
 
@@ -1082,6 +1084,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.metricpusher.MetricTemplateInventory", "org.zstack.zwatch.metricpusher.MetricTemplateInventory");
 			put("org.zstack.sdk.zwatch.metricpusher.ReceiverState", "org.zstack.zwatch.metricpusher.ReceiverState");
 			put("org.zstack.sdk.zwatch.ruleengine.ComparisonOperator", "org.zstack.zwatch.ruleengine.ComparisonOperator");
+			put("org.zstack.sdk.zwatch.thirdparty.entity.ThirdpartyOriginalAlertInventory", "org.zstack.zwatch.thirdparty.entity.ThirdpartyOriginalAlertInventory");
+			put("org.zstack.sdk.zwatch.thirdparty.entity.ThirdpartyPlatformInventory", "org.zstack.zwatch.thirdparty.entity.ThirdpartyPlatformInventory");
         }
     };
 }
