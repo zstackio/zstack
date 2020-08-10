@@ -6611,7 +6611,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void handle(final APIDeleteVmCdRomMsg msg) {
+    protected void handle(final APIDeleteVmCdRomMsg msg) {
         APIDeleteVmCdRomEvent event = new APIDeleteVmCdRomEvent(msg.getId());
 
         DeleteVmCdRomMsg deleteVmCdRomMsg = new DeleteVmCdRomMsg();
@@ -6734,7 +6734,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         completion.success(VmCdRomInventory.valueOf(cdRomVO));
     }
 
-    private void handle(final APICreateVmCdRomMsg msg) {
+    protected void handle(final APICreateVmCdRomMsg msg) {
         APICreateVmCdRomEvent event = new APICreateVmCdRomEvent(msg.getId());
 
         CreateVmCdRomMsg cmsg = new CreateVmCdRomMsg();
