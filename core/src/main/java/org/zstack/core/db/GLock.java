@@ -198,13 +198,15 @@ public class GLock {
             PreparedStatement pstmt = null;
             try {
                 pstmt = conn.prepareStatement(String.format("select release_lock('%s')", name));
-                ResultSet rs = pstmt.executeQuery();
-                if (rs == null) {
-                    throw new CloudRuntimeException("Mysql cannot find lock: " + name);
-                } else if (rs.first() && rs.getInt(1) == 0) {
-                    String err = "Unable to release DB lock: " + name + ", lock: " + name + " is not held by this connection, internal error";
-                    throw new CloudRuntimeException(err);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (!rs.next()) {
+                        throw new CloudRuntimeException("Mysql cannot find lock: " + name);
+                    } else if (rs.first() && rs.getInt(1) == 0) {
+                        String err = "Unable to release DB lock: " + name + ", lock: " + name + " is not held by this connection, internal error";
+                        throw new CloudRuntimeException(err);
+                    }
                 }
+
 
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format("[GLock Release DB Lock] thread[%s] released DB lock[%s]", Thread.currentThread().getName(), name));
