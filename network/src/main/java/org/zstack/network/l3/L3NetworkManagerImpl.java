@@ -357,6 +357,9 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             reply.setCapacityData(capacityData);
         }
 
+        reply.setIpv4TotalCapacity(ret.ipv4TotalCapacity);
+        reply.setIpv4UsedIpAddressNumber(ret.ipv4UsedIpAddressNumber);
+        reply.setIpv4AvailableCapacity(ret.ipv4AvailableCapacity);
         reply.setIpv6TotalCapacity(ret.ipv6TotalCapacity);
         reply.setIpv6UsedIpAddressNumber(ret.ipv6UsedIpAddressNumber);
         reply.setIpv6AvailableCapacity(ret.ipv6AvailableCapacity);
