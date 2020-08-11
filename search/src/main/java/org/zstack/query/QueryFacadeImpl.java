@@ -458,19 +458,26 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             if (result.inventories != null) {
                 if (msg.getFilterName() != null) {
                     filter(result.inventories, msg.getFilterName());
+                    List sub;
+                    if (msg.getLimit() != null) {
+                        sub = result.inventories.subList(0, Math.min(msg.getLimit(), result.inventories.size()));
+                    } else {
+                        sub = result.inventories;
+                    }
+
                     if (msg.isCount()) {
-                        reply.setTotal(result.inventories.size());
+                        reply.setTotal(sub.size());
                     } else {
                         if (addUuid) {
-                            result.inventories.forEach(i -> {
+                            sub.forEach(i -> {
                                 removeUuidAfterZQLQuery(i);
                             });
                         }
-                        replySetter.invoke(reply, result.inventories);
+                        replySetter.invoke(reply, sub);
                     }
 
                     if (msg.isReplyWithCount()) {
-                        reply.setTotal(result.inventories.size());
+                        reply.setTotal(sub.size());
                     }
                 } else {
                     replySetter.invoke(reply, result.inventories);
@@ -590,7 +597,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             sb.add(String.format("order by %s %s", msg.getSortBy(), msg.getSortDirection()));
         }
 
-        if (msg.getLimit() != null) {
+        if (msg.getLimit() != null && msg.getFilterName() == null) {
             sb.add(String.format("limit %s", msg.getLimit()));
         }
 
