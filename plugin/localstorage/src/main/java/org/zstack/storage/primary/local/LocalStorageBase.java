@@ -1779,100 +1779,16 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @ExceptionSafe
     protected void reserveCapaciryOnHostIgnoreError(String hostUuid, long size, String psUuid) {
-        reserveCapacityOnHost(hostUuid, size, psUuid, true);
+        new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, self, true);
     }
 
     protected void reserveCapacityOnHost(String hostUuid, long size, String psUuid) {
-        reserveCapacityOnHost(hostUuid, size, psUuid, false);
-    }
-
-    @Transactional
-    protected void reserveCapacityOnHost(String hostUuid, long size, String psUuid, boolean ignoreError) {
-        String sql = "select ref" +
-                " from LocalStorageHostRefVO ref" +
-                " where ref.hostUuid = :huuid" +
-                " and ref.primaryStorageUuid = :psUuid";
-        TypedQuery<LocalStorageHostRefVO> q = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
-        q.setParameter("huuid", hostUuid);
-        q.setParameter("psUuid", psUuid);
-        q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
-        List<LocalStorageHostRefVO> refs = q.getResultList();
-
-        if (refs.isEmpty()) {
-            String errInfo = String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]",
-                    hostUuid, self.getUuid());
-            if (ignoreError) {
-                logger.error(errInfo);
-                return;
-            } else {
-                throw new CloudRuntimeException(errInfo);
-            }
-        }
-
-        LocalStorageHostRefVO ref = refs.get(0);
-
-        if (!ignoreError && !physicalCapacityMgr.checkCapacityByRatio(
-                self.getUuid(),
-                ref.getTotalPhysicalCapacity(),
-                ref.getAvailablePhysicalCapacity())) {
-            throw new OperationFailureException(operr("cannot reserve enough space for primary storage[uuid: %s] on host[uuid: %s], not enough physical capacity", self.getUuid(), hostUuid));
-        }
-
-        LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
-        s.setLocalStorage(getSelfInventory());
-        s.setHostUuid(ref.getHostUuid());
-        s.setSizeBeforeOverProvisioning(size);
-        s.setSize(size);
-
-        for (LocalStorageReserveHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(
-                LocalStorageReserveHostCapacityExtensionPoint.class)) {
-            ext.beforeReserveLocalStorageCapacityOnHost(s);
-        }
-
-        long avail = ref.getAvailableCapacity() - s.getSize();
-        if (avail < 0) {
-            if (ignoreError) {
-                avail = 0;
-            } else {
-                throw new OperationFailureException(operr("host[uuid: %s] of local primary storage[uuid: %s] doesn't have enough capacity" +
-                        "[current: %s bytes, needed: %s]", hostUuid, self.getUuid(), ref.getAvailableCapacity(), size));
-            }
-
-        }
-
-        ref.setAvailableCapacity(avail);
-        dbf.getEntityManager().merge(ref);
+        new LocalStorageUtils().reserveCapacityOnHost(hostUuid, size, psUuid, self, false);
     }
 
     @Transactional
     protected void returnStorageCapacityToHost(String hostUuid, long size) {
-        String sql = "select ref from LocalStorageHostRefVO ref where ref.hostUuid = :huuid and ref.primaryStorageUuid = :primaryStorageUuid";
-        TypedQuery<LocalStorageHostRefVO> q = dbf.getEntityManager().createQuery(sql, LocalStorageHostRefVO.class);
-        q.setParameter("huuid", hostUuid);
-        q.setParameter("primaryStorageUuid", self.getUuid());
-        q.setLockMode(LockModeType.PESSIMISTIC_WRITE);
-        List<LocalStorageHostRefVO> refs = q.getResultList();
-
-        if (refs.isEmpty()) {
-            throw new CloudRuntimeException(String.format("cannot find host[uuid: %s] of local primary storage[uuid: %s]",
-                    hostUuid, self.getUuid()));
-        }
-
-        LocalStorageHostRefVO ref = refs.get(0);
-
-        LocalStorageHostCapacityStruct s = new LocalStorageHostCapacityStruct();
-        s.setSizeBeforeOverProvisioning(size);
-        s.setHostUuid(hostUuid);
-        s.setLocalStorage(getSelfInventory());
-        s.setSize(size);
-
-        for (LocalStorageReturnHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(
-                LocalStorageReturnHostCapacityExtensionPoint.class)) {
-            ext.beforeReturnLocalStorageCapacityOnHost(s);
-        }
-
-        ref.setAvailableCapacity(ref.getAvailableCapacity() + s.getSize());
-        dbf.getEntityManager().merge(ref);
+        new LocalStorageUtils().returnStorageCapacityToHost(hostUuid, size, self);
     }
 
     @Transactional
