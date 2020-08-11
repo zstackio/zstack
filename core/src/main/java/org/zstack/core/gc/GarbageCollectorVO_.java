@@ -11,7 +11,7 @@ import java.sql.Timestamp;
  */
 @StaticMetamodel(GarbageCollectorVO.class)
 public class GarbageCollectorVO_ extends ResourceVO_ {
-    public static volatile SingularAttribute<GarbageCollectorVO, Long> name;
+    public static volatile SingularAttribute<GarbageCollectorVO, String> name;
     public static volatile SingularAttribute<GarbageCollectorVO, String> runnerClass;
     public static volatile SingularAttribute<GarbageCollectorVO, String> context;
     public static volatile SingularAttribute<GarbageCollectorVO, GCStatus> status;
