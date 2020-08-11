@@ -620,8 +620,8 @@
     "code": "1003",
     "method": "regex",
     "regex": ".*unable to attach a L3 network to the vm\\[uuid:.*], Unable to create tap device vnic.*: Device or resource busy.*",
-    "message_cn": "无法将L3网络连接到vm, 因为无法创建tap设备:设备或资源忙",
-    "message_en": "unable to attach a L3 network to the vm, Unable to create tap device: Device or resource busy.*"
+    "message_cn": "无法将L3网络连接到vm, 因为无法创建tap设备:设备或资源忙。请重试一遍或者手动删除网络接口[%6$s]。",
+    "message_en": "unable to attach a L3 network to the vm, Unable to create tap device: Device or resource busy.Please try again or delete device[%6$s] by yourself"
   },
   {
     "category": "L3",

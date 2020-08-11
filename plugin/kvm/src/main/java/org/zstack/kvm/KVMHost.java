@@ -1620,9 +1620,15 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(AttachNicResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s]," +
-                                    "because %s", msg.getNicInventory().getUuid(), msg.getNicInventory().getVmInstanceUuid(),
-                            self.getUuid(), self.getManagementIp(), ret.getError()));
+                    if (ret.getError().contains("Device or resource busy")) {
+                        reply.setError(operr("failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s]," +
+                                        "because %s, please try again or delete device[%s] by yourself", msg.getNicInventory().getUuid(), msg.getNicInventory().getVmInstanceUuid(),
+                                self.getUuid(), self.getManagementIp(), ret.getError(), msg.getNicInventory().getInternalName()));
+                    } else {
+                        reply.setError(operr("failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s]," +
+                                        "because %s", msg.getNicInventory().getUuid(), msg.getNicInventory().getVmInstanceUuid(),
+                                self.getUuid(), self.getManagementIp(), ret.getError()));
+                    }
                 }
 
                 bus.reply(msg, reply);
