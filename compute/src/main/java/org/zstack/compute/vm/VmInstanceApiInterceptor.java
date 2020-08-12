@@ -26,6 +26,9 @@ import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.cdrom.*;
+import org.zstack.header.volume.VolumeState;
+import org.zstack.header.volume.VolumeStatus;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.zone.ZoneState;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
@@ -78,6 +81,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APIDestroyVmInstanceMsg) msg);
         } else if (msg instanceof APICreateVmInstanceMsg) {
             validate((APICreateVmInstanceMsg) msg);
+        } else if (msg instanceof APICreateVmInstanceFromVolumeMsg) {
+            validate((APICreateVmInstanceFromVolumeMsg) msg);
         } else if (msg instanceof APIGetVmAttachableDataVolumeMsg) {
             validate((APIGetVmAttachableDataVolumeMsg) msg);
         } else if (msg instanceof APIDetachL3NetworkFromVmMsg) {
@@ -707,7 +712,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private void validateInstanceSettings(APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {
+    private void validateInstanceSettings(NewVmInstanceMessage2 msg) {
         final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
 
         if (instanceOfferingUuid == null) {
@@ -736,21 +741,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         msg.setMemorySize(ivo.getMemorySize());
     }
 
-    private void validate(APICreateVmInstanceMsg msg) throws ApiMessageInterceptionException {
-        validateInstanceSettings(msg);
-
-        Set<String> macs = new HashSet<>();
-        if (null != msg.getSystemTags()) {
-            Optional<String> duplicateMac = msg.getSystemTags().stream()
-                    .filter(t -> VmSystemTags.CUSTOM_MAC.isMatch(t))
-                    .map(t -> t.split("::")[2].toLowerCase())
-                    .filter(t -> !macs.add(t))
-                    .findAny();
-            if (duplicateMac.isPresent()){
-                throw new ApiMessageInterceptionException(operr(
-                        "Not allowed same mac [%s]", duplicateMac.get()));
-            }
-        }
+    private void validate(APICreateVmInstanceMsg msg) {
+        validate((NewVmInstanceMessage2) msg);
 
         SimpleQuery<ImageVO> imgq = dbf.createQuery(ImageVO.class);
         imgq.select(ImageVO_.state, ImageVO_.system, ImageVO_.mediaType, ImageVO_.status);
@@ -771,13 +763,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is of mediaType: %s, only RootVolumeTemplate and ISO can be used to create vm", msg.getImageUuid(), imgFormat));
         }
 
-        validateRootDiskOffering(imgFormat, msg);
-
         boolean isSystemImage = imgt.get(1, Boolean.class);
         if (isSystemImage && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
             throw new ApiMessageInterceptionException(argerr("image[uuid:%s] is system image, can't be used to create user vm", msg.getImageUuid()));
         }
 
+        validateRootDiskOffering(imgFormat, msg);
 
         List<String> allDiskOfferingUuids = new ArrayList<String>();
         if (msg.getRootDiskOfferingUuid() != null) {
@@ -795,6 +786,40 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             List<String> diskUuids = dq.listValue();
             if (!diskUuids.isEmpty()) {
                 throw new ApiMessageInterceptionException(operr("disk offerings[uuids:%s] are Disabled, can not create vm from it", diskUuids));
+            }
+        }
+    }
+
+    private void validate(APICreateVmInstanceFromVolumeMsg msg) {
+        validate((NewVmInstanceMessage2) msg);
+
+        VolumeVO volume = dbf.findByUuid(msg.getVolumeUuid(), VolumeVO.class);
+        if (volume.isShareable()) {
+            throw new ApiMessageInterceptionException(operr("cannot create vm instance from a shareable volume."));
+        }
+
+        if (volume.isAttached()) {
+            throw new ApiMessageInterceptionException(operr("could not create vm instance from a attached volume."));
+        }
+
+        if (volume.getStatus() != VolumeStatus.Ready || volume.getState() != VolumeState.Enabled) {
+            throw new ApiMessageInterceptionException(operr("volume[uuid:%s] could not satisfy conditions[state:Enabled status:Ready]", msg.getVolumeUuid()));
+        }
+    }
+
+    private void validate(NewVmInstanceMessage2 msg) {
+        validateInstanceSettings(msg);
+
+        Set<String> macs = new HashSet<>();
+        if (null != msg.getSystemTags()) {
+            Optional<String> duplicateMac = msg.getSystemTags().stream()
+                    .filter(t -> VmSystemTags.CUSTOM_MAC.isMatch(t))
+                    .map(t -> t.split("::")[2].toLowerCase())
+                    .filter(t -> !macs.add(t))
+                    .findAny();
+            if (duplicateMac.isPresent()){
+                throw new ApiMessageInterceptionException(operr(
+                        "Not allowed same mac [%s]", duplicateMac.get()));
             }
         }
 
@@ -881,7 +906,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         validateCdRomsTag(msg);
     }
 
-    private void validateCdRomsTag(APICreateVmInstanceMsg msg) {
+    private void validateCdRomsTag(NewVmInstanceMessage msg) {
         if (msg.getSystemTags() == null || msg.getSystemTags().isEmpty()) {
             return;
         }

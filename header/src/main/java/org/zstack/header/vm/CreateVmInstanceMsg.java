@@ -15,7 +15,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private int cpuNum;
     private long cpuSpeed;
     private long memorySize;
-    private List<VmNicSpec> l3NetworkUuids;
+    private List<VmNicSpec> l3NetworkSpecs;
     private String type;
     private String rootDiskOfferingUuid;
     private long rootDiskSize;
@@ -148,12 +148,12 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     }
 
     @Override
-    public List<VmNicSpec> getL3NetworkUuids() {
-        return l3NetworkUuids;
+    public List<VmNicSpec> getL3NetworkSpecs() {
+        return l3NetworkSpecs;
     }
 
-    public void setL3NetworkUuids(List<VmNicSpec> l3NetworkUuids) {
-        this.l3NetworkUuids = l3NetworkUuids;
+    public void setL3NetworkSpecs(List<VmNicSpec> l3NetworkSpecs) {
+        this.l3NetworkSpecs = l3NetworkSpecs;
     }
 
     public String getImageUuid() {
