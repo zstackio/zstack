@@ -2695,6 +2695,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(ShrinkVolumeSnapshotOnPrimaryStorageMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
+    @Override
     final protected void syncPhysicalCapacity(final ReturnValueCompletion<PhysicalCapacityUsage> completion) {
         final List<FactoryCluster> fs = getAllFactoriesForAttachedClusters();
         class Sync {

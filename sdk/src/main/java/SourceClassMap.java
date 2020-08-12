@@ -251,6 +251,7 @@ public class SourceClassMap {
 			put("org.zstack.header.storage.primary.PrimaryStorageHostStatus", "org.zstack.sdk.PrimaryStorageHostStatus");
 			put("org.zstack.header.storage.primary.PrimaryStorageInventory", "org.zstack.sdk.PrimaryStorageInventory");
 			put("org.zstack.header.storage.snapshot.BatchDeleteVolumeSnapshotStruct", "org.zstack.sdk.BatchDeleteVolumeSnapshotStruct");
+			put("org.zstack.header.storage.snapshot.ShrinkResult", "org.zstack.sdk.ShrinkResult");
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotBackupStorageRefInventory", "org.zstack.sdk.VolumeSnapshotBackupStorageRefInventory");
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotInventory", "org.zstack.sdk.VolumeSnapshotInventory");
 			put("org.zstack.header.storage.snapshot.VolumeSnapshotTree$SnapshotLeafInventory", "org.zstack.sdk.SnapshotLeafInventory");
@@ -879,6 +880,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SharedBlockType", "org.zstack.storage.primary.sharedblock.SharedBlockType");
 			put("org.zstack.sdk.SharedResourceInventory", "org.zstack.header.identity.SharedResourceInventory");
 			put("org.zstack.sdk.ShellResult", "org.zstack.kvm.APIKvmRunShellEvent$ShellResult");
+			put("org.zstack.sdk.ShrinkResult", "org.zstack.header.storage.snapshot.ShrinkResult");
 			put("org.zstack.sdk.SimulatorHostInventory", "org.zstack.header.simulator.SimulatorHostInventory");
 			put("org.zstack.sdk.SmartDataStruct", "org.zstack.storage.device.localRaid.SmartDataStruct");
 			put("org.zstack.sdk.SnapShotSpendingInventory", "org.zstack.billing.spendingcalculator.snapshot.SnapShotSpendingInventory");
