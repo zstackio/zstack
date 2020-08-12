@@ -185,10 +185,17 @@ public class VmInstanceBase extends AbstractVmInstance {
         self = changeVmStateInDb(VmInstanceStateEvent.destroying);
 
         FlowChain chain = new SimpleFlowChain();
-        setFlowBeforeFormalWorkFlow(chain, spec);
+
+        if (msg instanceof VmInstanceDeletionMsg && ((VmInstanceDeletionMsg) msg).isAdditionalFlowRequested()) {
+            setFlowBeforeFormalWorkFlow(chain, spec);
+        }
+
         chain.getFlows().addAll(getDestroyVmWorkFlowChain(inv).getFlows());
         setFlowMarshaller(chain);
-        setAdditionalFlow(chain, spec);
+
+        if (msg instanceof VmInstanceDeletionMsg && ((VmInstanceDeletionMsg) msg).isAdditionalFlowRequested()) {
+            setAdditionalFlow(chain, spec);
+        }
 
         chain.setName(String.format("destroy-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
