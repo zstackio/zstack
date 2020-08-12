@@ -392,6 +392,7 @@ public class RESTFacadeImpl implements RESTFacade {
             ListenableFuture<ResponseEntity<String>> f = asyncRestTemplate.exchange(url, HttpMethod.POST, req, String.class);
             f.addCallback(rsp -> {}, e -> wrapper.fail(err(SysErrors.HTTP_ERROR, e.getLocalizedMessage())));
         } catch (RestClientException e) {
+            logger.warn(String.format("Unable to post to %s: %s", url, e.getMessage()));
             wrapper.fail(ExceptionDSL.isCausedBy(e, ResourceAccessException.class) ? err(SysErrors.IO_ERROR, e.getMessage()) : inerr(e.getMessage()));
         }
     }
