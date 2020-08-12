@@ -421,7 +421,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 to.vipGateway = vip.getGateway();
                 to.vipNetmask = vip.getNetmask();
                 to.vipUuid = vip.getUuid();
-                List<NormalIpRangeVO> vipIprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, vip.getL3NetworkUuid()).list();
+                List<NormalIpRangeVO> vipIprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, vip.getL3NetworkUuid())
+                        .eq(NormalIpRangeVO_.ipVersion, to.ipVersion).list();
                 to.vipPrefixLen = vipIprs.get(0).getPrefixLen();
                 to.publicBridgeName = pubBridgeNames.get(eip.getVipUuid());
                 return to;
@@ -607,7 +608,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         to.vipGateway = struct.getVip().getGateway();
         to.vipNetmask = struct.getVip().getNetmask();
         to.vipUuid = struct.getVip().getUuid();
-        List<NormalIpRangeVO> iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, struct.getVip().getL3NetworkUuid()).list();
+        List<NormalIpRangeVO> iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, struct.getVip().getL3NetworkUuid())
+                .eq(NormalIpRangeVO_.ipVersion, to.ipVersion).list();
         to.vipPrefixLen = iprs.get(0).getPrefixLen();
         to.publicBridgeName = new BridgeNameFinder().findByL3Uuid(struct.getVip().getL3NetworkUuid());
         return to;

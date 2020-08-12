@@ -111,7 +111,9 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             return;
         }
 
-        long normaCnt = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).count();
+        /* address pool only related to Ipv4 */
+        long normaCnt = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid())
+                .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).count();
         long addressPoolCnt = Q.New(AddressPoolVO.class).eq(AddressPoolVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).count();
         if (addressPoolCnt > 0 && normaCnt == 1) {
             throw new ApiMessageInterceptionException(argerr("can not delete the last normal ip range because there is still has address pool"));
@@ -156,7 +158,9 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         if (!NetworkUtils.isIpv4Address(msg.getRouterInterfaceIp())) {
             throw new ApiMessageInterceptionException(argerr("invalid IP[%s]", msg.getRouterInterfaceIp()));
         }
-        List<NormalIpRangeVO> ipRangeVOS = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+        /* this API only related ipv4 */
+        List<NormalIpRangeVO> ipRangeVOS = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
         if (ipRangeVOS == null || ipRangeVOS.isEmpty()) {
             throw new ApiMessageInterceptionException(argerr("no ip range in l3[%s]", msg.getL3NetworkUuid()));
         }

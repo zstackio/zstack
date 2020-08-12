@@ -369,7 +369,9 @@ public class L3BasicNetwork implements L3Network {
             return;
         }
 
-        List<NormalIpRangeVO> ipRangeVOS = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+        /* this api only support ipv4 */
+        List<NormalIpRangeVO> ipRangeVOS = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).list();
         if (ipRangeVOS == null || ipRangeVOS.isEmpty()) {
             reply.setRouterInterfaceIp(null);
             bus.reply(msg, reply);

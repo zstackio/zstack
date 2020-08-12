@@ -12,7 +12,9 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Inventory(mappingVOClass = UsedIpVO.class)
 @ExpandedQueries({
@@ -57,6 +59,7 @@ public class UsedIpInventory implements Serializable {
 
     public static List<UsedIpInventory> valueOf(Collection<UsedIpVO> vos) {
         List<UsedIpInventory> invs = new ArrayList<UsedIpInventory>(vos.size());
+        vos = vos.stream().sorted(Comparator.comparingInt(UsedIpVO::getIpVersion)).collect(Collectors.toList());
         for (UsedIpVO vo : vos) {
             invs.add(UsedIpInventory.valueOf(vo));
         }
