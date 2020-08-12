@@ -940,8 +940,8 @@
     "code": "1001",
     "method": "regex",
     "regex": "quota exceeding. The account\\[uuid: .*] exceeds a quota\\[name: .*, value: .*], Current used:.*, Request:.*. Please contact the administrator.",
-    "message_cn": "帐户[%1$s]的配额超出限制[配额名称: %2$s, 配额总量: $3$s]",
-    "message_en": "The account[uuid:%1$s]'s quota exceeds the limit, name: %2$s, value:%3$s."
+    "message_cn": "帐户[%1$s]的配额超出限制[配额名称: %2$s, 配额总量: %3$s], 当前已使用: %4$s, 本次请求数量: %5$s, 如需继续操作请联系管理员",
+    "message_en": "The account[uuid:%1$s]'s quota exceeds the limit, name: %2$s, value:%3$s, current used: %4$s, request amount: %5$s. Please contact the administrator."
   },
   {
     "category": "QUOTA",
@@ -950,6 +950,14 @@
     "regex": ".*quota exceeding.The resource owner\\(or target resource owner\\) account\\[uuid:.*] exceeds a quota\\[name:.*, value: .*], Current used:.*, Request:.*. Please contact the administrator.",
     "message_cn": "请求资源超出配额。资源所有者或目标资源所有者帐户[uuid：%1$s]超出配额[配额名称：%2$s，配额总量：%3$s]，当前已使用：%4$s，本次请求数量：%5$s。如需继续操作请联系管理员。",
     "message_en": "Quota exceeded. The resource owner or target resource owner account[uuid:%1$s] exceeds a quota[name: %2$s, total amount: %3$s], current used: %4$s, request amount: %5$s. Please contact the administrator."
+  },
+  {
+    "category": "QUOTA",
+    "code": "1003",
+    "method": "regex",
+    "regex": "quota exceeding. The account\\[uuid: .*] exceeds a quota\\[name: .*, value: .*]. Please contact the administrator.",
+    "message_cn": "帐户[%1$s]的配额超出限制[配额名称: %2$s, 配额总量: %3$s]",
+    "message_en": "The account[uuid:%1$s]'s quota exceeds the limit, name: %2$s, value:%3$s."
   },
   {
     "category": "SHAREDBLOCK",
