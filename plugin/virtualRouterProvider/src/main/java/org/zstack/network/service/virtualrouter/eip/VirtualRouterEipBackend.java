@@ -557,10 +557,8 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                 "and nic.vmInstanceUuid = vm.uuid " +
                 "and nic.l3NetworkUuid = :l3Uuid " +
                 "and eip.vipUuid = vip.uuid " +
-                "and vm.state in (:syncEipVmStates) " +
                 "and eip.state = :enabledState", Tuple.class)
                 .param("l3Uuid", nic.getL3NetworkUuid())
-                .param("syncEipVmStates", SYNC_EIP_VM_STATES)
                 .param("enabledState", EipState.Enabled)
                 .list();
 

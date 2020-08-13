@@ -21,4 +21,6 @@ public interface L3NetworkManager {
     void updateIpAllocationMsg(AllocateIpMsg msg, String mac);
 
     IpRangeFactory getIpRangeFactory(IpRangeType type);
+
+    boolean applyNetworkServiceWhenVmStateChange(String type);
 }
