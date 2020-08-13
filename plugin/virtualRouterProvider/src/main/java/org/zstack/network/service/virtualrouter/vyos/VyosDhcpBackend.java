@@ -107,6 +107,10 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
 
         VirtualRouterVmVO vrVO = dbf.findByUuid(vrUuid, VirtualRouterVmVO.class);
         for (VmNicVO vo : vrVO.getVmNics()) {
+            if (VmNicInventory.valueOf(vo).isIpv6OnlyNic()) {
+                continue;
+            }
+
             if (!isVRouterDhcpEnabled(vo.getL3NetworkUuid())) {
                 continue;
             }
@@ -164,7 +168,7 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
         L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
         VirtualRouterCommands.DhcpServerInfo server = new VirtualRouterCommands.DhcpServerInfo();
         server.setNicMac(nic.getMac());
-        //TODO: shixin ipv6 server.setSubnet(NetworkUtils.getCidrFromIpMask(nic.getIp(), nic.getNetmask()));
+        server.setSubnet(NetworkUtils.getCidrFromIpMask(nic.getIp(), nic.getNetmask()));
         server.setNetmask(nic.getNetmask());
         server.setGateway(nic.getGateway());
         server.setDnsDomain(l3Vo.getDnsDomain());
@@ -212,6 +216,11 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
     }
 
     protected void startDhcpServer(VmNicInventory nic, Completion completion) {
+        if (nic.isIpv6OnlyNic()) {
+            completion.success();
+            return;
+        }
+
         VirtualRouterCommands.DhcpServerInfo serverInfo = getDhcpServerInfo(nic, false);
         VirtualRouterCommands.RefreshDHCPServerCmd cmd = new VirtualRouterCommands.RefreshDHCPServerCmd();
         cmd.setDhcpServers(Arrays.asList(serverInfo));
@@ -243,6 +252,11 @@ public class VyosDhcpBackend extends VirtualRouterDhcpBackend implements Virtual
     }
 
     protected void stopDhcpServer(VmNicInventory nic, Completion completion) {
+        if (nic.isIpv6OnlyNic()) {
+            completion.success();
+            return;
+        }
+
         VirtualRouterCommands.DhcpServerInfo serverInfo = getDhcpServerInfo(nic, true);
         VirtualRouterCommands.RefreshDHCPServerCmd cmd = new VirtualRouterCommands.RefreshDHCPServerCmd();
         cmd.setDhcpServers(Arrays.asList(serverInfo));

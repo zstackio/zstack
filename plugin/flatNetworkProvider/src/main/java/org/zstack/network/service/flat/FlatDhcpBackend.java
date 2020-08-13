@@ -248,7 +248,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 left join (select uuid, name, type from VmInstanceVO) it on nic.vmInstanceUuid = it.uuid
         order by {sortBy} {direction};
          */
-        /* TODO: shixin, hardcode ipv4 */
         Map<String, String> dhcpMap = getExistingDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.DUAL_STACK);
         Set<String> dhcp = dhcpMap.keySet();
         StringBuilder sqlBuilder = new StringBuilder();

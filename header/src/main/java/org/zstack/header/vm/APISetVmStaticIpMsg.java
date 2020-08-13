@@ -23,7 +23,7 @@ public class APISetVmStaticIpMsg extends APIMessage implements VmInstanceMessage
     private String vmInstanceUuid;
     @APIParam(resourceType = L3NetworkVO.class)
     private String l3NetworkUuid;
-    @APIParam
+    @APIParam(required = false)
     private String ip;
     @APIParam(required = false)
     private String ip6;

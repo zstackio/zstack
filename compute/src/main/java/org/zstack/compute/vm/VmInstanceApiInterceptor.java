@@ -318,6 +318,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APISetVmStaticIpMsg msg) {
+        if (msg.getIp() == null && msg.getIp6() == null) {
+            throw new ApiMessageInterceptionException(argerr("could not set ip address, due to no ip address is specified"));
+        }
+
         L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
         List<VmNicVO> vmNics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, msg.getVmInstanceUuid()).list();
         boolean l3Found = false;

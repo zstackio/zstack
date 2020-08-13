@@ -319,16 +319,20 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         if (vmNics.isEmpty()){
             return vmNics;
         }
+        List<String> vmNicL3Uuids  = new ArrayList<>();
+        for (VmNicInventory nic : vmNics) {
+            vmNicL3Uuids.addAll(VmNicHelper.getL3Uuids(nic));
+        }
         List<String> l3 = new ArrayList<>();
         for (GetL3NetworkForEipInVirtualRouterExtensionPoint extp : pluginRgty.getExtensionList(GetL3NetworkForEipInVirtualRouterExtensionPoint.class)) {
-            l3.addAll(extp.getL3NetworkForEipInVirtualRouter(networkProviderType, vip));
+            l3.addAll(extp.getL3NetworkForEipInVirtualRouter(networkProviderType, vip, vmNicL3Uuids));
         }
 
         if (l3.size() > 0) {
             return vmNics.stream().filter(nic -> l3.contains(nic.getL3NetworkUuid())).collect(Collectors.toList());
         }
 
-        return vmNics;
+        return new ArrayList<>();
     }
 
     @Transactional(readOnly = true)
