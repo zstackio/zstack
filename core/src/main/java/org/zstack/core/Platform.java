@@ -783,9 +783,11 @@ public class Platform {
         if (elaboration != null) {
             String formatStr = elaboration.getFormatSrcError();
             if (StringSimilarity.matched(elaboration)) {
+                StringSimilarity.addErrors(description, elaboration);
                 insertLogError(formatStr, elaboration, true);
                 return elaboration;
             } else {
+                StringSimilarity.addMissed(description);
                 insertLogError(formatStr, elaboration, false);
                 return null;
             }
@@ -800,10 +802,12 @@ public class Platform {
         if (elaboration != null) {
             String formatStr = elaboration.getFormatSrcError();
             if (StringSimilarity.matched(elaboration)) {
+                StringSimilarity.addErrors(details, elaboration);
                 insertLogError(formatStr, elaboration, true);
                 return elaboration;
             } else {
                 if (excludeCode.contains(errCode)) {
+                    StringSimilarity.addMissed(details);
                     insertLogError(formatStr, elaboration, false);
                     return null;
                 }
