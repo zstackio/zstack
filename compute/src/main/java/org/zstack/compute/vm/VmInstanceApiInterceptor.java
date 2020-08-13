@@ -329,15 +329,21 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             for (UsedIpVO ipvo: nic.getUsedIps()) {
                 if (ipvo.getL3NetworkUuid().equals(msg.getL3NetworkUuid())) {
                     l3Found = true;
-                    if (NetworkUtils.isIpv4Address(msg.getIp())) {
-                        validateStaticIPv4(nic, l3NetworkVO, msg.getIp());
-                    } else if (IPv6NetworkUtils.isIpv6Address(msg.getIp())){
-                        validateStaticIPv6(nic, l3NetworkVO, msg.getIp());
-                    } else {
-                        throw new ApiMessageInterceptionException(argerr("static ip [%s] format error", msg.getIp()));
+                    if (msg.getIp() != null) {
+                        String ip = IPv6NetworkUtils.ipv6TagValueToAddress(msg.getIp());
+                        if (NetworkUtils.isIpv4Address(ip)) {
+                            validateStaticIPv4(nic, l3NetworkVO, ip);
+                        } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
+                            validateStaticIPv6(nic, l3NetworkVO, ip);
+                            msg.setIp(ip);
+                        } else {
+                            throw new ApiMessageInterceptionException(argerr("static ip [%s] format error", msg.getIp()));
+                        }
                     }
                     if (msg.getIp6() != null) {
-                        validateStaticIPv6(nic, l3NetworkVO, msg.getIp6());
+                        String ip6 = IPv6NetworkUtils.ipv6TagValueToAddress(msg.getIp6());
+                        validateStaticIPv6(nic, l3NetworkVO, ip6);
+                        msg.setIp6(ip6);
                     }
                 }
             }

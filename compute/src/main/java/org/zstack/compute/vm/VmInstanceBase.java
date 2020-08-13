@@ -3023,18 +3023,23 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final APISetVmStaticIpEvent evt = new APISetVmStaticIpEvent(msg.getId());
         Map<Integer, String> staticIpMap = new HashMap<>();
-        if (NetworkUtils.isIpv4Address(msg.getIp())) {
-            staticIpMap.put(IPv6Constants.IPv4, msg.getIp());
-            if (msg.getIp6() != null) {
-                staticIpMap.put(IPv6Constants.IPv6, msg.getIp6());
+        if (msg.getIp() != null) {
+            if (NetworkUtils.isIpv4Address(msg.getIp())) {
+                staticIpMap.put(IPv6Constants.IPv4, msg.getIp());
+            } else {
+                staticIpMap.put(IPv6Constants.IPv6, msg.getIp());
             }
-        } else {
-            staticIpMap.put(IPv6Constants.IPv6, msg.getIp());
         }
+        if (msg.getIp6() != null) {
+            staticIpMap.put(IPv6Constants.IPv6, msg.getIp6());
+        }
+
         changeVmIp(msg.getL3NetworkUuid(), staticIpMap, new Completion(msg, completion) {
             @Override
             public void success() {
-                new StaticIpOperator().setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp());
+                if (msg.getIp() != null) {
+                    new StaticIpOperator().setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp());
+                }
                 if (msg.getIp6() != null) {
                     new StaticIpOperator().setStaticIp(self.getUuid(), msg.getL3NetworkUuid(), msg.getIp6());
                 }
