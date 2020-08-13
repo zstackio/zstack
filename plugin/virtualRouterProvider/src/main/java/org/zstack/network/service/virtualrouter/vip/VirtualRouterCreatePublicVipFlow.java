@@ -166,12 +166,6 @@ public class VirtualRouterCreatePublicVipFlow implements Flow {
                     return;
                 }
 
-                /* only default route network nic ip will apply snat */
-                if (!nic.getL3NetworkUuid().equals(vr.getDefaultRouteL3NetworkUuid())) {
-                    chain.next();
-                    return;
-                }
-
                 /* if there is no guest nic, don't apply snat */
                 boolean hasGuestNic = false;
                 for (VmNicInventory nic : vr.getVmNics()) {
@@ -192,6 +186,12 @@ public class VirtualRouterCreatePublicVipFlow implements Flow {
                     }
                 }
                 if (ipv4Vip == null) {
+                    chain.next();
+                    return;
+                }
+
+                /* only default route network nic ip will apply snat */
+                if (!ipv4Vip.getL3NetworkUuid().equals(vr.getDefaultRouteL3NetworkUuid())) {
                     chain.next();
                     return;
                 }

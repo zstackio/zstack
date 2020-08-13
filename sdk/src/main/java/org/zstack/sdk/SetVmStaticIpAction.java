@@ -31,7 +31,7 @@ public class SetVmStaticIpAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String l3NetworkUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ip;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

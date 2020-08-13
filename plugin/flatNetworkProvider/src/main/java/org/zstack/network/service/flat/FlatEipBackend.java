@@ -749,17 +749,18 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     }
 
     @Override
-    public List<String> getL3NetworkForEipInVirtualRouter(String networkServiceProviderType, VipInventory vip) {
+    public List<String> getL3NetworkForEipInVirtualRouter(String networkServiceProviderType, VipInventory vip, List<String> l3Uuids) {
         if (networkServiceProviderType.equals(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)) {
             /* get vpc network or vrouter network */
             return SQL.New("select distinct l3.uuid" +
                     " from  L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider" +
                     " where l3.uuid = ref.l3NetworkUuid and ref.networkServiceProviderUuid = provider.uuid" +
                     " and ref.networkServiceType = :serviceType and provider.type = :providerType" +
-                    " and l3.ipVersion in (:ipVersions)")
+                    " and l3.ipVersion in (:ipVersions) and l3.uuid in (:l3Uuids)")
                     .param("serviceType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
                     .param("providerType", FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)
                     .param("ipVersions", vip.getCandidateIpversion())
+                    .param("l3Uuids", l3Uuids)
                     .list();
         }
         return new ArrayList<>();
