@@ -1,6 +1,12 @@
 package org.zstack.network.service.portforwarding;
 
 import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.vm.VmInstanceConstant;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static java.util.Arrays.asList;
 
 public interface PortForwardingConstant {
     public static String SERVICE_ID = "portForwarding";
@@ -15,4 +21,9 @@ public interface PortForwardingConstant {
         NEED_LOCK_VIP,
         NEED_UNLOCK_VIP
     }
+
+    public final List<VmInstanceConstant.VmOperation> vmOperationForDetachPortfordingRule = asList(
+            VmInstanceConstant.VmOperation.Destroy,
+            VmInstanceConstant.VmOperation.DetachNic
+    );
 }
