@@ -24,4 +24,6 @@ public interface L3NetworkManager {
     IpRangeFactory getIpRangeFactory(IpRangeType type);
 
     List<VmNicInventory> filterVmNicByIpVersion(List<VmNicInventory> vmNics, int ipVersion);
+
+    boolean applyNetworkServiceWhenVmStateChange(String type);
 }

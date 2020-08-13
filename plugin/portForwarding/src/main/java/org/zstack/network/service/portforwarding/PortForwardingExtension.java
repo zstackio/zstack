@@ -11,6 +11,7 @@ import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
@@ -31,6 +32,8 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension {
 
     @Autowired
     private PortForwardingManager pfMgr;
+    @Autowired
+    private L3NetworkManager l3Mgr;
 
     private final String SUCCESS = PortForwardingExtension.class.getName();
 
@@ -201,6 +204,11 @@ public class PortForwardingExtension extends AbstractNetworkServiceExtension {
             List<PortForwardingStruct> lst = new ArrayList<PortForwardingStruct>();
 
             for (L3NetworkInventory l3 : e.getValue()) {
+                if (!l3Mgr.applyNetworkServiceWhenVmStateChange(l3.getType()) &&
+                        !PortForwardingConstant.vmOperationForDetachPortfordingRule.contains(spec.getCurrentVmOperation())) {
+                    continue;
+                }
+
                 lst.addAll(makePortForwardingStruct(spec.getDestNics(), spec.getCurrentVmOperation() == VmOperation.Destroy || spec.getCurrentVmOperation() == VmOperation.DetachNic, l3));
             }
 

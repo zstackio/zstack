@@ -422,11 +422,12 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         VmNicVO nicvo = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
         vo.setVmNicUuid(nicvo.getUuid());
         vo.setGuestIp(nicvo.getIp());
+        L3NetworkVO nicL3Vo = dbf.findByUuid(nicvo.getL3NetworkUuid(), L3NetworkVO.class);
         final PortForwardingRuleVO prvo = dbf.updateAndRefresh(vo);
         final PortForwardingRuleInventory inv = PortForwardingRuleInventory.valueOf(prvo);
 
         VmInstanceState vmState = getVmStateFromVmNicUuid(msg.getVmNicUuid());
-        if (VmInstanceState.Running != vmState) {
+        if (VmInstanceState.Running != vmState && l3Mgr.applyNetworkServiceWhenVmStateChange(nicL3Vo.getType())) {
             Vip vip = new Vip(vo.getVipUuid());
             ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
             struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
@@ -726,7 +727,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         q.select(VmInstanceVO_.state);
         q.add(VmInstanceVO_.uuid, Op.EQ, vmNic.getVmInstanceUuid());
         VmInstanceState vmState = q.findValue();
-        if (VmInstanceState.Running != vmState) {
+        L3NetworkVO nicL3Vo = dbf.findByUuid(vmNic.getL3NetworkUuid(), L3NetworkVO.class);
+        if (VmInstanceState.Running != vmState && l3Mgr.applyNetworkServiceWhenVmStateChange(nicL3Vo.getType())) {
             ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
             struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
             struct.setServiceUuid(vo.getUuid());
