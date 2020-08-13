@@ -9,17 +9,10 @@ public class ErrorCodeElaboration {
     private String regex;
     private String message_cn;
     private String message_en;
-    private String operation_cn;
-    private String operation_en;
-    private String causes_cn;
-    private String causes_en;
-    private String extension_cn;
-    private String extension_en;
     private String source = "zstack";
     private double distance = 0;
     private ElaborationSearchMethod method;
     private String formatSrcError;
-    private String url;
 
     public ErrorCodeElaboration() {
     }
@@ -43,16 +36,9 @@ public class ErrorCodeElaboration {
         regex = other.regex;
         message_en = other.message_en;
         message_cn = other.message_cn;
-        operation_en = other.operation_en;
-        operation_cn = other.operation_cn;
-        causes_en = other.causes_en;
-        causes_cn = other.causes_cn;
-        extension_en = other.extension_en;
-        extension_cn = other.extension_cn;
         source = other.source;
         distance = other.distance;
         formatSrcError = other.formatSrcError;
-        url = other.url;
         method = other.method;
     }
 
@@ -111,54 +97,6 @@ public class ErrorCodeElaboration {
         this.message_en = message_en;
     }
 
-    public String getOperation_cn() {
-        return operation_cn;
-    }
-
-    public void setOperation_cn(String operation_cn) {
-        this.operation_cn = operation_cn;
-    }
-
-    public String getOperation_en() {
-        return operation_en;
-    }
-
-    public void setOperation_en(String operation_en) {
-        this.operation_en = operation_en;
-    }
-
-    public String getCauses_cn() {
-        return causes_cn;
-    }
-
-    public void setCauses_cn(String causes_cn) {
-        this.causes_cn = causes_cn;
-    }
-
-    public String getCauses_en() {
-        return causes_en;
-    }
-
-    public void setCauses_en(String causes_en) {
-        this.causes_en = causes_en;
-    }
-
-    public String getExtension_cn() {
-        return extension_cn;
-    }
-
-    public void setExtension_cn(String extension_cn) {
-        this.extension_cn = extension_cn;
-    }
-
-    public String getExtension_en() {
-        return extension_en;
-    }
-
-    public void setExtension_en(String extension_en) {
-        this.extension_en = extension_en;
-    }
-
     public String getSource() {
         return source;
     }
@@ -181,14 +119,6 @@ public class ErrorCodeElaboration {
 
     public void setFormatSrcError(String formatSrcError) {
         this.formatSrcError = formatSrcError;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
     }
 
     public ElaborationSearchMethod getMethod() {

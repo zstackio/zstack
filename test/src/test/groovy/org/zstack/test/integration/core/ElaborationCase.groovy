@@ -67,13 +67,11 @@ class ElaborationCase extends SubCase {
         assert err.elaboration == null
         def missed = Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "test for missed error").find() as ElaborationVO
         assert missed.distance > 0
-        assert missed.repeats == 1
 
         err = Platform.operr("test for missed error") as ErrorCode
         assert err.elaboration == null
         missed = Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "test for missed error").find() as ElaborationVO
         assert missed.distance > 0
-        assert missed.repeats == 2
 
         err = Platform.err(IdentityErrors.INVALID_SESSION, "xxxxxxxxx") as ErrorCode
         assert err.elaboration != null
@@ -124,13 +122,6 @@ class ElaborationCase extends SubCase {
 
     void testGetMissedElaboration() {
         def result = getMissedElaboration {
-            repeats = 2
-        } as List<ElaborationInventory>
-
-        assert result.size() == 1
-        assert result.get(0).errorInfo == "test for missed error"
-
-        result = getMissedElaboration {
             startTime = "1999-01-01 10:00:00"
         } as List<ElaborationInventory>
         assert result.size() > 0

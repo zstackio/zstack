@@ -62,8 +62,26 @@ public class StringSimilarity {
     }
 
     public static void resetCachedErrors() {
-        errors.clear();
-        missed.clear();
+        synchronized(errors) {
+            errors.clear();
+        }
+        synchronized(missed) {
+            missed.clear();
+        }
+    }
+
+    public static void addErrors(String key, ErrorCodeElaboration err) {
+        if (err != null) {
+            synchronized(errors) {
+                errors.put(key, err);
+            }
+        }
+    }
+
+    public static void addMissed(String key) {
+        synchronized(missed){
+            missed.put(key, true);
+        }
     }
 
     public static void refreshErrorTemplates() {
@@ -190,11 +208,6 @@ public class StringSimilarity {
         return l.distance(str, sub);
     }
 
-    //TODO: could be extensions here
-    private static String formatSrc(String str) {
-        return str;
-    }
-
     private static final List<String> redundanceStrs = CollectionDSL.list("unhandled exception happened when calling");
 
     private static boolean isRedundant(String sub) {
@@ -217,37 +230,33 @@ public class StringSimilarity {
         }
 
         long start = System.currentTimeMillis();
-        String formatSub = formatSrc(sub);
-        if (errors.get(formatSub) != null) {
+        if (errors.get(sub) != null) {
             logSearchSpend(sub, start);
-            return errors.get(formatSub);
+            return errors.get(sub);
         }
 
-        if (missed.get(formatSub) != null) {
+        if (missed.get(sub) != null) {
             logSearchSpend(sub, start);
             return null;
         }
 
-        ErrorCodeElaboration err = null;
+        ErrorCodeElaboration err;
         try {
-            logger.debug(String.format("start to find similary from: %s", String.format(formatSub, args)));
-            err = findMostSimilaryRegex(String.format(formatSub, args));
+            logger.debug(String.format("start to find similary from: %s", String.format(sub, args)));
+            err = findMostSimilaryRegex(String.format(sub, args));
         } catch (Exception e) {
             logger.warn("exception happened when format error message");
             logger.warn(e.getMessage());
-            logger.debug(String.format("start to find similary from: %s", formatSub));
-            err = findMostSimilaryRegex(formatSub);
+            logger.debug(String.format("start to find similary from: %s", sub));
+            err = findMostSimilaryRegex(sub);
         }
 
         if (err == null) {
-            err = findSimilaryDistance(formatSub);
+            err = findSimilaryDistance(sub);
         }
 
         if (err != null) {
-            err.setFormatSrcError(formatSub);
-            errors.put(formatSub, err);
-        } else {
-            missed.put(formatSub, true);
+            err.setFormatSrcError(sub);
         }
 
         logSearchSpend(sub, start);
@@ -311,18 +320,6 @@ public class StringSimilarity {
     public static String formatElaboration(ErrorCodeElaboration elaboration, Object...args) {
         StringBuilder buffer = new StringBuilder();
         buffer.append(String.format("错误信息: %s\n", elaboration.getMessage_cn()));
-
-        if (elaboration.getCauses_cn() != null) {
-            buffer.append(String.format("可能原因: %s\n", elaboration.getCauses_cn()));
-        }
-
-        if (elaboration.getOperation_cn() != null) {
-            buffer.append(String.format("操作建议: %s\n", elaboration.getOperation_cn()));
-        }
-
-        if (elaboration.getUrl() != null) {
-            buffer.append(String.format("更多信息: %s\n", elaboration.getUrl()));
-        }
 
         buffer.deleteCharAt(buffer.lastIndexOf("\n"));
         return String.format(buffer.toString(), args);
