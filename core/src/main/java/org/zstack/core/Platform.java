@@ -867,7 +867,7 @@ public class Platform {
                     result.setMessages(messages);
                 }
 
-                if (result.getElaboration() == null) {
+                if (result.getElaboration() == null && cause == null) {
                     long start = System.currentTimeMillis();
                     ErrorCodeElaboration ela = elaborate(errCode, result.getDescription(), fmt, args);
                     if (ela != null) {
