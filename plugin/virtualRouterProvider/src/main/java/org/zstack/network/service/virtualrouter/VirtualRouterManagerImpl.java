@@ -2076,17 +2076,28 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     private List<ApplianceVmVO> applianceVmsToBeDeletedByIpRanges(List<ApplianceVmVO> applianceVmVOS, List<String> iprUuids) {
         List<ApplianceVmVO> toDeleted = new ArrayList<>();
+        List<String> l3Uuids = Q.New(IpRangeVO.class).in(IpRangeVO_.uuid, iprUuids).select(IpRangeVO_.l3NetworkUuid).listValues();
         for (ApplianceVmVO vos : applianceVmVOS) {
             for (VmNicVO nic : vos.getVmNics()) {
-                /* only mgt network, public network, default network is deleted, will delete the virtual router */
-                if (!VirtualRouterNicMetaData.isManagementNic(nic) && !VirtualRouterNicMetaData.isPublicNic(nic) &&
-                        !nic.getL3NetworkUuid().equals(vos.getDefaultRouteL3NetworkUuid())) {
+                /* for additional public network, only delete nic */
+                if (VirtualRouterNicMetaData.isAddinitionalPublicNic(nic)) {
                     continue;
                 }
 
                 /* if any ip of the nic is deleted, delete the appliance vm */
                 if (nic.getUsedIps().stream().anyMatch(ip -> iprUuids.contains(ip.getIpRangeUuid()))) {
                     toDeleted.add(vos);
+                    break;
+                }
+
+                /* for virtual router, if all ip ranges of guest nic delete, will delete the virtual router,
+                   but gateway ip is no allocated in UsedIpVO: there is no ipv6 for virtual router */
+                if (VirtualRouterNicMetaData.isGuestNic(nic) && nic.getUsedIpUuid() == null && l3Uuids.contains(nic.getL3NetworkUuid())) {
+                    if (Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, nic.getL3NetworkUuid())
+                            .eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv4).count() <= 1) {
+                        toDeleted.add(vos);
+                    }
+                    break;
                 }
             }
         }
@@ -2096,7 +2107,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public List<ApplianceVmVO> filterApplianceVmCascade(List<ApplianceVmVO> applianceVmVOS, String parentIssuer, List<String> parentIssuerUuids) {
-
+        logger.debug(String.format("filter appliance vm type with parentIssuer [type: %s, uuids: %s]", parentIssuer, parentIssuerUuids));
         if (parentIssuer.equals(L3NetworkVO.class.getSimpleName())) {
             List<ApplianceVmVO> vos = applianceVmsToBeDeleted(applianceVmVOS, parentIssuerUuids);
 
