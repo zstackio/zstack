@@ -1,10 +1,10 @@
-package org.zstack.sdk.zwatch.alarm;
+package org.zstack.sdk.zwatch.thirdparty.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateSubscribeEventAction extends AbstractAction {
+public class QuerySNSEndpointThirdpartyAlertHistoryAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateSubscribeEventAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.zwatch.alarm.UpdateSubscribeEventResult value;
+        public org.zstack.sdk.zwatch.thirdparty.api.QuerySNSEndpointThirdpartyAlertHistoryResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,6 @@ public class UpdateSubscribeEventAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, validValues = {"Emergent","Important","Normal"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String emergencyLevel;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -66,8 +34,8 @@ public class UpdateSubscribeEventAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.zwatch.alarm.UpdateSubscribeEventResult value = res.getResult(org.zstack.sdk.zwatch.alarm.UpdateSubscribeEventResult.class);
-        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.UpdateSubscribeEventResult() : value; 
+        org.zstack.sdk.zwatch.thirdparty.api.QuerySNSEndpointThirdpartyAlertHistoryResult value = res.getResult(org.zstack.sdk.zwatch.thirdparty.api.QuerySNSEndpointThirdpartyAlertHistoryResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.thirdparty.api.QuerySNSEndpointThirdpartyAlertHistoryResult() : value; 
 
         return ret;
     }
@@ -96,11 +64,11 @@ public class UpdateSubscribeEventAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/zwatch/events/subscriptions/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/zwatch/third-party/alert-publish-histories";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "updateSubscribeEvent";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

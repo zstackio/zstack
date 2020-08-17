@@ -36,6 +36,14 @@ public class ErrorCode  {
         return this.elaboration;
     }
 
+    public java.lang.String location;
+    public void setLocation(java.lang.String location) {
+        this.location = location;
+    }
+    public java.lang.String getLocation() {
+        return this.location;
+    }
+
     public java.lang.String cost;
     public void setCost(java.lang.String cost) {
         this.cost = cost;
