@@ -49,34 +49,31 @@ class ElaborationCase extends SubCase {
     }
 
     void testElaborationWithLongName() {
-        def err = Platform.operr("host[uuid:%s, name:%s] is in status[%s], cannot perform required operation", Platform.uuid, "long long long long long long long long long host name", "Connecting") as ErrorCode
+        def err = operr("host[uuid:%s, name:%s] is in status[%s], cannot perform required operation", Platform.uuid, "long long long long long long long long long host name", "Connecting") as ErrorCode
         assert err.elaboration != null
         assert err.elaboration.trim() == "错误信息: 物理机[long long long long long long long long long host name]正处于[Connecting]状态, 当前状态不允许进行该操作"
     }
 
     void testElaboration() {
-        def err = Platform.operr("certificate has expired or is not yet valid") as ErrorCode
+        def err = operr("certificate has expired or is not yet valid") as ErrorCode
         assert err.elaboration != null
         assert err.elaboration.trim() == "错误信息: 当前系统时间不在镜像仓库证书有效期内, 调整过镜像仓库服务器的系统时间，或者证书被修改"
 
-        err = Platform.operr("The state of vm[uuid:%s] is %s. Only these state[Running,Stopped] is allowed to update cpu or memory.", Platform.uuid, "Rebooting") as ErrorCode
+        err = operr("The state of vm[uuid:%s] is %s. Only these state[Running,Stopped] is allowed to update cpu or memory.", Platform.uuid, "Rebooting") as ErrorCode
         assert err.elaboration != null
         assert err.elaboration.trim() == "错误信息: 云主机的状态为Rebooting,只有状态[Running,Stopped]允许升级CPU/内存"
 
-        err = Platform.operr("test for missed error") as ErrorCode
+        err = operr("test for missed error") as ErrorCode
         assert err.elaboration == null
-        def missed = Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "test for missed error").find() as ElaborationVO
-        assert missed.distance > 0
+        assert Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "test for missed error").eq(ElaborationVO_.matched, false).exists
 
-        err = Platform.operr("test for missed error") as ErrorCode
+        err = operr("test for missed error") as ErrorCode
         assert err.elaboration == null
-        missed = Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "test for missed error").find() as ElaborationVO
-        assert missed.distance > 0
+        assert Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "test for missed error").eq(ElaborationVO_.matched, false).exists
 
         err = Platform.err(IdentityErrors.INVALID_SESSION, "xxxxxxxxx") as ErrorCode
         assert err.elaboration != null
-        missed = Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "xxxxxxxxx").find() as ElaborationVO
-        assert missed == null
+        assert Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "xxxxxxxxx").eq(ElaborationVO_.matched, true).exists
     }
 
     void testGetElaborationCategory() {
@@ -169,11 +166,10 @@ class ElaborationCase extends SubCase {
     }
 
     void testElaborationWithUnknownFormatConversion() {
-        def err = Platform.operr("%!s(int=0) %!s(bytes.readOp=0)", "nowadays") as ErrorCode
+        def err = operr("%!s(int=0) %!s(bytes.readOp=0)", "nowadays") as ErrorCode
         assert err.elaboration == null
         assert err.details == "%!s(int=0) %!s(bytes.readOp=0)"
-        def missed = Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "%!s(int=0) %!s(bytes.readOp=0)").find() as ElaborationVO
-        assert !missed.matched
+        assert !Q.New(ElaborationVO.class).eq(ElaborationVO_.errorInfo, "%!s(int=0) %!s(bytes.readOp=0)").exists
     }
 
     void testErrorList() {

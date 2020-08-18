@@ -12,7 +12,6 @@ public class ElaborationVO_ {
     public static volatile SingularAttribute<ElaborationVO, Long> id;
     public static volatile SingularAttribute<ElaborationVO, String> errorInfo;
     public static volatile SingularAttribute<ElaborationVO, String> md5sum;
-    public static volatile SingularAttribute<ElaborationVO, Double> distance;
     public static volatile SingularAttribute<ElaborationVO, Long> repeats;
     public static volatile SingularAttribute<ElaborationVO, Boolean> matched;
     public static volatile SingularAttribute<ElaborationVO, Timestamp> createDate;

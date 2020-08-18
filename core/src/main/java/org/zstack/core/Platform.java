@@ -25,6 +25,7 @@ import org.zstack.header.core.StaticInit;
 import org.zstack.header.core.encrypt.ENCRYPT;
 import org.zstack.header.errorcode.*;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.utils.*;
 import org.zstack.utils.data.StringTemplate;
@@ -757,7 +758,7 @@ public class Platform {
         }
     }
 
-    private synchronized static void insertLogError(String content, ErrorCodeElaboration err, boolean matched) {
+    private synchronized static void insertLogError(String content, boolean matched) {
         if (!CoreGlobalProperty.RECORD_TO_DB_ELABORATION) {
             return;
         }
@@ -765,13 +766,11 @@ public class Platform {
         String md5Sum = StringDSL.getMd5Sum(content);
         ElaborationVO mvo = Q.New(ElaborationVO.class).eq(ElaborationVO_.md5sum, md5Sum).find();
         if (mvo != null) {
-            mvo.setDistance(err.getDistance());
             mvo.setMatched(matched);
             mvo.setRepeats(mvo.getRepeats() + 1);
             dbf.updateAndRefresh(mvo);
         } else {
             mvo = new ElaborationVO();
-            mvo.setDistance(err.getDistance());
             mvo.setRepeats(1L);
             mvo.setMatched(matched);
             mvo.setMd5sum(md5Sum);
@@ -780,48 +779,21 @@ public class Platform {
         }
     }
 
-    private static ErrorCodeElaboration elaborate(String description) {
-        ErrorCodeElaboration elaboration = StringSimilarity.findSimilary(description);
-        if (elaboration != null) {
-            String formatStr = elaboration.getFormatSrcError();
-            if (StringSimilarity.matched(elaboration)) {
-                StringSimilarity.addErrors(description, elaboration);
-                insertLogError(formatStr, elaboration, true);
-                return elaboration;
-            } else {
-                StringSimilarity.addMissed(description);
-                insertLogError(formatStr, elaboration, false);
-                return null;
-            }
+    private static ErrorCodeElaboration elaborate(String details, Object...args) {
+        if (String.format(details, args).length() > StringSimilarity.maxElaborationRegex) {
+            return null;
+        }
+        ErrorCodeElaboration elaboration = StringSimilarity.findSimilary(details, args);
+        if (elaboration == null) {
+            return null;
+        }
+        if (StringSimilarity.matched(elaboration)) {
+            return elaboration;
         }
         return null;
     }
 
-    private static List<Enum> excludeCode = CollectionDSL.list(SysErrors.INTERNAL, SysErrors.OPERATION_ERROR, SysErrors.INVALID_ARGUMENT_ERROR, SysErrors.TIMEOUT);
-
-    private static ErrorCodeElaboration elaborate(Enum errCode, String description,  String details, Object...args) {
-        ErrorCodeElaboration elaboration = StringSimilarity.findSimilary(details, args);
-        if (elaboration != null) {
-            String formatStr = elaboration.getFormatSrcError();
-            if (StringSimilarity.matched(elaboration)) {
-                StringSimilarity.addErrors(details, elaboration);
-                insertLogError(formatStr, elaboration, true);
-                return elaboration;
-            } else {
-                if (excludeCode.contains(errCode)) {
-                    StringSimilarity.addMissed(details);
-                    insertLogError(formatStr, elaboration, false);
-                    return null;
-                }
-            }
-        }
-
-        if (!excludeCode.contains(errCode)) {
-            return elaborate(description);
-        } else {
-            return null;
-        }
-    }
+    private static List<Enum> allowCode = CollectionDSL.list(IdentityErrors.INVALID_SESSION);
 
     public static ErrorCode err(Enum errCode, String fmt, Object...args) {
         return err(errCode, null, fmt, args);
@@ -871,13 +843,21 @@ public class Platform {
 
                 if (result.getElaboration() == null && cause == null) {
                     long start = System.currentTimeMillis();
-                    ErrorCodeElaboration ela = elaborate(errCode, result.getDescription(), fmt, args);
+                    ErrorCodeElaboration ela = elaborate(fmt, args);
+                    if (ela == null && allowCode.contains(errCode)) {
+                        ela = elaborate(result.getDescription());
+                    }
                     if (ela != null) {
-                        long end = System.currentTimeMillis();
-                        result.setCost((end - start) + "ms");
+                        StringSimilarity.addErrors(fmt, ela);
+                        insertLogError(fmt, true);
+
+                        result.setCost((System.currentTimeMillis() - start) + "ms");
                         result.setElaboration(StringSimilarity.formatElaboration(ela, args));
                         result.setMessages(new ErrorCodeElaboration(ela.getCode(), ela.getMessage_en(), ela.getMessage_cn(),
                                 ela.getDistance(), ela.getMethod(), args));
+                    } else {
+                        StringSimilarity.addMissed(fmt);
+                        insertLogError(fmt, false);
                     }
                 }
             } catch (Throwable e) {

@@ -23,12 +23,6 @@ doc {
 		since "3.3.0"
 	}
 	field {
-		name "distance"
-		desc "最佳匹配值"
-		type "double"
-		since "3.3.0"
-	}
-	field {
 		name "matched"
 		desc "是否命中错误码"
 		type "boolean"

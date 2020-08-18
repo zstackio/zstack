@@ -17,7 +17,6 @@ public class ElaborationInventory {
     private long id;
     private String errorInfo;
     private String md5sum;
-    private double distance;
     private boolean matched;
     private long repeats;
     private Timestamp createDate;
@@ -37,14 +36,6 @@ public class ElaborationInventory {
 
     public void setErrorInfo(String errorInfo) {
         this.errorInfo = errorInfo;
-    }
-
-    public double getDistance() {
-        return distance;
-    }
-
-    public void setDistance(double distance) {
-        this.distance = distance;
     }
 
     public long getRepeats() {
@@ -93,7 +84,6 @@ public class ElaborationInventory {
     public static ElaborationInventory valueOf(ElaborationVO vo) {
         ElaborationInventory inventory = new ElaborationInventory();
         inventory.setId(vo.getId());
-        inventory.setDistance(vo.getDistance());
         inventory.setErrorInfo(vo.getErrorInfo());
         inventory.setRepeats(vo.getRepeats());
         inventory.setMd5sum(vo.getMd5sum());
