@@ -531,29 +531,34 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         Map<String, VmInstanceVO> vmvos = vms.stream()
                 .collect(Collectors.toMap(VmInstanceVO::getUuid, inv -> inv));
-
+        Map<String, List<String>> vmToDefaultIpMap = new HashMap<>();
         for (IpStatisticData element : ipStatistics) {
             VmInstanceVO vmvo = vmvos.get(element.getVmInstanceUuid());
             if (vmvo == null) {
                 continue;
             }
-
-            List<VmNicVO> nics;
-            nics = vmvo.getVmNics().stream()
+            if (!vmToDefaultIpMap.containsKey(vmvo.getUuid())) {
+                List<VmNicVO> nics;
+                nics = vmvo.getVmNics().stream()
                         .filter(vmNic -> vmNic.getL3NetworkUuid().equals(vmvo.getDefaultL3NetworkUuid()))
                         .collect(Collectors.toList());
 
-            VmNicVO nic;
-
-            if (nics.size() == 1) {
-                nic = nics.get(0);
-            } else if (nics.size() > 1) {
-                nic = VmNicVO.findTheEarliestOne(nics);
+                VmNicVO nic;
+                if (nics.size() == 1) {
+                    nic = nics.get(0);
+                } else if (nics.size() > 1) {
+                    nic = VmNicVO.findTheEarliestOne(nics);
+                } else {
+                    continue;
+                }
+                vmToDefaultIpMap.put(vmvo.getUuid(), new ArrayList<>());
+                for (UsedIpVO usedIpVO : nic.getUsedIps()) {
+                    vmToDefaultIpMap.get(vmvo.getUuid()).add(usedIpVO.getIp());
+                }
+                element.setVmDefaultIp(vmToDefaultIpMap.get(vmvo.getUuid()));
             } else {
-                continue;
+                element.setVmDefaultIp(vmToDefaultIpMap.get(vmvo.getUuid()));
             }
-
-            element.setVmDefaultIp(nic.getIp());
         }
 
         return ipStatistics;
