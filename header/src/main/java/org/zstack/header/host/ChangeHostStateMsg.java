@@ -6,6 +6,9 @@ public class ChangeHostStateMsg extends NeedReplyMessage implements HostMessage 
     private String uuid;
     private String stateEvent;
 
+    // different behaviours for APIChangeHostStateMsg and ChangeHostStateMsg
+    private boolean fromApiMsg = false;
+
     public ChangeHostStateMsg() {
     }
 
@@ -33,5 +36,13 @@ public class ChangeHostStateMsg extends NeedReplyMessage implements HostMessage 
     @Override
     public String getHostUuid() {
         return getUuid();
+    }
+
+    public boolean isFromApiMsg() {
+        return fromApiMsg;
+    }
+
+    public void setFromApiMsg(boolean fromApiMsg) {
+        this.fromApiMsg = fromApiMsg;
     }
 }
