@@ -3809,19 +3809,14 @@ public class KVMHost extends HostBase implements Host {
         return true;
     }
 
-    private boolean isHostDisabledOrMaintenance() {
-        dbf.reload(self);
-        final boolean disabled = self.getState() == HostState.Disabled;
-        final boolean maintenance = self.getState() == HostState.Maintenance;
-        return (disabled || maintenance);
-    }
-
     @Override
     protected void updateOsHook(UpdateHostOSMsg msg, Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("update-operating-system-for-host-%s", self.getUuid()));
         chain.then(new ShareFlow() {
-            final HostState oldState = self.getState();
+            // is the host in maintenance already?
+            HostState oldState = self.getState();
+            boolean maintenance = oldState == HostState.Maintenance;
 
             @Override
             public void setup() {
@@ -3841,19 +3836,19 @@ public class KVMHost extends HostBase implements Host {
                 });
 
                 flow(new Flow() {
-                    String __name__ = "make-host-in-disabled-state";
+                    String __name__ = "make-host-in-maintenance";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (isHostDisabledOrMaintenance()) {
+                        if (maintenance) {
                             trigger.next();
                             return;
                         }
 
-                        // disable the host before update its os, keep the vms running in it
+                        // enter maintenance, but donot stop/migrate vm on the host
                         ChangeHostStateMsg cmsg = new ChangeHostStateMsg();
                         cmsg.setUuid(self.getUuid());
-                        cmsg.setStateEvent(HostStateEvent.disable.toString());
+                        cmsg.setStateEvent(HostStateEvent.preMaintain.toString());
                         bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, self.getUuid());
                         bus.send(cmsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -3869,7 +3864,7 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (isHostDisabledOrMaintenance()) {
+                        if (maintenance) {
                             trigger.rollback();
                             return;
                         }
@@ -3920,7 +3915,7 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        if (isHostDisabledOrMaintenance()) {
+                        if (maintenance) {
                             trigger.next();
                             return;
                         }
