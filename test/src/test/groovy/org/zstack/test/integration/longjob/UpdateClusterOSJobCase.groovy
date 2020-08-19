@@ -340,9 +340,16 @@ class UpdateClusterOSJobCase extends SubCase {
         HostInventory kvm2 = env.inventoryByName("kvm2") as HostInventory
 
         // set kvm1 maintenance
-        HostVO hvo = dbFindByUuid(kvm1.uuid, HostVO.class)
-        hvo.state = HostState.Maintenance
-        dbf.update(hvo)
+        HostVO hvo1 = dbFindByUuid(kvm1.uuid, HostVO.class)
+        assert hvo1.state == HostState.Enabled
+
+        changeHostState {
+            uuid = kvm1.uuid
+            stateEvent = "maintain"
+        }
+
+        hvo1 = dbFindByUuid(kvm1.uuid, HostVO.class)
+        assert hvo1.state == HostState.Maintenance
 
         // try to update cluster os
         APIUpdateClusterOSMsg msg = new APIUpdateClusterOSMsg()
@@ -361,8 +368,8 @@ class UpdateClusterOSJobCase extends SubCase {
         }
 
         // kvm1 still in maintenance state
-        hvo = dbf.reload(hvo)
-        assert hvo.state == HostState.Maintenance
+        hvo1 = dbFindByUuid(kvm1.uuid, HostVO.class)
+        assert hvo1.state == HostState.Maintenance
 
         // kvm2 still in enabled state
         HostVO hvo2 = dbFindByUuid(kvm2.uuid, HostVO.class)
@@ -376,8 +383,12 @@ class UpdateClusterOSJobCase extends SubCase {
 
     void testUpdateClusterUsingAPI() {
         ClusterInventory cls = env.inventoryByName("cluster1") as ClusterInventory
-        HostInventory kvm1 = env.inventoryByName("kvm1") as HostInventory
+        HostInventory kvm2 = env.inventoryByName("kvm2") as HostInventory
         VmInstanceInventory vmInv = env.inventoryByName("vm1") as VmInstanceInventory
+
+        // check kvm2 state before update cluster os
+        HostVO hvo2 = dbFindByUuid(kvm2.uuid, HostVO.class)
+        assert hvo2.state == HostState.Enabled
 
         // try to update cluster os
         LongJobInventory jobInv = updateClusterOS {
@@ -389,6 +400,10 @@ class UpdateClusterOSJobCase extends SubCase {
             LongJobVO job = dbFindByUuid(jobInv.getUuid(), LongJobVO.class)
             assert job.state == LongJobState.Succeeded
         }
+
+        // kvm2 is back to enabled state
+        hvo2 = dbFindByUuid(kvm2.uuid, HostVO.class)
+        assert hvo2.state == HostState.Enabled
 
         // vm1 still running
         VmInstanceVO vmVO = dbFindByUuid(vmInv.uuid, VmInstanceVO.class)
