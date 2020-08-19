@@ -9,6 +9,7 @@ public class ShutdownHostMsg extends NeedReplyMessage implements HostMessage {
     private String uuid;
     private boolean waitTaskCompleted;
     private Long maxWaitTime;
+    private boolean returnEarly;
 
     @Override
     public String getHostUuid() {
@@ -37,5 +38,13 @@ public class ShutdownHostMsg extends NeedReplyMessage implements HostMessage {
 
     public void setMaxWaitTime(Long maxWaitTime) {
         this.maxWaitTime = maxWaitTime;
+    }
+
+    public boolean isReturnEarly() {
+        return returnEarly;
+    }
+
+    public void setReturnEarly(boolean returnEarly) {
+        this.returnEarly = returnEarly;
     }
 }
