@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.appliancevm.*;
+import org.zstack.image.ImageSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
@@ -338,6 +339,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 aspec.setSshPort(VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class));
                 aspec.setAgentPort(msg.getApplianceVmAgentPort());
 
+                if (ImageSystemTags.BOOT_MODE.hasTag(imgvo.getUuid())) {
+                    aspec.getInherentSystemTags().add(ImageSystemTags.BOOT_MODE.getTag(imgvo.getUuid()));
+                }
                 L3NetworkInventory mgmtNw = L3NetworkInventory.valueOf(dbf.findByUuid(offering.getManagementNetworkUuid(), L3NetworkVO.class));
                 ApplianceVmNicSpec mgmtNicSpec = new ApplianceVmNicSpec();
                 mgmtNicSpec.setL3NetworkUuid(mgmtNw.getUuid());
