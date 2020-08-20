@@ -1,9 +1,11 @@
 package org.zstack.network.service.virtualrouter;
 
+import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.appliancevm.*;
+import org.zstack.header.image.ImageBootMode;
 import org.zstack.image.ImageSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
@@ -339,8 +341,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 aspec.setSshPort(VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class));
                 aspec.setAgentPort(msg.getApplianceVmAgentPort());
 
-                if (ImageSystemTags.BOOT_MODE.hasTag(imgvo.getUuid())) {
-                    aspec.getInherentSystemTags().add(ImageSystemTags.BOOT_MODE.getTag(imgvo.getUuid()));
+                String imgBootMode = ImageSystemTags.BOOT_MODE.getTokenByResourceUuid(imgvo.getUuid(), ImageSystemTags.BOOT_MODE_TOKEN);
+                if (ImageBootMode.UEFI.toString().equals(imgBootMode)) {
+                    aspec.getInherentSystemTags().addAll(Lists.newArrayList(ImageSystemTags.BOOT_MODE.getTag(imgvo.getUuid()), "vmMachineType::q35"));
                 }
                 L3NetworkInventory mgmtNw = L3NetworkInventory.valueOf(dbf.findByUuid(offering.getManagementNetworkUuid(), L3NetworkVO.class));
                 ApplianceVmNicSpec mgmtNicSpec = new ApplianceVmNicSpec();
