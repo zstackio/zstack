@@ -7043,7 +7043,7 @@
   {
     "raw": "ecs [%s] already has public ip now",
     "en_US": "ecs [{0}] already has public ip now",
-    "zh_CN": "ECS云主机[{0}]已经拥有拥有IP",
+    "zh_CN": "ECS云主机[{0}]已经拥有IP",
     "arguments": [
       "msg.getEcsUuid()"
     ],
