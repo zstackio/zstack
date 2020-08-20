@@ -8,6 +8,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -42,6 +44,9 @@ import org.zstack.header.vm.VmNicVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.vip.*;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.resourceconfig.ResourceConfigUpdateExtensionPoint;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.RangeSet;
@@ -78,7 +83,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     private PluginRegistry pluginRgty;
     @Autowired
     private TagManager tagMgr;
-
+    @Autowired
+    private ResourceConfigFacade rcf;
     private Map<String, LoadBalancerBackend> backends = new HashMap<String, LoadBalancerBackend>();
 
     @Override
