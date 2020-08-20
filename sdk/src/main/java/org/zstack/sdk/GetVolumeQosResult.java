@@ -51,4 +51,11 @@ public class GetVolumeQosResult {
         return this.volumeBandwidthWriteUpthreshold;
     }
 
+    public String volumeUuid;
+    public void setVolumeUuid(String volumeUuid) {
+        this.volumeUuid = volumeUuid;
+    }
+    public String getVolumeUuid() {
+        return volumeUuid;
+    }
 }
