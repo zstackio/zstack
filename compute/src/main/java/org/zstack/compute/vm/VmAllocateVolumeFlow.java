@@ -127,12 +127,6 @@ public class VmAllocateVolumeFlow implements Flow {
                         }
 
                         vspec.setIsVolumeCreated(true);
-                        if (!vspec.isRoot()) {
-                            VolumeConstant.CreateDataVolumeData d = new VolumeConstant.CreateDataVolumeData();
-                            d.vmUuid = inv.getVmInstanceUuid();
-                            d.dataVolumeUuid = inv.getUuid();
-                            evtf.fire(VolumeConstant.DATAVOLUME_CREATE_EVENT_PATH, d);
-                        }
                     } else {
                         err = r.getError();
                         vspec.setIsVolumeCreated(false);

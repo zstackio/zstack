@@ -24,7 +24,6 @@ public interface L3NetworkConstant {
     public static final String VROUTER_CREATE_EVENT_PATH = "/vrouter/create/event/path";
 
     public class VRouterData {
-        public List<String> l3NetworkUuid = new ArrayList<>();
         public String vrouterUuid;
     }
 
