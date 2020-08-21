@@ -1225,6 +1225,8 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void attachIso(final AttachIsoOnHypervisorMsg msg, final NoErrorCompletion completion) {
+        checkStatus();
+
         final AttachIsoOnHypervisorReply reply = new AttachIsoOnHypervisorReply();
 
         IsoTO iso = new IsoTO();
