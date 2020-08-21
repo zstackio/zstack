@@ -39,13 +39,17 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ThirdpartyOriginalAlertVO` (
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`uuid`),
   UNIQUE KEY `uuid` (`uuid`),
-  CONSTRAINT `fkThirdpartyAlertVOThirdpartyPlatformVO` FOREIGN KEY (`thirdpartyPlatformUuid`) REFERENCES `ThirdpartyPlatformVO` (`uuid`) ON DELETE CASCADE
+  CONSTRAINT `fkThirdpartyAlertVOThirdpartyPlatformVO` FOREIGN KEY (`thirdpartyPlatformUuid`) REFERENCES `ThirdpartyPlatformVO` (`uuid`) ON DELETE CASCADE,
+  INDEX `idxThirdpartyPlatformUuid` (`thirdpartyPlatformUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`SNSEndpointThirdpartyAlertHistoryVO` (
   `endpointUuid` varchar(32) NOT NULL,
   `alertUuid` varchar(32) NOT NULL,
-  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
+  `subscriptionUuid` varchar(32) NOT NULL,
+  `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  INDEX `idxEndpointUuid` (`endpointUuid`),
+  INDEX `idxSubscriptionUuid` (`subscriptionUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

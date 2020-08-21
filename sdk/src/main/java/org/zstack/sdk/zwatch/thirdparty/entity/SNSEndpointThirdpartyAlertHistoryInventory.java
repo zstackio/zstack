@@ -20,6 +20,14 @@ public class SNSEndpointThirdpartyAlertHistoryInventory  {
         return this.endpointUuid;
     }
 
+    public java.lang.String subscriptionUuid;
+    public void setSubscriptionUuid(java.lang.String subscriptionUuid) {
+        this.subscriptionUuid = subscriptionUuid;
+    }
+    public java.lang.String getSubscriptionUuid() {
+        return this.subscriptionUuid;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
