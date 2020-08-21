@@ -207,17 +207,8 @@ public class CreateApplianceVmJob implements Job {
         }).done(new FlowDoneHandler(complete) {
             @Override
             public void handle(Map chainData) {
-                /**
-                 * send event, if cloudformation is creating now, it will recieve the event and record vrouter for rollback
-                 */
                 ApplianceVmVO avo = (ApplianceVmVO) chainData.get(ApplianceVmVO.class.getSimpleName());
                 L3NetworkConstant.VRouterData data = new L3NetworkConstant.VRouterData();
-                for (ApplianceVmNicSpec nic: spec.getAdditionalNics()) {
-                    data.l3NetworkUuid.add(nic.getL3NetworkUuid());
-                }
-                if (data.l3NetworkUuid.isEmpty()) {
-                    data.l3NetworkUuid.add(spec.getManagementNic().getL3NetworkUuid());
-                }
                 data.vrouterUuid = avo.getUuid();
                 evtf.fire(L3NetworkConstant.VROUTER_CREATE_EVENT_PATH, data);
 
