@@ -3,6 +3,7 @@ package org.zstack.network.service.virtualrouter;
 import org.zstack.appliancevm.ApplianceVmGlobalProperty;
 import org.zstack.header.network.l3.L3NetworkInventory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,8 +14,8 @@ public class VirtualRouterStruct {
     private VirtualRouterOfferingValidator offeringValidator;
     private VirtualRouterVmSelector virtualRouterVmSelector;
     private VirtualRouterOfferingSelector virtualRouterOfferingSelector;
-    private List<String> inherentSystemTags;
-    private List<String> nonInherentSystemTags;
+    private List<String> inherentSystemTags = new ArrayList<>();
+    private List<String> nonInherentSystemTags = new ArrayList<>();
     private boolean notGatewayForGuestL3Network;
     private String providerType = VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
     private String applianceVmType = VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE;

@@ -3,6 +3,7 @@ package org.zstack.network.service.virtualrouter;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l3.L3NetworkInventory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -11,8 +12,8 @@ import java.util.List;
 public class CreateVirtualRouterVmMsg extends NeedReplyMessage {
     private L3NetworkInventory l3Network;
     private VirtualRouterOfferingInventory offering;
-    private List<String> inherentSystemTags;
-    private List<String> nonInherentSystemTags;
+    private List<String> inherentSystemTags = new ArrayList<>();
+    private List<String> nonInherentSystemTags = new ArrayList<>();
     private boolean notGatewayForGuestL3Network;
     private String providerType;
     private String applianceVmType;
