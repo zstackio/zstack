@@ -28,6 +28,9 @@
         <dependency>
             <groupId>org.kohsuke</groupId>
             <artifactId>groovy-sandbox</artifactId>
+            <version>1.19</version>
+           <!-- <scope>system</scope>
+            <systemPath>${project.basedir}/ext-libs/groovy-sandbox-1.27-SNAPSHOT.jar</systemPath>-->
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -331,7 +334,7 @@
                 <version>2.18</version>
                 <configuration>
                     <classpathDependencyExcludes>
-                        <classpathDependencyExcludes>c3p0:c3p0:jar:0.9.1.1</classpathDependencyExcludes>
+                        <classpathDependencyExcludes>c3p0:c3p0:jar:0.9.5.4</classpathDependencyExcludes>
                     </classpathDependencyExcludes>
                 </configuration>
             </plugin>
