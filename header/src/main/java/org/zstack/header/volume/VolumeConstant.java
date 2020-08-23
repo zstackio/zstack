@@ -13,10 +13,4 @@ public interface VolumeConstant {
         MigrationInCurrentPrimaryStorage,
         MigrationToOtherPrimaryStorage
     }
-
-    String DATAVOLUME_CREATE_EVENT_PATH = "/datavolume/create/event/path";
-    class CreateDataVolumeData {
-        public String dataVolumeUuid;
-        public String vmUuid;
-    }
 }
