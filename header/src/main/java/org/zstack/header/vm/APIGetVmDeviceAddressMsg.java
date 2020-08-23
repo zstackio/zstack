@@ -7,6 +7,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -44,5 +45,12 @@ public class APIGetVmDeviceAddressMsg extends APISyncCallMessage implements VmIn
 
     public void setResourceTypes(List<String> resourceTypes) {
         this.resourceTypes = resourceTypes;
+    }
+
+    public static APIGetVmDeviceAddressMsg __example__() {
+        APIGetVmDeviceAddressMsg msg = new APIGetVmDeviceAddressMsg();
+        msg.uuid = uuid();
+        msg.resourceTypes = Collections.singletonList("VolumeVO");
+        return msg;
     }
 }
