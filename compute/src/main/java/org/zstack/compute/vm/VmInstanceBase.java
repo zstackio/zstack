@@ -5448,6 +5448,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        if (self.getState() == VmInstanceState.Running) {
+            completion.success();
+            return;
+        }
+
         if (self.getState() == VmInstanceState.Created) {
             InstantiateVmFromNewCreatedStruct struct = new JsonLabel().get(
                     InstantiateVmFromNewCreatedStruct.makeLabelKey(self.getUuid()), InstantiateVmFromNewCreatedStruct.class);
