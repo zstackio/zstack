@@ -31,7 +31,6 @@ public class APIGetMissedElaborationReply extends APIReply {
         inventory.setId(1);
         inventory.setMatched(false);
         inventory.setErrorInfo("test for missed error");
-        inventory.setDistance(0.37104707956314087);
         inventory.setRepeats(2);
         inventory.setCreateDate(new Timestamp(org.zstack.header.message.DocUtils.date));
         inventory.setLastOpDate(new Timestamp(org.zstack.header.message.DocUtils.date));

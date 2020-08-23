@@ -28,14 +28,6 @@ public class ElaborationInventory  {
         return this.md5sum;
     }
 
-    public double distance;
-    public void setDistance(double distance) {
-        this.distance = distance;
-    }
-    public double getDistance() {
-        return this.distance;
-    }
-
     public boolean matched;
     public void setMatched(boolean matched) {
         this.matched = matched;

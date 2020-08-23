@@ -21,9 +21,6 @@ public class ElaborationVO {
     private String md5sum;
 
     @Column
-    private double distance;
-
-    @Column
     private long repeats;
 
     @Column
@@ -54,14 +51,6 @@ public class ElaborationVO {
 
     public void setErrorInfo(String errorInfo) {
         this.errorInfo = errorInfo;
-    }
-
-    public double getDistance() {
-        return distance;
-    }
-
-    public void setDistance(double distance) {
-        this.distance = distance;
     }
 
     public long getRepeats() {

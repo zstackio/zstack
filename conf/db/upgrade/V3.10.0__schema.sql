@@ -48,3 +48,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SNSEndpointThirdpartyAlertHistoryVO` (
   `alertUuid` varchar(32) NOT NULL,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE ElaborationVO DROP COLUMN `distance`;

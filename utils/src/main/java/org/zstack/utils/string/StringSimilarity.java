@@ -25,6 +25,7 @@ public class StringSimilarity {
     public static File classPathFolder = PathUtil.findFolderOnClassPath(StringSimilarity.elaborateFolder);
     private static final double threshold = 0.1;
     private static final int mapLength = 1500;
+    public static int maxElaborationRegex = 8192;
 
     // matched errors
     private static final Map<String, ErrorCodeElaboration> errors = new LinkedHashMap<String, ErrorCodeElaboration>(mapLength, 0.9f, true) {
