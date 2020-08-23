@@ -101,6 +101,9 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
 
             SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
             q.add(LocalStorageHostRefVO_.hostUuid, Op.IN, huuids);
+            if (!spec.getRequiredPrimaryStorageUuids().isEmpty()) {
+                q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.IN, spec.getRequiredPrimaryStorageUuids());
+            }
             List<LocalStorageHostRefVO> refs = q.list();
 
             final Set<String> toRemoveHuuids = new HashSet<>();
