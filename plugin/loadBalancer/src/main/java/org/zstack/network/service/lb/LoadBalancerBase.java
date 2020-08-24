@@ -37,8 +37,10 @@ import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.vip.ModifyVipAttributesStruct;
 import org.zstack.network.service.vip.Vip;
+import org.zstack.network.service.vip.VipVO;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -46,6 +48,8 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -79,6 +83,8 @@ public class LoadBalancerBase {
     private TagManager tagMgr;
     @Autowired
     protected CascadeFacade casf;
+    @Autowired
+    protected L3NetworkManager l3Mgr;
 
     @Autowired
     private PluginRegistry pluginRgty;
@@ -653,7 +659,17 @@ public class LoadBalancerBase {
                             .list();
                 }
 
-                reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, VmNicInventory.valueOf(nics)));
+                /* TODO: lb only support ipv4 */
+                LoadBalancerVO lbVO = dbf.findByUuid(msg.getLoadBalancerUuid(), LoadBalancerVO.class);
+                VipVO vipVO = dbf.findByUuid(lbVO.getVipUuid(), VipVO.class);
+                List<VmNicInventory> nicInvs;
+                if (IPv6NetworkUtils.isIpv6Address(vipVO.getIp())) {
+                    nicInvs = new ArrayList<>();
+                } else {
+                    nicInvs = l3Mgr.filterVmNicByIpVersion(VmNicInventory.valueOf(nics), IPv6Constants.IPv4);
+                }
+
+                reply.setInventories(callGetCandidateVmNicsForLoadBalancerExtensionPoint(msg, nicInvs));
             }
         }.execute();
 

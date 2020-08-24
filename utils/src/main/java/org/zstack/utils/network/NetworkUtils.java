@@ -82,6 +82,18 @@ public class NetworkUtils {
         return matcher.matches();
     }
 
+    public static boolean isIpAddress(String ip) {
+        boolean isIpAddress = false;
+        if (NetworkUtils.isIpv4Address(ip)) {
+            isIpAddress = true;
+        } else {
+            if (IPv6NetworkUtils.isIpv6Address(ip)) {
+                isIpAddress = true;
+            }
+        }
+        return isIpAddress;
+    }
+
     public static boolean isNetmask(String netmask) {
         return validNetmasks.keySet().contains(netmask);
     }

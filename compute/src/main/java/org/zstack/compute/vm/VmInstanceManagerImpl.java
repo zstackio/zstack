@@ -193,10 +193,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private void handleLocalMessage(Message msg) {
         if (msg instanceof CreateVmInstanceMsg) {
             handle((CreateVmInstanceMsg) msg);
-        } else if (msg instanceof DetachIpAddressFromVmNicMsg) {
-            handle((DetachIpAddressFromVmNicMsg) msg);
-        } else if (msg instanceof AttachL3NetworkToVmNicMsg) {
-            handle((AttachL3NetworkToVmNicMsg) msg);
         } else if (msg instanceof VmInstanceMessage) {
             passThrough((VmInstanceMessage) msg);
         } else {
@@ -213,8 +209,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
             handle((APICreateVmNicMsg) msg);
         } else if (msg instanceof APIDeleteVmNicMsg) {
             handle((APIDeleteVmNicMsg) msg);
-        } else if (msg instanceof APIAttachL3NetworkToVmNicMsg) {
-            handle((APIAttachL3NetworkToVmNicMsg) msg);
         } else if (msg instanceof APIGetCandidateZonesClustersHostsForCreatingVmMsg) {
             handle((APIGetCandidateZonesClustersHostsForCreatingVmMsg) msg);
         } else if (msg instanceof APIGetCandidatePrimaryStoragesForCreatingVmMsg) {
@@ -708,6 +702,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         final APICreateVmNicEvent evt = new APICreateVmNicEvent(msg.getId());
         VmNicInventory nic = new VmNicInventory();
         VmNicVO nicVO = new VmNicVO();
+        List<UsedIpInventory> ips = new ArrayList<>();
 
         FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
         flowChain.setName(String.format("create-nic-on-l3-network-%s", msg.getL3NetworkUuid()));
@@ -759,44 +754,78 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                AllocateIpMsg allocateIpMsg = new AllocateIpMsg();
-                allocateIpMsg.setL3NetworkUuid(msg.getL3NetworkUuid());
-                allocateIpMsg.setRequiredIp(msg.getIp());
-                l3nm.updateIpAllocationMsg(allocateIpMsg, nic.getMac());
-                bus.makeTargetServiceIdByResourceUuid(allocateIpMsg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());
+                List<ErrorCode> errors = new ArrayList<>();
+                L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+                new While<>(l3NetworkVO.getIpVersions()).each((version, wcomp) -> {
+                    AllocateIpMsg allocateIpMsg = new AllocateIpMsg();
+                    allocateIpMsg.setL3NetworkUuid(msg.getL3NetworkUuid());
+                    allocateIpMsg.setRequiredIp(msg.getIp());
+                    allocateIpMsg.setIpVersion(version);
+                    l3nm.updateIpAllocationMsg(allocateIpMsg, nic.getMac());
+                    bus.makeTargetServiceIdByResourceUuid(allocateIpMsg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());
 
-                bus.send(allocateIpMsg, new CloudBusCallBack(trigger) {
+                    bus.send(allocateIpMsg, new CloudBusCallBack(wcomp) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                errors.add(reply.getError());
+                                wcomp.allDone();
+                                return;
+                            }
+
+                            AllocateIpReply aReply = reply.castReply();
+                            UsedIpInventory ipInventory = aReply.getIpInventory();
+                            ips.add(ipInventory);
+                            for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
+                                ext.afterAddIpAddress(nic.getUuid(), ipInventory.getUuid());
+                            }
+
+                            if (nic.getL3NetworkUuid() == null) {
+                                nic.setL3NetworkUuid(aReply.getIpInventory().getL3NetworkUuid());
+                            }
+                            if (nic.getUsedIpUuid() == null) {
+                                nic.setUsedIpUuid(aReply.getIpInventory().getUuid());
+                            }
+                            /* TODO, to support nic driver type*/
+                            wcomp.done();
+                        }
+                    });
+                }).run(new NoErrorCompletion(trigger) {
                     @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                            return;
+                    public void done() {
+                        if (errors.size() > 0) {
+                            trigger.fail(errors.get(0));
+                        } else {
+                            trigger.next();
                         }
-
-                        AllocateIpReply aReply = reply.castReply();
-                        UsedIpInventory ipInventory = aReply.getIpInventory();
-                        for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
-                            ext.afterAddIpAddress(nic.getUuid(), ipInventory.getUuid());
-                        }
-
-                        nic.setL3NetworkUuid(aReply.getIpInventory().getL3NetworkUuid());
-                        nic.setUsedIpUuid(aReply.getIpInventory().getUuid());
-                        trigger.next();
                     }
                 });
+
             }
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
-                if (nic.getUsedIpUuid() != null) {
-                    ReturnIpMsg msg = new ReturnIpMsg();
-                    msg.setL3NetworkUuid(nic.getL3NetworkUuid());
-                    msg.setUsedIpUuid(nic.getUsedIpUuid());
-                    bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
+                if (!ips.isEmpty()) {
+                    List<ReturnIpMsg> rmsgs = new ArrayList<>();
+                    for (UsedIpInventory ip : ips) {
+                        ReturnIpMsg rmsg = new ReturnIpMsg();
+                        rmsg.setL3NetworkUuid(ip.getL3NetworkUuid());
+                        rmsg.setUsedIpUuid(ip.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+                        rmsgs.add(rmsg);
+                    }
 
-                    bus.send(msg, new CloudBusCallBack(trigger) {
+                    new While<>(rmsgs).step((rmsg, wcomp) -> {
+                        bus.send(rmsg, new CloudBusCallBack(wcomp) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                wcomp.done();
+
+                            }
+                        });
+                    }, 2).run(new NoErrorCompletion(trigger) {
                         @Override
-                        public void run(MessageReply reply) {
+                        public void done() {
                             dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
                             trigger.rollback();
                         }
@@ -991,28 +1020,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     private List<VmNicSpec> getVmNicSpecsFromNewVmInstanceMsg(NewVmInstanceMessage msg) {
         List<VmNicSpec> nicSpecs = new ArrayList<>();
-        Map<String, List<String>> secondaryNetworksMap = new DualStackNicSecondaryNetworksOperator().getSecondaryNetworksFromSystemTags(msg.getSystemTags());
 
         for (String l3Uuid : msg.getL3NetworkUuids()) {
             List<L3NetworkInventory> l3Invs = new ArrayList<>();
             L3NetworkInventory inv = L3NetworkInventory.valueOf(dbf.findByUuid(l3Uuid, L3NetworkVO.class));
             l3Invs.add(inv);
-
-            List<String> secondaryNetworksList = secondaryNetworksMap.get(l3Uuid);
-            if (secondaryNetworksList == null || secondaryNetworksList.isEmpty()) {
-                nicSpecs.add(new VmNicSpec(l3Invs));
-                continue;
-            }
-
-            for (String secondaryL3Uuid : secondaryNetworksList) {
-                if (secondaryL3Uuid.equals(l3Uuid)) {
-                    continue;
-                }
-
-                L3NetworkInventory secInv = L3NetworkInventory.valueOf(dbf.findByUuid(secondaryL3Uuid, L3NetworkVO.class));
-                l3Invs.add(secInv);
-            }
-
             nicSpecs.add(new VmNicSpec(l3Invs));
         }
 
@@ -1348,175 +1360,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
         return String.format("vmNic-%s", nicUuid);
     }
 
-    private void doAttachL3ToNic(final VmNicInventory nic, final String l3Uuid, boolean attachedToHypervisor, final Completion completion) {
-        thdf.chainSubmit(new ChainTask(completion) {
-            @Override
-            public String getSyncSignature() {
-                return getVmNicSyncSignature(nic.getUuid());
-            }
-
-            @Override
-            public void run(SyncTaskChain chain) {
-                VmInstanceVO vmVo = null;
-
-                L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, l3Uuid).find();
-                FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
-                flowChain.setName(String.format("attach-l3-network-%s-to-nic-%s", l3Uuid, nic.getUuid()));
-                flowChain.getData().put(VmInstanceConstant.Params.VmNicInventory.toString(), nic);
-                flowChain.getData().put(VmInstanceConstant.Params.L3NetworkInventory.toString(), L3NetworkInventory.valueOf(l3Vo));
-                if (nic.getVmInstanceUuid() != null) {
-                    vmVo = dbf.findByUuid(nic.getVmInstanceUuid(), VmInstanceVO.class);
-                    flowChain.getData().put(VmInstanceConstant.Params.vmInventory.toString(), VmInstanceInventory.valueOf(vmVo));
-                }
-                flowChain.then(new VmPreAllocateNicIpFlow());
-                flowChain.then(new VmNicAllocateIpFlow());
-                if (vmVo != null) {
-                    flowChain.then(new VmChangeDefaultL3NetworkFlow());
-                }
-                /* when doAttachL3ToNic is called from APIMsg, it need to update nic to hypervisor,
-                * or the the outer caller will update nic to hypervisor */
-                if (attachedToHypervisor) {
-                    flowChain.then(new AddL3NetworkToVmNicFlow());
-                }
-                flowChain.done(new FlowDoneHandler(completion) {
-                    @Override
-                    public void handle(Map data) {
-                        completion.success();
-                        chain.next();
-                    }
-                }).error(new FlowErrorHandler(completion) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        completion.fail(errCode);
-                        chain.next();
-                    }
-                }).start();
-            }
-
-            @Override
-            public String getName() {
-                return String.format("attach-l3-network-%s-to-nic-%s", l3Uuid, nic.getUuid());
-            }
-        });
-    }
-
-    private void handle(final AttachL3NetworkToVmNicMsg msg) {
-        final AttachL3NetworkToVmNicReply reply = new AttachL3NetworkToVmNicReply();
-        VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
-
-        doAttachL3ToNic(VmNicInventory.valueOf(vmNicVO), msg.getL3NetworkUuid(), false, new Completion(msg) {
-            @Override
-            public void success() {
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
-    }
-
-    private void handle(final APIAttachL3NetworkToVmNicMsg msg) {
-        final APIAttachL3NetworkToVmNicEvent evt = new APIAttachL3NetworkToVmNicEvent(msg.getId());
-        VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
-
-        if (msg.getStaticIp() != null) {
-            new StaticIpOperator().setStaticIp(vmNicVO.getVmInstanceUuid(), msg.getL3NetworkUuid(), msg.getStaticIp());
-        }
-        doAttachL3ToNic(VmNicInventory.valueOf(vmNicVO), msg.getL3NetworkUuid(), true, new Completion(msg) {
-            @Override
-            public void success() {
-                VmNicVO vmNicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
-                evt.setInventory(VmNicInventory.valueOf(vmNicVO));
-                bus.publish(evt);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                new StaticIpOperator().deleteStaticIpByVmUuidAndL3Uuid(vmNicVO.getVmInstanceUuid(), msg.getL3NetworkUuid());
-                evt.setError(errorCode);
-                bus.publish(evt);
-            }
-        });
-    }
-
-    private void doDetachIpAddressFromNic(String vmNicUuid, String usedIpUuid, final Completion completion) {
-        thdf.chainSubmit(new ChainTask(completion) {
-            @Override
-            public String getSyncSignature() {
-                return getVmNicSyncSignature(vmNicUuid);
-            }
-
-            @Override
-            public void run(SyncTaskChain chain) {
-                /* detach last ip, will delete the nic */
-                VmNicInventory nic = VmNicInventory.valueOf(dbf.findByUuid(vmNicUuid, VmNicVO.class));
-                UsedIpInventory usedIp = UsedIpInventory.valueOf(dbf.findByUuid(usedIpUuid, UsedIpVO.class));
-
-                if (nic.getUsedIps().size() <= 1) {
-                    doDeleteVmNic(nic, completion);
-                    chain.next();
-                    return;
-                }
-
-                VmInstanceVO vmVo = null;
-                if (nic.getVmInstanceUuid() != null) {
-                    vmVo = dbf.findByUuid(nic.getVmInstanceUuid(), VmInstanceVO.class);
-                }
-
-                FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
-                flowChain.setName(String.format("detach-ip-%s-from-nic-%s", usedIp.getIp(), nic.getUuid()));
-                flowChain.getData().put(VmInstanceConstant.Params.VmNicInventory.toString(), nic);
-                flowChain.getData().put(VmInstanceConstant.Params.UsedIPInventory.toString(), usedIp);
-                if (vmVo != null) {
-                    flowChain.getData().put(VmInstanceConstant.Params.vmInventory.toString(), VmInstanceInventory.valueOf(vmVo));
-                    flowChain.then(new DeleteL3NetworkFromVmNicFlow());
-                }
-                flowChain.then(new VmNicReturnIpFlow());
-                if (vmVo != null) {
-                    flowChain.then(new VmChangeDefaultL3NetworkFlow());
-                }
-                flowChain.done(new FlowDoneHandler(completion) {
-                    @Override
-                    public void handle(Map data) {
-                        completion.success();
-                        chain.next();
-                    }
-                }).error(new FlowErrorHandler(completion) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        completion.fail(errCode);
-                        chain.next();
-                    }
-                }).start();
-            }
-
-            @Override
-            public String getName() {
-                return String.format("detach-usedIp-%s-to-nic-%s", vmNicUuid, usedIpUuid);
-            }
-        });
-    }
-
-    private void handle(final DetachIpAddressFromVmNicMsg msg) {
-        final DetachIpAddressFromVmNicReply reply = new DetachIpAddressFromVmNicReply();
-
-        doDetachIpAddressFromNic(msg.getVmNicUuid(), msg.getUsedIpUuid(), new Completion(msg) {
-            @Override
-            public void success() {
-                bus.reply(msg, reply);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                reply.setError(errorCode);
-                bus.reply(msg, reply);
-            }
-        });
-    }
-
     @Override
     public String getId() {
         return bus.makeLocalServiceId(VmInstanceConstant.SERVICE_ID);
@@ -1683,12 +1526,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         l3NetworkUuids.forEach(it->validateHostNameOnDefaultL3Network(sysTag, hostname, it));
                     } else if (VmSystemTags.STATIC_IP.isMatch(sysTag)) {
                         validateStaticIp(sysTag);
-                    } else if (VmSystemTags.DUAL_STACK_NIC.isMatch(sysTag)) {
-                        validateDualStackNic(sysTag);
                     }
                 }
-
-                validateDualStackNic(msg.getSystemTags(), msg.getL3NetworkUuids());
             }
 
             private void validateStaticIp(String sysTag) {
@@ -1700,18 +1539,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
 
                 String ip = token.get(VmSystemTags.STATIC_IP_TOKEN);
-                L3NetworkVO l3NetworkVO = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
-                if (l3NetworkVO.getIpVersion() == IPv6Constants.IPv4) {
-                    if (!NetworkUtils.isIpv4Address(ip)) {
-                        throw new ApiMessageInterceptionException(argerr("%s is not a valid IPv4 address. Please correct your system tag[%s] of static IP",
-                                ip, sysTag));
-                    }
-                } else {
-                    ip = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
-                    if (!IPv6NetworkUtils.isIpv6Address(ip)) {
-                        throw new ApiMessageInterceptionException(argerr("%s is not a valid IPv6 address. Please correct your system tag[%s] of static IP",
-                                ip, sysTag));
-                    }
+                ip = IPv6NetworkUtils.ipv6TagValueToAddress(ip);
+                if (!NetworkUtils.isIpv4Address(ip) && !IPv6NetworkUtils.isIpv6Address(ip)) {
+                    throw new ApiMessageInterceptionException(argerr("%s is not a valid ip address. Please correct your system tag[%s] of static IP",
+                            ip, sysTag));
                 }
 
                 CheckIpAvailabilityMsg cmsg = new CheckIpAvailabilityMsg();
@@ -1726,81 +1557,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 CheckIpAvailabilityReply cr = r.castReply();
                 if (!cr.isAvailable()) {
                     throw new ApiMessageInterceptionException(operr("IP[%s] is not available on the L3 network[uuid:%s] because: %s", ip, l3Uuid, cr.getReason()));
-                }
-            }
-
-            private void validateDualStackNic(List<String> systemTags, List<String> l3Uuids) {
-                Map<String, List<String>> secondaryNetworksMap = new DualStackNicSecondaryNetworksOperator().getSecondaryNetworksFromSystemTags(systemTags);
-                Set<String> l3NetworkSet = new HashSet<>();
-                for (Map.Entry<String, List<String>> e : secondaryNetworksMap.entrySet()) {
-                    int ipv4Count = 0;
-                    int statefulIpv6Count = 0;
-                    String primaryL3 = e.getKey();
-                    List<String> secondaryNetworksList = e.getValue();
-
-                    for (String uuid : secondaryNetworksList) {
-                        if (!l3NetworkSet.contains(uuid)) {
-                            l3NetworkSet.add(uuid);
-                        } else {
-                            throw new ApiMessageInterceptionException(argerr("l3 network [uuid: %s] is added to vm more than once", uuid));
-                        }
-
-                        L3NetworkVO l3Vo = dbf.findByUuid(uuid, L3NetworkVO.class);
-                        if (l3Vo.getIpVersion() == IPv6Constants.IPv4) {
-                            ipv4Count++;
-                        } else {
-                            L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(l3Vo);
-                            List<IpRangeInventory> iprs = IpRangeHelper.getNormalIpRanges(l3Inv);
-                            if (!iprs.isEmpty() && !iprs.get(0).getAddressMode().equals(IPv6Constants.SLAAC)) {
-                                statefulIpv6Count++;
-                            }
-                        }
-                    }
-                    l3NetworkSet.remove(primaryL3);
-
-                    if (ipv4Count > 1) {
-                        throw new ApiMessageInterceptionException(argerr("there are %d ipv4 network on same nic", ipv4Count));
-                    }
-
-                    if (statefulIpv6Count > 1) {
-                        throw new ApiMessageInterceptionException(argerr("there are %d ipv6 stateful network on same nic", statefulIpv6Count));
-                    }
-                }
-
-                for (String uuid : l3Uuids) {
-                    if (l3NetworkSet.contains(uuid)) {
-                        throw new ApiMessageInterceptionException(argerr("l3 network [uuid: %s] is added to vm more than once", uuid));
-                    }
-                }
-            }
-
-            private void validateDualStackNic(String sysTag) {
-                Map<String, String> token = TagUtils.parse(VmSystemTags.DUAL_STACK_NIC.getTagFormat(), sysTag);
-                String primaryL3Uuid = token.get(VmSystemTags.DUAL_STACK_NIC_PRIMARY_L3_TOKEN);
-                L3NetworkVO primaryL3Vo = dbf.findByUuid(primaryL3Uuid, L3NetworkVO.class);
-                if (primaryL3Vo == null) {
-                    throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] not found. Please correct your system tag[%s] of dualStackNic",
-                            primaryL3Uuid, sysTag));
-                }
-
-                String secondaryL3Uuid = token.get(VmSystemTags.DUAL_STACK_NIC_SECONDARY_L3_TOKEN);
-                L3NetworkVO secondaryL3Vo = dbf.findByUuid(secondaryL3Uuid, L3NetworkVO.class);
-                if (secondaryL3Vo == null) {
-                    throw new ApiMessageInterceptionException(argerr("L3 network[uuid:%s] not found. Please correct your system tag[%s] of dualStackNic",
-                            primaryL3Uuid, sysTag));
-                }
-
-                if (!primaryL3Vo.getL2NetworkUuid().equals(secondaryL3Vo.getL2NetworkUuid())) {
-                    throw new ApiMessageInterceptionException(operr("L3 networks[primaryL3Uuid:%s, secondaryL3Uuid:%s] of dualStackNic is not on same l2 network",
-                            primaryL3Uuid, secondaryL3Uuid));
-                }
-
-                if (IpRangeHelper.getNormalIpRanges(primaryL3Vo).isEmpty()) {
-                    throw new ApiMessageInterceptionException(operr("L3 networks[uuid:%s] does not have ip range", primaryL3Uuid));
-                }
-
-                if (IpRangeHelper.getNormalIpRanges(secondaryL3Vo).isEmpty()) {
-                    throw new ApiMessageInterceptionException(operr("L3 networks[uuid:%s] does not have ip range", secondaryL3Uuid));
                 }
             }
 
@@ -1845,8 +1601,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     validateStaticIp(systemTag);
                 } else if (VmSystemTags.BOOT_ORDER.isMatch(systemTag)) {
                     validateBootOrder(systemTag);
-                }  else if (VmSystemTags.DUAL_STACK_NIC.isMatch(systemTag)) {
-                    validateDualStackNic(systemTag);
                 }
             }
 

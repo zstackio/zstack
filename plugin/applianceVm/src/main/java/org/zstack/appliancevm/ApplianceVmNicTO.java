@@ -1,6 +1,9 @@
 package org.zstack.appliancevm;
 
+import org.zstack.core.db.Q;
+import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.utils.network.IPv6Constants;
 
 /**
  */
@@ -17,11 +20,31 @@ public class ApplianceVmNicTO {
     private Integer vni;
     private String physicalInterface;
     private Integer mtu;
+    private String ip6;
+    private Integer prefixLength;
+    private String gateway6;
+    private String addressMode;
 
     public ApplianceVmNicTO(VmNicInventory inv) {
-        ip = inv.getIp();
-        netmask = inv.getNetmask();
-        gateway = inv.getGateway();
+        for (UsedIpInventory uip : inv.getUsedIps()) {
+            if (uip.getIpVersion() == IPv6Constants.IPv4) {
+                ip = uip.getIp();
+                netmask = uip.getNetmask();
+                gateway = uip.getGateway();
+            } else {
+                ip6 = uip.getIp();
+                gateway6 = uip.getGateway();
+                NormalIpRangeVO ipRangeVO = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, uip.getIpRangeUuid()).find();
+                prefixLength = ipRangeVO.getPrefixLen();
+                addressMode = ipRangeVO.getAddressMode();
+            }
+        }
+        /* for virtual router, gateway ip is in the usedIpVO */
+        if (inv.getUsedIps().size() == 0) {
+            ip = inv.getIp();
+            netmask = inv.getNetmask();
+            gateway = inv.getGateway();
+        }
         mac = inv.getMac();
     }
 
@@ -122,5 +145,37 @@ public class ApplianceVmNicTO {
 
     public void setMtu(Integer mtu) {
         this.mtu = mtu;
+    }
+
+    public String getIp6() {
+        return ip6;
+    }
+
+    public void setIp6(String ip6) {
+        this.ip6 = ip6;
+    }
+
+    public Integer getPrefixLength() {
+        return prefixLength;
+    }
+
+    public void setPrefixLength(Integer prefixLength) {
+        this.prefixLength = prefixLength;
+    }
+
+    public String getGateway6() {
+        return gateway6;
+    }
+
+    public void setGateway6(String gateway6) {
+        this.gateway6 = gateway6;
+    }
+
+    public String getAddressMode() {
+        return addressMode;
+    }
+
+    public void setAddressMode(String addressMode) {
+        this.addressMode = addressMode;
     }
 }

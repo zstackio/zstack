@@ -1,10 +1,13 @@
 package org.zstack.network.service.vip;
 
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Column;
 import java.io.Serializable;
@@ -43,7 +46,9 @@ import java.util.stream.Collectors;
         @ExpandedQuery(expandedField = "peerL3Network", inventoryClass = VipPeerL3NetworkRefInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "vipUuid"),
         @ExpandedQuery(expandedField = "NetworkServicesRef", inventoryClass = VipNetworkServicesRefInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "vipUuid")
+                foreignKey = "uuid", expandedInventoryKey = "vipUuid"),
+        @ExpandedQuery(expandedField = "usedIp", inventoryClass = UsedIpInventory.class,
+                foreignKey = "usedIpUuid", expandedInventoryKey = "uuid")
 })
 public class VipInventory implements Serializable {
     /**
@@ -288,5 +293,17 @@ public class VipInventory implements Serializable {
 
     public void setSystem(boolean system) {
         this.system = system;
+    }
+
+    public List<Integer> getCandidateIpversion() {
+        List<Integer> ipVersions = new ArrayList<>();
+        if (NetworkUtils.isIpv4Address(ip)) {
+            ipVersions.add(IPv6Constants.IPv4);
+            ipVersions.add(IPv6Constants.DUAL_STACK);
+        } else {
+            ipVersions.add(IPv6Constants.IPv6);
+            ipVersions.add(IPv6Constants.DUAL_STACK);
+        }
+        return ipVersions;
     }
 }

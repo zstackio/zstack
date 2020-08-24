@@ -11,4 +11,12 @@ public class GetL3NetworkDhcpIpAddressResult {
         return this.ip;
     }
 
+    public java.lang.String ip6;
+    public void setIp6(java.lang.String ip6) {
+        this.ip6 = ip6;
+    }
+    public java.lang.String getIp6() {
+        return this.ip6;
+    }
+
 }

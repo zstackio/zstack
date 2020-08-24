@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
@@ -61,7 +62,7 @@ import static org.zstack.core.Platform.*;
  * Created by xing5 on 2016/4/4.
  */
 public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
-        VmAbnormalLifeCycleExtensionPoint, VmInstanceMigrateExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint {
+        VmAbnormalLifeCycleExtensionPoint, VmInstanceMigrateExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint {
     private static final CLogger logger = Utils.getLogger(FlatEipBackend.class);
 
     @Autowired
@@ -421,7 +422,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 to.vipGateway = vip.getGateway();
                 to.vipNetmask = vip.getNetmask();
                 to.vipUuid = vip.getUuid();
-                List<NormalIpRangeVO> vipIprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, vip.getL3NetworkUuid()).list();
+                List<NormalIpRangeVO> vipIprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, vip.getL3NetworkUuid())
+                        .eq(NormalIpRangeVO_.ipVersion, to.ipVersion).list();
                 to.vipPrefixLen = vipIprs.get(0).getPrefixLen();
                 to.publicBridgeName = pubBridgeNames.get(eip.getVipUuid());
                 return to;
@@ -608,7 +610,8 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         to.vipGateway = struct.getVip().getGateway();
         to.vipNetmask = struct.getVip().getNetmask();
         to.vipUuid = struct.getVip().getUuid();
-        List<NormalIpRangeVO> iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, struct.getVip().getL3NetworkUuid()).list();
+        List<NormalIpRangeVO> iprs = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, struct.getVip().getL3NetworkUuid())
+                .eq(NormalIpRangeVO_.ipVersion, to.ipVersion).list();
         to.vipPrefixLen = iprs.get(0).getPrefixLen();
         to.publicBridgeName = new BridgeNameFinder().findByL3Uuid(struct.getVip().getL3NetworkUuid());
         return to;
@@ -745,5 +748,23 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         }
 
         return ret;
+    }
+
+    @Override
+    public List<String> getL3NetworkForEipInVirtualRouter(String networkServiceProviderType, VipInventory vip, List<String> l3Uuids) {
+        if (networkServiceProviderType.equals(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)) {
+            /* get vpc network or vrouter network */
+            return SQL.New("select distinct l3.uuid" +
+                    " from  L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref, NetworkServiceProviderVO provider" +
+                    " where l3.uuid = ref.l3NetworkUuid and ref.networkServiceProviderUuid = provider.uuid" +
+                    " and ref.networkServiceType = :serviceType and provider.type = :providerType" +
+                    " and l3.ipVersion in (:ipVersions) and l3.uuid in (:l3Uuids)")
+                    .param("serviceType", EipConstant.EIP_NETWORK_SERVICE_TYPE)
+                    .param("providerType", FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)
+                    .param("ipVersions", vip.getCandidateIpversion())
+                    .param("l3Uuids", l3Uuids)
+                    .list();
+        }
+        return new ArrayList<>();
     }
 }

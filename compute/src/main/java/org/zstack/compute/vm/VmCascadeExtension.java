@@ -47,6 +47,7 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
@@ -139,16 +140,14 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     class VmNicDetachResult {
         List<DetachNicFromVmMsg> dmsgs;
-        List<DetachIpAddressFromVmNicMsg> nicMsgs;
     }
 
     @Transactional(readOnly = true)
     private VmNicDetachResult getVmNicDetachMsgs(List<L2NetworkDetachStruct> structs) {
         List<DetachNicFromVmMsg> dmsgs  = new ArrayList<>();
-        List<DetachIpAddressFromVmNicMsg> nicMsgs  = new ArrayList<>();
 
         for (L2NetworkDetachStruct s : structs) {
-            String sql = "select vm.uuid, nic.uuid, ip.uuid from VmInstanceVO vm, VmNicVO nic, L3NetworkVO l3, UsedIpVO ip"
+            String sql = "select vm.uuid, nic.uuid from VmInstanceVO vm, VmNicVO nic, L3NetworkVO l3, UsedIpVO ip"
                     + " where vm.clusterUuid = :clusterUuid"
                     + " and l3.l2NetworkUuid = :l2NetworkUuid"
                     + " and nic.uuid = ip.vmNicUuid and ip.l3NetworkUuid = l3.uuid "
@@ -157,43 +156,26 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             q.setParameter("clusterUuid", s.getClusterUuid());
             q.setParameter("l2NetworkUuid", s.getL2NetworkUuid());
             List<Tuple> result = q.getResultList();
-            Map<String, List<String>> nicIpMap = new HashMap<>();
+            Map<String, String> nicVmMap = new HashMap<>();
             for (Tuple t : result) {
+                String vmUuid = t.get(0, String.class);
                 String nicUuid = t.get(1, String.class);
-                String ipUuid = t.get(2, String.class);
-                List<String> l3Uuids = nicIpMap.get(nicUuid);
-                if (l3Uuids == null) {
-                    l3Uuids = new ArrayList<>();
-                    nicIpMap.put(nicUuid, l3Uuids);
-                }
-                l3Uuids.add(ipUuid);
+                nicVmMap.put(nicUuid, vmUuid);
             }
 
-            for (Map.Entry<String, List<String>> entry : nicIpMap.entrySet()) {
+            for (Map.Entry<String, String> entry : nicVmMap.entrySet()) {
                 String nicUuid = entry.getKey();
-                List<String> ipUuids = entry.getValue();
-                VmNicVO nicVO = dbf.findByUuid(nicUuid, VmNicVO.class);
-                if (VmNicHelper.nicIncludeAllIps(VmNicInventory.valueOf(nicVO), ipUuids)) {
-                    DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
-                    msg.setVmInstanceUuid(nicVO.getVmInstanceUuid());
-                    msg.setVmNicUuid(nicUuid);
-                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, msg.getVmInstanceUuid());
-                    dmsgs.add(msg);
-                } else {
-                    for (String ipUuid : ipUuids) {
-                        DetachIpAddressFromVmNicMsg nicMsg = new DetachIpAddressFromVmNicMsg();
-                        nicMsg.setVmNicUuid(nicUuid);
-                        nicMsg.setId(ipUuid);
-                        bus.makeTargetServiceIdByResourceUuid(nicMsg, VmInstanceConstant.SERVICE_ID, nicVO.getVmInstanceUuid());
-                        nicMsgs.add(nicMsg);
-                    }
-                }
+                String vmUuid = entry.getValue();
+                DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
+                msg.setVmInstanceUuid(vmUuid);
+                msg.setVmNicUuid(nicUuid);
+                bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, msg.getVmInstanceUuid());
+                dmsgs.add(msg);
             }
         }
 
         VmNicDetachResult result = new VmNicDetachResult();
         result.dmsgs = dmsgs;
-        result.nicMsgs = nicMsgs;
         return result;
     }
 
@@ -203,8 +185,9 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             return;
         }
 
+        int parallelism = 10;
         List<String> vmNicUuids = new ArrayList<String>();
-        new While<>(msgs).all((msg, compl) -> bus.send(msg, new CloudBusCallBack(compl) {
+        new While<>(msgs).step((msg, compl) -> bus.send(msg, new CloudBusCallBack(compl) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
@@ -215,7 +198,7 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
                 compl.done();
             }
-        })).run(new NoErrorCompletion(completion) {
+        }), parallelism).run(new NoErrorCompletion(completion) {
             @Override
             public void done() {
                 if (!vmNicUuids.isEmpty() && deleteFromDb) {
@@ -230,44 +213,11 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         });
     }
 
-    private void detachIpFromVmNicCascade(List<DetachIpAddressFromVmNicMsg> msgs, final Completion completion) {
-        if (msgs.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        new While<>(msgs).all((msg, compl) -> bus.send(msg, new CloudBusCallBack(compl) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    logger.warn(String.format("failed to detach ip[uuid:%s] from vmNic [uuid:%s], %s." +
-                            " However, detaching will go on", msg.getUsedIpUuid(), msg.getVmNicUuid(), reply.getError()));
-                }
-                compl.done();
-            }
-        })).run(new NoErrorCompletion(completion) {
-            @Override
-            public void done() {
-                completion.success();
-            }
-        });
-    }
-
     private void handleL2NetworkDetach(CascadeAction action, final Completion completion) {
         List<L2NetworkDetachStruct> structs = action.getParentIssuerContext();
         final VmNicDetachResult result = getVmNicDetachMsgs(structs);
 
-        detachIpFromVmNicCascade(result.nicMsgs, new Completion(completion) {
-            @Override
-            public void success() {
-                detachVmNicCascade(result.dmsgs, false, completion);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
-            }
-        });
+        detachVmNicCascade(result.dmsgs, true, completion);
     }
 
     @Transactional(readOnly = true)
@@ -495,10 +445,8 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
             });
         } else if (op == OP_DETACH_NIC) {
             final List<DetachNicFromVmMsg> msgs = new ArrayList<>();
-            final List<DetachIpAddressFromVmNicMsg> nicMsgs = new ArrayList<>();
             if (L3NetworkVO.class.getSimpleName().equals(action.getParentIssuer())) {
                 List<L3NetworkInventory> l3s = action.getParentIssuerContext();
-                List<String> l3Uuids = l3s.stream().map(l3inv -> l3inv.getUuid()).collect(Collectors.toList());
                 for (VmDeletionStruct vm : vminvs) {
                     for (L3NetworkInventory l3 : l3s) {
                         VmNicInventory nic = vm.getInventory().findNic(l3.getUuid());
@@ -506,66 +454,31 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                             continue;
                         }
 
-                        if (VmNicHelper.includeAllNicL3s(nic, l3Uuids)) {
-                            DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
-                            msg.setVmInstanceUuid(vm.getInventory().getUuid());
-                            msg.setVmNicUuid(nic.getUuid());
-                            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.getInventory().getUuid());
-                            msgs.add(msg);
-                        } else {
-                            for (UsedIpInventory ip : nic.getUsedIps()) {
-                                if (l3Uuids.contains(ip.getL3NetworkUuid())) {
-                                    DetachIpAddressFromVmNicMsg nicMsg = new DetachIpAddressFromVmNicMsg();
-                                    nicMsg.setVmNicUuid(nic.getUuid());
-                                    nicMsg.setUsedIpUuid(ip.getUuid());
-                                    bus.makeTargetServiceIdByResourceUuid(nicMsg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());
-                                    nicMsgs.add(nicMsg);
-                                }
-                            }
-                        }
+                        DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
+                        msg.setVmInstanceUuid(vm.getInventory().getUuid());
+                        msg.setVmNicUuid(nic.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.getInventory().getUuid());
+                        msgs.add(msg);
                     }
                 }
             } else if (IpRangeVO.class.getSimpleName().equals(action.getParentIssuer())) {
                 List<IpRangeInventory> iprs = action.getParentIssuerContext();
-                List<String> uuids = iprs.stream().map(ipr -> ipr.getUuid()).collect(Collectors.toList());
-                List<String> iprUuids = Q.New(NormalIpRangeVO.class).in(NormalIpRangeVO_.uuid, uuids).select(NormalIpRangeVO_.uuid).listValues();
+                List<String> uuids = iprs.stream().map(IpRangeInventory::getUuid).collect(Collectors.toList());
                 for (VmDeletionStruct vm : vminvs) {
                     for (VmNicInventory nic : vm.getInventory().getVmNics()) {
-                        List<String> rangeUuids = nic.getUsedIps().stream().map(n -> n.getIpRangeUuid()).collect(Collectors.toList());
-                        rangeUuids.removeAll(iprUuids);
-                        if(rangeUuids.isEmpty()) {
+                        /* if any ip of the nic is in the rang of delete, then delete the nic */
+                        if (nic.getUsedIps().stream().anyMatch(ip -> uuids.contains(ip.getIpRangeUuid()))) {
                             DetachNicFromVmMsg msg = new DetachNicFromVmMsg();
                             msg.setVmInstanceUuid(vm.getInventory().getUuid());
                             msg.setVmNicUuid(nic.getUuid());
                             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.getInventory().getUuid());
                             msgs.add(msg);
-                        } else {
-                            for (UsedIpInventory ip : nic.getUsedIps()) {
-                                if (iprUuids.contains(ip.getIpRangeUuid())) {
-                                    DetachIpAddressFromVmNicMsg nicMsg = new DetachIpAddressFromVmNicMsg();
-                                    nicMsg.setVmNicUuid(nic.getUuid());
-                                    nicMsg.setUsedIpUuid(ip.getUuid());
-                                    bus.makeTargetServiceIdByResourceUuid(nicMsg, VmInstanceConstant.SERVICE_ID, nic.getVmInstanceUuid());
-                                    nicMsgs.add(nicMsg);
-                                }
-                            }
                         }
                     }
                 }
             }
 
-            boolean deleteFromDb = action.getParentIssuer().equals(L3NetworkVO.class.getSimpleName());
-            detachIpFromVmNicCascade(nicMsgs, new Completion(completion) {
-                @Override
-                public void success() {
-                    detachVmNicCascade(msgs, false, completion);
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    completion.fail(errorCode);
-                }
-            });
+            detachVmNicCascade(msgs, true, completion);
         }
     }
 

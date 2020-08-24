@@ -17,6 +17,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.*;
 import org.zstack.network.service.NetworkServiceManager;
@@ -34,6 +35,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -118,6 +120,15 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         applySnat(snatStructList.iterator(), spec, completion);
     }
 
+    private String getNicIpv4Address(VmNicInventory nic) {
+        for (UsedIpInventory ip : nic.getUsedIps()) {
+            if (ip.getIpVersion() == IPv6Constants.IPv4) {
+                return ip.getIp();
+            }
+        }
+        return null;
+    }
+
     private void releaseSnat(final Iterator<SnatStruct> it, final VmInstanceInventory vmInstanceInventory, final NoErrorCompletion completion) {
         if (!it.hasNext()) {
             completion.done();
@@ -155,12 +166,18 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
                 struct.getGuestGateway(), vr.getUuid(), vr.getName()));
 
         VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vr);
+        String publicIpv4 = getNicIpv4Address(publicNic);
+        if (publicIpv4 == null || privateNic.isIpv6OnlyNic()) {
+            /* only ipv4 has snat */
+            releaseSnat(it, vmInstanceInventory, completion);
+            return;
+        }
 
         final VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
         info.setPrivateNicIp(privateNic.getIp());
         info.setPrivateNicMac(privateNic.getMac());
         info.setPublicNicMac(publicNic.getMac());
-        info.setPublicIp(publicNic.getIp());
+        info.setPublicIp(publicIpv4);
         info.setSnatNetmask(struct.getGuestNetmask());
 
         VirtualRouterCommands.RemoveSNATCmd cmd = new VirtualRouterCommands.RemoveSNATCmd();
@@ -284,17 +301,29 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
         new VirtualRouterRoleManager().makeSnatRole(vr.getUuid());
 
         VmNicInventory publicNic = vrMgr.getSnatPubicInventory(vr);
+        String publicIpv4 = getNicIpv4Address(publicNic);
+        if (publicIpv4 == null) {
+            /* only ipv4 has snat */
+            completion.success();
+            return;
+        }
+
         final List<VirtualRouterCommands.SNATInfo> snatInfo = new ArrayList<VirtualRouterCommands.SNATInfo>();
         for (VmNicInventory vnic : vr.getVmNics()) {
-            if (nwServed.contains(vnic.getL3NetworkUuid())) {
+            if (nwServed.contains(vnic.getL3NetworkUuid()) && !vnic.isIpv6OnlyNic()) {
                 VirtualRouterCommands.SNATInfo info = new VirtualRouterCommands.SNATInfo();
                 info.setPrivateNicIp(vnic.getIp());
                 info.setPrivateNicMac(vnic.getMac());
-                info.setPublicIp(publicNic.getIp());
+                info.setPublicIp(publicIpv4);
                 info.setPublicNicMac(publicNic.getMac());
                 info.setSnatNetmask(vnic.getNetmask());
                 snatInfo.add(info);
             }
+        }
+
+        if (snatInfo.isEmpty()) {
+            completion.success();
+            return;
         }
 
         VirtualRouterCommands.SyncSNATCmd cmd = new VirtualRouterCommands.SyncSNATCmd();

@@ -65,7 +65,8 @@ class AddSecurityGroupRulesCase extends SubCase{
             rules = ruleList
         } as SecurityGroupInventory
 
-        assert sg.rules.size() == num + 2
+        /* 2 ipv4 base rule + 2 ipv6 base rule */
+        assert sg.rules.size() == num + 4
 
         retryInSecs {
             assert cmd != null

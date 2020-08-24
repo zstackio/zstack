@@ -3,6 +3,7 @@ package org.zstack.header.vm;
 import org.zstack.header.message.NeedReplyMessage;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -10,7 +11,7 @@ import java.util.Map;
 public class VmAttachNicMsg extends NeedReplyMessage implements VmInstanceMessage {
     private String vmInstanceUuid;
     private String l3NetworkUuid;
-    private Map<String, String> staticIpMap = new HashMap<>();
+    private Map<String, List<String>> staticIpMap = new HashMap<>();
     private boolean allowDuplicatedAddress = false;
 
     public boolean isAllowDuplicatedAddress() {
@@ -38,11 +39,11 @@ public class VmAttachNicMsg extends NeedReplyMessage implements VmInstanceMessag
         this.l3NetworkUuid = l3NetworkUuid;
     }
 
-    public Map<String, String> getStaticIpMap() {
+    public Map<String, List<String>> getStaticIpMap() {
         return staticIpMap;
     }
 
-    public void setStaticIpMap(Map<String, String> staticIpMap) {
+    public void setStaticIpMap(Map<String, List<String>> staticIpMap) {
         this.staticIpMap = staticIpMap;
     }
 }

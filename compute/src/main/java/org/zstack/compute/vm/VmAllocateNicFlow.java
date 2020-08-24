@@ -10,9 +10,12 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -27,12 +30,10 @@ import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -78,7 +79,7 @@ public class VmAllocateNicFlow implements Flow {
         data.put(VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString(), ips);
         data.put(VmInstanceConstant.Params.VmAllocateNicFlow_nics.toString(), nics);
         List<ErrorCode> errs = new ArrayList<>();
-        Map<String, String> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(spec.getVmInventory().getUuid());
+        Map<String, List<String>> vmStaticIps = new StaticIpOperator().getStaticIpbyVmUuid(spec.getVmInventory().getUuid());
         List<VmNicSpec> firstL3s = VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks())
                 .stream()
                 .peek(v -> {
@@ -119,32 +120,61 @@ public class VmAllocateNicFlow implements Flow {
                 vnicFactory = vmMgr.getVmInstanceNicFactory(VmNicType.valueOf("VNIC"));
             }
 
-            AllocateIpMsg msg = new AllocateIpMsg();
-            msg.setL3NetworkUuid(nw.getUuid());
-            msg.setAllocateStrategy(spec.getIpAllocatorStrategy());
-            String staticIp = vmStaticIps.get(nw.getUuid());
-            if (staticIp != null) {
-                msg.setRequiredIp(staticIp);
-            } else {
-                l3nm.updateIpAllocationMsg(msg, customMac);
+            List<Integer> ipVersions = nw.getIpVersions();
+            Map<Integer, String> nicStaticIpMap = new StaticIpOperator().getNicStaticIpMap(vmStaticIps.get(nw.getUuid()));
+            List<AllocateIpMsg> msgs = new ArrayList<>();
+            for (int ipversion : ipVersions) {
+                AllocateIpMsg msg = new AllocateIpMsg();
+                msg.setL3NetworkUuid(nw.getUuid());
+                msg.setAllocateStrategy(spec.getIpAllocatorStrategy());
+                String  staticIp = nicStaticIpMap.get(ipversion);
+                if (staticIp != null) {
+                    msg.setRequiredIp(staticIp);
+                } else {
+                    if (ipversion == IPv6Constants.IPv6) {
+                        l3nm.updateIpAllocationMsg(msg, customMac);
+                    }
+                }
+                if (allowDuplicatedAddress != null) {
+                    msg.setDuplicatedIpAllowed(allowDuplicatedAddress);
+                }
+                msg.setIpVersion(ipversion);
+                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nw.getUuid());
+                msgs.add(msg);
             }
-            if (allowDuplicatedAddress != null) {
-                msg.setDuplicatedIpAllowed(allowDuplicatedAddress);
-            }
-            bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nw.getUuid());
-            bus.send(msg, new CloudBusCallBack(wcomp) {
+            List<ErrorCode> ipErrs = new ArrayList<>();
+            List<UsedIpInventory> nicIps = new ArrayList<>();
+            new While<>(msgs).each((msg, wcompl) -> {
+                bus.send(msg, new CloudBusCallBack(wcompl) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            AllocateIpReply areply = reply.castReply();
+                            ips.add(areply.getIpInventory());
+                            nicIps.add(areply.getIpInventory());
+                            wcompl.done();
+                        } else {
+                            ipErrs.add(reply.getError());
+                            wcompl.allDone();
+                        }
+                    }
+                });
+            }).run(new NoErrorCompletion(wcomp) {
                 @Override
-                public void run(MessageReply reply) {
-                    if (reply.isSuccess()) {
-                        AllocateIpReply areply = reply.castReply();
-                        ips.add(areply.getIpInventory());
+                public void done() {
+                    if (ipErrs.size() > 0) {
+                        errs.add(ipErrs.get(0));
+                        wcomp.allDone();
+                    } else {
                         VmNicInventory nic = new VmNicInventory();
                         nic.setUuid(Platform.getUuid());
-                        nic.setIp(areply.getIpInventory().getIp());
-                        nic.setIpVersion(areply.getIpInventory().getIpVersion());
-                        nic.setUsedIpUuid(areply.getIpInventory().getUuid());
+                        /* the first ip is ipv4 address for dual stack nic */
+                        UsedIpInventory ip = nicIps.get(0);
+                        nic.setIp(ip.getIp());
+                        nic.setIpVersion(ip.getIpVersion());
+                        nic.setUsedIpUuid(ip.getUuid());
                         nic.setVmInstanceUuid(spec.getVmInventory().getUuid());
-                        nic.setL3NetworkUuid(areply.getIpInventory().getL3NetworkUuid());
+                        nic.setL3NetworkUuid(ip.getL3NetworkUuid());
                         nic.setMac(mac);
                         nic.setHypervisorType(spec.getDestHost() == null ?
                                 spec.getVmInventory().getHypervisorType() : spec.getDestHost().getHypervisorType());
@@ -160,24 +190,19 @@ public class VmAllocateNicFlow implements Flow {
                                     nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
                         }
 
-                        assert nic.getL3NetworkUuid() != null;
-
                         nic.setDeviceId(deviceId);
-                        nic.setNetmask(areply.getIpInventory().getNetmask());
-                        nic.setGateway(areply.getIpInventory().getGateway());
+                        nic.setNetmask(ip.getNetmask());
+                        nic.setGateway(ip.getGateway());
                         nic.setInternalName(VmNicVO.generateNicInternalName(spec.getVmInventory().getInternalId(), nic.getDeviceId()));
 
                         new SQLBatch() {
                             @Override
                             protected void scripts() {
-                                vnicFactory.createVmNic(nic, spec);
+                                vnicFactory.createVmNic(nic, spec, nicIps);
                                 nics.add(nic);
                             }
                         }.execute();
                         wcomp.done();
-                    } else {
-                        errs.add(reply.getError());
-                        wcomp.allDone();
                     }
                 }
             });

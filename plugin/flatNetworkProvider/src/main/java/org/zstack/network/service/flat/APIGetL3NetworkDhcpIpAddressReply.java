@@ -9,6 +9,7 @@ import org.zstack.header.rest.RestResponse;
 @RestResponse(fieldsTo = {"all"})
 public class APIGetL3NetworkDhcpIpAddressReply extends APIReply {
     private String ip;
+    private String ip6;
 
     public String getIp() {
         return ip;
@@ -17,7 +18,15 @@ public class APIGetL3NetworkDhcpIpAddressReply extends APIReply {
     public void setIp(String ip) {
         this.ip = ip;
     }
- 
+
+    public String getIp6() {
+        return ip6;
+    }
+
+    public void setIp6(String ip6) {
+        this.ip6 = ip6;
+    }
+
     public static APIGetL3NetworkDhcpIpAddressReply __example__() {
         APIGetL3NetworkDhcpIpAddressReply reply = new APIGetL3NetworkDhcpIpAddressReply();
 

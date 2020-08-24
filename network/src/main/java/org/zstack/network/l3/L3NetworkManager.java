@@ -1,6 +1,7 @@
 package org.zstack.network.l3;
 
 import org.zstack.header.network.l3.*;
+import org.zstack.header.vm.VmNicInventory;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -21,4 +22,6 @@ public interface L3NetworkManager {
     void updateIpAllocationMsg(AllocateIpMsg msg, String mac);
 
     IpRangeFactory getIpRangeFactory(IpRangeType type);
+
+    List<VmNicInventory> filterVmNicByIpVersion(List<VmNicInventory> vmNics, int ipVersion);
 }

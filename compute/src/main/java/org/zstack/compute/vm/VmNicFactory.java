@@ -6,6 +6,7 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.header.core.workflow.FlowException;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.network.l3.UsedIpVO_;
 import org.zstack.header.vm.*;
@@ -13,6 +14,9 @@ import org.zstack.identity.Account;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.zstack.core.Platform.err;
 
@@ -29,7 +33,7 @@ public class VmNicFactory implements VmInstanceNicFactory {
     }
 
     @Override
-    public VmNicVO createVmNic(VmNicInventory nic, VmInstanceSpec spec) {
+    public VmNicVO createVmNic(VmNicInventory nic, VmInstanceSpec spec, List<UsedIpInventory> ips) {
         String acntUuid = Account.getAccountUuidOfResource(spec.getVmInventory().getUuid());
 
         VmNicVO vnic = VmInstanceNicFactory.createVmNic(nic);
@@ -39,8 +43,15 @@ public class VmNicFactory implements VmInstanceNicFactory {
         if (vnic == null) {
             throw new FlowException(err(VmErrors.ALLOCATE_MAC_ERROR, "unable to find an available mac address after re-try 5 times, too many collisions"));
         }
-        /* update usedIpVo */
-        SQL.New(UsedIpVO.class).eq(UsedIpVO_.uuid, vnic.getUsedIpUuid()).set(UsedIpVO_.vmNicUuid, nic.getUuid()).update();
+
+        List<UsedIpVO> ipVOS = new ArrayList<>();
+        for (UsedIpInventory ip : ips) {
+            /* update usedIpVo */
+            UsedIpVO ipVO = dbf.findByUuid(ip.getUuid(), UsedIpVO.class);
+            ipVO.setVmNicUuid(vnic.getUuid());
+            ipVOS.add(ipVO);
+        }
+        dbf.updateCollection(ipVOS);
 
         vnic = dbf.reload(vnic);
         spec.getDestNics().add(VmNicInventory.valueOf(vnic));

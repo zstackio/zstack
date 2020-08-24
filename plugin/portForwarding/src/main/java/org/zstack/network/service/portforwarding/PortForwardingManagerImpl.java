@@ -39,6 +39,7 @@ import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
+import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
@@ -46,6 +47,8 @@ import org.zstack.utils.*;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -80,6 +83,8 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
     private VipManager vipMgr;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private L3NetworkManager l3Mgr;
 
     private Map<String, PortForwardingBackend> backends = new HashMap<String, PortForwardingBackend>();
     private List<AttachPortForwardingRuleExtensionPoint> attachRuleExts = new ArrayList<AttachPortForwardingRuleExtensionPoint>();
@@ -216,6 +221,9 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                             .collect(Collectors.toList());
                 }
                 VipVO vipVO = Q.New(VipVO.class).eq(VipVO_.uuid, vipUuid).find();
+                if (IPv6NetworkUtils.isIpv6Address(vipVO.getIp())) {
+                    return new ArrayList<>();
+                }
 
                 //0.check the l3 of vm nic has been attached to port forwarding service
                 List<String> l3Uuids = new ArrayList<>();
@@ -351,7 +359,9 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                         " and pf1.vmNicUuid = nic.uuid")
                         .param("vipUuid",vipUuid).list();
 
-                return VmNicInventory.valueOf(nics.stream().filter(nic -> !usedVm.contains(nic.getVmInstanceUuid())).collect(Collectors.toList()));
+                /* TODO: only ipv4 portforwarding is supported */
+                List<VmNicInventory> nicInvs = VmNicInventory.valueOf(nics.stream().filter(nic -> !usedVm.contains(nic.getVmInstanceUuid())).collect(Collectors.toList()));
+                return l3Mgr.filterVmNicByIpVersion(nicInvs, IPv6Constants.IPv4);
             }
         }.execute();
     }

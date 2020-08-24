@@ -46,6 +46,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.TypedQuery;
@@ -190,6 +191,22 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
         amsg.setRequiredIp(msg.getRequiredIp());
         amsg.setSystem(msg.isSystem());
         amsg.setSession(msg.getSession());
+        if (msg.getRequiredIp() != null) {
+            if (NetworkUtils.isIpv4Address(msg.getRequiredIp())) {
+                amsg.setIpVersion(IPv6Constants.IPv4);
+            } else if (IPv6NetworkUtils.isIpv6Address(msg.getRequiredIp())) {
+                amsg.setIpVersion(IPv6Constants.IPv6);
+            }
+        } else if (msg.getIpVersion() != null) {
+            amsg.setIpVersion(msg.getIpVersion());
+        } else {
+            L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+            if (l3NetworkVO.getIpVersions().contains(IPv6Constants.IPv4)) {
+                amsg.setIpVersion(IPv6Constants.IPv4);
+            } else {
+                amsg.setIpVersion(IPv6Constants.IPv6);
+            }
+        }
         docreateVip(amsg, new ReturnValueCompletion<VipInventory>(msg) {
             @Override
             public void success(VipInventory returnValue) {
@@ -230,10 +247,9 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
                             }
                         }
 
-                        L3NetworkVO l3Vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
                         String strategyType = msg.getAllocatorStrategy();
-                        if (msg.getAllocatorStrategy() == null) {
-                            if (l3Vo.getIpVersion() == IPv6Constants.IPv4) {
+                        if (strategyType == null) {
+                            if (msg.getIpVersion() == IPv6Constants.IPv4) {
                                 strategyType = L3NetworkConstant.RANDOM_IP_ALLOCATOR_STRATEGY;
                             } else {
                                 strategyType = L3NetworkConstant.RANDOM_IPV6_ALLOCATOR_STRATEGY;

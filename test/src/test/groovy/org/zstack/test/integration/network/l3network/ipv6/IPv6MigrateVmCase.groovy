@@ -47,17 +47,17 @@ class IPv6MigrateVmCase extends SubCase {
         HostInventory h1 = env.inventoryByName("kvm-1")
         HostInventory h2 = env.inventoryByName("kvm-2")
 
+        addIpRangeByNetworkCidr {
+            name = "ipr4-1"
+            l3NetworkUuid = l3_statefull.getUuid()
+            networkCidr = "192.168.110.0/24"
+        }
         VmInstanceInventory vm = createVmInstance {
             name = "vm-eip"
             instanceOfferingUuid = offering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = asList(l3_statefull.uuid)
             hostUuid = h1.uuid
-        }
-        VmNicInventory nic = vm.getVmNics()[0]
-        attachL3NetworkToVmNic {
-            vmNicUuid = nic.uuid
-            l3NetworkUuid = l3.uuid
         }
 
         List<FlatDhcpBackend.ApplyDhcpCmd> cmds = new ArrayList()
@@ -72,12 +72,11 @@ class IPv6MigrateVmCase extends SubCase {
             hostUuid = h2.uuid
         }
 
-        assert cmds.size() == 2
+        assert cmds.size() == 1
 
         reconnectHost {
             uuid = h2.uuid
         }
-
     }
 
 }

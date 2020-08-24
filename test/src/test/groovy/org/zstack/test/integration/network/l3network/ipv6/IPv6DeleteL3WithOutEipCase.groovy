@@ -47,6 +47,12 @@ class IPv6DeleteL3WithOutEipCase extends SubCase {
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
 
+        addIpRangeByNetworkCidr {
+            name = "ipr4-1"
+            l3NetworkUuid = l3_statefull.getUuid()
+            networkCidr = "192.168.110.0/24"
+        }
+
         List<VmInstanceInventory> vms = new ArrayList<>()
         List<VmNicInventory> nics = new ArrayList<>()
         for (int i = 0; i < 5; i ++) {
@@ -56,20 +62,8 @@ class IPv6DeleteL3WithOutEipCase extends SubCase {
                 imageUuid = image.uuid
                 l3NetworkUuids = asList(l3_statefull.uuid)
             }
-            VmNicInventory nic = vm.getVmNics()[0]
-            attachL3NetworkToVmNic {
-                vmNicUuid = nic.uuid
-                l3NetworkUuid = l3.uuid
-            }
-            attachL3NetworkToVmNic {
-                vmNicUuid = nic.uuid
-                l3NetworkUuid = l3_slaac.uuid
-            }
-            vm = queryVmInstance {
-                conditions=["uuid=${vm.uuid}".toString()]
-            } [0]
             vms.add(vm)
-            nic = vm.getVmNics()[0]
+            VmNicInventory nic = vm.getVmNics()[0]
             nics.add(nic)
         }
 

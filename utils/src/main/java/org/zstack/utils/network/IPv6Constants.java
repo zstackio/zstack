@@ -3,8 +3,10 @@ package org.zstack.utils.network;
 import java.math.BigInteger;
 
 public class IPv6Constants {
+    public static int NONE = 0;
     public static int IPv4 = 4;
     public static int IPv6 = 6;
+    public static int DUAL_STACK = 46;
 
     public static final String SLAAC = "SLAAC";
     public static final String Stateless_DHCP = "Stateless-DHCP";

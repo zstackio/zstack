@@ -1,8 +1,11 @@
 package org.zstack.network.service.virtualrouter;
 
 import org.zstack.appliancevm.ApplianceVmVO;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpVO;
 import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vm.VmInstanceEO;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO;
@@ -55,5 +58,13 @@ public class VirtualRouterVmVO extends ApplianceVmVO {
 
     public void setVirtualRouterVips(Set<VirtualRouterVipVO> virtualRouterVips) {
         this.virtualRouterVips = virtualRouterVips;
+    }
+
+    public List<UsedIpVO> getUsedIps() {
+        List<UsedIpVO> ret = new ArrayList<>();
+        for (VmNicVO nic : getVmNics()) {
+            ret.addAll(nic.getUsedIps());
+        }
+        return ret;
     }
 }

@@ -9,6 +9,7 @@ import org.zstack.network.securitygroup.SecurityGroupMembersTO
 import org.zstack.network.securitygroup.SecurityGroupRuleProtocolType
 import org.zstack.network.securitygroup.SecurityGroupRuleTO
 import org.zstack.network.securitygroup.SecurityGroupRuleType
+import org.zstack.network.securitygroup.SecurityGroupRuleVO
 import org.zstack.network.service.flat.FlatDhcpBackend
 import org.zstack.sdk.*
 import org.zstack.test.integration.network.l3network.Env
@@ -83,20 +84,6 @@ class IPv6SecurityGroupCase extends SubCase {
         rule6.endPort = 200
         rule6.ipVersion = 6
 
-        expect(AssertionError.class) {
-            addSecurityGroupRule {
-                delegate.securityGroupUuid = sg4.uuid
-                delegate.rules = [rule6]
-            }
-        }
-
-        expect(AssertionError.class) {
-            addSecurityGroupRule {
-                delegate.securityGroupUuid = sg6.uuid
-                delegate.rules = [rule4]
-            }
-        }
-
         addSecurityGroupRule {
             delegate.securityGroupUuid = sg4.uuid
             delegate.rules = [rule4]
@@ -107,23 +94,9 @@ class IPv6SecurityGroupCase extends SubCase {
             delegate.rules = [rule6]
         }
 
-        expect(AssertionError.class) {
-            attachSecurityGroupToL3Network {
-                securityGroupUuid = sg4.uuid
-                l3NetworkUuid = l3_statefull.uuid
-            }
-        }
-
-        expect(AssertionError.class) {
-            attachSecurityGroupToL3Network {
-                securityGroupUuid = sg6.uuid
-                l3NetworkUuid = l3.uuid
-            }
-        }
-
         attachSecurityGroupToL3Network {
             securityGroupUuid = sg4.uuid
-            l3NetworkUuid = l3.uuid
+            l3NetworkUuid = l3_statefull.uuid
         }
 
         attachSecurityGroupToL3Network {
@@ -134,11 +107,15 @@ class IPv6SecurityGroupCase extends SubCase {
 
     void testApplySecurityGroup() {
         L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
-        L3NetworkInventory l3 = env.inventoryByName("l3")
         InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
         ImageInventory image = env.inventoryByName("image1")
         HostInventory host = env.inventoryByName("kvm-1")
 
+        addIpRangeByNetworkCidr {
+            name = "ipr4-1"
+            l3NetworkUuid = l3_statefull.getUuid()
+            networkCidr = "192.168.110.0/24"
+        }
         VmInstanceInventory vm = createVmInstance {
             name = "vm-sg"
             instanceOfferingUuid = offering.uuid
@@ -147,10 +124,6 @@ class IPv6SecurityGroupCase extends SubCase {
             hostUuid = host.uuid
         }
         VmNicInventory nic = vm.getVmNics()[0]
-        attachL3NetworkToVmNic {
-            vmNicUuid = nic.uuid
-            l3NetworkUuid = l3.uuid
-        }
 
         SecurityGroupInventory sg4 = querySecurityGroup {
             conditions=["name=SecurityGroup4"]
@@ -159,21 +132,51 @@ class IPv6SecurityGroupCase extends SubCase {
             conditions=["name=SecurityGroup6"]
         }[0]
 
-        addVmNicToSecurityGroup {
-            securityGroupUuid = sg4.uuid
-            vmNicUuids = [nic.uuid]
-        }
-        addVmNicToSecurityGroup {
-            securityGroupUuid = sg6.uuid
-            vmNicUuids = [nic.uuid]
-        }
-
         KVMAgentCommands.ApplySecurityGroupRuleCmd cmd = null
         env.afterSimulator(KVMSecurityGroupBackend.SECURITY_GROUP_APPLY_RULE_PATH) { rsp, HttpEntity<String> e ->
             cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ApplySecurityGroupRuleCmd.class)
             return rsp
         }
 
+        addVmNicToSecurityGroup {
+            securityGroupUuid = sg4.uuid
+            vmNicUuids = [nic.uuid]
+        }
+        retryInSecs {
+            assert cmd != null
+            assert cmd.ipv6RuleTOs.size() == 1
+            SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
+            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule6.rules.size() == 0
+            assert rule6.securityGroupBaseRules.size() == 2
+            assert cmd.ruleTOs.size() == 1
+            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
+            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule4.rules.size() == 1
+            assert rule4.securityGroupBaseRules.size() == 2
+        }
+
+        cmd = null
+        addVmNicToSecurityGroup {
+            securityGroupUuid = sg6.uuid
+            vmNicUuids = [nic.uuid]
+        }
+        retryInSecs {
+            assert cmd != null
+            assert cmd.ipv6RuleTOs.size() == 1
+            SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
+            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule6.rules.size() == 1
+            assert rule6.securityGroupBaseRules.size() == 4 /* each sg has 2 base rules */
+
+            assert cmd.ruleTOs.size() == 1
+            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
+            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule4.rules.size() == 1
+            assert rule4.securityGroupBaseRules.size() == 4
+        }
+
+        cmd = null
         changeSecurityGroupState {
             uuid = sg4.uuid
             stateEvent = "disable"
@@ -184,9 +187,14 @@ class IPv6SecurityGroupCase extends SubCase {
             assert cmd.ipv6RuleTOs.size() == 1
             SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
             assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule6.rules.size() == 1
+            assert rule6.securityGroupBaseRules.size() == 2
+
             assert cmd.ruleTOs.size() == 1
             SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN
+            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule4.rules.size() == 0
+            assert rule4.securityGroupBaseRules.size() == 2
         }
 
         cmd == null
@@ -197,12 +205,16 @@ class IPv6SecurityGroupCase extends SubCase {
         retryInSecs {
             assert cmd != null
             assert cmd.ipv6RuleTOs.size() == 1
-            assert cmd.ruleTOs.size() == 1
             SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
             assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule6.rules.size() == 1
+            assert rule6.securityGroupBaseRules.size() == 4 /* each sg has 2 base rules */
+
             assert cmd.ruleTOs.size() == 1
             SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
             assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule4.rules.size() == 1
+            assert rule4.securityGroupBaseRules.size() == 4
         }
 
         cmd == null
@@ -213,12 +225,16 @@ class IPv6SecurityGroupCase extends SubCase {
         retryInSecs {
             assert cmd != null
             assert cmd.ipv6RuleTOs.size() == 1
-            assert cmd.ruleTOs.size() == 1
             SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
-            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN
+            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule6.rules.size() == 0
+            assert rule6.securityGroupBaseRules.size() == 2 /* each sg has 2 base rules */
+
             assert cmd.ruleTOs.size() == 1
             SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
             assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule4.rules.size() == 1
+            assert rule4.securityGroupBaseRules.size() == 2
         }
 
         cmd == null
@@ -229,18 +245,21 @@ class IPv6SecurityGroupCase extends SubCase {
         retryInSecs {
             assert cmd != null
             assert cmd.ipv6RuleTOs.size() == 1
-            assert cmd.ruleTOs.size() == 1
             SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
             assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule6.rules.size() == 1
+            assert rule6.securityGroupBaseRules.size() == 4 /* each sg has 2 base rules */
+
             assert cmd.ruleTOs.size() == 1
             SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
             assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule4.rules.size() == 1
+            assert rule4.securityGroupBaseRules.size() == 4
         }
     }
 
     void testDetachL3NetworkFromSecurityGroup() {
         L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
-        L3NetworkInventory l3 = env.inventoryByName("l3")
 
         SecurityGroupInventory sg4 = querySecurityGroup {
             conditions=["name=SecurityGroup4"]
@@ -258,7 +277,7 @@ class IPv6SecurityGroupCase extends SubCase {
         }
 
         detachSecurityGroupFromL3Network {
-            l3NetworkUuid = l3.uuid
+            l3NetworkUuid = l3_statefull.uuid
             securityGroupUuid = sg4.uuid
         }
 
@@ -269,13 +288,14 @@ class IPv6SecurityGroupCase extends SubCase {
             assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
             assert cmd.ruleTOs.size() == 1
             SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN
+            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule4.securityGroupBaseRules.size() == 2
         }
 
         cmd == null
         attachSecurityGroupToL3Network {
             securityGroupUuid = sg4.uuid
-            l3NetworkUuid = l3.uuid
+            l3NetworkUuid = l3_statefull.uuid
         }
         addVmNicToSecurityGroup {
             securityGroupUuid = sg4.uuid
@@ -302,7 +322,8 @@ class IPv6SecurityGroupCase extends SubCase {
             assert cmd.ipv6RuleTOs.size() == 1
             assert cmd.ruleTOs.size() == 1
             SecurityGroupRuleTO rule6 = cmd.ipv6RuleTOs.get(0)
-            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN
+            assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule6.securityGroupBaseRules.size() == 2
             assert cmd.ruleTOs.size() == 1
             SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
             assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
@@ -351,7 +372,7 @@ class IPv6SecurityGroupCase extends SubCase {
             SecurityGroupRuleTO rule = cmd.ruleTOs.get(0)
             assert rule.vmNicUuid == nic.uuid
             assert rule.rules.size() == 1
-            assert rule.securityGroupBaseRules.size() == 2
+            assert rule.securityGroupBaseRules.size() == 4
             RuleTO ruleTo = rule.rules.get(0)
             assert ruleTo.ipVersion == IPv6Constants.IPv4
             assert ruleTo.allowedCidr == "192.168.0.1/24"
@@ -360,7 +381,7 @@ class IPv6SecurityGroupCase extends SubCase {
             rule = cmd.ipv6RuleTOs.get(0)
             assert rule.vmNicUuid == nic.uuid
             assert rule.rules.size() == 1
-            assert rule.securityGroupBaseRules.size() == 2
+            assert rule.securityGroupBaseRules.size() == 4
             ruleTo = rule.rules.get(0)
             assert ruleTo.ipVersion == IPv6Constants.IPv6
             assert ruleTo.allowedCidr == "2002::/64"
@@ -379,7 +400,7 @@ class IPv6SecurityGroupCase extends SubCase {
             SecurityGroupRuleTO rule = cmd.ruleTOs.get(0)
             assert rule.vmNicUuid == nic.uuid
             assert rule.rules.size() == 1
-            assert rule.securityGroupBaseRules.size() == 2
+            assert rule.securityGroupBaseRules.size() == 4
             RuleTO ruleTo = rule.rules.get(0)
             assert ruleTo.ipVersion == IPv6Constants.IPv4
             assert ruleTo.allowedCidr == "192.168.0.1/24"
@@ -388,7 +409,7 @@ class IPv6SecurityGroupCase extends SubCase {
             rule = cmd.ipv6RuleTOs.get(0)
             assert rule.vmNicUuid == nic.uuid
             assert rule.rules.size() == 1
-            assert rule.securityGroupBaseRules.size() == 2
+            assert rule.securityGroupBaseRules.size() == 4
             ruleTo = rule.rules.get(0)
             assert ruleTo.ipVersion == IPv6Constants.IPv6
             assert ruleTo.allowedCidr == "2002::/64"
@@ -411,7 +432,9 @@ class IPv6SecurityGroupCase extends SubCase {
             uuid = vm.uuid
         }
         retryInSecs {
-            assert cmd.ruleTOs == null
+            assert cmd.ruleTOs.size() == 1
+            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
+            assert rule4.rules.size() == 0
 
             assert cmd.ipv6RuleTOs.size() == 1
             SecurityGroupRuleTO rule = cmd.ipv6RuleTOs.get(0)
@@ -428,7 +451,9 @@ class IPv6SecurityGroupCase extends SubCase {
             uuid = host.uuid
         }
         retryInSecs {
-            assert cmd.ruleTOs == null
+            assert cmd.ruleTOs.size() == 1
+            SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
+            assert rule4.rules.size() == 0
 
             assert cmd.ipv6RuleTOs.size() == 1
             SecurityGroupRuleTO rule = cmd.ipv6RuleTOs.get(0)
@@ -543,7 +568,8 @@ class IPv6SecurityGroupCase extends SubCase {
             assert rule6.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
             assert cmd.ruleTOs.size() == 1
             SecurityGroupRuleTO rule4 = cmd.ruleTOs.get(0)
-            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_DELETE_CHAIN
+            assert rule4.actionCode == SecurityGroupRuleTO.ACTION_CODE_APPLY_RULE
+            assert rule4.securityGroupBaseRules.size() == 2
         }
     }
 }

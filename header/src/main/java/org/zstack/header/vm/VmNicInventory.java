@@ -6,6 +6,7 @@ import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
+import org.zstack.utils.network.IPv6Constants;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -34,6 +35,7 @@ public class VmNicInventory implements Serializable {
     private String netmask;
     private String gateway;
     private String metaData;
+    @Deprecated
     private Integer ipVersion;
     private String driverType;
     private List<UsedIpInventory> usedIps;
@@ -62,7 +64,6 @@ public class VmNicInventory implements Serializable {
         this.setMetaData(vo.getMetaData());
         this.setNetmask(vo.getNetmask());
         this.setGateway(vo.getGateway());
-        this.setIpVersion(vo.getIpVersion());
         this.setUsedIps(UsedIpInventory.valueOf(vo.getUsedIps()));
         this.setDriverType(vo.getDriverType());
         this.setType(vo.getType());
@@ -192,10 +193,12 @@ public class VmNicInventory implements Serializable {
         this.internalName = internalName;
     }
 
+    @Deprecated
     public Integer getIpVersion() {
         return ipVersion;
     }
 
+    @Deprecated
     public void setIpVersion(Integer ipVersion) {
         this.ipVersion = ipVersion;
     }
@@ -222,5 +225,13 @@ public class VmNicInventory implements Serializable {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public boolean isIpv6OnlyNic() {
+        return this.usedIps.size() == 1 && this.usedIps.get(0).getIpVersion() == IPv6Constants.IPv6;
+    }
+
+    public boolean isIpv4OnlyNic() {
+        return this.usedIps.size() == 1 && this.usedIps.get(0).getIpVersion() == IPv6Constants.IPv4;
     }
 }

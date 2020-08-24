@@ -15,6 +15,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.POST,
         responseClass = APIAttachL3NetworkToVmNicEvent.class
 )
+@Deprecated
 public class APIAttachL3NetworkToVmNicMsg extends APIMessage {
     /**
      * @desc vm uuid

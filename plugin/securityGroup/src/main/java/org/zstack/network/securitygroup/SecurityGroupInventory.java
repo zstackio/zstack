@@ -88,6 +88,7 @@ public class SecurityGroupInventory {
      */
     private String state;
 
+    @Deprecated
     private Integer ipVersion;
 
     /**
@@ -124,7 +125,6 @@ public class SecurityGroupInventory {
     protected SecurityGroupInventory(SecurityGroupVO vo) {
         this.setUuid(vo.getUuid());
         this.setName(vo.getName());
-        this.setIpVersion(vo.getIpVersion());
         this.setInternalId(vo.getInternalId());
         this.setDescription(vo.getDescription());
         this.setCreateDate(vo.getCreateDate());
@@ -222,10 +222,12 @@ public class SecurityGroupInventory {
         this.state = state;
     }
 
+    @Deprecated
     public Integer getIpVersion() {
         return ipVersion;
     }
 
+    @Deprecated
     public void setIpVersion(Integer ipVersion) {
         this.ipVersion = ipVersion;
     }

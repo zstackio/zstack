@@ -5,6 +5,7 @@ import org.zstack.header.message.NeedReplyMessage;
 public class ReturnIpMsg extends NeedReplyMessage implements L3NetworkMessage {
     private String usedIpUuid;
     private String l3NetworkUuid;
+    private String nicUuid;
 
     public String getUsedIpUuid() {
         return usedIpUuid;
@@ -21,5 +22,13 @@ public class ReturnIpMsg extends NeedReplyMessage implements L3NetworkMessage {
     @Override
     public String getL3NetworkUuid() {
         return l3NetworkUuid;
+    }
+
+    public String getNicUuid() {
+        return nicUuid;
+    }
+
+    public void setNicUuid(String nicUuid) {
+        this.nicUuid = nicUuid;
     }
 }

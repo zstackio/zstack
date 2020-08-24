@@ -9,18 +9,10 @@ public class SecurityGroupMembersTO {
     public static final String ACTION_CODE_DELETE_GROUP = "deleteGroup";
     public static final String ACTION_CODE_UPDATE_GROUP_MEMBER = "updateGroup";
 
-    private Integer ipVersion;
     private String securityGroupUuid;
     private List<String> securityGroupVmIps;
+    private List<String> securityGroupVmIp6s;
     private String actionCode = ACTION_CODE_UPDATE_GROUP_MEMBER;
-
-    public Integer getIpVersion() {
-        return ipVersion;
-    }
-
-    public void setIpVersion(Integer ipVersion) {
-        this.ipVersion = ipVersion;
-    }
 
     public void setSecurityGroupUuid(String securityGroupUuid) {
         this.securityGroupUuid = securityGroupUuid;
@@ -46,4 +38,11 @@ public class SecurityGroupMembersTO {
         return actionCode;
     }
 
+    public List<String> getSecurityGroupVmIp6s() {
+        return securityGroupVmIp6s;
+    }
+
+    public void setSecurityGroupVmIp6s(List<String> securityGroupVmIp6s) {
+        this.securityGroupVmIp6s = securityGroupVmIp6s;
+    }
 }

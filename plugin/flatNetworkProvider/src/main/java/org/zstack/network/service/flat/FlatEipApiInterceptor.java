@@ -16,6 +16,7 @@ import org.zstack.network.service.eip.*;
 import org.zstack.network.service.vip.Vip;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.network.service.vip.VipVO_;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.Arrays;
@@ -72,6 +73,13 @@ public class FlatEipApiInterceptor implements GlobalApiMessageInterceptor {
     protected void validate(APIAttachEipMsg msg) {
         String privateL3Uuid = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid).eq(VmNicVO_.uuid, msg.getVmNicUuid()).findValue();
         NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(privateL3Uuid, EipConstant.EIP_TYPE);
+
+        /* TODO: this is temp limitation, ipv6 eip can be only attached to flat eip */
+        EipVO eip = Q.New(EipVO.class).eq(EipVO_.uuid, msg.getEipUuid()).find();
+        if (IPv6NetworkUtils.isIpv6Address(eip.getVipIp()) && !providerType.toString().equals(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)) {
+            throw new ApiMessageInterceptionException(argerr("could not attach eip because ipv6 eip can ONLY be attached to flat network"));
+        }
+
         if (!providerType.toString().equals(FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE_STRING)) {
             return;
         }

@@ -64,6 +64,16 @@ doc {
 					values ("Normal","AddressPool")
 				}
 				column {
+					name "ipVersion"
+					enclosedIn ""
+					desc "IP地址版本号"
+					location "query"
+					type "Integer"
+					optional true
+					since "0.6"
+					values ("4","6")
+				}
+				column {
 					name "limit"
 					enclosedIn ""
 					desc "数量限制"

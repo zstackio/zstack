@@ -64,6 +64,7 @@ public class APICreateSecurityGroupMsg extends APICreateMessage implements APIAu
     @APIParam(required = false, maxLength = 2048)
     private String description;
 
+    @Deprecated
     @APIParam(required = false, validValues = {"4", "6"})
     private Integer ipVersion;
 

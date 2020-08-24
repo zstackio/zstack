@@ -110,6 +110,7 @@
             <zstack:extension interface="org.zstack.network.service.vip.VipCleanupExtensionPoint" />
             <zstack:extension interface="org.zstack.network.service.eip.GetL3NetworkForEipInVirtualRouterExtensionPoint" />
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterHaGetCallbackExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.l3.AfterAddIpRangeExtensionPoint" />
         </zstack:plugin>
     </bean>
 

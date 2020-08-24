@@ -75,6 +75,10 @@ public class VirtualRouterCommands {
 		private Integer vni;
 		private String firewallDefaultAction;
 		private Integer mtu;
+		private String ip6;
+		private Integer prefixLength;
+		private String gateway6;
+		private String addressMode;
 		
 		public String getIp() {
 			return ip;
@@ -153,6 +157,38 @@ public class VirtualRouterCommands {
 
 		public void setMtu(Integer mtu) {
 			this.mtu = mtu;
+		}
+
+		public String getIp6() {
+			return ip6;
+		}
+
+		public void setIp6(String ip6) {
+			this.ip6 = ip6;
+		}
+
+		public Integer getPrefixLength() {
+			return prefixLength;
+		}
+
+		public void setPrefixLength(Integer prefixLength) {
+			this.prefixLength = prefixLength;
+		}
+
+		public String getGateway6() {
+			return gateway6;
+		}
+
+		public void setGateway6(String gateway6) {
+			this.gateway6 = gateway6;
+		}
+
+		public String getAddressMode() {
+			return addressMode;
+		}
+
+		public void setAddressMode(String addressMode) {
+			this.addressMode = addressMode;
 		}
 	}
 	

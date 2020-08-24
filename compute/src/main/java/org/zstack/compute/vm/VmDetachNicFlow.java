@@ -76,7 +76,6 @@ public class VmDetachNicFlow extends NoRollbackFlow {
         }).run(new NoErrorCompletion(trigger){
             @Override
             public void done() {
-                new DualStackNicSecondaryNetworksOperator().deleteSecondaryNetworksByVmNic(nic);
                 dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
                 trigger.next();
             }

@@ -8,10 +8,14 @@ import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 import org.zstack.header.zone.ZoneVO;
+import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table
@@ -87,5 +91,19 @@ public class L3NetworkVO extends L3NetworkAO implements OwnedByAccount {
 
     public void setHostRoutes(Set<L3NetworkHostRouteVO> hostRoutes) {
         this.hostRoutes = hostRoutes;
+    }
+
+    public List<Integer> getIpVersions() {
+        List<Integer> ipVersions = new ArrayList<>();
+        if (super.getIpVersion() == IPv6Constants.IPv4) {
+            ipVersions.add(IPv6Constants.IPv4);
+        } else if (super.getIpVersion() == IPv6Constants.IPv6) {
+            ipVersions.add(IPv6Constants.IPv6);
+        } else if (super.getIpVersion() == IPv6Constants.DUAL_STACK) {
+            ipVersions.add(IPv6Constants.IPv4);
+            ipVersions.add(IPv6Constants.IPv6);
+        }
+
+        return ipVersions;
     }
 }

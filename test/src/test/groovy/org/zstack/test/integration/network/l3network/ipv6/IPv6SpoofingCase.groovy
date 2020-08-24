@@ -52,6 +52,11 @@ class IPv6SpoofingCase extends SubCase {
             startCmd = json(entity.getBody(), KVMAgentCommands.StartVmCmd)
             return rsp
         }
+        addIpRangeByNetworkCidr {
+            name = "ipr4-1"
+            l3NetworkUuid = l3_statefull.getUuid()
+            networkCidr = "192.168.110.0/24"
+        }
 
         VmInstanceInventory vm = createVmInstance {
             name = "vm-spoofing"
@@ -63,31 +68,7 @@ class IPv6SpoofingCase extends SubCase {
         VmNicInventory nic = vm.getVmNics()[0]
         assert startCmd.nics.size() == 1
         KVMAgentCommands.NicTO nicTO = startCmd.nics.get(0)
-        assert nicTO.ips.size() == 1
-        assert nicTO.ips.get(0) == nic.ip
-
-        KVMAgentCommands.UpdateNicCmd updateCmd = new KVMAgentCommands.UpdateNicCmd()
-        env.afterSimulator(KVMConstant.KVM_UPDATE_NIC_PATH) { rsp, HttpEntity<String> entity ->
-            updateCmd = json(entity.getBody(), KVMAgentCommands.UpdateNicCmd)
-            return rsp
-        }
-
-        attachL3NetworkToVmNic {
-            vmNicUuid = nic.uuid
-            l3NetworkUuid = l3.uuid
-        }
-        vm = queryVmInstance { conditions=["uuid=${vm.uuid}"]}[0]
-        nic = vm.getVmNics()[0]
-
-        assert updateCmd
-        assert updateCmd.nics.size() == 1
-        nicTO = updateCmd.nics.get(0)
         assert nicTO.ips.size() == 2
-        List<String> ips = nic.getUsedIps().stream().map{ip -> ip.getIp()}.distinct().collect(Collectors.toList())
-        assert ips.size() == 2
-        for (String ip : ips) {
-            assert nicTO.ips.contains(ip)
-        }
     }
 
 }
