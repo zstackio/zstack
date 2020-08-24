@@ -534,6 +534,10 @@ public class KVMHost extends HostBase implements Host {
         bus.send(kmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    throw new OperationFailureException(operr("check host capacity failed, because:%s", reply.getError()));
+                }
+
                 KVMHostAsyncHttpCallReply r = reply.castReply();
                 HostCapacityResponse rsp = r.toResponse(HostCapacityResponse.class);
                 if (!rsp.isSuccess()) {
