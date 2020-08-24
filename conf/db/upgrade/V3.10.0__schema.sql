@@ -75,3 +75,11 @@ DELIMITER ;
 
 CALL changeL3NetworkDefaultIpversion();
 DROP PROCEDURE IF EXISTS changeL3NetworkDefaultIpversion;
+
+
+ALTER TABLE `zstack`.`AlarmActionVO` ADD COLUMN `createDate` TIMESTAMP default '2018-05-10 06:04:00';
+ALTER TABLE `zstack`.`AlarmActionVO` ADD COLUMN `lastOpDate` TIMESTAMP ON UPDATE CURRENT_TIMESTAMP default '2018-05-10 06:04:00';
+
+ALTER TABLE `zstack`.`EventSubscriptionActionVO` ADD COLUMN `createDate` TIMESTAMP default '2018-05-10 06:04:00';
+ALTER TABLE `zstack`.`EventSubscriptionActionVO` ADD COLUMN `lastOpDate` TIMESTAMP ON UPDATE CURRENT_TIMESTAMP default '2018-05-10 06:04:00';
+
