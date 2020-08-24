@@ -14,6 +14,9 @@ import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicInteger
+
 /**
  * Created by mingjian.deng on 2019/10/16.*/
 class ConnectHostMultiTimesCase extends SubCase {
@@ -57,8 +60,9 @@ class ConnectHostMultiTimesCase extends SubCase {
     }
 
     void testConnectHost(int times) {
-        int successCount = 0
-        int cancelCount = 0
+        CountDownLatch latch = new CountDownLatch(times)
+        AtomicInteger successCount = new AtomicInteger(0)
+        AtomicInteger cancelCount = new AtomicInteger(0)
 
         for (int i in 1..times) {
             def msg = new ConnectHostMsg()
@@ -68,19 +72,18 @@ class ConnectHostMultiTimesCase extends SubCase {
                 @Override
                 void run(MessageReply reply) {
                     if (reply.isSuccess()) {
-                        successCount ++
+                        successCount.incrementAndGet()
                     } else if (reply.isCanceled()) {
-                        cancelCount ++
+                        cancelCount.incrementAndGet()
                     }
+                    latch.countDown()
                 }
             })
         }
 
-        sleep 200
-        retryInSecs {
-            assert successCount == 1
-            assert cancelCount == 19
-        }
+        latch.await()
+        assert successCount.get() == 1
+        assert cancelCount.get() == 19
 
         refreshHost()
         assert host1.status == HostStatus.Connected.toString()
@@ -88,8 +91,9 @@ class ConnectHostMultiTimesCase extends SubCase {
     }
 
     void testConnectTwoHosts(int times1, int times2) {
-        int successCount = 0
-        int cancelCount = 0
+        CountDownLatch latch = new CountDownLatch(times1+times2)
+        AtomicInteger successCount = new AtomicInteger(0)
+        AtomicInteger cancelCount = new AtomicInteger(0)
 
         for (int i in 1..times1) {
             def msg = new ConnectHostMsg()
@@ -99,10 +103,11 @@ class ConnectHostMultiTimesCase extends SubCase {
                 @Override
                 void run(MessageReply reply) {
                     if (reply.isSuccess()) {
-                        successCount ++
+                        successCount.incrementAndGet()
                     } else if (reply.isCanceled()) {
-                        cancelCount ++
+                        cancelCount.incrementAndGet()
                     }
+                    latch.countDown()
                 }
             })
         }
@@ -115,19 +120,18 @@ class ConnectHostMultiTimesCase extends SubCase {
                 @Override
                 void run(MessageReply reply) {
                     if (reply.isSuccess()) {
-                        successCount ++
+                        successCount.incrementAndGet()
                     } else if (reply.isCanceled()) {
-                        cancelCount ++
+                        cancelCount.incrementAndGet()
                     }
+                    latch.countDown()
                 }
             })
         }
 
-        sleep 200
-        retryInSecs {
-            assert successCount == 2
-            assert cancelCount == 18
-        }
+        latch.await()
+        assert successCount.get() == 2
+        assert cancelCount.get() == 18
 
         refreshHost()
         assert host1.status == HostStatus.Connected.toString()
