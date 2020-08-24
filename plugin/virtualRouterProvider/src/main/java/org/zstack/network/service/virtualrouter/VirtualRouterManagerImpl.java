@@ -10,6 +10,8 @@ import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -69,6 +71,9 @@ import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.lb.LbConfigProxy;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO_;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
 import org.zstack.network.service.virtualrouter.vip.VipConfigProxy;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
@@ -77,6 +82,7 @@ import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO_;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.network.service.virtualrouter.vyos.VyosVersionCheckResult;
 import org.zstack.network.service.virtualrouter.vyos.VyosVersionManager;
+import org.zstack.resourceconfig.*;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
@@ -172,7 +178,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private ResourceDestinationMaker destMaker;
     @Autowired
     protected VirtualRouterHaBackend haBackend;
-
+    @Autowired
+    private LbConfigProxy proxy;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     @Override
     @MessageSafe
@@ -569,6 +578,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
         rebootVirtualRouterVmOnRebootEvent();
 
+        installResourceConfigValidator();
+        installGlobalConfigValidator();
         VirtualRouterSystemTags.VR_PARALLELISM_DEGREE.installLifeCycleListener(new SystemTagLifeCycleListener() {
             @Override
             public void tagCreated(SystemTagInventory tag) {
@@ -591,6 +602,26 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         });
 		return true;
 	}
+
+    private void installResourceConfigValidator(){
+        ResourceConfig resourceConfig = rcf.getResourceConfig(VirtualRouterGlobalConfig.LOG_LEVEL.getIdentity());
+        resourceConfig.installUpdateExtension( new ResourceConfigUpdateExtensionPoint(){
+            @Override
+            public void updateResourceConfig(ResourceConfig config, String resourceUuid, String resourceType, String oldValue, String newValue){
+                refreshLBLogLevelToVirtualRouter(resourceUuid, newValue);
+            }
+        });
+    }
+
+    private void installGlobalConfigValidator() {
+        VirtualRouterGlobalConfig.LOG_LEVEL.installLocalUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                refreshLBLogLevelToVirtualRouter(null, newConfig.value());
+            }
+        });
+    }
+
 
 	@Override
 	public boolean stop() {
@@ -2228,5 +2259,84 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         structs.add(changeDefaultNic);
 
         return structs;
+    }
+
+    private void refreshLBLogLevelToVirtualRouter(String vrUuid, String logLevel) {
+        thdf.chainSubmit(new ChainTask(null) {
+            @Override
+            public String getSyncSignature() {
+                return getName();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                if (vrUuid == null) {
+                    refreshLBLogLevelToVirtualRouter(logLevel, chain);
+                } else {
+                    refreshLBLogLevelToVirtualRouter(Arrays.asList(vrUuid), logLevel, chain);
+                }
+            }
+
+            @Override
+            public String getName() {
+                return String.format("refresh-lb-log-level-to-VR[%s]", vrUuid);
+            }
+        });
+
+    }
+
+    private void refreshLBLogLevelToVirtualRouter(String logLevel, SyncTaskChain chain) {
+        List<String> resourceConfigVrUuid = Q.New(ResourceConfigVO.class)
+                .select(ResourceConfigVO_.resourceUuid)
+                .eq(ResourceConfigVO_.category, VirtualRouterGlobalConfig.LOG_LEVEL.getCategory())
+                .eq(ResourceConfigVO_.name, VirtualRouterGlobalConfig.LOG_LEVEL.getName())
+                .listValues();
+
+        // get all vrouter bind global config
+        // only vrouter which exec haproxy that will refresh lb log level
+        List<String> vrs;
+        if (!resourceConfigVrUuid.isEmpty()) {
+            vrs = Q.New(VirtualRouterLoadBalancerRefVO.class).select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid).notIn(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, resourceConfigVrUuid).listValues();
+        } else {
+            vrs = Q.New(VirtualRouterLoadBalancerRefVO.class).select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid).listValues();
+        }
+        if (vrs.isEmpty()) {
+            logger.debug(String.format("no vrouter found, skip to refresh lb log level"));
+            chain.next();
+            return;
+        }
+        refreshLBLogLevelToVirtualRouter(vrs, logLevel, chain);
+    }
+
+    private void refreshLBLogLevelToVirtualRouter(List<String> vrs, String logLevel, SyncTaskChain chain) {
+        new While<>(vrs).each((vrUuid, completion) -> {
+            VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
+            msg.setVmInstanceUuid(vrUuid);
+            msg.setPath(VirtualRouterLoadBalancerBackend.REFRESH_LB_LOG_LEVEL_PATH);
+            msg.setCheckStatus(true);
+            VirtualRouterLoadBalancerBackend.RefreshLbLogLevelCmd cmd = new VirtualRouterLoadBalancerBackend.RefreshLbLogLevelCmd();
+            cmd.setLogLevel(logLevel);
+            msg.setCommand(cmd);
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrUuid);
+            bus.send(msg, new CloudBusCallBack(completion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (reply.isSuccess()) {
+                        logger.debug(String.format("refresh Lb log level to virtualrouter[%s]",
+                                vrUuid));
+                    } else {
+                        logger.debug(String.format("fail to refresh Lb log level to virtualrouter[%s]",
+                                vrUuid));
+                    }
+                    completion.done();
+                }
+            });
+
+        }).run(new NoErrorCompletion() {
+            @Override
+            public void done() {
+                chain.next();
+            }
+        });
     }
 }
