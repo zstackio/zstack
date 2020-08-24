@@ -61,7 +61,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "3.10"
 					
 				}
 				column {

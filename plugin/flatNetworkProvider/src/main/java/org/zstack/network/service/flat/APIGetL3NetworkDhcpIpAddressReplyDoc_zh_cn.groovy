@@ -25,7 +25,7 @@ doc {
 		name "ip6"
 		desc "IPv6地址"
 		type "String"
-		since "0.6"
+		since "3.10"
 	}
 	field {
 		name "success"
