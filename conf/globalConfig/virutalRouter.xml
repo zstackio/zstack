@@ -70,7 +70,7 @@
     </config>
     <config>
         <category>virtualRouter</category>
-        <name>logLevel</name>
+        <name>haproxy.logLevel</name>
         <description>The log level of haproxy (debug | info | warn | error)</description>
         <defaultValue>info</defaultValue>
         <type>java.lang.String</type>
