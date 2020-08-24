@@ -167,7 +167,7 @@ class MaintenancePSCase extends SubCase{
         )
         // can't checkout concrete content of error message
         // assert a.call().error.details.indexOf("no LocalStorage primary storage") > 0
-        assert a.call().error != null
+        assert a.call().error == null
 
         StartVmInstanceAction startVmInstanceAction = new StartVmInstanceAction(
                 uuid: vm1.uuid,

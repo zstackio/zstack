@@ -29,7 +29,10 @@ import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.HostAllocatorStrategyType;
 import org.zstack.header.configuration.*;
+import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator;
+import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.*;
@@ -38,6 +41,8 @@ import org.zstack.header.rest.RestRequest;
 import org.zstack.header.search.APIGetMessage;
 import org.zstack.header.search.APISearchMessage;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.tag.SystemTagCreateMessageValidator;
+import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.NoView;
 import org.zstack.identity.AccountManager;
@@ -57,6 +62,8 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.argerr;
 
 public class ConfigurationManagerImpl extends AbstractService implements ConfigurationManager {
     private static final CLogger logger = Utils.getLogger(ConfigurationManagerImpl.class);
@@ -1004,9 +1011,109 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
         return f;
     }
 
+    private void prepareSystemTags() {
+        class InstanceOfferingUserConfigValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
+
+            private void check(String resourceUuid, String systemTag) {
+                int existUserdataTagCount = InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.getTags(resourceUuid, InstanceOfferingVO.class).size();
+                if (existUserdataTagCount > 0) {
+                    throw new OperationFailureException(argerr(
+                            "Already have one userdata systemTag for instanceOffering[uuid: %s].",
+                            resourceUuid));
+                }
+
+                String configStr = InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.getTokenByTag(systemTag, InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG_TOKEN);
+                checkInstanceOfferingUserConfig(configStr);
+            }
+
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                if (!InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.isMatch(systemTag)) {
+                    return;
+                }
+                check(resourceUuid, systemTag);
+            }
+
+            @Override
+            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+                int userdataTagCount = 0;
+                for (String sysTag : msg.getSystemTags()) {
+                    if (InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.isMatch(sysTag)) {
+                        if (userdataTagCount > 0) {
+                            throw new OperationFailureException(argerr(
+                                    "Shouldn't be more than one systemTag for one instanceOffering."));
+                        }
+                        userdataTagCount++;
+
+                        check(msg.getResourceUuid(), sysTag);
+                    }
+                }
+            }
+        }
+        InstanceOfferingUserConfigValidator instanceOfferingUserConfigValidator = new InstanceOfferingUserConfigValidator();
+        tagMgr.installCreateMessageValidator(InstanceOfferingVO.class.getSimpleName(), instanceOfferingUserConfigValidator);
+        InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.installValidator(instanceOfferingUserConfigValidator);
+
+        class DiskOfferingUserConfigValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
+
+            private void check(String resourceUuid, String systemTag) {
+                int existUserdataTagCount = DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.getTags(resourceUuid, DiskOfferingVO.class).size();
+                if (existUserdataTagCount > 0) {
+                    throw new OperationFailureException(argerr(
+                            "Already have one userdata systemTag for diskOffering[uuid: %s].",
+                            resourceUuid));
+                }
+
+                String configStr = DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.getTokenByTag(systemTag, DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG_TOKEN);
+                checkDiskOfferingUserConfig(configStr);
+            }
+
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                if (!DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.isMatch(systemTag)) {
+                    return;
+                }
+                check(resourceUuid, systemTag);
+            }
+
+            @Override
+            public void validateSystemTagInCreateMessage(APICreateMessage msg) {
+                int userdataTagCount = 0;
+                for (String sysTag : msg.getSystemTags()) {
+                    if (InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.isMatch(sysTag)) {
+                        if (userdataTagCount > 0) {
+                            throw new OperationFailureException(argerr(
+                                    "Shouldn't be more than one systemTag for one instanceOffering."));
+                        }
+                        userdataTagCount++;
+
+                        check(msg.getResourceUuid(), sysTag);
+                    }
+                }
+            }
+        }
+        DiskOfferingUserConfigValidator diskOfferingUserConfigValidator = new DiskOfferingUserConfigValidator();
+        tagMgr.installCreateMessageValidator(DiskOfferingVO.class.getSimpleName(), diskOfferingUserConfigValidator);
+        DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.installValidator(diskOfferingUserConfigValidator);
+    }
+
+    private void checkInstanceOfferingUserConfig(String configStr) {
+        for (InstanceOfferingUserConfigValidator ext : pluginRgty.getExtensionList(InstanceOfferingUserConfigValidator.class)) {
+            ext.validateInstanceOfferingUserConfig(configStr, null);
+        }
+    }
+
+    private void checkDiskOfferingUserConfig(String configStr) {
+        for (DiskOfferingUserConfigValidator ext : pluginRgty.getExtensionList(DiskOfferingUserConfigValidator.class)) {
+            ext.validateDiskOfferingUserConfig(configStr, null);
+        }
+    }
+
     @Override
     public boolean start() {
         populateExtensions();
+        prepareSystemTags();
+
         return true;
     }
 
