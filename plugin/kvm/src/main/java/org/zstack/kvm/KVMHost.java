@@ -2482,6 +2482,13 @@ public class KVMHost extends HostBase implements Host {
         return vol.getInstallPath().startsWith("iscsi") ? VolumeTO.ISCSI : VolumeTO.FILE;
     }
 
+    private void checkPlatformWithOther(VmInstanceSpec spec) {
+        int total = spec.getDestDataVolumes().size() + spec.getDestCacheVolumes().size() + spec.getCdRomSpecs().size();
+        if (total > 3) {
+            throw new OperationFailureException(operr("when the vm platform is Other, the number of dataVolumes and cdroms cannot exceed 3, currently %s", total));
+        }
+    }
+
     private void startVm(final VmInstanceSpec spec, final NeedReplyMessage msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
 
@@ -2491,6 +2498,9 @@ public class KVMHost extends HostBase implements Host {
         String nestedVirtualization;
         String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
                 spec.getVmInventory().getPlatform();
+        if(ImagePlatform.Other.toString().equals(platform)){
+            checkPlatformWithOther(spec);
+        }
 
         if (ImagePlatform.Windows.toString().equals(platform)) {
             virtio = VmSystemTags.WINDOWS_VOLUME_ON_VIRTIO.hasTag(spec.getVmInventory().getUuid());
@@ -2573,7 +2583,7 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
         rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
         rootVolume.setUseVirtio(virtio);
-        rootVolume.setUseVirtioSCSI(KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(spec.getDestRootVolume().getUuid()));
+        rootVolume.setUseVirtioSCSI(ImagePlatform.Other.toString().equals(platform) ? false : KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(spec.getDestRootVolume().getUuid()));
         rootVolume.setWwn(computeWwnIfAbsent(spec.getDestRootVolume().getUuid()));
         rootVolume.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
 
@@ -2585,9 +2595,9 @@ public class KVMHost extends HostBase implements Host {
         List<VolumeTO> dataVolumes = new ArrayList<>(spec.getDestDataVolumes().size());
         for (VolumeInventory data : spec.getDestDataVolumes()) {
             VolumeTO v = VolumeTO.valueOfWithOutExtension(data, (KVMHostInventory) getSelfInventory(), spec.getVmInventory().getPlatform());
-            // always use virtio driver for data volume
+            // except for platform = Other, always use virtio driver for data volume
             // set bug https://github.com/zxwing/premium/issues/1050
-            v.setUseVirtio(true);
+            v.setUseVirtio(!ImagePlatform.Other.toString().equals(platform));
             dataVolumes.add(v);
         }
         dataVolumes.sort(Comparator.comparing(VolumeTO::getDeviceId));
@@ -2596,9 +2606,9 @@ public class KVMHost extends HostBase implements Host {
         List<VolumeTO> cacheVolumes = new ArrayList<>(spec.getDestCacheVolumes().size());
         for (VolumeInventory data : spec.getDestCacheVolumes()) {
             VolumeTO v = VolumeTO.valueOfWithOutExtension(data, (KVMHostInventory) getSelfInventory(), spec.getVmInventory().getPlatform());
-            // always use virtio driver for data volume
+            // except for platform = Other, always use virtio driver for data volume
             // set bug https://github.com/zxwing/premium/issues/1050
-            v.setUseVirtio(true);
+            v.setUseVirtio(!ImagePlatform.Other.toString().equals(platform));
             cacheVolumes.add(v);
         }
         cmd.setCacheVolumes(cacheVolumes);
