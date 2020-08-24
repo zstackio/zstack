@@ -29,12 +29,11 @@
                                 WEB-INF/lib/regexp*.jar,
                                 WEB-INF/lib/jtidy*.jar,
                                 WEB-INF/lib/servlet-api*.jar,
-                                WEB-INF/lib/c3p0-0.9.5.4.jar,
+                                WEB-INF/lib/c3p0-0.9.1.1.jar,
                                 WEB-INF/lib/reflections-0.9.8.jar,
                                 WEB-INF/lib/groovy-2.4.7.jar,
-                                WEB-INF/lib/okhttp-3.14.0.jar,
+                                WEB-INF/lib/okhttp-2.7.5.jar,
                                 WEB-INF/lib/sisu-guava-0.9.9.jar,
-                                WEB-INF/lib/log4j-1.2.17.jar,
                             </packagingExcludes>
                             <webResources>
                                 <resource>
@@ -544,11 +543,10 @@
                         WEB-INF/lib/regexp*.jar,
                         WEB-INF/lib/jtidy*.jar,
                         WEB-INF/lib/servlet-api*.jar,
-                        WEB-INF/lib/c3p0-0.9.5.4.jar,
+                        WEB-INF/lib/c3p0-0.9.1.1.jar,
                         WEB-INF/lib/reflections-0.9.8.jar,
                         WEB-INF/lib/groovy-2.4.7.jar,
-                        WEB-INF/lib/okhttp-3.14.0.jar,
-                        WEB-INF/lib/log4j-1.2.17.jar,
+                        WEB-INF/lib/okhttp-2.7.5.jar,
                     </packagingExcludes>
                     <webResources>
                         <resource>
