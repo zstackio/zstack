@@ -334,7 +334,7 @@
                 <version>2.18</version>
                 <configuration>
                     <classpathDependencyExcludes>
-                        <classpathDependencyExcludes>c3p0:c3p0:jar:0.9.5.4</classpathDependencyExcludes>
+                        <classpathDependencyExcludes>c3p0:c3p0:jar:0.9.1.1</classpathDependencyExcludes>
                     </classpathDependencyExcludes>
                 </configuration>
             </plugin>
