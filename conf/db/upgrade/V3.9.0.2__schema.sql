@@ -61,6 +61,3 @@ CREATE TABLE IF NOT EXISTS `zstack`.`HostPortVO` (
     KEY `hostUuid` (`hostUuid`),
     CONSTRAINT `fkHostPortVOHostEO` FOREIGN KEY (`hostUuid`) REFERENCES HostEO (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-DELETE ref1 FROM ImageBackupStorageRefVO ref1 INNER JOIN ImageBackupStorageRefVO ref2 WHERE ref1.imageUuid = ref2.imageUuid
- AND ref1.backupStorageUuid = ref2.backupStorageUuid AND ref1.id < ref2.id;
