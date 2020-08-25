@@ -22,6 +22,7 @@ import org.zstack.network.service.eip.*;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.SyncEipRsp;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant.Param;
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -122,11 +123,13 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
                 public List<String> call() {
                     String sql = "select eip.uuid from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm where " +
                             " vm.uuid = nic.vmInstanceUuid and eip.vipUuid = vip.uuid " +
-                            " and eip.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid " +
+                            " and eip.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and vip.serviceProvider in (:providers) " +
                             " and nic.l3NetworkUuid in (:guestL3Uuid)";
                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                     q.setParameter("vipL3Uuid", publicNic.getL3NetworkUuid());
                     q.setParameter("guestL3Uuid", guestNics.stream().map(n -> n.getL3NetworkUuid()).collect(Collectors.toList()));
+                    /*just only vrouter vip and skip the flat vip*/
+                    q.setParameter("providers", Arrays.asList(VyosConstants.PROVIDER_TYPE.toString(), VirtualRouterConstant.PROVIDER_TYPE.toString()));
                     return q.getResultList();
                 }
             }.call();
