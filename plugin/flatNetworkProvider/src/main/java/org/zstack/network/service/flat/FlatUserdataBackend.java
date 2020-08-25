@@ -31,10 +31,7 @@ import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceProviderVO;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.*;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.network.service.NetworkProviderFinder;
@@ -83,10 +80,11 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
 
             @Transactional(readOnly = true)
             private List<String> getVmsNeedUserdataOnHost() {
-                String sql = "select vm.uuid from VmInstanceVO vm where vm.hostUuid = :huuid and vm.state = :state";
+                String sql = "select vm.uuid from VmInstanceVO vm where vm.hostUuid = :huuid and vm.state = :state and vm.type = :type";
                 TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                 q.setParameter("state", VmInstanceState.Running);
                 q.setParameter("huuid", context.getInventory().getUuid());
+                q.setParameter("type", VmInstanceConstant.USER_VM_TYPE);
                 List<String> vmUuids = q.getResultList();
                 if (vmUuids.isEmpty()) {
                     return null;
