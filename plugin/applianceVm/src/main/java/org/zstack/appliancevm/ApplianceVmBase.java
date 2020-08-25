@@ -105,6 +105,8 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
             handle((ApplianceVmRefreshFirewallMsg) msg);
         } else if (msg instanceof ApplianceVmAsyncHttpCallMsg) {
             handle((ApplianceVmAsyncHttpCallMsg) msg);
+        } else if (msg instanceof ApplianceVmChangeStatusMsg) {
+            handle((ApplianceVmChangeStatusMsg)msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -195,6 +197,16 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
                 }
             });
         }
+    }
+
+    protected void handle(final ApplianceVmChangeStatusMsg msg) {
+        ApplianceVmChangeStatusReply reply = new ApplianceVmChangeStatusReply();
+        try {
+            changeApplianceVmStatus(msg.getNewStatus());
+        } catch (Exception e) {
+            reply.setSuccess(false);
+        }
+        bus.reply(msg, reply);
     }
 
     public static String buildAgentUrl(String hostname, String subPath, int port) {
