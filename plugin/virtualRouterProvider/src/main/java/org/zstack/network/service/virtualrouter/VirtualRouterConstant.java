@@ -73,6 +73,6 @@ public interface VirtualRouterConstant {
 		BACKEND,
 		SNAT,
 		IS_HA_ROUTER,
-		SKIP_APPLY_TO_VIRTUALROUTER,
+		APPLY_TO_VIRTUALROUTER,
     }
 }

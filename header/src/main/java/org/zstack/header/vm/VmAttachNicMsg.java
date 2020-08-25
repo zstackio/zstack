@@ -13,6 +13,7 @@ public class VmAttachNicMsg extends NeedReplyMessage implements VmInstanceMessag
     private String l3NetworkUuid;
     private Map<String, List<String>> staticIpMap = new HashMap<>();
     private boolean allowDuplicatedAddress = false;
+    private boolean applyToBacked = true;
 
     public boolean isAllowDuplicatedAddress() {
         return allowDuplicatedAddress;
@@ -45,5 +46,13 @@ public class VmAttachNicMsg extends NeedReplyMessage implements VmInstanceMessag
 
     public void setStaticIpMap(Map<String, List<String>> staticIpMap) {
         this.staticIpMap = staticIpMap;
+    }
+
+    public boolean isApplyToBacked() {
+        return applyToBacked;
+    }
+
+    public void setApplyToBacked(boolean applyToBacked) {
+        this.applyToBacked = applyToBacked;
     }
 }
