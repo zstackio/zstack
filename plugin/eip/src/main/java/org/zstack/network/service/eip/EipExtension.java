@@ -15,6 +15,7 @@ import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
+import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipVO;
@@ -37,6 +38,8 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
     private EipManager eipMgr;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    L3NetworkManager l3Mgr;
 
     private static final String SUCCESS = EipExtension.class.getName();
 
@@ -94,6 +97,11 @@ public class EipExtension extends AbstractNetworkServiceExtension implements Com
         for (Map.Entry<NetworkServiceProviderType, List<L3NetworkInventory>> e : map.entrySet()) {
             List<EipStruct> structs = new ArrayList<EipStruct>();
             for (final L3NetworkInventory l3 : e.getValue()) {
+                /* when vm is destroyed, eip configure will be deleted */
+                if (!l3Mgr.applyNetworkServiceWhenVmStateChange(l3.getType()) &&
+                        !EipConstant.vmOperationForDetachEip.contains(spec.getCurrentVmOperation())) {
+                    continue;
+                }
                 final VmNicInventory nic = CollectionUtils.find(spec.getDestNics(), new Function<VmNicInventory, VmNicInventory>() {
                     @Override
                     public VmNicInventory call(VmNicInventory arg) {

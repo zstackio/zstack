@@ -456,6 +456,15 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         return true;
     }
 
+    @Override
+    public boolean applyNetworkServiceWhenVmStateChange(String type) {
+        L3NetworkFactory factory = l3NetworkFactories.get(type);
+        if (factory == null) {
+            throw new CloudRuntimeException(String.format("Cannot find L3NetworkFactory for type(%s)", type));
+        }
+        return factory.applyNetworkServiceWhenVmStateChange();
+    }
+
     private void populateExtensions() {
         for (L3NetworkFactory f : pluginRgty.getExtensionList(L3NetworkFactory.class)) {
             L3NetworkFactory old = l3NetworkFactories.get(f.getType().toString());
