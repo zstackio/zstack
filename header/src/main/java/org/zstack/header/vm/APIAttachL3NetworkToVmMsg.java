@@ -66,6 +66,9 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
     @APINoSee
     private Map<String, String> staticIpMap;
 
+    @APINoSee
+    private boolean applyToBackend = true;
+
     public String getStaticIp() {
         return staticIp;
     }
@@ -105,6 +108,14 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
 
     public void setStaticIpMap(Map<String, String> staticIpMap) {
         this.staticIpMap = staticIpMap;
+    }
+
+    public boolean isApplyToBackend() {
+        return applyToBackend;
+    }
+
+    public void setApplyToBackend(boolean applyToBackend) {
+        this.applyToBackend = applyToBackend;
     }
 
     public static APIAttachL3NetworkToVmMsg __example__() {
