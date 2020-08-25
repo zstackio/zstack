@@ -338,14 +338,14 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     public static class RefreshLbLogLevelCmd extends AgentCommand {
-        String logLevel;
+        String level;
 
-        public String getLogLevel() {
-            return logLevel;
+        public String getLevel() {
+            return level;
         }
 
-        public void setLogLevel(String logLevel) {
-            this.logLevel = logLevel;
+        public void setLevel(String level) {
+            this.level = level;
         }
     }
 
