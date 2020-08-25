@@ -77,6 +77,14 @@
             <artifactId>jsch</artifactId>
             <version>0.1.55</version>
         </dependency>
+        <!--<dependency>
+            <groupId>net.schmizz</groupId>
+            <artifactId>sshj</artifactId>
+        </dependency>-->
+        <dependency>
+            <groupId>com.hierynomus</groupId>
+            <artifactId>sshj</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
