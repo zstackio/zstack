@@ -72,8 +72,12 @@
             <groupId>com.googlecode.gentyref</groupId>
             <artifactId>gentyref</artifactId>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>net.schmizz</groupId>
+            <artifactId>sshj</artifactId>
+        </dependency>-->
+        <dependency>
+            <groupId>com.hierynomus</groupId>
             <artifactId>sshj</artifactId>
         </dependency>
         <!--<dependency>
