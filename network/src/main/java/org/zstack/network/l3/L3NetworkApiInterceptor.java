@@ -16,9 +16,12 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
+import org.zstack.network.service.MtuGetter;
+import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -31,7 +34,10 @@ import static org.zstack.core.Platform.operr;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created with IntelliJ IDEA.
@@ -98,11 +104,64 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             validate((APIAddIpv6RangeMsg) msg);
         } else if (msg instanceof APIDeleteIpRangeMsg) {
             validate((APIDeleteIpRangeMsg) msg);
+        } else if (msg instanceof APISetL3NetworkMtuMsg) {
+            validate((APISetL3NetworkMtuMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APISetL3NetworkMtuMsg msg) {
+        L3NetworkVO l3Vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        L2NetworkVO l2VO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
+
+        if (!l2VO.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
+            return;
+        }
+
+        /* when set mtu to vlan network, no vlan network mtu must be first */
+        List<L2NetworkVO> novlanL2Vos = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.physicalInterface, l2VO.getPhysicalInterface())
+                .eq(L2NetworkVO_.type, L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE).list();
+        if (novlanL2Vos.isEmpty()) {
+            Integer defaultMtu = NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value(Integer.class);
+            if (msg.getMtu() > defaultMtu) {
+                throw new ApiMessageInterceptionException(argerr("could not set mtu because l2 network[uuid:%s] of " +
+                        "l3 network [uuid:%s] mtu can not be bigger than the novlan network", l2VO.getUuid(), msg.getL3NetworkUuid()));
+            }
+        }
+
+        /* in a cluster, there should only 1 no vlan network of same physical interface */
+        Map<String, L2NetworkVO> novlanMap = new HashMap<>();
+        for (L2NetworkVO noVlanNetwork : novlanL2Vos) {
+            for (String cluster : noVlanNetwork.getAttachedClusterRefs().stream().map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList())) {
+                novlanMap.put(cluster, noVlanNetwork);
+            }
+        }
+
+        Integer noVlanMax = null;
+        List<String> vlanClusters = l2VO.getAttachedClusterRefs().stream().map(L2NetworkClusterRefVO::getClusterUuid).collect(Collectors.toList());
+        for (String vlanCluster : vlanClusters) {
+            L2NetworkVO novlanL2 = novlanMap.get(vlanCluster);
+            Integer mtu;
+            if (novlanL2 == null) {
+                mtu = NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value(Integer.class);
+            }else {
+                mtu = new MtuGetter().getL2Mtu(L2NetworkInventory.valueOf(novlanL2));
+            }
+
+            if (noVlanMax == null) {
+                noVlanMax = mtu;
+            } else if (mtu < noVlanMax) {
+                noVlanMax = mtu;
+            }
+        }
+
+        if (noVlanMax != null && msg.getMtu() > noVlanMax) {
+            throw new ApiMessageInterceptionException(argerr("could not set mtu because l2 network[uuid:%s] of " +
+                    "l3 network [uuid:%s] mtu can not be bigger than the novlan network", l2VO.getUuid(), msg.getL3NetworkUuid()));
+        }
     }
 
     private void validate(APIDeleteIpRangeMsg msg) {
