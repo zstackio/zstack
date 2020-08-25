@@ -1,11 +1,16 @@
 package org.zstack.test.integration.kvm.vm
 
+import org.zstack.core.db.DatabaseFacade
+import org.zstack.header.image.ImageBackupStorageRefVO
 import org.zstack.header.image.ImageConstant
+import org.zstack.header.image.ImageStatus
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.ZoneInventory
 import org.zstack.test.integration.kvm.KvmTest
+import org.zstack.storage.backup.sftp.SftpBackupStorageCommands
+import org.zstack.storage.backup.sftp.SftpBackupStorageConstant
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
@@ -136,10 +141,54 @@ class GetCandidateIsoForAttachingVmCase extends SubCase {
         assert 1 == isoList.size()
         assert iso.uuid != isoList.get(0).uuid
 
+       env.simulator(SftpBackupStorageConstant.CONNECT_PATH) {
+            def rsp = new SftpBackupStorageCommands.ConnectResponse()
+            rsp.availableCapacity = SizeUnit.GIGABYTE.toByte(1000)
+            rsp.totalCapacity = SizeUnit.GIGABYTE.toByte(1000)
+            return rsp
+        }
+
+        def bs2 = addSftpBackupStorage {
+            name = "sftp2"
+            description = "test"
+            username = "username"
+            password = "foobar"
+            hostname = "127.0.0.22"
+            url = "/sftp2"
+        }
+
+        attachBackupStorageToZone {
+            zoneUuid = zone.uuid
+            backupStorageUuid = bs2.uuid
+        }
+
+        DatabaseFacade dbf = bean(DatabaseFacade.class)
+        ImageBackupStorageRefVO refVO = new ImageBackupStorageRefVO()
+        refVO.imageUuid = isoList.get(0).uuid
+        refVO.backupStorageUuid = bs2.uuid
+        refVO.status = ImageStatus.Ready
+        refVO.installPath = "/sftp2/image2.iso"
+        refVO = dbf.persistAndRefresh(refVO)
+
+        isoList = getCandidateIsoForAttachingVm {
+            vmInstanceUuid = vm.uuid
+        }
+        assert 1 == isoList.size()
+
+        detachBackupStorageFromZone {
+            zoneUuid = zone.uuid
+            backupStorageUuid = bs2.uuid
+        }
+
+        deleteBackupStorage {
+            uuid = bs2.uuid
+        }
+
         detachBackupStorageFromZone {
             zoneUuid = zone.uuid
             backupStorageUuid = bs.uuid
         }
+
         assert 0 == getCandidateIsoForAttachingVm {
             vmInstanceUuid = vm.uuid
         }.size()

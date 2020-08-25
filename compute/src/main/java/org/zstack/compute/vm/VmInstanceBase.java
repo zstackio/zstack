@@ -2798,7 +2798,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         List<String> bsUuids = psType.findBackupStorage(psUuid);
 
         if (!bsUuids.isEmpty()) {
-            String sql = "select img" +
+            String sql = "select distinct img" +
                     " from ImageVO img, ImageBackupStorageRefVO ref, BackupStorageVO bs, BackupStorageZoneRefVO bsRef" +
                     " where ref.imageUuid = img.uuid" +
                     " and img.mediaType = :imgType" +
