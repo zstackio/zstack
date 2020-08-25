@@ -2145,7 +2145,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                afterAttachNic((VmNicInventory) data.get(vmNicInvKey), new Completion(trigger) {
+                afterAttachNic((VmNicInventory) data.get(vmNicInvKey), msg.isApplyToBacked(), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -4770,7 +4770,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                afterAttachNic((VmNicInventory) data.get(vmNicInvKey), new Completion(trigger) {
+                afterAttachNic((VmNicInventory) data.get(vmNicInvKey), msg.isApplyToBackend(), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -4863,8 +4863,12 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).start();
     }
 
-    protected void afterAttachNic(VmNicInventory nicInventory, Completion completion) {
+    protected void afterAttachNic(VmNicInventory nicInventory, boolean applyToBackend, Completion completion) {
         completion.success();
+    }
+
+    protected void afterAttachNic(VmNicInventory nicInventory, Completion completion) {
+        afterAttachNic(nicInventory, true, completion);
     }
 
     protected void afterDetachNic(VmNicInventory nicInventory, boolean isRollback, Completion completion) {

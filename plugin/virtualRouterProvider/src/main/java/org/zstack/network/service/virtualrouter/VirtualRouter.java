@@ -690,6 +690,12 @@ public class VirtualRouter extends ApplianceVmBase {
     private class virtualRouterAfterAttachNicFlow extends NoRollbackFlow {
         @Override
         public void run(FlowTrigger trigger, Map data) {
+            boolean applyToVirtualRouter = (boolean)data.get(Param.APPLY_TO_VIRTUALROUTER.toString());
+            if (!applyToVirtualRouter) {
+                trigger.next();
+                return;
+            }
+
             VmNicInventory nicInventory = (VmNicInventory) data.get(Param.VR_NIC.toString());
             L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, nicInventory.getL3NetworkUuid()).find();
 
@@ -770,6 +776,11 @@ public class VirtualRouter extends ApplianceVmBase {
         @Override
         public void run(FlowTrigger trigger, Map data) {
             VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC.toString());
+            boolean applyToVirtualRouter = (boolean)data.get(Param.APPLY_TO_VIRTUALROUTER.toString());
+            if (!applyToVirtualRouter) {
+                trigger.next();
+                return;
+            }
 
             Iterator<VirtualRouterAfterAttachNicExtensionPoint> it = pluginRgty.getExtensionList(VirtualRouterAfterAttachNicExtensionPoint.class).iterator();
             virtualRouterApplyServicesAfterAttachNic(it, nicInv,  new Completion(trigger) {
@@ -815,6 +826,11 @@ public class VirtualRouter extends ApplianceVmBase {
 
     @Override
     protected void afterAttachNic(VmNicInventory nicInventory, Completion completion) {
+        super.afterAttachNic(nicInventory, true, completion);
+    }
+
+    @Override
+    protected void afterAttachNic(VmNicInventory nicInventory, boolean applyToBackend, Completion completion) {
         thdf.chainSubmit(new ChainTask(completion) {
 
             @Override
@@ -844,6 +860,7 @@ public class VirtualRouter extends ApplianceVmBase {
                 data.put(Param.VR_NIC.toString(), VmNicInventory.valueOf(vo));
                 data.put(Param.SNAT.toString(), Boolean.FALSE);
                 data.put(Param.VR.toString(), VirtualRouterVmInventory.valueOf(vrVo));
+                data.put(Param.APPLY_TO_VIRTUALROUTER.toString(), applyToBackend);
 
                 FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
                 chain.setName(String.format("apply-services-after-attach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
