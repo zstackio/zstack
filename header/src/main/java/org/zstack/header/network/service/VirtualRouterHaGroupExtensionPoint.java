@@ -10,7 +10,7 @@ public interface VirtualRouterHaGroupExtensionPoint {
     List<String> getPublicIp(String vrUuid, String l3Uuid);
     String getPublicIpUuid(String vrUuid, String l3Uuid);
 
-    void VirtualRouterVmHaAttachL3Network(String vrUuid, String l3NetworkUuid, Completion completion);
+    void VirtualRouterVmHaAttachL3Network(String vrUuid, String l3NetworkUuid, boolean applyToVirtualRouter, Completion completion);
     void VirtualRouterVmHaDetachL3Network(String vrUuid, String l3NetworkUuid, boolean isRollback, Completion completion);
     Boolean isVirtualRouterInSameHaPair(List<String> vrUuids);
 

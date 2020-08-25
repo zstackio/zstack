@@ -691,8 +691,8 @@ public class VirtualRouter extends ApplianceVmBase {
     private class virtualRouterAfterAttachNicFlow extends NoRollbackFlow {
         @Override
         public void run(FlowTrigger trigger, Map data) {
-            boolean skipOnVirtualRouter = (boolean)data.get(Param.SKIP_APPLY_TO_VIRTUALROUTER.toString());
-            if (skipOnVirtualRouter) {
+            boolean applyToVirtualRouter = (boolean)data.get(Param.APPLY_TO_VIRTUALROUTER.toString());
+            if (!applyToVirtualRouter) {
                 trigger.next();
                 return;
             }
@@ -788,8 +788,8 @@ public class VirtualRouter extends ApplianceVmBase {
         @Override
         public void run(FlowTrigger trigger, Map data) {
             VmNicInventory nicInv = (VmNicInventory) data.get(Param.VR_NIC.toString());
-            boolean skipOnVirtualRouter = (boolean)data.get(Param.SKIP_APPLY_TO_VIRTUALROUTER.toString());
-            if (skipOnVirtualRouter) {
+            boolean applyToVirtualRouter = (boolean)data.get(Param.APPLY_TO_VIRTUALROUTER.toString());
+            if (!applyToVirtualRouter) {
                 trigger.next();
                 return;
             }
@@ -843,38 +843,16 @@ public class VirtualRouter extends ApplianceVmBase {
 
     @Override
     protected void afterAttachNic(VmNicInventory nicInventory, Completion completion) {
+        super.afterAttachNic(nicInventory, true, completion);
+    }
+
+    @Override
+    protected void afterAttachNic(VmNicInventory nicInventory, boolean applyToBackend, Completion completion) {
         thdf.chainSubmit(new ChainTask(completion) {
 
             @Override
             public String getSyncSignature() {
                 return syncThreadName;
-            }
-
-            private boolean skipAttachOnVirtualRouter(VirtualRouterVmVO vrVo) {
-                if (!vrVo.isHaEnabled()) {
-                    if (vrVo.getState() == VmInstanceState.Stopped) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                } else {
-                    /* ha router, both vrouter stopped, will skip; or it make 2 router has different nic */
-                    String peerUuid = haBackend.getVirutalRouterPeerUuid(vrVo.getUuid());
-                    if (peerUuid == null) {
-                        if (vrVo.getState() == VmInstanceState.Stopped) {
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    } else {
-                        VirtualRouterVmVO peerVo = dbf.findByUuid(peerUuid, VirtualRouterVmVO.class);
-                        if (vrVo.getState() == VmInstanceState.Stopped || peerVo.getState() == VmInstanceState.Stopped) {
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    }
-                }
             }
 
             @Override
@@ -895,12 +873,11 @@ public class VirtualRouter extends ApplianceVmBase {
                 logger.debug(String.format("updated metadata of vmnic[uuid: %s]", vo.getUuid()));
 
                 VirtualRouterVmVO vrVo = dbf.findByUuid(self.getUuid(), VirtualRouterVmVO.class);
-                boolean skipOnVRouter = skipAttachOnVirtualRouter(vrVo);
                 Map<String, Object> data = new HashMap();
                 data.put(Param.VR_NIC.toString(), VmNicInventory.valueOf(vo));
                 data.put(Param.SNAT.toString(), Boolean.FALSE);
                 data.put(Param.VR.toString(), VirtualRouterVmInventory.valueOf(vrVo));
-                data.put(Param.SKIP_APPLY_TO_VIRTUALROUTER.toString(), skipOnVRouter);
+                data.put(Param.APPLY_TO_VIRTUALROUTER.toString(), applyToBackend);
 
                 FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
                 chain.setName(String.format("apply-services-after-attach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
