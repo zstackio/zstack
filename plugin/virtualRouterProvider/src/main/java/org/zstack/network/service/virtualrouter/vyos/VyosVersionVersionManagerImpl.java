@@ -51,6 +51,7 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
             @Override
             public void fail(ErrorCode err) {
                 logger.warn(String.format("virtual router[uuid: %s] get version failed because %s", vrUuid, err.getDetails()));
+                result.setNeedReconnect(true);
                 completion.success(result);
             }
 
