@@ -35,5 +35,5 @@ public class VirtualRouterGlobalConfig {
     public static GlobalConfig VYOS_ECHO_TIMEOUT = new GlobalConfig(CATEGORY, "vrouter.echoTimeout");
     @BindResourceConfig({VmInstanceVO.class})
     @GlobalConfigValidation(validValues = {"debug", "info", "warn", "error"})
-    public static GlobalConfig LOG_LEVEL = new GlobalConfig(CATEGORY, "logLevel");
+    public static GlobalConfig LOG_LEVEL = new GlobalConfig(CATEGORY, "haproxy.logLevel");
 }
