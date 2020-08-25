@@ -20,10 +20,14 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.SessionInventory;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
+import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.query.*;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.search.Parent;
 import org.zstack.header.search.SearchConstant;
 import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -35,10 +39,12 @@ import org.zstack.zql.ast.ZQLMetadata;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.*;
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.inerr;
 
 public class QueryFacadeImpl extends AbstractService implements QueryFacade, GlobalApiMessageInterceptor, ReplyMessagePreSendingExtensionPoint {
     private static CLogger logger = Utils.getLogger(QueryFacadeImpl.class);
@@ -46,6 +52,9 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
     private Map<String, QueryBelongFilter> belongfilters = new HashMap<>();
     private String queryBuilderType = MysqlQueryBuilderFactory.type.toString();
     private List<Class> zqlFilterClasses = Lists.newArrayList();
+
+    private Map<String, List<String>> apiNoSeeFields = new HashMap<>();
+    private Map<String, List<Class>> inventoryFamilies = new HashMap<>();
 
     @Autowired
     private PluginRegistry pluginRgty;
@@ -158,6 +167,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
     public boolean start() {
         checkBoxTypeInInventory();
         populateExtensions();
+        collectInventoryAPINoSee();
         return true;
     }
 
@@ -595,8 +605,88 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
         ZQL zql = ZQL.fromString(text);
         ZQLQueryReturn result = zql.getSingleResult();
+        if (result.inventories != null) {
+            dropAPINoSee(result.inventories, targetInventoryClass);
+        }
         ZQLContext.cleanAPISession();
         return result;
+    }
+
+    private void collectInventoryAPINoSee() {
+        BeanUtils.reflections.getTypesAnnotatedWith(Inventory.class).stream()
+                .filter(clz -> !Modifier.isStatic(clz.getModifiers()))
+                .forEach(clz -> {
+            Inventory inventory = clz.getAnnotation(Inventory.class);
+            if (inventory == null) {
+                return;
+            }
+            List<String> skip = new ArrayList<>();
+            for (Field field : clz.getDeclaredFields()) {
+                if (field.isAnnotationPresent(APINoSee.class)) {
+                    skip.add(field.getName());
+                }
+            }
+            if (!skip.isEmpty()) {
+                apiNoSeeFields.put(clz.getName(), skip);
+                for (Parent parent : inventory.parent()) {
+                    inventoryFamilies.compute(parent.inventoryClass().getName(), (k, v) -> {
+                        if (v == null) {
+                            v = CollectionDSL.list(clz);
+                        } else {
+                            v.add(clz);
+                        }
+                        return v;
+                    });
+                }
+            }
+        });
+    }
+
+    private Class getAPINoSeeClassDirectly(Class inventoryClass) {
+        if (apiNoSeeFields.get(inventoryClass.getName()) != null && !apiNoSeeFields.get(inventoryClass.getName()).isEmpty()) {
+            return inventoryClass;
+        }
+        return null;
+    }
+
+    private List<Class> getAPINoSeeClasses(Class inventoryClass) {
+        List<Class> apiNoSeeClasses = new ArrayList<>();
+        Class clz = getAPINoSeeClassDirectly(inventoryClass);
+        if (clz != null) {
+            apiNoSeeClasses.add(clz);
+        }
+        if (!inventoryFamilies.containsKey(inventoryClass.getName())) {
+            return apiNoSeeClasses;
+        }
+        for (Class inventory: inventoryFamilies.get(inventoryClass.getName())) {
+            clz = getAPINoSeeClassDirectly(inventory);
+            if (clz != null) {
+                apiNoSeeClasses.add(clz);
+            }
+        }
+        return apiNoSeeClasses;
+    }
+
+    private void dropAPINoSee(List<Object> inventories, Class inventoryClass) {
+        List<Class> clzs = getAPINoSeeClasses(inventoryClass);
+        if (clzs.isEmpty()) {
+            return;
+        }
+        for(Class clz: clzs) {
+            for (String field : apiNoSeeFields.get(clz.getName())) {
+                try {
+                    Field f = clz.getDeclaredField(field);
+                    f.setAccessible(true);
+                    for (Object inv : inventories) {
+                        if (!f.getType().isPrimitive()) {
+                            f.set(inv, null);
+                        }
+                    }
+                } catch (NoSuchFieldException | IllegalAccessException e) {
+                    logger.warn(e.getMessage());
+                }
+            }
+        }
     }
 
     private void handle(APIGenerateInventoryQueryDetailsMsg msg) {
