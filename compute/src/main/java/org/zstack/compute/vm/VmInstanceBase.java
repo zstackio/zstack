@@ -6292,20 +6292,22 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void handle(final APIRebootVmInstanceMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getName() {
-                return String.format("reboot-vm-%s", self.getUuid());
-            }
+        APIRebootVmInstanceEvent evt = new APIRebootVmInstanceEvent(msg.getId());
 
+        RebootVmInstanceMsg rmsg = new RebootVmInstanceMsg();
+        rmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        bus.makeTargetServiceIdByResourceUuid(rmsg, VmInstanceConstant.SERVICE_ID, rmsg.getVmInstanceUuid());
+        bus.send(rmsg, new CloudBusCallBack(msg) {
             @Override
-            public String getSyncSignature() {
-                return syncThreadName;
-            }
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setError(err(VmErrors.REBOOT_ERROR, reply.getError(), reply.getError().getDetails()));
+                } else {
+                    refreshVO();
+                    evt.setInventory(getSelfInventory());
+                }
 
-            @Override
-            public void run(SyncTaskChain chain) {
-                rebootVm(msg, chain);
+                bus.publish(evt);
             }
         });
     }
