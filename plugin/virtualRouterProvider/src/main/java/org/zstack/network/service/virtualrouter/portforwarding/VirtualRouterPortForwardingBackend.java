@@ -344,10 +344,8 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
                     "where pf.vmNicUuid = nic.uuid " +
                     "and nic.vmInstanceUuid = vm.uuid " +
                     "and nic.l3NetworkUuid = :l3Uuid " +
-                    "and vm.state in (:syncPfVmStates) " +
                     "and pf.state = :enabledState", Tuple.class)
                     .param("l3Uuid", nic.getL3NetworkUuid())
-                    .param("syncPfVmStates", SYNC_PF_VM_STATES)
                     .param("enabledState", PortForwardingRuleState.Enabled)
                     .list();
     }
