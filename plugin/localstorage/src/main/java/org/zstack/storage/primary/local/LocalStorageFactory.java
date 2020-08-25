@@ -907,10 +907,6 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             return null;
         }
 
-        if (!LocalStoragePrimaryStorageGlobalConfig.ALLOW_LIVE_MIGRATION.value(Boolean.class)) {
-            return refuseLiveMigrationForLocalStorage(vm);
-        }
-
         // forbid live migration with data volumes for local storage
         if (vm.getAllVolumes().size() > 1) {
             return operr("unable to live migrate vm[uuid:%s] with data volumes on local storage." +
@@ -938,27 +934,6 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
         if (err != null) {
             throw new OperationFailureException(err);
         }
-    }
-
-    private ErrorCode refuseLiveMigrationForLocalStorage(VmInstanceInventory vm) {
-        List<String> volUuids = CollectionUtils.transformToList(vm.getAllVolumes(), VolumeInventory::getUuid);
-
-        String sql = "select count(ps)" +
-                " from PrimaryStorageVO ps, VolumeVO vol" +
-                " where ps.uuid = vol.primaryStorageUuid" +
-                " and vol.uuid in (:volUuids)" +
-                " and ps.type = :ptype";
-        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
-        q.setParameter("volUuids", volUuids);
-        q.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
-        q.setMaxResults(1);
-        Long count = q.getSingleResult();
-        if (count > 0) {
-            return operr("unable to live migrate with local storage. The vm[uuid:%s] has volumes on local storage," +
-                    "to protect your data, please stop the vm and do the volume migration", vm.getUuid());
-        }
-
-        return null;
     }
 
     @Override
@@ -1177,25 +1152,6 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
             if (err != null) {
                 capabilities.setSupportLiveMigration(false);
-            }
-        }
-
-        if (capabilities.isSupportVolumeMigration()) {
-            if (!Q.New(PrimaryStorageVO.class)
-                    .eq(PrimaryStorageVO_.uuid, inv.getRootVolume().getPrimaryStorageUuid())
-                    .eq(PrimaryStorageVO_.type, LocalStorageConstants.LOCAL_STORAGE_TYPE).isExists()) {
-                return;
-            }
-
-            long count = Q.New(VolumeVO.class)
-                    .eq(VolumeVO_.type,VolumeType.Data)
-                    .eq(VolumeVO_.vmInstanceUuid, inv.getUuid()).count();
-            if (count != 0) {
-                capabilities.setSupportVolumeMigration(false);
-            }
-
-            if (IsoOperator.isIsoAttachedToVm(inv.getUuid())) {
-                capabilities.setSupportVolumeMigration(false);
             }
         }
     }
