@@ -250,10 +250,15 @@
                 <artifactId>json</artifactId>
                 <version>20170516</version>
             </dependency>
-            <dependency>
+           <!-- <dependency>
                 <groupId>net.schmizz</groupId>
                 <artifactId>sshj</artifactId>
                 <version>0.8.1</version>
+            </dependency>-->
+            <dependency>
+                <groupId>com.hierynomus</groupId>
+                <artifactId>sshj</artifactId>
+                <version>0.30.0</version>
             </dependency>
             <dependency>
                 <groupId>com.mchange</groupId>
@@ -281,10 +286,17 @@
                 <version>1.65</version>
             </dependency>
             <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcmail-jdk15on</artifactId>
-            <version>1.65</version>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcmail-jdk15on</artifactId>
+                <version>1.65</version>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcpkix-jdk15on -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk15on</artifactId>
+                <version>1.66</version>
+            </dependency>
+
 
             <dependency>
                 <groupId>org.objenesis</groupId>
