@@ -76,7 +76,6 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     private PluginRegistry pluginRgty;
     @Autowired
     private TagManager tagMgr;
-
     private Map<String, LoadBalancerBackend> backends = new HashMap<String, LoadBalancerBackend>();
 
     @Override

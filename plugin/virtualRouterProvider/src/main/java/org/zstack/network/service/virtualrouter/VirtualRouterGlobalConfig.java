@@ -3,6 +3,9 @@ package org.zstack.network.service.virtualrouter;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.network.service.lb.LoadBalancerVO;
+import org.zstack.resourceconfig.BindResourceConfig;
 
 /**
  */
@@ -30,4 +33,7 @@ public class VirtualRouterGlobalConfig {
     public static GlobalConfig VYOS_PASSWORD = new GlobalConfig(CATEGORY, "vrouter.password");
     @GlobalConfigValidation
     public static GlobalConfig VYOS_ECHO_TIMEOUT = new GlobalConfig(CATEGORY, "vrouter.echoTimeout");
+    @BindResourceConfig({VmInstanceVO.class})
+    @GlobalConfigValidation(validValues = {"debug", "info", "warn", "error"})
+    public static GlobalConfig LOG_LEVEL = new GlobalConfig(CATEGORY, "haproxy.logLevel");
 }

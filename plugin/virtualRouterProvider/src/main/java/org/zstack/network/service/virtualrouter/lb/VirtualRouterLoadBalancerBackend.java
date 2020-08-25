@@ -337,6 +337,21 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         }
     }
 
+    public static class RefreshLbLogLevelCmd extends AgentCommand {
+        String logLevel;
+
+        public String getLogLevel() {
+            return logLevel;
+        }
+
+        public void setLogLevel(String logLevel) {
+            this.logLevel = logLevel;
+        }
+    }
+
+    public static class RefreshLbLogLevelRsp extends AgentResponse {
+    }
+
     public static class RefreshLbRsp extends AgentResponse {
     }
 
@@ -381,6 +396,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     public static final String REFRESH_LB_PATH = "/lb/refresh";
     public static final String DELETE_LB_PATH = "/lb/delete";
+    public static final String REFRESH_LB_LOG_LEVEL_PATH = "/lb/log/level";
     public static final String CREATE_CERTIFICATE_PATH = "/certificate/create";
     public static final String DELETE_CERTIFICATE_PATH = "/certificate/delete";
 
