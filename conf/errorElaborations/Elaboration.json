@@ -1064,6 +1064,22 @@
     "message_en": "duplicate MAC address with the currently managed vCenter environment"
   },
   {
+    "category": "VCENTER",
+    "code": "1006",
+    "method": "regex",
+    "regex": "There are tasks running on the VCenter\\[uuid:.*], please try again later.",
+    "message_cn": "仍有任务在vCenter[uuid:%1$s]上运行，请稍后再试。",
+    "message_en": "There are tasks running on the VCenter[uuid:%1$s], please try again later."
+  },
+  {
+    "category": "VCENTER",
+    "code": "1007",
+    "method": "regex",
+    "regex": "Syncing with VCenter\\[uuid:.*], please try again later.",
+    "message_cn": "vCenter[uuid:%1$s]正在进行同步，请稍后再试。",
+    "message_en": "Syncing with VCenter[uuid:%1$s], please try again later."
+  },
+  {
     "category": "VIRTUALROUTER",
     "code": "1000",
     "method": "regex",
