@@ -3,8 +3,11 @@ package org.zstack.network.service.virtualrouter.ha;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO_;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +54,20 @@ public abstract class VirtualRouterConfigProxy {
         List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
         if (exps != null && !exps.isEmpty()) {
             vrUuids = exps.get(0).getHaVrUuidsFromNetworkService(type, serviceUuid);
+        }
+
+        return vrUuids;
+    }
+
+    final public List<String> getVrUuidsByNetworkService(String type) {
+        List<String> vrUuids  = Q.New(VirtualRouterLoadBalancerRefVO.class).select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid).listValues();
+
+        List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
+        if (exps != null && !exps.isEmpty()) {
+            List<String> vrUuidsFromHaGroup = exps.get(0).getHaVrUuidsFromNetworkService(type);
+            if ( !vrUuidsFromHaGroup.isEmpty() ) {
+                vrUuids.addAll(vrUuidsFromHaGroup);
+            }
         }
 
         return vrUuids;
