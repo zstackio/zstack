@@ -39,7 +39,6 @@ public class VmNicInventory implements Serializable {
     private Integer ipVersion;
     private String driverType;
     private List<UsedIpInventory> usedIps;
-    @APINoSee
     private String internalName;
     private Integer deviceId;
     private String type;
