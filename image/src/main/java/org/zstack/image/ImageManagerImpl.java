@@ -52,6 +52,7 @@ import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeMsg;
 import org.zstack.header.vm.CreateTemplateFromVmRootVolumeReply;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -989,7 +990,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
 
                 logger.debug(String.format("added image [name: %s, uuid: %s]", name, imageUuid));
 
-                final ImageInventory einv = ImageInventory.valueOf(ivo);
+                final ImageInventory einv = ImageInventory.valueOf(dbf.reload(ivo));
                 fireEvent(einv, null);
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(AddImageExtensionPoint.class),
                         ext -> ext.afterAddImage(einv));
