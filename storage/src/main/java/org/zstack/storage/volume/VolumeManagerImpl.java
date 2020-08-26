@@ -35,6 +35,8 @@ import org.zstack.header.storage.backup.BackupStorageState;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
@@ -853,6 +855,18 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         }
 
         changeVolumeOwner(ref, newOwnerUuid);
+        changeVolumeSnapshotGroupOwner(ref, newOwnerUuid);
+    }
+
+    private void changeVolumeSnapshotGroupOwner(AccountResourceRefInventory ref, String newOwnerUuid) {
+        SimpleQuery<VolumeSnapshotGroupVO> q = dbf.createQuery(VolumeSnapshotGroupVO.class);
+        q.select(VolumeSnapshotGroupVO_.uuid);
+        q.add(VolumeSnapshotGroupVO_.vmInstanceUuid, Op.EQ, ref.getResourceUuid());
+        List<String> uuids = q.listValue();
+
+        for (String uuid : uuids) {
+            acntMgr.changeResourceOwner(uuid, newOwnerUuid);
+        }
     }
 
     private void changeVolumeOwner(AccountResourceRefInventory ref, String newOwnerUuid) {

@@ -15,6 +15,7 @@ public class VolumeSnapshotGroupRefVO_ {
     public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, Boolean> snapshotDeleted;
     public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, Integer> deviceId;
     public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, String> volumeName;
+    public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, String> volumeUuid;
     public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, String> volumeType;
     public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, String> volumeInstallPath;
     public static volatile SingularAttribute<VolumeSnapshotGroupRefVO, String> snapshotName;
