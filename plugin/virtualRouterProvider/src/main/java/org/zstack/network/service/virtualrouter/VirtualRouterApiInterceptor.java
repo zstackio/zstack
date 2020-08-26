@@ -3,6 +3,7 @@ package org.zstack.network.service.virtualrouter;
 import org.apache.commons.net.util.SubnetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
@@ -22,8 +23,7 @@ import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
-import org.zstack.header.vm.VmNicHelper;
-import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.*;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.utils.ShellResult;
@@ -45,6 +45,21 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private CloudBus bus;
+
+    private void setServiceId(APIMessage msg) {
+        if (msg instanceof APIReconnectVirtualRouterMsg) {
+            VmInstanceMessage vmsg = (VmInstanceMessage) msg;
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmsg.getVmInstanceUuid());
+        } else if (msg instanceof APIUpdateVirtualRouterMsg) {
+            VmInstanceMessage vmsg = (VmInstanceMessage) msg;
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmsg.getVmInstanceUuid());
+        } else if (msg instanceof VmInstanceMessage){
+            VmInstanceMessage vmsg = (VmInstanceMessage) msg;
+            bus.makeTargetServiceIdByResourceUuid(msg, VirtualRouterConstant.SERVICE_ID, vmsg.getVmInstanceUuid());
+        }
+    }
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
@@ -57,6 +72,8 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor {
         } else if (msg instanceof APIUpdateVirtualRouterMsg) {
             validate((APIUpdateVirtualRouterMsg) msg);
         }
+
+        setServiceId(msg);
 
         return msg;
     }
