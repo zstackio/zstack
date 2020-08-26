@@ -71,6 +71,7 @@ import org.zstack.network.service.eip.GetL3NetworkForEipInVirtualRouterExtension
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
+import org.zstack.network.service.virtualrouter.ha.VirtualRouterConfigProxy;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.lb.LbConfigProxy;
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend;
@@ -2460,16 +2461,14 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
         // get all vrouter bind global config
         // only vrouter which exec haproxy that will refresh lb log level
-        List<String> vrs;
-        if (!resourceConfigVrUuid.isEmpty()) {
-            vrs = Q.New(VirtualRouterLoadBalancerRefVO.class).select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid).notIn(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, resourceConfigVrUuid).listValues();
-        } else {
-            vrs = Q.New(VirtualRouterLoadBalancerRefVO.class).select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid).listValues();
-        }
+        List<String> vrs = lbProxy.getVrUuidsByNetworkService(LoadBalancerVO.class.getSimpleName());
         if (vrs.isEmpty()) {
             logger.debug(String.format("no vrouter found, skip to refresh lb log level"));
             chain.next();
             return;
+        }
+        if (!resourceConfigVrUuid.isEmpty()) {
+            vrs = vrs.stream().filter( vr -> !resourceConfigVrUuid.contains(vr)).collect(Collectors.toList());
         }
         refreshLBLogLevelToVirtualRouter(vrs, logLevel, chain);
     }
@@ -2481,7 +2480,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             msg.setPath(VirtualRouterLoadBalancerBackend.REFRESH_LB_LOG_LEVEL_PATH);
             msg.setCheckStatus(true);
             VirtualRouterLoadBalancerBackend.RefreshLbLogLevelCmd cmd = new VirtualRouterLoadBalancerBackend.RefreshLbLogLevelCmd();
-            cmd.setLogLevel(logLevel);
+            cmd.setLevel(logLevel);
             msg.setCommand(cmd);
             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrUuid);
             bus.send(msg, new CloudBusCallBack(completion) {
