@@ -10,15 +10,13 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.host.APIAddHostEvent;
 import org.zstack.header.host.AddHostReply;
 import org.zstack.header.host.HostConstant;
-import org.zstack.header.longjob.LongJob;
-import org.zstack.header.longjob.LongJobFor;
-import org.zstack.header.longjob.LongJobVO;
-import org.zstack.header.longjob.UseApiTimeout;
+import org.zstack.header.longjob.*;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
 import org.zstack.longjob.LongJobUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 /**
@@ -56,11 +54,11 @@ public class AddKVMHostLongJob implements LongJob {
 
     @Override
     public void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {
-        completion.fail(operr("not supported"));
+        completion.fail(err(LongJobErrors.NOT_SUPPORTED,"not supported"));
     }
 
     @Override
     public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
-        completion.fail(operr("not supported"));
+        completion.fail(err(LongJobErrors.NOT_SUPPORTED,"not supported"));
     }
 }

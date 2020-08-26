@@ -1,9 +1,10 @@
 package org.zstack.header.longjob;
 
-public enum  LongJobErrors {
+public enum LongJobErrors {
     CANCELED(1000),
     NONCANCELABLE(1001),
-    INTERRUPTED(1002);
+    INTERRUPTED(1002),
+    NOT_SUPPORTED(1003);
 
     private String code;
 

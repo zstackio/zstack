@@ -15,4 +15,9 @@
         <id>1002</id>
         <description>some error interrupt the job, fix error then resume the job or cancel the job if you dont want to continue.</description>
     </code>
+
+    <code>
+        <id>1003</id>
+        <description>operation is not supported.</description>
+    </code>
 </error>

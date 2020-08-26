@@ -11,6 +11,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Constants;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.longjob.LongJobErrors;
 import org.zstack.header.longjob.LongJobFor;
 import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.message.APIEvent;
@@ -19,6 +20,7 @@ import org.zstack.header.vm.*;
 import org.zstack.header.longjob.LongJob;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 
@@ -78,7 +80,7 @@ public class MigrateVmLongJob implements LongJob {
 
     @Override
     public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
-        completion.fail(operr("not supported"));
+        completion.fail(err(LongJobErrors.NOT_SUPPORTED,"not supported"));
     }
 
     @Override
