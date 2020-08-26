@@ -14,6 +14,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.TransactionalCallback;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
@@ -868,10 +869,11 @@ public abstract class BackupStorageBase extends AbstractBackupStorage {
             return;
         }
 
-        BackupStorageVO vo = dbf.findByUuid(self.getUuid(), BackupStorageVO.class);
-        vo.setTotalCapacity(totalCapacity);
-        vo.setAvailableCapacity(availableCapacity);
-        dbf.update(vo);
+        SQL.New(BackupStorageVO.class)
+                .eq(BackupStorageVO_.uuid, self.getUuid())
+                .set(BackupStorageVO_.totalCapacity, totalCapacity)
+                .set(BackupStorageVO_.availableCapacity, availableCapacity)
+                .update();
     }
 
     protected void fireDisconnectedCanonicalEvent(ErrorCode reason) {
