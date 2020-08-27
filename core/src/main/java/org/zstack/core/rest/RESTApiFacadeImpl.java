@@ -112,9 +112,7 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
             }
         }
 
-        for (APIEvent e : boundEvents) {
-            bus.subscribeEvent(this, e);
-        }
+        bus.subscribeEvent(this, boundEvents.toArray(new APIEvent[boundEvents.size()]));
     }
 
     private static int initMaxRestResultLength() {
