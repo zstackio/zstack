@@ -6,10 +6,7 @@ import org.apache.commons.io.IOUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -19,10 +16,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public class PathUtil {
     private static final CLogger logger = Utils.getLogger(PathUtil.class);
@@ -125,6 +119,39 @@ public class PathUtil {
 
     public static File findFileOnClassPath(String fileName) {
         URL fileUrl = PathUtil.class.getClassLoader().getResource(fileName);
+
+        if (fileUrl != null && fileUrl.getProtocol().equals("jar")) {
+            InputStream is = PathUtil.class.getClassLoader().getResourceAsStream(fileName);
+            File file = new File(fileName);
+
+            File parentFile = file.getParentFile();
+            try {
+                if (parentFile != null && !parentFile.exists()) {
+                    parentFile.mkdirs();
+                }
+
+                if (!file.exists()) {
+                    file.createNewFile();
+                }
+            } catch (IOException e) {
+                logger.error(String.format("create file error: %s", e.getMessage()));
+            }
+
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                 BufferedWriter out = new BufferedWriter(new FileWriter(file))) {
+                String s = "";
+                while ((s = br.readLine()) != null) {
+                    out.write(s);
+                }
+                return file;
+            } catch (IOException e) {
+                logger.error(String.format("read jar resource error: %s", e.getMessage()));
+
+                file.delete();
+                return null;
+            }
+        }
+
         if (fileUrl == null || !fileUrl.getProtocol().equals("file")) {
             logger.warn(String.format("The file %s is not found in classpath or there is another resource has the same name.", fileName));
             return null;
