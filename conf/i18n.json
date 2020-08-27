@@ -22736,8 +22736,8 @@
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
-    "raw": "l3 network [uuid:%s] must be attached first, becaue there is vip on that l3 network",
-    "en_US": "l3 network [uuid:{0}] must be attached first, becaue there is vip on that l3 network",
+    "raw": "l3 network [uuid:%s] must be attached first, because there is vip on that l3 network",
+    "en_US": "l3 network [uuid:{0}] must be attached first, because there is vip on that l3 network",
     "zh_CN": "",
     "arguments": [
       "vipL3Uuid"
