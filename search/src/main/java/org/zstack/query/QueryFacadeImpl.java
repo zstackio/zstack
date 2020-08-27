@@ -678,7 +678,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                     Field f = clz.getDeclaredField(field);
                     f.setAccessible(true);
                     for (Object inv : inventories) {
-                        if (!f.getType().isPrimitive()) {
+                        if (!f.getType().isPrimitive() && clz.isInstance(inv)) {
                             f.set(inv, null);
                         }
                     }
