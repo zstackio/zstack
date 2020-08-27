@@ -28,6 +28,7 @@ import org.zstack.header.core.AsyncBackup;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.APIDeleteAccountEvent;
 import org.zstack.header.longjob.*;
@@ -44,6 +45,7 @@ import org.zstack.utils.ThreadContextUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import java.sql.SQLNonTransientConnectionException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -52,6 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.db.DBSourceUtils.isDBConnected;
 import static org.zstack.core.db.DBSourceUtils.waitDBConnected;
 import static org.zstack.core.progress.ProgressReportService.reportProgress;
@@ -297,10 +300,16 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     }
 
     private void cancelLongJob(String uuid, Completion completion) {
-        LongJobState originState = Q.New(LongJobVO.class).eq(LongJobVO_.uuid, uuid).select(LongJobVO_.state).findValue();
+        Tuple t = Q.New(LongJobVO.class).eq(LongJobVO_.uuid, uuid).select(LongJobVO_.state, LongJobVO_.jobName).findTuple();
+        LongJobState originState = t.get(0, LongJobState.class);
         if (originState == LongJobState.Canceled) {
             logger.info(String.format("longjob [uuid:%s] has been canceled before", uuid));
             completion.success();
+            return;
+        }
+
+        if (!longJobFactory.supportCancel(t.get(1, String.class))) {
+            completion.fail(err(LongJobErrors.NOT_SUPPORTED, "not supported"));
             return;
         }
 
@@ -397,7 +406,15 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     }
 
     private void resumeLongJob(String uuid, ReturnValueCompletion<LongJobVO> completion) {
-        completion.success(doResumeJob(uuid, null));
+        String jobName = Q.New(LongJobVO.class).select(LongJobVO_.jobName)
+                .eq(LongJobVO_.uuid, uuid)
+                .findValue();
+
+        if (longJobFactory.supportResume(jobName)) {
+            completion.success(doResumeJob(uuid, null));
+        } else {
+            completion.fail(err(LongJobErrors.NOT_SUPPORTED, "not supported"));
+        }
     }
 
     private void handle(APISubmitLongJobMsg msg) {
@@ -731,7 +748,11 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         if (operation == LongJobOperation.Start) {
             doStartJob(vo.getUuid(), null);
         } else if (operation == LongJobOperation.Resume) {
-            doResumeJob(vo.getUuid(), null);
+            if (longJobFactory.supportResume(vo.getJobName())) {
+                doResumeJob(vo.getUuid(), null);
+            } else {
+                LongJobUtils.changeState(vo.getUuid(), LongJobStateEvent.fail);
+            }
         } else if (operation == LongJobOperation.Cancel) {
             LongJobUtils.changeState(vo.getUuid(), LongJobStateEvent.canceled);
         }

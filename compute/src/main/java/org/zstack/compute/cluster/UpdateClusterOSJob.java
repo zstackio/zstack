@@ -13,12 +13,14 @@ import org.zstack.header.cluster.UpdateClusterOSMsg;
 import org.zstack.header.cluster.UpdateClusterOSReply;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.longjob.LongJob;
+import org.zstack.header.longjob.LongJobErrors;
 import org.zstack.header.longjob.LongJobFor;
 import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 /**
@@ -53,12 +55,11 @@ public class UpdateClusterOSJob implements LongJob {
 
     @Override
     public void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {
-        // TODO
-        completion.fail(Platform.operr("not supported"));
+        completion.fail(err(LongJobErrors.NOT_SUPPORTED,"not supported"));
     }
 
     @Override
     public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
-        completion.fail(operr("not supported"));
+        completion.fail(err(LongJobErrors.NOT_SUPPORTED,"not supported"));
     }
 }
