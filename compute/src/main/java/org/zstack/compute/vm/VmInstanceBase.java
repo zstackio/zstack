@@ -1416,6 +1416,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
                 VmNicVO nicVO = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
+
+                if (nicVO == null) {
+                    logger.debug(String.format("vm nic[uuid:%s] not exists. It may have been deleted", msg.getVmNicUuid()));
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
                 doDetachNic(VmNicInventory.valueOf(nicVO), true, false, new Completion(chain) {
                     @Override
                     public void success() {
