@@ -74,6 +74,7 @@ BEGIN
 
     END LOOP;
     CLOSE cur;
+    SELECT CURTIME();
 END $$
 DELIMITER ;
 
