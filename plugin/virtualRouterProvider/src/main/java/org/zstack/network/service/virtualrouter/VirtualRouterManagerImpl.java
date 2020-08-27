@@ -581,7 +581,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     private void installResourceConfigValidator(){
         ResourceConfig resourceConfig = rcf.getResourceConfig(VirtualRouterGlobalConfig.LOG_LEVEL.getIdentity());
-        resourceConfig.installUpdateExtension( new ResourceConfigUpdateExtensionPoint(){
+        resourceConfig.installLocalUpdateExtension( new ResourceConfigUpdateExtensionPoint(){
             @Override
             public void updateResourceConfig(ResourceConfig config, String resourceUuid, String resourceType, String oldValue, String newValue){
                 refreshLBLogLevelToVirtualRouter(resourceUuid, newValue);

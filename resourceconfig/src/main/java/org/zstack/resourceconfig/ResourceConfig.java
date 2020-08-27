@@ -113,7 +113,7 @@ public class ResourceConfig {
 
                 UpdateEvent evt = (UpdateEvent) data;
                 String newValue = Q.New(ResourceConfigVO.class).select(ResourceConfigVO_.value)
-                        .eq(ResourceConfigVO_.uuid, evt.getResourceUuid())
+                        .eq(ResourceConfigVO_.resourceUuid, evt.getResourceUuid())
                         .eq(ResourceConfigVO_.category, globalConfig.getCategory())
                         .eq(ResourceConfigVO_.name, globalConfig.getName())
                         .findValue();
