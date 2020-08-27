@@ -11,7 +11,6 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
-import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -39,9 +38,7 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
-        if (msg instanceof APICreateL2VlanNetworkMsg) {
-            validate((APICreateL2VlanNetworkMsg) msg);
-        } else if (msg instanceof APICreateL2NetworkMsg) {
+        if (msg instanceof APICreateL2NetworkMsg) {
             validate((APICreateL2NetworkMsg)msg);
         } else if (msg instanceof APIDeleteL2NetworkMsg) {
             validate((APIDeleteL2NetworkMsg)msg);
@@ -84,15 +81,6 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
     private void validate(APICreateL2NetworkMsg msg) {
         if (!L2NetworkType.hasType(msg.getType())) {
             throw new ApiMessageInterceptionException(argerr("unsupported l2Network type[%s]", msg.getType()));
-        }
-    }
-
-    private void validate(APICreateL2VlanNetworkMsg msg) {
-        // check interface name length
-        if (NetworkUtils.generateVlanDeviceName(msg.getPhysicalInterface(), msg.getVlan()).length()
-                > L2NetworkConstant.LINUX_IF_NAME_MAX_SIZE) {
-            throw new ApiMessageInterceptionException(argerr("cannot create vlan-device on %s because it's too long"
-                    , msg.getPhysicalInterface()));
         }
     }
 }

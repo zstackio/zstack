@@ -867,7 +867,7 @@ public class VirtualRouter extends ApplianceVmBase {
         logger.debug(String.format("updated metadata of vmnic[uuid: %s]", vo.getUuid()));
 
         VirtualRouterVmVO vrVo = dbf.findByUuid(self.getUuid(), VirtualRouterVmVO.class);
-        Map<String, Object> data = new HashMap();
+        Map<String, Object> data = new HashMap<String, Object>();
         data.put(Param.VR_NIC.toString(), VmNicInventory.valueOf(vo));
         data.put(Param.SNAT.toString(), Boolean.FALSE);
         data.put(Param.VR.toString(), VirtualRouterVmInventory.valueOf(vrVo));
