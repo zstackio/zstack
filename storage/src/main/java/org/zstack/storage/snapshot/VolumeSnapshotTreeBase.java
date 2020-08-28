@@ -308,6 +308,7 @@ public class VolumeSnapshotTreeBase {
         chain.allowEmptyFlow();
 
         boolean ancestorOfLatest = false;
+        final long requiredSize = currentLeaf.getInventory().getSize();
         for (VolumeSnapshotInventory inv : currentLeaf.getDescendants()) {
             if (inv.isLatest()) {
                 ancestorOfLatest = true;
@@ -420,20 +421,14 @@ public class VolumeSnapshotTreeBase {
                     String __name__ = "allocate-primary-storage";
 
                     boolean success;
-                    Long requiredSize = (currentLeaf.getParent() == null ? currentLeaf.getInventory() : currentLeaf.getParent().getInventory()).getSize();
+
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        PrimaryStorageVO primaryStorageVO = dbf.findByUuid(currentRoot.getPrimaryStorageUuid(), PrimaryStorageVO.class);
-                        if (primaryStorageVO.getState() ==  PrimaryStorageState.Disabled) {
-                            if (primaryStorageVO.getCapacity().getAvailablePhysicalCapacity() < requiredSize) {
-                                trigger.fail(operr("primaryStorage[uuid:%s] has no enough space to rebase snapshot[uuid:%s], please free more than %s bytes storage space",
-                                        currentRoot.getPrimaryStorageUuid(), currentLeaf.getUuid(), Math.abs(requiredSize - primaryStorageVO.getCapacity().getAvailablePhysicalCapacity())));
-                            } else {
-                                trigger.next();
-                            }
-                            return;
-                        }
                         AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
+                        for (SnapshotDeletionExtensionPoint ext : pluginRgty.getExtensionList(SnapshotDeletionExtensionPoint.class)) {
+                            String hostUuid = ext.getHostUuidByResourceUuid(currentRoot.getPrimaryStorageUuid() ,currentRoot.getVolumeUuid());
+                            amsg.setRequiredHostUuid(hostUuid);
+                        }
                         amsg.setRequiredPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
                         amsg.setSize(requiredSize);
                         amsg.setNoOverProvisioning(true);
@@ -482,7 +477,7 @@ public class VolumeSnapshotTreeBase {
                             public void run(MessageReply reply) {
                                 IncreasePrimaryStorageCapacityMsg imsg = new IncreasePrimaryStorageCapacityMsg();
                                 imsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
-                                imsg.setDiskSize(from.getSize());
+                                imsg.setDiskSize(requiredSize);
                                 imsg.setNoOverProvisioning(true);
                                 bus.makeTargetServiceIdByResourceUuid(imsg, PrimaryStorageConstant.SERVICE_ID, currentRoot.getPrimaryStorageUuid());
                                 bus.send(imsg);

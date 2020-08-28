@@ -86,21 +86,25 @@ class LocalStorageDisablePrimaryStorageDeleteSnapshotCase extends SubCase{
         }
         assert cmd2 != null
 
+        /*
         changePrimaryStorageState {
             uuid = primaryStorageSpec.inventory.uuid
             stateEvent = PrimaryStorageStateEvent.disable.toString()
         }
         assert dbf.findByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class).state == PrimaryStorageState.Disabled
 
-
         Map cmd3 = null
         env.afterSimulator(LocalStorageKvmBackend.DELETE_BITS_PATH) { rsp, HttpEntity<String> e ->
             cmd3 = json(e.body, LinkedHashMap.class)
             return rsp
         }
+        */
+
         deleteVolumeSnapshot {
             uuid = sp.uuid
         }
+
+        /*
         assert cmd3 != null
 
         changePrimaryStorageState {
@@ -109,6 +113,7 @@ class LocalStorageDisablePrimaryStorageDeleteSnapshotCase extends SubCase{
         }
 
         assert dbf.findByUuid(primaryStorageSpec.inventory.uuid, PrimaryStorageVO.class).state == PrimaryStorageState.Enabled
+         */
     }
 
     @Override

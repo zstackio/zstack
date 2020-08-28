@@ -17,10 +17,15 @@ import org.zstack.sdk.BatchDeleteVolumeSnapshotAction
 import org.zstack.sdk.BatchDeleteVolumeSnapshotResult
 import org.zstack.sdk.CreateVolumeSnapshotResult
 import org.zstack.sdk.DestroyVmInstanceResult
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeSnapshotInventory
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
+import org.zstack.storage.primary.local.LocalStorageHostRefVO
+import org.zstack.storage.primary.local.LocalStorageHostRefVO_
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO
+import org.zstack.storage.primary.local.LocalStorageResourceRefVO_
 import org.zstack.storage.snapshot.VolumeSnapshot
 import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig
 import org.zstack.test.integration.storage.StorageTest
@@ -145,6 +150,13 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
                         password = "password"
                     }
 
+                    kvm {
+                        name = "kvm2"
+                        managementIp = "127.0.0.3"
+                        username = "root"
+                        password = "password"
+                    }
+
                     attachPrimaryStorage("local")
                     attachL2Network("l2")
                 }
@@ -171,6 +183,14 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
 
             vm {
                 name = "cephVm"
+                useCluster("ceph-cluster")
+                useL3Networks("l3")
+                useInstanceOffering("instanceOffering")
+                useImage("ceph-image1")
+            }
+
+            vm {
+                name = "cephVm2"
                 useCluster("ceph-cluster")
                 useL3Networks("l3")
                 useInstanceOffering("instanceOffering")
@@ -249,30 +269,9 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
         def volumeSnapshotVO1 = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, snap1.uuid).find() as VolumeSnapshotVO
         volumeSnapshotVO1.size = SizeUnit.TERABYTE.toByte(120)
         dbf.update(volumeSnapshotVO1)
-        changePrimaryStorageState {
-            uuid = local.uuid
-            stateEvent = PrimaryStorageStateEvent.disable.toString()
-        }
         expectError {
             deleteVolumeSnapshot {
                 uuid = snap1.uuid
-            }
-        }
-
-        changePrimaryStorageState {
-            uuid = local.uuid
-            stateEvent = PrimaryStorageStateEvent.enable.toString()
-        }
-        def snap2 = createVolumeSnapshot {
-            name = "snapshot2"
-            volumeUuid = localVm3.rootVolumeUuid
-        } as VolumeSnapshotInventory
-        def volumeSnapshotVO2 = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, snap2.uuid).find() as VolumeSnapshotVO
-        volumeSnapshotVO2.size = SizeUnit.TERABYTE.toByte(120)
-        dbf.update(volumeSnapshotVO2)
-        expectError {
-            deleteVolumeSnapshot {
-                uuid = snap2.uuid
             }
         }
     }

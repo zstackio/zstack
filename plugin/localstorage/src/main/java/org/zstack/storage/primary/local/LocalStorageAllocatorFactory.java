@@ -23,6 +23,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
+import org.zstack.storage.snapshot.SnapshotDeletionExtensionPoint;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.SizeUtils;
 import org.zstack.utils.Utils;
@@ -41,7 +42,7 @@ import static org.zstack.core.Platform.err;
  */
 public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStrategyFactory, Component,
         HostAllocatorFilterExtensionPoint, PrimaryStorageAllocatorStrategyExtensionPoint, PrimaryStorageAllocatorFlowNameSetter,
-        HostAllocatorStrategyExtensionPoint {
+        HostAllocatorStrategyExtensionPoint, SnapshotDeletionExtensionPoint {
     private CLogger logger = Utils.getLogger(LocalStorageAllocatorFactory.class);
 
     @Autowired
@@ -322,5 +323,13 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     @Override
     public String filterErrorReason() {
         return Platform.i18n("localstorage allocator failed");
+    }
+
+    @Override
+    public String getHostUuidByResourceUuid(String primaryStorageUuid, String resUuid) {
+        if (LocalStorageUtils.isLocalStorage(primaryStorageUuid)) {
+            return LocalStorageUtils.getHostUuidByResourceUuid(resUuid);
+        }
+        return null;
     }
 }

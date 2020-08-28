@@ -8,6 +8,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
@@ -154,5 +155,30 @@ public class LocalStorageUtils {
 
         ref.setAvailableCapacity(ref.getAvailableCapacity() + s.getSize());
         dbf.getEntityManager().merge(ref);
+    }
+
+    public static String getHostUuidByResourceUuid(String resUuid) {
+        String huuid;
+        huuid = new SQLBatchWithReturn<String>() {
+            private String findHostByUuid(String uuid) {
+                return sql("select uuid from HostVO where uuid = :uuid", String.class).param("uuid", uuid).find();
+            }
+
+            @Override
+            protected String scripts() {
+                String uuid = sql("select hostUuid from LocalStorageResourceRefVO where resourceUuid = :resUuid", String.class)
+                        .param("resUuid", resUuid)
+                        .find();
+                if (uuid == null) {
+                    throw new OperationFailureException(operr("cannot find any host which has resource[uuid:%s]", resUuid));
+                } else if (findHostByUuid(uuid) == null) {
+                    throw new OperationFailureException(
+                            operr("Resource[uuid:%s] can only be operated on host[uuid:%s], but the host has been deleted",
+                                    resUuid, uuid));
+                }
+                return uuid;
+            }
+        }.execute();
+        return huuid;
     }
 }
