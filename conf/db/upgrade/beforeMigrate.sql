@@ -49,3 +49,43 @@ DELIMITER  ;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP PROCEDURE IF EXISTS cleanupUsedIpVO;
+DELIMITER $$
+CREATE PROCEDURE cleanupUsedIpVO()
+BEGIN
+    DECLARE curUsedIpUuid VARCHAR(32);
+    DECLARE vipCount INT DEFAULT 0;
+    DECLARE vmNicCount INT DEFAULT 0;
+    DECLARE dhcpCount INT DEFAULT 0;
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur CURSOR FOR SELECT uuid FROM `zstack`.`UsedIpVO` usedIp;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO curUsedIpUuid;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        SELECT COUNT(*) INTO vipCount FROM VipVO WHERE usedIpUuid = curUsedIpUuid;
+        IF (vipCount > 0) THEN
+            ITERATE read_loop;
+        END IF;
+
+        SELECT COUNT(*) INTO vmNicCount FROM VmNicVO WHERE usedIpUuid = curUsedIpUuid;
+        IF (vmNicCount > 0) THEN
+            ITERATE read_loop;
+        END IF;
+
+        SELECT COUNT(*) INTO dhcpCount FROM SystemTagVO WHERE resourceType='L3NetworkVO'
+         AND tag LIKE CONCAT('flatNetwork::DhcpServer::%::ipUuid::', curUsedIpUuid,  '%');
+        IF (dhcpCount > 0) THEN
+            ITERATE read_loop;
+        END IF;
+
+        SELECT * FROM UsedIpVO WHERE uuid = curUsedIpUuid;
+    END LOOP;
+    CLOSE cur;
+    SELECT CURTIME();
+END $$
+DELIMITER ;
