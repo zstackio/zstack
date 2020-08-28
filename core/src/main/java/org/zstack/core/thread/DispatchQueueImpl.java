@@ -414,10 +414,6 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                                         k -> Collections.synchronizedList(new ArrayList<>())).add(syncSignature));
                     }
 
-                    if (cf.getTask().getDeduplicateString() != null) {
-                        removeSubPending(cf.getTask().getDeduplicateString(), false);
-                    }
-
                     // recover task context from backup
                     if (cf.getTask().taskContext != null) {
                         TaskContext.setTaskContext(cf.getTask().taskContext);
