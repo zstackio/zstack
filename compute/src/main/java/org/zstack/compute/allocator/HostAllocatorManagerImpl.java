@@ -637,7 +637,14 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
                 if (msg.getHostUuids() != null && !msg.getHostUuids().isEmpty()) {
                     reply.setResourceType(HostVO.class.getSimpleName());
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum), host.uuid" + " from HostCapacityVO hc, HostVO host" + " where hc.uuid in (:hostUuids)" + " and hc.uuid = host.uuid" + " and host.state = :hstate" + " and host.status = :hstatus" + addHypervisorSqlString + " group by hc.uuid";
+                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum), host.uuid" +
+                            " from HostCapacityVO hc, HostVO host" +
+                            " where hc.uuid in (:hostUuids)" +
+                            " and hc.uuid = host.uuid" +
+                            " and host.state = :hstate" +
+                            " and host.status = :hstatus" +
+                            addHypervisorSqlString +
+                            " group by hc.uuid";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("hostUuids", msg.getHostUuids());
                     q.setParameter("hstate", HostState.Enabled);
@@ -650,7 +657,14 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     return res;
                 } else if (msg.getClusterUuids() != null && !msg.getClusterUuids().isEmpty()) {
                     reply.setResourceType(ClusterVO.class.getSimpleName());
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum), host.clusterUuid" + " from HostCapacityVO hc, HostVO host" + " where hc.uuid = host.uuid" + " and host.clusterUuid in (:clusterUuids)" + " and host.state = :hstate" + " and host.status = :hstatus" + addHypervisorSqlString + " group by host.clusterUuid";
+                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum), host.clusterUuid" +
+                            " from HostCapacityVO hc, HostVO host" +
+                            " where hc.uuid = host.uuid" +
+                            " and host.clusterUuid in (:clusterUuids)" +
+                            " and host.state = :hstate" +
+                            " and host.status = :hstatus" +
+                            addHypervisorSqlString +
+                            " group by host.clusterUuid";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("clusterUuids", msg.getClusterUuids());
                     q.setParameter("hstate", HostState.Enabled);
@@ -663,7 +677,14 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     return res;
                 } else if (msg.getZoneUuids() != null && !msg.getZoneUuids().isEmpty()) {
                     reply.setResourceType(ZoneVO.class.getSimpleName());
-                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum), host.zoneUuid" + " from HostCapacityVO hc, HostVO host" + " where hc.uuid = host.uuid" + " and host.zoneUuid in (:zoneUuids)" + " and host.state = :hstate" + " and host.status = :hstatus" + addHypervisorSqlString + " group by host.zoneUuid";
+                    String sql = "select sum(hc.totalCpu), sum(hc.availableCpu), sum(hc.availableMemory), sum(hc.totalMemory), sum(hc.cpuNum), host.zoneUuid" +
+                            " from HostCapacityVO hc, HostVO host" +
+                            " where hc.uuid = host.uuid" +
+                            " and host.zoneUuid in (:zoneUuids)" +
+                            " and host.state = :hstate" +
+                            " and host.status = :hstatus" +
+                            addHypervisorSqlString +
+                            " group by host.zoneUuid";
                     TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                     q.setParameter("zoneUuids", msg.getZoneUuids());
                     q.setParameter("hstate", HostState.Enabled);
@@ -807,6 +828,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
                     cap.setAvailableMemory(availMemory);
                 }
+                logger.debug(String.format("[Host Allocation]: successfully return cpu[%s], memory[%s bytes] on host[uuid:%s]", cpu, memory, hostUuid));
                 return cap;
             }
         });
