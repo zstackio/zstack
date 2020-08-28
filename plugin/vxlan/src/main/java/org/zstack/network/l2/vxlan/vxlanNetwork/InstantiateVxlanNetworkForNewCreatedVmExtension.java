@@ -58,7 +58,7 @@ public class InstantiateVxlanNetworkForNewCreatedVmExtension implements PreVmIns
 
         ErrorCodeList errList = new ErrorCodeList();
 
-        new While<>(vxlanUuids).all((uuid, completion1) -> {
+        new While<>(vxlanUuids).step((uuid, completion1) -> {
             PrepareL2NetworkOnHostMsg msg = new PrepareL2NetworkOnHostMsg();
             msg.setL2NetworkUuid(uuid);
             msg.setHost(spec.getDestHost());
@@ -76,7 +76,7 @@ public class InstantiateVxlanNetworkForNewCreatedVmExtension implements PreVmIns
 
                 }
             });
-        }).run(new NoErrorCompletion() {
+        }, 5).run(new NoErrorCompletion() {
             @Override
             public void done() {
                 if (!errList.getCauses().isEmpty()) {
