@@ -14,6 +14,7 @@ import org.zstack.header.core.webhooks.WebhookInventory;
 import org.zstack.header.core.webhooks.WebhookVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Event;
+import org.zstack.utils.TaskContext;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import static org.zstack.core.Platform.argerr;
@@ -94,6 +95,8 @@ public class EventFacadeImpl implements EventFacade, CloudBusEventListener, Comp
 
         @AsyncThread
         void call(CanonicalEvent e) {
+            TaskContext.removeTaskContext();
+
             if (callback instanceof EventRunnable) {
                 ((EventRunnable) callback).run();
             } else {
