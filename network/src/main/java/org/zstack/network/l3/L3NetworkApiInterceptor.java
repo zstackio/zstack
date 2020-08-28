@@ -1,6 +1,7 @@
 package org.zstack.network.l3;
 
 
+import com.googlecode.ipv6.IPv6Address;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.apache.commons.validator.routines.DomainValidator;
@@ -638,15 +639,29 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddDnsToL3NetworkMsg msg) {
-        SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
-        q.add(L3NetworkDnsVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-        q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
-        if (q.isExists()) {
-            throw new ApiMessageInterceptionException(operr("there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
-        }
-
         if ( !NetworkUtils.isIpAddress(msg.getDns()) ) {
             throw new ApiMessageInterceptionException(argerr("dns[%s] is not a IP address", msg.getDns()));
+        }
+
+        List<L3NetworkDnsVO> l3NetworkDnsVOS = Q.New(L3NetworkDnsVO.class).eq(L3NetworkDnsVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+        if ( l3NetworkDnsVOS.isEmpty() ) {
+            return;
+        }
+
+        if ( NetworkUtils.isIpv4Address(msg.getDns()) ) {
+            boolean exist = l3NetworkDnsVOS.stream().anyMatch(l3NetworkDnsVO -> msg.getDns().equals(l3NetworkDnsVO.getDns()));
+            if ( exist ) {
+                throw new ApiMessageInterceptionException(operr("there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
+            }
+        } else {
+            for ( L3NetworkDnsVO l3NetworkDnsVO : l3NetworkDnsVOS ) {
+                if ( !IPv6NetworkUtils.isIpv6Address(l3NetworkDnsVO.getDns()) ) {
+                    continue;
+                }
+                if ( IPv6Address.fromString(msg.getDns()).toBigInteger().equals(IPv6Address.fromString(l3NetworkDnsVO.getDns()).toBigInteger()) ) {
+                    throw new ApiMessageInterceptionException(operr("there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
+                }
+            }
         }
     }
 
