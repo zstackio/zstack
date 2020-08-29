@@ -68,4 +68,11 @@
         <type>java.lang.Integer</type>
         <category>virtualRouter</category>
     </config>
+    <config>
+        <category>virtualRouter</category>
+        <name>haproxy.logLevel</name>
+        <description>The log level of haproxy (debug | info | warn | error)</description>
+        <defaultValue>info</defaultValue>
+        <type>java.lang.String</type>
+    </config>
 </globalConfig>
