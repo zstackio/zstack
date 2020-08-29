@@ -25,6 +25,8 @@ import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
 import org.zstack.network.service.virtualrouter.VirtualRouterManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.zsha2.ZSha2Helper;
 import org.zstack.utils.zsha2.ZSha2Info;
@@ -45,6 +47,8 @@ public class VyosConnectFlow extends NoRollbackFlow {
     private RESTFacade restf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -97,6 +101,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
 
                         cmd.setMgtCidr(Platform.getManagementServerCidr());
                         cmd.setUuid(vrUuid);
+                        cmd.setLogLevel(rcf.getResourceConfigValue(VirtualRouterGlobalConfig.LOG_LEVEL, vrUuid, String.class));
                         restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
                             @Override
                             public void fail(ErrorCode err) {
