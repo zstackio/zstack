@@ -15,12 +15,10 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.network.service.vip.VipInventory;
 import org.zstack.network.service.vip.VipReleaseExtensionPoint;
@@ -44,8 +42,6 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
-    @Autowired
-    private L3NetworkManager l3Mgr;
 
     @Override
     public NetworkServiceType getNetworkServiceType() {
@@ -54,8 +50,8 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
 
     @Transactional(readOnly = true)
     private List<Tuple> getLbTuple(VmInstanceSpec servedVm) {
-        String sql = "select l.uuid, l.loadBalancerUuid, ref.vmNicUuid, nic.l3NetworkUuid from LoadBalancerListenerVmNicRefVO ref, LoadBalancerListenerVO l, VmNicVO nic" +
-                " where ref.listenerUuid = l.uuid and ref.vmNicUuid = nic.uuid and nic.uuid in (:nicUuids)";
+        String sql = "select l.uuid, l.loadBalancerUuid, ref.vmNicUuid from LoadBalancerListenerVmNicRefVO ref, LoadBalancerListenerVO l where ref.listenerUuid = l.uuid" +
+                " and ref.vmNicUuid in (:nicUuids)";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("nicUuids", CollectionUtils.transformToList(servedVm.getDestNics(), new Function<String, VmNicInventory>() {
             @Override
@@ -75,22 +71,10 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
         }
 
         Map<String, LoadBalancerActiveVmNicMsg> m = new HashMap<String, LoadBalancerActiveVmNicMsg>();
-        Map<String, L3NetworkVO> l3Map = new HashMap<>();
         for (Tuple t : ts) {
             String listenerUuid = t.get(0, String.class);
             String lbUuid =  t.get(1, String.class);
             String nicUuid = t.get(2, String.class);
-            String l3Uuid = t.get(3, String.class);
-            L3NetworkVO l3Vo = l3Map.get(l3Uuid);
-            if (l3Vo == null) {
-                l3Vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
-                l3Map.put(l3Uuid, l3Vo);
-            }
-            /* if l3 netowrk doesn't want to apply lb for vm start, skip this nic */
-            if (!l3Mgr.applyNetworkServiceWhenVmStateChange(l3Vo.getType())) {
-                continue;
-            }
-
             LoadBalancerActiveVmNicMsg msg = m.get(listenerUuid);
             if (msg == null) {
                 msg = new LoadBalancerActiveVmNicMsg();
@@ -101,11 +85,6 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                 m.put(listenerUuid, msg);
             }
             msg.getVmNicUuids().add(nicUuid);
-        }
-
-        if (m.isEmpty()) {
-            completion.success();
-            return;
         }
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
@@ -181,7 +160,6 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
         }
 
         Map<String, Triplet> mt = new HashMap<String, Triplet>();
-        Map<String, L3NetworkVO> l3Map = new HashMap<>();
         for (Tuple t : ts) {
             String lbUuid = t.get(1, String.class);
             Triplet tr = mt.get(lbUuid);
@@ -191,17 +169,6 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                 tr.lbUuid = t.get(1, String.class);
                 tr.vmNicUuids = new HashSet<>();
                 mt.put(tr.lbUuid, tr);
-            }
-            String l3Uuid = t.get(3, String.class);
-            L3NetworkVO l3Vo = l3Map.get(l3Uuid);
-            if (l3Vo == null) {
-                l3Vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
-                l3Map.put(l3Uuid, l3Vo);
-            }
-            /* if l3 netowrk doesn't want to apply lb for vm start, skip this nic */
-            if (!l3Mgr.applyNetworkServiceWhenVmStateChange(l3Vo.getType())
-                    && !LoadBalancerConstants.vmOperationForDetachListener.contains(servedVm.getCurrentVmOperation())) {
-                continue;
             }
             tr.vmNicUuids.add(t.get(2, String.class));
             tr.listenerUuids.add(t.get(0, String.class));

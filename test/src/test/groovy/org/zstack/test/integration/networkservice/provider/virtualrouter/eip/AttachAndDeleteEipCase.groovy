@@ -1,6 +1,5 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.eip
 
-import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQLBatch
 import org.zstack.header.network.l3.UsedIpVO
@@ -370,9 +369,8 @@ class AttachAndDeleteEipCase extends SubCase{
         }
 
         boolean called = false
-        env.afterSimulator(VirtualRouterConstant.VR_REMOVE_EIP) { rsp, HttpEntity<String> entity ->
+        env.afterSimulator(VirtualRouterConstant.VR_REMOVE_EIP) {
             called = true
-            return rsp
         }
 
         deleteEip {
