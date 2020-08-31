@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateAccessKeyAction extends AbstractAction {
+public class DeleteAliyunProxyVpcAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateAccessKeyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateAccessKeyResult value;
+        public org.zstack.sdk.DeleteAliyunProxyVpcResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,11 @@ public class CreateAccessKeyAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String accountUuid;
-
-    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String userUuid;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, maxLength = 20, minLength = 10, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String AccessKeyID;
-
-    @Param(required = false, maxLength = 40, minLength = 10, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String AccessKeySecret;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -78,8 +63,8 @@ public class CreateAccessKeyAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateAccessKeyResult value = res.getResult(org.zstack.sdk.CreateAccessKeyResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateAccessKeyResult() : value; 
+        org.zstack.sdk.DeleteAliyunProxyVpcResult value = res.getResult(org.zstack.sdk.DeleteAliyunProxyVpcResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAliyunProxyVpcResult() : value; 
 
         return ret;
     }
@@ -108,11 +93,11 @@ public class CreateAccessKeyAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/accesskeys";
+        info.httpMethod = "DELETE";
+        info.path = "/aliyun-proxy/vpcs/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
