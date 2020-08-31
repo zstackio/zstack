@@ -538,7 +538,7 @@ abstract class Test extends ApiHelper implements Retry {
 
     }
 
-    private String getResultDirBase() {
+    protected String getResultDirBase() {
         String resultDir = System.getProperty("resultDir")
         if (resultDir == null) {
             resultDir = [System.getProperty("user.dir"), "zstack-integration-test-result"].join("/")
