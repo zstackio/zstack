@@ -33,6 +33,7 @@ public class VirtualRouterCommands {
 		private String uuid;
         private int restartDnsmasqAfterNumberOfSIGUSER1;
 		private String mgtCidr;
+		private String logLevel;
 
 		public String getUuid() {
 			return uuid;
@@ -56,6 +57,14 @@ public class VirtualRouterCommands {
 
 		public void setMgtCidr(String mgtCidr) {
 			this.mgtCidr = mgtCidr;
+		}
+
+		public String getLogLevel() {
+			return logLevel;
+		}
+
+		public void setLogLevel(String logLevel) {
+			this.logLevel = logLevel;
 		}
 	}
 
