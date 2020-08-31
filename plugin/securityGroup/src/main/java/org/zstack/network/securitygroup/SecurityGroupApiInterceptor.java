@@ -180,14 +180,16 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor {
             if (rule1.getAllowedCidr() == null) {
                 if (rule2.getAllowedCidr() == null ||
                         rule2.getAllowedCidr().equals("") ||
-                        rule2.getAllowedCidr().equals(SecurityGroupConstant.WORLD_OPEN_CIDR)) {
+                        rule2.getAllowedCidr().equals(SecurityGroupConstant.WORLD_OPEN_CIDR) ||
+                        rule2.getAllowedCidr().equals(SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6)) {
                     return true;
                 }
             }
             if (rule2.getAllowedCidr() == null) {
                 if (rule1.getAllowedCidr() == null ||
                         rule1.getAllowedCidr().equals("") ||
-                        rule1.getAllowedCidr().equals(SecurityGroupConstant.WORLD_OPEN_CIDR)) {
+                        rule1.getAllowedCidr().equals(SecurityGroupConstant.WORLD_OPEN_CIDR) ||
+                        rule1.getAllowedCidr().equals(SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6)) {
                     return true;
                 }
             }
