@@ -30,9 +30,4 @@ public class L3BasicNetworkFactory implements L3NetworkFactory {
     public L3Network getL3Network(L3NetworkVO vo) {
         return new L3BasicNetwork(vo);
     }
-
-    @Override
-    public boolean applyNetworkServiceWhenVmStateChange() {
-        return true;
-    }
 }

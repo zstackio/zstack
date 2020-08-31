@@ -60,10 +60,10 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
 
     @Transactional(readOnly = true)
     private List<EipTO> findEipOnThisRouter(VirtualRouterVmInventory vr, List<String> eipUuids) {
-        String sql = "select vip.ip, nic.l3NetworkUuid, nic.ip, vip.l3NetworkUuid from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm " +
-                "where nic.vmInstanceUuid = vm.uuid and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and eip.uuid in (:euuids)";
+        String sql = "select vip.ip, nic.l3NetworkUuid, nic.ip, vip.l3NetworkUuid from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm where nic.vmInstanceUuid = vm.uuid and vm.state in (:vmState) and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and eip.uuid in (:euuids)";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("euuids", eipUuids);
+        q.setParameter("vmState", Arrays.asList(VmInstanceState.Running, VmInstanceState.Unknown));
         List<Tuple> tuples =  q.getResultList();
         List<EipTO> ret = new ArrayList<EipTO>();
         for (Tuple t : tuples) {
@@ -119,12 +119,11 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
                 @Override
                 @Transactional(readOnly = true)
                 public List<String> call() {
-                    String sql = "select eip.uuid from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm " +
-                            " where vm.uuid = nic.vmInstanceUuid and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid " +
-                            " and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid in (:guestL3Uuid)";
+                    String sql = "select eip.uuid from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and vm.state = :vmState and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid in (:guestL3Uuid)";
                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                     q.setParameter("vipL3Uuid", publicNic.getL3NetworkUuid());
                     q.setParameter("guestL3Uuid", guestNics.stream().map(n -> n.getL3NetworkUuid()).collect(Collectors.toList()));
+                    q.setParameter("vmState", VmInstanceState.Running);
                     return q.getResultList();
                 }
             }.call();

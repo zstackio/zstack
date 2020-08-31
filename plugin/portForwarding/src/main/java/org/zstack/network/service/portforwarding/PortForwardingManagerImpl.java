@@ -39,7 +39,6 @@ import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
-import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
@@ -81,8 +80,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
     private VipManager vipMgr;
     @Autowired
     private ThreadFacade thdf;
-    @Autowired
-    private L3NetworkManager l3Mgr;
 
     private Map<String, PortForwardingBackend> backends = new HashMap<String, PortForwardingBackend>();
     private List<AttachPortForwardingRuleExtensionPoint> attachRuleExts = new ArrayList<AttachPortForwardingRuleExtensionPoint>();
@@ -405,12 +402,11 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         VmNicVO nicvo = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
         vo.setVmNicUuid(nicvo.getUuid());
         vo.setGuestIp(nicvo.getIp());
-        L3NetworkVO nicL3Vo = dbf.findByUuid(nicvo.getL3NetworkUuid(), L3NetworkVO.class);
         final PortForwardingRuleVO prvo = dbf.updateAndRefresh(vo);
         final PortForwardingRuleInventory inv = PortForwardingRuleInventory.valueOf(prvo);
 
         VmInstanceState vmState = getVmStateFromVmNicUuid(msg.getVmNicUuid());
-        if (VmInstanceState.Running != vmState && l3Mgr.applyNetworkServiceWhenVmStateChange(nicL3Vo.getType())) {
+        if (VmInstanceState.Running != vmState) {
             Vip vip = new Vip(vo.getVipUuid());
             ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
             struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
@@ -710,8 +706,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         q.select(VmInstanceVO_.state);
         q.add(VmInstanceVO_.uuid, Op.EQ, vmNic.getVmInstanceUuid());
         VmInstanceState vmState = q.findValue();
-        L3NetworkVO nicL3Vo = dbf.findByUuid(vmNic.getL3NetworkUuid(), L3NetworkVO.class);
-        if (VmInstanceState.Running != vmState && l3Mgr.applyNetworkServiceWhenVmStateChange(nicL3Vo.getType())) {
+        if (VmInstanceState.Running != vmState) {
             ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
             struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
             struct.setServiceUuid(vo.getUuid());

@@ -57,10 +57,11 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
                 return new ArrayList<>();
             }
 
-            String sql = "select rule from PortForwardingRuleVO rule, VmNicVO nic, VmInstanceVO vm where" +
-                    " nic.vmInstanceUuid = vm.uuid and rule.vmNicUuid = nic.uuid and rule.uuid in (:pfUuids)";
+            String sql = "select rule from PortForwardingRuleVO rule, VmNicVO nic, VmInstanceVO vm where vm.state = :vmState " +
+                    "and nic.vmInstanceUuid = vm.uuid and rule.vmNicUuid = nic.uuid and rule.uuid in (:pfUuids)";
             TypedQuery<PortForwardingRuleVO> q = dbf.getEntityManager().createQuery(sql, PortForwardingRuleVO.class);
             q.setParameter("pfUuids", pfUuids);
+            q.setParameter("vmState", VmInstanceState.Running);
             return q.getResultList();
         } else {
             VmNicInventory publicNic = vr.getPublicNic();
@@ -68,11 +69,11 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
             if (guestNics == null || guestNics.isEmpty()) {
                 return new ArrayList<PortForwardingRuleVO>(0);
             }
-            String sql = "select rule from PortForwardingRuleVO rule, VipVO vip, VmNicVO nic, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and " +
-                    " rule.vipUuid = vip.uuid and rule.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid in (:guestL3Uuid)";
+            String sql = "select rule from PortForwardingRuleVO rule, VipVO vip, VmNicVO nic, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and vm.state = :vmState and rule.vipUuid = vip.uuid and rule.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid in (:guestL3Uuid)";
             TypedQuery<PortForwardingRuleVO> q = dbf.getEntityManager().createQuery(sql, PortForwardingRuleVO.class);
             q.setParameter("vipL3Uuid", publicNic.getL3NetworkUuid());
-            q.setParameter("guestL3Uuid", guestNics.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()));
+            q.setParameter("guestL3Uuid", guestNics.stream().map(n -> n.getL3NetworkUuid()).collect(Collectors.toList()));
+            q.setParameter("vmState", VmInstanceState.Running);
 
             List<PortForwardingRuleVO> rules =  q.getResultList();
             List<String> ruleUuids = rules.stream().map(PortForwardingRuleVO::getUuid).collect(Collectors.toList());
@@ -86,8 +87,7 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
     
     @Transactional(readOnly=true)
     private Collection<PortForwardingRuleTO> calculateAllRules(Map<String, PortForwardingRuleVO> ruleMap, String vrUuid) {
-        String sql = "select rule.uuid, nic.ip, vip.ip, vip.l3NetworkUuid from PortForwardingRuleVO rule, VmNicVO nic, VipVO vip " +
-                " where rule.vmNicUuid = nic.uuid and rule.uuid in (:ruleUuids) and vip.uuid = rule.vipUuid";
+        String sql = "select rule.uuid, nic.ip, vip.ip, vip.l3NetworkUuid from PortForwardingRuleVO rule, VmNicVO nic, VipVO vip where rule.vmNicUuid = nic.uuid and rule.uuid in (:ruleUuids) and vip.uuid = rule.vipUuid";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("ruleUuids", ruleMap.keySet());
         List<Tuple> privateIps = q.getResultList();
@@ -118,9 +118,7 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
         
         assert tos.size() == ruleMap.size();
         
-        sql = "select rule.uuid, vrnic.mac from PortForwardingRuleVO rule, VmNicVO vrnic, VmNicVO nic2, ApplianceVmVO vr " +
-                " where vr.uuid = vrnic.vmInstanceUuid and vrnic.l3NetworkUuid = nic2.l3NetworkUuid and nic2.uuid = rule.vmNicUuid " +
-                " and rule.uuid in (:ruleUuids) and vr.uuid = :vrUuid";
+        sql = "select rule.uuid, vrnic.mac from PortForwardingRuleVO rule, VmNicVO vrnic, VmNicVO nic2, ApplianceVmVO vr where vr.uuid = vrnic.vmInstanceUuid and vrnic.l3NetworkUuid = nic2.l3NetworkUuid and nic2.uuid = rule.vmNicUuid and rule.uuid in (:ruleUuids) and vr.uuid = :vrUuid";
         TypedQuery<Tuple> privateMacQuery = dbf.getEntityManager().createQuery(sql, Tuple.class);
         privateMacQuery.setParameter("ruleUuids", ruleMap.keySet());
         privateMacQuery.setParameter("vrUuid", vrUuid);

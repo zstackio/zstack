@@ -2,7 +2,6 @@ package org.zstack.network.service.eip;
 
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstance;
-import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
 
 import java.util.List;
@@ -38,10 +37,5 @@ public interface EipConstant {
             VmInstanceState.Resuming,
             VmInstanceState.Stopped,
             VmInstanceState.VolumeMigrating
-    );
-
-    public final List<VmInstanceConstant.VmOperation> vmOperationForDetachEip = asList(
-            VmInstanceConstant.VmOperation.Destroy,
-            VmInstanceConstant.VmOperation.DetachNic
     );
 }

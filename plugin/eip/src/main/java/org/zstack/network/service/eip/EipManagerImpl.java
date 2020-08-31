@@ -33,7 +33,6 @@ import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
-import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
@@ -68,8 +67,6 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     private AccountManager acntMgr;
     @Autowired
     private TagManager tagMgr;
-    @Autowired
-    L3NetworkManager l3Mgr;
 
     private Map<String, EipBackend> backends = new HashMap<>();
 
@@ -396,11 +393,6 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         });
     }
 
-    private boolean checkVmStateBeforeAttachEipToBackend(String l3Uuid) {
-        L3NetworkVO l3Vo = dbf.findByUuid(l3Uuid, L3NetworkVO.class);
-        return l3Mgr.applyNetworkServiceWhenVmStateChange(l3Vo.getType());
-    }
-
     private void handle(final APIAttachEipMsg msg) {
         final APIAttachEipEvent evt = new APIAttachEipEvent(msg.getId());
         final EipVO vo = dbf.findByUuid(msg.getEipUuid(), EipVO.class);
@@ -411,12 +403,11 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         VipInventory vipInventory = VipInventory.valueOf(vipvo);
         UsedIpVO guestIp = dbf.findByUuid(msg.getUsedIpUuid(), UsedIpVO.class);
 
-        boolean applyWithCheck = checkVmStateBeforeAttachEipToBackend(guestIp.getL3NetworkUuid());
         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
         q.select(VmInstanceVO_.state);
         q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, nicvo.getVmInstanceUuid());
         VmInstanceState state = q.findValue();
-        if (applyWithCheck && EipConstant.noNeedApplyOnBackendVmStates.contains(state)) {
+        if (EipConstant.noNeedApplyOnBackendVmStates.contains(state)) {
             vo.setVmNicUuid(nicInventory.getUuid());
             vo.setGuestIp(guestIp.getIp());
             EipVO evo = dbf.updateAndRefresh(vo);
@@ -684,15 +675,12 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             return;
         }
 
-        boolean applyWithCheck;
         VmNicVO nicvo = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
         if (msg.getUsedIpUuid() != null) {
             UsedIpVO guestIp = dbf.findByUuid(msg.getUsedIpUuid(), UsedIpVO.class);
             vo.setGuestIp(guestIp.getIp());
-            applyWithCheck = checkVmStateBeforeAttachEipToBackend(guestIp.getL3NetworkUuid());
         } else {
             vo.setGuestIp(nicvo.getIp());
-            applyWithCheck = checkVmStateBeforeAttachEipToBackend(nicvo.getL3NetworkUuid());
         }
         vo = dbf.updateAndRefresh(vo);
         final EipInventory retinv = EipInventory.valueOf(vo);
@@ -704,7 +692,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         q.add(VmInstanceVO_.uuid, SimpleQuery.Op.EQ, nicvo.getVmInstanceUuid());
         VmInstanceState state = q.findValue();
 
-        if (applyWithCheck && state != VmInstanceState.Running) {
+        if (state != VmInstanceState.Running) {
             EipVO finalVo = vo;
             ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
             struct.setUseFor(EipConstant.EIP_NETWORK_SERVICE_TYPE);
