@@ -16,4 +16,6 @@ public class ApplianceVmGlobalConfig {
     public static GlobalConfig SSH_LOGIN_TIMEOUT = new GlobalConfig(CATEGORY, "ssh.timeout");
     @GlobalConfigValidation
     public static GlobalConfig DEPLOY_AGENT_ON_START = new GlobalConfig(CATEGORY, "agent.deployOnStart");
+    @GlobalConfigValidation(numberGreaterThan = 1)
+    public static GlobalConfig BOOTSTRAPINFO_TIMEOUT = new GlobalConfig(CATEGORY, "bootstrapinfo.timeout");
 }

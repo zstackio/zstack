@@ -12,6 +12,7 @@ public interface ApplianceVmKvmCommands {
 
         private Map<String, Object> info;
         private String socketPath;
+        private Integer bootStrapInfoTimeout;
 
         public Map<String, Object> getInfo() {
             return info;
@@ -27,6 +28,14 @@ public interface ApplianceVmKvmCommands {
 
         public void setSocketPath(String socketPath) {
             this.socketPath = socketPath;
+        }
+
+        public Integer getBootStrapInfoTimeout() {
+            return bootStrapInfoTimeout;
+        }
+
+        public void setBootStrapInfoTimeout(Integer bootStrapInfoTimeout) {
+            this.bootStrapInfoTimeout = bootStrapInfoTimeout;
         }
     }
 
