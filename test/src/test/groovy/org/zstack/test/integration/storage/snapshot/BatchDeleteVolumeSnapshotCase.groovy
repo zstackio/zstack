@@ -3,6 +3,7 @@ package org.zstack.test.integration.storage.snapshot
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.storage.primary.PrimaryStorageStateEvent
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
@@ -11,6 +12,8 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.BatchDeleteVolumeSnapshotAction
@@ -266,9 +269,36 @@ public class BatchDeleteVolumeSnapshotCase extends SubCase {
             name = "snapshot1"
             volumeUuid = localVm3.rootVolumeUuid
         } as VolumeSnapshotInventory
-        def volumeSnapshotVO1 = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, snap1.uuid).find() as VolumeSnapshotVO
-        volumeSnapshotVO1.size = SizeUnit.TERABYTE.toByte(120)
-        dbf.update(volumeSnapshotVO1)
+        SQL.New(VolumeSnapshotVO.class)
+                .set(VolumeSnapshotVO_.size, SizeUnit.TERABYTE.toByte(120))
+                .eq(VolumeSnapshotVO_.uuid, snap1.uuid)
+                .update()
+        SQL.New(VolumeVO.class)
+                .set(VolumeVO_.size, SizeUnit.TERABYTE.toByte(120))
+                .eq(VolumeVO_.uuid, localVm3.rootVolumeUuid)
+                .update()
+        expectError {
+            deleteVolumeSnapshot {
+                uuid = snap1.uuid
+            }
+        }
+
+        SQL.New(VolumeSnapshotVO.class)
+                .set(VolumeSnapshotVO_.size, SizeUnit.TERABYTE.toByte(110))
+                .eq(VolumeSnapshotVO_.uuid, snap1.uuid)
+                .update()
+        def snap2 = createVolumeSnapshot {
+            name = "snapshot2"
+            volumeUuid = localVm3.rootVolumeUuid
+        } as VolumeSnapshotInventory
+        SQL.New(VolumeSnapshotVO.class)
+            .set(VolumeSnapshotVO_.size, SizeUnit.TERABYTE.toByte(15))
+            .eq(VolumeSnapshotVO_.uuid, snap2.uuid)
+            .update()
+        SQL.New(VolumeVO.class)
+                .set(VolumeVO_.size, SizeUnit.TERABYTE.toByte(125))
+                .eq(VolumeVO_.uuid, localVm3.rootVolumeUuid)
+                .update()
         expectError {
             deleteVolumeSnapshot {
                 uuid = snap1.uuid
