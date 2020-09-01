@@ -22835,6 +22835,17 @@
     "fileName": "src/main/java/org/zstack/vpc/VpcManagerImpl.java"
   },
   {
+    "raw": "dns address [%s] has bean added to vpc router [uuid:%s]",
+    "en_US": "dns address [{0}] has bean added to vpc router [uuid:{1}]",
+    "zh_CN": "在路由器[uuid:{1}]上已经存在一个DNS[{0}]",
+    "arguments": [
+      "msg.getDns()",
+      "msg.getVpcRouterUuid()"
+    ],
+    "line": 1281,
+    "fileName": "src/main/java/org/zstack/vpc/VpcManagerImpl.java"
+  },
+  {
     "raw": "can not detach nic from vpc vr[uuid:%s]",
     "en_US": "can not detach nic from vpc vr[uuid:{0}]",
     "zh_CN": "不能从VPC云路由[uuid:{0}]解绑网卡",
