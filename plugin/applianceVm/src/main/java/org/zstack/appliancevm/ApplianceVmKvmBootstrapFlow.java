@@ -43,6 +43,7 @@ public class ApplianceVmKvmBootstrapFlow extends NoRollbackFlow {
         ApplianceVmKvmCommands.PrepareBootstrapInfoCmd cmd = new ApplianceVmKvmCommands.PrepareBootstrapInfoCmd();
         cmd.setInfo(info);
         cmd.setSocketPath(kvmExt.makeChannelSocketPath(spec.getVmInventory().getUuid()));
+        cmd.setBootStrapInfoTimeout(ApplianceVmGlobalConfig.BOOTSTRAPINFO_TIMEOUT.value(Integer.class));
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setPath(cmd.PATH);

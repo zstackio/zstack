@@ -23,4 +23,12 @@
         <category>applianceVm</category>
         <type>java.lang.Boolean</type>
     </config>
+
+    <config>
+        <category>applianceVm</category>
+        <name>bootstrapinfo.timeout</name>
+        <description>The default timeout value for bootstrapinfo socket </description>
+        <defaultValue>120</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>
