@@ -1,7 +1,5 @@
 package org.zstack.testlib
 
-import org.zstack.utils.ShellUtils
-
 /**
  * Created by lining on 2017/7/12.
  */
@@ -112,28 +110,10 @@ abstract class StabilityTest extends Test implements Case{
         }
     }
 
-    protected Case buildCase(String caseName) {
+    protected static Case buildCase(String caseName) {
         Case subCase = Class.forName(caseName).newInstance() as Case
-        def resultDir = [getResultDirBase(), "org_zstack_test_integration_StabilityTest"].join("/")
-        def dir = new File(resultDir)
-        dir.deleteDir()
-        dir.mkdirs()
-
-        String caseLogStartLine = "stability test, a sub case \\[class ${caseName}\\] start running"
-
         subCase.metaClass.collectErrorLog = {
-            File failureLogDir = new File([dir.absolutePath, "failureLogs", caseName.replace(".", "_")].join("/"))
-            failureLogDir.mkdirs()
-            File failureLog = new File([failureLogDir.absolutePath, "case.log"].join("/"))
-
-            File mgmtLogPath = new File([System.getProperty("user.dir"), "management-server.log"].join("/"))
-
-            ShellUtils.run("""\
-start=`grep -nr "$caseLogStartLine" ${mgmtLogPath.absolutePath} | grep -v ShellUtils | tail -n 1 | gawk '{print \$1}' FS=":"`
-tail -n +\$start ${mgmtLogPath.absolutePath} > ${failureLog.absolutePath}
-
-mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
-""", false)
+            return
         }
 
         return subCase
