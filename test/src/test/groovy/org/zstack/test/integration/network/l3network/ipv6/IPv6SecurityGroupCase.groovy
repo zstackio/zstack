@@ -84,6 +84,14 @@ class IPv6SecurityGroupCase extends SubCase {
         rule6.endPort = 200
         rule6.ipVersion = 6
 
+        //rule same as default sg rule
+        APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO rule7 = new APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO()
+        rule7.type = SecurityGroupRuleType.Ingress.toString()
+        rule7.protocol = SecurityGroupRuleProtocolType.ALL.toString()
+        rule7.startPort = null
+        rule7.endPort = null
+        rule7.ipVersion = 6
+
         addSecurityGroupRule {
             delegate.securityGroupUuid = sg4.uuid
             delegate.rules = [rule4]
@@ -94,6 +102,18 @@ class IPv6SecurityGroupCase extends SubCase {
             delegate.rules = [rule6]
         }
 
+        addSecurityGroupRule {
+            delegate.securityGroupUuid = sg6.uuid
+            delegate.rules = [rule7]
+        }
+
+        expectError {
+            addSecurityGroupRule {
+                delegate.securityGroupUuid = sg6.uuid
+                delegate.rules = [rule7]
+            }
+        }
+
         attachSecurityGroupToL3Network {
             securityGroupUuid = sg4.uuid
             l3NetworkUuid = l3_statefull.uuid
@@ -102,6 +122,17 @@ class IPv6SecurityGroupCase extends SubCase {
         attachSecurityGroupToL3Network {
             securityGroupUuid = sg6.uuid
             l3NetworkUuid = l3_statefull.uuid
+        }
+
+        sg6 = querySecurityGroup {
+            conditions=["name=SecurityGroup6"]
+        }[0]
+
+        SecurityGroupRuleInventory rule1 = sg6.rules.stream().filter{r -> r.protocol == rule7.protocol && r.ipVersion == rule7.ipVersion &&
+                r.remoteSecurityGroupUuid == null && r.startPort == -1 && r.endPort == -1}.collect(Collectors.toList()).get(0)
+        //delete rule7
+        deleteSecurityGroupRule {
+            ruleUuids = asList(rule1.uuid)
         }
     }
 
