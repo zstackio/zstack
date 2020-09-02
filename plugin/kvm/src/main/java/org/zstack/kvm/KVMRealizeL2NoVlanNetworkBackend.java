@@ -12,12 +12,14 @@ import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkType;
+import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.KVMAgentCommands.CheckBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.CreateBridgeCmd;
 import org.zstack.kvm.KVMAgentCommands.CreateBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
 import org.zstack.network.l3.NetworkGlobalProperty;
+import org.zstack.network.service.MtuGetter;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -42,6 +44,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
         cmd.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface()));
         cmd.setL2NetworkUuid(l2Network.getUuid());
         cmd.setDisableIptables(NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES);
+        cmd.setMtu(new MtuGetter().getL2Mtu(l2Network));
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -145,13 +148,14 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
     }
 
     @Override
-    public NicTO completeNicInformation(L2NetworkInventory l2Network, VmNicInventory nic) {
+    public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         NicTO to = new NicTO();
         to.setMac(nic.getMac());
         to.setUuid(nic.getUuid());
         to.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface()));
         to.setDeviceId(nic.getDeviceId());
         to.setNicInternalName(nic.getInternalName());
+        to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
         return to;
     }
 

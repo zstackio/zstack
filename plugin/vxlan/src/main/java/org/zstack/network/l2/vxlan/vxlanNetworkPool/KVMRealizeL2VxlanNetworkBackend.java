@@ -31,6 +31,7 @@ import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkConstant;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO;
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO_;
+import org.zstack.network.service.MtuGetter;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -58,7 +59,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     private static String NEED_POPULATE = "needPopulate";
 
     public static String makeBridgeName(int vxlan) {
-        return String.format("br_vx_%s",vxlan);
+        return String.format("br_vx_%s", vxlan);
     }
 
     @Override
@@ -92,6 +93,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         cmd.setVni(l2vxlan.getVni());
         cmd.setL2NetworkUuid(l2Network.getUuid());
         cmd.setPeers(peers);
+        cmd.setMtu(new MtuGetter().getL2Mtu(l2Network));
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
@@ -325,7 +327,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
     }
 
     @Override
-    public KVMAgentCommands.NicTO completeNicInformation(L2NetworkInventory l2Network, VmNicInventory nic) {
+    public KVMAgentCommands.NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         final Integer vni = getVni(l2Network.getUuid());
         KVMAgentCommands.NicTO to = new KVMAgentCommands.NicTO();
         to.setMac(nic.getMac());
@@ -334,6 +336,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         to.setDeviceId(nic.getDeviceId());
         to.setNicInternalName(nic.getInternalName());
         to.setMetaData(String.valueOf(vni));
+        to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
         return to;
     }
 

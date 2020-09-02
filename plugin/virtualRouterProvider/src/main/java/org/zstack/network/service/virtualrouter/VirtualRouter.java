@@ -13,10 +13,8 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -36,6 +34,7 @@ import org.zstack.header.network.service.*;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.*;
+import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingCmd;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.PingRsp;
@@ -68,10 +67,6 @@ public class VirtualRouter extends ApplianceVmBase {
     protected VirtualRouterManager vrMgr;
     @Autowired
     protected RESTFacade restf;
-    @Autowired
-    protected ErrorFacade errf;
-    @Autowired
-    protected ApiTimeoutManager apiTimeoutManager;
     @Autowired
     protected VirtualRouterHaBackend haBackend;
     @Autowired
@@ -824,6 +819,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     info.setVni(ext.getL2NetworkVni(l2NetworkVO.getUuid(), vr.getHostUuid()));
                 }
             }
+            info.setMtu(new MtuGetter().getMtu(l3NetworkVO.getUuid()));
             cmd.setNics(Arrays.asList(info));
 
             VirtualRouterAsyncHttpCallMsg cmsg = new VirtualRouterAsyncHttpCallMsg();

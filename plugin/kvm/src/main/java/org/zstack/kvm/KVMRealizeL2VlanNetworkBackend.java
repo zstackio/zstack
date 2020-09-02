@@ -10,12 +10,14 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.kvm.KVMAgentCommands.CheckVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeCmd;
 import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
 import org.zstack.network.l3.NetworkGlobalProperty;
+import org.zstack.network.service.MtuGetter;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -43,6 +45,7 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
         cmd.setVlan(l2vlan.getVlan());
         cmd.setL2NetworkUuid(l2Network.getUuid());
         cmd.setDisableIptables(NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES);
+        cmd.setMtu(new MtuGetter().getL2Mtu(l2Network));
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
@@ -141,23 +144,24 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
         return HypervisorType.valueOf(KVMConstant.KVM_HYPERVISOR_TYPE);
     }
 
-	@Override
-	public L2NetworkType getL2NetworkTypeVmNicOn() {
-		return getSupportedL2NetworkType();
-	}
+    @Override
+    public L2NetworkType getL2NetworkTypeVmNicOn() {
+        return getSupportedL2NetworkType();
+    }
 
-	@Override
-	public NicTO completeNicInformation(L2NetworkInventory l2Network, VmNicInventory nic) {
+    @Override
+    public NicTO completeNicInformation(L2NetworkInventory l2Network, L3NetworkInventory l3Network, VmNicInventory nic) {
         final Integer vlanId = getVlanId(l2Network.getUuid());
-		NicTO to = new NicTO();
-		to.setMac(nic.getMac());
+        NicTO to = new NicTO();
+        to.setMac(nic.getMac());
         to.setUuid(nic.getUuid());
-		to.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface(), vlanId));
-		to.setDeviceId(nic.getDeviceId());
-		to.setNicInternalName(nic.getInternalName());
-		to.setMetaData(String.valueOf(vlanId));
-		return to;
-	}
+        to.setBridgeName(makeBridgeName(l2Network.getPhysicalInterface(), vlanId));
+        to.setDeviceId(nic.getDeviceId());
+        to.setNicInternalName(nic.getInternalName());
+        to.setMetaData(String.valueOf(vlanId));
+        to.setMtu(new MtuGetter().getMtu(l3Network.getUuid()));
+        return to;
+    }
 
     @Override
     public String getBridgeName(L2NetworkInventory l2Network) {

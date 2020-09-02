@@ -13,7 +13,11 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.APICreateL3NetworkMsg;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.l2.L2NetworkManager;
+import org.zstack.network.service.MtuGetter;
+import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.query.QueryFacade;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -38,6 +42,8 @@ public class VxlanNetworkPoolFactory implements L2NetworkFactory, Component, Glo
     private VxlanNetworkChecker vxlanInterceptor;
     @Autowired
     private AccountManager acntMgr;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
     @Override
     public L2NetworkType getType() {

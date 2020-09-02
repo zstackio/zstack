@@ -1,12 +1,12 @@
 package org.zstack.kvm;
 
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
 import org.zstack.header.core.validation.Validation;
-import org.zstack.header.vm.PriorityConfigStruct;
+import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
+import org.zstack.header.vm.PriorityConfigStruct;
 import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.vm.VmPriorityConfigVO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
@@ -508,6 +508,7 @@ public class KVMAgentCommands {
         private String bridgeName;
         private String l2NetworkUuid;
         private Boolean disableIptables;
+        private Integer mtu;
 
         public String getL2NetworkUuid() {
             return l2NetworkUuid;
@@ -539,6 +540,14 @@ public class KVMAgentCommands {
 
         public void setDisableIptables(Boolean disableIptables) {
             this.disableIptables = disableIptables;
+        }
+
+        public Integer getMtu() {
+            return mtu;
+        }
+
+        public void setMtu(Integer mtu) {
+            this.mtu = mtu;
         }
     }
 
@@ -636,6 +645,7 @@ public class KVMAgentCommands {
         private Boolean useVirtio;
         private int bootOrder;
         private PciAddressConfig pci;
+        private Integer mtu;
 
         public List<String> getIps() {
             return ips;
@@ -715,6 +725,14 @@ public class KVMAgentCommands {
 
         public void setPci(PciAddressConfig pci) {
             this.pci = pci;
+        }
+
+        public Integer getMtu() {
+            return mtu;
+        }
+
+        public void setMtu(Integer mtu) {
+            this.mtu = mtu;
         }
     }
 

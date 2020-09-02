@@ -31,12 +31,12 @@ import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.L2NetworkGetVniExtensionPoint;
-import org.zstack.header.network.l2.L2NetworkVO;
-import org.zstack.header.network.l2.L2NetworkVO_;
+import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.vm.*;
+import org.zstack.network.l2.L2NetworkManager;
+import org.zstack.network.service.MtuGetter;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -70,6 +70,8 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     private GlobalConfigFacade gcf;
     @Autowired
     private AnsibleFacade asf;
+    @Autowired
+    private L2NetworkManager l2Mgr;
 
     private List<String> createApplianceVmWorkFlow;
     private FlowChainBuilder createApplianceVmWorkFlowBuilder;
@@ -297,6 +299,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
                     .get(l2NetworkVO.getType())
                     .getL2NetworkVni(l2NetworkVO.getUuid(), spec.getVmInventory().getHostUuid()));
         }
+        mto.setMtu(new MtuGetter().getMtu(l3NetworkVO.getUuid()));
 
         ret.put(ApplianceVmConstant.BootstrapParams.managementNic.toString(), mto);
 
@@ -326,6 +329,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             t.setL2type(l2NetworkVO.getType());
             t.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid(), spec.getVmInventory().getHostUuid()));
             t.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
+            t.setMtu(new MtuGetter().getMtu(l3NetworkVO.getUuid()));
             deviceId ++;
             extraTos.add(t);
             additionalNics = reduceNic(additionalNics, defaultRouteNic);
@@ -341,6 +345,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             nto.setL2type(l2NetworkVO.getType());
             nto.setVni(l2NetworkGetVniExtensionPointMap.get(l2NetworkVO.getType()).getL2NetworkVni(l2NetworkVO.getUuid(), spec.getVmInventory().getHostUuid()));
             nto.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
+            nto.setMtu(new MtuGetter().getMtu(l3NetworkVO.getUuid()));
             extraTos.add(nto);
             deviceId ++;
         }

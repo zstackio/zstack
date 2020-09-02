@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetEventDataAction extends AbstractAction {
+public class DeleteMetricTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetEventDataAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.zwatch.api.GetEventDataResult value;
+        public org.zstack.sdk.zwatch.api.DeleteMetricTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,29 +25,11 @@ public class GetEventDataAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long startTime;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long endTime;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long offsetAheadOfCurrentTime;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer limit = 100;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.util.List conditions;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean count = false;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer start = 0;
-
-    @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String conditionExpression;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -67,6 +49,12 @@ public class GetEventDataAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -75,8 +63,8 @@ public class GetEventDataAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.zwatch.api.GetEventDataResult value = res.getResult(org.zstack.sdk.zwatch.api.GetEventDataResult.class);
-        ret.value = value == null ? new org.zstack.sdk.zwatch.api.GetEventDataResult() : value; 
+        org.zstack.sdk.zwatch.api.DeleteMetricTemplateResult value = res.getResult(org.zstack.sdk.zwatch.api.DeleteMetricTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.api.DeleteMetricTemplateResult() : value; 
 
         return ret;
     }
@@ -105,10 +93,10 @@ public class GetEventDataAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/zwatch/events";
+        info.httpMethod = "DELETE";
+        info.path = "/zwatch/metrics/httpreceivers/templates/{uuid}";
         info.needSession = true;
-        info.needPoll = false;
+        info.needPoll = true;
         info.parameterName = "";
         return info;
     }
