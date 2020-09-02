@@ -77,3 +77,46 @@ ALTER TABLE `zstack`.`AlarmActionVO` ADD COLUMN `lastOpDate` TIMESTAMP ON UPDATE
 
 ALTER TABLE `zstack`.`EventSubscriptionActionVO` ADD COLUMN `createDate` TIMESTAMP default '2018-05-10 06:04:00';
 ALTER TABLE `zstack`.`EventSubscriptionActionVO` ADD COLUMN `lastOpDate` TIMESTAMP ON UPDATE CURRENT_TIMESTAMP default '2018-05-10 06:04:00';
+
+DELIMITER $$
+CREATE PROCEDURE insertDefaultSecurityGroup()
+BEGIN
+    DECLARE securityGroupUuid VARCHAR(32);
+    DECLARE ruleUuid1 VARCHAR(32);
+    DECLARE ruleUuid2 VARCHAR(32);
+    DECLARE ipVersion int(10);
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur CURSOR FOR SELECT sg.uuid, sg.ipVersion FROM `zstack`.`SecurityGroupVO` sg;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO securityGroupUuid, ipVersion;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        SET ruleUuid1 = REPLACE(UUID(), '-', '');
+        SET ruleUuid2 = REPLACE(UUID(), '-', '');
+        INSERT INTO `zstack`.ResourceVO (uuid, resourceType, concreteResourceType) VALUES (ruleUuid1, 'SecurityGroupRuleVO', 'org.zstack.network.securitygroup.SecurityGroupRuleVO');
+        INSERT INTO `zstack`.ResourceVO (uuid, resourceType, concreteResourceType) VALUES (ruleUuid2, 'SecurityGroupRuleVO', 'org.zstack.network.securitygroup.SecurityGroupRuleVO');
+        IF ipVersion = 4
+        THEN
+            INSERT INTO `zstack`.`SecurityGroupRuleVO` (uuid, securityGroupUuid, type, protocol, allowedCidr, startPort, endPort, state, lastOpDate, createDate, remoteSecurityGroupUuid, ipVersion)
+              values (ruleUuid1, securityGroupUuid, 'Egress', 'ALL', '::/0', -1, -1, 'Enabled', NOW(), NOW(), securityGroupUuid, 6);
+            INSERT INTO `zstack`.`SecurityGroupRuleVO` (uuid, securityGroupUuid, type, protocol, allowedCidr, startPort, endPort, state, lastOpDate, createDate, remoteSecurityGroupUuid, ipVersion)
+              values (ruleUuid2, securityGroupUuid, 'Ingress', 'ALL', '::/0', -1, -1, 'Enabled', NOW(), NOW(), securityGroupUuid, 6);
+        ELSE
+            INSERT INTO `zstack`.`SecurityGroupRuleVO` (uuid, securityGroupUuid, type, protocol, allowedCidr, startPort, endPort, state, lastOpDate, createDate, remoteSecurityGroupUuid, ipVersion)
+              values (ruleUuid1, securityGroupUuid, 'Egress', 'ALL', '0.0.0.0/0', -1, -1, 'Enabled', NOW(), NOW(), securityGroupUuid, 4);
+            INSERT INTO `zstack`.`SecurityGroupRuleVO` (uuid, securityGroupUuid, type, protocol, allowedCidr, startPort, endPort, state, lastOpDate, createDate, remoteSecurityGroupUuid, ipVersion)
+              values (ruleUuid2, securityGroupUuid, 'Ingress', 'ALL', '0.0.0.0/0', -1, -1, 'Enabled', NOW(), NOW(), securityGroupUuid, 4);
+        END IF;
+
+    END LOOP;
+    CLOSE cur;
+    SELECT CURTIME();
+END $$
+DELIMITER ;
+
+CALL insertDefaultSecurityGroup();
+DROP PROCEDURE IF EXISTS insertDefaultSecurityGroup;
