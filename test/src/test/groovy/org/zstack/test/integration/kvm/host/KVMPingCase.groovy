@@ -399,7 +399,7 @@ class KVMPingCase extends SubCase {
         hostManager.managementNodeReady()
 
         retryInSecs {
-            assert count == 2
+            assert count == 0
             assert Q.New(HostVO.class).eq(HostVO_.status, HostStatus.Connected).count() == 2
         }
 

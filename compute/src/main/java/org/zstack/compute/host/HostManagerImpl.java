@@ -916,7 +916,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     @AsyncThread
     public void managementNodeReady() {
         logger.debug(String.format("Management node[uuid:%s] joins, start loading host...", Platform.getManagementServerId()));
-        loadHost(false);
+
+        // Disconnected and connecting are not expected host status for ZStack
+        // Need to reconnect those hosts when the node started.
+        loadHost(true);
     }
 
     @Override
