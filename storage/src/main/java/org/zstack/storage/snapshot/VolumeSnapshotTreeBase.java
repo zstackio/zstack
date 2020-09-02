@@ -55,10 +55,7 @@ import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.volume.VolumeFormat;
-import org.zstack.header.volume.VolumeInventory;
-import org.zstack.header.volume.VolumeType;
-import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.*;
 import org.zstack.longjob.LongJobUtils;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
@@ -308,13 +305,19 @@ public class VolumeSnapshotTreeBase {
         chain.allowEmptyFlow();
 
         boolean ancestorOfLatest = false;
-        final long requiredSize = currentLeaf.getInventory().getSize();
+        long size = 0;
         for (VolumeSnapshotInventory inv : currentLeaf.getDescendants()) {
             if (inv.isLatest()) {
                 ancestorOfLatest = true;
-                break;
             }
+
+            size += inv.getSize();
         }
+        long volumeVirtualSize = Q.New(VolumeVO.class)
+                .select(VolumeVO_.size)
+                .eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                .findValue();
+        long requiredSize = size < volumeVirtualSize ? size : volumeVirtualSize;
 
         String primaryStorageType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type)
                 .eq(PrimaryStorageVO_.uuid, getSelfInventory().getPrimaryStorageUuid()).findValue();
