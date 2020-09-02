@@ -356,18 +356,34 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
             return;
         }
 
-        syncVm(host, new Completion(completion) {
+        thdf.chainSubmit(new ChainTask(null) {
             @Override
-            public void success() {
-                completion.done();
+            public String getSyncSignature() {
+                return String.format("sync-vm-state-after-ping-host-%s-success", host.getUuid());
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("failed to sync VM states on the host[uuid:%s, name:%s], %s",
-                        host.getUuid(), host.getName(), errorCode));
-                completion.done();
+            public void run(SyncTaskChain chain) {
+                syncVm(host, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.warn(String.format("failed to sync VM states on the host[uuid:%s, name:%s], %s",
+                                host.getUuid(), host.getName(), errorCode));
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
             }
         });
+        completion.done();
     }
 }
