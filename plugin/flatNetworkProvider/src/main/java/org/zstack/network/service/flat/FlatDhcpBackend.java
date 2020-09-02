@@ -593,7 +593,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     "where a.accountUuid = :accUuid and u.l3NetworkUuid = :l3Uuid " +
                     "and u.vmNicUuid = n.uuid and n.uuid = a.resourceUuid";
             if (StringUtils.isNotEmpty(msg.getIp())) {
-                sql += " and ip like '" + msg.getIp() + '\'';
+                sql += " and u.ip like '" + msg.getIp() + '\'';
             }
             return SQL.New(sql, Long.class)
                     .param("accUuid", msg.getSession().getAccountUuid())
