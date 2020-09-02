@@ -1,16 +1,20 @@
 package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.method.P;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmInstanceBase;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
@@ -22,6 +26,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
@@ -73,83 +78,120 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
         return types;
     }
 
-    private void prepareNetwork(final Iterator<L2NetworkInventory> it, final String hostUuid, final Completion completion) {
-        if (!it.hasNext()) {
+    private void prepareNetwork(final List<L2NetworkInventory> l2Networks, final String hostUuid, final Completion completion) {
+        if (l2Networks.isEmpty()) {
             completion.success();
             return;
         }
 
-        final L2NetworkInventory l2 = it.next();
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("prepare-l2-%s-for-kvm-%s-connect", l2.getUuid(), hostUuid));
+        chain.setName(String.format("prepare-l2-for-kvm-%s-connect", hostUuid));
         chain.then(new NoRollbackFlow() {
             String __name__ = "check-network-physical-interface";
 
             @Override
             public void run(final FlowTrigger trigger, Map data) {
-                CheckNetworkPhysicalInterfaceMsg cmsg = new CheckNetworkPhysicalInterfaceMsg();
-                cmsg.setHostUuid(hostUuid);
-                cmsg.setPhysicalInterface(l2.getPhysicalInterface());
-                bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, hostUuid);
-                bus.send(cmsg, new CloudBusCallBack(completion) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                        } else {
-                            trigger.next();
+                List<BatchCheckNetworkPhysicalInterfaceMsg> batchCheckNetworkPhysicalInterfaceMsgs = new ArrayList<>();
+
+                int step = 100;
+                int count = l2Networks.size() / 100 + 1;
+                for (int i = 0; i < count; i++) {
+                    int end = (i + 1) * step - 1;
+                    List<String> interfaces = l2Networks.subList(i * step, Math.min(end, l2Networks.size() - 1))
+                            .stream()
+                            .map(L2NetworkInventory::getPhysicalInterface)
+                            .collect(Collectors.toList());
+
+                    BatchCheckNetworkPhysicalInterfaceMsg bmsg = new BatchCheckNetworkPhysicalInterfaceMsg();
+                    bmsg.setPhysicalInterfaces(interfaces);
+                    bmsg.setHostUuid(hostUuid);
+                    bus.makeTargetServiceIdByResourceUuid(bmsg, HostConstant.SERVICE_ID, hostUuid);
+                    batchCheckNetworkPhysicalInterfaceMsgs.add(bmsg);
+                }
+
+                ErrorCodeList errorCodeList = new ErrorCodeList();
+                new While<>(batchCheckNetworkPhysicalInterfaceMsgs).each((bmsg, c) -> {
+                    bus.send(bmsg, new CloudBusCallBack(c) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                errorCodeList.getCauses().add(reply.getError());
+                                c.allDone();
+                                return;
+                            }
+
+                            c.done();
                         }
+                    });
+                }).run(new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        if (!errorCodeList.getCauses().isEmpty()) {
+                            trigger.fail(errorCodeList.getCauses().get(0));
+                            return;
+                        }
+
+                        trigger.next();
                     }
                 });
             }
         });
 
-        if (l2.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
-            chain.then(new NoRollbackFlow() {
-                String __name__ = "realize_no_vlan";
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "realize_no_vlan";
 
-                @Override
-                public void run(final FlowTrigger trigger, Map data) {
-                    noVlanNetworkBackend.realize(l2, hostUuid, true, new Completion(trigger) {
-                        @Override
-                        public void success() {
-                            trigger.next();
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                ErrorCodeList errorCodeList = new ErrorCodeList();
+                new While<>(l2Networks).step((l2, c) -> {
+                    if (l2.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
+                        noVlanNetworkBackend.realize(l2, hostUuid, true, new Completion(c) {
+                            @Override
+                            public void success() {
+                                c.done();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                errorCodeList.getCauses().add(errorCode);
+                                c.allDone();
+                            }
+                        });
+                    } else if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(l2.getType())) {
+                        vlanNetworkBackend.realize(l2, hostUuid, true, new Completion(c) {
+                            @Override
+                            public void success() {
+                                c.done();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                errorCodeList.getCauses().add(errorCode);
+                                c.allDone();
+                            }
+                        });
+                    } else {
+                        errorCodeList.getCauses().add(operr("KVMConnectExtensionForL2Network wont's support L2Network[type:%s]", l2.getType()));
+                        c.allDone();
+                    }
+                }, 10).run(new NoErrorCompletion(trigger) {
+                    @Override
+                    public void done() {
+                        if (!errorCodeList.getCauses().isEmpty()) {
+                            trigger.fail(errorCodeList.getCauses().get(0));
+                            return;
                         }
 
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            trigger.fail(errorCode);
-                        }
-                    });
-                }
-            });
-        } else if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(l2.getType())) {
-            chain.then(new NoRollbackFlow() {
-                String __name__ = "realize_vlan";
-                @Override
-                public void run(final FlowTrigger trigger, Map data) {
-                    vlanNetworkBackend.realize(l2, hostUuid, true, new Completion(trigger) {
-                        @Override
-                        public void success() {
-                            trigger.next();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            trigger.fail(errorCode);
-                        }
-                    });
-                }
-            });
-        } else {
-            completion.fail(operr("KVMConnectExtensionForL2Network wont's support L2Network[type:%s]", l2.getType()));
-            return;
-        }
+                        trigger.next();
+                    }
+                });
+            }
+        });
 
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                prepareNetwork(it, hostUuid, completion);
+                completion.success();
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
@@ -169,7 +211,7 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
         }
 
         FutureCompletion completion = new FutureCompletion(null);
-        prepareNetwork(l2s.iterator(), inv.getUuid(), completion);
+        prepareNetwork(l2s, inv.getUuid(), completion);
         completion.await(TimeUnit.SECONDS.toMillis(600));
         if (!completion.isSuccess()) {
             throw new OperationFailureException(completion.getErrorCode());
@@ -195,7 +237,7 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
                     return;
                 }
 
-                prepareNetwork(l2s.iterator(), context.getInventory().getUuid(), new Completion(trigger) {
+                prepareNetwork(l2s, context.getInventory().getUuid(), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();

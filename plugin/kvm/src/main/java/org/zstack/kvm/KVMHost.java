@@ -444,6 +444,8 @@ public class KVMHost extends HostBase implements Host {
     protected void handleLocalMessage(Message msg) {
         if (msg instanceof CheckNetworkPhysicalInterfaceMsg) {
             handle((CheckNetworkPhysicalInterfaceMsg) msg);
+        } else if (msg instanceof BatchCheckNetworkPhysicalInterfaceMsg) {
+            handle((BatchCheckNetworkPhysicalInterfaceMsg) msg);
         } else if (msg instanceof StartVmOnHypervisorMsg) {
             handle((StartVmOnHypervisorMsg) msg);
         } else if (msg instanceof CreateVmOnHypervisorMsg) {
@@ -2751,6 +2753,17 @@ public class KVMHost extends HostBase implements Host {
                 }));
     }
 
+    private void handle(final BatchCheckNetworkPhysicalInterfaceMsg msg) {
+        inQueue().name(String.format("check-network-physical-interface-on-host-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> batchCheckPhysicalInterface(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
     private void pauseVm(final PauseVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStatus();
         final VmInstanceInventory vminv = msg.getVmInventory();
@@ -2828,6 +2841,24 @@ public class KVMHost extends HostBase implements Host {
                 completion.done();
             }
         });
+    }
+
+    private void batchCheckPhysicalInterface(BatchCheckNetworkPhysicalInterfaceMsg msg, NoErrorCompletion completion) {
+        checkState();
+        CheckPhysicalNetworkInterfaceCmd cmd = new CheckPhysicalNetworkInterfaceCmd();
+        msg.getPhysicalInterfaces().forEach(cmd::addInterfaceName);
+        BatchCheckNetworkPhysicalInterfaceReply reply = new BatchCheckNetworkPhysicalInterfaceReply();
+        CheckPhysicalNetworkInterfaceResponse rsp = restf.syncJsonPost(checkPhysicalNetworkInterfacePath, cmd, CheckPhysicalNetworkInterfaceResponse.class);
+        if (!rsp.isSuccess()) {
+            if (rsp.getFailedInterfaceNames().isEmpty()) {
+                reply.setError(operr("operation error, because:%s", rsp.getError()));
+            } else {
+                reply.setError(operr("failed to check physical network interfaces[names : %s] on kvm host[uuid:%s, ip:%s]",
+                        rsp.getFailedInterfaceNames(), context.getInventory().getUuid(), context.getInventory().getManagementIp()));
+            }
+        }
+        bus.reply(msg, reply);
+        completion.done();
     }
 
     private void checkPhysicalInterface(CheckNetworkPhysicalInterfaceMsg msg, NoErrorCompletion completion) {
