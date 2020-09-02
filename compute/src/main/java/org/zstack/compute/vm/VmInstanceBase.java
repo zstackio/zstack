@@ -1071,8 +1071,10 @@ public class VmInstanceBase extends AbstractVmInstance {
             return VmAbnormalLifeCycleOperation.VmRunningOnTheHost;
         }
 
-        if (originalState == VmInstanceState.Running && currentState == VmInstanceState.Stopped &&
-                currentHostUuid.equals(originalHostUuid)) {
+        // c.f. ZSTAC-25974
+        if ((originalState == VmInstanceState.Running || originalState == VmInstanceState.Starting)
+                && currentState == VmInstanceState.Stopped
+                && currentHostUuid.equals(originalHostUuid)) {
             return VmAbnormalLifeCycleOperation.VmStoppedOnTheSameHost;
         }
 
