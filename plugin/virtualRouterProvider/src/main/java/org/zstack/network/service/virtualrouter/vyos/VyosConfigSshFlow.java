@@ -131,10 +131,10 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
                     ).setTimeout(300).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
                 }
 
-                if (NetworkUtils.isRemotePortOpen(mgmtNicIp, 22, 2000)) {
+                if (NetworkUtils.isRemotePortOpen(mgmtNicIp, 22, (int) TimeUnit.SECONDS.toMillis(timeoutInSeconds))) {
                     trigger.next();
                 } else {
-                    trigger.fail(operr("unable to ssh in to the vyos[%s] after configure ssh", mgmtNicIp));
+                    trigger.fail(operr("unable to ssh in to the vyos[%s] after configure ssh after %d sceonds", mgmtNicIp, timeoutInSeconds));
                 }
 
             }
