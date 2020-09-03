@@ -7,6 +7,7 @@ import org.zstack.appliancevm.ApplianceVmFirewallProtocol;
 import org.zstack.appliancevm.ApplianceVmFirewallRuleInventory;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.*;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -63,6 +64,8 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
     private EipConfigProxy proxy;
     @Autowired
     private VirtualRouterHaBackend haBackend;
+    @Autowired
+    private EventFacade evtf;
 
     private String APPLY_EIP_TASK = "applyEip";
     private String REVOKE_EIP_TASK = "revokeEip";
@@ -161,6 +164,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                         VirtualRouterAsyncHttpCallReply re = reply.castReply();
                         CreateEipRsp ret = re.toResponse(CreateEipRsp.class);
                         if (ret.isSuccess()) {
+                            fireFirewallEvent(vr.getUuid());
                             trigger.next();
                         } else {
                             trigger.fail(operr("failed to create eip[uuid:%s, name:%s, ip:%s] for vm nic[uuid:%s] on virtual router[uuid:%s], %s",
@@ -187,6 +191,12 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
             }
         }).start();
 
+    }
+
+    private void fireFirewallEvent(String vRouterUuid) {
+        FirewallCanonicalEvents.FirewallRuleChangedData data = new FirewallCanonicalEvents.FirewallRuleChangedData();
+        data.setVirtualRouterUuid(vRouterUuid);
+        evtf.fire(FirewallCanonicalEvents.FIREWALL_RULE_CHANGED_PATH, data);
     }
 
     protected void applyEipOnHaRouter(String vrUuid, EipStruct struct, Completion completion) {
@@ -314,6 +324,7 @@ public class VirtualRouterEipBackend extends AbstractVirtualRouterBackend implem
                             }
                         }
 
+                        fireFirewallEvent(vr.getUuid());
                         trigger.next();
                     }
                 });

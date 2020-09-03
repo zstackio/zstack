@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-public class UpdateFirewallRuleSetResult {
+public class ApplyRuleSetChangesResult {
     public VpcFirewallRuleSetInventory inventory;
     public void setInventory(VpcFirewallRuleSetInventory inventory) {
         this.inventory = inventory;
