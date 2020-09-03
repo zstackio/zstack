@@ -13,7 +13,6 @@ import org.zstack.header.core.progress.ChainInfo;
 import org.zstack.header.core.progress.PendingTaskInfo;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.TaskContext;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -285,7 +284,6 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             }
 
             try {
-                TaskContext.removeTaskContext();
                 getTask().run(() -> {
                     try {
                         done();
