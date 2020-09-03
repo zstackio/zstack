@@ -12,6 +12,7 @@ import org.zstack.header.message.Message;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
+import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.GsonUtil;
 import org.zstack.utils.gson.JSONObjectUtil;
 
@@ -31,6 +32,7 @@ public class LogSafeGson {
 
     private static final List<Class<?>> searchClasses = Arrays.asList(HasSensitiveInfo.class, Message.class);
     private static final Gson logSafeGson;
+    private static Function<String, String> tagInfoHider = s -> s;
     private static class FieldNoLogging {
         Field field;
         NoLogging annotation;
@@ -74,6 +76,8 @@ public class LogSafeGson {
         String getMaskedValue(String raw) {
             if (annotation.type().simple()) {
                 return "*****";
+            } else if (annotation.type().tag()) {
+                return tagInfoHider.call(raw);
             } else {
                 return Utils.getLogMaskWords().getOrDefault(raw, uriPattern.matcher(raw).replaceFirst(":*****@"));
             }
@@ -202,6 +206,10 @@ public class LogSafeGson {
         }
 
         return paths;
+    }
+
+    public static void registryTagHider(Function<String, String> hider) {
+        tagInfoHider = hider;
     }
 
     private static boolean mayHasSensitiveInfo(Class<?> clz) {

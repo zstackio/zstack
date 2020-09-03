@@ -25,10 +25,15 @@ public @interface NoLogging {
 
     enum Type {
         Simple,
+        Tag,
         Uri;
 
         public boolean simple() {
             return this == Simple;
+        }
+
+        public boolean tag() {
+            return this == Tag;
         }
 
         public boolean uri() {
