@@ -34,6 +34,9 @@ public class DetachFirewallRuleSetFromL3Action extends AbstractAction {
     @Param(required = true, validValues = {"in","out"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String forward;
 
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ruleSetUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 
@@ -97,7 +100,7 @@ public class DetachFirewallRuleSetFromL3Action extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/vpcfirewalls/l3networks/{l3Uuid}";
+        info.path = "/vpcfirewalls/l3networks/{l3Uuid}/ruleSets/{ruleSetUuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
