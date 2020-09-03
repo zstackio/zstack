@@ -13,6 +13,7 @@ import org.zstack.header.core.progress.ChainInfo;
 import org.zstack.header.core.progress.PendingTaskInfo;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.TaskContext;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -434,6 +435,13 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                         removeSubPending(cf.getTask().getDeduplicateString(), false);
                     }
 
+                    // recover task context from backup
+                    if (cf.getTask().taskContext != null) {
+                        TaskContext.setTaskContext(cf.getTask().taskContext);
+                    } else {
+                        TaskContext.removeTaskContext();
+                    }
+
                     cf.run(() -> {
                         synchronized (runningQueue) {
                             Optional.ofNullable(getApiId(cf))
@@ -448,7 +456,6 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                                 removeSubPendingZero(cf.getTask().getDeduplicateString());
                             }
                         }
-
 
                         runQueue();
                     });
@@ -522,6 +529,11 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     @Override
     public Future<Void> chainSubmit(ChainTask task) {
+        // backup task context for each chain task
+        if (TaskContext.getTaskContext() != null) {
+            task.taskContext = new HashMap<>(TaskContext.getTaskContext());
+        }
+
         return doChainSyncSubmit(task);
     }
 
