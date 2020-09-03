@@ -1542,5 +1542,13 @@
     "regex": ".*Message\\[name: org.zstack.appliancevm.StartNewCreatedApplianceVmMsg, id: .*] timeout after 1800 seconds.*",
     "message_cn": "创建VPC路由器超时。请检查镜像，检查管理网双向互通，再试一次。",
     "message_en": "Creating VPC router timeout.Please check the mirror, check the two-way communication between the management network, and try again."
+  },
+  {
+    "category": "VPC",
+    "code": "1003",
+    "method": "regex",
+    "regex": "the L3 network[uuid: .*] is same network address with [uuid: .*], it cannot be used for virtual router",
+    "message_cn": "L3网络地址与另一个L3网络重复，无法被用于云路由",
+    "message_en": "the L3 network address is same with another one, it cannot be used for virtual router"
   }
 ]
