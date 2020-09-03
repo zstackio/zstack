@@ -504,6 +504,14 @@
     "message_en": "duplicate virtualID name"
   },
   {
+    "category": "IAM2",
+    "code": "1001",
+    "method": "regex",
+    "regex": "the project[.*] is in state of .* which disallows the operation[.*]",
+    "message_cn": "项目的状态为[%3$s]，无法执行对应的操作",
+    "message_en": "the project is in state of [%3$s] which disallows the operation"
+  },
+  {
     "category": "IMAGE",
     "code": "1000",
     "method": "regex",
