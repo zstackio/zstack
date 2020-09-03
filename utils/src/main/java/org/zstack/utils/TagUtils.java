@@ -1,5 +1,8 @@
 package org.zstack.utils;
 
+import org.apache.commons.codec.binary.StringUtils;
+import org.apache.logging.log4j.util.Strings;
+
 import java.util.*;
 
 /**
@@ -29,6 +32,11 @@ public class TagUtils {
     }
 
     public static boolean isMatch(String fmt, String tag) {
+        char fmtFirstChar = fmt.charAt(0);
+        if (!Strings.isEmpty(tag) && fmtFirstChar != tag.charAt(0) && fmtFirstChar != '{') {
+            return false;
+        }
+
         List<String> origins =  new ArrayList<String>();
         Collections.addAll(origins, tag.split("::"));
 

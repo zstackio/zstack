@@ -18,6 +18,8 @@ import static org.zstack.utils.StringDSL.s;
 /**
  */
 public class PatternedSystemTag extends SystemTag {
+    List<String> sensitiveTokens;
+
     public PatternedSystemTag(String tagFormat, Class resourceClass) {
         super(tagFormat, resourceClass);
     }
@@ -115,6 +117,20 @@ public class PatternedSystemTag extends SystemTag {
 
     public String getTokenByResourceUuid(String resourceUuid, String tokenName) {
         return getTokenByResourceUuid(resourceUuid, resourceClass, tokenName);
+    }
+
+    public String hideSensitiveInfo(String tag) {
+        if (sensitiveTokens == null) {
+            return tag;
+        }
+
+        Map<String, String> tokens = TagUtils.parseIfMatch(tagFormat, tag);
+        if (tokens == null) {
+            return tag;
+        }
+
+        sensitiveTokens.forEach(t -> tokens.put(t, "*****"));
+        return instantiateTag(tokens);
     }
 
     public String instantiateTag(Map tokens) {

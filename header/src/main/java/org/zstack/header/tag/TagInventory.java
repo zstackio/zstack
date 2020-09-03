@@ -1,13 +1,17 @@
 package org.zstack.header.tag;
 
+import org.zstack.header.log.HasSensitiveInfo;
+import org.zstack.header.log.NoLogging;
+
 import java.sql.Timestamp;
 
 /**
  */
-public class TagInventory {
+public class TagInventory implements HasSensitiveInfo {
     private String uuid;
     private String resourceUuid;
     private String resourceType;
+    @NoLogging(type = NoLogging.Type.Tag)
     private String tag;
     private String type;
     private Timestamp createDate;

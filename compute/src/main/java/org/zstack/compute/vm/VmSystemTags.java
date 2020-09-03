@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.tag.PatternedSystemTag;
+import org.zstack.tag.SensitiveTag;
 
 /**
  */
@@ -47,6 +48,7 @@ public class VmSystemTags {
     public static PatternedSystemTag BOOT_ORDER_ONCE = new PatternedSystemTag(String.format("bootOrderOnce::{%s}", BOOT_ORDER_ONCE_TOKEN), VmInstanceVO.class);
 
     public static String CONSOLE_PASSWORD_TOKEN = "consolePassword";
+    @SensitiveTag(tokens = {"consolePassword"})
     public static PatternedSystemTag CONSOLE_PASSWORD = new PatternedSystemTag(String.format("consolePassword::{%s}",CONSOLE_PASSWORD_TOKEN),VmInstanceVO.class);
 
     // set usbRedirect::true to enable usb redirect

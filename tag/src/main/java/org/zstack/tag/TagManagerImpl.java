@@ -11,6 +11,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.log.LogSafeGson;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -58,6 +59,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     private List<SystemTag> systemTags = new ArrayList<>();
     private List<SystemTag> adminOnlySystemTags = new ArrayList<>();
+    private List<PatternedSystemTag> sensitiveTags = new ArrayList<>();
     private Map<String, List<SystemTag>> resourceTypeSystemTagMap = new HashMap<>();
     private Map<String, Class> resourceTypeClassMap = new HashMap<>();
     private Map<Class, Class> resourceTypeCreateMessageMap = new HashMap<>();
@@ -110,6 +112,11 @@ public class TagManagerImpl extends AbstractService implements TagManager,
                     adminOnlySystemTags.add(stag);
                 }
 
+                if (f.isAnnotationPresent(SensitiveTag.class) && stag instanceof PatternedSystemTag) {
+                    sensitiveTags.add((PatternedSystemTag) stag);
+                    ((PatternedSystemTag) stag).sensitiveTokens = Arrays.asList(f.getAnnotation(SensitiveTag.class).tokens());
+                }
+
                 stag.setTagMgr(this);
                 List<SystemTag> lst = resourceTypeSystemTagMap.get(stag.getResourceClass().getSimpleName());
                 if (lst == null) {
@@ -138,6 +145,8 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             throw new CloudRuntimeException(e);
         }
 
+        registrySensitiveTagHider();
+
         Set<Class<?>> createMessageClass = BeanUtils.reflections.getTypesAnnotatedWith(TagResourceType.class)
                 .stream().filter(i->i.isAnnotationPresent(TagResourceType.class)).collect(Collectors.toSet());
         for (Class cmsgClz : createMessageClass) {
@@ -160,6 +169,20 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         });
 
         logger.debug(String.format("tags of following resources are auto-deleting enabled: %s", clzNames));
+    }
+
+    private void registrySensitiveTagHider() {
+        LogSafeGson.registryTagHider(this::hideSensitiveInfoInTag);
+    }
+
+    private String hideSensitiveInfoInTag(String tag) {
+        for (PatternedSystemTag sensitiveTag : sensitiveTags) {
+            if (sensitiveTag.isMatch(tag)) {
+                return sensitiveTag.hideSensitiveInfo(tag);
+            }
+        }
+
+        return tag;
     }
 
     private void populateExtensions() {
