@@ -2320,4 +2320,11 @@ public class KVMAgentCommands {
         public String uuid;
         public String operation;
     }
+
+    public static class CreateVmVsocCommand extends AgentCommand {
+        public String vmUuid;
+    }
+
+    public static class CreateVmVsocRsp extends AgentResponse {
+    }
 }

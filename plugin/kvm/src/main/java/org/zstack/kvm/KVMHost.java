@@ -150,6 +150,7 @@ public class KVMHost extends HostBase implements Host {
     private String updateSpiceChannelConfigPath;
     private String cancelJob;
     private String getVmFirstBootDevicePath;
+    private String vmCreateVsocPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -290,6 +291,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_GET_VM_FIRST_BOOT_DEVICE_PATH);
         getVmFirstBootDevicePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VM_CREATE_VSOC);
+        vmCreateVsocPath = ub.build().toString();
     }
 
     class Http<T> {
@@ -466,6 +471,8 @@ public class KVMHost extends HostBase implements Host {
             handle((CancelHostTaskMsg) msg);
         } else if (msg instanceof GetVmFirstBootDeviceOnHypervisorMsg) {
             handle((GetVmFirstBootDeviceOnHypervisorMsg) msg);
+        } else if (msg instanceof CreateVmVsocFileMsg) {
+            handle((CreateVmVsocFileMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -480,6 +487,32 @@ public class KVMHost extends HostBase implements Host {
                         chain.next();
                     }
                 }));
+    }
+
+    private void handle(CreateVmVsocFileMsg msg) {
+        CreateVmVsocCommand cmd = new CreateVmVsocCommand();
+        cmd.vmUuid = msg.getVmInstanceUuid();
+
+        new Http<>(vmCreateVsocPath, cmd, CreateVmVsocRsp.class).call(new ReturnValueCompletion<CreateVmVsocRsp>(msg) {
+
+            @Override
+            public void success(CreateVmVsocRsp ret) {
+                final CreateVmVsocFileReply reply = new CreateVmVsocFileReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("Error: %s", ret.getError()));
+                }
+
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                final GetVmFirstBootDeviceOnHypervisorReply reply = new GetVmFirstBootDeviceOnHypervisorReply();
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+        });
     }
 
     private void getVmFirstBootDevice(final GetVmFirstBootDeviceOnHypervisorMsg msg, final NoErrorCompletion completion) {
