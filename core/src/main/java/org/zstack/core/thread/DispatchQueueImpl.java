@@ -102,7 +102,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     @Override
     public Set<String> getApiRunningTaskSignature(String apiId) {
-        return new HashSet<>(apiRunningSignature.get(apiId));
+        return new HashSet<>(apiRunningSignature.getOrDefault(apiId, Collections.emptyList()));
     }
 
     public DispatchQueueImpl() {
