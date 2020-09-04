@@ -3,7 +3,7 @@ package org.zstack.header.vm;
 import org.zstack.header.host.HostMessage;
 import org.zstack.header.message.NeedReplyMessage;
 
-public class CreateVmVsocFileMsg extends NeedReplyMessage implements HostMessage {
+public class DeleteVmVsocFileMsg extends NeedReplyMessage implements HostMessage {
     private String vmInstanceUuid;
     private String hostUuid;
 

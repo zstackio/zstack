@@ -151,6 +151,7 @@ public class KVMHost extends HostBase implements Host {
     private String cancelJob;
     private String getVmFirstBootDevicePath;
     private String vmCreateVsocPath;
+    private String vmDeleteVsocPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -295,6 +296,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_VM_CREATE_VSOC);
         vmCreateVsocPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VM_DELETE_VSOC);
+        vmDeleteVsocPath = ub.build().toString();
     }
 
     class Http<T> {
@@ -473,7 +478,10 @@ public class KVMHost extends HostBase implements Host {
             handle((GetVmFirstBootDeviceOnHypervisorMsg) msg);
         } else if (msg instanceof CreateVmVsocFileMsg) {
             handle((CreateVmVsocFileMsg) msg);
-        } else {
+        } else if (msg instanceof DeleteVmVsocFileMsg) {
+            handle((DeleteVmVsocFileMsg) msg);
+        }
+        else {
             super.handleLocalMessage(msg);
         }
     }
@@ -497,6 +505,31 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void success(CreateVmVsocRsp ret) {
+                final CreateVmVsocFileReply reply = new CreateVmVsocFileReply();
+                if (!ret.isSuccess()) {
+                    reply.setError(operr("Error: %s", ret.getError()));
+                }
+
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                final GetVmFirstBootDeviceOnHypervisorReply reply = new GetVmFirstBootDeviceOnHypervisorReply();
+                reply.setError(err);
+                bus.reply(msg, reply);
+            }
+
+        });
+    }
+
+    private void handle(DeleteVmVsocFileMsg msg) {
+        DeleteVmVsocCommand cmd = new DeleteVmVsocCommand();
+        cmd.vmUuid = msg.getVmInstanceUuid();
+
+        new Http<>(vmDeleteVsocPath, cmd, DeleteVmVsocRsp.class).call(new ReturnValueCompletion<DeleteVmVsocRsp>(msg) {
+            @Override
+            public void success(DeleteVmVsocRsp ret) {
                 final CreateVmVsocFileReply reply = new CreateVmVsocFileReply();
                 if (!ret.isSuccess()) {
                     reply.setError(operr("Error: %s", ret.getError()));
@@ -1379,6 +1412,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setAutoConverge(autoConverage);
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
                         cmd.setTimeout(timeoutManager.getTimeout());
+                        cmd.setSscardId(HostSystemTags.HOST_SSCARDID.getTokenByResourceUuid(dstHostUuid, HostSystemTags.HOST_SSCARDID_TOKEN));
 
                         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(migrateVmPath);
                         ub.host(migrateFromDestination ? dstHostMnIp : srcHostMnIp);
@@ -3166,6 +3200,7 @@ public class KVMHost extends HostBase implements Host {
                                     createTagWithoutNonValue(HostSystemTags.CPU_GHZ, HostSystemTags.CPU_GHZ_TOKEN, ret.getCpuGHz(), true);
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_PRODUCT_NAME, HostSystemTags.SYSTEM_PRODUCT_NAME_TOKEN, ret.getSystemProductName(), true);
                                     createTagWithoutNonValue(HostSystemTags.SYSTEM_SERIAL_NUMBER, HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN, ret.getSystemSerialNumber(), true);
+                                    createTagWithoutNonValue(HostSystemTags.HOST_SSCARDID, HostSystemTags.HOST_SSCARDID_TOKEN, ret.getSscardId(), true);
 
                                     if (ret.getLibvirtVersion().compareTo(KVMConstant.MIN_LIBVIRT_VIRTIO_SCSI_VERSION) >= 0) {
                                         recreateNonInherentTag(KVMSystemTags.VIRTIO_SCSI);
