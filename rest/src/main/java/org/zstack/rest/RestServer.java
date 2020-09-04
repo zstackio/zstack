@@ -61,6 +61,7 @@ import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -80,6 +81,7 @@ public class RestServer implements Component, CloudBusEventListener {
 
     private static final OkHttpClient http;
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    private static final DateTimeFormatter formatter;
 
     @Autowired
     private CloudBus bus;
@@ -108,6 +110,11 @@ public class RestServer implements Component, CloudBusEventListener {
                     .hostnameVerifier(DefaultSSLVerifier::verify)
                     .build();
         }
+
+        formatter = new DateTimeFormatterBuilder()
+                .parseCaseInsensitive()
+                .appendPattern("EEE, dd MMM yyyy HH:mm:ss z")
+                .toFormatter(Locale.ENGLISH);
     }
 
     static class RequestInfo {
@@ -907,7 +914,6 @@ public class RestServer implements Component, CloudBusEventListener {
             throw new RestException(HttpStatus.BAD_REQUEST.value(), "'Date' must be incuded in request header");
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z");
         ZonedDateTime date;
         try {
             date = ZonedDateTime.parse(dateStr, formatter);

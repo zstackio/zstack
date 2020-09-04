@@ -1,9 +1,9 @@
 package org.zstack.sdk;
 
-import org.apache.commons.codec.binary.Base64;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import okhttp3.*;
+import org.apache.commons.codec.binary.Base64;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -12,7 +12,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +29,7 @@ public class ZSClient {
 
     static final Gson gson;
     static final Gson prettyGson;
+    private static final DateTimeFormatter formatter;
 
     private static ConcurrentHashMap<String, Api> waittingApis = new ConcurrentHashMap<>();
 
@@ -36,6 +39,10 @@ public class ZSClient {
     static {
         gson = new GsonBuilder().create();
         prettyGson = new GsonBuilder().setPrettyPrinting().create();
+        formatter = new DateTimeFormatterBuilder()
+                .parseCaseInsensitive()
+                .appendPattern("EEE, dd MMM yyyy HH:mm:ss VV")
+                .toFormatter(Locale.ENGLISH);
     }
 
     private static ZSConfig config;
@@ -285,10 +292,9 @@ public class ZSClient {
             }
         }
 
-        private void calculateAccessKeySignature(Request.Builder reqBuilder, String accessKeyId, String accessKeySecret, String path) throws Exception{
-            Date date = new Date();
-            SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH);
-            String dateStr = sdf.format(date);
+        private void calculateAccessKeySignature(Request.Builder reqBuilder, String accessKeyId, String accessKeySecret, String path) throws Exception {
+            ZonedDateTime date = ZonedDateTime.now();
+            String dateStr = date.format(formatter);
 
             StringBuilder sb = new StringBuilder();
             sb.append(info.httpMethod).append("\n");
