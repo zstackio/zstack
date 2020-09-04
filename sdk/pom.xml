@@ -43,8 +43,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${project.compiler.version}</version>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>${project.java.version}</source>
+                    <target>${project.java.version}</target>
+                    <debuglevel>lines,vars,source</debuglevel>
                     <debug>true</debug>
                 </configuration>
             </plugin>
