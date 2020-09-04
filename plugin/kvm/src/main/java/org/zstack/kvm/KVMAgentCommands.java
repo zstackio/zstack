@@ -409,6 +409,15 @@ public class KVMAgentCommands {
         private String systemProductName;
         private String systemSerialNumber;
         private List<String> ipAddresses;
+        private String sscardId;
+
+        public String getSscardId() {
+            return sscardId;
+        }
+
+        public void setSscardId(String sscardId) {
+            this.sscardId = sscardId;
+        }
 
         public String getOsDistribution() {
             return osDistribution;
@@ -2473,6 +2482,15 @@ public class KVMAgentCommands {
         private boolean autoConverge;
         private boolean xbzrle;
         private Long timeout; // in seconds
+        private String sscardId;
+
+        public String getSscardId() {
+            return sscardId;
+        }
+
+        public void setSscardId(String sscardId) {
+            this.sscardId = sscardId;
+        }
 
         public boolean isUseNuma() {
             return useNuma;
@@ -2940,5 +2958,12 @@ public class KVMAgentCommands {
     }
 
     public static class CreateVmVsocRsp extends AgentResponse {
+    }
+
+    public static class DeleteVmVsocCommand extends AgentCommand {
+        public String vmUuid;
+    }
+
+    public static class DeleteVmVsocRsp extends AgentResponse {
     }
 }

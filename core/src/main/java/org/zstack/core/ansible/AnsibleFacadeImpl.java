@@ -138,7 +138,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     "sudo apt-get --assume-yes remove ansible; " +
                     "else echo \"Warning: can't remove ansible from unknown platform\"; " +
                     "fi; " +
-                    "sudo pip install -i file://%s --trusted-host localhost -I ansible==1.9.6; " +
+                    "sudo pip install -i file://%s --trusted-host localhost ansible==1.9.6; " +
                     "fi", AnsibleConstant.PYPI_REPO), false);
 
             deployModule("ansible/zstacklib", "zstacklib.py");
