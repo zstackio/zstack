@@ -4,10 +4,14 @@ import org.zstack.header.PassMaskWords;
 import org.zstack.header.core.AbstractCompletion;
 import org.zstack.header.core.AsyncBackup;
 
+import java.util.Map;
+
 public abstract class ChainTask extends AbstractCompletion implements PassMaskWords {
     public ChainTask(AsyncBackup one, AsyncBackup...others) {
         super(one, others);
     }
+
+    public Map<Object, Object> taskContext = null;
 
     public abstract String getSyncSignature();
 
