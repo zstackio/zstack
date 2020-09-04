@@ -24,6 +24,8 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.cdrom.*;
 import org.zstack.header.volume.VolumeState;
@@ -730,6 +732,25 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
+    private void validatePsWhetherSameCluster(APICreateVmInstanceMsg msg) {
+        if (msg.getPrimaryStorageUuidForRootVolume() == null || msg.getSystemTags() == null || msg.getSystemTags().isEmpty()) {
+            return;
+        }
+
+        String primaryStorageUuidForDataVolume = SystemTagUtils.findTagValue(msg.getSystemTags(), VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME, VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN);
+        if (primaryStorageUuidForDataVolume == null) {
+            return;
+        }
+
+        List<String> clusterUuidsForRootVolume = Q.New(PrimaryStorageClusterRefVO.class).select(PrimaryStorageClusterRefVO_.clusterUuid).eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, msg.getPrimaryStorageUuidForRootVolume()).listValues();
+        List<String> clusterUuidsForDataVolume = Q.New(PrimaryStorageClusterRefVO.class).select(PrimaryStorageClusterRefVO_.clusterUuid).eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, primaryStorageUuidForDataVolume).listValues();
+
+        clusterUuidsForRootVolume.retainAll(clusterUuidsForDataVolume);
+        if (clusterUuidsForRootVolume.isEmpty()) {
+            throw new ApiMessageInterceptionException(operr("the primary storage[%s] of the root volume and the primary storage[%s] of the data volume are not in the same cluster", msg.getPrimaryStorageUuidForRootVolume(), primaryStorageUuidForDataVolume));
+        }
+    }
+
     private void validateInstanceSettings(NewVmInstanceMessage2 msg) {
         final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
 
@@ -806,6 +827,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(operr("disk offerings[uuids:%s] are Disabled, can not create vm from it", diskUuids));
             }
         }
+
+        validatePsWhetherSameCluster(msg);
     }
 
     private void validate(APICreateVmInstanceFromVolumeMsg msg) {
