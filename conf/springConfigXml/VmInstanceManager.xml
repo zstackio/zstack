@@ -76,6 +76,7 @@
                 <value>org.zstack.compute.vm.VmReturnHostFlow</value>
                 <value>org.zstack.compute.vm.VmReleaseResourceFlow</value>
                 <value>org.zstack.compute.vm.VmReturnReleaseNicFlow</value>
+                <value>org.zstack.compute.vm.VmDeleteVsocFileFlow</value>
                 <value>org.zstack.compute.vm.VmDeleteVolumeFlow</value>
             </list>
         </property>

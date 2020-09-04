@@ -53,4 +53,7 @@ public class HostSystemTags {
     public static String HOST_GUEST_TOOLS_VERSION_TOKEN = "guestToolsVersion";
     public static PatternedSystemTag HOST_GUEST_TOOLS =
             new PatternedSystemTag(String.format("GuestTools::{%s}", HOST_GUEST_TOOLS_VERSION_TOKEN), HostVO.class);
+
+    public static final String HOST_SSCARDID_TOKEN = "sscardId";
+    public static PatternedSystemTag HOST_SSCARDID = new PatternedSystemTag(String.format("sscardId::{%s}", HOST_SSCARDID_TOKEN), HostVO.class);
 }

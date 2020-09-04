@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VmCreateVsocFileFlow implements Flow {
+public class VmDeleteVsocFileFlow implements Flow {
     private static final CLogger logger = Utils.getLogger(VmCreateOnHypervisorFlow.class);
 
     @Autowired
@@ -36,7 +36,7 @@ public class VmCreateVsocFileFlow implements Flow {
     public void run(final FlowTrigger chain,final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        CreateVmVsocFileMsg msg = new CreateVmVsocFileMsg();
+        DeleteVmVsocFileMsg msg = new DeleteVmVsocFileMsg();
         msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         msg.setHostUuid(spec.getDestHost().getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());
