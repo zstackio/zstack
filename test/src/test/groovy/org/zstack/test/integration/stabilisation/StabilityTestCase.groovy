@@ -27,4 +27,9 @@ class StabilityTestCase extends StabilityTest {
     SpringSpec getDefaultSpringSpec(){
         return TestCaseStabilityTest.springSpec
     }
+
+    @Override
+    String getFailureLogsDirName() {
+        return TestCaseStabilityTest.class.getName().replace(".", "_")
+    }
 }
