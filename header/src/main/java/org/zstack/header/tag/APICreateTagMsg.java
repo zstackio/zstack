@@ -1,5 +1,6 @@
 package org.zstack.header.tag;
 
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.vo.ResourceVO;
@@ -12,6 +13,7 @@ public abstract class APICreateTagMsg extends APIMessage {
     @APIParam(checkAccount = true, resourceType = ResourceVO.class)
     private String resourceUuid;
     @APIParam
+    @NoLogging(type = NoLogging.Type.Tag)
     private String tag;
 
     public String getResourceType() {
