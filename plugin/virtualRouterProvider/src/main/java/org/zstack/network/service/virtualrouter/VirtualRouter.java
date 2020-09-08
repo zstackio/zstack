@@ -928,64 +928,43 @@ public class VirtualRouter extends ApplianceVmBase {
 
     @Override
     protected void afterAttachNic(VmNicInventory nicInventory, Completion completion) {
-        thdf.chainSubmit(new ChainTask(completion) {
+        VmNicVO vo = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nicInventory.getUuid()).find();
+        L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, vo.getL3NetworkUuid()).find();
 
+        if (l3NetworkVO.getCategory().equals(L3NetworkCategory.Private)) {
+            vo.setMetaData(GUEST_NIC_MASK.toString());
+            UsedIpVO usedIpVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, nicInventory.getUsedIpUuid()).find();
+            usedIpVO.setMetaData(GUEST_NIC_MASK.toString());
+            dbf.updateAndRefresh(usedIpVO);
+        } else {
+            vo.setMetaData(ADDITIONAL_PUBLIC_NIC_MASK.toString());
+        }
+        vo = dbf.updateAndRefresh(vo);
+        logger.debug(String.format("updated metadata of vmnic[uuid: %s]", vo.getUuid()));
+
+        VirtualRouterVmVO vrVo = dbf.findByUuid(self.getUuid(), VirtualRouterVmVO.class);
+        Map<String, Object> data = new HashMap();
+        data.put(Param.VR_NIC.toString(), VmNicInventory.valueOf(vo));
+        data.put(Param.SNAT.toString(), Boolean.FALSE);
+        data.put(Param.VR.toString(), VirtualRouterVmInventory.valueOf(vrVo));
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("apply-services-after-attach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
+        chain.setData(data);
+        chain.then(new virtualRouterAfterAttachNicFlow());
+        chain.then(new VirtualRouterCreatePublicVipFlow());
+        chain.then(new virtualRouterApplyServicesAfterAttachNicFlow());
+        chain.then(haBackend.getAttachL3NetworkFlow());
+        chain.done(new FlowDoneHandler(completion) {
             @Override
-            public String getSyncSignature() {
-                return syncThreadName;
+            public void handle(Map data) {
+                completion.success();
             }
-
+        }).error(new FlowErrorHandler(completion) {
             @Override
-            @Deferred
-            public void run(final SyncTaskChain schain) {
-                VmNicVO vo = Q.New(VmNicVO.class).eq(VmNicVO_.uuid, nicInventory.getUuid()).find();
-                L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, vo.getL3NetworkUuid()).find();
-
-                if (l3NetworkVO.getCategory().equals(L3NetworkCategory.Private)) {
-                    vo.setMetaData(GUEST_NIC_MASK.toString());
-
-                    UsedIpVO usedIpVO = Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, nicInventory.getUsedIpUuid()).find();
-                    usedIpVO.setMetaData(GUEST_NIC_MASK.toString());
-                    dbf.updateAndRefresh(usedIpVO);
-                } else {
-                    vo.setMetaData(ADDITIONAL_PUBLIC_NIC_MASK.toString());
-                }
-                vo = dbf.updateAndRefresh(vo);
-                logger.debug(String.format("updated metadata of vmnic[uuid: %s]", vo.getUuid()));
-
-                VirtualRouterVmVO vrVo = dbf.findByUuid(self.getUuid(), VirtualRouterVmVO.class);
-                Map<String, Object> data = new HashMap();
-                data.put(Param.VR_NIC.toString(), VmNicInventory.valueOf(vo));
-                data.put(Param.SNAT.toString(), Boolean.FALSE);
-                data.put(Param.VR.toString(), VirtualRouterVmInventory.valueOf(vrVo));
-
-                FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-                chain.setName(String.format("apply-services-after-attach-nic-%s-from-virtualrouter-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid()));
-                chain.setData(data);
-                chain.then(new virtualRouterAfterAttachNicFlow());
-                chain.then(new VirtualRouterCreatePublicVipFlow());
-                chain.then(new virtualRouterApplyServicesAfterAttachNicFlow());
-                chain.then(haBackend.getAttachL3NetworkFlow());
-                chain.done(new FlowDoneHandler(completion) {
-                    @Override
-                    public void handle(Map data) {
-                        completion.success();
-                        schain.next();
-                    }
-                }).error(new FlowErrorHandler(completion) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        completion.fail(errCode);
-                        schain.next();
-                    }
-                }).start();
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
             }
-
-            @Override
-            public String getName() {
-                return String.format("after-attach-nic-%s-on-vm-%s", nicInventory.getUuid(), nicInventory.getVmInstanceUuid());
-            }
-        });
+        }).start();
     }
 
     @Override
@@ -1024,7 +1003,8 @@ public class VirtualRouter extends ApplianceVmBase {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    completion.fail(errorCode);
+                    /* even failed, continue release */
+                    virtualRouterReleaseVipServices(it, vip, completion);
                 }
             });
         }
@@ -1118,7 +1098,9 @@ public class VirtualRouter extends ApplianceVmBase {
                 @Override
                 public void run(MessageReply reply) {
                     if (!reply.isSuccess()) {
-                        trigger.fail(reply.getError());
+                        logger.warn(String.format("detach nic[%s] from virtual router vm[uuid:%s, ip:%s] failed because %s",
+                                info, vr.getUuid(), vr.getManagementNic().getIp(), reply.getError().getDetails()));
+                        trigger.next();
                         return;
                     }
 
@@ -1129,9 +1111,9 @@ public class VirtualRouter extends ApplianceVmBase {
                                 .getIp()));
                         trigger.next();
                     } else {
-                        ErrorCode err = operr("unable to detach nic[%s] from virtual router vm[uuid:%s ip:%s], because %s",
-                                info, vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError());
-                        trigger.fail(err);
+                        logger.warn(String.format("unable to detach nic[%s] from virtual router vm[uuid:%s ip:%s], because %s",
+                                info, vr.getUuid(), vr.getManagementNic().getIp(), rsp.getError()));
+                        trigger.next();;
                     }
                 }
             });
@@ -1157,7 +1139,8 @@ public class VirtualRouter extends ApplianceVmBase {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    completion.fail(errorCode);
+                    /* even failed, continue the release process */
+                    virtualRouterReleaseServices(it, nicInv, completion);
                 }
             });
         }
