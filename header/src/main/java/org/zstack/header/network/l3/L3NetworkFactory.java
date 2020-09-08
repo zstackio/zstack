@@ -6,4 +6,6 @@ public interface L3NetworkFactory {
     L3NetworkInventory createL3Network(L3NetworkVO l3vo, APICreateL3NetworkMsg msg);
 
     L3Network getL3Network(L3NetworkVO vo);
+
+    boolean applyNetworkServiceWhenVmStateChange();
 }

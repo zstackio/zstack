@@ -52,11 +52,12 @@ public class VirtualRouterSyncVipForNewCreateFlow implements Flow {
                 @Override
                 @Transactional(readOnly = true)
                 public List<String> call() {
-                    String sql = "select vip.uuid from EipVO eip, VmNicVO nic, VipVO vip, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and vm.state = :vmState and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid in (:guestL3Uuid)";
+                    String sql = "select vip.uuid from EipVO eip, VmNicVO nic, VipVO vip, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid "+
+                            " and eip.vipUuid = vip.uuid and eip.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid "
+                            +" and nic.l3NetworkUuid in (:guestL3Uuid)";
                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                     q.setParameter("vipL3Uuid", publicNic.getL3NetworkUuid());
                     q.setParameter("guestL3Uuid", l3Uuids);
-                    q.setParameter("vmState", VmInstanceState.Running);
                     return q.getResultList();
                 }
             }.call());
@@ -67,11 +68,12 @@ public class VirtualRouterSyncVipForNewCreateFlow implements Flow {
                 @Override
                 @Transactional(readOnly = true)
                 public List<String> call() {
-                    String sql = "select vip.uuid from PortForwardingRuleVO rule, VmNicVO nic, VipVO vip, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and vm.state = :vmState and rule.vipUuid = vip.uuid and rule.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid in (:guestL3Uuid)";
+                    String sql = "select vip.uuid from PortForwardingRuleVO rule, VmNicVO nic, VipVO vip, VmInstanceVO vm where " +
+                            " vm.uuid = nic.vmInstanceUuid and rule.vipUuid = vip.uuid and rule.vmNicUuid = nic.uuid " +
+                            " and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid in (:guestL3Uuid)";
                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
                     q.setParameter("vipL3Uuid", publicNic.getL3NetworkUuid());
                     q.setParameter("guestL3Uuid", l3Uuids);
-                    q.setParameter("vmState", VmInstanceState.Running);
                     return q.getResultList();
                 }
             }.call());

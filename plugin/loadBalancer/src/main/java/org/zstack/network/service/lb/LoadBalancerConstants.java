@@ -1,9 +1,12 @@
 package org.zstack.network.service.lb;
 
 import org.zstack.header.network.service.NetworkServiceType;
+import org.zstack.header.vm.VmInstanceConstant;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.util.Arrays.asList;
 
 /**
  * Created by frank on 8/8/2015.
@@ -69,4 +72,9 @@ public class LoadBalancerConstants {
     public static final int HEALTH_CHECK_INTERVAL_MAX = Integer.MAX_VALUE;
 
     public static final String HEALTH_CHECK_TARGET_DEFAULT = "default";
+
+    public static final List<VmInstanceConstant.VmOperation> vmOperationForDetachListener = asList(
+            VmInstanceConstant.VmOperation.Destroy,
+            VmInstanceConstant.VmOperation.DetachNic
+    );
 }
