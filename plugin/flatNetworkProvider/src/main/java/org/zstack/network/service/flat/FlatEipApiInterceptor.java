@@ -122,16 +122,18 @@ public class FlatEipApiInterceptor implements GlobalApiMessageInterceptor {
         }
         boolean newVipVersion = NetworkUtils.isIpv4Address(newVipVO.getIp());
 
-        String oldVipIp = Q.New(EipVO.class).eq(EipVO_.vmNicUuid, vmNicUuid).select(EipVO_.vipIp).findValue();
-        if (oldVipIp == null) {
+        List<String> oldVipIps = Q.New(EipVO.class).eq(EipVO_.vmNicUuid, vmNicUuid).select(EipVO_.vipIp).listValues();
+        if (oldVipIps.isEmpty()) {
             return;
         }
 
-        boolean oldVipVersion = NetworkUtils.isIpv4Address(oldVipIp);
-        if (oldVipVersion == newVipVersion){
-            String version = oldVipVersion ? "ipv4" : "ipv6";
-            throw new ApiMessageInterceptionException(argerr("can not bound more than 1 %s eip to a vm nic[uuid:%s] of flat ",
-                    version, vmNicUuid));
+        for (String oldVipIp : oldVipIps) {
+            boolean oldVipVersion = NetworkUtils.isIpv4Address(oldVipIp);
+            if (oldVipVersion == newVipVersion) {
+                String version = oldVipVersion ? "ipv4" : "ipv6";
+                throw new ApiMessageInterceptionException(argerr("can not bound more than 1 %s eip to a vm nic[uuid:%s] of flat ",
+                        version, vmNicUuid));
+            }
         }
     }
 }

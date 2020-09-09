@@ -735,12 +735,19 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
             /* vmnic in flat network, it can have only 1 eip */
             if (l3ProviderType == FlatNetworkServiceConstant.FLAT_NETWORK_SERVICE_TYPE) {
-                String vipIp = Q.New(EipVO.class).eq(EipVO_.vmNicUuid, nic.getUuid()).select(EipVO_.vipIp).findValue();
-                if (vipIp != null) {
-                    boolean isVipIpv4 = NetworkUtils.isIpv4Address(vipIp);
-                    if (isIpv4 == isVipIpv4) {
-                        continue;
+                List<String> vipIps = Q.New(EipVO.class).eq(EipVO_.vmNicUuid, nic.getUuid()).select(EipVO_.vipIp).listValues();
+                boolean attached = false;
+                for (String vipIp : vipIps) {
+                    if (vipIp != null) {
+                        boolean isVipIpv4 = NetworkUtils.isIpv4Address(vipIp);
+                        if (isIpv4 == isVipIpv4) {
+                            attached = true;
+                            break;
+                        }
                     }
+                }
+                if (attached) {
+                    continue;
                 }
             }
 

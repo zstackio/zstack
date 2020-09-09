@@ -9,7 +9,9 @@ import org.zstack.sdk.AttachEipAction
 import org.zstack.sdk.EipInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
+import org.zstack.sdk.IpRangeInventory
 import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.UsedIpInventory
 import org.zstack.sdk.VipInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VmNicInventory
@@ -17,6 +19,7 @@ import org.zstack.test.integration.networkservice.provider.NetworkServiceProvide
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.network.IPv6Constants
 
 /**
  * Created by liangbo.zhou on 17-6-24.
@@ -237,6 +240,77 @@ class VipOverlapWithVmIpCase extends SubCase{
                 vmNicUuid = vm2.vmNics.get(0).uuid
             }
         }
+
+        /* add ipv6 range to public1 */
+        IpRangeInventory ipr6 = addIpv6RangeByNetworkCidr {
+            name = "ip61"
+            l3NetworkUuid = publ3_1.uuid
+            networkCidr = "2020:09:08:1::/64"
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+
+        VipInventory vip6 = createVip {
+            name = "vip6"
+            l3NetworkUuid = publ3_1.uuid
+            ipRangeUuid = ipr6.uuid
+        }
+        EipInventory eip6 = createEip{
+            name = "eip6"
+            vipUuid = vip6.uuid
+        }
+
+        /* add ipv6 range to l3 */
+        IpRangeInventory ipr62 = addIpv6RangeByNetworkCidr {
+            name = "ip62"
+            l3NetworkUuid = l3.uuid
+            networkCidr = "2020:09:08:2::/64"
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+        /* reboot vm will allocate a ipv6 address for vmnic */
+        vm2 = rebootVmInstance {
+            uuid = vm2.uuid
+        }
+        UsedIpInventory ip6 = null
+        for (UsedIpInventory ip : vm2.vmNics.get(0).usedIps) {
+            if (ip.ipVersion == IPv6Constants.IPv6) {
+                ip6 = ip
+            }
+        }
+        assert ip6 != null
+
+        vmnics = getEipAttachableVmNics {
+            eipUuid = eip6.uuid
+        }
+        assert vmnics.size() == 1
+
+        attachEip {
+            eipUuid = eip6.uuid
+            vmNicUuid = vm2.vmNics.get(0).uuid
+            usedIpUuid = ip6.uuid
+        }
+
+        /* add ipv6 range to public1 */
+        IpRangeInventory ipr63 = addIpv6RangeByNetworkCidr {
+            name = "ip63"
+            l3NetworkUuid = publ3_2.uuid
+            networkCidr = "2020:09:08:3::/64"
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+
+        /* vm2 nic can only attach 1 eip, getEipAttachableVmNics will return empty */
+        VipInventory vip63 = createVip {
+            name = "vip63"
+            l3NetworkUuid = publ3_2.uuid
+            ipRangeUuid = ipr63.uuid
+        }
+        EipInventory eip63 = createEip{
+            name = "eip63"
+            vipUuid = vip63.uuid
+        }
+        vmnics = getEipAttachableVmNics {
+            eipUuid = eip63.uuid
+        }
+        assert vmnics.size() == 0
     }
 
     @Override
