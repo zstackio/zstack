@@ -154,6 +154,17 @@ class OneVmUserdataCase extends SubCase {
     }
 
     void testUserdataForMigratedVm() {
+        expectError {
+            createVmInstance {
+                name = "vm"
+                imageUuid = env.inventoryByName("image").uuid
+                l3NetworkUuids = [l3.uuid]
+                instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
+                systemTags = [VmSystemTags.USERDATA.instantiateTag([(VmSystemTags.USERDATA_TOKEN): "测试未Base64_encode"])]
+                hostUuid = env.inventoryByName("kvm").uuid
+            }
+        }
+
         VmInstanceInventory vm = createVmInstance {
             name = "vm"
             imageUuid = env.inventoryByName("image").uuid
