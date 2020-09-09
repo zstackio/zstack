@@ -1717,12 +1717,18 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
             }
 
+            private void checkUserdataDecode(String systemTag) {
+                String userdata = VmSystemTags.USERDATA.getTokenByTag(systemTag, VmSystemTags.USERDATA_TOKEN);
+                Base64.getDecoder().decode(userdata.getBytes());
+            }
+
             @Override
             public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
                 if (!VmSystemTags.USERDATA.isMatch(systemTag)) {
                     return;
                 }
                 check(resourceUuid, resourceType);
+                checkUserdataDecode(systemTag);
             }
 
             @Override
@@ -1737,6 +1743,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         userdataTagCount++;
 
                         check(msg.getResourceUuid(), VmInstanceVO.class);
+                        checkUserdataDecode(sysTag);
                     }
                 }
             }
