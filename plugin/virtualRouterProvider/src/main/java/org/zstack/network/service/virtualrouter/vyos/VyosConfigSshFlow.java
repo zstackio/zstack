@@ -8,6 +8,8 @@ import org.zstack.appliancevm.ApplianceVmConstant.Params;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.retry.Retry;
+import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -131,10 +133,24 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
                     ).setTimeout(300).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(22).runErrorByExceptionAndClose();
                 }
 
-                if (NetworkUtils.isRemotePortOpen(mgmtNicIp, 22, (int) TimeUnit.SECONDS.toMillis(timeoutInSeconds))) {
+                try {
+                    new Retry<Boolean>() {
+                        String __name__ = String.format("test-virtualrouter-%s-sshd", mgmtNicIp);
+
+                        @Override
+                        @RetryCondition(times = 6, interval = 20)
+                        protected Boolean call() {
+                            if (NetworkUtils.isRemotePortOpen(mgmtNicIp, 22, 2000)) {
+                                return true;
+                            } else {
+                                throw new RuntimeException(String.format("unable to ssh in to the vyos[%s]", mgmtNicIp));
+                            }
+                        }
+                    }.run();
+
                     trigger.next();
-                } else {
-                    trigger.fail(operr("unable to ssh in to the vyos[%s] after configure ssh after %d sceonds", mgmtNicIp, timeoutInSeconds));
+                } catch (Exception e) {
+                    trigger.fail(operr("unable to ssh in to the vyos[%s] after configure ssh", mgmtNicIp));
                 }
 
             }
