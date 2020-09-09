@@ -504,6 +504,14 @@
     "message_en": "This host is disconnected, cannot perform the required operation"
   },
   {
+    "category": "HOST",
+    "code": "1031",
+    "method": "regex",
+    "regex": ".*failed to start vm\\[uuid:.* name:.*] on kvm host\\[uuid:.*, ip:.*], because Traceback .*exceeds max disk limit.*",
+    "message_cn": "在物理机上启动vm失败，因为挂载的云盘数量超过上限。",
+    "message_en": "Failed to start vm on kvm host, because exceeds max disk limit for vm."
+  },
+  {
     "category": "IAM2",
     "code": "1000",
     "method": "regex",
