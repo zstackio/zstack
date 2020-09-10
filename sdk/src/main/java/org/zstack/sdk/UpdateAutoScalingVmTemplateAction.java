@@ -46,6 +46,12 @@ public class UpdateAutoScalingVmTemplateAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String imageUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmInstanceClusterUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 
