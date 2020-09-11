@@ -20,7 +20,6 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.vo.ToInventory;
 import org.zstack.header.zql.*;
-import org.zstack.query.MysqlQueryBuilderImpl3;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -108,6 +107,9 @@ public class ZQL {
                 Object[] fieldValues = (Object[]) vo;
                 for (int i = 0; i < astResult.targetFieldNames.size(); i++) {
                     String fieldName = astResult.targetFieldNames.get(i);
+                    if (fieldValues[i] == null) {
+                        continue;
+                    }
                     BeanUtils.setProperty(inv, fieldName, inventoryMetadata.toInventoryFieldObject(fieldName, fieldValues[i]));
                 }
             } else {
