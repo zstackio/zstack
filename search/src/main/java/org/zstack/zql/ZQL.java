@@ -114,7 +114,9 @@ public class ZQL {
                 }
             } else {
                 String fieldName =  astResult.targetFieldNames.get(0);
-                BeanUtils.setProperty(inv, fieldName, astResult.inventoryMetadata.toInventoryFieldObject(fieldName, vo));
+                if (vo != null) {
+                    BeanUtils.setProperty(inv, fieldName, astResult.inventoryMetadata.toInventoryFieldObject(fieldName, vo));
+                }
             }
             return inv;
         } catch (Exception e) {
