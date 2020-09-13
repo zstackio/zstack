@@ -21,6 +21,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.*;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
+import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
@@ -890,8 +891,29 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     public void preCreateVmInstance(CreateVmInstanceMsg msg) {
         settingRootVolume(msg);
         settingDataVolume(msg);
-    }
 
+        String instanceOffering = msg.getInstanceOfferingUuid();
+        if (InstanceOfferingSystemTags.INSTANCE_OFFERING_USER_CONFIG.hasTag(instanceOffering)) {
+            InstanceOfferingUserConfig config = OfferingUserConfigUtils.getInstanceOfferingConfig(instanceOffering, InstanceOfferingUserConfig.class);
+            if (config.getAllocate() == null || config.getAllocate().getClusterUuid() == null) {
+                return;
+            }
+
+            String clusterUuid = config.getAllocate().getClusterUuid();
+            if (clusterUuid != null) {
+                if (!dbf.isExist(clusterUuid, ClusterVO.class)) {
+                    throw new IllegalArgumentException(String.format("the cluster[uuid=%s] does not exist", clusterUuid));
+                }
+            }
+
+            if (msg.getClusterUuid() != null && !msg.getClusterUuid().equals(clusterUuid)) {
+                throw new OperationFailureException(operr("clusterUuid conflict, the cluster specified by the instance offering is %s, and the cluster specified in the creation parameter is %s"
+                        , clusterUuid, msg.getClusterUuid()));
+            }
+
+            msg.setClusterUuid(clusterUuid);
+        }
+    }
     private void settingRootVolume(CreateVmInstanceMsg msg) {
         String instanceOffering = msg.getInstanceOfferingUuid();
 
@@ -1010,11 +1032,18 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         try {
             config = OfferingUserConfigUtils.toObject(userConfig, InstanceOfferingUserConfig.class);
         } catch (JsonSyntaxException e) {
-            throw new IllegalArgumentException("Syntax error(s) in billing instance offering user configuration, user configuration should write in json format.", e);
+            throw new IllegalArgumentException("Syntax error(s) in instance offering user configuration, user configuration should write in json format.", e);
         }
 
         if (config.getAllocate() == null) {
             return;
+        }
+
+        String clusterUuid = config.getAllocate().getClusterUuid();
+        if (clusterUuid != null) {
+            if (!dbf.isExist(clusterUuid, ClusterVO.class)) {
+                throw new IllegalArgumentException(String.format("the cluster[uuid=%s] does not exist", clusterUuid));
+            }
         }
 
         PrimaryStorageAllocateConfig primaryStorageAllocateConfig = config.getAllocate().getPrimaryStorage();

@@ -15,7 +15,8 @@ public class OfferingUserConfigUtilsCase {
                 "        \"primaryStorage\": {\n" +
                 "            \"type\": \"localstorage\", \n" +
                 "            \"uuid\": \"c56d0ff8d24f4f119837742d4658aa83\"\n" +
-                "        }\n" +
+                "        },\n" +
+                "        \"clusterUuid\": \"a54d0ff8d24f4f119837742d4658aa83\"" +
                 "    }, \n" +
                 "    \"displayAttribute\": {\n" +
                 "        \"rootVolume\": {\n" +
