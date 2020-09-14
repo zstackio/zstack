@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateFirewallRuleSetAction extends AbstractAction {
+public class DeleteFirewallIpSetTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateFirewallRuleSetAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateFirewallRuleSetResult value;
+        public org.zstack.sdk.DeleteFirewallIpSetTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,20 +25,11 @@ public class CreateFirewallRuleSetAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, validValues = {"drop","accept","reject"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String actionType;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -72,8 +63,8 @@ public class CreateFirewallRuleSetAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateFirewallRuleSetResult value = res.getResult(org.zstack.sdk.CreateFirewallRuleSetResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateFirewallRuleSetResult() : value; 
+        org.zstack.sdk.DeleteFirewallIpSetTemplateResult value = res.getResult(org.zstack.sdk.DeleteFirewallIpSetTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteFirewallIpSetTemplateResult() : value; 
 
         return ret;
     }
@@ -102,11 +93,11 @@ public class CreateFirewallRuleSetAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/vpcfirewalls/ruleSets";
+        info.httpMethod = "DELETE";
+        info.path = "/vpcfirewalls/ipset/templates/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateFirewallRuleAction extends AbstractAction {
+public class CreateFirewallIpSetTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateFirewallRuleAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateFirewallRuleResult value;
+        public org.zstack.sdk.CreateFirewallIpSetTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,47 +25,17 @@ public class CreateFirewallRuleAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ruleSetUuid;
-
-    @Param(required = true, validValues = {"drop","reject","accept"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String action;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String protocol;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String destPort;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String sourcePort;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String sourceIp;
+    public java.lang.String sourceValue;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String destIp;
+    public java.lang.String destValue;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String allowStates;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String tcpFlag;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String icmpTypeName;
-
-    @Param(required = true, maxLength = 4, nonempty = false, nullElements = false, emptyString = true, numberRange = {1001L,2999L}, noTrim = false)
-    public java.lang.Integer ruleNumber;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean enableLog = false;
-
-    @Param(required = true, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String state;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = true, validValues = {"ip","port"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public org.zstack.sdk.IpSetType type;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -105,8 +75,8 @@ public class CreateFirewallRuleAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateFirewallRuleResult value = res.getResult(org.zstack.sdk.CreateFirewallRuleResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateFirewallRuleResult() : value; 
+        org.zstack.sdk.CreateFirewallIpSetTemplateResult value = res.getResult(org.zstack.sdk.CreateFirewallIpSetTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateFirewallIpSetTemplateResult() : value; 
 
         return ret;
     }
@@ -136,7 +106,7 @@ public class CreateFirewallRuleAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/vpcfirewalls/rules";
+        info.path = "/vpcfirewalls/ipset/templates";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
