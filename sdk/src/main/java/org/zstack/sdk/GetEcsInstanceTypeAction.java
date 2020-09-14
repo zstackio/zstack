@@ -28,6 +28,9 @@ public class GetEcsInstanceTypeAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String identityZoneUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ecsImageUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 
