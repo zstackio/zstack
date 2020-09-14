@@ -28,7 +28,7 @@ public class UpdateFirewallIpSetTemplateAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -37,7 +37,7 @@ public class UpdateFirewallIpSetTemplateAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String destValue;
 
-    @Param(required = true, validValues = {"ip","port"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"ip","port"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public org.zstack.sdk.IpSetType type;
 
     @Param(required = false)
