@@ -28,6 +28,9 @@ public class UpdateFirewallRuleTemplateAction extends AbstractAction {
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
     @Param(required = true, validValues = {"drop","reject","accept"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String action;
 
