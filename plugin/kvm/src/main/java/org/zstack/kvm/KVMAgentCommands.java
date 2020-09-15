@@ -634,6 +634,36 @@ public class KVMAgentCommands {
     public static class CreateVlanBridgeResponse extends CreateBridgeResponse {
     }
 
+    public static class VHostAddOn {
+        private int queueNum;
+        private String rxBufferSize;
+        private String txBufferSize;
+
+        public int getQueueNum() {
+            return queueNum;
+        }
+
+        public void setQueueNum(int queueNum) {
+            this.queueNum = queueNum;
+        }
+
+        public String getRxBufferSize() {
+            return rxBufferSize;
+        }
+
+        public void setRxBufferSize(String rxBufferSize) {
+            this.rxBufferSize = rxBufferSize;
+        }
+
+        public String getTxBufferSize() {
+            return txBufferSize;
+        }
+
+        public void setTxBufferSize(String txBufferSize) {
+            this.txBufferSize = txBufferSize;
+        }
+    }
+
     public static class NicTO {
         private String mac;
         private List<String> ips;
@@ -646,6 +676,15 @@ public class KVMAgentCommands {
         private int bootOrder;
         private PciAddressConfig pci;
         private Integer mtu;
+        private VHostAddOn vHostAddOn;
+
+        public VHostAddOn getvHostAddOn() {
+            return vHostAddOn;
+        }
+
+        public void setvHostAddOn(VHostAddOn vHostAddOn) {
+            this.vHostAddOn = vHostAddOn;
+        }
 
         public List<String> getIps() {
             return ips;

@@ -63,4 +63,8 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"Auto", "All"})
     @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig RESOURCE_BINDING_SCENE = new GlobalConfig(CATEGORY, "resourceBinding.Scene");
+
+    @GlobalConfigValidation(inNumberRange = {1, 256})
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig VM_NIC_MULTIQUEUE_NUM = new GlobalConfig(CATEGORY, "nicMultiQueueNum");
 }
