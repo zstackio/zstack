@@ -47,6 +47,10 @@ public class ShellResult {
 
     public void raiseExceptionIfFail(int expectedRetCode) {
         if (retCode != expectedRetCode) {
+            if (stderr != null && stderr.contains("Account expired")) {
+                throw new ShellUtils.ShellException(String.format("local account '%s' has expired", System.getProperty("user.name")));
+            }
+
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("\nshell command[%s] failed", command));
             sb.append(String.format("\nret code: %s", retCode));
