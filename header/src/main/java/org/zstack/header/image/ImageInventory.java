@@ -38,6 +38,7 @@ public class ImageInventory implements Serializable {
     private String guestOsType;
     private String type;
     private String platform;
+    private String architecture;
     private String format;
     private Boolean system;
     private Timestamp createDate;
@@ -62,6 +63,7 @@ public class ImageInventory implements Serializable {
         inv.setState(vo.getState().toString());
         inv.setUrl(vo.getUrl());
         inv.setPlatform(vo.getPlatform() == null ? null : vo.getPlatform().toString());
+        inv.setArchitecture(vo.getArchitecture());
         inv.setUuid(vo.getUuid());
         inv.setType(vo.getType());
         inv.setSystem(vo.isSystem());
@@ -76,6 +78,7 @@ public class ImageInventory implements Serializable {
         inv.setDescription(vo.getDescription());
         inv.setMediaType(vo.getMediaType().toString());
         inv.setPlatform(vo.getPlatform().toString());
+        inv.setArchitecture(vo.getArchitecture());
         inv.setFormat(vo.getFormat());
         inv.setGuestOsType(vo.getGuestOsType());
         inv.setMd5Sum(vo.getMd5Sum());
@@ -142,6 +145,14 @@ public class ImageInventory implements Serializable {
 
     public String getPlatform() {
         return platform;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 
     public void setPlatform(String platform) {
