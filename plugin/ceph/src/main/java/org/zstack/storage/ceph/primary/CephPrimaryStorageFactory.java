@@ -4,6 +4,7 @@ import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.host.HostSystemTags;
 import org.zstack.compute.vm.VmCapabilities;
 import org.zstack.compute.vm.VmCapabilitiesExtensionPoint;
 import org.zstack.configuration.DiskOfferingSystemTags;
@@ -35,6 +36,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
@@ -1196,6 +1199,28 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         msg.setPrimaryStorageUuid(rootVolume.getPrimaryStorageUuid());
         msg.setVolumeUuid(rootVolume.getUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+
+        List<String> avoidHostUuids = new ArrayList<>();
+        if (spec.getAvoidHostUuids() != null) {
+            avoidHostUuids.addAll(spec.getAvoidHostUuids());
+        }
+        if (spec.getSoftAvoidHostUuids() != null ) {
+            avoidHostUuids.addAll(spec.getSoftAvoidHostUuids());
+        }
+
+        if (!avoidHostUuids.isEmpty()) {
+            List<String> hostIps = Q.New(HostVO.class)
+                    .in(HostVO_.uuid, avoidHostUuids)
+                    .select(HostVO_.managementIp)
+                    .listValues();
+            List<String> monUuids = Q.New(CephPrimaryStorageMonVO.class)
+                    .select(CephPrimaryStorageMonVO_.uuid)
+                    .eq(CephPrimaryStorageMonVO_.primaryStorageUuid, rootVolume.getPrimaryStorageUuid())
+                    .in(CephPrimaryStorageMonVO_.hostname, hostIps)
+                    .listValues();
+            msg.setAvoidCephMonUuids(monUuids);
+        }
+
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
