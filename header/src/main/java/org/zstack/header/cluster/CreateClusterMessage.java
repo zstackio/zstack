@@ -12,4 +12,6 @@ public interface CreateClusterMessage {
     String getType();
 
     String getResourceUuid();
+
+    String getArchitecture();
 }
