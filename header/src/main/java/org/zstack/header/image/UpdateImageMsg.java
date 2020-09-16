@@ -14,6 +14,7 @@ public class UpdateImageMsg extends NeedReplyMessage implements ImageMessage {
     private String format;
     private Boolean system;
     private String platform;
+    private String architecture;
 
     public String getPlatform() {
         return platform;
@@ -79,6 +80,14 @@ public class UpdateImageMsg extends NeedReplyMessage implements ImageMessage {
         this.system = system;
     }
 
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
+    }
+
     @Override
     public String getImageUuid() {
         return uuid;
@@ -95,6 +104,7 @@ public class UpdateImageMsg extends NeedReplyMessage implements ImageMessage {
         result.format = msg.getFormat();
         result.system = msg.getSystem();
         result.platform = msg.getPlatform();
+        result.architecture = msg.getArchitecture();
         return result;
     }
 }

@@ -36,6 +36,8 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, HasS
     private String mediaType;
     @APIParam(maxLength = 255, required = false)
     private String guestOsType;
+    @APIParam(required = false, maxLength = 32, validValues = {"x86_64", "aarch64", "mips64el"})
+    private String architecture;
     private boolean system;
     @APIParam(required = false)
     private String format;
@@ -120,6 +122,14 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, HasS
         this.guestOsType = guestOsType;
     }
 
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
+    }
+
     public String getType() {
         return type;
     }
@@ -137,6 +147,7 @@ public class APIAddImageMsg extends APICreateMessage implements APIAuditor, HasS
         msg.setFormat(ImageConstant.QCOW2_FORMAT_STRING);
         msg.setMediaType(ImageConstant.ImageMediaType.RootVolumeTemplate.toString());
         msg.setPlatform(ImagePlatform.Linux.toString());
+        msg.setArchitecture(ImageArchitecture.x86_64.toString());
 
         return msg;
     }

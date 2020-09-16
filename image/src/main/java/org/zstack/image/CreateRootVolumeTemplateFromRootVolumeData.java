@@ -21,6 +21,7 @@ public class CreateRootVolumeTemplateFromRootVolumeData extends LongJobMessageDa
     private String rootVolumeUuid;
     private String platform;
     private boolean system;
+    private String architecture;
 
     private String resourceUuid;
     private SessionInventory session;
@@ -73,6 +74,14 @@ public class CreateRootVolumeTemplateFromRootVolumeData extends LongJobMessageDa
 
     public void setPlatform(String platform) {
         this.platform = platform;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 
     public boolean isSystem() {
