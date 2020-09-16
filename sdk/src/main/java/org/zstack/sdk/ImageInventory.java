@@ -108,6 +108,14 @@ public class ImageInventory  {
         return this.platform;
     }
 
+    public java.lang.String architecture;
+    public void setArchitecture(java.lang.String architecture) {
+        this.architecture = architecture;
+    }
+    public java.lang.String getArchitecture() {
+        return this.architecture;
+    }
+
     public java.lang.String format;
     public void setFormat(java.lang.String format) {
         this.format = format;

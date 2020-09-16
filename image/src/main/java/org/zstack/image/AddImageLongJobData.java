@@ -2,6 +2,7 @@ package org.zstack.image;
 
 
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.image.ImageArchitecture;
 import org.zstack.header.longjob.LongJobMessageData;
 import org.zstack.header.message.NeedReplyMessage;
 
@@ -23,6 +24,7 @@ public class AddImageLongJobData extends LongJobMessageData {
     private String platform;
     private List<String> backupStorageUuids;
     private String type;
+    private String architecture = ImageArchitecture.x86_64.toString();
     private SessionInventory session;
     private List<String> systemTags;
     private List<String> userTags;
@@ -102,6 +104,14 @@ public class AddImageLongJobData extends LongJobMessageData {
 
     public void setPlatform(String platform) {
         this.platform = platform;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 
     public List<String> getBackupStorageUuids() {
