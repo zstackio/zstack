@@ -101,6 +101,8 @@ public class ClusterInventory implements Serializable {
      */
     private String type;
 
+    private String architecture;
+
     public static ClusterInventory valueOf(ClusterVO vo) {
         ClusterInventory inv = new ClusterInventory();
         inv.setName(vo.getName());
@@ -177,6 +179,14 @@ public class ClusterInventory implements Serializable {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 
     public Timestamp getCreateDate() {

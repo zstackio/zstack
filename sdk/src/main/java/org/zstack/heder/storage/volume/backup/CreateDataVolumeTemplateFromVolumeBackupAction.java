@@ -44,6 +44,9 @@ public class CreateDataVolumeTemplateFromVolumeBackupAction extends AbstractActi
     public java.lang.String platform;
 
     @Param(required = false)
+    public java.lang.String architecture;
+
+    @Param(required = false)
     public boolean system = false;
 
     @Param(required = false)

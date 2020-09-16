@@ -442,6 +442,10 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             @Override
             public void handle(Map data) {
                 HostInventory inv = factory.getHostInventory(vo.getUuid());
+                if (cluster.getArchitecture() == null) {
+                    cluster.setArchitecture(HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN));
+                    dbf.update(cluster);
+                }
                 logger.debug(String.format("successfully added host[name:%s, hypervisor:%s, uuid:%s]", vo.getName(), vo.getHypervisorType(), vo.getUuid()));
                 completion.success(inv);
             }
