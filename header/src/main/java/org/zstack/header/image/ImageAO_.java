@@ -20,6 +20,7 @@ public class ImageAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<ImageAO, String> url;
     public static volatile SingularAttribute<ImageAO, Boolean> system;
     public static volatile SingularAttribute<ImageAO, ImagePlatform> platform;
+    public static volatile SingularAttribute<ImageAO, ImagePlatform> architecture;
     public static volatile SingularAttribute<ImageAO, ImageMediaType> mediaType;
     public static volatile SingularAttribute<ImageAO, Timestamp> createDate;
     public static volatile SingularAttribute<ImageAO, Timestamp> lastOpDate;

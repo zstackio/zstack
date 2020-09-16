@@ -19,6 +19,7 @@
             <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.allocator.HostAllocatorFilterExtensionPoint"/>
         </zstack:plugin>
     </bean>
 

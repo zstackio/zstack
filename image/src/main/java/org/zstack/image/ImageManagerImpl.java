@@ -6,6 +6,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.HostExtensionManager;
+import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -24,6 +25,8 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
+import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
+import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.core.AsyncLatch;
@@ -36,6 +39,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.*;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
@@ -87,7 +91,7 @@ import static org.zstack.longjob.LongJobUtils.noncancelableErr;
 import static org.zstack.utils.CollectionDSL.list;
 
 public class ImageManagerImpl extends AbstractService implements ImageManager, ManagementNodeReadyExtensionPoint,
-        ReportQuotaExtensionPoint, ResourceOwnerPreChangeExtensionPoint {
+        ReportQuotaExtensionPoint, ResourceOwnerPreChangeExtensionPoint, HostAllocatorFilterExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ImageManagerImpl.class);
 
     @Autowired
@@ -513,6 +517,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         populateExtensions();
         installSystemTagValidator();
         installGlobalConfigUpdater();
+        initDefaultImageArch();
         return true;
     }
 
@@ -684,6 +689,14 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 return "expunge-image";
             }
         });
+    }
+
+    private void initDefaultImageArch() {
+        String defaultArch = System.getProperty("os.arch").equals("amd64") ? "x86_64" : System.getProperty("os.arch");
+        UpdateQuery.New(ImageVO.class)
+                .isNull(ImageVO_.architecture)
+                .set(ImageVO_.architecture, defaultArch)
+                .update();
     }
 
     @Override
@@ -1176,6 +1189,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         vo.setState(ImageState.Enabled);
         vo.setUrl(msgData.getUrl());
         vo.setDescription(msgData.getDescription());
+        vo.setArchitecture(msgData.getArchitecture());
         if (msgData.getPlatform() != null) {
             vo.setPlatform(ImagePlatform.valueOf(msgData.getPlatform()));
         }
@@ -1481,6 +1495,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         imvo.setPlatform(ImagePlatform.valueOf(msgData.getPlatform()));
                         imvo.setStatus(ImageStatus.Downloading);
                         imvo.setType(ImageConstant.ZSTACK_IMAGE_TYPE);
+                        imvo.setArchitecture(msgData.getArchitecture());
                         imvo.setUrl(String.format("volume://%s", msgData.getRootVolumeUuid()));
                         imvo.setSize(volvo.getSize());
                         imvo.setActualSize(imageActualSize);
@@ -2156,5 +2171,23 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 completion.success();
             }
         });
+    }
+
+    @Override
+    public List<HostVO> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
+        List<HostVO> result = new ArrayList<>();
+        String imageArch = spec.getImage().getArchitecture();
+        for (HostVO host : candidates) {
+            String hostArch = HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(host.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN);
+            if (imageArch.equals(hostArch) || imageArch == null){
+                result.add(host);
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public String filterErrorReason() {
+        return null;
     }
 }
