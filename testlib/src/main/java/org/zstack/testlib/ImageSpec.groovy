@@ -29,6 +29,8 @@ class ImageSpec extends Spec implements HasSession {
     String guestOsType = "CentOS"
     @SpecParam
     boolean system = false
+    @SpecParam
+    String architecture = "x86_64"
 
     ImageInventory inventory
 
@@ -50,6 +52,7 @@ class ImageSpec extends Spec implements HasSession {
             delegate.systemTags = systemTags
             delegate.sessionId = sessionId
             delegate.system = system
+            delegate.architecture = architecture
             delegate.backupStorageUuids = [(parent as BackupStorageSpec).inventory.uuid]
         }
 

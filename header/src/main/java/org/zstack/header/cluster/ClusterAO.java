@@ -43,6 +43,9 @@ public class ClusterAO extends ResourceVO {
     @Column
     private String managementNodeId;
 
+    @Column
+    private String architecture;
+
     public ClusterAO() {
         this.state = ClusterState.Disabled;
     }
@@ -106,6 +109,14 @@ public class ClusterAO extends ResourceVO {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 
     public Timestamp getCreateDate() {
