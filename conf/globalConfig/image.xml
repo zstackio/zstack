@@ -31,14 +31,6 @@
 		<type>java.lang.Long</type>
 	</config>
 
-    <config>
-        <name>enableResetPassword</name>
-        <description>enable reset password</description>
-        <defaultValue>true</defaultValue>
-        <type>java.lang.Boolean</type>
-        <category>image</category>
-    </config>
-
 	<config>
 		<name>image.num</name>
 		<description>default quota for image.num</description>
