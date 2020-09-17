@@ -5,5 +5,6 @@ public enum RoleType {
     Customized,
     Predefined,
     CreatedBySystem,
-    PredefinedBySystem
+    PredefinedBySystem,
+    CreatedForProject
 }
