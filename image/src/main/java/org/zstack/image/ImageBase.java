@@ -299,7 +299,13 @@ public class ImageBase implements Image {
         final ImageDeletionReply reply = new ImageDeletionReply();
         Set<ImageBackupStorageRefVO> bsRefs = self.getBackupStorageRefs();
 
-        if (bsRefs.isEmpty() || bsRefs.stream().allMatch(
+        if (bsRefs.isEmpty()) {
+            if (self.getStatus() == ImageStatus.Ready) {
+                SQL.New(ImageVO.class).eq(ImageVO_.uuid, self.getUuid()).delete();
+            } else {
+                SQL.New(ImageVO.class).eq(ImageVO_.uuid, self.getUuid()).hardDelete();
+            }
+        } else if (bsRefs.stream().allMatch(
                 r -> r.getStatus() == ImageStatus.Creating || r.getStatus() == ImageStatus.Downloading)) {
             // the image is not on any backup storage; mostly likely the image is not in the status of Ready, for example
             // it's still downloading

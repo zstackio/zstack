@@ -123,6 +123,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/nfsprimarystorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/nfsprimarystorage/kvmhost/download/cancel";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/nfsprimarystorage/kvmhost/download/progress";
+    public static final String CREATE_VOLUME_FROM_TEMPLATE_PATH = "/nfsprimarystorage/sftp/createvolumefromtemplate";
 
 
     //////////////// For unit test //////////////////////////
@@ -1176,11 +1177,65 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
+    public void createVolumeFromImageCache(final PrimaryStorageInventory primaryStorage, final ImageCacheInventory image,
+                                           final VolumeInventory volume, final ReturnValueCompletion<String> completion) {
+        HostInventory host = nfsFactory.getConnectedHostForOperation(primaryStorage).get(0);
+
+        final String installPath = StringUtils.isNotEmpty(volume.getInstallPath()) ? volume.getInstallPath() :
+                NfsPrimaryStorageKvmHelper.makeRootVolumeInstallUrl(primaryStorage, volume);
+        final String accountUuid = acntMgr.getOwnerAccountUuidOfResource(volume.getUuid());
+        final CreateRootVolumeFromTemplateCmd cmd = new CreateRootVolumeFromTemplateCmd();
+        cmd.setTemplatePathInCache(image.getInstallUrl());
+        cmd.setInstallUrl(installPath);
+        cmd.setAccountUuid(accountUuid);
+        cmd.setName(volume.getName());
+        cmd.setVolumeUuid(volume.getUuid());
+        cmd.setUuid(primaryStorage.getUuid());
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setCommand(cmd);
+        msg.setPath(CREATE_VOLUME_FROM_TEMPLATE_PATH);
+        msg.setHostUuid(host.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                CreateRootVolumeFromTemplateResponse rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(CreateRootVolumeFromTemplateResponse.class);
+                if (!rsp.isSuccess()) {
+                    ErrorCode err = operr("fails to create root volume[uuid:%s] from cached image[path:%s] because %s",
+                            volume.getUuid(), image.getImageUuid(), rsp.getError());
+                    completion.fail(err);
+                    return;
+                }
+
+
+                nfsMgr.reportCapacityIfNeeded(primaryStorage.getUuid(), rsp);
+                completion.success(installPath);
+            }
+        });
+    }
+
+    @Override
+    public void createImageCacheFromVolume(PrimaryStorageInventory primaryStorage, VolumeInventory volume, ImageInventory image, ReturnValueCompletion<String> completion) {
+        final String installPath = NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrl(primaryStorage, image);
+        doCreateTemplateFromVolume(installPath, primaryStorage, volume, image, completion);
+    }
+
+    @Override
     public void createTemplateFromVolume(final PrimaryStorageInventory primaryStorage, final VolumeInventory volume, final ImageInventory image, final ReturnValueCompletion<String> completion) {
+        final String installPath = NfsPrimaryStorageKvmHelper.makeTemplateFromVolumeInWorkspacePath(primaryStorage, image.getUuid());
+        doCreateTemplateFromVolume(installPath, primaryStorage, volume, image, completion);
+    }
+
+    private void doCreateTemplateFromVolume(final String installPath, final PrimaryStorageInventory primaryStorage, final VolumeInventory volume, final ImageInventory image, final ReturnValueCompletion<String> completion) {
         final HostInventory destHost = nfsFactory.getConnectedHostForOperation(primaryStorage).get(0);
 
-        final String installPath = NfsPrimaryStorageKvmHelper.makeTemplateFromVolumeInWorkspacePath(primaryStorage, image.getUuid());
-        CreateTemplateFromVolumeCmd cmd = new CreateTemplateFromVolumeCmd();
+         CreateTemplateFromVolumeCmd cmd = new CreateTemplateFromVolumeCmd();
         cmd.setInstallPath(installPath);
         cmd.setVolumePath(volume.getInstallPath());
         cmd.setUuid(primaryStorage.getUuid());

@@ -146,7 +146,7 @@ public class NfsPrimaryStorageSimulator {
         return null;
     }
     
-    @RequestMapping(value=NfsPrimaryToSftpBackupKVMBackend.CREATE_VOLUME_FROM_TEMPLATE_PATH, method=RequestMethod.POST)
+    @RequestMapping(value=NfsPrimaryStorageKVMBackend.CREATE_VOLUME_FROM_TEMPLATE_PATH, method=RequestMethod.POST)
     private @ResponseBody String createRootVolumeFromTemplate(HttpServletRequest req) throws InterruptedException {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
         if (config.createRootVolumeFromTemplateException) {

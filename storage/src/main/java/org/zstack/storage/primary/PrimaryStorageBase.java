@@ -116,6 +116,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(DeleteVolumeOnPrimaryStorageMsg msg);
 
+    protected abstract void handle(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg);
+
     protected abstract void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg);
 
     protected abstract void handle(DownloadDataVolumeToPrimaryStorageMsg msg);
@@ -309,6 +311,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((DeleteVolumeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteBitsOnPrimaryStorageMsg) {
             handle((DeleteBitsOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof CreateImageCacheFromVolumeOnPrimaryStorageMsg) {
+            handleBase((CreateImageCacheFromVolumeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CreateTemplateFromVolumeOnPrimaryStorageMsg) {
             handleBase((CreateTemplateFromVolumeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CancelJobOnPrimaryStorageMsg) {
@@ -668,8 +672,15 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         }
     }
 
+    protected void check(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
+        checkVolumeNotActive(msg.getVolumeInventory().getUuid());
+    }
+
     protected void check(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
-        String volUuid = msg.getVolumeInventory().getUuid();
+        checkVolumeNotActive(msg.getVolumeInventory().getUuid());
+    }
+
+    private void checkVolumeNotActive(String volUuid) {
         VmInstanceState vmState = SQL.New("select vm.state from VmInstanceVO vm, VolumeVO volume" +
                 " where volume.uuid = :volUuid" +
                 " and volume.vmInstanceUuid = vm.uuid", VmInstanceState.class)
@@ -678,6 +689,13 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         if (vmState != null && vmState != VmInstanceState.Stopped) {
             throw new ApiMessageInterceptionException(operr("volume[uuid:%s] has been attached a %s VM. VM should be Stopped.", volUuid, vmState));
         }
+    }
+
+    private void handleBase(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
+        new PrimaryStorageValidater().disable().maintenance()
+                .validate();
+        check(msg);
+        handle(msg);
     }
 
     private void handleBase(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {

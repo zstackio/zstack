@@ -46,6 +46,11 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
     private String findBackupStorage(VmInstanceSpec spec, String imageUuid) {
         taskProgress("Choose backup storage for downloading the image");
 
+        spec.getImageSpec().setNeedDownload(imageNeedDownload(spec, imageUuid));
+        if (!spec.getImageSpec().isNeedDownload() && spec.getImageSpec().getInventory().getBackupStorageRefs().size() == 0) {
+            return null;
+        }
+
         if (spec.getImageSpec().getInventory().getBackupStorageRefs().size() == 1) {
             return spec.getImageSpec().getInventory().getBackupStorageRefs().iterator().next().getBackupStorageUuid();
         }
@@ -61,18 +66,7 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
             return bsUuid;
         }
 
-        String psUuid;
-        if (VmOperation.NewCreate == spec.getCurrentVmOperation()) {
-            VolumeSpec rootVolumeSpec = spec.getVolumeSpecs().get(0);
-            psUuid = rootVolumeSpec.getPrimaryStorageInventory().getUuid();
-        } else {
-            psUuid = spec.getVmInventory().getRootVolume().getPrimaryStorageUuid();
-        }
-
-        SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
-        q.add(ImageCacheVO_.imageUuid, Op.EQ, imageUuid);
-        q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, psUuid);
-        if (q.isExists()) {
+        if (!spec.getImageSpec().isNeedDownload()) {
             // the image is already on the primary storage,
             // in this case, the backup storage needs not to be Connected
             selector.setCheckStatus(false);
@@ -95,6 +89,25 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
                             imageUuid, spec.getVmInventory().getName(), spec.getVmInventory().getUuid())
             );
         }
+    }
+
+    private boolean imageNeedDownload(VmInstanceSpec spec, String imageUuid) {
+        String psUuid;
+        if (VmOperation.NewCreate == spec.getCurrentVmOperation()) {
+            psUuid = spec.getVolumeSpecs().isEmpty() ? spec.getRequiredPrimaryStorageUuidForRootVolume() :
+                    spec.getVolumeSpecs().get(0).getPrimaryStorageInventory().getUuid();
+        } else {
+            psUuid = spec.getVmInventory().getRootVolume().getPrimaryStorageUuid();
+        }
+
+        if (psUuid == null) {
+            return true;
+        }
+
+        SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
+        q.add(ImageCacheVO_.imageUuid, Op.EQ, imageUuid);
+        q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, psUuid);
+        return !q.isExists();
     }
 
     @Transactional(readOnly = true)

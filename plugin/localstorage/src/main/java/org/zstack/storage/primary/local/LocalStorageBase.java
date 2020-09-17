@@ -2008,10 +2008,41 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getVolumeInventory().getUuid(), VolumeVO.class.getSimpleName());
+        LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<CreateImageCacheFromVolumeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(CreateImageCacheFromVolumeOnPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                CreateImageCacheFromVolumeOnPrimaryStorageReply r = new CreateImageCacheFromVolumeOnPrimaryStorageReply();
+                r.setError(errorCode);
+                bus.reply(msg, r);
+            }
+        });
+    }
+
+    @Override
     protected void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
         LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByResourceUuid(msg.getVolumeInventory().getUuid(), VolumeVO.class.getSimpleName());
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
-        bkd.handle(msg);
+        bkd.handle(msg, new ReturnValueCompletion<CreateTemplateFromVolumeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(CreateTemplateFromVolumeOnPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                CreateTemplateFromVolumeOnPrimaryStorageReply r = new CreateTemplateFromVolumeOnPrimaryStorageReply();
+                r.setError(errorCode);
+                bus.reply(msg, r);
+            }
+        });
     }
 
     @Override
@@ -2844,11 +2875,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
     protected void handle(GetPrimaryStorageResourceLocationMsg msg) {
         GetPrimaryStorageResourceLocationReply reply = new GetPrimaryStorageResourceLocationReply();
         reply.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-        String hostUuid = Q.New(LocalStorageResourceRefVO.class)
+        List<String> hostUuids = Q.New(LocalStorageResourceRefVO.class)
                 .eq(LocalStorageResourceRefVO_.resourceUuid, msg.getResourceUuid())
                 .select(LocalStorageResourceRefVO_.hostUuid)
-                .findValue();
-        reply.setHostUuid(hostUuid);
+                .listValues();
+        reply.setHostUuids(hostUuids);
         bus.reply(msg, reply);
     }
 

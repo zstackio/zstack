@@ -59,7 +59,11 @@ public interface NfsPrimaryStorageBackend {
 
     void resetRootVolumeFromImage(VolumeInventory vol, HostInventory host, ReturnValueCompletion<String> completion);
 
-    void createTemplateFromVolume(PrimaryStorageInventory primaryStorage, VolumeInventory rootVolume, ImageInventory image, ReturnValueCompletion<String> completion);
+    void createVolumeFromImageCache(PrimaryStorageInventory primaryStorage, ImageCacheInventory image, VolumeInventory volume, ReturnValueCompletion<String> completion);
+
+    void createImageCacheFromVolume(PrimaryStorageInventory primaryStorage, VolumeInventory volume, ImageInventory image, ReturnValueCompletion<String> completion);
+
+    void createTemplateFromVolume(PrimaryStorageInventory primaryStorage, VolumeInventory volume, ImageInventory image, ReturnValueCompletion<String> completion);
 
     void mergeSnapshotToVolume(PrimaryStorageInventory pinv, VolumeSnapshotInventory snapshot, VolumeInventory volume, boolean fullRebase, Completion completion);
 

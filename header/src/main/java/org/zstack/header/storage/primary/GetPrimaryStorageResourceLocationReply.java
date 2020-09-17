@@ -2,21 +2,15 @@ package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.MessageReply;
 
+import java.util.List;
+
 /**
  * Created by MaJin on 2019/6/4.
  */
 public class GetPrimaryStorageResourceLocationReply extends MessageReply {
-    private String hostUuid;
+    private List<String> hostUuids;
     private String primaryStorageUuid;
     private String installPath;
-
-    public String getHostUuid() {
-        return hostUuid;
-    }
-
-    public void setHostUuid(String hostUuid) {
-        this.hostUuid = hostUuid;
-    }
 
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
@@ -32,5 +26,13 @@ public class GetPrimaryStorageResourceLocationReply extends MessageReply {
 
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
+    }
+
+    public List<String> getHostUuids() {
+        return hostUuids;
+    }
+
+    public void setHostUuids(List<String> hostUuids) {
+        this.hostUuids = hostUuids;
     }
 }

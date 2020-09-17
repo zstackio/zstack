@@ -10,6 +10,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.core.Completion;
@@ -28,6 +29,7 @@ import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.header.volume.VolumeType;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -53,13 +55,6 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         HostInventory destHost = spec.getDestHost();
         final ImageInventory iminv = spec.getImageSpec().getInventory();
 
-        // get ps types from image bs or cdroms bs
-        List<String> primaryStorageTypes = selectPsTypesFromImageBSOrCdRomBs(spec);
-        if (primaryStorageTypes.isEmpty()) {
-            trigger.fail(operr("No primary storage available"));
-            return;
-        }
-
         // allocate ps for root volume
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
         rmsg.setRequiredPrimaryStorageUuid(spec.getRequiredPrimaryStorageUuidForRootVolume());
@@ -80,7 +75,7 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
 
         rmsg.setRequiredHostUuid(destHost.getUuid());
         rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
-        rmsg.setPossiblePrimaryStorageTypes(primaryStorageTypes);
+        rmsg.setPossiblePrimaryStorageTypes(selectPsTypesFromSpec(spec));
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
         msgs.add(rmsg);
 
@@ -163,25 +158,35 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         chain.rollback();
     }
 
-    private List<String> selectPsTypesFromImageBSOrCdRomBs(final VmInstanceSpec vmSpec) {
-        String imageBsType = findImageBsType(vmSpec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
-        List<String> psTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(imageBsType);
-        List<VmInstanceSpec.CdRomSpec> cdRomsSpecs = vmSpec.getCdRomSpecs();
-        for (VmInstanceSpec.CdRomSpec cdRom : cdRomsSpecs) {
+    private List<String> selectPsTypesFromSpec(final VmInstanceSpec spec) {
+        // get ps types from image bs and cdroms bs
+        List<String> psTypes = null;
+        if (spec.getImageSpec().isNeedDownload() || spec.getImageSpec().getSelectedBackupStorage() != null) {
+            String imageBsType = findImageBsType(spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
+            psTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(imageBsType);
+            DebugUtils.Assert(psTypes != null, "why primaryStorageTypes is null");
+        }
+
+        for (VmInstanceSpec.CdRomSpec cdRom : spec.getCdRomSpecs()) {
+            if (!cdRom.isAttachedIso()) {
+                continue;
+            }
+
             String cdRomBsType = findImageBsType(cdRom.getBackupStorageUuid());
-            if (cdRomBsType != null) {
-                //can't use retainall,because it changes the content of the psTypes
-                psTypes = (List<String>) CollectionUtils.intersection(hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(cdRomBsType), psTypes);
+            if (psTypes == null) {
+                psTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(cdRomBsType);
+            } else {
+                psTypes = new ArrayList<>(psTypes);
+                psTypes.retainAll(hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(cdRomBsType));
             }
         }
         return psTypes;
     }
 
     private String findImageBsType(String bsUuid) {
-        String type = Q.New(BackupStorageVO.class)
+        return Q.New(BackupStorageVO.class)
                 .select(BackupStorageVO_.type)
                 .eq(BackupStorageVO_.uuid, bsUuid)
                 .findValue();
-        return type;
     }
 }
