@@ -167,7 +167,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIDeleteIpRangeMsg msg) {
         NormalIpRangeVO ipr = dbf.findByUuid(msg.getUuid(), NormalIpRangeVO.class);
-        if (ipr == null) {
+        if (ipr == null || ipr.getIpVersion() != IPv6Constants.IPv4) {
             return;
         }
 
