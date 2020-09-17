@@ -1,5 +1,6 @@
 package org.zstack.test.integration.network.vxlanNetwork
 
+import org.apache.commons.collections.list.SynchronizedList
 import org.springframework.http.HttpEntity
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
@@ -240,6 +241,7 @@ class AddVxlanVtepIpCase extends SubCase {
         assert ccmd != null
         assert ccmd.vtepip == "127.1.0.2" || ccmd.vtepip == "127.1.0.1"
 
+        env.cleanAfterSimulatorHandlers()
     }
 
     void testCreateVxlanPoll() {
@@ -272,6 +274,12 @@ class AddVxlanVtepIpCase extends SubCase {
             resp.setSuccess(true)
             return resp
         }
+        def cmds = [] as SynchronizedList<String>
+        env.afterSimulator(VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH) { rsp, HttpEntity<String> e ->
+            VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd cmd = JSONObjectUtil.toObject(e.body, VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd.class)
+            cmds.add(cmd)
+            return rsp
+        }
 
         attachL2NetworkToCluster {
             l2NetworkUuid = pool.uuid
@@ -287,5 +295,8 @@ class AddVxlanVtepIpCase extends SubCase {
         assert vtepIps.size() == 2
         assert vtepIps.contains(vtep1)
         assert vtepIps.contains(vtep2)
+        retryInSecs(15) {
+            assert cmds.size()==2
+        }
     }
 }
