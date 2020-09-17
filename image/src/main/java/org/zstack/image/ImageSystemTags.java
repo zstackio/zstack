@@ -3,6 +3,7 @@ package org.zstack.image;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.tag.PatternedSystemTag;
+import org.zstack.tag.SystemTag;
 
 /**
  * Created by xing5 on 2016/7/18.
@@ -34,8 +35,9 @@ public class ImageSystemTags {
     public static PatternedSystemTag BOOT_MODE = new PatternedSystemTag(String.format("bootMode::{%s}", BOOT_MODE_TOKEN), ImageVO.class);
 
     public static String IMAGE_CREATED_BY_SYSTEM_TOKEN = "CreatedBySystem";
-    public static PatternedSystemTag IMAGE_CREATED_BY_SYSTEM =
-            new PatternedSystemTag(String.format("%s", IMAGE_CREATED_BY_SYSTEM_TOKEN), ImageVO.class);
+    public static SystemTag IMAGE_CREATED_BY_SYSTEM = new SystemTag(IMAGE_CREATED_BY_SYSTEM_TOKEN, ImageVO.class);
+
+    public static SystemTag TEMPORARY_IMAGE = new SystemTag("temporary", ImageVO.class);
 
     public static String IMAGE_GUEST_TOOLS_VERSION_TOKEN = "guestToolsVersion";
     public static PatternedSystemTag IMAGE_GUEST_TOOLS =

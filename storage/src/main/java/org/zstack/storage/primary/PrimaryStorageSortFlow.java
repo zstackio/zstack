@@ -38,6 +38,11 @@ public class PrimaryStorageSortFlow extends NoRollbackFlow {
 
         List<PrimaryStorageVO> candidates = (List<PrimaryStorageVO>) data.get(PrimaryStorageConstant.AllocatorParams.CANDIDATES);
 
+        if (candidates.size() == 1) {
+            trigger.next();
+            return;
+        }
+
         PrimaryStoragePriorityGetter.PrimaryStoragePriority result = priorityGetter
                 .getPrimaryStoragePriority(spec.getImageUuid(), spec.getBackupStorageUuid());
         Map<String, Integer> priority = result.psPriority.stream().collect(Collectors.toMap(it -> it.PS, it -> it.priority));

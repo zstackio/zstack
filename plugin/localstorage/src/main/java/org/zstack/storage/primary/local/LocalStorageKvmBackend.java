@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -987,7 +986,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         DownloadVolumeTemplateToPrimaryStorageReply reply = new DownloadVolumeTemplateToPrimaryStorageReply();
         ImageSpec ispec = msg.getTemplateSpec();
         BackupStorageInventory bsinv = null;
-        String backupStorageInstallPath;
+        String backupStorageInstallPath = null;
         if (ispec.getSelectedBackupStorage() != null) {
             SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
             q.add(BackupStorageVO_.uuid, Op.EQ, ispec.getSelectedBackupStorage().getBackupStorageUuid());
@@ -995,7 +994,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
             bsinv = BackupStorageInventory.valueOf(bs);
             backupStorageInstallPath = ispec.getSelectedBackupStorage().getInstallPath();
-        } else {
+        } else if (ispec.isNeedDownload()) {
             ImageBackupStorageSelector selector = new ImageBackupStorageSelector();
             selector.setZoneUuid(self.getZoneUuid());
             selector.setImageUuid(ispec.getInventory().getUuid());
@@ -1149,16 +1148,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     class ImageCache {
         ImageInventory image;
         BackupStorageInventory backupStorage;
+        VolumeInventory volume;
         String hostUuid;
         String primaryStorageInstallPath;
         String backupStorageInstallPath;
 
         void download(final ReturnValueCompletion<ImageCacheInventory> completion) {
             DebugUtils.Assert(image != null, "image cannot be null");
-            DebugUtils.Assert(backupStorage != null, "backup storage cannot be null");
             DebugUtils.Assert(hostUuid != null, "host uuid cannot be null");
             DebugUtils.Assert(primaryStorageInstallPath != null, "primaryStorageInstallPath cannot be null");
-            DebugUtils.Assert(backupStorageInstallPath != null, "backupStorageInstallPath cannot be null");
 
             thdf.chainSubmit(new ChainTask(completion) {
                 @Override
@@ -1167,6 +1165,11 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 }
 
                 private void doDownload(final SyncTaskChain chain) {
+                    if (volume == null) {
+                        DebugUtils.Assert(backupStorage != null, "backup storage cannot be null");
+                        DebugUtils.Assert(backupStorageInstallPath != null, "backupStorageInstallPath cannot be null");
+                    }
+
                     taskProgress("Download the image[%s] to the image cache", image.getName());
 
                     FlowChain fchain = FlowChainBuilder.newShareFlowChain();
@@ -1243,6 +1246,34 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                                 @Override
                                 public void run(final FlowTrigger trigger, Map data) {
+                                    if (volume != null) {
+                                        downloadFromVolume(trigger);
+                                    } else {
+                                        downloadFromBackupStorage(trigger);
+                                    }
+                                }
+
+                                private void downloadFromVolume(FlowTrigger trigger) {
+                                    CreateTemplateFromVolumeCmd cmd = new CreateTemplateFromVolumeCmd();
+                                    cmd.setInstallPath(primaryStorageInstallPath);
+                                    cmd.setVolumePath(volume.getInstallPath());
+
+                                    httpCall(CREATE_TEMPLATE_FROM_VOLUME, hostUuid, cmd, false,
+                                            CreateTemplateFromVolumeRsp.class,
+                                            new ReturnValueCompletion<CreateTemplateFromVolumeRsp>(trigger) {
+                                                @Override
+                                                public void success(CreateTemplateFromVolumeRsp rsp) {
+                                                    trigger.next();
+                                                }
+
+                                                @Override
+                                                public void fail(ErrorCode errorCode) {
+                                                    trigger.fail(errorCode);
+                                                }
+                                            });
+                                }
+
+                                private void downloadFromBackupStorage(FlowTrigger trigger) {
                                     LocalStorageBackupStorageMediator m = localStorageFactory.getBackupStorageMediator(KVMConstant.KVM_HYPERVISOR_TYPE, backupStorage.getType());
                                     m.downloadBits(getSelfInventory(), backupStorage,
                                             backupStorageInstallPath, primaryStorageInstallPath,
@@ -2885,7 +2916,33 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     }
 
     @Override
-    protected void handle(final CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
+    void handle(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<CreateImageCacheFromVolumeOnPrimaryStorageReply> completion) {
+        CreateImageCacheFromVolumeOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeOnPrimaryStorageReply();
+        final LocalStorageResourceRefVO ref = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, msg.getVolumeInventory().getUuid())
+                .find();
+
+        ImageCache cache = new ImageCache();
+        cache.primaryStorageInstallPath = makeCachedImageInstallUrl(msg.getImageInventory());
+        cache.hostUuid = ref.getHostUuid();
+        cache.image = msg.getImageInventory();
+        cache.volume = msg.getVolumeInventory();
+        cache.download(new ReturnValueCompletion<ImageCacheInventory>(completion) {
+            @Override
+            public void success(ImageCacheInventory cache) {
+                reply.setLocateHostUuid(ref.getHostUuid());
+                completion.success(reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    @Override
+    void handle(CreateTemplateFromVolumeOnPrimaryStorageMsg msg, ReturnValueCompletion<CreateTemplateFromVolumeOnPrimaryStorageReply> completion) {
         final LocalStorageResourceRefVO ref = Q.New(LocalStorageResourceRefVO.class)
                 .eq(LocalStorageResourceRefVO_.resourceUuid, msg.getVolumeInventory().getUuid())
                 .find();
@@ -3044,15 +3101,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     public void handle(Map data) {
                         reply.setFormat(msg.getVolumeInventory().getFormat());
                         reply.setTemplateBackupStorageInstallPath(backupStorageInstallPath);
-                        bus.reply(msg, reply);
+                        completion.success(reply);
                     }
                 });
 
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        reply.setError(errCode);
-                        bus.reply(msg, reply);
+                        completion.fail(errCode);
                     }
                 });
             }
