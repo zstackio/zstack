@@ -83,7 +83,7 @@ BEGIN
             ITERATE read_loop;
         END IF;
 
-        SELECT * FROM UsedIpVO WHERE uuid = curUsedIpUuid;
+        DELETE FROM UsedIpVO WHERE uuid = curUsedIpUuid;
     END LOOP;
     CLOSE cur;
     SELECT CURTIME();
