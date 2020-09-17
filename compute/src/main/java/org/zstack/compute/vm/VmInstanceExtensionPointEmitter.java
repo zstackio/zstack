@@ -294,6 +294,14 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
+    public void preMigrateVm(final VmInstanceInventory inv, final String dstHostUuid) {
+        CollectionUtils.safeForEach(migrateVmExtensions, arg -> arg.preMigrateVm(inv, dstHostUuid));
+    }
+
+    public void beforeMigrateVm(final VmInstanceInventory inv, final String dstHostUuid) {
+        CollectionUtils.safeForEach(migrateVmExtensions, arg -> arg.beforeMigrateVm(inv, dstHostUuid));
+    }
+
     public void afterMigrateVm(final VmInstanceInventory inv, final String srcHostUuid) {
         CollectionUtils.safeForEach(migrateVmExtensions, new ForEachFunction<VmInstanceMigrateExtensionPoint>() {
             @Override
