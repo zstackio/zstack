@@ -273,64 +273,6 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                     }
                 });
             }
-        }).then(new NoRollbackFlow() {
-            String __name__ = String.format("populate-vtep-for-l2-vxlan-pool-%s", l2Network.getUuid());
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                if (data.get(NEED_POPULATE).equals(false)) {
-                    trigger.next();
-                    return;
-                }
-
-                List<VtepVO> vteps = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, l2Network.getUuid()).list();
-
-                if (vteps == null || vteps.size() <= 1) {
-                    logger.debug("no need to populate fdb since there are only one vtep or less");
-                    trigger.next();
-                    return;
-                }
-
-                List<String> vxlanNetworkUuids = Q.New(VxlanNetworkVO.class)
-                        .select(VxlanNetworkVO_.uuid)
-                        .eq(VxlanNetworkVO_.poolUuid, l2Network.getUuid())
-                        .listValues();
-
-                new While<>(vteps).all((vtep, completion1) -> {
-                    Set<String> peers = vteps.stream()
-                            .map(VtepVO::getVtepIp)
-                            .collect(Collectors.toSet());
-                    peers.remove(vtep.getVtepIp());
-
-                    logger.info(String.format("populate fdb to vtep[ip:%s] for vxlan network pool %s with vxlan network[uuids:%s] to host[uuid:%s]",
-                            vtep.getVtepIp(), l2Network.getUuid(), vxlanNetworkUuids, vtep.getHostUuid()));
-
-                    VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd();
-                    cmd.setPeers(new ArrayList<>(peers));
-                    cmd.setNetworkUuids(vxlanNetworkUuids);
-
-                    KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                    msg.setHostUuid(vtep.getHostUuid());
-                    msg.setCommand(cmd);
-                    msg.setPath(VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH);
-                    msg.setNoStatusCheck(noStatusCheck);
-                    bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-                    bus.send(msg, new CloudBusCallBack(completion1) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                logger.warn(reply.getError().toString());
-                            }
-                            completion1.done();
-                        }
-                    });
-                }).run(new NoErrorCompletion() {
-                    @Override
-                    public void done() {
-                        trigger.next();
-                    }
-                });
-            }
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {

@@ -637,6 +637,23 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 });
             }
         }).then(new NoRollbackFlow() {
+            String __name__ = String.format("populate-vtep-for-l2-vxlan-pool-%s", l2NetworkUuid);
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                PopulateVtepPeersMsg pmsg = new PopulateVtepPeersMsg();
+                pmsg.setPoolUuid(l2NetworkUuid);
+                bus.makeTargetServiceIdByResourceUuid(pmsg, L2NetworkConstant.SERVICE_ID, l2NetworkUuid);
+                bus.send(pmsg, new CloudBusCallBack(pmsg){
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            logger.debug(String.format("fail to populate vtep for l2 vxlan pool %s", l2NetworkUuid));
+                        }
+                        trigger.next();
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
             private void realize(final Iterator<HostInventory> it, final FlowTrigger trigger) {
                 if (!it.hasNext()) {
                     trigger.next();
