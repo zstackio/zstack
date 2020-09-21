@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 ALTER TABLE `zstack`.`TicketStatusHistoryVO` ADD COLUMN `sequence` INT;
 ALTER TABLE `zstack`.`ArchiveTicketStatusHistoryVO` ADD COLUMN `sequence` INT;
 
@@ -146,13 +147,6 @@ ALTER TABLE `zstack`.`VpcFirewallRuleSetVO` DROP COLUMN `vyosName`;
 ALTER TABLE `zstack`.`VpcFirewallRuleSetVO` DROP COLUMN `vpcFirewallUuid`;
 ALTER TABLE `zstack`.`VpcFirewallRuleVO` DROP COLUMN `vpcFirewallUuid`;
 ALTER TABLE `zstack`.`VpcFirewallRuleVO` DROP COLUMN `ruleSetName`;
---
--- INSERT INTO `zstack`.`IAM2OrganizationVO` (uuid, name, state, type, srcType, createDate, lastOpDate, rootOrganizationUuid)
---               values ('6e3d19dab98348d8bd67657378843f82', 'default', 'Enabled', 'Default', 'ZStack', NOW(), NOW(), '6e3d19dab98348d8bd67657378843f82');
---
--- INSERT INTO `zstack`.`ResourceVO`(uuid, resourceName, resourceType, concreteResourceType) values ('6e3d19dab98348d8bd67657378843f82','default', 'IAM2OrganizationVO', 'org.zstack.iam2.entity.IAM2OrganizationVO');
---
--- INSERT INTO `zstack`.`AccountResourceRefVO`(accountUuid, ownerAccountUuid, resourceUuid, resourceType, permission, isShared, concreteResourceType)  values ('36c27e8ff05c4780bf6d2fa65700f22e', '36c27e8ff05c4780bf6d2fa65700f22e', '6e3d19dab98348d8bd67657378843f82', 'IAM2OrganizationVO', 2, false, 'org.zstack.iam2.entity.IAM2OrganizationVO');
 
 DELIMITER $$
 CREATE PROCEDURE insertDefaultIAM2Organization()
