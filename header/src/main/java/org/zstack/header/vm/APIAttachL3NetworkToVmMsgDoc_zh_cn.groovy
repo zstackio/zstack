@@ -71,6 +71,16 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "driverType"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "4.0.0"
+					
+				}
 			}
         }
 

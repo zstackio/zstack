@@ -1,6 +1,7 @@
 package org.zstack.network.service.virtualrouter.vyos;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -16,6 +17,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
@@ -80,6 +82,7 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
 
                 VersionComparator mnVersion = new VersionComparator(managementVersion);
                 VersionComparator remoteVersion = new VersionComparator(ret.getVersion().trim());
+                result.setVersion(ret.getVersion());
                 if (mnVersion.compare(remoteVersion) > 0) {
                     logger.warn(String.format("virtual router[uuid: %s] version [%s] is older than management node version [%s]",vrUuid, ret.getVersion(), managementVersion));
                     result.setNeedReconnect(true);
@@ -103,6 +106,10 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
     }
 
     private String getManagementVersion() {
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            return "3.10.0.0";
+        }
+
         String managementVersion = null;
         String path = null;
         try {
