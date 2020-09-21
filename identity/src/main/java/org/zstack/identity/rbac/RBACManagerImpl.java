@@ -26,6 +26,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -34,6 +35,8 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
     private static final CLogger logger = Utils.getLogger(RBACManagerImpl.class);
 
     private static PolicyMatcher matcher = new PolicyMatcher();
+
+    Map<String, RoleIdentityFactory> roleIdentityFactoryMap = new HashMap<>();
 
     @Autowired
     private CloudBus bus;
@@ -44,6 +47,15 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
 
     @Override
     public boolean start() {
+        for (RoleIdentityFactory factory : pluginRgty.getExtensionList(RoleIdentityFactory.class)) {
+            RoleIdentityFactory old = roleIdentityFactoryMap.get(factory.getIdentity().toString());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate RoleIdentityFactory[%s, %s] with the same type[%s]", factory.getClass(), old.getClass(), factory.getIdentity()));
+            }
+
+            roleIdentityFactoryMap.put(factory.getIdentity().toString(), factory);
+        }
+
         return true;
     }
 
@@ -138,7 +150,17 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                 vo.setType(msg.getRoleType());
                 vo.setIdentity(msg.getIdentity());
                 vo.setAccountUuid(msg.getSession().getAccountUuid());
-                persist(vo);
+
+                if (msg.getIdentity() == null) {
+                    persist(vo);
+                } else {
+                    RoleIdentityFactory factory = roleIdentityFactoryMap.get(msg.getIdentity());
+                    if (factory == null) {
+                        persist(vo);
+                    } else {
+                        vo = factory.createRole(vo, msg.getSession());
+                    }
+                }
 
                 String roleUuid = vo.getUuid();
                 if (msg.getStatements() != null) {
@@ -211,9 +233,9 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                             persist(rp);
                         });
 
-                        for (NewPredefinedRoleExtensionPoint ext : exts) {
-                            ext.predefinedNewRole(reload(rvo));
-                        }
+//                        for (NewPredefinedRoleExtensionPoint ext : exts) {
+//                            ext.predefinedNewRole(reload(rvo));
+//                        }
                     } else {
                         role.toStatements().forEach(s -> {
                             String statementString = JSONObjectUtil.toJsonString(s);

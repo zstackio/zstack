@@ -1,5 +1,6 @@
 package org.zstack.header.identity.role;
 
+import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.vo.BaseResource;
@@ -57,6 +58,20 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
         vo.type = type;
         vo.identity = identity;
         return vo;
+    }
+
+    public RoleVO() {
+    }
+
+    protected RoleVO(RoleVO vo) {
+        this.name = vo.getName();
+        this.uuid = vo.getUuid();
+        this.state = vo.getState();
+        this.description = vo.getDescription();
+        this.type = vo.getType();
+        this.identity = vo.getIdentity();
+        this.createDate = vo.getCreateDate();
+        this.lastOpDate = vo.getLastOpDate();
     }
 
     public RoleState getState() {
