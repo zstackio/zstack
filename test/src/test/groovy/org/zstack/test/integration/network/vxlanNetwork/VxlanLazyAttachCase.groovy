@@ -306,7 +306,7 @@ class VxlanLazyAttachCase extends SubCase {
 
         env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH) { HttpEntity<String> entity, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(entity.body, VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd.class)
-            //realizeRecords.addAll(cmd.networkUuids)
+            realizeRecords.addAll(cmd.networkUuids)
             return new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd()
         }
 

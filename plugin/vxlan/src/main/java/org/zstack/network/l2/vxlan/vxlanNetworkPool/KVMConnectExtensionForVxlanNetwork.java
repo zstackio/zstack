@@ -2,17 +2,15 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.workflow.*;
+import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConnectionReestablishExtensionPoint;
 import org.zstack.header.host.HostException;
@@ -22,11 +20,9 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.CheckL2NetworkOnHostMsg;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkInventory;
-import org.zstack.header.network.l2.PrepareL2NetworkOnHostMsg;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
-import org.zstack.network.l2.vxlan.vtep.PopulateVtepPeersMsg;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -63,27 +59,28 @@ public class KVMConnectExtensionForVxlanNetwork implements KVMHostConnectExtensi
         return ret;
     }
 
-    private void prepareNetwork(final Iterator<String> it, HostInventory hostInventory, final Completion completion) {
+    private void prepareNetwork(final Iterator<String> it, final String hostUuid, final Completion completion) {
         if (!it.hasNext()) {
             completion.success();
             return;
         }
 
         final String l2Uuid = it.next();
-        PrepareL2NetworkOnHostMsg pmsg = new PrepareL2NetworkOnHostMsg();
-        pmsg.setHost(hostInventory);
-        pmsg.setL2NetworkUuid(l2Uuid);
-        bus.makeTargetServiceIdByResourceUuid(pmsg, L2NetworkConstant.SERVICE_ID, l2Uuid);
-        bus.send(pmsg, new CloudBusCallBack(completion) {
+        CheckL2NetworkOnHostMsg cmsg = new CheckL2NetworkOnHostMsg();
+        cmsg.setHostUuid(hostUuid);
+        cmsg.setL2NetworkUuid(l2Uuid);
+        bus.makeTargetServiceIdByResourceUuid(cmsg, L2NetworkConstant.SERVICE_ID, l2Uuid);
+        bus.send(cmsg, new CloudBusCallBack(completion) {
+            @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
                     completion.fail(reply.getError());
                 } else {
-                    prepareNetwork(it, hostInventory, completion);
+                    prepareNetwork(it, hostUuid, completion);
                 }
-
             }
         });
+
     }
 
     @Override
@@ -95,7 +92,7 @@ public class KVMConnectExtensionForVxlanNetwork implements KVMHostConnectExtensi
         }
 
         FutureCompletion completion = new FutureCompletion(null);
-        prepareNetwork(l2s.iterator(), inv, completion);
+        prepareNetwork(l2s.iterator(), inv.getUuid(), completion);
         completion.await(TimeUnit.SECONDS.toMillis(600));
         if (!completion.isSuccess()) {
             throw new OperationFailureException(completion.getErrorCode());
@@ -120,7 +117,7 @@ public class KVMConnectExtensionForVxlanNetwork implements KVMHostConnectExtensi
                     return;
                 }
 
-                prepareNetwork(l2s.iterator(), context.getInventory(), new Completion(trigger) {
+                prepareNetwork(l2s.iterator(), context.getInventory().getUuid(), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
