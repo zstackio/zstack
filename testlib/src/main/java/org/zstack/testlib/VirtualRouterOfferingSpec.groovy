@@ -109,6 +109,7 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
                 VirtualRouterCommands.PingCmd cmd = JSONObjectUtil.toObject(e.body, VirtualRouterCommands.PingCmd.class)
                 VirtualRouterCommands.PingRsp rsp = new VirtualRouterCommands.PingRsp()
                 rsp.uuid = cmd.uuid
+                rsp.version = "3.10.0.0"
                 return rsp
             }
 

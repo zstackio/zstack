@@ -22357,6 +22357,14 @@
     "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
   },
   {
+    "raw": "Can\u0027t detach nic because the nic not supported to hot plugin in vcenter",
+    "en_US": "Can\u0027t detach nic because the nic not supported to hot plugin in vcenter",
+    "zh_CN": "无法卸载网络，因为该网卡不支持热拔插",
+    "arguments": [],
+    "line": 3993,
+    "fileName": "src/main/java/org/zstack/vmware/VCenterManagerImpl.java"
+  },
+  {
     "raw": "No virtual disk manager",
     "en_US": "No virtual disk manager",
     "zh_CN": "",

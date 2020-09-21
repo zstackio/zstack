@@ -28,4 +28,6 @@ public interface VyosConstants {
     String HA_STATUS = "haStatus";
 
     String VIP_REBUILD_VERSION = "3.8.4.2";
+
+    String VYOS_VMWARE_ALLOW_NIC_HOT_PLUGIN_VERSION = "4.2.0.0";
 }
