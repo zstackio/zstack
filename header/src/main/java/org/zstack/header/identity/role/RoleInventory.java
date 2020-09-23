@@ -20,6 +20,22 @@ public class RoleInventory {
     private List<RolePolicyStatementInventory> statements;
     private List<RolePolicyRefInventory> policies;
 
+    protected RoleInventory(RoleVO vo) {
+        this.setCreateDate(vo.getCreateDate());
+        this.setDescription(vo.getDescription());
+        this.setLastOpDate(vo.getLastOpDate());
+        this.setType(vo.getType());
+        this.setName(vo.getName());
+        this.setState(vo.getState());
+        this.setUuid(vo.getUuid());
+        this.setIdentity(vo.getIdentity());
+        this.setStatements(RolePolicyStatementInventory.valueOf(vo.getStatements()));
+        this.setPolicies(RolePolicyRefInventory.valueOf(vo.getPolicies()));
+    }
+
+    public RoleInventory() {
+    }
+
     public static RoleInventory valueOf(RoleVO vo) {
         RoleInventory inv = new RoleInventory();
         inv.uuid = vo.getUuid();
