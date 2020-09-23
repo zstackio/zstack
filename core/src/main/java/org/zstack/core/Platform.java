@@ -389,6 +389,7 @@ public class Platform {
 
             in = new FileInputStream(globalPropertiesFile);
             System.getProperties().load(in);
+            MaskSensitiveInfoRewritePolicy.initKey(System.getProperty("log.encrypt.key"));
 
             // get ms ip should after global property setup
             msId = UUID.nameUUIDFromBytes(getManagementServerIp().getBytes()).toString().replaceAll("-", "");
