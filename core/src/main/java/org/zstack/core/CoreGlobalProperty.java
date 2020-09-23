@@ -66,4 +66,6 @@ public class CoreGlobalProperty {
     public static boolean RECORD_TO_DB_ELABORATION;
     @GlobalProperty(name = "chain.task.qos", defaultValue = "false")
     public static boolean CHAIN_TASK_QOS;
+    @GlobalProperty(name = "platformId", defaultValue = "0300020002")
+    public static String PLATFORM_ID;
 }

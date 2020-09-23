@@ -19,6 +19,8 @@ import org.zstack.utils.logging.CLogger;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.CoreGlobalProperty.PLATFORM_ID;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmDeleteVsocFileFlow implements Flow {
     private static final CLogger logger = Utils.getLogger(VmCreateOnHypervisorFlow.class);
@@ -39,6 +41,7 @@ public class VmDeleteVsocFileFlow implements Flow {
         DeleteVmVsocFileMsg msg = new DeleteVmVsocFileMsg();
         msg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         msg.setHostUuid(spec.getDestHost().getUuid());
+        msg.setPlatformId(PLATFORM_ID);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getDestHost().getUuid());
         bus.send(msg, new CloudBusCallBack(chain) {
             @Override

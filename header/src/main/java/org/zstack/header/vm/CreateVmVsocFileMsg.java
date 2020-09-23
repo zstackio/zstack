@@ -6,6 +6,15 @@ import org.zstack.header.message.NeedReplyMessage;
 public class CreateVmVsocFileMsg extends NeedReplyMessage implements HostMessage {
     private String vmInstanceUuid;
     private String hostUuid;
+    private String platformId;
+
+    public String getPlatformId() {
+        return platformId;
+    }
+
+    public void setPlatformId(String platformId) {
+        this.platformId = platformId;
+    }
 
     public String getVmInstanceUuid() {
         return vmInstanceUuid;

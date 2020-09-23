@@ -80,6 +80,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.CoreGlobalProperty.PLATFORM_ID;
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.e;
@@ -500,6 +501,7 @@ public class KVMHost extends HostBase implements Host {
     private void handle(CreateVmVsocFileMsg msg) {
         CreateVmVsocCommand cmd = new CreateVmVsocCommand();
         cmd.vmUuid = msg.getVmInstanceUuid();
+        cmd.platformId = msg.getPlatformId();
 
         new Http<>(vmCreateVsocPath, cmd, CreateVmVsocRsp.class).call(new ReturnValueCompletion<CreateVmVsocRsp>(msg) {
 
@@ -526,6 +528,7 @@ public class KVMHost extends HostBase implements Host {
     private void handle(DeleteVmVsocFileMsg msg) {
         DeleteVmVsocCommand cmd = new DeleteVmVsocCommand();
         cmd.vmUuid = msg.getVmInstanceUuid();
+        cmd.vmUuid = msg.getPlatformId();
 
         new Http<>(vmDeleteVsocPath, cmd, DeleteVmVsocRsp.class).call(new ReturnValueCompletion<DeleteVmVsocRsp>(msg) {
             @Override
@@ -1413,6 +1416,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setUseNuma(rcf.getResourceConfigValue(VmGlobalConfig.NUMA, vmUuid, Boolean.class));
                         cmd.setTimeout(timeoutManager.getTimeout());
                         cmd.setSscardId(HostSystemTags.HOST_SSCARDID.getTokenByResourceUuid(dstHostUuid, HostSystemTags.HOST_SSCARDID_TOKEN));
+                        cmd.setPlatformId(PLATFORM_ID);
 
                         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(migrateVmPath);
                         ub.host(migrateFromDestination ? dstHostMnIp : srcHostMnIp);
@@ -2303,6 +2307,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVmPortOff(VmGlobalConfig.VM_PORT_OFF.value(Boolean.class));
         cmd.setConsoleMode("vnc");
         cmd.setTimeout(TimeUnit.MINUTES.toSeconds(5));
+        cmd.setPlatformId(PLATFORM_ID);
         if (spec.isCreatePaused()) {
             cmd.setCreatePaused(true);
         }

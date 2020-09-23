@@ -1121,6 +1121,15 @@ public class KVMAgentCommands {
         private String chassisAssetTag;
         private PriorityConfigStruct priorityConfigStruct;
         private String memorySnapshotPath;
+        private String platformId;
+
+        public String getPlatformId() {
+            return platformId;
+        }
+
+        public void setPlatformId(String platformId) {
+            this.platformId = platformId;
+        }
 
         public String getChassisAssetTag() {
             return chassisAssetTag;
@@ -1915,6 +1924,15 @@ public class KVMAgentCommands {
         private boolean autoConverge;
         private Long timeout; // in seconds
         private String sscardId;
+        private String platformId;
+
+        public String getPlatformId() {
+            return platformId;
+        }
+
+        public void setPlatformId(String platformId) {
+            this.platformId = platformId;
+        }
 
         public String getSscardId() {
             return sscardId;
@@ -2341,6 +2359,7 @@ public class KVMAgentCommands {
 
     public static class CreateVmVsocCommand extends AgentCommand {
         public String vmUuid;
+        public String platformId;
     }
 
     public static class CreateVmVsocRsp extends AgentResponse {
@@ -2348,6 +2367,7 @@ public class KVMAgentCommands {
 
     public static class DeleteVmVsocCommand extends AgentCommand {
         public String vmUuid;
+        public String platformId;
     }
 
     public static class DeleteVmVsocRsp extends AgentResponse {
