@@ -26,9 +26,9 @@
                 <value>org.zstack.compute.vm.VmAllocateNicFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateCdRomFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
+                <value>org.zstack.compute.vm.VmCreateVsocFileFlow</value>
                 <value>org.zstack.compute.vm.VmCreateOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
-                <value>org.zstack.compute.vm.VmCreateVsocFileFlow</value>
             </list>
         </property>
         <property name="stopVmWorkFlowElements">
