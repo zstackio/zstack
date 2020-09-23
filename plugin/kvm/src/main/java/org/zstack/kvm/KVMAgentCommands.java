@@ -310,6 +310,7 @@ public class KVMAgentCommands {
 
     public static class PingCmd extends AgentCommand {
         public String hostUuid;
+        public boolean checkIdleState;
     }
 
     public static class PingResponse extends AgentResponse {
