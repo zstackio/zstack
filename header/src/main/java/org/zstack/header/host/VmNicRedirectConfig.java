@@ -6,6 +6,7 @@ public class VmNicRedirectConfig {
     private Integer secondaryInPort;
     private Integer primaryOutPort;
     private Integer deviceId;
+    private String driverType;
 
     public Integer getMirrorPort() {
         return mirrorPort;
@@ -45,5 +46,13 @@ public class VmNicRedirectConfig {
 
     public void setDeviceId(Integer deviceId) {
         this.deviceId = deviceId;
+    }
+
+    public String getDriverType() {
+        return driverType;
+    }
+
+    public void setDriverType(String driverType) {
+        this.driverType = driverType;
     }
 }
