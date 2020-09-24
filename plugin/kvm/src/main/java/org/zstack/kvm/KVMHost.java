@@ -3424,6 +3424,11 @@ public class KVMHost extends HostBase implements Host {
                             if (NetworkGlobalProperty.SKIP_IPV6) {
                                 runner.putArgument("skipIpv6", "true");
                             }
+                            for (CheckMiniExtensionPoint ext : pluginRegistry.getExtensionList(CheckMiniExtensionPoint.class)) {
+                                if (ext.isMini()) {
+                                    runner.putArgument("isMini", "true");
+                                }
+                            }
                             if (NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES) {
                                 runner.putArgument("bridgeDisableIptables", "true");
                             }
