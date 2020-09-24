@@ -667,7 +667,9 @@ public class KVMHost extends HostBase implements Host {
     private void handle(DeleteVmVsocFileMsg msg) {
         DeleteVmVsocCommand cmd = new DeleteVmVsocCommand();
         cmd.vmUuid = msg.getVmInstanceUuid();
-        cmd.vmUuid = msg.getPlatformId();
+        cmd.platformId = msg.getPlatformId();
+        public void success(DeleteVmVsocRsp ret) {
+            final DeleteVmVsocFileReply reply = new DeleteVmVsocFileReply();
 
     private void handle(StartColoSyncMsg msg) {
         inQueue().name(String.format("start-colo-sync-vm-%s-on-%s", msg.getVmInstanceUuid(), self.getUuid()))
