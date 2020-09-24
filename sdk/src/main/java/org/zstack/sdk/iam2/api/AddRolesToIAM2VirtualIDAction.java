@@ -31,6 +31,9 @@ public class AddRolesToIAM2VirtualIDAction extends AbstractAction {
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List roleUuids;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String projectUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 
