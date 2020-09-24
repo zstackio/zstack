@@ -528,12 +528,12 @@ public class KVMHost extends HostBase implements Host {
     private void handle(DeleteVmVsocFileMsg msg) {
         DeleteVmVsocCommand cmd = new DeleteVmVsocCommand();
         cmd.vmUuid = msg.getVmInstanceUuid();
-        cmd.vmUuid = msg.getPlatformId();
+        cmd.platformId = msg.getPlatformId();
 
         new Http<>(vmDeleteVsocPath, cmd, DeleteVmVsocRsp.class).call(new ReturnValueCompletion<DeleteVmVsocRsp>(msg) {
             @Override
             public void success(DeleteVmVsocRsp ret) {
-                final CreateVmVsocFileReply reply = new CreateVmVsocFileReply();
+                final DeleteVmVsocFileReply reply = new DeleteVmVsocFileReply();
                 if (!ret.isSuccess()) {
                     reply.setError(operr("Error: %s", ret.getError()));
                 }
