@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateIAM2VirtualIDGroupAction extends AbstractAction {
+public class RemoveIAM2VirtualIDGroupFromProjectsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateIAM2VirtualIDGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.CreateIAM2VirtualIDGroupResult value;
+        public org.zstack.sdk.iam2.api.RemoveIAM2VirtualIDGroupFromProjectsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,22 +26,10 @@ public class CreateIAM2VirtualIDGroupAction extends AbstractAction {
     }
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String projectUuid;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false)
-    public java.util.List attributes;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
+    public java.util.List projectUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.util.List groupUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -75,8 +63,8 @@ public class CreateIAM2VirtualIDGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.CreateIAM2VirtualIDGroupResult value = res.getResult(org.zstack.sdk.iam2.api.CreateIAM2VirtualIDGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.CreateIAM2VirtualIDGroupResult() : value; 
+        org.zstack.sdk.iam2.api.RemoveIAM2VirtualIDGroupFromProjectsResult value = res.getResult(org.zstack.sdk.iam2.api.RemoveIAM2VirtualIDGroupFromProjectsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.RemoveIAM2VirtualIDGroupFromProjectsResult() : value; 
 
         return ret;
     }
@@ -105,11 +93,11 @@ public class CreateIAM2VirtualIDGroupAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/iam2/groups";
+        info.httpMethod = "DELETE";
+        info.path = "/iam2/projects/groups";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 

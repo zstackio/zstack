@@ -304,6 +304,7 @@ public class SourceClassMap {
 			put("org.zstack.iam2.entity.IAM2ProjectAccountRefInventory", "org.zstack.sdk.iam2.entity.IAM2ProjectAccountRefInventory");
 			put("org.zstack.iam2.entity.IAM2ProjectAttributeInventory", "org.zstack.sdk.iam2.entity.IAM2ProjectAttributeInventory");
 			put("org.zstack.iam2.entity.IAM2ProjectInventory", "org.zstack.sdk.iam2.entity.IAM2ProjectInventory");
+			put("org.zstack.iam2.entity.IAM2ProjectRoleInventory", "org.zstack.sdk.iam2.entity.IAM2ProjectRoleInventory");
 			put("org.zstack.iam2.entity.IAM2ProjectTemplateInventory", "org.zstack.sdk.iam2.entity.IAM2ProjectTemplateInventory");
 			put("org.zstack.iam2.entity.IAM2VirtualIDAttributeInventory", "org.zstack.sdk.iam2.entity.IAM2VirtualIDAttributeInventory");
 			put("org.zstack.iam2.entity.IAM2VirtualIDGroupAttributeInventory", "org.zstack.sdk.iam2.entity.IAM2VirtualIDGroupAttributeInventory");
@@ -1017,6 +1018,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.iam2.entity.IAM2ProjectAccountRefInventory", "org.zstack.iam2.entity.IAM2ProjectAccountRefInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2ProjectAttributeInventory", "org.zstack.iam2.entity.IAM2ProjectAttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2ProjectInventory", "org.zstack.iam2.entity.IAM2ProjectInventory");
+			put("org.zstack.sdk.iam2.entity.IAM2ProjectRoleInventory", "org.zstack.iam2.entity.IAM2ProjectRoleInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2ProjectTemplateInventory", "org.zstack.iam2.entity.IAM2ProjectTemplateInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2VirtualIDAttributeInventory", "org.zstack.iam2.entity.IAM2VirtualIDAttributeInventory");
 			put("org.zstack.sdk.iam2.entity.IAM2VirtualIDGroupAttributeInventory", "org.zstack.iam2.entity.IAM2VirtualIDGroupAttributeInventory");

@@ -235,3 +235,13 @@ DELIMITER ;
 
 CALL insertIAM2ProjectVirtualIDGroupRef();
 DROP PROCEDURE IF EXISTS insertIAM2ProjectVirtualIDGroupRef;
+
+Alter table `zstack`.`IAM2VirtualIDGroupVO` modify projectUuid VARCHAR(32) NULL;
+
+ALTER TABLE IAM2VirtualIDGroupRoleRefVO DROP FOREIGN KEY fkIAM2VirtualIDGroupRoleRefVOIAM2VirtualIDGroupVO;
+ALTER TABLE IAM2VirtualIDGroupRoleRefVO DROP FOREIGN KEY fkIAM2VirtualIDGroupRoleRefVORoleVO;
+ALTER TABLE IAM2VirtualIDGroupRoleRefVO ADD COLUMN `targetAccountUuid` varchar(32) NOT NULL;
+ALTER TABLE IAM2VirtualIDGroupRoleRefVO DROP PRIMARY KEY, ADD PRIMARY KEY(groupUuid, roleUuid, targetAccountUuid);
+ALTER TABLE IAM2VirtualIDGroupRoleRefVO ADD CONSTRAINT fkIAM2VirtualIDGroupRoleRefVOIAM2VirtualIDGroupVO FOREIGN KEY (groupUuid) REFERENCES IAM2VirtualIDGroupVO (uuid) ON DELETE CASCADE;
+ALTER TABLE IAM2VirtualIDGroupRoleRefVO ADD CONSTRAINT fkIAM2VirtualIDGroupRoleRefVORoleVO FOREIGN KEY (roleUuid) REFERENCES RoleVO (uuid) ON DELETE CASCADE;
+CREATE INDEX idxIAM2VirtualIDGroupRoleRefVOTargetAccountUuid ON IAM2VirtualIDGroupRoleRefVO (targetAccountUuid);
