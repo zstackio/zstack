@@ -1,0 +1,63 @@
+package org.zstack.sdk;
+
+
+
+public class BareMetal2InstanceInventory extends org.zstack.sdk.VmInstanceInventory {
+
+    public java.lang.String chassisUuid;
+    public void setChassisUuid(java.lang.String chassisUuid) {
+        this.chassisUuid = chassisUuid;
+    }
+    public java.lang.String getChassisUuid() {
+        return this.chassisUuid;
+    }
+
+    public java.lang.String lastChassisUuid;
+    public void setLastChassisUuid(java.lang.String lastChassisUuid) {
+        this.lastChassisUuid = lastChassisUuid;
+    }
+    public java.lang.String getLastChassisUuid() {
+        return this.lastChassisUuid;
+    }
+
+    public java.lang.String gatewayUuid;
+    public void setGatewayUuid(java.lang.String gatewayUuid) {
+        this.gatewayUuid = gatewayUuid;
+    }
+    public java.lang.String getGatewayUuid() {
+        return this.gatewayUuid;
+    }
+
+    public java.lang.String lastGatewayUuid;
+    public void setLastGatewayUuid(java.lang.String lastGatewayUuid) {
+        this.lastGatewayUuid = lastGatewayUuid;
+    }
+    public java.lang.String getLastGatewayUuid() {
+        return this.lastGatewayUuid;
+    }
+
+    public java.lang.String chassisOfferingUuid;
+    public void setChassisOfferingUuid(java.lang.String chassisOfferingUuid) {
+        this.chassisOfferingUuid = chassisOfferingUuid;
+    }
+    public java.lang.String getChassisOfferingUuid() {
+        return this.chassisOfferingUuid;
+    }
+
+    public java.lang.String gatewayAllocatorStrategy;
+    public void setGatewayAllocatorStrategy(java.lang.String gatewayAllocatorStrategy) {
+        this.gatewayAllocatorStrategy = gatewayAllocatorStrategy;
+    }
+    public java.lang.String getGatewayAllocatorStrategy() {
+        return this.gatewayAllocatorStrategy;
+    }
+
+    public java.lang.String status;
+    public void setStatus(java.lang.String status) {
+        this.status = status;
+    }
+    public java.lang.String getStatus() {
+        return this.status;
+    }
+
+}

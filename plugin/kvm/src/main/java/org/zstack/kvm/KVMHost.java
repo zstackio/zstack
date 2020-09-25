@@ -1126,7 +1126,7 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void handle(final CheckVmStateOnHypervisorMsg msg) {
+    protected void handle(final CheckVmStateOnHypervisorMsg msg) {
         final CheckVmStateOnHypervisorReply reply = new CheckVmStateOnHypervisorReply();
         if (self.getStatus() != HostStatus.Connected) {
             reply.setError(operr("the host[uuid:%s, status:%s] is not Connected", self.getUuid(), self.getStatus()));
@@ -1274,7 +1274,7 @@ public class KVMHost extends HostBase implements Host {
                 }));
     }
 
-    private void detachNic(final DetachNicFromVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
+    protected void detachNic(final DetachNicFromVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         final DetachNicFromVmOnHypervisorReply reply = new DetachNicFromVmOnHypervisorReply();
         NicTO to = completeNicInfo(msg.getNic());
 
@@ -1957,7 +1957,7 @@ public class KVMHost extends HostBase implements Host {
                 }));
     }
 
-    private void attachNic(final VmAttachNicOnHypervisorMsg msg, final NoErrorCompletion completion) {
+    protected void attachNic(final VmAttachNicOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
 
         NicTO to = completeNicInfo(msg.getNicInventory());
@@ -2021,7 +2021,7 @@ public class KVMHost extends HostBase implements Host {
                 }));
     }
 
-    private void detachVolume(final DetachVolumeFromVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
+    protected void detachVolume(final DetachVolumeFromVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
 
         final VolumeInventory vol = msg.getInventory();
@@ -2106,7 +2106,7 @@ public class KVMHost extends HostBase implements Host {
         return serialNumber;
     }
 
-    private void attachVolume(final AttachVolumeToVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
+    protected void attachVolume(final AttachVolumeToVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
         KVMHostInventory host = (KVMHostInventory) getSelfInventory();
 
@@ -2157,7 +2157,7 @@ public class KVMHost extends HostBase implements Host {
                 }));
     }
 
-    private void destroyVm(final DestroyVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
+    protected void destroyVm(final DestroyVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStatus();
 
         final VmInstanceInventory vminv = msg.getVmInventory();
@@ -2288,7 +2288,7 @@ public class KVMHost extends HostBase implements Host {
                 }));
     }
 
-    private void stopVm(final StopVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
+    protected void stopVm(final StopVmOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStatus();
         final VmInstanceInventory vminv = msg.getVmInventory();
 
@@ -2495,7 +2495,7 @@ public class KVMHost extends HostBase implements Host {
         }
     }
 
-    private void startVm(final VmInstanceSpec spec, final NeedReplyMessage msg, final NoErrorCompletion completion) {
+    protected void startVm(final VmInstanceSpec spec, final NeedReplyMessage msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
 
         final StartVmCmd cmd = new StartVmCmd();

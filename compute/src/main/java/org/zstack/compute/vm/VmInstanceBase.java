@@ -122,7 +122,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected VmInstanceVO originalCopy;
     protected String syncThreadName;
 
-    private void checkState(final String hostUuid, final NoErrorCompletion completion) {
+    protected void checkState(final String hostUuid, final NoErrorCompletion completion) {
         CheckVmStateOnHypervisorMsg msg = new CheckVmStateOnHypervisorMsg();
         msg.setVmInstanceUuids(list(self.getUuid()));
         msg.setHostUuid(hostUuid);
@@ -4384,7 +4384,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 });
 
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.DetachNic);
-        spec.setVmInventory(VmInstanceInventory.valueOf(self));
+        // comment out for org.zstack.baremetal2.instance.BareMetal2InstanceFactory.afterBuildVmSpec
+        //spec.setVmInventory(VmInstanceInventory.valueOf(self));
         spec.setDestNics(list(nic));
     
         FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
@@ -5261,8 +5262,15 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
+        // for org.zstack.baremetal2.instance.BareMetal2InstanceFactory.afterBuildVmSpec
+        VmInstanceSpec spec = new VmInstanceSpec();
+        spec.setVmInventory(VmInstanceInventory.valueOf(self));
+        for (BuildVmSpecExtensionPoint ext : pluginRgty.getExtensionList(BuildVmSpecExtensionPoint.class)) {
+            ext.afterBuildVmSpec(spec);
+        }
+
         // VmInstanceState.Running
-        String hostUuid = self.getHostUuid();
+        String hostUuid = spec.getVmInventory().getHostUuid();
         DetachVolumeFromVmOnHypervisorMsg dmsg = new DetachVolumeFromVmOnHypervisorMsg();
         dmsg.setVmInventory(VmInstanceInventory.valueOf(self));
         dmsg.setInventory(volume);
@@ -5317,6 +5325,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setVmInventory(VmInstanceInventory.valueOf(self));
         spec.setCurrentVmOperation(VmOperation.AttachVolume);
         spec.setDestDataVolumes(list(volume));
+
+        for (BuildVmSpecExtensionPoint ext : pluginRgty.getExtensionList(BuildVmSpecExtensionPoint.class)) {
+            ext.afterBuildVmSpec(spec);
+        }
+
         FlowChain chain;
         if (volume.getStatus().equals(VolumeStatus.Ready.toString())) {
             chain = FlowChainBuilder.newSimpleFlowChain();
@@ -6169,7 +6182,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         return spec;
     }
 
-    private List<VolumeInventory> getAllDataVolumes(VmInstanceInventory inv) {
+    protected List<VolumeInventory> getAllDataVolumes(VmInstanceInventory inv) {
         List<VolumeInventory> dataVols = inv.getAllVolumes().stream()
                 .filter(it -> it.getType().equals(VolumeType.Data.toString()) && !it.isShareable())
                 .collect(Collectors.toList());

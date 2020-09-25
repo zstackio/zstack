@@ -1,11 +1,11 @@
 package org.zstack.header.vm;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.zstack.header.network.l3.L3NetworkInventory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.zstack.utils.CollectionDSL.list;
 
@@ -50,6 +50,11 @@ public class VmNicSpec implements Serializable {
 
     public static List<L3NetworkInventory> getL3NetworkInventoryOfSpec(List<VmNicSpec> specs) {
         List<L3NetworkInventory> res = new ArrayList<>();
+
+        if (CollectionUtils.isEmpty(specs)) {
+            return res;
+        }
+
         for (VmNicSpec spec: specs) {
             res.addAll(spec.l3Invs);
         }
