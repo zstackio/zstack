@@ -20,12 +20,7 @@ import org.zstack.header.rest.RestRequest
 import org.zstack.header.rest.RestResponse
 import org.zstack.rest.RestConstants
 import org.zstack.rest.sdk.DocumentGenerator
-import org.zstack.rest.sdk.DocumentGenerator.DocMode
-import org.zstack.utils.DebugUtils
-import org.zstack.utils.FieldUtils
-import org.zstack.utils.ShellResult
-import org.zstack.utils.ShellUtils
-import org.zstack.utils.Utils
+import org.zstack.utils.*
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 import org.zstack.utils.path.PathUtil
@@ -38,7 +33,6 @@ import java.lang.reflect.Modifier
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.stream.Collectors
-
 /**
  * Created by xing5 on 2016/12/21.
  */
@@ -1565,17 +1559,27 @@ ${fieldStr}
 
         List<String> imports = []
         static Map<String, String> apiCategories = [:]
+        static List<File> xmlConfigFiles = []
 
         static {
             File apiConfig = PathUtil.findFolderOnClassPath("serviceConfig")
             apiConfig.list().each {
-                def xml = new XmlSlurper()
                 def f = new File(PathUtil.join(apiConfig.absolutePath, it))
-                if (!it.endsWith(".xml")) {
-                    return
+                if (f.isDirectory()) {
+                    // for serviceConfig/SOME_FOLDER_NAME/xxx.xml
+                    for (File file : f.listFiles()) {
+                        if (file.isFile() && file.name.endsWith(".xml")) {
+                            xmlConfigFiles.add(file)
+                        }
+                    }
+                } else if (it.endsWith(".xml")) {
+                    xmlConfigFiles.add(f)
                 }
+            }
 
-                def o = xml.parse(f)
+            def xml = new XmlSlurper()
+            for (File file : xmlConfigFiles) {
+                def o = xml.parse(file)
                 (o.message as List).each {
                     apiCategories[(it.name as String).trim()] = (o.id as String).trim()
                 }

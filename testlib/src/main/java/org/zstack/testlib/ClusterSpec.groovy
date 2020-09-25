@@ -17,8 +17,8 @@ class ClusterSpec extends Spec {
     String hypervisorType = KVMConstant.KVM_HYPERVISOR_TYPE
     List<HostSpec> hosts = []
 
-    private List<String> primaryStorageToAttach = []
-    private List<String> l2NetworkToAttach = []
+    List<String> primaryStorageToAttach = []
+    List<String> l2NetworkToAttach = []
 
     ClusterInventory inventory
 

@@ -378,6 +378,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>baremetal2</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>external-api-adapter</artifactId>
                     <version>${project.version}</version>
                 </dependency>

@@ -34,10 +34,10 @@ public class CreateClusterAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, validValues = {"KVM","Simulator","baremetal","xdragon"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"KVM","Simulator","baremetal","baremetal2","xdragon"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String hypervisorType;
 
-    @Param(required = false, validValues = {"zstack","baremetal"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"zstack","baremetal","baremetal2"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
     @Param(required = false)

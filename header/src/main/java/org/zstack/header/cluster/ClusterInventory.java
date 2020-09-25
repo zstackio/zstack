@@ -82,6 +82,7 @@ public class ClusterInventory implements Serializable {
      * @choices KVM
      * - Simulator
      * - baremetal
+     * - baremetal2
      */
     private String hypervisorType;
     /**
@@ -97,7 +98,7 @@ public class ClusterInventory implements Serializable {
      */
     private String zoneUuid;
     /**
-     * @desc for now, the only types are 'zstack' and 'baremetal'. This field is reserved for future extension
+     * @desc for now, the only types are 'zstack' 'baremetal' and 'baremetal2'. This field is reserved for future extension
      */
     private String type;
 
