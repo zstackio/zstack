@@ -749,7 +749,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             HostAllocatorStrategyFactory old = factories.get(ext.getHostAllocatorStrategyType().toString());
             if (old != null) {
                 throw new CloudRuntimeException(String.format("duplicate HostAllocatorStrategyFactory[%s, %s] for type[%s]",
-                        old.getClass().getName(), ext.getClass().getName(), ext.getHostAllocatorStrategy()));
+                        old.getClass().getName(), ext.getClass().getName(), ext.getHostAllocatorStrategyType()));
             }
             factories.put(ext.getHostAllocatorStrategyType().toString(), ext);
         }

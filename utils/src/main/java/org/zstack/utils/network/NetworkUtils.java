@@ -766,6 +766,29 @@ public class NetworkUtils {
         }
     }
 
+    public static boolean isValidMacAddress(String macAddress) {
+        final String MAC_REGEX = "^([A-Fa-f0-9]{2}[-,:]){5}[A-Fa-f0-9]{2}$";
+        return macAddress != null && !macAddress.isEmpty() && (macAddress.matches(MAC_REGEX));
+    }
+
+    public static boolean isBelongToSameSubnet(String addr1, String addr2, String mask) {
+        byte[] addr1Byte = new byte[0];
+        byte[] addr2Byte = new byte[0];
+        byte[] maskByte = new byte[0];
+        try {
+            addr1Byte = InetAddress.getByName(addr1).getAddress();
+            addr2Byte = InetAddress.getByName(addr2).getAddress();
+            maskByte = InetAddress.getByName(mask).getAddress();
+        } catch (UnknownHostException e) {
+            return false;
+        }
+
+        for (int i = 0; i < addr1Byte.length; i++)
+            if ((addr1Byte[i] & maskByte[i]) != (addr2Byte[i] & maskByte[i]))
+                return false;
+        return true;
+    }
+
     public static boolean isValidIPAddress(String ip) {
         if (isIpv4Address(ip)) {
             return true;
