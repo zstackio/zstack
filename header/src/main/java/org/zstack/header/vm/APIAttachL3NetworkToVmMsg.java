@@ -63,6 +63,9 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
     @APIParam(required = false)
     private String driverType;
 
+    @APIParam(required = false)
+    private String customMac;
+
     @APINoSee
     @Deprecated
     private List<String> secondaryL3Uuids;
@@ -79,6 +82,14 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
 
     public void setStaticIp(String staticIp) {
         this.staticIp = staticIp;
+    }
+
+    public String getCustomMac() {
+        return customMac;
+    }
+
+    public void setCustomMac(String customMac) {
+        this.customMac = customMac;
     }
 
     @Override

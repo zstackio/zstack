@@ -123,7 +123,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected VmInstanceVO originalCopy;
     protected String syncThreadName;
 
-    private void checkState(final String hostUuid, final NoErrorCompletion completion) {
+    protected void checkState(final String hostUuid, final NoErrorCompletion completion) {
         CheckVmStateOnHypervisorMsg msg = new CheckVmStateOnHypervisorMsg();
         msg.setVmInstanceUuids(list(self.getUuid()));
         msg.setHostUuid(hostUuid);
@@ -6210,7 +6210,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         return spec;
     }
 
-    private List<VolumeInventory> getAllDataVolumes(VmInstanceInventory inv) {
+    protected List<VolumeInventory> getAllDataVolumes(VmInstanceInventory inv) {
         List<VolumeInventory> dataVols = inv.getAllVolumes().stream()
                 .filter(it -> it.getType().equals(VolumeType.Data.toString()) && !it.isShareable())
                 .collect(Collectors.toList());

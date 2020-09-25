@@ -49,7 +49,9 @@ public class CoreGlobalProperty {
     @GlobalProperty(name = "shadowEntityOn", defaultValue = "false")
     public static boolean SHADOW_ENTITY_ON;
     @GlobalProperty(name = "consoleProxyPort", defaultValue = "4900")
-    public static int CONSOLE_PROXY_PORT;
+    public static int CONSOLE_PROXY_PORT;       // for vnc
+    @GlobalProperty(name = "httpConsoleProxyPort", defaultValue = "4901")
+    public static int HTTP_CONSOLE_PROXY_PORT;  // for terminal
     @GlobalProperty(name = "consoleProxyCertFile", defaultValue = "")
     public static String CONSOLE_PROXY_CERT_FILE;
     @GlobalProperty(name = "dataDir", defaultValue = "/var/lib/zstack/")

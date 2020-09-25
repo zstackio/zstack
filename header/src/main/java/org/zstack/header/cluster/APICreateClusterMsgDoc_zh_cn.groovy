@@ -59,7 +59,7 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					values ("KVM","Simulator")
+					values ("KVM","Simulator","baremetal","baremetal2","xdragon")
 				}
 				column {
 					name "type"
@@ -69,7 +69,7 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					values ("zstack")
+					values ("zstack","baremetal","baremetal2")
 				}
 				column {
 					name "resourceUuid"
@@ -104,7 +104,7 @@ doc {
 				column {
 					name "architecture"
 					enclosedIn "params"
-					desc ""
+					desc "集群架构"
 					location "body"
 					type "String"
 					optional true

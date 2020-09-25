@@ -1,9 +1,8 @@
 package org.zstack.kvm;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.method.P;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.vm.VmInstanceBase;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -20,11 +19,13 @@ import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -36,8 +37,10 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
+    @Qualifier("KVMRealizeL2NoVlanNetworkBackend")
     private KVMRealizeL2NoVlanNetworkBackend noVlanNetworkBackend;
     @Autowired
+    @Qualifier("KVMRealizeL2VlanNetworkBackend")
     private KVMRealizeL2VlanNetworkBackend vlanNetworkBackend;
     @Autowired
     private CloudBus bus;

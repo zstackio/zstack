@@ -4,6 +4,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.VolumeInventory;
@@ -34,6 +36,11 @@ public class VolumeTO {
     private int bootOrder;
     private int physicalBlockSize;
 
+    // for baremetal2 instance
+    private String type;
+    private String format;
+    private String primaryStorageType;
+
     public VolumeTO() {
     }
 
@@ -49,6 +56,9 @@ public class VolumeTO {
         this.shareable = other.shareable;
         this.bootOrder = other.bootOrder;
         this.physicalBlockSize = other.physicalBlockSize;
+        this.type = other.type;
+        this.format = other.format;
+        this.primaryStorageType = other.primaryStorageType;
     }
 
     public static List<VolumeTO> valueOf(List<VolumeInventory> vols, KVMHostInventory host) {
@@ -84,6 +94,14 @@ public class VolumeTO {
         to.setWwn(KVMHost.computeWwnIfAbsent(vol.getUuid()));
         to.setShareable(vol.isShareable());
         to.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
+
+        String psType = Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.uuid, vol.getPrimaryStorageUuid())
+                .select(PrimaryStorageVO_.type)
+                .findValue();
+        to.setType(vol.getType());
+        to.setFormat(vol.getFormat());
+        to.setPrimaryStorageType(psType);
 
         if (!withExtension) {
             return to;
@@ -190,5 +208,29 @@ public class VolumeTO {
 
     public void setPhysicalBlockSize(int physicalBlockSize) {
         this.physicalBlockSize = physicalBlockSize;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
+    }
+
+    public String getPrimaryStorageType() {
+        return primaryStorageType;
+    }
+
+    public void setPrimaryStorageType(String primaryStorageType) {
+        this.primaryStorageType = primaryStorageType;
     }
 }

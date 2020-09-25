@@ -40,6 +40,9 @@ public class ConsoleProxyVO extends ResourceVO {
     private Integer proxyPort;
 
     @Column
+    private String targetSchema;
+
+    @Column
     private String targetHostname;
 
     @Column
@@ -134,6 +137,14 @@ public class ConsoleProxyVO extends ResourceVO {
 
     public void setProxyPort(Integer proxyPort) {
         this.proxyPort = proxyPort;
+    }
+
+    public String getTargetSchema() {
+        return targetSchema;
+    }
+
+    public void setTargetSchema(String targetSchema) {
+        this.targetSchema = targetSchema;
     }
 
     public String getTargetHostname() {
