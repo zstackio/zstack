@@ -22,6 +22,8 @@ public interface ConsoleConstants {
 
     String VNC_IPTABLES_COMMENTS = "vnc.allow.port";
 
+    String VNC_SCHEMA = "vnc";
+    String HTTP_SCHEMA = "http";
 
     public static enum ConsoleGlobalConfig {
         ProxyIdleTimeout;

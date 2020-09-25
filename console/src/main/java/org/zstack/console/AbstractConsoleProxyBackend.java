@@ -29,11 +29,12 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import static org.zstack.core.Platform.*;
 
 import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created with IntelliJ IDEA.
@@ -75,6 +76,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
                 vo.setScheme(ret.getScheme());
                 vo.setProxyHostname(ret.getProxyHostname());
                 vo.setProxyPort(ret.getProxyPort());
+                vo.setTargetSchema(ret.getTargetSchema());
                 vo.setTargetHostname(ret.getTargetHostname());
                 vo.setTargetPort(ret.getTargetPort());
                 vo.setToken(ret.getToken());
@@ -200,6 +202,15 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
         TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
         q.setParameter("uuid", vm.getUuid());
         List<String> ret = q.getResultList();
+        if (!ret.isEmpty()) {
+            return ret.get(0);
+        }
+
+        // FIXME
+        sql = "select g.managementIp from BareMetal2GatewayVO g, BareMetal2InstanceVO bm where g.uuid = bm.gatewayUuid and bm.uuid = :uuid";
+        q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("uuid", vm.getUuid());
+        ret = q.getResultList();
         return ret.isEmpty() ? null : ret.get(0);
     }
 

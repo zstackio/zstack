@@ -91,20 +91,20 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             return;
         }
 
-        List<Tuple> avaliablePsTuples = Q.New(PrimaryStorageVO.class)
+        List<Tuple> availablePsTuples = Q.New(PrimaryStorageVO.class)
                 .select(PrimaryStorageVO_.uuid, PrimaryStorageVO_.type)
                 .in(PrimaryStorageVO_.uuid, possiblePsUuids)
                 .eq(PrimaryStorageVO_.state, PrimaryStorageState.Enabled)
                 .eq(PrimaryStorageVO_.status, PrimaryStorageStatus.Connected)
                 .listTuple();
 
-        List<String> avaliablePsUuids = new ArrayList<>();
+        List<String> availablePsUuids = new ArrayList<>();
         List<String> localPsUuids = new ArrayList<>();
         List<String> nonLocalPsUuids = new ArrayList<>();
-        for (Tuple tuple : avaliablePsTuples) {
+        for (Tuple tuple : availablePsTuples) {
             String psUuid = (String)tuple.get(0);
             String psType = (String)tuple.get(1);
-            avaliablePsUuids.add((String)tuple.get(0));
+            availablePsUuids.add((String)tuple.get(0));
 
             if (psType.equals(PrimaryStorageConstants.LOCAL_STORAGE_TYPE)) {
                 localPsUuids.add(psUuid);
@@ -113,7 +113,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }
         }
 
-        if (avaliablePsUuids.isEmpty()) {
+        if (availablePsUuids.isEmpty()) {
             allocate(trigger, spec);
             return;
         }
@@ -130,8 +130,8 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             List<String[]> psCombos2 = new ArrayList<>();
             List<String[]> psCombos3 = new ArrayList<>();
 
-            for (String rootVolumePsUuid : avaliablePsUuids) {
-                for (String dataVolumePsUuid : avaliablePsUuids) {
+            for (String rootVolumePsUuid : availablePsUuids) {
+                for (String dataVolumePsUuid : availablePsUuids) {
                     String[] combo = {rootVolumePsUuid, dataVolumePsUuid};
 
                     if (localPsUuids.contains(rootVolumePsUuid) && nonLocalPsUuids.contains(dataVolumePsUuid)) {
@@ -169,7 +169,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }).run(new NoErrorCompletion(trigger) {
                 @Override
                 public void done() {
-                    if (errorCodes.size() == avaliablePsUuids.size()) {
+                    if (errorCodes.size() == availablePsUuids.size()) {
                         trigger.fail(errorCodes.get(0));
                         return;
                     }
@@ -180,16 +180,16 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             return;
         }
 
-        avaliablePsUuids.clear();
+        availablePsUuids.clear();
         if (autoAllocateRootVolumePs) {
-            avaliablePsUuids.addAll(localPsUuids);
-            avaliablePsUuids.addAll(nonLocalPsUuids);
+            availablePsUuids.addAll(localPsUuids);
+            availablePsUuids.addAll(nonLocalPsUuids);
         } else {
-            avaliablePsUuids.addAll(nonLocalPsUuids);
-            avaliablePsUuids.addAll(localPsUuids);
+            availablePsUuids.addAll(nonLocalPsUuids);
+            availablePsUuids.addAll(localPsUuids);
         }
 
-        new While<>(avaliablePsUuids).each((psUuid, whileCompletion) -> {
+        new While<>(availablePsUuids).each((psUuid, whileCompletion) -> {
             if (autoAllocateRootVolumePs) {
                 spec.setRequiredPrimaryStorageUuidForRootVolume(psUuid);
             } else {
@@ -212,7 +212,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         }).run(new NoErrorCompletion(trigger) {
             @Override
             public void done() {
-                if (errorCodes.size() == avaliablePsUuids.size()) {
+                if (errorCodes.size() == availablePsUuids.size()) {
                     trigger.fail(errorCodes.get(0));
                     return;
                 }
@@ -343,7 +343,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         String l3Uuid = vm.getDefaultL3NetworkUuid();
         String zoneUuid = vm.getZoneUuid();
         String rootVolumePsUuid = spec.getRequiredPrimaryStorageUuidForRootVolume();
-        String dataVoluePsUuid = spec.getRequiredPrimaryStorageUuidForDataVolume();
+        String dataVolumePsUuid = spec.getRequiredPrimaryStorageUuidForDataVolume();
 
         if (hostUuid != null) {
             clusterUuid = Q.New(HostVO.class)
@@ -363,10 +363,10 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }
         }
 
-        if (dataVoluePsUuid != null) {
+        if (dataVolumePsUuid != null) {
             List<String> clusters = Q.New(PrimaryStorageClusterRefVO.class)
                     .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                    .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, dataVoluePsUuid)
+                    .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, dataVolumePsUuid)
                     .listValues();
             if (clusters.size() == 1) {
                 return clusters.get(0);
@@ -410,7 +410,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         String l3Uuid = vm.getDefaultL3NetworkUuid();
         String zoneUuid = vm.getZoneUuid();
         String rootVolumePsUuid = spec.getRequiredPrimaryStorageUuidForRootVolume();
-        String dataVoluePsUuid = spec.getRequiredPrimaryStorageUuidForDataVolume();
+        String dataVolumePsUuid = spec.getRequiredPrimaryStorageUuidForDataVolume();
 
         if (rootVolumePsUuid != null) {
             return Q.New(PrimaryStorageClusterRefVO.class)
@@ -419,10 +419,10 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                     .listValues();
         }
 
-        if (dataVoluePsUuid != null) {
+        if (dataVolumePsUuid != null) {
             return Q.New(PrimaryStorageClusterRefVO.class)
                     .select(PrimaryStorageClusterRefVO_.clusterUuid)
-                    .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, dataVoluePsUuid)
+                    .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, dataVolumePsUuid)
                     .listValues();
         }
 

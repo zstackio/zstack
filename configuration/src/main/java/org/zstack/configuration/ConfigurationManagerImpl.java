@@ -3,7 +3,6 @@ package org.zstack.configuration;
 import javassist.Modifier;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.util.Strings;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -168,12 +167,36 @@ public class ConfigurationManagerImpl extends AbstractService implements Configu
                 handle((APIGenerateSqlForeignKeyMsg) msg);
             } else if (msg instanceof APIGenerateSqlIndexMsg) {
                 handle((APIGenerateSqlIndexMsg) msg);
+            } else if (msg instanceof APIGetGlobalPropertyMsg) {
+                handle((APIGetGlobalPropertyMsg) msg);
             } else {
                 bus.dealWithUnknownMessage(msg);
             }
         } catch (IOException e) {
             throw new CloudRuntimeException(e);
         }
+    }
+
+    private void handle(APIGetGlobalPropertyMsg msg) {
+        /*
+        Properties p = System.getProperties();
+        Enumeration keys = p.keys();
+        List<String> pps = new ArrayList<String>();
+        while (keys.hasMoreElements()) {
+            String key = (String) keys.nextElement();
+            String value = (String) p.get(key);
+            pps.add(String.format("%s = %s", key, value));
+        }
+         */
+
+        List<String> pps = new ArrayList<>();
+        for (Map.Entry<String, String> e : Platform.getGlobalProperties().entrySet()) {
+            pps.add(String.format("%s: %s", e.getKey(), e.getValue()));
+        }
+
+        APIGetGlobalPropertyReply reply = new APIGetGlobalPropertyReply();
+        reply.setProperties(pps);
+        bus.reply(msg, reply);
     }
 
     private void handle(APIGenerateSqlIndexMsg msg) {
