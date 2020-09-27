@@ -4301,13 +4301,20 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     // switch vm default nic if vm current default nic is input parm nic
     protected void selectDefaultL3(VmNicInventory nic) {
-        if (self.getDefaultL3NetworkUuid() != null && !VmNicHelper.isDefaultNic(nic, VmInstanceInventory.valueOf(self))) {
-            return;
+        if (self.getDefaultL3NetworkUuid() != null) {
+            VmInstanceInventory vmInstanceInventory = VmInstanceInventory.valueOf(self);
+            
+            // maybe default L3 network and nic has been modified | ZSTAC-29441
+            if (VmNicHelper.getDefaultNic(vmInstanceInventory) == null) {
+                self.setDefaultL3NetworkUuid(null);
+            } else if (!VmNicHelper.isDefaultNic(nic, vmInstanceInventory)) {
+                return;
+            }
         }
 
         final VmInstanceInventory vm = getSelfInventory();
         final String previousDefaultL3 = vm.getDefaultL3NetworkUuid();
-
+        
         // the nic has been removed, reload
         self = dbf.reload(self);
 
@@ -4379,15 +4386,20 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.DetachNic);
         spec.setVmInventory(VmInstanceInventory.valueOf(self));
         spec.setDestNics(list(nic));
-        L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class));
-        spec.setL3Networks(list(new VmNicSpec(l3Inv)));
-
+    
         FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
         flowChain.setName(String.format("detachNic-vm-%s-nic-%s", self.getUuid(), nicUuid));
         setFlowMarshaller(flowChain);
+        
+        if (nic.getL3NetworkUuid() != null) {
+            L3NetworkVO l3NetworkVO = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
+            L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(l3NetworkVO);
+            spec.setL3Networks(list(new VmNicSpec(l3Inv)));
+        }
+        
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         flowChain.getData().put(Params.ReleaseNicAfterDetachNic.toString(), releaseNic);
-        if (self.getState() == VmInstanceState.Running) {
+        if (self.getState() == VmInstanceState.Running && nic.getL3NetworkUuid() != null) {
             flowChain.then(new VmDetachNicOnHypervisorFlow());
         }
         flowChain.then(new VmReleaseResourceOnDetachingNicFlow());
