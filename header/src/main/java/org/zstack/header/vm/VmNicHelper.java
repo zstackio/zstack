@@ -1,15 +1,13 @@
 package org.zstack.header.vm;
 
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.UsedIpInventory;
-import org.zstack.header.network.l3.UsedIpVO;
-import org.zstack.utils.Utils;
-import org.zstack.utils.gson.JSONObjectUtil;
-import org.zstack.utils.logging.CLogger;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.l3.UsedIpVO;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 public class VmNicHelper {
     private static final CLogger logger = Utils.getLogger(VmNicHelper.class);
@@ -97,6 +95,13 @@ public class VmNicHelper {
         }
 
         return false;
+    }
+    
+    public static VmNicInventory getDefaultNic(VmInstanceInventory vm) {
+        return vm.getVmNics().stream()
+                .filter(nic -> isDefaultNic(nic, vm))
+                .findAny()
+                .orElse(null);
     }
 
     public static String getPrimaryL3Uuid(VmNicInventory nic) {
