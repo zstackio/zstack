@@ -7,6 +7,7 @@ import org.zstack.header.message.DeletionMessage;
 public class VmInstanceDeletionMsg extends DeletionMessage implements VmInstanceMessage, ReleaseResourceMessage {
     private String vmInstanceUuid;
     private String deletionPolicy;
+    private boolean additionalFlowRequested = true;
     private boolean ignoreResourceReleaseFailure = false;
 
     public String getDeletionPolicy() {
@@ -32,5 +33,13 @@ public class VmInstanceDeletionMsg extends DeletionMessage implements VmInstance
 
     public void setIgnoreResourceReleaseFailure(boolean ignoreResourceReleaseFailure) {
         this.ignoreResourceReleaseFailure = ignoreResourceReleaseFailure;
+    }
+
+    public boolean isAdditionalFlowRequested() {
+        return additionalFlowRequested;
+    }
+
+    public void setAdditionalFlowRequested(boolean additionalFlowRequested) {
+        this.additionalFlowRequested = additionalFlowRequested;
     }
 }
