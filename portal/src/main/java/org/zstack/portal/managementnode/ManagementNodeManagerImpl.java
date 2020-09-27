@@ -135,7 +135,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         @Override
         public void nodeLeft(ManagementNodeInventory inv) {
             final String nodeId = inv.getUuid();
-            if (joinedManagementNodes.remove(nodeId) == null) {
+            if (joinedManagementNodes.remove(nodeId) == null && !destinationMaker.getManagementNodesInHashRing().contains(nodeId)) {
                 logger.debug(String.format("the management node[uuid:%s] is not in our hash ring, ignore this node-left call", nodeId));
                 return;
             }
