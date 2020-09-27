@@ -11,11 +11,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.*;
+import java.nio.file.attribute.*;
 import java.util.*;
 
 public class PathUtil {
@@ -323,5 +320,32 @@ public class PathUtil {
             return false;
         }
         return true;
+    }
+    
+    public static boolean chown(File file, String userOwner, String groupOwner) {
+        boolean success = true;
+        FileSystem fs = FileSystems.getDefault();
+        UserPrincipalLookupService lookup = fs.getUserPrincipalLookupService();
+        
+        if (userOwner != null) {
+            try {
+                UserPrincipal newOwner = lookup.lookupPrincipalByName(userOwner);
+                Files.setOwner(file.toPath(), newOwner);
+            } catch (IOException e) {
+                success = false;
+            }
+        }
+        
+        if (groupOwner != null) {
+            try {
+                GroupPrincipal group = lookup.lookupPrincipalByGroupName(groupOwner);
+                Files.getFileAttributeView(file.toPath(), PosixFileAttributeView.class,
+                    LinkOption.NOFOLLOW_LINKS).setGroup(group);
+            } catch (IOException e) {
+                success = false;
+            }
+        }
+        
+        return success;
     }
 }
