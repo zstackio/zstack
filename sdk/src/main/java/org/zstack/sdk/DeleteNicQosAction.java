@@ -28,7 +28,7 @@ public class DeleteNicQosAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, validValues = {"in","out"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"in","out","dscp"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String direction;
 
     @Param(required = false)

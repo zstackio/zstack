@@ -2412,6 +2412,7 @@ public class KVMHost extends HostBase implements Host {
         KVMCompleteNicInformationExtensionPoint extp = factory.getCompleteNicInfoExtension(L2NetworkType.valueOf(l2inv.getType()));
         NicTO to = extp.completeNicInformation(l2inv, l3Inv, nic);
 
+        to.setUsedIps(VmNicHelper.getIpAddresses(nic));
         if (to.getUseVirtio() == null) {
             SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
             q.select(VmInstanceVO_.platform);
