@@ -10,6 +10,7 @@ import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.log.LogUtils;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.core.thread.*;
@@ -674,9 +675,11 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     }
 
     private boolean islogMessage(Message msg) {
-        if (CloudBusGlobalProperty.READ_API_LOG_OFF && (msg instanceof APISyncCallMessage || msg instanceof APIReply)) {
-            return false;
-        } else if (CloudBusGlobalProperty.MESSAGE_LOG_FILTER_ALL) {
+        if (msg instanceof APISyncCallMessage || msg instanceof APIReply) {
+            return new LogUtils().isLogReadAPI();
+        }
+
+        if (CloudBusGlobalProperty.MESSAGE_LOG_FILTER_ALL) {
             return !filterMsgNames.contains(msg.getClass().getName());
         } else {
             return filterMsgNames.contains(msg.getClass().getName());
