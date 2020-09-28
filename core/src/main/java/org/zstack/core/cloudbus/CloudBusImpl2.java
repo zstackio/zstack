@@ -13,6 +13,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.jmx.JmxFacade;
+import org.zstack.core.log.LogUtils;
 import org.zstack.core.thread.*;
 import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -549,9 +550,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                 return true;
             }
 
-            if (CloudBusGlobalProperty.READ_API_LOG_OFF &&
-                    (msg instanceof APISyncCallMessage || msg instanceof APIReply)) {
-                return false;
+            if (msg instanceof APISyncCallMessage || msg instanceof APIReply) {
+                return new LogUtils().isLogReadAPI();
             }
 
             if (CloudBusGlobalProperty.MESSAGE_LOG_FILTER_ALL) {

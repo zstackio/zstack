@@ -16,12 +16,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusEventListener;
-import org.zstack.core.cloudbus.CloudBusGlobalProperty;
-import org.zstack.core.cloudbus.CloudBusGson;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.log.LogSafeGson;
+import org.zstack.core.log.LogUtils;
 import org.zstack.core.retry.Retry;
 import org.zstack.core.retry.RetryCondition;
 import org.zstack.header.Component;
@@ -597,8 +595,8 @@ public class RestServer implements Component, CloudBusEventListener {
             return true;
         }
 
-        if (CloudBusGlobalProperty.READ_API_LOG_OFF && HttpMethod.GET.name().equals(req.method)) {
-            return false;
+        if (HttpMethod.GET.name().equals(req.method)) {
+            return new LogUtils().isLogReadAPI();
         }
 
         return true;
