@@ -2813,7 +2813,12 @@ public class KVMHost extends HostBase implements Host {
                             sshShell.setPassword(getSelf().getPassword());
                             sshShell.setPort(getSelf().getPort());
                             ShellUtils.run(String.format("arp -d %s || true", getSelf().getManagementIp()));
-                            SshResult ret = sshShell.runCommand(String.format("curl --connect-timeout 10 %s", restf.getCallbackUrl()));
+                            final String cmd = String.format("curl --connect-timeout 10 %s", restf.getCallbackUrl());
+                            SshResult ret = sshShell.runCommand(cmd);
+                            if (ret.getStderr() != null && ret.getStderr().contains("No route to host")) {
+                                // c.f. https://access.redhat.com/solutions/1120533
+                                ret = sshShell.runCommand(cmd);
+                            }
 
                             if (ret.isSshFailure()) {
                                 throw new OperationFailureException(operr("unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity," +
