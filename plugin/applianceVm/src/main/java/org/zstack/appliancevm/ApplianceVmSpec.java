@@ -37,7 +37,7 @@ public class ApplianceVmSpec implements Serializable {
     private String sshUsername = "root";
     private int sshPort = 22;
     private int agentPort = 7759;
-    private Map<Integer, String> staticVip = new HashMap<>();
+    private Map<String,Map<Integer, String>> staticVip = new HashMap<>();
     private ApplianceVmHaSpec haSpec;
     private String requiredZoneUuid;
     private String requiredClusterUuid;
@@ -198,11 +198,11 @@ public class ApplianceVmSpec implements Serializable {
         this.haSpec = haSpec;
     }
 
-    public Map<Integer, String> getStaticVip() {
+    public Map<String,Map<Integer, String>> getStaticVip() {
         return staticVip;
     }
 
-    public void setStaticVip(Map<Integer, String> staticVip) {
+    public void setStaticVip(Map <String,Map<Integer, String>> staticVip) {
         this.staticVip = staticVip;
     }
 
