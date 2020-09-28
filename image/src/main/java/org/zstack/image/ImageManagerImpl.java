@@ -1187,7 +1187,11 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         vo.setState(ImageState.Enabled);
         vo.setUrl(msgData.getUrl());
         vo.setDescription(msgData.getDescription());
-        vo.setArchitecture(msgData.getArchitecture());
+        if (msgData.getFormat().equals(ImageConstant.VMTX_FORMAT_STRING)) {
+            vo.setArchitecture(ImageArchitecture.x86_64.toString());
+        } else {
+            vo.setArchitecture(msgData.getArchitecture());
+        }
         if (msgData.getPlatform() != null) {
             vo.setPlatform(ImagePlatform.valueOf(msgData.getPlatform()));
         }
