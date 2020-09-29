@@ -2,7 +2,7 @@ package org.zstack.compute.vm;
 
 public interface VmNicQosConfigBackend {
     String getVmInstanceType();
-    void addNicQos(String vmUuid, String vmNicUuid, Long outboundBandwidth, Long inboundBandwidth);
+    void addNicQos(String vmUuid, String vmNicUuid, Long outboundBandwidth, Long inboundBandwidth, Integer dscp);
     void deleteNicQos(String vmUuid, String vmNicUuid,String direction);
     VmNicQosStruct getNicQos(String vmUuid, String vmNicUuid);
 
