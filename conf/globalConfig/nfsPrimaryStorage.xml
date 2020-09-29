@@ -15,4 +15,12 @@
 		<category>nfsPrimaryStorage</category>
 		<type>java.lang.Integer</type>
 	</config>
+
+	<config>
+		<name>qcow2.allocation</name>
+		<description>qcow2 allocation policy, can be none, metadata, falloc, full</description>
+		<defaultValue>none</defaultValue>
+		<category>nfsPrimaryStorage</category>
+		<type>java.lang.String</type>
+	</config>
 </globalConfig>
