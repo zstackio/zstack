@@ -280,11 +280,6 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     public PrimaryStorageInventory createPrimaryStorage(PrimaryStorageVO vo, APIAddPrimaryStorageMsg msg) {
         vo.setMountPath(msg.getUrl());
         vo = dbf.persistAndRefresh(vo);
-
-        for (InitPrimarystoragePreallocationConfigExtensionPoint exp : pluginRgty.getExtensionList(InitPrimarystoragePreallocationConfigExtensionPoint.class)) {
-            exp.InitPrimarystoragePreallocationConfig(vo.getUuid());
-        }
-
         return PrimaryStorageInventory.valueOf(vo);
     }
 
