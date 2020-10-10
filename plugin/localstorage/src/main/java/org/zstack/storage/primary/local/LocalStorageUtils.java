@@ -181,4 +181,18 @@ public class LocalStorageUtils {
         }.execute();
         return huuid;
     }
+
+    @Transactional(readOnly = true)
+    public static String getPrimaryStorageUuidByHostUuid(String hostUuid) {
+
+        String psUuid = Q.New(LocalStorageHostRefVO.class)
+                .select(LocalStorageHostRefVO_.primaryStorageUuid)
+                .eq(LocalStorageHostRefVO_.hostUuid, hostUuid)
+                .findValue();
+        if (psUuid == null) {
+            throw new OperationFailureException(operr("cannot find any primaryStorage for host[uuid:%s]", hostUuid));
+        }
+        return psUuid;
+    }
+
 }
