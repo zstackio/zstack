@@ -181,4 +181,25 @@ public class LocalStorageUtils {
         }.execute();
         return huuid;
     }
+
+    public static String getPrimaryStorageUuidByHostUuid(String hostUuid) {
+        String psUuid;
+        psUuid = new SQLBatchWithReturn<String>() {
+            private String findHostByUuid(String uuid) {
+                return sql("select uuid from HostVO where uuid = :uuid", String.class).param("uuid", uuid).find();
+            }
+
+            @Override
+            protected String scripts() {
+                String uuid = sql("select primaryStorageUuid from LocalStorageHostRefVO where hostUuid = :hostUuid", String.class)
+                        .param("hostUuid", hostUuid)
+                        .find();
+                if (uuid == null) {
+                    throw new OperationFailureException(operr("cannot find any primaryStorage for host[uuid:%s]", hostUuid));
+                }
+                return uuid;
+            }
+        }.execute();
+        return psUuid;
+    }
 }
