@@ -673,11 +673,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
     private void handle(final InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg msg) {
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
         final ImageSpec ispec = msg.getTemplateSpec();
-
-        SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
-        q.select(BackupStorageVO_.type);
-        q.add(BackupStorageVO_.uuid, Op.EQ, ispec.getSelectedBackupStorage().getBackupStorageUuid());
-        final String bsType = q.findValue();
         final VolumeInventory volume = msg.getVolume();
         final ImageInventory image = ispec.getInventory();
 
@@ -718,12 +713,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     flow(new NoRollbackFlow() {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            NfsPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(
-                                    BackupStorageType.valueOf(bsType),
-                                    nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getFormat(), self.getUuid())
-                            );
-
-                            mediator.createVolumeFromImageCache(primaryStorage, imageCache, volume, new ReturnValueCompletion<String>(trigger) {
+                            NfsPrimaryStorageBackend backend = factory.getHypervisorBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getFormat(), self.getUuid()));
+                            backend.createVolumeFromImageCache(primaryStorage, imageCache, volume, new ReturnValueCompletion<String>(trigger) {
                                 @Override
                                 public void success(String returnValue) {
                                     volumeInstallPath = returnValue;
@@ -884,6 +875,35 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         } else {
             backend.delete(getSelfInventory(), vol.getInstallPath(), completion);
         }
+    }
+
+    @Override
+    protected void handle(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
+        CreateImageCacheFromVolumeOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeOnPrimaryStorageReply();
+
+        ImageSpec spec = new ImageSpec();
+        spec.setInventory(msg.getImageInventory());
+
+        NfsDownloadImageToCacheJob job = new NfsDownloadImageToCacheJob();
+        job.setPrimaryStorage(getSelfInventory());
+        job.setImage(spec);
+        job.setVolume(msg.getVolumeInventory());
+
+        jobf.execute(NfsPrimaryStorageKvmHelper.makeDownloadImageJobName(msg.getImageInventory(), job.getPrimaryStorage()),
+                NfsPrimaryStorageKvmHelper.makeJobOwnerName(job.getPrimaryStorage()), job,
+                new ReturnValueCompletion<ImageCacheInventory>(msg) {
+
+                    @Override
+                    public void success(ImageCacheInventory cache) {
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                }, ImageCacheInventory.class);
     }
 
     @Override

@@ -43,6 +43,11 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
             return;
         }
 
+        if (spec.getRequiredPrimaryStorageUuids() != null && spec.getRequiredPrimaryStorageUuids().size() == 1) {
+            prepareForNext(candidates);
+            return;
+        }
+
         PrimaryStoragePriorityGetter.PrimaryStoragePriority priority =
                 priorityGetter.getPrimaryStoragePriority(spec.getImage().getUuid(), spec.getRequiredBackupStorageUuid());
 

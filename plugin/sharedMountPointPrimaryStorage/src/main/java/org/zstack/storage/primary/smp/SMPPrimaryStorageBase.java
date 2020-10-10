@@ -209,6 +209,26 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
+    protected void handle(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
+        HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getVolumeInventory().getFormat());
+        HypervisorFactory f = getHypervisorFactoryByHypervisorType(type.toString());
+        HypervisorBackend bkd = f.getHypervisorBackend(self);
+        bkd.handle(msg, new ReturnValueCompletion<CreateImageCacheFromVolumeOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(CreateImageCacheFromVolumeOnPrimaryStorageReply reply) {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                CreateImageCacheFromVolumeOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeOnPrimaryStorageReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    @Override
     protected void handle(final CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
         HypervisorType type = VolumeFormat.getMasterHypervisorTypeByVolumeFormat(msg.getVolumeInventory().getFormat());
         HypervisorFactory f = getHypervisorFactoryByHypervisorType(type.toString());

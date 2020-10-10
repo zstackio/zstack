@@ -54,12 +54,15 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         final ImageInventory iminv = spec.getImageSpec().getInventory();
 
         // get ps types from bs
-        SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
-        q.select(BackupStorageVO_.type);
-        q.add(BackupStorageVO_.uuid, Op.EQ, spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
-        String bsType = q.findValue();
-        List<String> primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
-        DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
+        List<String> primaryStorageTypes = null;
+        if (spec.getImageSpec().isNeedDownload() || spec.getImageSpec().getSelectedBackupStorage() != null) {
+            SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
+            q.select(BackupStorageVO_.type);
+            q.add(BackupStorageVO_.uuid, Op.EQ, spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
+            String bsType = q.findValue();
+            primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
+            DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
+        }
 
         // allocate ps for root volume
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();

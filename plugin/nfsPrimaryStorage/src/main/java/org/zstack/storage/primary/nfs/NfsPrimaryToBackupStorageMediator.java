@@ -9,9 +9,6 @@ import org.zstack.header.storage.primary.PrimaryToBackupStorageMediator;
 import org.zstack.header.volume.VolumeInventory;
 
 public interface NfsPrimaryToBackupStorageMediator extends PrimaryToBackupStorageMediator {
-    void createVolumeFromImageCache(PrimaryStorageInventory primaryStorage, ImageCacheInventory image,
-                                    VolumeInventory volume, ReturnValueCompletion<String> completion);
-
     void downloadBits(PrimaryStorageInventory pinv, BackupStorageInventory bsinv, String backupStorageInstallPath, String primaryStorageInstallPath, boolean isData, Completion completion);
 
     void uploadBits(String imageUuid, PrimaryStorageInventory pinv, BackupStorageInventory bsinv, String backupStorageInstallPath, String primaryStorageInstallPath, ReturnValueCompletion<String> completion);

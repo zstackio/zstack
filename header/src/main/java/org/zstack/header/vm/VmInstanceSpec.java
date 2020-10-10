@@ -89,6 +89,7 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
 
     public static class ImageSpec implements Serializable {
         private ImageInventory inventory;
+        private boolean needDownload = true;
         private ImageBackupStorageRefInventory selectedBackupStorage;
 
         public ImageInventory getInventory() {
@@ -105,6 +106,14 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
 
         public void setSelectedBackupStorage(ImageBackupStorageRefInventory selectedBackupStorage) {
             this.selectedBackupStorage = selectedBackupStorage;
+        }
+
+        public boolean isNeedDownload() {
+            return needDownload;
+        }
+
+        public void setNeedDownload(boolean needDownload) {
+            this.needDownload = needDownload;
         }
     }
 

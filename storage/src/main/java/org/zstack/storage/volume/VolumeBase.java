@@ -123,6 +123,8 @@ public class VolumeBase implements Volume {
             handle((DeleteVolumeMsg) msg);
         } else if (msg instanceof VolumeCreateSnapshotMsg) {
             handle((VolumeCreateSnapshotMsg) msg);
+        } else if (msg instanceof CreateImageCacheFromVolumeMsg) {
+            handle((CreateImageCacheFromVolumeMsg) msg);
         } else if (msg instanceof CreateDataVolumeTemplateFromDataVolumeMsg) {
             handle((CreateDataVolumeTemplateFromDataVolumeMsg) msg);
         } else if (msg instanceof ExpungeVolumeMsg) {
@@ -832,6 +834,30 @@ public class VolumeBase implements Volume {
         });
     }
 
+    private void handle(final CreateImageCacheFromVolumeMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doCreateImageCacheFromVolume(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("create-data-volume-template-from-data-volume-%s", msg.getVolumeUuid());
+            }
+        });
+    }
+
     private void handle(final CreateDataVolumeTemplateFromDataVolumeMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
@@ -853,6 +879,29 @@ public class VolumeBase implements Volume {
             @Override
             public String getName() {
                 return String.format("create-data-volume-template-from-data-volume-%s", msg.getVolumeUuid());
+            }
+        });
+    }
+
+    private void doCreateImageCacheFromVolume(CreateImageCacheFromVolumeMsg msg, NoErrorCompletion completion) {
+        CreateImageCacheFromVolumeReply outReply = new CreateImageCacheFromVolumeReply();
+
+        final CreateImageCacheFromVolumeOnPrimaryStorageMsg cmsg = new CreateImageCacheFromVolumeOnPrimaryStorageMsg();
+        cmsg.setImageInventory(msg.getImage());
+        cmsg.setVolumeInventory(getSelfInventory());
+        bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+        bus.send(cmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    outReply.setError(r.getError());
+                } else {
+                    CreateImageCacheFromVolumeOnPrimaryStorageReply reply = r.castReply();
+                    outReply.setLocateHostUuid(reply.getLocateHostUuid());
+                }
+
+                bus.reply(msg, outReply);
+                completion.done();
             }
         });
     }
