@@ -2108,7 +2108,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     @Override
     void downloadImageToCache(ImageInventory img, String hostUuid, final ReturnValueCompletion<String> completion) {
         DownloadVolumeTemplateToPrimaryStorageMsg dmsg = new DownloadVolumeTemplateToPrimaryStorageMsg();
+        String originPrimaryStorageUuid = self.getUuid();
         dmsg.setPrimaryStorageUuid(self.getUuid());
+        if (hostUuid.length()>0) {
+            String destPrimaryStorageUuid = LocalStorageUtils.getPrimaryStorageUuidByHostUuid(hostUuid);
+            if (destPrimaryStorageUuid != null) {
+                String PrimaryStorageUuid = !originPrimaryStorageUuid.equals(destPrimaryStorageUuid) ? destPrimaryStorageUuid:originPrimaryStorageUuid;
+                dmsg.setPrimaryStorageUuid(PrimaryStorageUuid);
+            }
+        }
         dmsg.setHostUuid(hostUuid);
         ImageSpec imageSpec = new ImageSpec();
         imageSpec.setInventory(img);
@@ -2312,7 +2320,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             return;
                         }
 
-                        reserveCapacityOnHost(struct.getDestHostUuid(), context.baseImageCacheSize, self.getUuid());
+                        reserveCapacityOnHost(struct.getDestHostUuid(), context.baseImageCacheSize, struct.getDestPrimaryStorageUuid());
                         s = true;
                         trigger.next();
                     }
@@ -2320,7 +2328,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
-                            returnStorageCapacityToHost(struct.getDestHostUuid(), context.baseImageCacheSize);
+                            if (struct.CrossPrimaryStorage()) {
+                                PrimaryStorageVO ps = dbf.findByUuid(struct.getDestPrimaryStorageUuid(), PrimaryStorageVO.class);
+                                returnStorageCapacityToDestHost(struct.getDestHostUuid(),context.baseImageCacheSize, ps);
+                            } else {
+                                returnStorageCapacityToHost(struct.getDestHostUuid(), context.baseImageCacheSize);
+                            }
                         }
                         trigger.rollback();
                     }
@@ -2856,7 +2869,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     Long managedResourceSize = calculateManagedResourceActualSize(hostUuid);
                     Long usedSize = rsp.getTotalCapacity() - rsp.getAvailableCapacity() - managedResourceSize;
-                    
+
                     total += rsp.getTotalCapacity();
 
                     avail += rsp.getAvailableCapacity();
