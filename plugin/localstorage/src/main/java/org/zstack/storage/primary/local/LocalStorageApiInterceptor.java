@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.local;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.IsoOperator;
 import org.zstack.core.cloudbus.CloudBus;
@@ -95,39 +96,74 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(argerr("the volume[uuid:%s] is already on the host[uuid:%s]", msg.getVolumeUuid(), msg.getDestHostUuid()));
                 }
 
-                //2.confirm primary storage is available.
+                //2.confirm if has multi primary storage for dest host
+                String destPrimaryStorageUuid = msg.getDestPrimaryStorageUuid();
+                boolean isMultiPrimaryStorage = false;
+
+                List<String> destHostPSUuids = Q.New(LocalStorageHostRefVO.class)
+                        .select(LocalStorageHostRefVO_.primaryStorageUuid)
+                        .eq(LocalStorageHostRefVO_.hostUuid, msg.getDestHostUuid())
+                        .listValues();
+
+                if (destHostPSUuids.size() >0) {
+                    if (destPrimaryStorageUuid == null) {
+                        if (destHostPSUuids.size() == 1) {
+                            destPrimaryStorageUuid = destHostPSUuids.get(0);
+                        } else {
+                            if (!destHostPSUuids.contains(ref.getPrimaryStorageUuid())) {
+                                throw new ApiMessageInterceptionException(argerr("the dest host[uuid:%s] has attach multi local primary storage, parameter [destPrimaryStorageUuid] can't be null!", msg.getDestHostUuid()));
+                            } else {
+                                destPrimaryStorageUuid = ref.getPrimaryStorageUuid();
+                            }
+                        }
+                        msg.setDestPrimaryStorageUuid(destPrimaryStorageUuid);
+                    }
+                }
+
+                if (!StringUtils.equals(destPrimaryStorageUuid, ref.getPrimaryStorageUuid())) {
+                    isMultiPrimaryStorage = true;
+                }
+
+                //3.confirm primary storage is available.
                 PrimaryStorageVO vo = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid,ref.getPrimaryStorageUuid()).find();
+                if (isMultiPrimaryStorage) {
+                    vo = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, destPrimaryStorageUuid).find();
+                }
+
                 if (vo == null) {
-                    throw new ApiMessageInterceptionException(argerr("the primary storage[uuid:%s] is not found", msg.getPrimaryStorageUuid()));
+                    throw new ApiMessageInterceptionException(argerr("the primary storage[uuid:%s] is not found", isMultiPrimaryStorage?destPrimaryStorageUuid:msg.getPrimaryStorageUuid()));
                 }
 
                 if (vo.getState() == PrimaryStorageState.Disabled || vo.getState() == PrimaryStorageState.Maintenance) {
-                    throw new ApiMessageInterceptionException(argerr("the primary storage[uuid:%s] is disabled or maintenance cold migrate is not allowed", ref.getPrimaryStorageUuid()));
+                    throw new ApiMessageInterceptionException(argerr("the primary storage[uuid:%s] is disabled or maintenance cold migrate is not allowed", isMultiPrimaryStorage?destPrimaryStorageUuid:ref.getPrimaryStorageUuid()));
                 }
 
-                //3.confirm the dest host belong to the local storage where the volume locates and physical capacity is enough
-                LocalStorageHostRefVO refVO = Q.New(LocalStorageHostRefVO.class)
-                        .eq(LocalStorageHostRefVO_.hostUuid, msg.getDestHostUuid())
-                        .eq(LocalStorageHostRefVO_.primaryStorageUuid,ref.getPrimaryStorageUuid())
-                        .find();
+                //4.confirm the dest host belong to the local storage where the volume locates and physical capacity is enough
+                Q query = Q.New(LocalStorageHostRefVO.class)
+                        .eq(LocalStorageHostRefVO_.hostUuid, msg.getDestHostUuid());
+                if (isMultiPrimaryStorage) {
+                    query.eq(LocalStorageHostRefVO_.primaryStorageUuid,destPrimaryStorageUuid);
+                } else {
+                    query.eq(LocalStorageHostRefVO_.primaryStorageUuid,ref.getPrimaryStorageUuid());
+                }
+                LocalStorageHostRefVO refVO = query.find();
                 if (refVO == null) {
-                    throw new ApiMessageInterceptionException(argerr("the dest host[uuid:%s] doesn't belong to the local primary storage[uuid:%s] where the" +
-                            " volume[uuid:%s] locates", msg.getDestHostUuid(), ref.getPrimaryStorageUuid(), msg.getVolumeUuid()));
+                    throw new ApiMessageInterceptionException(argerr("the dest host[uuid:%s] doesn't attach local primary storage[uuid:%s], please change another dest host!", msg.getDestHostUuid(), isMultiPrimaryStorage?destPrimaryStorageUuid:msg.getPrimaryStorageUuid()));
                 }
 
                 double physicalThreshold = physicalCapacityMgr.getRatio(msg.getPrimaryStorageUuid());
                 if (!((refVO.getTotalPhysicalCapacity() * (1.0 - physicalThreshold)) <= refVO.getAvailablePhysicalCapacity())) {
                     throw new ApiMessageInterceptionException(argerr("the dest host[uuid:%s] doesn't have enough physical capacity due to the threshold of " +
-                            "primary storage[uuid:%s] is %f but available physical capacity is %d", msg.getDestHostUuid(), msg.getPrimaryStorageUuid(), physicalThreshold, refVO.getAvailablePhysicalCapacity()));
+                            "primary storage[uuid:%s] is %f but available physical capacity is %d", msg.getDestHostUuid(), isMultiPrimaryStorage?destPrimaryStorageUuid:msg.getPrimaryStorageUuid(), physicalThreshold, refVO.getAvailablePhysicalCapacity()));
                 }
 
-                //4.confirm primary storage is available.
+                //5.confirm primary storage is available.
                 VolumeVO vol = Q.New(VolumeVO.class).eq(VolumeVO_.uuid,msg.getVolumeUuid()).find();
                 if (VolumeStatus.Ready != vol.getStatus()) {
                     throw new ApiMessageInterceptionException(argerr("the volume[uuid:%s] is not in status of Ready, cannot migrate it", msg.getVolumeUuid()));
                 }
 
-                //5.confirm that the data volume and iso has detach the vm and the root volume will migrate to appropriate cluster.
+                //6.confirm that the data volume and iso has detach the vm and the root volume will migrate to appropriate cluster.
                 if (vol.getType() == VolumeType.Data && vol.getVmInstanceUuid() != null) {
                     throw new ApiMessageInterceptionException(argerr("the data volume[uuid:%s, name: %s] is still attached to the VM[uuid:%s]. Please detach" +
                             " it before migration", vol.getUuid(), vol.getName(), vol.getVmInstanceUuid()));
