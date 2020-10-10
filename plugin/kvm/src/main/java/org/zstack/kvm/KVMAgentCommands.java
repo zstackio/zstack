@@ -1,6 +1,5 @@
 package org.zstack.kvm;
 
-import org.zstack.compute.host.HostPortGetter;
 import org.zstack.header.host.VmNicRedirectConfig;
 import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.core.validation.ConditionalValidation;
@@ -1433,6 +1432,7 @@ public class KVMAgentCommands {
         private String memorySnapshotPath;
         private boolean coloPrimary;
         private boolean coloSecondary;
+        private boolean consoleLogToFile;
 
         // TODO: only for test
         private boolean useColoBinary;
@@ -1799,7 +1799,15 @@ public class KVMAgentCommands {
         public void setColoSecondary(boolean coloSecondary) {
             this.coloSecondary = coloSecondary;
         }
-
+    
+        public boolean isConsoleLogToFile() {
+            return consoleLogToFile;
+        }
+    
+        public void setConsoleLogToFile(boolean consoleLogToFile) {
+            this.consoleLogToFile = consoleLogToFile;
+        }
+    
         @Override
         public Map<String, Object> getAddons() {
             if (addons == null) {
