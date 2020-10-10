@@ -60,7 +60,7 @@ public class APILocalStorageMigrateVolumeMsg extends APIMessage implements Prima
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
     }
- 
+
     public static APILocalStorageMigrateVolumeMsg __example__() {
         APILocalStorageMigrateVolumeMsg msg = new APILocalStorageMigrateVolumeMsg();
 

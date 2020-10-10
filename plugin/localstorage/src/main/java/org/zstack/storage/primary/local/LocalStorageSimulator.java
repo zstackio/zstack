@@ -129,6 +129,20 @@ public class LocalStorageSimulator {
         return null;
     }
 
+    @RequestMapping(value=LocalStorageKvmBackend.REBASE_QCOW2_FILE, method= RequestMethod.POST)
+    public @ResponseBody
+    String rebaseQcow2BackingFileCmd(HttpEntity<String> entity) {
+        RebaseQcow2BackingFileCmd cmd = JSONObjectUtil.toObject(entity.getBody(), RebaseQcow2BackingFileCmd.class);
+        config.rebaseQcow2BackingFileCmd.add(cmd);
+        AgentResponse rsp = new AgentResponse();
+        if (!config.rebaseQcow2BackingFileSuccess) {
+            rsp.setSuccess(false);
+            rsp.setError("on purpose");
+        }
+        reply(entity, rsp);
+        return null;
+    }
+
     @RequestMapping(value=LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, method= RequestMethod.POST)
     public @ResponseBody
     String copyBitsFromRemote(HttpEntity<String> entity) {
