@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.local;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.VolumeMigrationTargetHostFilter;
@@ -12,6 +13,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
@@ -43,6 +45,7 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
+import org.zstack.storage.volume.VolumeBase;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionDSL;
@@ -56,6 +59,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -263,6 +267,14 @@ public class LocalStorageBase extends PrimaryStorageBase {
             bus.publish(evt);
             return;
         }
+
+        VolumeStatus status = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).select(VolumeVO_.status).findValue();
+        if (status == VolumeStatus.Migrating) {
+            evt.setError(operr("The volume [uuid:%s] status is migrating! wait for migrate action finish", msg.getVolumeUuid()));
+            bus.publish(evt);
+            return;
+        }
+
 
         class MigrateStruct {
             private boolean isRootVolume = false;
@@ -565,14 +577,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
             return;
         }
 
-        if (ref.getHostUuid().equals(msg.getDestHostUuid())) {
-            logger.debug(String.format("the volume[uuid:%s] is already on the host[uuid:%s], no need to migrate",
-                    msg.getVolumeUuid(), msg.getDestHostUuid()));
-            bus.reply(msg, reply);
-            completion.done();
-            return;
-        }
-
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("migrate-volume-%s-local-storage-%s-to-host-%s",
                 msg.getVolumeUuid(), msg.getPrimaryStorageUuid(), msg.getDestHostUuid()));
@@ -610,6 +614,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 struct.setDestHostUuid(msg.getDestHostUuid());
                 struct.setSrcHostUuid(ref.getHostUuid());
                 struct.setVolume(VolumeInventory.valueOf(volume));
+                struct.setDestPrimaryStorageUuid(msg.getDestPrimaryStorageUuid());
+                checkIfCrossPrimaryStorage(struct);
+                if (struct.CrossPrimaryStorage()) {
+                    setBaseInfo(struct);
+                }
 
                 if (!snapshots.isEmpty()) {
                     List<String> spUuids = CollectionUtils.transformToList(snapshots, ResourceVO::getUuid);
@@ -641,13 +650,38 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 }
 
-                LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHostUuid());
+                LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHostUuid(), false);
                 bkd = f.getHypervisorBackend(self);
 
                 originVolumeStatus = volume.getStatus();
                 volume.setStatus(VolumeStatus.Migrating);
                 SQL.New(VolumeVO.class).set(VolumeVO_.status, VolumeStatus.Migrating).eq(VolumeVO_.uuid, volume.getUuid()).update();
             }
+
+            private void setBaseInfo(MigrateBitsStruct struct) {
+                PrimaryStorageVO  destPs = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, struct.getDestPrimaryStorageUuid()).find();
+                PrimaryStorageVO originPs = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, struct.getVolume().getPrimaryStorageUuid()).find();
+                String originBaseDir = originPs.getMountPath();
+                String newBaseDir = destPs.getMountPath();
+                struct.setOriginBaseDir(originBaseDir);
+                struct.setNewBaseDir(newBaseDir);
+                String srcVolumeFolderPath = getVolumeFolderPath(struct.getVolume().getInstallPath(), originBaseDir, originBaseDir);
+                String dstVolumeFolderPath = getVolumeFolderPath(struct.getVolume().getInstallPath(), originBaseDir, newBaseDir);
+                struct.setSrcVolumeFolderPath(srcVolumeFolderPath);
+                struct.setDstVolumeFolderPath(dstVolumeFolderPath);
+            }
+
+            private void checkIfCrossPrimaryStorage(MigrateBitsStruct struct) {
+                String originPrimaryStorageUuid = struct.getVolume().getPrimaryStorageUuid();
+                if (struct.getDestPrimaryStorageUuid() == null) {
+                    struct.setCrossPrimaryStorage(false);
+                    return;
+                }
+                if (!StringUtils.equals(struct.getDestPrimaryStorageUuid(), originPrimaryStorageUuid)) {
+                    struct.setCrossPrimaryStorage(true);
+                }
+            }
+
 
             @Override
             public void setup() {
@@ -656,13 +690,19 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(msg.getDestHostUuid(), requiredSize, self.getUuid());
+                        reserveCapacityOnHost(msg.getDestHostUuid(), requiredSize, struct.CrossPrimaryStorage() ? struct.getDestPrimaryStorageUuid(): self.getUuid());
                         trigger.next();
                     }
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        returnStorageCapacityToHost(msg.getDestHostUuid(), requiredSize);
+                        if (struct.CrossPrimaryStorage()) {
+                            PrimaryStorageVO ps = dbf.findByUuid(struct.getDestPrimaryStorageUuid(), PrimaryStorageVO.class);
+                            returnStorageCapacityToDestHost(msg.getDestHostUuid(), requiredSize, ps);
+                        } else {
+                            returnStorageCapacityToHost(msg.getDestHostUuid(), requiredSize);
+                        }
+
                         trigger.rollback();
                     }
                 });
@@ -685,11 +725,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             }
                         }
 
-                        UpdateQuery.New(LocalStorageResourceRefVO.class)
+                        UpdateQuery query = UpdateQuery.New(LocalStorageResourceRefVO.class)
                                 .set(LocalStorageResourceRefVO_.hostUuid, msg.getDestHostUuid())
-                                .condAnd(LocalStorageResourceRefVO_.resourceUuid, Op.IN, resourceUuids)
-                                .update();
-
+                                .condAnd(LocalStorageResourceRefVO_.resourceUuid, Op.IN, resourceUuids);
+                        if (struct.CrossPrimaryStorage()) {
+                            query.set(LocalStorageResourceRefVO_.primaryStorageUuid, struct.getDestPrimaryStorageUuid());
+                        }
+                        query.update();
                         trigger.next();
                     }
                 });
@@ -700,6 +742,39 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         returnStorageCapacityToHost(ref.getHostUuid(), requiredSize);
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "update-VolumeVO-after-migrate-success";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        UpdateQuery query = UpdateQuery.New(VolumeVO.class)
+                                .eq(VolumeVO_.uuid, volumeRefVO.getResourceUuid())
+                                .set(VolumeVO_.status, originVolumeStatus);
+
+                        if (struct.CrossPrimaryStorage()) {
+                            String installPath = volume.getInstallPath().replace(struct.getOriginBaseDir(), struct.getNewBaseDir());
+                            query.set(VolumeVO_.installPath, installPath);
+                            query.set(VolumeVO_.primaryStorageUuid, struct.getDestPrimaryStorageUuid());
+                        }
+                        query.update();
+
+                        if (!snapshots.isEmpty()) {
+                            if (struct.CrossPrimaryStorage()) {
+                                for (final VolumeSnapshotVO vo : snapshots) {
+                                    String snapShotInstallPath = vo.getPrimaryStorageInstallPath().replace(struct.getOriginBaseDir(), struct.getNewBaseDir());
+                                    UpdateQuery.New(VolumeSnapshotVO.class)
+                                            .eq(VolumeSnapshotVO_.uuid, vo.getUuid())
+                                            .set(VolumeSnapshotVO_.primaryStorageInstallPath, snapShotInstallPath)
+                                            .set(VolumeSnapshotVO_.primaryStorageUuid, struct.getDestPrimaryStorageUuid())
+                                            .update();
+                                }
+                            }
+                        }
+
                         trigger.next();
                     }
                 });
@@ -764,7 +839,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                                     String vmUuid = tuple.get(1, String.class);
                                     String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid)
                                             .eq(HostVO_.uuid, msg.getDestHostUuid()).findValue();
-                                    if (!originClusterUuid.equals(clusterUuid)) {
+                                    if (!StringUtils.equals(originClusterUuid,clusterUuid)) {
                                         sql("update  VmInstanceEO" +
                                                 " set clusterUuid = :clusterUuid" +
                                                 " where uuid = :vmUuid")
@@ -773,14 +848,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
                                     }
                                 }
 
-                                sql(VolumeVO.class)
-                                        .eq(VolumeVO_.uuid, volumeRefVO.getResourceUuid())
-                                        .set(VolumeVO_.status, originVolumeStatus)
-                                        .update();
-
                                 LocalStorageResourceRefVO vo = Q.New(LocalStorageResourceRefVO.class)
                                         .eq(LocalStorageResourceRefVO_.resourceUuid, volumeRefVO.getResourceUuid())
-                                        .eq(LocalStorageResourceRefVO_.primaryStorageUuid, volumeRefVO.getPrimaryStorageUuid())
+                                        .eq(LocalStorageResourceRefVO_.primaryStorageUuid, struct.CrossPrimaryStorage() ? struct.getDestPrimaryStorageUuid(): volumeRefVO.getPrimaryStorageUuid())
                                         .eq(LocalStorageResourceRefVO_.hostUuid, msg.getDestHostUuid())
                                         .find();
                                 reply.setInventory(LocalStorageResourceRefInventory.valueOf(vo));
@@ -1847,6 +1917,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
     protected void returnStorageCapacityToHost(String hostUuid, long size) {
         new LocalStorageUtils().returnStorageCapacityToHost(hostUuid, size, self);
     }
+
+    @Transactional
+    protected void returnStorageCapacityToDestHost(String hostUuid, long size, PrimaryStorageVO ps) {
+        new LocalStorageUtils().returnStorageCapacityToHost(hostUuid, size, ps);
+    }
+
 
     @Transactional
     protected void returnStorageCapacityToHostByResourceUuid(String resUuid) {
@@ -2965,5 +3041,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     public static class LocalStoragePhysicalCapacityUsage extends PrimaryStorageBase.PhysicalCapacityUsage {
         public long localStorageUsedSize;
+    }
+
+    // be careful with snapshots folder
+    private static String getVolumeFolderPath(String srcInstallPath, String srcPsMountPath, String dstPsMountPath) {
+        File vol = new File(srcInstallPath);
+        if (vol.getParentFile().getName().equals("snapshots")) {
+            return vol.getParentFile().getParent().replace(srcPsMountPath, dstPsMountPath);
+        } else {
+            return vol.getParent().replaceFirst(srcPsMountPath, dstPsMountPath);
+        }
     }
 }

@@ -102,17 +102,18 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor {
                 }
 
                 if (vo.getState() == PrimaryStorageState.Disabled || vo.getState() == PrimaryStorageState.Maintenance) {
-                    throw new ApiMessageInterceptionException(argerr("the primary storage[uuid:%s] is disabled or maintenance cold migrate is not allowed", ref.getPrimaryStorageUuid()));
+                    throw new ApiMessageInterceptionException(argerr("the primary storage[uuid:%s] is disabled or maintenance cold migrate is not allowed", msg.getPrimaryStorageUuid()));
                 }
 
                 //3.confirm the dest host belong to the local storage where the volume locates and physical capacity is enough
                 LocalStorageHostRefVO refVO = Q.New(LocalStorageHostRefVO.class)
                         .eq(LocalStorageHostRefVO_.hostUuid, msg.getDestHostUuid())
-                        .eq(LocalStorageHostRefVO_.primaryStorageUuid,ref.getPrimaryStorageUuid())
+                        .eq(LocalStorageHostRefVO_.primaryStorageUuid, ref.getPrimaryStorageUuid())
                         .find();
                 if (refVO == null) {
                     throw new ApiMessageInterceptionException(argerr("the dest host[uuid:%s] doesn't belong to the local primary storage[uuid:%s] where the" +
                             " volume[uuid:%s] locates", msg.getDestHostUuid(), ref.getPrimaryStorageUuid(), msg.getVolumeUuid()));
+
                 }
 
                 double physicalThreshold = physicalCapacityMgr.getRatio(msg.getPrimaryStorageUuid());

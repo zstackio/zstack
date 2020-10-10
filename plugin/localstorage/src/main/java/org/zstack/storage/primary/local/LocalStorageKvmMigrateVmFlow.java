@@ -96,6 +96,8 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
     public static class CopyBitsFromRemoteCmd extends LocalStorageKvmBackend.AgentCommand implements HasThreadContext, Serializable {
         public String sendCommandUrl;
         public List<String> paths;
+        public String originBaseDir;
+        public String destBaseDir;
         public String dstIp;
         @NoLogging
         public String dstPassword;

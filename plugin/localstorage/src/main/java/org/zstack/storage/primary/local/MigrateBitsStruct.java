@@ -42,6 +42,13 @@ public class MigrateBitsStruct {
     private List<ResourceInfo> infos = new ArrayList<ResourceInfo>();
     private String srcHostUuid;
     private String destHostUuid;
+    private String destPrimaryStorageUuid;
+    private boolean crossPrimaryStorage = false;
+    private String originBaseDir;
+    private String newBaseDir;
+    private String srcVolumeFolderPath;
+    private String dstVolumeFolderPath;
+
 
     public String getSrcHostUuid() {
         return srcHostUuid;
@@ -65,5 +72,53 @@ public class MigrateBitsStruct {
 
     public void setDestHostUuid(String destHostUuid) {
         this.destHostUuid = destHostUuid;
+    }
+
+    public String getDestPrimaryStorageUuid() {
+        return destPrimaryStorageUuid;
+    }
+
+    public void setDestPrimaryStorageUuid(String destPrimaryStorageUuid) {
+        this.destPrimaryStorageUuid = destPrimaryStorageUuid;
+    }
+
+    public boolean CrossPrimaryStorage() {
+        return crossPrimaryStorage;
+    }
+
+    public void setCrossPrimaryStorage(boolean crossPrimaryStorage) {
+        this.crossPrimaryStorage = crossPrimaryStorage;
+    }
+
+    public String getOriginBaseDir() {
+        return originBaseDir;
+    }
+
+    public void setOriginBaseDir(String originBaseDir) {
+        this.originBaseDir = originBaseDir;
+    }
+
+    public String getNewBaseDir() {
+        return newBaseDir;
+    }
+
+    public void setNewBaseDir(String newBaseDir) {
+        this.newBaseDir = newBaseDir;
+    }
+
+    public String getSrcVolumeFolderPath() {
+        return this.srcVolumeFolderPath;
+    }
+
+    public void setSrcVolumeFolderPath(String srcVolumeFolderPath) {
+        this.srcVolumeFolderPath = srcVolumeFolderPath;
+    }
+
+    public String getDstVolumeFolderPath() {
+        return this.dstVolumeFolderPath;
+    }
+
+    public void setDstVolumeFolderPath(String dstVolumeFolderPath) {
+        this.dstVolumeFolderPath = dstVolumeFolderPath;
     }
 }
