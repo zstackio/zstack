@@ -20,6 +20,7 @@ import org.zstack.core.encrypt.EncryptRSA;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.statemachine.StateMachine;
 import org.zstack.core.statemachine.StateMachineImpl;
+import org.zstack.core.propertyvalidator.ValidatorTool;
 import org.zstack.header.Component;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.core.encrypt.ENCRYPT;
@@ -228,6 +229,15 @@ public class Platform {
         return ret;
     }
 
+    private static void validateGlobalProperty() {
+        ValidatorTool validatorTool = new ValidatorTool();
+
+        for (final String name : System.getProperties().stringPropertyNames()) {
+            String value = System.getProperty(name);
+            validatorTool.checkProperty(name, value);
+        }
+    }
+
     private static void linkGlobalProperty() {
         Set<Class<?>> clzs = reflections.getTypesAnnotatedWith(GlobalPropertyDefinition.class);
 
@@ -394,6 +404,7 @@ public class Platform {
             msId = UUID.nameUUIDFromBytes(getManagementServerIp().getBytes()).toString().replaceAll("-", "");
 
             collectDynamicObjectMetadata();
+            validateGlobalProperty();
             linkGlobalProperty();
             prepareDefaultDbProperties();
             callStaticInitMethods();
