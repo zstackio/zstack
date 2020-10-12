@@ -1,5 +1,5 @@
 #!/bin/sh
-pip install codemod
+## pip install codemod
 
 mv premium/conf/preconfigurationTemplates/zstack_expert_x86_64_v2.cfg premium/conf/preconfigurationTemplates/cloud_expert_x86_64_v2.cfg
 mv premium/conf/preconfigurationTemplates/zstack_host_x86_64_v2.cfg premium/conf/preconfigurationTemplates/cloud_host_x86_64_v2.cfg
@@ -14,6 +14,7 @@ mv premium/conf/cloudFormationTemplates/ZStack.System.v3.LB.json premium/conf/cl
 mv premium/conf/cloudFormationTemplates/ZStack.System.v3.PF.json premium/conf/cloudFormationTemplates/Cloud.System.v3.PF.json
 mv premium/conf/cloudFormationTemplates/ZStack.System.v3.SG.json premium/conf/cloudFormationTemplates/Cloud.System.v3.SG.json
 
+sed -i "s/ZStack::/Cloud::/g" premium/conf/cloudFormationTemplates/*
 
 mv sdk/src/main/java/org/zstack/ sdk/src/main/java/org/cloud/
 codemod -m -d sdk/src/main/* --extensions java,groovy org.zstack.heder org.cloud.heder --accept-all
@@ -38,13 +39,13 @@ codemod -m -d premium/plugin-premium/externalapiadapter/src/* --extensions java,
 
 ## modify mydql contain zstack
 
-mysql -uroot -pzstack.mysql.password <<EOF
-use zstack;
-update StackTemplateVO set name = replace(name, 'ZStack', 'Cloud');
-update StackTemplateVO set content = replace(content, 'ZStack', 'Cloud');
+## mysql -uroot -pzstack.mysql.password <<EOF
+## use zstack;
+## update StackTemplateVO set name = replace(name, 'ZStack', 'Cloud');
+## update StackTemplateVO set content = replace(content, 'ZStack', 'Cloud');
 
-update PreconfigurationTemplateVO set name = replace(name, 'zstack', 'cloud');
-update PreconfigurationTemplateVO set description = replace(name, 'zstack', 'cloud');
-update PreconfigurationTemplateVO set distribution = replace(name, 'zstack', 'cloud');
+## update PreconfigurationTemplateVO set name = replace(name, 'zstack', 'cloud');
+## update PreconfigurationTemplateVO set description = replace(name, 'zstack', 'cloud');
+## update PreconfigurationTemplateVO set distribution = replace(name, 'zstack', 'cloud');
 
-EOF
+## EOF
