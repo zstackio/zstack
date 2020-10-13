@@ -193,9 +193,12 @@ class ChangeNetworkSerivceCase extends SubCase{
         }
 
         FlatDhcpBackend.ApplyDhcpCmd acmd
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
-            acmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            FlatDhcpBackend.BatchApplyDhcpCmd batchApplyDhcpCmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
 
+            assert batchApplyDhcpCmd.dhcpInfos.size() == 1
+
+            acmd = batchApplyDhcpCmd.dhcpInfos.get(0)
             assert !acmd.dhcp.empty
 
             assert acmd.dhcp.stream().filter({dhcp -> nic.ip == dhcp.ip})
@@ -212,17 +215,17 @@ class ChangeNetworkSerivceCase extends SubCase{
             return rsp
         }
 
-        FlatDhcpBackend.PrepareDhcpCmd cmd
-        env.afterSimulator(FlatDhcpBackend.PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e ->
-            cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.PrepareDhcpCmd.class)
+        FlatDhcpBackend.BatchPrepareDhcpCmd cmd
+        env.afterSimulator(FlatDhcpBackend.BATCH_PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchPrepareDhcpCmd.class)
 
             Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByResourceUuid(l3.getUuid());
             String dhcpServerIp = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
             String dhcpServerIpUuid = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN)
             UsedIpVO ipvo = dbf.findByUuid(dhcpServerIpUuid, UsedIpVO.class)
             assert ipvo.getIp() == dhcpServerIp
-            assert dhcpServerIp == cmd.dhcpServerIp
-            assert ipvo.getNetmask() == cmd.dhcpNetmask
+            assert dhcpServerIp == cmd.dhcpInfos.get(0).dhcpServerIp
+            assert ipvo.getNetmask() == cmd.dhcpInfos.get(0).dhcpNetmask
 
             return rsp
         }
@@ -244,8 +247,8 @@ class ChangeNetworkSerivceCase extends SubCase{
         assert null != acmd
         assert null != cmd
         FlatDhcpBackend.DhcpInfo dhcp = acmd.dhcp[0]
-        assert dhcp.bridgeName == cmd.bridgeName
-        assert dhcp.namespaceName == cmd.namespaceName
+        assert dhcp.bridgeName == cmd.dhcpInfos.get(0).bridgeName
+        assert dhcp.namespaceName == cmd.dhcpInfos.get(0).namespaceName
     }
 
     @Override

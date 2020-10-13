@@ -17,7 +17,15 @@ class FlatnetworkSimualtor implements Simulator {
             return new FlatDhcpBackend.ApplyDhcpRsp()
         }
 
+        spec.simulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) {
+            return new FlatDhcpBackend.ApplyDhcpRsp()
+        }
+
         spec.simulator(FlatDhcpBackend.PREPARE_DHCP_PATH) {
+            return new FlatDhcpBackend.PrepareDhcpRsp()
+        }
+
+        spec.simulator(FlatDhcpBackend.BATCH_PREPARE_DHCP_PATH) {
             return new FlatDhcpBackend.PrepareDhcpRsp()
         }
 
