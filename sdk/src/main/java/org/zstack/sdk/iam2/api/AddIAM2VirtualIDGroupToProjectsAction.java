@@ -25,14 +25,8 @@ public class AddIAM2VirtualIDGroupToProjectsAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List projectUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List groupUuids;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List roleUuids;
+    @Param(required = false)
+    public java.util.List structs;
 
     @Param(required = false)
     public java.util.List systemTags;
