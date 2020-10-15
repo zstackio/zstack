@@ -18,6 +18,7 @@ import org.zstack.core.db.DatabaseGlobalProperty;
 import org.zstack.core.db.Q;
 import org.zstack.core.encrypt.EncryptRSA;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.search.SearchGlobalProperty;
 import org.zstack.core.statemachine.StateMachine;
 import org.zstack.core.statemachine.StateMachineImpl;
 import org.zstack.core.propertyvalidator.ValidatorTool;
@@ -36,6 +37,8 @@ import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.string.ErrorCodeElaboration;
 import org.zstack.utils.string.StringSimilarity;
+import org.zstack.utils.zsha2.ZSha2Helper;
+import org.zstack.utils.zsha2.ZSha2Info;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -382,6 +385,74 @@ public class Platform {
         }
     }
 
+    private static void prepareHibernateSearchProperties() {
+        if (!SearchGlobalProperty.SearchAutoRegister) {
+            System.setProperty("Search.autoRegister", "false");
+            logger.debug(String.format("default Search.autoRegister to Search.autoRegister [%s]", SearchGlobalProperty.SearchAutoRegister));
+        }
+        if (SearchGlobalProperty.SearchIndexBaseDir != null) {
+            if (getGlobalProperty("Search.indexBaseDir") == null) {
+                System.setProperty("Search.indexBaseDir", SearchGlobalProperty.SearchIndexBaseDir);
+                logger.debug(String.format("default Search.indexBaseDir to Search.indexBaseDir [%s]", SearchGlobalProperty.SearchIndexBaseDir));
+            }
+        }
+        if (SearchGlobalProperty.IndexWorkerExecution != null) {
+            if (getGlobalProperty("IndexWorker.execution") == null) {
+                System.setProperty("IndexWorker.execution", SearchGlobalProperty.IndexWorkerExecution);
+                logger.debug(String.format("default IndexWorker.execution to IndexWorker.execution [%s]", SearchGlobalProperty.IndexWorkerExecution));
+            }
+        }
+        if (SearchGlobalProperty.IndexWorkerFlushInterval != null) {
+            if (getGlobalProperty("IndexWorker.flushInterval") == null) {
+                System.setProperty("IndexWorker.flushInterval", SearchGlobalProperty.IndexWorkerFlushInterval);
+                logger.debug(String.format("default IndexWorker.flushInterval to IndexWorker.flushIntervalr [%s]", SearchGlobalProperty.IndexWorkerFlushInterval));
+            }
+        }
+        if (SearchGlobalProperty.JGroupInfinispanPort != null) {
+            if (getGlobalProperty("JGroup.InfinispanPort") == null) {
+                System.setProperty("JGroup.InfinispanPort", SearchGlobalProperty.JGroupInfinispanPort);
+                logger.debug(String.format("default JGroup.InfinispanPort to JGroup.InfinispanPort [%s]", SearchGlobalProperty.JGroupInfinispanPort));
+            }
+        }
+        if (SearchGlobalProperty.JGroupBackendPort != null) {
+            if (getGlobalProperty("JGroup.BackendPort") == null) {
+                System.setProperty("JGroup.BackendPort", SearchGlobalProperty.JGroupBackendPort);
+                logger.debug(String.format("default JGroup.BackendPort to JGroup.BackendPort [%s]", SearchGlobalProperty.JGroupBackendPort));
+            }
+        }
+
+        if (ZSha2Helper.isMNHaEnvironment()) {
+            ZSha2Info info = ZSha2Helper.getInfo();
+            SearchGlobalProperty.JGroupInfinispanInitialHosts = String.format("%s[%s],%s[%s]",
+                    info.getNodeip(), SearchGlobalProperty.JGroupInfinispanPort,
+                    info.getPeerip(), SearchGlobalProperty.JGroupInfinispanPort);
+            SearchGlobalProperty.JGroupBackendInitialHosts = String.format("%s[%s],%s[%s]",
+                    info.getNodeip(), SearchGlobalProperty.JGroupBackendPort,
+                    info.getPeerip(), SearchGlobalProperty.JGroupBackendPort);
+            if (getGlobalProperty("JGroup.TcppingInitialHosts") == null) {
+                System.setProperty("JGroup.InfinispanInitialHosts", SearchGlobalProperty.JGroupInfinispanInitialHosts);
+                logger.debug(String.format("default JGroup.InfinispanInitialHosts to JGroup.InfinispanInitialHosts [%s]", SearchGlobalProperty.JGroupInfinispanInitialHosts));
+            }
+            if (getGlobalProperty("JGroup.BackendInitialHosts") == null) {
+                System.setProperty("JGroup.BackendInitialHosts", SearchGlobalProperty.JGroupBackendInitialHosts);
+                logger.debug(String.format("default JGroup.BackendInitialHosts to JGroup.BackendInitialHosts [%s]", SearchGlobalProperty.JGroupBackendInitialHosts));
+            }
+        }
+        if (getGlobalProperty("JGroup.Address") == null) {
+            System.setProperty("JGroup.Address", getManagementServerIp());
+            logger.debug(String.format("default JGroup.Address to JGroup.Address [%s]", getManagementServerIp()));
+        }
+        if (ZSha2Helper.isMNHaEnvironment()) {
+            SearchGlobalProperty.ExclusiveIndexUse = "false";
+            System.setProperty("Exclusive.indexUse", SearchGlobalProperty.ExclusiveIndexUse);
+            logger.debug(String.format("default Exclusive.indexUse to Exclusive.indexUse [%s]", SearchGlobalProperty.ExclusiveIndexUse));
+        } else {
+            SearchGlobalProperty.ExclusiveIndexUse = "true";
+            System.setProperty("Exclusive.indexUse", SearchGlobalProperty.ExclusiveIndexUse);
+            logger.debug(String.format("default Exclusive.indexUse to Exclusive.indexUse [%s]", SearchGlobalProperty.ExclusiveIndexUse));
+        }
+    }
+
     static {
         FileInputStream in = null;
         try {
@@ -407,6 +478,7 @@ public class Platform {
             linkGlobalProperty();
             validateGlobalProperty();
             prepareDefaultDbProperties();
+            prepareHibernateSearchProperties();
             callStaticInitMethods();
             encryptedMethodsMap = getAllEncryptPassword();
             writePidFile();
@@ -620,6 +692,34 @@ public class Platform {
         }
 
         return managementServerIp;
+    }
+
+    public static boolean isVIPNode() {
+        if (!ZSha2Helper.isMNHaEnvironment() || CoreGlobalProperty.MN_VIP == null) {
+            return true;
+        }
+
+        String vip = CoreGlobalProperty.MN_VIP;
+        try {
+            Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+            while (nets.hasMoreElements()) {
+                NetworkInterface ifc = nets.nextElement();
+                if (!ifc.isUp()) {
+                    continue;
+                }
+
+                Enumeration<InetAddress> enumAdds = ifc.getInetAddresses();
+                while (enumAdds.hasMoreElements()) {
+                    if (vip.equals(enumAdds.nextElement().getHostAddress())) {
+                        return true;
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            throw new CloudRuntimeException(e);
+        }
+
+        return false;
     }
 
     private static String getManagementServerCidrInternal() {

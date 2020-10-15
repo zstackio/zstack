@@ -6,7 +6,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
-                .normalAPIs(APIBatchQueryMsg.class, APIZQLQueryMsg.class)
+                .normalAPIs(APIBatchQueryMsg.class, APIZQLQueryMsg.class, APIRefreshSearchIndexesMsg.class)
                 .build();
     }
 
@@ -14,7 +14,7 @@ public class RBACInfo implements RBACDescription {
     public void contributeToRoles() {
         roleContributorBuilder()
                 .roleName("other")
-                .actions(APIBatchQueryMsg.class, APIZQLQueryMsg.class)
+                .actions(APIBatchQueryMsg.class, APIZQLQueryMsg.class, APIRefreshSearchIndexesMsg.class)
                 .build();
     }
 

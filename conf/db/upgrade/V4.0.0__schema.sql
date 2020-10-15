@@ -145,6 +145,7 @@ ALTER TABLE `zstack`.`VpcFirewallRuleSetVO` DROP COLUMN `vyosName`;
 ALTER TABLE `zstack`.`VpcFirewallRuleSetVO` DROP COLUMN `vpcFirewallUuid`;
 ALTER TABLE `zstack`.`VpcFirewallRuleVO` DROP COLUMN `vpcFirewallUuid`;
 ALTER TABLE `zstack`.`VpcFirewallRuleVO` DROP COLUMN `ruleSetName`;
+
 DROP PROCEDURE IF EXISTS checkFlatLoadBalancerExist;
 DELIMITER $$
 CREATE PROCEDURE checkFlatLoadBalancerExist()
@@ -373,3 +374,5 @@ CALL insertIAM2ProjectRole();
 DROP PROCEDURE IF EXISTS insertIAM2ProjectRole;
 
 ALTER TABLE RolePolicyStatementVO ADD INDEX (`roleUuid`);
+
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.affinitygroup.AffinityGroupVO"  WHERE resourceName = "zstack.affinity.group.for.virtual.router" and resourceType = "AffinityGroupVO";

@@ -17,6 +17,7 @@
         <aspectj.plugin.version>1.10</aspectj.plugin.version>
         <groovy.eclipse.compiler>2.9.2-01</groovy.eclipse.compiler>
         <groovy.eclipse.batch>2.4.3-01</groovy.eclipse.batch>
+        <hibernate.search.version>5.7.3.Final</hibernate.search.version>
     </properties>
 
     <modelVersion>4.0.0</modelVersion>
@@ -147,6 +148,26 @@
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-entitymanager</artifactId>
                 <version>${hibernate.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-search-orm</artifactId>
+                <version>${hibernate.search.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-search-serialization-avro</artifactId>
+                <version>${hibernate.search.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-search-backend-jgroups</artifactId>
+                <version>${hibernate.search.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-directory-provider</artifactId>
+                <version>8.2.4.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>

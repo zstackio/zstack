@@ -181,4 +181,20 @@ class ASTNode {
     static class FilterBy extends ASTNode {
          List<FilterByExpr> exprs
     }
+
+    static class Search extends ASTNode {
+        Keyword keyword
+        Index index
+        RestrictBy restrictBy
+        Limit limit
+        Offset offset
+    }
+
+    static class Keyword extends ASTNode {
+        String value
+    }
+
+    static class Index extends ASTNode {
+        List<String> indexs
+    }
 }
