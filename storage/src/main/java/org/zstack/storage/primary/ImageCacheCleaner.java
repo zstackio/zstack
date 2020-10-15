@@ -10,6 +10,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.thread.*;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
@@ -291,6 +293,55 @@ public abstract class ImageCacheCleaner {
             cq.setParameter("psUuid", psUuid);
         }
         deleted.addAll(cq.getResultList());
+
+        if (deleted.isEmpty()) {
+            return null;
+        }
+
+        return deleted;
+    }
+
+    @Transactional
+    protected List<Long> getStaleImageCacheIdsForLocalStorage(String psUuid) {
+        String sql;
+        Long count;
+        if (psUuid == null) {
+            sql = "select count(*) from VolumeVO vol, PrimaryStorageVO pri where vol.primaryStorageUuid = pri.uuid" +
+                    " and vol.type = :volType and vol.rootImageUuid is null and pri.type = :psType";
+            count = SQL.New(sql).param("volType", VolumeType.Root).param("psType", getPrimaryStorageType()).find();
+
+        } else {
+            sql = "select count(*) from VolumeVO vol, PrimaryStorageVO pri where vol.primaryStorageUuid = pri.uuid" +
+                    " and vol.type = :volType and vol.rootImageUuid is null and pri.type = :psType and pri.uuid = :psUuid";
+            count = SQL.New(sql).param("volType", VolumeType.Root).param("psType", getPrimaryStorageType()).param("psUuid", psUuid).find();
+        }
+
+        if (count != 0) {
+            logger.warn(String.format("found %s volumes on the primary storage[type:%s] has NULL rootImageUuid. Please do following:\n" +
+                    "1. zstack-ctl stop_node\n" +
+                    "2. zstack-ctl start_node -DfixImageCacheUuid=true -DrootVolumeFindMissingImageUuid=true\n" +
+                    "to fix the problem. For the data safety, we won't clean the image cache of the primary storage", count, getPrimaryStorageType()));
+            return null;
+        }
+
+        List<Long> deleted;
+        if (psUuid == null) {
+            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where c.primaryStorageUuid = pri.uuid and i.uuid = c.imageUuid and i.deleted is not null and pri.type = :ptype";
+            deleted=SQL.New(sql).param("ptype", getPrimaryStorageType()).list();
+        } else  {
+            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where c.primaryStorageUuid = pri.uuid and i.uuid = c.imageUuid and i.deleted is not null and pri.type = :ptype and pri.uuid = :psUuid";
+            deleted=SQL.New(sql).param("ptype", getPrimaryStorageType()).param("psUuid", psUuid).list();
+        }
+
+        if (psUuid == null) {
+            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select vm.imageUuid from VmInstanceVO vm) and" +
+                    " c.primaryStorageUuid = pri.uuid and pri.type = :psType";
+            deleted.addAll(SQL.New(sql).param("psType", getPrimaryStorageType()).list());
+        } else {
+            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select vm.imageUuid from VmInstanceVO vm) and" +
+                    " c.primaryStorageUuid = pri.uuid and pri.type = :psType and pri.uuid = :psUuid";
+            deleted.addAll(SQL.New(sql).param("psType", getPrimaryStorageType()).param("psUuid", psUuid).list());
+        }
 
         if (deleted.isEmpty()) {
             return null;

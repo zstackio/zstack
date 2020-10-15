@@ -51,6 +51,16 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "force"
+					enclosedIn ""
+					desc "是否强制删除"
+					location "url"
+					type "boolean"
+					optional false
+					since "4.0.0"
+
+				}
 			}
         }
 
