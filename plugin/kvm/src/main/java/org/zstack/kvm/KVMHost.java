@@ -2595,14 +2595,7 @@ public class KVMHost extends HostBase implements Host {
         String CpuModeFromResourceConfig = rcf.getResourceConfigValue(KVMGlobalConfig.NESTED_VIRTUALIZATION, spec.getVmInventory().getUuid(), String.class);
         String CpuModeFromGlobalConfig = KVMGlobalConfig.NESTED_VIRTUALIZATION.value(String.class);
 
-        // priority: ResourceConfig > GlobalConfig
-        if(CpuModeFromResourceConfig != CpuModeFromGlobalConfig){
-            // different CPU mode, use ResourceConfig first
-            cmd.setNestedVirtualization(CpuModeFromResourceConfig);
-        } else {
-            cmd.setNestedVirtualization(CpuModeFromGlobalConfig);
-        }
-
+        cmd.setNestedVirtualization( rcf.getResourceConfigValue(KVMGlobalConfig.NESTED_VIRTUALIZATION, spec.getVmInventory().getUuid(), String.class) );
         cmd.setRootVolume(rootVolume);
         cmd.setUseBootMenu(VmGlobalConfig.VM_BOOT_MENU.value(Boolean.class));
 
