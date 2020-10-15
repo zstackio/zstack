@@ -56,7 +56,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
 
     @Transactional
     protected List<ImageCacheShadowVO> createShadowImageCacheVOsForNewDeletedAndOld(String psUUid) {
-        List<Long> staleImageCacheIds = getStaleImageCacheIds(psUUid);
+        List<Long> staleImageCacheIds = getStaleImageCacheIdsForLocalStorage(psUUid);
         if (staleImageCacheIds == null || staleImageCacheIds.isEmpty()) {
             return null;
         }

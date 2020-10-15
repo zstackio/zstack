@@ -300,6 +300,68 @@ public abstract class ImageCacheCleaner {
     }
 
     @Transactional
+    protected List<Long> getStaleImageCacheIdsForLocalStorage(String psUuid) {
+        String sql;
+        if (psUuid == null) {
+            sql = "select count(*) from VolumeVO vol, PrimaryStorageVO pri where vol.primaryStorageUuid = pri.uuid" +
+                    " and vol.type = :volType and vol.rootImageUuid is null and pri.type = :psType";
+        } else {
+            sql = "select count(*) from VolumeVO vol, PrimaryStorageVO pri where vol.primaryStorageUuid = pri.uuid" +
+                    " and vol.type = :volType and vol.rootImageUuid is null and pri.type = :psType and pri.uuid = :psUuid";
+        }
+
+        TypedQuery<Long> q = dbf.getEntityManager().createQuery(sql, Long.class);
+        q.setParameter("volType", VolumeType.Root);
+        q.setParameter("psType", getPrimaryStorageType());
+        if (psUuid != null) {
+            q.setParameter("psUuid", psUuid);
+        }
+
+        Long count = q.getSingleResult();
+        if (count != 0) {
+            logger.warn(String.format("found %s volumes on the primary storage[type:%s] has NULL rootImageUuid. Please do following:\n" +
+                    "1. zstack-ctl stop_node\n" +
+                    "2. zstack-ctl start_node -DfixImageCacheUuid=true -DrootVolumeFindMissingImageUuid=true\n" +
+                    "to fix the problem. For the data safety, we won't clean the image cache of the primary storage", count, getPrimaryStorageType()));
+            return null;
+        }
+
+        if (psUuid == null) {
+            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where c.primaryStorageUuid = pri.uuid and i.uuid = c.imageUuid and i.deleted is not null and pri.type = :ptype";
+        } else  {
+            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri, ImageEO i where c.primaryStorageUuid = pri.uuid and i.uuid = c.imageUuid and i.deleted is not null and pri.type = :ptype and pri.uuid = :psUuid";
+        }
+
+        TypedQuery<Long> cq = dbf.getEntityManager().createQuery(sql, Long.class);
+        cq.setParameter("ptype", getPrimaryStorageType());
+        if (psUuid != null) {
+            cq.setParameter("psUuid", psUuid);
+        }
+        List<Long> deleted = cq.getResultList();
+
+        if (psUuid == null) {
+            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select vm.imageUuid from VmInstanceVO vm) and" +
+                    " c.primaryStorageUuid = pri.uuid and pri.type = :psType";
+        } else {
+            sql = "select c.id from ImageCacheVO c, PrimaryStorageVO pri where c.imageUuid not in (select vm.imageUuid from VmInstanceVO vm) and" +
+                    " c.primaryStorageUuid = pri.uuid and pri.type = :psType and pri.uuid = :psUuid";
+        }
+
+        cq = dbf.getEntityManager().createQuery(sql, Long.class);
+        cq.setParameter("psType", getPrimaryStorageType());
+        if (psUuid != null) {
+            cq.setParameter("psUuid", psUuid);
+        }
+        deleted.addAll(cq.getResultList());
+
+        if (deleted.isEmpty()) {
+            return null;
+        }
+
+        return deleted;
+    }
+
+    @Transactional
     protected List<ImageCacheShadowVO> createShadowImageCacheVOsForNewDeletedAndOld(String psUuid) {
         List<Long> staleImageCacheIds = getStaleImageCacheIds(psUuid);
         if (staleImageCacheIds == null || staleImageCacheIds.isEmpty()) {
