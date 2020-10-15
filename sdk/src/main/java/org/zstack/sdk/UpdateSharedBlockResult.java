@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 import org.zstack.sdk.SharedBlockGroupPrimaryStorageInventory;
 
-public class UpdateSharedBlockDiskUuidResult {
+public class UpdateSharedBlockResult {
     public SharedBlockGroupPrimaryStorageInventory inventory;
     public void setInventory(SharedBlockGroupPrimaryStorageInventory inventory) {
         this.inventory = inventory;
