@@ -1,5 +1,6 @@
 package org.zstack.zql;
 
+import com.google.common.collect.Sets;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.apache.commons.lang.StringUtils;
@@ -9,18 +10,22 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.db.EntityMetadata;
-import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.*;
+import org.zstack.core.search.SearchGlobalProperty;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.vo.ResourceInventory;
+import org.zstack.header.vo.ResourceVO;
+import org.zstack.header.vo.ResourceVO_;
 import org.zstack.header.vo.ToInventory;
 import org.zstack.header.zql.*;
-import org.zstack.query.MysqlQueryBuilderImpl3;
+import org.zstack.search.SearchErrors;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -28,11 +33,13 @@ import org.zstack.zql.antlr4.ZQLLexer;
 import org.zstack.zql.antlr4.ZQLParser;
 import org.zstack.zql.ast.ZQLMetadata;
 import org.zstack.zql.ast.parser.visitors.CountVisitor;
+import org.zstack.zql.ast.parser.visitors.SearchVisitor;
 import org.zstack.zql.ast.parser.visitors.SumVisitor;
 import org.zstack.zql.ast.visitors.QueryVisitor;
 import org.zstack.zql.ast.visitors.ReturnWithVisitor;
 import org.zstack.zql.ast.visitors.result.QueryResult;
 import org.zstack.zql.ast.visitors.result.ReturnWithResult;
+import org.zstack.zql.ast.visitors.result.SearchResult;
 
 import javax.persistence.Query;
 import java.lang.reflect.Field;
@@ -40,11 +47,14 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.err;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ZQL {
     private static final CLogger logger = Utils.getLogger(ZQL.class);
 
     private QueryResult astResult;
+    private SearchResult searchResult;
     private String text;
 
     @Autowired
@@ -331,6 +341,44 @@ public class ZQL {
                 qr.name = sum.getName();
 
                 clean.run();
+            } else if (ctx instanceof ZQLParser.SearchGrammarContext) {
+                if (!SearchGlobalProperty.SearchAutoRegister) {
+                    throw new OperationFailureException(err(SearchErrors.SEARCH_MODULE_DISABLED, "search module disabled"));
+                }
+
+                ASTNode.Search search = ((ZQLParser.SearchGrammarContext) ctx).search().accept(new SearchVisitor());
+                searchResult = (SearchResult) search.accept(new org.zstack.zql.ast.visitors.SearchVisitor());
+                Set<String> resourceUuids = Sets.newConcurrentHashSet();
+                searchResult.getSearchs()
+                        .parallelStream()
+                        .forEach(v -> {
+                            List result = v.getQuery().getResultList();
+                            Set<String> searchResults = Sets.newConcurrentHashSet();
+                            for (Object o : result) {
+                                Object[] rarray = (Object[]) o;
+                                searchResults.add((String) rarray[0]);
+                            }
+
+                            if (!searchResults.isEmpty() && v.getRestrictSql() != null) {
+                                new SQLBatch() {
+                                    @Override
+                                    protected void scripts() {
+                                        Query q = databaseFacade
+                                            .getEntityManager()
+                                            .createQuery(String.format(v.getRestrictSql(),
+                                                    String.join(",", searchResults)
+                                                            .replaceAll("([^,]+)", "'$1'")));
+                                        List res = q.getResultList();
+                                        resourceUuids.addAll((Collection<? extends String>) res.stream().collect(Collectors.toList()));
+                                    }
+                                }.execute();
+                            } else {
+                                resourceUuids.addAll(searchResults);
+                            }
+                        });
+
+                qr.inventories = filterNoAccessResources(resourceUuids, ZQLContext.getAPISession().getAccountUuid());
+                ret.count = (long) qr.inventories.size();
             } else {
                 throw new CloudRuntimeException(String.format("should not be here, %s", ctx));
             }
@@ -342,6 +390,40 @@ public class ZQL {
         });
 
         return rs;
+    }
+
+    private List<ResourceInventory> filterNoAccessResources(Set<String> resourceUuids, String accountUuid) {
+        if (resourceUuids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return new SQLBatchWithReturn<List<ResourceInventory>>() {
+            @Override
+            protected List<ResourceInventory> scripts() {
+                if (accountUuid.equals(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)) {
+                    Query q = databaseFacade.getEntityManager().createNativeQuery("select uuid, resourceName, SUBSTRING_INDEX(concreteResourceType,\".\",-1) from ResourceVO where uuid in (:uuids)");
+                    q.setParameter("uuids", resourceUuids);
+                    List<Object[]> objs = q.getResultList();
+                    List<ResourceVO> vos = objs.stream().map(ResourceVO::new).collect(Collectors.toList());
+                    return ResourceInventory.valueOf(vos);
+                }
+
+                Query q = databaseFacade.getEntityManager().createNativeQuery(
+                        "select r.uuid, r.resourceName, SUBSTRING_INDEX(r.concreteResourceType,\".\",-1) from ResourceVO r " +
+                        "left join AccountResourceRefVO ar on r.uuid=ar.resourceUuid " +
+                        "where ar.accountUuid is Null and r.uuid in :uuids "+
+                        "or r.uuid in (select ref.resourceUuid from AccountResourceRefVO ref where" +
+                        " (ref.ownerAccountUuid = :accountUuid " +
+                        " or ref.resourceUuid in" +
+                        " (select sh.resourceUuid from SharedResourceVO sh where (sh.receiverAccountUuid = :accountUuid or sh.toPublic = 1))) " +
+                        "and ref.resourceUuid in (:uuids))");
+                q.setParameter("uuids", resourceUuids);
+                q.setParameter("accountUuid", accountUuid);
+                List<Object[]> objs = q.getResultList();
+                List<ResourceVO> vos = objs.stream().map(ResourceVO::new).collect(Collectors.toList());
+                return ResourceInventory.valueOf(vos);
+            }
+        }.execute();
     }
 
     private void beforeExecuteQuery(QueryResult astResult, SessionInventory session) {

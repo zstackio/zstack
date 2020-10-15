@@ -52,6 +52,7 @@
                                         <exclude>springConfigXml/ceph.xml</exclude>
                                         <exclude>springConfigXml/AccountManager.xml</exclude>
                                         <exclude>serviceConfig/metadata.xml</exclude>
+                                        <exclude>searchConfig/indexConfig.xml</exclude>
                                     </excludes>
                                 </resource>
                                 <resource>

@@ -145,6 +145,7 @@ ALTER TABLE `zstack`.`VpcFirewallRuleSetVO` DROP COLUMN `vyosName`;
 ALTER TABLE `zstack`.`VpcFirewallRuleSetVO` DROP COLUMN `vpcFirewallUuid`;
 ALTER TABLE `zstack`.`VpcFirewallRuleVO` DROP COLUMN `vpcFirewallUuid`;
 ALTER TABLE `zstack`.`VpcFirewallRuleVO` DROP COLUMN `ruleSetName`;
+
 DROP PROCEDURE IF EXISTS checkFlatLoadBalancerExist;
 DELIMITER $$
 CREATE PROCEDURE checkFlatLoadBalancerExist()
@@ -572,3 +573,5 @@ INSERT INTO `ActiveAlarmTemplateVO` (`uuid`,`alarmName`,`comparisonOperator`,`pe
 INSERT INTO `ActiveAlarmTemplateVO` (`uuid`,`alarmName`,`comparisonOperator`,`period`,`repeatInterval`,`namespace`,`metricName`,`threshold`,`lastOpDate`,`createDate`,`repeatCount`,`enableRecovery`,`emergencyLevel`,`labels`) VALUES ('c9e6cdca107140bea62b4ca919ff9e88','VRouter-CPUAverageUsedUtilization','GreaterThanOrEqualTo',300,1800,'ZStack/VRouter','VRouterCPUAverageUsedUtilization',80,CURRENT_TIMESTAMP(),CURRENT_TIMESTAMP(),-1,0,'Important',NULL);
 INSERT INTO `ActiveAlarmTemplateVO` (`uuid`,`alarmName`,`comparisonOperator`,`period`,`repeatInterval`,`namespace`,`metricName`,`threshold`,`lastOpDate`,`createDate`,`repeatCount`,`enableRecovery`,`emergencyLevel`,`labels`) VALUES ('ccc249938ad34e7f92d6a1cc7e123b38','VM-CPUAverageUsedUtilization','GreaterThanOrEqualTo',300,1800,'ZStack/VM','CPUAverageUsedUtilization',80,CURRENT_TIMESTAMP(),CURRENT_TIMESTAMP(),-1,0,'Important',NULL);
 INSERT INTO `ActiveAlarmTemplateVO` (`uuid`,`alarmName`,`comparisonOperator`,`period`,`repeatInterval`,`namespace`,`metricName`,`threshold`,`lastOpDate`,`createDate`,`repeatCount`,`enableRecovery`,`emergencyLevel`,`labels`) VALUES ('fa6ead4d89064002b1b96ed2abf6ecb5','VM-OperatingSystemCPUAverageUsedUtilization','GreaterThanOrEqualTo',300,1800,'ZStack/VM','OperatingSystemCPUAverageUsedUtilization',80,CURRENT_TIMESTAMP(),CURRENT_TIMESTAMP(),-1,0,'Important',NULL);
+
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.affinitygroup.AffinityGroupVO"  WHERE resourceName = "zstack.affinity.group.for.virtual.router" and resourceType = "AffinityGroupVO";

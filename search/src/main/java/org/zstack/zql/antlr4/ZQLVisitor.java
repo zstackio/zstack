@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.7
+// Generated from ZQL.g4 by ANTLR 4.8
 
 package org.zstack.zql.antlr4;
 
@@ -39,6 +39,13 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitSumGrammar(ZQLParser.SumGrammarContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code searchGrammar}
+	 * labeled alternative in {@link ZQLParser#zql}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSearchGrammar(ZQLParser.SearchGrammarContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ZQLParser#entity}.
 	 * @param ctx the parse tree
@@ -352,4 +359,30 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitSum(ZQLParser.SumContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#search}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSearch(ZQLParser.SearchContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#keyword}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitKeyword(ZQLParser.KeywordContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code singleIndex}
+	 * labeled alternative in {@link ZQLParser#index}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSingleIndex(ZQLParser.SingleIndexContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code multiIndexs}
+	 * labeled alternative in {@link ZQLParser#index}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMultiIndexs(ZQLParser.MultiIndexsContext ctx);
 }
