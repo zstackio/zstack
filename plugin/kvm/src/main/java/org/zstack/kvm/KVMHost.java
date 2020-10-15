@@ -2526,7 +2526,6 @@ public class KVMHost extends HostBase implements Host {
         final StartVmCmd cmd = new StartVmCmd();
 
         boolean virtio;
-        String nestedVirtualization;
         String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
                 spec.getVmInventory().getPlatform();
         if(ImagePlatform.Other.toString().equals(platform)){
@@ -2622,8 +2621,7 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setWwn(computeWwnIfAbsent(spec.getDestRootVolume().getUuid()));
         rootVolume.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
 
-        nestedVirtualization = KVMGlobalConfig.NESTED_VIRTUALIZATION.value(String.class);
-        cmd.setNestedVirtualization(nestedVirtualization);
+        cmd.setNestedVirtualization( rcf.getResourceConfigValue(KVMGlobalConfig.NESTED_VIRTUALIZATION, spec.getVmInventory().getUuid(), String.class) );
         cmd.setRootVolume(rootVolume);
         cmd.setUseBootMenu(VmGlobalConfig.VM_BOOT_MENU.value(Boolean.class));
 
