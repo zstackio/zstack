@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateSharedBlockDiskUuidAction extends AbstractAction {
+public class UpdateSharedBlockAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateSharedBlockDiskUuidAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateSharedBlockDiskUuidResult value;
+        public org.zstack.sdk.UpdateSharedBlockResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,13 +26,19 @@ public class UpdateSharedBlockDiskUuidAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public String uuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String sharedBlockGroupUuid;
+    public String sharedBlockGroupUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String diskUuid;
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public String description;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public String diskUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +72,8 @@ public class UpdateSharedBlockDiskUuidAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateSharedBlockDiskUuidResult value = res.getResult(org.zstack.sdk.UpdateSharedBlockDiskUuidResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateSharedBlockDiskUuidResult() : value; 
+        org.zstack.sdk.UpdateSharedBlockResult value = res.getResult(org.zstack.sdk.UpdateSharedBlockResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateSharedBlockResult() : value; 
 
         return ret;
     }
@@ -100,7 +106,7 @@ public class UpdateSharedBlockDiskUuidAction extends AbstractAction {
         info.path = "/primary-storage/sharedblockgroup/{sharedBlockGroupUuid}/sharedblocks/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateSharedBlockDiskUuid";
+        info.parameterName = "updateSharedBlock";
         return info;
     }
 
