@@ -1,5 +1,6 @@
 package org.zstack.network.service.virtualrouter;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.appliancevm.ApplianceVmVO;
 import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.l3.UsedIpVO;
@@ -23,6 +24,7 @@ import java.util.Set;
 @PrimaryKeyJoinColumn(name="uuid", referencedColumnName="uuid")
 @EO(EOClazz = VmInstanceEO.class, needView = false)
 @AutoDeleteTag
+@Indexed
 public class VirtualRouterVmVO extends ApplianceVmVO {
     private String publicNetworkUuid;
 

@@ -1,5 +1,12 @@
 package org.zstack.header.vo;
 
+import org.apache.lucene.analysis.core.KeywordTokenizerFactory;
+import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
+import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilterFactory;
+import org.apache.lucene.analysis.ngram.NGramFilterFactory;
+import org.hibernate.search.annotations.AnalyzerDef;
+import org.hibernate.search.annotations.TokenFilterDef;
+import org.hibernate.search.annotations.TokenizerDef;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.FieldUtils;
 
@@ -14,6 +21,28 @@ import java.util.concurrent.ConcurrentHashMap;
 @Entity
 @Table
 @Inheritance(strategy = InheritanceType.JOINED)
+@AnalyzerDef(name = "Ngram_analyzer",
+        tokenizer = @TokenizerDef(factory = KeywordTokenizerFactory.class),
+        filters = {
+                // Replace accented characters by their simpler counterpart (è => e, etc.)
+                @TokenFilterDef(factory = ASCIIFoldingFilterFactory.class),
+                @TokenFilterDef(factory = LowerCaseFilterFactory.class),
+                @TokenFilterDef(
+                        factory = NGramFilterFactory.class, // Generate middle tokens
+                        params = {
+                                @org.hibernate.search.annotations.Parameter(name = "minGramSize", value = "1"),
+                                @org.hibernate.search.annotations.Parameter(name = "maxGramSize", value = "32")
+                        }
+                )
+        }
+)
+@AnalyzerDef(name = "Keyword_analyzer",
+        tokenizer = @TokenizerDef(factory = KeywordTokenizerFactory.class),
+        filters = {
+                @TokenFilterDef(factory = ASCIIFoldingFilterFactory.class),
+                @TokenFilterDef(factory = LowerCaseFilterFactory.class)
+        }
+)
 public class ResourceVO {
     @Id
     @Column

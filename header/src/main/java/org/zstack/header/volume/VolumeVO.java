@@ -1,5 +1,6 @@
 package org.zstack.header.volume;
 
+import org.hibernate.search.annotations.Indexed;
 import org.springframework.security.access.method.P;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.identity.OwnedByAccount;
@@ -32,6 +33,7 @@ import java.util.List;
         }
 )
 @AutoDeleteTag
+@Indexed
 public class VolumeVO extends VolumeAO implements OwnedByAccount {
     @Transient
     private String accountUuid;

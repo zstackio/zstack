@@ -1,6 +1,8 @@
 package org.zstack.core.db;
 
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import org.hibernate.search.jpa.FullTextEntityManager;
+import org.hibernate.search.jpa.Search;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Propagation;
@@ -16,10 +18,7 @@ import org.zstack.header.message.APIListMessage;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
-import org.zstack.utils.BeanUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.FieldUtils;
-import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
@@ -489,6 +488,10 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
     public EntityManager getEntityManager() {
         return entityManager;
+    }
+
+    public FullTextEntityManager getFullTextEntityManager() {
+        return Search.getFullTextEntityManager(entityManager);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.zstack.header.host;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.allocator.HostCapacityVO;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.tag.AutoDeleteTag;
@@ -22,6 +23,7 @@ import javax.persistence.*;
                 @EntityGraph.Neighbour(type = ZoneVO.class, myField = "zoneUuid", targetField = "uuid"),
         }
 )
+@Indexed
 public class HostVO extends HostAO {
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "uuid")

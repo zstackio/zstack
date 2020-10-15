@@ -1,5 +1,6 @@
 package org.zstack.header.network.l2;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.*;
 import org.zstack.header.vo.EntityGraph;
@@ -21,6 +22,7 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = L2NetworkClusterRefVO.class, myField = "uuid", targetField = "l2NetworkUuid")
         }
 )
+@Indexed
 public class L2NetworkVO extends L2NetworkAO implements ToInventory, OwnedByAccount {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "l2NetworkUuid", insertable = false, updatable = false)

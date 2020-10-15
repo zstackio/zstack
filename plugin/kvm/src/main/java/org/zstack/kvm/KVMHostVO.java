@@ -1,5 +1,6 @@
 package org.zstack.kvm;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.core.convert.PasswordConverter;
 import org.zstack.header.host.HostEO;
 import org.zstack.header.host.HostVO;
@@ -11,6 +12,7 @@ import javax.persistence.*;
 @Table
 @PrimaryKeyJoinColumn(name="uuid", referencedColumnName="uuid")
 @EO(EOClazz = HostEO.class, needView = false)
+@Indexed
 public class KVMHostVO extends HostVO {
     @Column
     private String username;

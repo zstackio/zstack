@@ -1,5 +1,7 @@
 package org.zstack.header.image;
 
+import org.hibernate.search.annotations.Analyzer;
+import org.hibernate.search.annotations.Field;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ResourceVO;
@@ -12,6 +14,7 @@ import java.sql.Timestamp;
 public class ImageAO extends ResourceVO implements ShadowEntity {
     @Column
     @Index
+    @Field(analyzer = @Analyzer(definition = "Ngram_analyzer"))
     private String name;
 
     @Column

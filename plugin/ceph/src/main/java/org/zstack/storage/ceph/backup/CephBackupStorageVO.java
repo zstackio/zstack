@@ -1,5 +1,6 @@
 package org.zstack.storage.ceph.backup;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.storage.backup.BackupStorageEO;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.tag.AutoDeleteTag;
@@ -18,6 +19,7 @@ import java.util.Set;
 @PrimaryKeyJoinColumn(name="uuid", referencedColumnName="uuid")
 @EO(EOClazz = BackupStorageEO.class, needView = false)
 @AutoDeleteTag
+@Indexed
 public class CephBackupStorageVO extends BackupStorageVO {
     @OneToMany(fetch= FetchType.EAGER)
     @JoinColumn(name="backupStorageUuid", insertable=false, updatable=false)

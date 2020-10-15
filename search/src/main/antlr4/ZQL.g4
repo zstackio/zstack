@@ -12,6 +12,7 @@ zql
     : query #queryGrammar
     | count #countGrammar
     | sum #sumGrammar
+    | search #searchGrammar
     ;
 
 entity
@@ -210,6 +211,19 @@ sum
     : SUM queryTarget sumBy (WHERE condition+)? orderBy? limit? offset? namedAs?
     ;
 
+search
+    : SEARCH keyword (FROM index)? restrictBy? limit? offset?
+    ;
+
+keyword
+    : STRING
+    ;
+
+index
+    : ID #singleIndex
+    | ID (',' ID)+ #multiIndexs
+    ;
+
 
 FILTER_BY: 'filter by';
 
@@ -224,6 +238,8 @@ GET: 'getapi';
 COUNT: 'count';
 
 SUM: 'sum';
+
+SEARCH: 'search';
 
 DISTINCT: 'distinct';
 
@@ -240,6 +256,8 @@ RESTRICT_BY: 'restrict by';
 RETURN_WITH: 'return with';
 
 WHERE: 'where';
+
+FROM: 'from';
 
 AND: 'and';
 

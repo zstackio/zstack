@@ -1,5 +1,7 @@
 package org.zstack.header.vm;
 
+import org.hibernate.search.annotations.Analyzer;
+import org.hibernate.search.annotations.Field;
 import org.zstack.header.cluster.ClusterEO;
 import org.zstack.header.configuration.InstanceOfferingEO;
 import org.zstack.header.host.HostEO;
@@ -20,6 +22,7 @@ import java.sql.Timestamp;
 public class VmInstanceAO extends ResourceVO {
     @Column
     @Index(length = 128)
+    @Field(analyzer = @Analyzer(definition = "Ngram_analyzer"))
     private String name;
 
     @Column

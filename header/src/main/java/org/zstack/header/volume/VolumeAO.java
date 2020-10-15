@@ -1,5 +1,7 @@
 package org.zstack.header.volume;
 
+import org.hibernate.search.annotations.Analyzer;
+import org.hibernate.search.annotations.Field;
 import org.zstack.header.configuration.DiskOfferingEO;
 import org.zstack.header.storage.primary.PrimaryStorageEO;
 import org.zstack.header.vo.ForeignKey;
@@ -15,6 +17,7 @@ import java.sql.Timestamp;
 public class VolumeAO extends ResourceVO implements ShadowEntity {
     @Column
     @Index
+    @Field(analyzer = @Analyzer(definition = "Ngram_analyzer"))
     private String name;
 
     @Column

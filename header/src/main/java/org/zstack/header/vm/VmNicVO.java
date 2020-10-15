@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.hibernate.search.annotations.Field;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.network.l3.L3NetworkEO;
 import org.zstack.header.network.l3.L3NetworkVO;

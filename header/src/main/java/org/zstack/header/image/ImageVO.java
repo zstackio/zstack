@@ -1,5 +1,6 @@
 package org.zstack.header.image;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
@@ -19,6 +20,7 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = ImageBackupStorageRefVO.class, myField = "uuid", targetField = "imageUuid")
         }
 )
+@Indexed
 public class ImageVO extends ImageAO implements OwnedByAccount {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "imageUuid", insertable = false, updatable = false)

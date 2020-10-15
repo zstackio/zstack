@@ -1,5 +1,7 @@
 package org.zstack.header.cluster;
 
+import org.hibernate.search.annotations.Analyzer;
+import org.hibernate.search.annotations.Field;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
@@ -19,6 +21,7 @@ public class ClusterAO extends ResourceVO {
 
     @Column
     @Index
+    @Field(analyzer = @Analyzer(definition = "Ngram_analyzer"))
     private String name;
 
     @Column

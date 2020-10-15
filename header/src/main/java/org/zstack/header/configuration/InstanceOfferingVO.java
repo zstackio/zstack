@@ -1,5 +1,6 @@
 package org.zstack.header.configuration;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.BaseResource;
@@ -13,6 +14,7 @@ import javax.persistence.Transient;
 @EO(EOClazz = InstanceOfferingEO.class)
 @BaseResource
 @AutoDeleteTag
+@Indexed
 public class InstanceOfferingVO extends InstanceOfferingAO implements OwnedByAccount {
     @Transient
     private String accountUuid;

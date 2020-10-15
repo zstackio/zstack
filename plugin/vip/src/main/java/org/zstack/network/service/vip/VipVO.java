@@ -1,5 +1,8 @@
 package org.zstack.network.service.vip;
 
+import org.hibernate.search.annotations.Analyzer;
+import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vo.*;
@@ -31,11 +34,13 @@ import java.util.stream.Collectors;
                 @EntityGraph.Neighbour(type = VipNetworkServicesRefVO.class, myField = "uuid", targetField = "vipUuid")
         }
 )
+@Indexed
 public class VipVO extends ResourceVO implements OwnedByAccount {
     protected static final CLogger logger = Utils.getLogger(VipVO.class);
 
     @Column
     @Index
+    @Field(analyzer = @Analyzer(definition = "Ngram_analyzer"))
     private String  name;
 
     @Column

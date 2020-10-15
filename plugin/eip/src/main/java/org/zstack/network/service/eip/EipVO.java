@@ -1,5 +1,8 @@
 package org.zstack.network.service.eip;
 
+import org.hibernate.search.annotations.Analyzer;
+import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vo.BaseResource;
@@ -27,9 +30,11 @@ import java.sql.Timestamp;
                 @EntityGraph.Neighbour(type = VmNicVO.class, myField = "vmNicUuid", targetField = "uuid")
         }
 )
+@Indexed
 public class EipVO extends ResourceVO implements OwnedByAccount {
     @Column
     @Index
+    @Field(analyzer = @Analyzer(definition = "Ngram_analyzer"))
     private String  name;
 
     @Column

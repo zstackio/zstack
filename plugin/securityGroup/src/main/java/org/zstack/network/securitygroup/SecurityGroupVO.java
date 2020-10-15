@@ -1,5 +1,8 @@
 package org.zstack.network.securitygroup;
 
+import org.hibernate.search.annotations.Analyzer;
+import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EntityGraph;
@@ -14,9 +17,11 @@ import java.util.Set;
 @Entity
 @Table
 @BaseResource
+@Indexed
 public class SecurityGroupVO extends ResourceVO implements OwnedByAccount {
     @Column
     @Index
+    @Field(analyzer = @Analyzer(definition = "Ngram_analyzer"))
     private String name;
     
     @Column

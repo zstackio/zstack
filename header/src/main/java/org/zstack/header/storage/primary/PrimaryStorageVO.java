@@ -1,5 +1,6 @@
 package org.zstack.header.storage.primary;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.vo.*;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.zone.ZoneVO;
@@ -20,6 +21,7 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = PrimaryStorageClusterRefVO.class, myField = "uuid", targetField = "primaryStorageUuid")
         }
 )
+@Indexed
 public class PrimaryStorageVO extends PrimaryStorageAO implements ToInventory {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "primaryStorageUuid", insertable = false, updatable = false)

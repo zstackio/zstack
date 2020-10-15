@@ -1,5 +1,7 @@
 package org.zstack.header.network.l2;
 
+import org.hibernate.search.annotations.Analyzer;
+import org.hibernate.search.annotations.Field;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
 import org.zstack.header.vo.Index;
@@ -16,6 +18,7 @@ import java.sql.Timestamp;
 public class L2NetworkAO extends ResourceVO {
     @Column
     @Index
+    @Field(analyzer = @Analyzer(definition = "Ngram_analyzer"))
     private String name;
 
     @Column

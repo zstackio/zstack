@@ -1,5 +1,8 @@
 package org.zstack.network.service.lb;
 
+import org.hibernate.search.annotations.Analyzer;
+import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EntityGraph;
@@ -27,12 +30,14 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = LoadBalancerListenerACLRefVO.class, myField = "uuid", targetField = "listenerUuid")
         }
 )
+@Indexed
 public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount {
     @Column
     @ForeignKey(parentEntityClass = LoadBalancerVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.RESTRICT)
     private String loadBalancerUuid;
 
     @Column
+    @Field(analyzer = @Analyzer(definition = "Ngram_analyzer"))
     private String name;
 
     @Column

@@ -1,5 +1,6 @@
 package org.zstack.storage.backup.sftp;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.core.convert.PasswordConverter;
 import org.zstack.header.storage.backup.BackupStorageEO;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -17,6 +18,7 @@ import javax.persistence.Convert;
 @PrimaryKeyJoinColumn(name="uuid", referencedColumnName="uuid")
 @EO(EOClazz = BackupStorageEO.class, needView = false)
 @AutoDeleteTag
+@Indexed
 public class SftpBackupStorageVO extends BackupStorageVO {
 
     @Column

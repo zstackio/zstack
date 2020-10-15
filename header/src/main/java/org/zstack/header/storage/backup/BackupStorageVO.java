@@ -1,5 +1,6 @@
 package org.zstack.header.storage.backup;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.image.ImageBackupStorageRefVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EO;
@@ -20,6 +21,7 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = ImageBackupStorageRefVO.class, myField = "uuid", targetField = "backupStorageUuid")
         }
 )
+@Indexed
 public class BackupStorageVO extends BackupStorageAO {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "backupStorageUuid", insertable = false, updatable = false)

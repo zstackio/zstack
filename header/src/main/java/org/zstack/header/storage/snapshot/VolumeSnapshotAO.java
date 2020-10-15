@@ -1,5 +1,7 @@
 package org.zstack.header.storage.snapshot;
 
+import org.hibernate.search.annotations.Analyzer;
+import org.hibernate.search.annotations.Field;
 import org.zstack.header.storage.primary.PrimaryStorageEO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
@@ -17,6 +19,7 @@ import java.sql.Timestamp;
 public class VolumeSnapshotAO extends ResourceVO implements ShadowEntity {
     @Column
     @Index
+    @Field(analyzer = @Analyzer(definition = "Ngram_analyzer"))
     private String name;
 
     @Column

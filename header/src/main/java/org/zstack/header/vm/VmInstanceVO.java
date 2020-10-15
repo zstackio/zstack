@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.host.HostVO;
@@ -34,6 +35,7 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = VmNicVO.class, myField = "uuid", targetField = "vmInstanceUuid"),
         }
 )
+@Indexed
 public class VmInstanceVO extends VmInstanceAO implements OwnedByAccount, ToInventory {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "vmInstanceUuid", insertable = false, updatable = false)

@@ -1,6 +1,7 @@
 package org.zstack.network.l2.vxlan.vxlanNetworkPool;
 
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.network.l2.L2NetworkEO;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.tag.AutoDeleteTag;
@@ -21,6 +22,7 @@ import java.util.Set;
 @PrimaryKeyJoinColumn(name = "uuid", referencedColumnName = "uuid")
 @EO(EOClazz = L2NetworkEO.class, needView = false)
 @AutoDeleteTag
+@Indexed
 public class VxlanNetworkPoolVO extends L2NetworkVO {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "poolUuid", insertable = false, updatable = false)

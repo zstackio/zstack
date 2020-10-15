@@ -1,5 +1,6 @@
 package org.zstack.header.cluster;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
@@ -23,5 +24,6 @@ import javax.persistence.Table;
                 @EntityGraph.Neighbour(type = L2NetworkClusterRefVO.class, myField = "uuid", targetField = "clusterUuid")
         }
 )
+@Indexed
 public class ClusterVO extends ClusterAO {
 }

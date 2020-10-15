@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.7
+// Generated from ZQL.g4 by ANTLR 4.8
 
 package org.zstack.zql.antlr4;
 
@@ -55,6 +55,18 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitSumGrammar(ZQLParser.SumGrammarContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code searchGrammar}
+	 * labeled alternative in {@link ZQLParser#zql}.
+	 * @param ctx the parse tree
+	 */
+	void enterSearchGrammar(ZQLParser.SearchGrammarContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code searchGrammar}
+	 * labeled alternative in {@link ZQLParser#zql}.
+	 * @param ctx the parse tree
+	 */
+	void exitSearchGrammar(ZQLParser.SearchGrammarContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ZQLParser#entity}.
 	 * @param ctx the parse tree
@@ -581,4 +593,48 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitSum(ZQLParser.SumContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#search}.
+	 * @param ctx the parse tree
+	 */
+	void enterSearch(ZQLParser.SearchContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#search}.
+	 * @param ctx the parse tree
+	 */
+	void exitSearch(ZQLParser.SearchContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#keyword}.
+	 * @param ctx the parse tree
+	 */
+	void enterKeyword(ZQLParser.KeywordContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#keyword}.
+	 * @param ctx the parse tree
+	 */
+	void exitKeyword(ZQLParser.KeywordContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code singleIndex}
+	 * labeled alternative in {@link ZQLParser#index}.
+	 * @param ctx the parse tree
+	 */
+	void enterSingleIndex(ZQLParser.SingleIndexContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code singleIndex}
+	 * labeled alternative in {@link ZQLParser#index}.
+	 * @param ctx the parse tree
+	 */
+	void exitSingleIndex(ZQLParser.SingleIndexContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code multiIndexs}
+	 * labeled alternative in {@link ZQLParser#index}.
+	 * @param ctx the parse tree
+	 */
+	void enterMultiIndexs(ZQLParser.MultiIndexsContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code multiIndexs}
+	 * labeled alternative in {@link ZQLParser#index}.
+	 * @param ctx the parse tree
+	 */
+	void exitMultiIndexs(ZQLParser.MultiIndexsContext ctx);
 }

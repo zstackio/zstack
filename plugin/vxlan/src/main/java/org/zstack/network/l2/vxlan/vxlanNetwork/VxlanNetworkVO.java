@@ -1,5 +1,6 @@
 package org.zstack.network.l2.vxlan.vxlanNetwork;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.network.l2.L2NetworkEO;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.tag.AutoDeleteTag;
@@ -17,6 +18,7 @@ import javax.persistence.*;
 @PrimaryKeyJoinColumn(name = "uuid", referencedColumnName = "uuid")
 @EO(EOClazz = L2NetworkEO.class, needView = false)
 @AutoDeleteTag
+@Indexed
 public class VxlanNetworkVO extends L2NetworkVO {
     @Column
     private Integer vni;

@@ -145,3 +145,5 @@ ALTER TABLE `zstack`.`VpcFirewallRuleSetVO` DROP COLUMN `vyosName`;
 ALTER TABLE `zstack`.`VpcFirewallRuleSetVO` DROP COLUMN `vpcFirewallUuid`;
 ALTER TABLE `zstack`.`VpcFirewallRuleVO` DROP COLUMN `vpcFirewallUuid`;
 ALTER TABLE `zstack`.`VpcFirewallRuleVO` DROP COLUMN `ruleSetName`;
+
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.affinitygroup.AffinityGroupVO"  WHERE resourceName = "zstack.affinity.group.for.virtual.router" and resourceType = "AffinityGroupVO";

@@ -1,5 +1,6 @@
 package org.zstack.header.storage.snapshot;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;

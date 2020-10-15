@@ -1,5 +1,7 @@
 package org.zstack.header.host;
 
+import org.hibernate.search.annotations.Analyzer;
+import org.hibernate.search.annotations.Field;
 import org.zstack.header.cluster.ClusterEO;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
@@ -19,6 +21,7 @@ public class HostAO extends ResourceVO {
     private String zoneUuid;
 
     @Column
+    @Field(analyzer = @Analyzer(definition = "Ngram_analyzer"))
     private String name;
 
     @Column

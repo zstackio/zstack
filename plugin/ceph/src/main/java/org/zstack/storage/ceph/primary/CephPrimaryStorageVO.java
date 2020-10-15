@@ -1,5 +1,6 @@
 package org.zstack.storage.ceph.primary;
 
+import org.hibernate.search.annotations.Indexed;
 import org.zstack.header.storage.primary.PrimaryStorageEO;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.tag.AutoDeleteTag;
@@ -19,6 +20,7 @@ import java.util.Set;
 @PrimaryKeyJoinColumn(name="uuid", referencedColumnName="uuid")
 @EO(EOClazz = PrimaryStorageEO.class, needView = false)
 @AutoDeleteTag
+@Indexed
 public class CephPrimaryStorageVO extends PrimaryStorageVO {
     @OneToMany(fetch= FetchType.EAGER)
     @JoinColumn(name="primaryStorageUuid", insertable=false, updatable=false)
