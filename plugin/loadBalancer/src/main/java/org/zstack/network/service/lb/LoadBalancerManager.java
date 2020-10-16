@@ -5,4 +5,5 @@ package org.zstack.network.service.lb;
  */
 public interface LoadBalancerManager {
     LoadBalancerBackend getBackend(String providerType);
+    LoadBalancerFactory getLoadBalancerFactory(String type);
 }

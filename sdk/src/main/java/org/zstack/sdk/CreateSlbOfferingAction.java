@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateLoadBalancerAction extends AbstractAction {
+public class CreateSlbOfferingAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateLoadBalancerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateLoadBalancerResult value;
+        public org.zstack.sdk.CreateInstanceOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,32 @@ public class CreateLoadBalancerAction extends AbstractAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String zoneUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String managementNetworkUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String imageUuid;
+
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vipUuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,1024L}, noTrim = false)
+    public int cpuNum = 0;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, numberRangeUnit = {"byte", "bytes"}, noTrim = false)
+    public long memorySize = 0L;
+
+    @Param(required = false)
+    public java.lang.String allocatorStrategy;
+
+    @Param(required = false)
+    public int sortKey = 0;
 
     @Param(required = false)
     public java.lang.String type;
@@ -75,8 +93,8 @@ public class CreateLoadBalancerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateLoadBalancerResult value = res.getResult(org.zstack.sdk.CreateLoadBalancerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateLoadBalancerResult() : value; 
+        org.zstack.sdk.CreateInstanceOfferingResult value = res.getResult(org.zstack.sdk.CreateInstanceOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateInstanceOfferingResult() : value; 
 
         return ret;
     }
@@ -106,7 +124,7 @@ public class CreateLoadBalancerAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/load-balancers";
+        info.path = "/instance-offerings/slb";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

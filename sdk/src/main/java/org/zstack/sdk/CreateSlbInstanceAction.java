@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateLoadBalancerAction extends AbstractAction {
+public class CreateSlbInstanceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateLoadBalancerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateLoadBalancerResult value;
+        public org.zstack.sdk.CreateSlbInstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,14 +28,20 @@ public class CreateLoadBalancerAction extends AbstractAction {
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String slbGroupUuid;
+
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vipUuid;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String zoneUuid;
 
-    @Param(required = false)
-    public java.lang.String type;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String clusterUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostUuid;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -75,8 +81,8 @@ public class CreateLoadBalancerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateLoadBalancerResult value = res.getResult(org.zstack.sdk.CreateLoadBalancerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateLoadBalancerResult() : value; 
+        org.zstack.sdk.CreateSlbInstanceResult value = res.getResult(org.zstack.sdk.CreateSlbInstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateSlbInstanceResult() : value; 
 
         return ret;
     }
@@ -106,7 +112,7 @@ public class CreateLoadBalancerAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/load-balancers";
+        info.path = "/load-balancers/slb/instances";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

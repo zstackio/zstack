@@ -36,6 +36,14 @@ public class LoadBalancerInventory  {
         return this.state;
     }
 
+    public java.lang.String type;
+    public void setType(java.lang.String type) {
+        this.type = type;
+    }
+    public java.lang.String getType() {
+        return this.type;
+    }
+
     public java.lang.String vipUuid;
     public void setVipUuid(java.lang.String vipUuid) {
         this.vipUuid = vipUuid;
