@@ -3,7 +3,6 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.asyncbatch.AsyncLoop;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -20,6 +19,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
@@ -33,6 +33,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
@@ -44,8 +45,6 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
     protected CloudBus bus;
     @Autowired
     protected ErrorFacade errf;
-    @Autowired
-    protected HostAllocatorManager hostAllocatorMgr;
     @Autowired
     private PluginRegistry pluginRgty;
 
@@ -61,8 +60,7 @@ public class ApplianceVmAllocatePrimaryStorageFlow implements Flow {
         q.select(BackupStorageVO_.type);
         q.add(BackupStorageVO_.uuid, Op.EQ, spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
         String bsType = q.findValue();
-        List<String> primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
-        DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
+        List<String> primaryStorageTypes = BackupStorageType.findRelatedPrimaryStorageTypes(bsType);
 
         DebugUtils.Assert(spec.getDataDiskOfferings().size() == 0, "create appliance vm can not with data volume");
 

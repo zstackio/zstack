@@ -84,7 +84,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         VmCapabilitiesExtensionPoint, PreVmInstantiateResourceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
-    public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
+    public static final PrimaryStorageType type = PrimaryStorageType.createIfAbsent(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
 
     {
         type.setSupportSharedVolume(true);

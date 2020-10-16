@@ -81,7 +81,7 @@ public class NfsPrimaryStorageFactory implements NfsPrimaryStorageManager, Prima
     private Map<String, Map<String, NfsPrimaryToBackupStorageMediator>> mediators =
             new HashMap<>();
 
-    private static final PrimaryStorageType type = new PrimaryStorageType(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE);
+    private static final PrimaryStorageType type = PrimaryStorageType.createIfAbsent(NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE);
 
     static {
         type.setSupportHeartbeatFile(true);

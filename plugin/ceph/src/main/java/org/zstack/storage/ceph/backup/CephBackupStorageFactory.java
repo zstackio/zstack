@@ -25,7 +25,7 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
     @Autowired
     private AnsibleFacade asf;
 
-    public static final BackupStorageType type = new BackupStorageType(CephConstants.CEPH_BACKUP_STORAGE_TYPE);
+    public static final BackupStorageType type = BackupStorageType.createIfAbsent(CephConstants.CEPH_BACKUP_STORAGE_TYPE);
 
     static {
         type.setOrder(899);

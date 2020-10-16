@@ -6,7 +6,6 @@ import org.apache.commons.validator.routines.DomainValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.*;
@@ -63,7 +62,6 @@ import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
-import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
@@ -73,7 +71,6 @@ import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -156,8 +153,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private VmInstanceDeletionPolicyManager deletionPolicyMgr;
     @Autowired
     private EventFacade evtf;
-    @Autowired
-    private HostAllocatorManager hostAllocatorMgr;
     @Autowired
     protected VmInstanceExtensionPointEmitter extEmitter;
     @Autowired
@@ -279,7 +274,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             if (lst != null) {
                 psUuids.addAll(lst);
             } else {
-                psTypes.addAll(hostAllocatorMgr.getPrimaryStorageTypesByBackupStorageTypeFromMetrics(bs.getType()));
+                psTypes.addAll(BackupStorageType.findRelatedPrimaryStorageTypes(bs.getType()));
             }
         }
 
@@ -436,7 +431,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             List<String> relatedPrimaryStorageUuids = bsType.findRelatedPrimaryStorage(bs.getUuid());
             if (relatedPrimaryStorageUuids == null) {
                 // the backup storage has no strongly-bound primary storage
-                List<String> psTypes = hostAllocatorMgr.getPrimaryStorageTypesByBackupStorageTypeFromMetrics(bs.getType());
+                List<String> psTypes = BackupStorageType.findRelatedPrimaryStorageTypes(bs.getType());
                 sql = "select l3" +
                         " from L3NetworkVO l3, L2NetworkClusterRefVO l2ref," +
                         " PrimaryStorageClusterRefVO psref, PrimaryStorageVO ps" +
@@ -619,7 +614,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         " and bs.uuid = ref.backupStorageUuid", String.class)
                         .param("imageUuid", msg.getImageUuid())
                         .list().forEach(it ->
-                        psTypes.addAll(hostAllocatorMgr.getPrimaryStorageTypesByBackupStorageTypeFromMetrics((String)it)
+                        psTypes.addAll(BackupStorageType.findRelatedPrimaryStorageTypes((String)it)
                         ));
 
                 clusterUuids.addAll(sql("select distinct ref.clusterUuid" +

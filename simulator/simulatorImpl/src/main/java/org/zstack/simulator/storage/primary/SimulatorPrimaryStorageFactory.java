@@ -6,12 +6,15 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.simulator.storage.primary.APIAddSimulatorPrimaryStorageMsg;
 import org.zstack.header.simulator.storage.primary.SimulatorPrimaryStorageConstant;
 import org.zstack.header.storage.primary.*;
-import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.path.PathUtil;
 
 public class SimulatorPrimaryStorageFactory implements PrimaryStorageFactory {
-    private static final PrimaryStorageType type = new PrimaryStorageType(SimulatorPrimaryStorageConstant.SIMULATOR_PRIMARY_STORAGE_TYPE, CoreGlobalProperty.EXPOSE_SIMULATOR_TYPE);
+    private static final PrimaryStorageType type = PrimaryStorageType.createIfAbsent(SimulatorPrimaryStorageConstant.SIMULATOR_PRIMARY_STORAGE_TYPE);
 
+    static {
+        type.setExposed(CoreGlobalProperty.EXPOSE_SIMULATOR_TYPE);
+    }
+    
     @Autowired
     private DatabaseFacade dbf;
 

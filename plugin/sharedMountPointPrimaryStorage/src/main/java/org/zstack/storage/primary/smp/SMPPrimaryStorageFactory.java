@@ -47,7 +47,7 @@ public class SMPPrimaryStorageFactory implements PrimaryStorageFactory, CreateTe
         PostMarkRootVolumeAsSnapshotExtension, PrimaryStorageAttachExtensionPoint, AfterInstantiateVolumeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SMPPrimaryStorageFactory.class);
 
-    public static final PrimaryStorageType type = new PrimaryStorageType(SMPConstants.SMP_TYPE);
+    public static final PrimaryStorageType type = PrimaryStorageType.createIfAbsent(SMPConstants.SMP_TYPE);
 
     static {
         type.setSupportHeartbeatFile(true);

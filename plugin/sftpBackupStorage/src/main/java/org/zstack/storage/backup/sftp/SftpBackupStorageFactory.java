@@ -20,19 +20,14 @@ import org.zstack.utils.logging.CLogger;
 import static org.zstack.core.Platform.argerr;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 public class SftpBackupStorageFactory implements BackupStorageFactory, GlobalApiMessageInterceptor, Component {
     private static final CLogger logger = Utils.getLogger(SftpBackupStorageFactory.class);
-    public static BackupStorageType type = new BackupStorageType(
-            SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE,
-            BackupStorageConstant.SCHEME_HTTP,
-            BackupStorageConstant.SCHEME_HTTPS,
-            BackupStorageConstant.SCHEME_NFS,
-            BackupStorageConstant.SCHEME_FILE,
-            BackupStorageConstant.SCHEME_FTP,
-            BackupStorageConstant.SCHEME_SFTP
-    );
+    public static BackupStorageType type = BackupStorageType.createIfAbsent(
+            SftpBackupStorageConstant.SFTP_BACKUP_STORAGE_TYPE);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -42,6 +37,16 @@ public class SftpBackupStorageFactory implements BackupStorageFactory, GlobalApi
     private ErrorFacade errf;
 
     static {
+        HashSet<String> schemes = new HashSet<>();
+        Collections.addAll(schemes,
+            BackupStorageConstant.SCHEME_HTTP,
+            BackupStorageConstant.SCHEME_HTTPS,
+            BackupStorageConstant.SCHEME_NFS,
+            BackupStorageConstant.SCHEME_FILE,
+            BackupStorageConstant.SCHEME_FTP,
+            BackupStorageConstant.SCHEME_SFTP);
+        type.setSupportedSchemes(schemes);
+        
         type.setOrder(999);
     }
 

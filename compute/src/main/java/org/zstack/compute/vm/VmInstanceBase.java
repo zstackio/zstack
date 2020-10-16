@@ -5,7 +5,6 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
@@ -111,8 +110,6 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected PluginRegistry pluginRgty;
     @Autowired
     protected VmInstanceDeletionPolicyManager deletionPolicyMgr;
-    @Autowired
-    protected HostAllocatorManager hostAllocatorMgr;
     @Autowired
     private VmPriorityOperator priorityOperator;
     @Autowired

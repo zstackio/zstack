@@ -1,39 +1,48 @@
 package org.zstack.header.storage.backup;
 
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
+import org.zstack.header.storage.primary.PrimaryStorageType;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class BackupStorageType {
-    private static Map<String, BackupStorageType> types = Collections.synchronizedMap(new HashMap<String, BackupStorageType>());
+    private static Map<String, BackupStorageType> types = Collections.synchronizedMap(new HashMap<>());
     private final String typeName;
-    private final Set<String> supportedSchemes;
+    private Set<String> supportedSchemes;
     private boolean exposed = true;
     private int order;
     private BackupStorageFindRelatedPrimaryStorage primaryStorageFinder;
-
-    public BackupStorageType(String typeName, String... protocols) {
-        this.typeName = typeName;
-        supportedSchemes = new HashSet<String>(protocols.length);
-        Collections.addAll(supportedSchemes, protocols);
-        types.put(typeName, this);
+    private List<PrimaryStorageType> relatedPrimaryStorageTypes;
+    
+    public static BackupStorageType createIfAbsent(String typeName) {
+        BackupStorageType type;
+        synchronized (BackupStorageType.class) {
+            type = types.get(typeName);
+            if (type != null) {
+                return type;
+            }
+            types.put(typeName, type = new BackupStorageType(typeName));
+        }
+        return type;
     }
 
-    public BackupStorageType(String typeName, boolean expose, String... protocols) {
-        this(typeName);
-        this.exposed = expose;
+    private BackupStorageType(String typeName) {
+        this.typeName = typeName;
     }
 
     public Set<String> getSupportedSchemes() {
         return supportedSchemes;
     }
-
-    public static BackupStorageType valueOf(String typeName) {
+    
+    public void setSupportedSchemes(Set<String> supportedSchemes) {
+        this.supportedSchemes = supportedSchemes;
+    }
+    
+    public static BackupStorageType valueOf(String typeName) throws IllegalArgumentException {
         BackupStorageType type = types.get(typeName);
         if (type == null) {
-            throw new IllegalArgumentException("BackupStorageType type: " + typeName + " was not registered by any BackupStorageFactory");
+            throw new IllegalArgumentException("BackupStorageType type: " + typeName + " was not registered");
         }
         return type;
     }
@@ -53,7 +62,7 @@ public class BackupStorageType {
 
     @Override
     public boolean equals(Object t) {
-        if (t == null || !(t instanceof BackupStorageType)) {
+        if (!(t instanceof BackupStorageType)) {
             return false;
         }
 
@@ -67,26 +76,11 @@ public class BackupStorageType {
     }
 
     public static List<String> getAllTypeNames() {
-        List<BackupStorageType> exposedTypes = new ArrayList<BackupStorageType>();
-        for (BackupStorageType type : types.values()) {
-            if (type.isExposed()) {
-                exposedTypes.add(type);
-            }
-        }
-
-        Collections.sort(exposedTypes, new Comparator<BackupStorageType>() {
-            @Override
-            public int compare(BackupStorageType o1, BackupStorageType o2) {
-                return o1.getOrder() - o2.getOrder();
-            }
-        });
-
-        return CollectionUtils.transformToList(exposedTypes, new Function<String, BackupStorageType>() {
-            @Override
-            public String call(BackupStorageType arg) {
-                return arg.toString();
-            }
-        });
+        return types.values().stream()
+            .filter(BackupStorageType::isExposed)
+            .sorted(Comparator.comparingInt(BackupStorageType::getOrder))
+            .map(BackupStorageType::toString)
+            .collect(Collectors.toList());
     }
 
     public List<String> findRelatedPrimaryStorage(String bsUuid) {
@@ -107,5 +101,21 @@ public class BackupStorageType {
 
     public void setOrder(int order) {
         this.order = order;
+    }
+    
+    public void setRelatedPrimaryStorageTypes(List<PrimaryStorageType> relatedPrimaryStorageTypes) {
+        this.relatedPrimaryStorageTypes = relatedPrimaryStorageTypes;
+    }
+    
+    public List<PrimaryStorageType> getRelatedPrimaryStorageTypes() {
+        return relatedPrimaryStorageTypes;
+    }
+    
+    public static List<String> findRelatedPrimaryStorageTypes(String backupStorageType) throws IllegalArgumentException {
+        return BackupStorageType.valueOf(backupStorageType)
+            .getRelatedPrimaryStorageTypes()
+            .stream()
+            .map(PrimaryStorageType::toString)
+            .collect(Collectors.toList());
     }
 }

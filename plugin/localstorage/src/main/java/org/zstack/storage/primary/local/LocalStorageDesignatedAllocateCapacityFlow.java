@@ -3,7 +3,6 @@ package org.zstack.storage.primary.local;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.asyncbatch.AsyncLoop;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -17,6 +16,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.primary.*;
@@ -26,7 +26,6 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.function.Function;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,8 +47,6 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
     protected DatabaseFacade dbf;
     @Autowired
     protected CloudBus bus;
-    @Autowired
-    protected HostAllocatorManager hostAllocatorMgr;
 
     @Override
     public void run(final FlowTrigger trigger, Map data) {
@@ -137,8 +134,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
                 .select(BackupStorageVO_.type)
                 .eq(BackupStorageVO_.uuid,spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid())
                 .findValue();
-        List<String> primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
-        DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
+        List<String> primaryStorageTypes = BackupStorageType.findRelatedPrimaryStorageTypes(bsType);
 
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
         rmsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
@@ -186,7 +182,7 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
                 .select(BackupStorageVO_.type)
                 .eq(BackupStorageVO_.uuid,spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid())
                 .findValue();
-        List<String> primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
+        List<String> primaryStorageTypes = BackupStorageType.findRelatedPrimaryStorageTypes(bsType);
 
         for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
             AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();

@@ -1,25 +1,38 @@
 package org.zstack.header.storage.primary;
 
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.function.Function;
+import org.zstack.header.storage.backup.BackupStorageType;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-
 public class PrimaryStorageType {
-    private static Map<String, PrimaryStorageType> types = Collections.synchronizedMap(new HashMap<String, PrimaryStorageType>());
+    private static Map<String, PrimaryStorageType> types = Collections.synchronizedMap(new HashMap<>());
     private final String typeName;
     private boolean exposed = true;
     private boolean supportHeartbeatFile;
     protected boolean supportVmLiveMigration = true;
+    protected Function<Boolean, Boolean> supportVmLiveMigrationFunction = null;
     private boolean supportVolumeMigration;
     private boolean supportVolumeMigrationInCurrentPrimaryStorage;
     private boolean supportVolumeMigrationToOtherPrimaryStorage;
     private boolean supportSharedVolume;
     private int order;
     private PrimaryStorageFindBackupStorage primaryStorageFindBackupStorage;
-
+    private List<BackupStorageType> relatedBackupStorageTypes;
+    
+    public static PrimaryStorageType createIfAbsent(String typeName) {
+        PrimaryStorageType type;
+        synchronized (PrimaryStorageType.class) {
+            type = types.get(typeName);
+            if (type != null) {
+                return type;
+            }
+            types.put(typeName, type = new PrimaryStorageType(typeName));
+        }
+        return type;
+    }
+    
     public boolean isSupportSharedVolume() {
         return supportSharedVolume;
     }
@@ -36,20 +49,14 @@ public class PrimaryStorageType {
         this.order = order;
     }
 
-    public PrimaryStorageType(String typeName) {
+    private PrimaryStorageType(String typeName) {
         this.typeName = typeName;
-        types.put(typeName, this);
     }
 
-    public PrimaryStorageType(String typeName, boolean exposed) {
-        this(typeName);
-        this.exposed = exposed;
-    }
-
-    public static PrimaryStorageType valueOf(String typeName) {
+    public static PrimaryStorageType valueOf(String typeName) throws IllegalArgumentException {
         PrimaryStorageType type = types.get(typeName);
         if (type == null) {
-            throw new IllegalArgumentException("PrimaryStorageType type: " + typeName + " was not registered by any PrimaryStorageFactory");
+            throw new IllegalArgumentException("PrimaryStorageType type: " + typeName + " was not registered");
         }
         return type;
     }
@@ -69,7 +76,7 @@ public class PrimaryStorageType {
 
     @Override
     public boolean equals(Object t) {
-        if (t == null || !(t instanceof PrimaryStorageType)) {
+        if (!(t instanceof PrimaryStorageType)) {
             return false;
         }
 
@@ -83,21 +90,10 @@ public class PrimaryStorageType {
     }
 
     private static List<PrimaryStorageType> getExposedTypes() {
-        List<PrimaryStorageType> exposedTypes = new ArrayList<PrimaryStorageType>();
-        for (PrimaryStorageType type : types.values()) {
-            if (type.isExposed()) {
-                exposedTypes.add(type);
-            }
-        }
-
-        Collections.sort(exposedTypes, new Comparator<PrimaryStorageType>() {
-            @Override
-            public int compare(PrimaryStorageType o1, PrimaryStorageType o2) {
-                return o1.getOrder() - o2.getOrder();
-            }
-        });
-
-        return exposedTypes;
+        return types.values().stream()
+            .filter(PrimaryStorageType::isExposed)
+            .sorted(Comparator.comparingInt(PrimaryStorageType::getOrder))
+            .collect(Collectors.toList());
     }
 
     public static List<String> getSupportSharedVolumePSTypeNames() {
@@ -109,14 +105,9 @@ public class PrimaryStorageType {
     }
 
     public static List<String> getAllTypeNames() {
-        List<PrimaryStorageType> exposedTypes = getExposedTypes();
-
-        return CollectionUtils.transformToList(exposedTypes, new Function<String, PrimaryStorageType>() {
-            @Override
-            public String call(PrimaryStorageType arg) {
-                return arg.toString();
-            }
-        });
+        return getExposedTypes().stream()
+            .map(PrimaryStorageType::toString)
+            .collect(Collectors.toList());
     }
 
     public static List<PrimaryStorageType> getAllTypes() {
@@ -132,6 +123,9 @@ public class PrimaryStorageType {
     }
 
     public boolean isSupportVmLiveMigration() {
+        if (supportVmLiveMigrationFunction != null) {
+            return supportVmLiveMigrationFunction.apply(supportVmLiveMigration);
+        }
         return supportVmLiveMigration;
     }
 
@@ -146,7 +140,11 @@ public class PrimaryStorageType {
     public void setSupportVolumeMigration(boolean supportVolumeMigration) {
         this.supportVolumeMigration = supportVolumeMigration;
     }
-
+    
+    public void setSupportVmLiveMigrationFunction(Function<Boolean, Boolean> supportVmLiveMigrationFunction) {
+        this.supportVmLiveMigrationFunction = supportVmLiveMigrationFunction;
+    }
+    
     public boolean isSupportVolumeMigrationInCurrentPrimaryStorage() {
         return supportVolumeMigrationInCurrentPrimaryStorage;
     }
@@ -173,5 +171,21 @@ public class PrimaryStorageType {
 
     public List<String> findBackupStorage(String psUuid) {
         return primaryStorageFindBackupStorage.findBackupStorage(psUuid);
+    }
+    
+    public void setRelatedBackupStorageTypes(List<BackupStorageType> relatedBackupStorageTypes) {
+        this.relatedBackupStorageTypes = relatedBackupStorageTypes;
+    }
+    
+    public List<BackupStorageType> getRelatedBackupStorageTypes() {
+        return relatedBackupStorageTypes;
+    }
+    
+    public static List<String> findRelatedBackupStorageTypes(String primaryStorageType) throws IllegalArgumentException {
+        return PrimaryStorageType.valueOf(primaryStorageType)
+            .getRelatedBackupStorageTypes()
+            .stream()
+            .map(BackupStorageType::toString)
+            .collect(Collectors.toList());
     }
 }

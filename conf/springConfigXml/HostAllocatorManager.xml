@@ -53,14 +53,17 @@
         <entry key="VCenter" value-ref="VCenterMetric"/>
     </util:map>
 
+    <bean id="StorageTypeService"
+          class="org.zstack.header.storage.primary.StorageTypeServiceImpl">
+        <property name="backupStoragePrimaryStorageMetrics" ref="BackupStoragePrimaryStorageMetrics"/>
+    </bean>
+
     <bean id="HostAllocatorManager" class="org.zstack.compute.allocator.HostAllocatorManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.header.Service"/>
             <zstack:extension interface="org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint"/>
         </zstack:plugin>
-
-        <property name="backupStoragePrimaryStorageMetrics" ref="BackupStoragePrimaryStorageMetrics"/>
     </bean>
 
     <bean id="HostCapacityReserveManager" class="org.zstack.compute.allocator.HostCapacityReserveManagerImpl">

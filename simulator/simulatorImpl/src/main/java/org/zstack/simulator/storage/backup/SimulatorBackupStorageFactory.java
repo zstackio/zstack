@@ -10,14 +10,29 @@ import org.zstack.header.storage.backup.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Collections;
+import java.util.HashSet;
+
 public class SimulatorBackupStorageFactory implements BackupStorageFactory {
     private static final CLogger logger = Utils.getLogger(SimulatorBackupStorageFactory.class);
-	private static final BackupStorageType type = new BackupStorageType(SimulatorBackupStorageConstant.SIMULATOR_BACKUP_STORAGE_TYPE, CoreGlobalProperty.EXPOSE_SIMULATOR_TYPE, BackupStorageConstant.SCHEME_HTTP, BackupStorageConstant.SCHEME_HTTPS, BackupStorageConstant.SCHEME_NFS);
+	private static final BackupStorageType type = BackupStorageType.createIfAbsent(
+			SimulatorBackupStorageConstant.SIMULATOR_BACKUP_STORAGE_TYPE);
 	
 	@Autowired
 	private DatabaseFacade dbf;
 	@Autowired
 	private CloudBus bus;
+	
+	static {
+		HashSet<String> schemes = new HashSet<>();
+		Collections.addAll(schemes,
+			BackupStorageConstant.SCHEME_HTTP,
+			BackupStorageConstant.SCHEME_HTTPS,
+			BackupStorageConstant.SCHEME_NFS);
+		type.setSupportedSchemes(schemes);
+		
+		type.setExposed(CoreGlobalProperty.EXPOSE_SIMULATOR_TYPE);
+	}
 	
 	@Override
 	public BackupStorageType getBackupStorageType() {
