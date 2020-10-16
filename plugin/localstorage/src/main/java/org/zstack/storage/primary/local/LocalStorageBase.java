@@ -187,6 +187,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         .param("volUuid", msg.getVolumeUuid())
                         .param("rtype", VolumeVO.class.getSimpleName())
                         .param("thres", physicalThreshold)
+                        //.param("psUuid", self.getUuid())
                         .param("size", size).list();
 
                 if (hostUuids.isEmpty()) {
@@ -647,6 +648,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 }
 
                 LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHostUuid(), false);
+                //LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getDestHostUuid());
                 bkd = f.getHypervisorBackend(self);
 
                 originVolumeStatus = volume.getStatus();
@@ -658,7 +660,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 String originPrimaryStorageUuid = struct.getVolume().getPrimaryStorageUuid();
                 String destPrimaryStorageUuid = LocalStorageUtils.getPrimaryStorageUuidByHostUuid(struct.getDestHostUuid());
                 struct.setDestPrimaryStorageUuid(originPrimaryStorageUuid);
-                if (!originPrimaryStorageUuid.equals(destPrimaryStorageUuid)) {
+                logger.info(String.format("bjwww test src host: %s ,dest host: %s , src ps uuid: %s , dest ps uuid : %s", struct.getSrcHostUuid(),struct.getDestHostUuid(), originPrimaryStorageUuid, destPrimaryStorageUuid));
+                if (originPrimaryStorageUuid != null & destPrimaryStorageUuid != null & !originPrimaryStorageUuid.equals(destPrimaryStorageUuid)) {
                     struct.setCrossPrimaryStorage(true);
                     struct.setDestPrimaryStorageUuid(destPrimaryStorageUuid);
                 }
@@ -2233,7 +2236,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
     @Override
     protected void handle(DownloadVolumeTemplateToPrimaryStorageMsg msg) {
-        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid(), false);
+        LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid());
+       // LocalStorageHypervisorFactory f = getHypervisorBackendFactoryByHostUuid(msg.getHostUuid(), false);
         LocalStorageHypervisorBackend bkd = f.getHypervisorBackend(self);
         bkd.handle(msg, new ReturnValueCompletion<DownloadVolumeTemplateToPrimaryStorageReply>(msg) {
             DownloadVolumeTemplateToPrimaryStorageReply reply = new DownloadVolumeTemplateToPrimaryStorageReply();

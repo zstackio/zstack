@@ -73,7 +73,7 @@ public class LocalStorageMainAllocatorFlow extends NoRollbackFlow {
             query.setParameter("hstate", HostState.Enabled);
             query.setParameter("hstatus", HostStatus.Connected);
             query.setParameter("ptype", LocalStorageConstants.LOCAL_STORAGE_TYPE);
-
+            logger.info(String.format("bjwwwww primary storage[uuid:%s] state: %s ,status, %s", spec.getRequiredPrimaryStorageUuid(), spec.toString(), spec.getClass()));
             ret.err = operr("required local primary storage[uuid:%s] cannot satisfy conditions[state: %s, status: %s]," +
                             " or hosts providing the primary storage don't satisfy conditions[state: %s, status: %s, size > %s bytes]",
                     spec.getRequiredPrimaryStorageUuid(),

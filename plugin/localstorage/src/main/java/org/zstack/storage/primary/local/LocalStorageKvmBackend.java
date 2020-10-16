@@ -1185,10 +1185,18 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 @Override
                                 public void run(final FlowTrigger trigger, Map data) {
                                     String originPrimaryStorageUuid = self.getUuid();
-                                    String destPrimaryStorageUuid = LocalStorageUtils.getPrimaryStorageUuidByHostUuid(hostUuid);
-                                    String PrimaryStorageUuid = !originPrimaryStorageUuid.equals(destPrimaryStorageUuid) ? destPrimaryStorageUuid:originPrimaryStorageUuid;
                                     AllocatePrimaryStorageMsg amsg = new AllocatePrimaryStorageMsg();
-                                    amsg.setRequiredPrimaryStorageUuid(PrimaryStorageUuid);
+                                    /*amsg.setRequiredPrimaryStorageUuid(originPrimaryStorageUuid);
+                                    logger.info(String.format("bjw 11111111111111111111111: %s", hostUuid));
+                                    if (hostUuid.length()>0) {
+                                        String destPrimaryStorageUuid = LocalStorageUtils.getPrimaryStorageUuidByHostUuid(hostUuid);
+                                        logger.info(String.format("bjw 222222222222222222222 dest: %s  origin: %s ", destPrimaryStorageUuid, originPrimaryStorageUuid));
+                                        if (destPrimaryStorageUuid != null) {
+                                            String PrimaryStorageUuid = !originPrimaryStorageUuid.equals(destPrimaryStorageUuid) ? destPrimaryStorageUuid:originPrimaryStorageUuid;
+                                            amsg.setRequiredPrimaryStorageUuid(PrimaryStorageUuid);
+                                        }
+                                    }*/
+                                    amsg.setRequiredPrimaryStorageUuid(originPrimaryStorageUuid);
                                     amsg.setRequiredHostUuid(hostUuid);
                                     amsg.setSize(image.getActualSize());
                                     amsg.setPurpose(PrimaryStorageAllocationPurpose.DownloadImage.toString());
@@ -2111,6 +2119,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     @Override
     void downloadImageToCache(ImageInventory img, String hostUuid, final ReturnValueCompletion<String> completion) {
         DownloadVolumeTemplateToPrimaryStorageMsg dmsg = new DownloadVolumeTemplateToPrimaryStorageMsg();
+        // dmsg.setHostUuid();
         dmsg.setPrimaryStorageUuid(self.getUuid());
         dmsg.setHostUuid(hostUuid);
         ImageSpec imageSpec = new ImageSpec();
