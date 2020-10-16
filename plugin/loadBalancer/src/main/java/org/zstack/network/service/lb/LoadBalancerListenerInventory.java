@@ -35,11 +35,13 @@ public class LoadBalancerListenerInventory implements Serializable {
     private Integer instancePort;
     private Integer loadBalancerPort;
     private String protocol;
+    private String serverGroupUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private List<LoadBalancerListenerVmNicRefInventory> vmNicRefs;
     private List<LoadBalancerListenerACLRefInventory> aclRefs;
     private List<LoadBalancerListenerCertificateRefInventory> certificateRefs;
+    private List<LoadBalancerListenerServerGroupRefInventory> serverGroupRefs;
 
     public static LoadBalancerListenerInventory valueOf(LoadBalancerListenerVO vo) {
         LoadBalancerListenerInventory inv = new LoadBalancerListenerInventory();
@@ -52,9 +54,11 @@ public class LoadBalancerListenerInventory implements Serializable {
         inv.setProtocol(vo.getProtocol());
         inv.setName(vo.getName());
         inv.setDescription(vo.getDescription());
+        inv.setServerGroupUuid(vo.getServerGroupUuid());
         inv.setVmNicRefs(LoadBalancerListenerVmNicRefInventory.valueOf(vo.getVmNicRefs()));
         inv.setAclRefs(LoadBalancerListenerACLRefInventory.valueOf(vo.getAclRefs()));
         inv.setCertificateRefs(LoadBalancerListenerCertificateRefInventory.valueOf(vo.getCertificateRefs()));
+        inv.setServerGroupRefs(LoadBalancerListenerServerGroupRefInventory.valueOf(vo.getServerGroupRefs()));
         return inv;
     }
 
@@ -160,5 +164,29 @@ public class LoadBalancerListenerInventory implements Serializable {
 
     public void setCertificateRefs(List<LoadBalancerListenerCertificateRefInventory> certificateRefs) {
         this.certificateRefs = certificateRefs;
+    }
+
+    public void setInstancePort(Integer instancePort) {
+        this.instancePort = instancePort;
+    }
+
+    public void setLoadBalancerPort(Integer loadBalancerPort) {
+        this.loadBalancerPort = loadBalancerPort;
+    }
+
+    public List<LoadBalancerListenerServerGroupRefInventory> getServerGroupRefs() {
+        return serverGroupRefs;
+    }
+
+    public void setServerGroupRefs(List<LoadBalancerListenerServerGroupRefInventory> serverGroupRefs) {
+        this.serverGroupRefs = serverGroupRefs;
+    }
+
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
+    }
+
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
     }
 }

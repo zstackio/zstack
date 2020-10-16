@@ -3,11 +3,12 @@ package org.zstack.network.service.virtualrouter.vyos;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.appliancevm.ApplianceVmConstant;
-import org.zstack.appliancevm.ApplianceVmSpec;
+import org.zstack.appliancevm.*;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -47,7 +48,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
     @Autowired
     private RESTFacade restf;
     @Autowired
-    private ErrorFacade errf;
+    private DatabaseFacade dbf;
     @Autowired
     private ResourceConfigFacade rcf;
     @Autowired
@@ -66,10 +67,10 @@ public class VyosConnectFlow extends NoRollbackFlow {
             vrUuid = vr.getUuid();
         } else {
             final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-            final ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
-            mgmtNic = spec.getDestNics().stream().filter(n->n.getL3NetworkUuid().equals(aspec.getManagementNic().getL3NetworkUuid())).findAny().get();
-            DebugUtils.Assert(mgmtNic!=null, String.format("cannot find management nic for virtual router[uuid:%s, name:%s]", spec.getVmInventory().getUuid(), spec.getVmInventory().getName()));
             vrUuid = spec.getVmInventory().getUuid();
+            ApplianceVmInventory applianceVm = ApplianceVmInventory.valueOf(dbf.findByUuid(vrUuid, ApplianceVmVO.class));
+            mgmtNic = applianceVm.getManagementNic();
+            DebugUtils.Assert(mgmtNic!=null, String.format("cannot find management nic for virtual router[uuid:%s, name:%s]", spec.getVmInventory().getUuid(), spec.getVmInventory().getName()));
         }
 
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();

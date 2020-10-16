@@ -111,6 +111,7 @@
             <zstack:extension interface="org.zstack.network.service.eip.GetL3NetworkForEipInVirtualRouterExtensionPoint" />
             <zstack:extension interface="org.zstack.header.network.service.VirtualRouterHaGetCallbackExtensionPoint" />
             <zstack:extension interface="org.zstack.header.network.l3.AfterAddIpRangeExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.query.QueryBelongFilter"/>
         </zstack:plugin>
     </bean>
 
@@ -271,6 +272,12 @@
     <bean id="VirutalRouterDefaultL3ConfigProxy" class="org.zstack.network.service.virtualrouter.VirutalRouterDefaultL3ConfigProxy">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.appliancevm.ApplianceVmSyncConfigToHaGroupExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="SharedLoadBalancerFactory" class="org.zstack.network.service.virtualrouter.lb.SharedLoadBalancerFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.network.service.lb.LoadBalancerFactory" />
         </zstack:plugin>
     </bean>
 </beans>

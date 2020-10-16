@@ -28,6 +28,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.lb.APIGetCandidateVmNicsForLoadBalancerServerGroupMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.lb.APIRefreshLoadBalancerMsg</name>
     </message>
 
@@ -93,4 +97,42 @@
         <name>org.zstack.network.service.lb.APIQueryCertificateMsg</name>
         <serviceId>query</serviceId>
     </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIQueryLoadBalancerServerGroupMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APICreateLoadBalancerServerGroupMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIDeleteLoadBalancerServerGroupMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIUpdateLoadBalancerServerGroupMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIAddBackendServerToServerGroupMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIRemoveBackendServerFromServerGroupMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIAddServerGroupToLoadBalancerListenerMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIRemoveServerGroupFromLoadBalancerListenerMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIChangeLoadBalancerBackendServerMsg</name>
+    </message>
+
 </service>

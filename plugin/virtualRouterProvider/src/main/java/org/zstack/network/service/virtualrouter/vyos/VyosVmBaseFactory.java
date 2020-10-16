@@ -67,12 +67,12 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
     private FlowChainBuilder reconnectFlowsBuilder;
     private NetworkServiceProviderVO providerVO;
 
-    private List<VyosPostCreateFlowExtensionPoint> postCreateFlowExtensionPoints;
-    private List<VyosPostDestroyFlowExtensionPoint> postDestroyFlowExtensionPoints;
-    private List<VyosPostRebootFlowExtensionPoint> postRebootFlowExtensionPoints;
-    private List<VyosPostReconnectFlowExtensionPoint> postReconnectFlowExtensionPoints;
-    private List<VyosPostStartFlowExtensionPoint> postStartFlowExtensionPoints;
-    private List<VyosPostMigrateFlowExtensionPoint> postMigrateFlowExtensionPoints;
+    protected List<VyosPostCreateFlowExtensionPoint> postCreateFlowExtensionPoints;
+    protected List<VyosPostDestroyFlowExtensionPoint> postDestroyFlowExtensionPoints;
+    protected List<VyosPostRebootFlowExtensionPoint> postRebootFlowExtensionPoints;
+    protected List<VyosPostReconnectFlowExtensionPoint> postReconnectFlowExtensionPoints;
+    protected List<VyosPostStartFlowExtensionPoint> postStartFlowExtensionPoints;
+    protected List<VyosPostMigrateFlowExtensionPoint> postMigrateFlowExtensionPoints;
 
     private final static List<String> supportedL2NetworkTypes = new ArrayList<>();
 
@@ -179,7 +179,7 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
         return true;
     }
 
-    private void populateExtensions() {
+    protected void populateExtensions() {
         postCreateFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostCreateFlowExtensionPoint.class);
         postDestroyFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostDestroyFlowExtensionPoint.class);
         postRebootFlowExtensionPoints = pluginRgty.getExtensionList(VyosPostRebootFlowExtensionPoint.class);

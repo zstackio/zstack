@@ -50,48 +50,8 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
     protected VirtualRouterVipBackend vipExt;
     @Autowired
     private LbConfigProxy proxy;
-
-    private LoadBalancerStruct makeStruct(LoadBalancerVO vo) {
-        LoadBalancerStruct struct = new LoadBalancerStruct();
-        struct.setLb(LoadBalancerInventory.valueOf(vo));
-
-        List<String> activeNicUuids = new ArrayList<String>();
-        for (LoadBalancerListenerVO l : vo.getListeners()) {
-            activeNicUuids.addAll(CollectionUtils.transformToList(l.getVmNicRefs(), new Function<String, LoadBalancerListenerVmNicRefVO>() {
-                @Override
-                public String call(LoadBalancerListenerVmNicRefVO arg) {
-                    return arg.getStatus() == LoadBalancerVmNicStatus.Active || arg.getStatus() == LoadBalancerVmNicStatus.Pending ? arg.getVmNicUuid() : null;
-                }
-            }));
-        }
-
-        if (activeNicUuids.isEmpty()) {
-            struct.setVmNics(new HashMap<String, VmNicInventory>());
-        } else {
-            SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
-            nq.add(VmNicVO_.uuid, Op.IN, activeNicUuids);
-            List<VmNicVO> nicvos = nq.list();
-            Map<String, VmNicInventory> m = new HashMap<String, VmNicInventory>();
-            for (VmNicVO n : nicvos) {
-                m.put(n.getUuid(), VmNicInventory.valueOf(n));
-            }
-            struct.setVmNics(m);
-        }
-
-        Map<String, List<String>> systemTags = new HashMap<>();
-        for (LoadBalancerListenerVO l : vo.getListeners()) {
-            SimpleQuery<SystemTagVO> q  = dbf.createQuery(SystemTagVO.class);
-            q.select(SystemTagVO_.tag);
-            q.add(SystemTagVO_.resourceUuid, Op.EQ, l.getUuid());
-            q.add(SystemTagVO_.resourceType, Op.EQ, LoadBalancerListenerVO.class.getSimpleName());
-            systemTags.put(l.getUuid(), q.listValue());
-        }
-        struct.setTags(systemTags);
-
-        struct.setListeners(LoadBalancerListenerInventory.valueOf(vo.getListeners()));
-
-        return struct;
-    }
+    @Autowired
+    private LoadBalancerManager lbMgr;
 
     @Override
     public void run(final FlowTrigger outterTrigger, final Map data) {
@@ -118,8 +78,11 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
             @Override
             @Transactional(readOnly = true)
             public List<LoadBalancerVO> call() {
-                String sql = "select lb from LoadBalancerVO lb, LoadBalancerListenerVO l, LoadBalancerListenerVmNicRefVO lref, VmNicVO nic, L3NetworkVO l3" +
-                        " where lb.uuid = l.loadBalancerUuid and l.uuid = lref.listenerUuid and lref.vmNicUuid = nic.uuid and nic.l3NetworkUuid = l3.uuid" +
+                String sql = "select lb from LoadBalancerVO lb, LoadBalancerListenerVO l, LoadBalancerServerGroupVO g, " +
+                        " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef, VmNicVO nic, L3NetworkVO l3" +
+                        " where lb.uuid = l.loadBalancerUuid and l.uuid = lgref.listenerUuid " +
+                        " and lgref.loadBalancerServerGroupUuid = g.uuid and nicRef.loadBalancerServerGroupUuid= g.uuid " +
+                        " and nicRef.vmNicUuid = nic.uuid and nic.l3NetworkUuid = l3.uuid" +
                         " and l3.uuid in (:l3uuids) and lb.state = :state and lb.uuid not in (select t.resourceUuid from SystemTagVO t" +
                         " where t.tag = :tag and t.resourceType = :rtype)";
 
@@ -130,8 +93,11 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                     List<String> lbuuids = proxy.getServiceUuidsByRouterUuid(vr.getUuid(), LoadBalancerVO.class.getSimpleName());
 
                     if (!lbuuids.isEmpty()) {
-                        sql = "select lb from LoadBalancerVO lb, LoadBalancerListenerVO l, LoadBalancerListenerVmNicRefVO lref, VmNicVO nic, L3NetworkVO l3" +
-                                " where lb.uuid = l.loadBalancerUuid and l.uuid = lref.listenerUuid and lref.vmNicUuid = nic.uuid and nic.l3NetworkUuid = l3.uuid" +
+                        sql = "select lb from LoadBalancerVO lb, LoadBalancerListenerVO l, LoadBalancerServerGroupVO g, " +
+                                " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef, VmNicVO nic, L3NetworkVO l3" +
+                                " where lb.uuid = l.loadBalancerUuid and l.uuid = lgref.listenerUuid " +
+                                " and lgref.loadBalancerServerGroupUuid = g.uuid and nicRef.loadBalancerServerGroupUuid= g.uuid " +
+                                " and nicRef.vmNicUuid = nic.uuid and nic.l3NetworkUuid = l3.uuid" +
                                 " and l3.uuid in (:l3uuids) and lb.state = :state and lb.uuid not in (select t.resourceUuid from SystemTagVO t" +
                                 " where t.tag = :tag and t.resourceType = :rtype and t.resourceUuid not in (:mylbs))";
                         vq = dbf.getEntityManager().createQuery(sql, LoadBalancerVO.class);
@@ -206,7 +172,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                     public void run(final FlowTrigger trigger, final Map data) {
                         List<LoadBalancerStruct> structs = new ArrayList<LoadBalancerStruct>();
                         for (LoadBalancerVO vo : finalLbs) {
-                            structs.add(makeStruct(vo));
+                            structs.add(lbMgr.makeStruct(vo));
                         }
 
                         bkd.syncOnStart(vr, false, structs, new Completion(trigger) {

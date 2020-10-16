@@ -9,6 +9,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -18,6 +19,8 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -38,6 +41,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  * Created by frank on 8/13/2015.
@@ -59,8 +63,9 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
 
     @Transactional(readOnly = true)
     private List<Tuple> getLbTuple(VmInstanceSpec servedVm) {
-        String sql = "select l.uuid, l.loadBalancerUuid, ref.vmNicUuid, nic.l3NetworkUuid from LoadBalancerListenerVmNicRefVO ref, LoadBalancerListenerVO l, VmNicVO nic" +
-                " where ref.listenerUuid = l.uuid and ref.vmNicUuid = nic.uuid and nic.uuid in (:nicUuids)";
+        String sql = "select grp.uuid, grp.loadBalancerUuid, ref.vmNicUuid, nic.l3NetworkUuid from " +
+                "LoadBalancerServerGroupVmNicRefVO ref, LoadBalancerServerGroupVO grp, VmNicVO nic" +
+                " where ref.loadBalancerServerGroupUuid = grp.uuid and ref.vmNicUuid = nic.uuid and nic.uuid in (:nicUuids)";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("nicUuids", CollectionUtils.transformToList(servedVm.getDestNics(), new Function<String, VmNicInventory>() {
             @Override
@@ -82,7 +87,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
         Map<String, LoadBalancerActiveVmNicMsg> m = new HashMap<String, LoadBalancerActiveVmNicMsg>();
         Map<String, L3NetworkVO> l3Map = new HashMap<>();
         for (Tuple t : ts) {
-            String listenerUuid = t.get(0, String.class);
+            String serverGroupUuid = t.get(0, String.class);
             String lbUuid =  t.get(1, String.class);
             String nicUuid = t.get(2, String.class);
             String l3Uuid = t.get(3, String.class);
@@ -96,14 +101,14 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                 continue;
             }
 
-            LoadBalancerActiveVmNicMsg msg = m.get(listenerUuid);
+            LoadBalancerActiveVmNicMsg msg = m.get(serverGroupUuid);
             if (msg == null) {
                 msg = new LoadBalancerActiveVmNicMsg();
                 msg.setLoadBalancerUuid(lbUuid);
-                msg.setListenerUuid(listenerUuid);
+                msg.setServerGroupUuid(serverGroupUuid);
                 msg.setVmNicUuids(new ArrayList<String>());
                 bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, lbUuid);
-                m.put(listenerUuid, msg);
+                m.put(serverGroupUuid, msg);
             }
             msg.getVmNicUuids().add(nicUuid);
         }
@@ -139,7 +144,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                     if (!s) {
                         LoadBalancerDeactiveVmNicMsg dmsg = new LoadBalancerDeactiveVmNicMsg();
                         dmsg.setLoadBalancerUuid(msg.getLoadBalancerUuid());
-                        dmsg.setListenerUuids(Arrays.asList(msg.getListenerUuid()));
+                        dmsg.setServerGroupUuids(Arrays.asList(msg.getServerGroupUuid()));
                         dmsg.setVmNicUuids(msg.getVmNicUuids());
                         bus.makeTargetServiceIdByResourceUuid(dmsg, LoadBalancerConstants.SERVICE_ID, msg.getLoadBalancerUuid());
                         bus.send(dmsg, new CloudBusCallBack(trigger) {
@@ -181,7 +186,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
 
         class Triplet {
             String lbUuid;
-            Set<String> listenerUuids;
+            Set<String> serverGroupUuids;
             Set<String> vmNicUuids;
         }
 
@@ -192,7 +197,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
             Triplet tr = mt.get(lbUuid);
             if (tr == null) {
                 tr = new Triplet();
-                tr.listenerUuids = new HashSet<>();
+                tr.serverGroupUuids = new HashSet<>();
                 tr.lbUuid = t.get(1, String.class);
                 tr.vmNicUuids = new HashSet<>();
                 mt.put(tr.lbUuid, tr);
@@ -209,7 +214,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                 continue;
             }
             tr.vmNicUuids.add(t.get(2, String.class));
-            tr.listenerUuids.add(t.get(0, String.class));
+            tr.serverGroupUuids.add(t.get(0, String.class));
         }
 
         List<NeedReplyMessage> msgs = new ArrayList<NeedReplyMessage>();
@@ -219,7 +224,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                 public NeedReplyMessage call(Entry<String, Triplet> arg) {
                     LoadBalancerRemoveVmNicMsg msg = new LoadBalancerRemoveVmNicMsg();
                     msg.setVmNicUuids(new ArrayList<>(arg.getValue().vmNicUuids));
-                    msg.setListenerUuids(new ArrayList<>(arg.getValue().listenerUuids));
+                    msg.setServerGroupUuids(new ArrayList<>(arg.getValue().serverGroupUuids));
                     msg.setLoadBalancerUuid(arg.getValue().lbUuid);
                     bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, arg.getKey());
                     return msg;
@@ -231,7 +236,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                 public LoadBalancerDeactiveVmNicMsg call(Entry<String, Triplet> arg) {
                     LoadBalancerDeactiveVmNicMsg msg = new LoadBalancerDeactiveVmNicMsg();
                     msg.setVmNicUuids(new ArrayList<>(arg.getValue().vmNicUuids));
-                    msg.setListenerUuids(new ArrayList<>(arg.getValue().listenerUuids));
+                    msg.setServerGroupUuids(new ArrayList<>(arg.getValue().serverGroupUuids));
                     msg.setLoadBalancerUuid(arg.getValue().lbUuid);
                     bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, arg.getKey());
                     return msg;
@@ -300,11 +305,29 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
         if (listenerUuids.isEmpty()) {
             return;
         }
-        listenerUuids = Q.New(LoadBalancerListenerVmNicRefVO.class).select(LoadBalancerListenerVmNicRefVO_.listenerUuid)
-                         .in(LoadBalancerListenerVmNicRefVO_.listenerUuid, listenerUuids).listValues();
+
+        List<LoadBalancerListenerVO> listenerVOS = Q.New(LoadBalancerListenerVO.class)
+                .in(LoadBalancerListenerVO_.uuid, listenerUuids).list();
+        for (LoadBalancerListenerVO listenerVO : listenerVOS) {
+            List<String> nicUuids = new ArrayList<>();
+            List<String> serverIps = new ArrayList<>();
+            for (LoadBalancerListenerServerGroupRefVO ref : listenerVO.getServerGroupRefs()) {
+                LoadBalancerServerGroupVO groupVO = dbf.findByUuid(ref.getLoadBalancerServerGroupUuid(), LoadBalancerServerGroupVO.class);
+                nicUuids.addAll(groupVO.getLoadBalancerServerGroupVmNicRefs().stream()
+                        .map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList()));
+                serverIps.addAll(groupVO.getLoadBalancerServerGroupServerIps().stream()
+                        .map(LoadBalancerServerGroupServerIpVO::getIpAddress).collect(Collectors.toList()));
+            }
+            if (nicUuids.isEmpty() && serverIps.isEmpty()) {
+                /* listener is not bound any vmnic or server ips */
+                listenerUuids.remove(listenerVO.getUuid());
+                return;
+            }
+        }
         if (listenerUuids.isEmpty()) {
             return;
         }
+
         List<String> lbUuids = Q.New(LoadBalancerListenerVO.class).select(LoadBalancerListenerVO_.loadBalancerUuid)
                                 .in(LoadBalancerListenerVO_.uuid, listenerUuids).listValues();
         if (lbUuids.isEmpty()) {

@@ -744,12 +744,8 @@ public class NetworkUtils {
         if (isIpv4Address(ip)) {
             return IPv6Constants.IPv4;
         } else {
-            try {
-                IPv6Address.fromString(ip);
-                return IPv6Constants.IPv6;
-            } catch (Exception e) {
-                throw e;
-            }
+            IPv6Address.fromString(ip);
+            return IPv6Constants.IPv6;
         }
     }
 
@@ -757,12 +753,8 @@ public class NetworkUtils {
         if (isIpv4Address(mask)) {
             return validNetmasks.get(mask);
         } else {
-            try {
-                IPv6Address addr = IPv6Address.fromString(mask);
-                return addr.numberOfLeadingOnes();
-            } catch (Exception e) {
-                throw e;
-            }
+            IPv6Address addr = IPv6Address.fromString(mask);
+            return addr.numberOfLeadingOnes();
         }
     }
 

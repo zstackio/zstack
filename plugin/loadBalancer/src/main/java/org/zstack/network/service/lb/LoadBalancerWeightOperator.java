@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.tag.SystemTagVO;
@@ -44,6 +45,20 @@ public class LoadBalancerWeightOperator {
             return Long.parseLong(weight);
         }
         return LoadBalancerConstants.BALANCER_WEIGHT_default;
+    }
+
+    public Map<String, Long> getWeight(String listenerUuid) {
+        Map<String, Long> weights = new HashMap<>();
+        List<Map<String, String>> tokens = LoadBalancerSystemTags.BALANCER_WEIGHT
+                .getTokensOfTagsByResourceUuid(listenerUuid, LoadBalancerListenerVO.class);
+
+        for (Map<String, String>  token: tokens) {
+            String nicUuid = token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN);
+            String weight = token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN);
+            weights.put(nicUuid, Long.parseLong(weight));
+        }
+
+        return weights;
     }
 
     public Map<String, Long> getWeight(List<String> systemTags) {
@@ -104,7 +119,26 @@ public class LoadBalancerWeightOperator {
                 continue;
             }
             Map<String, String> token = LoadBalancerSystemTags.BALANCER_WEIGHT.getTokensByTag(systemTag);
-            setWeight(listenerUuid, token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN), Long.valueOf(token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN)));
+            String nicUuid = token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN);
+            Long weight = Long.valueOf(token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN));
+
+            setWeight(listenerUuid, nicUuid, weight);
+
+            String defaultServerGroupUuid = Q.New(LoadBalancerListenerVO.class)
+                    .select(LoadBalancerListenerVO_.serverGroupUuid)
+                    .eq(LoadBalancerListenerVO_.uuid, listenerUuid)
+                    .findValue();
+            if(defaultServerGroupUuid == null){
+                return;
+            }
+            LoadBalancerServerGroupVmNicRefVO vmNicRefVOS = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                    .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,defaultServerGroupUuid)
+                    .eq(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,nicUuid)
+                    .find();
+            if(weight != vmNicRefVOS.getWeight()){
+                vmNicRefVOS.setWeight(weight);
+                dbf.update(vmNicRefVOS);
+            }
         }
     }
 

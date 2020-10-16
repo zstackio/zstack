@@ -452,13 +452,14 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             listenerUuid = lblRes.value.inventory.uuid
         }
 
+        /* weight has been remove to server group
         List<Map<String, String>> tokens = LoadBalancerSystemTags.BALANCER_WEIGHT.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
 
         nicUuids.forEach { it ->
             List<Map<String, String>> ts = tokens.stream().filter { Map<String, String> token -> it.equals(token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN)) }.collect(Collectors.toList()) as List
             assert !ts.isEmpty()
             assert ts.get(0).get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN) == LoadBalancerConstants.BALANCER_WEIGHT_default.toString()
-        }
+        }*/
 
         String weight = "balancerWeight::" + vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid + "::20"
         ChangeLoadBalancerListenerAction action = new ChangeLoadBalancerListenerAction()
@@ -467,14 +468,14 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         action.sessionId = adminSession()
         ChangeLoadBalancerListenerAction.Result res = action.call()
         assert res.error == null
-        tokens = LoadBalancerSystemTags.BALANCER_WEIGHT.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
+        /*tokens = LoadBalancerSystemTags.BALANCER_WEIGHT.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
 
         for (Map<String, String>  token: tokens) {
             if (!vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid.equals(token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN))) {
                 continue
             }
             assert token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN) == "20"
-        }
+        }*/
 
         /*invalid weight*/
         weight = weight + "123"
@@ -487,8 +488,8 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             listenerUuid = lblRes.value.inventory.uuid
         }
 
-        tokens = LoadBalancerSystemTags.BALANCER_WEIGHT.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
-        assert tokens == null || tokens.isEmpty()
+        //tokens = LoadBalancerSystemTags.BALANCER_WEIGHT.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
+        //assert tokens == null || tokens.isEmpty()
 
     }
 

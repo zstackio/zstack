@@ -3,7 +3,9 @@ package org.zstack.appliancevm;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.utils.JsonWrapper;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -42,6 +44,8 @@ public class ApplianceVmSpec implements Serializable {
     private String requiredZoneUuid;
     private String requiredClusterUuid;
     private String requiredHostUuid;
+    @NoJsonSchema
+    private Map<String, JsonWrapper> applianceData = new HashMap<>();
 
     public int getAgentPort() {
         return agentPort;
@@ -225,4 +229,17 @@ public class ApplianceVmSpec implements Serializable {
     public String getRequiredHostUuid() { return requiredHostUuid; }
 
     public void setRequiredHostUuid(String requiredHostUuid) { this.requiredHostUuid = requiredHostUuid; }
+
+    public <T> T getExtensionData(String key, Class<?> clazz) {
+        JsonWrapper<T> wrapper = applianceData.get(key);
+        if (wrapper == null) {
+            return null;
+        }
+
+        return wrapper.get();
+    }
+
+    public void putExtensionData(String key, Object data) {
+        this.applianceData.put(key, JsonWrapper.wrap(data));
+    }
 }

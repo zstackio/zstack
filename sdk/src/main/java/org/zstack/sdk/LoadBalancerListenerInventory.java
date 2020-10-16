@@ -60,6 +60,14 @@ public class LoadBalancerListenerInventory  {
         return this.protocol;
     }
 
+    public java.lang.String serverGroupUuid;
+    public void setServerGroupUuid(java.lang.String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
+    }
+    public java.lang.String getServerGroupUuid() {
+        return this.serverGroupUuid;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
@@ -98,6 +106,14 @@ public class LoadBalancerListenerInventory  {
     }
     public java.util.List getCertificateRefs() {
         return this.certificateRefs;
+    }
+
+    public java.util.List serverGroupRefs;
+    public void setServerGroupRefs(java.util.List serverGroupRefs) {
+        this.serverGroupRefs = serverGroupRefs;
+    }
+    public java.util.List getServerGroupRefs() {
+        return this.serverGroupRefs;
     }
 
 }

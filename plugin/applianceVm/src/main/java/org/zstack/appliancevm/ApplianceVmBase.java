@@ -822,7 +822,7 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
         d.setApplianceVmUuid(self.getUuid());
         d.setOldStatus(oldStatus.toString());
         d.setNewStatus(newStatus.toString());
-        d.setInv((ApplianceVmInventory)getSelfInventory());
+        d.setInv(ApplianceVmInventory.valueOf(getSelf()));
         evtf.fire(ApplianceVmCanonicalEvents.APPLIANCEVM_STATUS_CHANGED_PATH, d);
 
         logger.debug(String.format("the virtual router [uuid:%s, name:%s] changed status from %s to %s",

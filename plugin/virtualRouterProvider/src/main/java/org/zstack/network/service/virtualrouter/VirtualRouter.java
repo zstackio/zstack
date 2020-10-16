@@ -691,7 +691,7 @@ public class VirtualRouter extends ApplianceVmBase {
         }).start();
     }
 
-    private class virtualRouterAfterAttachNicFlow extends NoRollbackFlow {
+    public class virtualRouterAfterAttachNicFlow extends NoRollbackFlow {
         @Override
         public void run(FlowTrigger trigger, Map data) {
             boolean applyToVirtualRouter = (boolean)data.get(Param.APPLY_TO_VIRTUALROUTER.toString());
@@ -1027,7 +1027,7 @@ public class VirtualRouter extends ApplianceVmBase {
         }
     }
 
-    private class virtualRouterbeforeDetachNic extends NoRollbackFlow {
+    public class virtualRouterbeforeDetachNic extends NoRollbackFlow {
         String __name__ = "virtualRouter-beforeDetachNic";
         @Override
         public void run(FlowTrigger trigger, Map data) {

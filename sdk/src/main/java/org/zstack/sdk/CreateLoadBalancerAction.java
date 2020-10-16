@@ -35,6 +35,9 @@ public class CreateLoadBalancerAction extends AbstractAction {
     public java.lang.String vipUuid;
 
     @Param(required = false)
+    public java.lang.String type;
+
+    @Param(required = false)
     public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
