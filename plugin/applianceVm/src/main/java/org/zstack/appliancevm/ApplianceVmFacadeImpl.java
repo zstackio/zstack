@@ -28,6 +28,8 @@ import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
+import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -354,7 +356,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         ret.put(ApplianceVmConstant.BootstrapParams.publicKey.toString(), publicKey);
         ret.put(BootstrapParams.sshPort.toString(), sshPort);
         ret.put(BootstrapParams.uuid.toString(), spec.getVmInventory().getUuid());
-        ret.put(BootstrapParams.managementNodeIp.toString(), Platform.getManagementServerIp());
+        ret.put(BootstrapParams.managementNodeIps.toString(), Platform.getManagementNodeIps());
         ret.put(BootstrapParams.managementNodeCidr.toString(), Platform.getManagementServerCidr());
         /* this is only used by ApplianceVmPrepareBootstrapInfoExtensionPoint extension point, will be deleted after extension point */
         ret.put(BootstrapParams.additionalL3Uuids.toString(), additionalNics.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()));

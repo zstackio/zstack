@@ -30,11 +30,12 @@ public class VirtualRouterCommands {
 		}
 	}
 
-    public static class InitCommand extends AgentCommand {
+    	public static class InitCommand extends AgentCommand {
 		private String uuid;
-        private int restartDnsmasqAfterNumberOfSIGUSER1;
+     		private int restartDnsmasqAfterNumberOfSIGUSER1;
 		private String mgtCidr;
 		private String logLevel;
+		private List <String> managementNodeIps;
 
 		public String getUuid() {
 			return uuid;
@@ -45,11 +46,11 @@ public class VirtualRouterCommands {
 		}
 
 		public int getRestartDnsmasqAfterNumberOfSIGUSER1() {
-            return restartDnsmasqAfterNumberOfSIGUSER1;
+           		 return restartDnsmasqAfterNumberOfSIGUSER1;
         }
 
         public void setRestartDnsmasqAfterNumberOfSIGUSER1(int restartDnsmasqAfterNumberOfSIGUSER1) {
-            this.restartDnsmasqAfterNumberOfSIGUSER1 = restartDnsmasqAfterNumberOfSIGUSER1;
+            	this.restartDnsmasqAfterNumberOfSIGUSER1 = restartDnsmasqAfterNumberOfSIGUSER1;
         }
 
 		public String getMgtCidr() {
@@ -66,6 +67,14 @@ public class VirtualRouterCommands {
 
 		public void setLogLevel(String logLevel) {
 			this.logLevel = logLevel;
+		}
+
+		public List<String> getManagementNodeIps() {
+			return managementNodeIps;
+		}
+
+		public void setManagementNodeIps(List<String> managementNodeIps) {
+			this.managementNodeIps = managementNodeIps;
 		}
 	}
 

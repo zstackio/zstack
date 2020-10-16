@@ -26,6 +26,8 @@ import org.zstack.header.core.encrypt.ENCRYPT;
 import org.zstack.header.errorcode.*;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityErrors;
+import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.utils.*;
 import org.zstack.utils.data.StringTemplate;
@@ -965,5 +967,12 @@ public class Platform {
 
     public static Map<String, Double> getErrorCounter() {
         return errorCounter;
+    }
+
+    public static List <String> getManagementNodeIps() {
+        List <String> mangementNodeIps = Q.New(ManagementNodeVO.class)
+                .select(ManagementNodeVO_.hostName)
+                .listValues();
+        return mangementNodeIps;
     }
 }

@@ -32,6 +32,10 @@ import org.zstack.utils.zsha2.ZSha2Helper;
 import org.zstack.utils.zsha2.ZSha2Info;
 
 import static org.zstack.core.Platform.operr;
+import org.zstack.core.db.Q;
+import org.zstack.header.managementnode.ManagementNodeVO;
+import org.zstack.header.managementnode.ManagementNodeVO_;
+import java.util.List;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -99,6 +103,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
                         String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_INIT);
                         InitCommand cmd = new InitCommand();
 
+                        cmd.setManagementNodeIps(Platform.getManagementNodeIps());
                         cmd.setMgtCidr(Platform.getManagementServerCidr());
                         cmd.setUuid(vrUuid);
                         cmd.setLogLevel(rcf.getResourceConfigValue(VirtualRouterGlobalConfig.LOG_LEVEL, vrUuid, String.class));
