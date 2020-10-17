@@ -1,4 +1,4 @@
-// Generated from D:/ZStack/zstack/search/src/main/antlr4\ZQL.g4 by ANTLR 4.7
+// Generated from ZQL.g4 by ANTLR 4.7
 
 package org.zstack.zql.antlr4;
 
@@ -162,6 +162,66 @@ public class ZQLBaseListener implements ZQLListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterApiGetValue(ZQLParser.ApiGetValueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitApiGetValue(ZQLParser.ApiGetValueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterGetQuery(ZQLParser.GetQueryContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitGetQuery(ZQLParser.GetQueryContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterApiparams(ZQLParser.ApiparamsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitApiparams(ZQLParser.ApiparamsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterInput(ZQLParser.InputContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitInput(ZQLParser.InputContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterOutput(ZQLParser.OutputContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitOutput(ZQLParser.OutputContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterExpr(ZQLParser.ExprContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -169,6 +229,18 @@ public class ZQLBaseListener implements ZQLListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitExpr(ZQLParser.ExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterEqual(ZQLParser.EqualContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitEqual(ZQLParser.EqualContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -481,6 +553,18 @@ public class ZQLBaseListener implements ZQLListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitFilterBy(ZQLParser.FilterByContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterNamedAsKey(ZQLParser.NamedAsKeyContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitNamedAsKey(ZQLParser.NamedAsKeyContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

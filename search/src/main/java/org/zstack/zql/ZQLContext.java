@@ -61,6 +61,7 @@ public class ZQLContext {
     private static final String QUERY_TARGET_INVENTORY_NAME = "QUERY_TARGET_INVENTORY_NAME";
     private static final String QUERY_TARGET_INVENTORY_STACK = "QUERY_TARGET_INVENTORY_STACK";
     private static final String API_SESSION = "API_SESSION";
+    private static final String API_SESSION_UUID = "API_SESSION_UUID";  // for unit test
 
     public static String getQueryTargetInventoryName() {
         return (String) get(QUERY_TARGET_INVENTORY_NAME);
@@ -76,14 +77,24 @@ public class ZQLContext {
 
     public static void putAPISession(SessionInventory session) {
         put(API_SESSION, session);
+        put(API_SESSION_UUID, session.getUuid());
+    }
+
+    public static void putAPISessionUuid(String sessionUuid) {
+        put(API_SESSION_UUID, sessionUuid);
     }
 
     public static SessionInventory getAPISession() {
         return (SessionInventory) get(API_SESSION);
     }
 
+    public static String getAPISessionUuid() {
+        return (String) get(API_SESSION_UUID);
+    }
+
     public static void cleanAPISession() {
         remove(API_SESSION);
+        remove(API_SESSION_UUID);
     }
 
     public static void pushQueryTargetInventoryName(String targetInventoryName) {
