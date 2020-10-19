@@ -14,8 +14,12 @@ public class TicketStatusHistoryInventory  {
     }
 
     public int sequence;
-    public void setSequence(int sequence) { this.sequence = sequence; }
-    public int getSequence() { return this.sequence;  }
+    public void setSequence(int sequence) {
+        this.sequence = sequence;
+    }
+    public int getSequence() {
+        return this.sequence;
+    }
 
     public java.lang.String ticketUuid;
     public void setTicketUuid(java.lang.String ticketUuid) {

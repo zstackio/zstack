@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.zwatch.alarm.activealarm.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateSharedBlockAction extends AbstractAction {
+public class GetActiveAlarmStatusAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateSharedBlockAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateSharedBlockResult value;
+        public org.zstack.sdk.zwatch.alarm.activealarm.api.GetActiveAlarmStatusResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,19 +26,7 @@ public class UpdateSharedBlockAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String sharedBlockGroupUuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String diskUuid;
+    public java.lang.String accountUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -58,12 +46,6 @@ public class UpdateSharedBlockAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -72,8 +54,8 @@ public class UpdateSharedBlockAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateSharedBlockResult value = res.getResult(org.zstack.sdk.UpdateSharedBlockResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateSharedBlockResult() : value; 
+        org.zstack.sdk.zwatch.alarm.activealarm.api.GetActiveAlarmStatusResult value = res.getResult(org.zstack.sdk.zwatch.alarm.activealarm.api.GetActiveAlarmStatusResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.activealarm.api.GetActiveAlarmStatusResult() : value; 
 
         return ret;
     }
@@ -102,11 +84,11 @@ public class UpdateSharedBlockAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/primary-storage/sharedblockgroup/{sharedBlockGroupUuid}/sharedblocks/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/zwatch/activealarms/status";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "updateSharedBlock";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

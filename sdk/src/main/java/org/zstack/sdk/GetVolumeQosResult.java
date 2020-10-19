@@ -3,6 +3,14 @@ package org.zstack.sdk;
 
 
 public class GetVolumeQosResult {
+    public java.lang.String volumeUuid;
+    public void setVolumeUuid(java.lang.String volumeUuid) {
+        this.volumeUuid = volumeUuid;
+    }
+    public java.lang.String getVolumeUuid() {
+        return this.volumeUuid;
+    }
+
     public long volumeBandwidth;
     public void setVolumeBandwidth(long volumeBandwidth) {
         this.volumeBandwidth = volumeBandwidth;
@@ -51,11 +59,4 @@ public class GetVolumeQosResult {
         return this.volumeBandwidthWriteUpthreshold;
     }
 
-    public String volumeUuid;
-    public void setVolumeUuid(String volumeUuid) {
-        this.volumeUuid = volumeUuid;
-    }
-    public String getVolumeUuid() {
-        return volumeUuid;
-    }
 }
