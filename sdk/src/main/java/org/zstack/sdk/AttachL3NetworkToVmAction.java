@@ -35,6 +35,9 @@ public class AttachL3NetworkToVmAction extends AbstractAction {
     public java.lang.String staticIp;
 
     @Param(required = false)
+    public java.lang.String driverType;
+
+    @Param(required = false)
     public java.util.List systemTags;
 
     @Param(required = false)

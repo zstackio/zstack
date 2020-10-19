@@ -288,6 +288,7 @@ public class VirtualRouterSimulator {
         config.pingCmds.add(cmd);
 
         PingRsp rsp = new PingRsp();
+        rsp.setVersion("3.10.0.0");
         rsp.setUuid(config.uuid);
         replyer.reply(entity, rsp);
         return null;

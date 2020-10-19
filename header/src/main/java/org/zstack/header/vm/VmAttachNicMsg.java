@@ -14,6 +14,7 @@ public class VmAttachNicMsg extends NeedReplyMessage implements VmInstanceMessag
     private Map<String, List<String>> staticIpMap = new HashMap<>();
     private boolean allowDuplicatedAddress = false;
     private boolean applyToBackend = true;
+    private String driverType;
 
     public boolean isAllowDuplicatedAddress() {
         return allowDuplicatedAddress;
@@ -55,4 +56,13 @@ public class VmAttachNicMsg extends NeedReplyMessage implements VmInstanceMessag
     public void setApplyToBackend(boolean applyToBackend) {
         this.applyToBackend = applyToBackend;
     }
+
+    public String getDriverType() {
+        return driverType;
+    }
+
+    public void setDriverType(String driverType) {
+        this.driverType = driverType;
+    }
+
 }
