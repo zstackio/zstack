@@ -4,7 +4,6 @@ import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.host.HostExtensionManager;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
@@ -28,7 +27,6 @@ import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.StopRoutingException;
-import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -1493,7 +1491,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         imvo.setPlatform(ImagePlatform.valueOf(msgData.getPlatform()));
                         imvo.setStatus(ImageStatus.Downloading);
                         imvo.setType(ImageConstant.ZSTACK_IMAGE_TYPE);
-                        imvo.setArchitecture(getArchitectureFromRootVolumeToCreateImage(msgData.getRootVolumeUuid()));
+                        imvo.setArchitecture(ImageUtils.getArchitectureFromRootVolume(msgData.getRootVolumeUuid(), null));
                         imvo.setUrl(String.format("volume://%s", msgData.getRootVolumeUuid()));
                         imvo.setSize(volvo.getSize());
                         imvo.setActualSize(imageActualSize);
@@ -2169,12 +2167,6 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 completion.success();
             }
         });
-    }
-
-    public String getArchitectureFromRootVolumeToCreateImage(String rootVolumeUuid) {
-        String vmUuid = dbf.findByUuid(rootVolumeUuid, VolumeVO.class).getVmInstanceUuid();
-        String clusterUuid = dbf.findByUuid(vmUuid, VmInstanceVO.class).getClusterUuid();
-        return dbf.findByUuid(clusterUuid, ClusterVO.class).getArchitecture();
     }
 
     @Override
