@@ -80,6 +80,9 @@ public class APICreateClusterMsg extends APICreateMessage implements CreateClust
     @APIParam(required = false, validValues = {"zstack", "baremetal"})
     private String type;
 
+    @APIParam(required = false, validValues = {"x86_64", "aarch64", "mips64el"})
+    private String architecture;
+
     public APICreateClusterMsg() {
     }
 
@@ -122,7 +125,15 @@ public class APICreateClusterMsg extends APICreateMessage implements CreateClust
     public void setType(String type) {
         this.type = type;
     }
- 
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
+    }
+
     public static APICreateClusterMsg __example__() {
         APICreateClusterMsg msg = new APICreateClusterMsg();
         msg.setClusterName("cluster1");

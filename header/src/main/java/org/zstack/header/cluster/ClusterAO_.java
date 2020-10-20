@@ -16,6 +16,7 @@ public class ClusterAO_ extends ResourceVO_ {
     public static volatile SingularAttribute<ClusterAO, ClusterState> state;
     public static volatile SingularAttribute<ClusterAO, String> hypervisorType;
     public static volatile SingularAttribute<ClusterAO, String> type;
+    public static volatile SingularAttribute<ClusterAO, String> architecture;
     public static volatile SingularAttribute<ClusterAO, String> managementNodeId;
     public static volatile SingularAttribute<ClusterAO, Timestamp> createDate;
     public static volatile SingularAttribute<ClusterAO, Timestamp> lastOpDate;

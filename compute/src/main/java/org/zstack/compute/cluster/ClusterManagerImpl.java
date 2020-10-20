@@ -92,6 +92,7 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
 			vo.setUuid(Platform.getUuid());
 		}
 
+		vo.setArchitecture(msg.getArchitecture());
 		vo.setDescription(msg.getDescription());
 		vo.setHypervisorType(msg.getHypervisorType());
 		vo.setManagementNodeId(Platform.getManagementServerId());

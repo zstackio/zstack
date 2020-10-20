@@ -797,6 +797,10 @@ public class ImageBase implements Image {
             self.setPlatform(ImagePlatform.valueOf(msg.getPlatform()));
             update = true;
         }
+        if (msg.getArchitecture() != null) {
+            self.setArchitecture(msg.getArchitecture());
+            update = true;
+        }
         if (update) {
             self = dbf.updateAndRefresh(self);
         }

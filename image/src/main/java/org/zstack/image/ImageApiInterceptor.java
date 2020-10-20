@@ -1,6 +1,9 @@
 package org.zstack.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.host.HostSystemTags;
+import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.GlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -163,6 +166,12 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
                 msg.setGuestOsType(osTypes.get(0));
             }
         }
+
+        if (msg.getArchitecture() == null) {
+            String vmUuid = dbf.createQuery(VolumeVO.class).add(VolumeVO_.uuid, Op.EQ, msg.getRootVolumeUuid()).find().getVmInstanceUuid();
+            String hostUuid = dbf.createQuery(VmInstanceVO.class).add(VmInstanceVO_.uuid, Op.EQ, vmUuid).find().getHostUuid();
+            msg.setArchitecture(HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(hostUuid, HostSystemTags.CPU_ARCHITECTURE_TOKEN));
+        }
     }
 
     private void validate(APIAddImageMsg msg) {
@@ -190,6 +199,10 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
 
         if (msg.getPlatform() == null) {
             msg.setPlatform(ImagePlatform.Linux.toString());
+        }
+
+        if (CoreGlobalProperty.UNIT_TEST_ON && msg.getArchitecture() == null) {
+            msg.setArchitecture(ImageArchitecture.x86_64.toString());
         }
 
         if (msg.getBackupStorageUuids() != null) {

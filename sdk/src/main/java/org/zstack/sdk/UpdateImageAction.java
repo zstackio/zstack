@@ -49,6 +49,9 @@ public class UpdateImageAction extends AbstractAction {
     @Param(required = false, validValues = {"Linux","Windows","Other","Paravirtualization","WindowsVirtio"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String platform;
 
+    @Param(required = false, validValues = {"x86_64","aarch64","mips64el"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String architecture;
+
     @Param(required = false)
     public java.util.List systemTags;
 
