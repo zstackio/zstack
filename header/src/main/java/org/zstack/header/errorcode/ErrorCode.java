@@ -179,17 +179,10 @@ public class ErrorCode implements Serializable, Cloneable {
     }
 
     public String getReadableDetails() {
-        String rootCauseDetails = getRootCauseDetails();
-        if (rootCauseDetails != null) {
-            return rootCauseDetails;
-        } else if (details != null) {
-            return details;
-        } else {
-            return description;
-        }
+        return getRootCauseDetails();
     }
 
-    public String getRootCauseDetails() {
+    public ErrorCode getRootCause() {
         ErrorCode root = this;
         do {
             if (root.cause != null) {
@@ -198,10 +191,12 @@ public class ErrorCode implements Serializable, Cloneable {
                 break;
             }
         } while (true);
+        return root;
+    }
 
-        if (root == this) {
-            return null;
-        } else if (root.getDetails() == null) {
+    public String getRootCauseDetails() {
+        ErrorCode root = getRootCause();
+        if (root.getDetails() == null) {
             return root.getDescription();
         } else {
             return root.getDetails();
