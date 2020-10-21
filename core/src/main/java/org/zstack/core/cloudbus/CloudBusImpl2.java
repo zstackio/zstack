@@ -2277,6 +2277,11 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     @Override
+    public String getServiceId(String targetServiceId) {
+        return targetServiceId.split(".")[0];
+    }
+
+    @Override
     public String makeLocalServiceId(String serviceId) {
         return serviceId + "." + Platform.getManagementServerId();
     }
