@@ -41,7 +41,8 @@ import java.util.concurrent.TimeUnit;
 import org.zstack.header.Component;
 import org.zstack.utils.path.PathUtil;
 
-
+import javax.persistence.Tuple;
+import static org.zstack.authentication.checkfile.FileVerification.NODE_MANAGEMENT_NODE;
 import static org.zstack.core.Platform.argerr;
 import static java.nio.file.StandardCopyOption.*;
 
@@ -55,6 +56,8 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    FileVerificationInitialService initializer;
 
     private static final String HOST_FILE_VERIFICATION = "/host/file/check";
     private static final String LOCAL_BACKUP_DIR = PathUtil.join(PathUtil.getZStackHomeFolder(), "backupfiles");
@@ -137,6 +140,10 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
 
     @Override
     public void managementNodeReady() {
+        if (FVGlobalProperty.initMNFileVerification) {
+            initializer.initManagementNodeFileVerificationList();
+        }
+        
         logger.debug(String.format("Management node[uuid:%s] is ready, starts to check task.", Platform.getManagementServerId()));
         startFileCheck();
 
@@ -168,7 +175,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
         }
         new While<>(filesGroupByNode.keySet()).all((node, compl) -> {
             try {
-                if( node.equals("mn")){
+                if(NODE_MANAGEMENT_NODE.equals(node)){
                     checkLocalFiles(filesGroupByNode.get(node));
                 }else{
                     checkHostFiles(node, filesGroupByNode.get(node));
@@ -207,7 +214,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
         try {
             FileInputStream fis = null;
             fis = new FileInputStream(fv.getPath());
-            Class clazz = Class.forName("org.apache.commons.codec.digest.DigestUtils");
+            Class<?> clazz = Class.forName("org.apache.commons.codec.digest.DigestUtils");
             String methodName = fv.getHexType() + "Hex";
             Object fileDigest = clazz.getMethod(methodName, InputStream.class).invoke(clazz.newInstance(), fis);
             return fileDigest.toString();
@@ -280,7 +287,6 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
     }
 
     private void addLocalFileToCheckList(FileVerification fv) {
-        FileInputStream fis = null;
         String path = fv.getPath();
         try {
             String digest = getLocalFileDigest(fv);
@@ -289,18 +295,9 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
             backupRestoreLocalFile(path, backupPath);
             allFile.put(fv.getUuid(), fv);
             dbf.persist(fv.toVO());
-        }catch(IOException e){
+        } catch (Exception e) {
             throw new CloudRuntimeException(e);
-        }catch (Exception e){
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException e_) {
-                    logger.warn(String.format("FileInputStream close IOException：%s", e_.getMessage()));
-                }
-            }
         }
-
     }
 
     private void addHostFileToCheckList(FileVerification fv){
@@ -309,7 +306,7 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
 
 
     private void recoverFileToCheckList(FileVerification fv) throws IOException{
-        if (fv.getNode().equals("mn")){
+        if (NODE_MANAGEMENT_NODE.equals(fv.getNode())){
             String digest = getLocalFileDigest(fv);
             if(! digest.equals(fv.getDigest())){
                 backupRestoreLocalFile(fv.getPath(), PathUtil.join(LOCAL_BACKUP_DIR, fv.getUuid()));
@@ -319,6 +316,16 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
         }else{
             fv.addHostFile(false);
         }
+    }
+    
+    @Override
+    public boolean anyCheckFilesExists(String node) {
+        Tuple tuple = SQL.New("SELECT uuid FROM FileVerificationVO where node = :node", Tuple.class)
+            .param("node", node)
+            .limit(1)
+            .find();
+        
+        return tuple != null;
     }
 
     @Override
@@ -354,7 +361,6 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
 
 
     public void handle(APIAddVerificationFileMsg msg){
-        APIAddVerificationFileEvent evt = new APIAddVerificationFileEvent(msg.getId());
         String uuid = Platform.getUuid();
         String path = msg.getPath();
         String node = msg.getNode();
@@ -367,26 +373,38 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
         fv.setHexType(hexType);
         fv.setCategory(category);
         fv.setState(FileVerificationState.Enabled.toString());
+        ErrorCode err = addVerificationFile(fv);
+        
+        APIAddVerificationFileEvent evt = new APIAddVerificationFileEvent(msg.getId());
+        if (err != null) {
+            evt.setError(err);
+            bus.publish(evt);
+        } else {
+            evt.setSuccess(true);
+            bus.publish(evt);
+        }
+    }
+    
+    @Override
+    public ErrorCode addVerificationFile(FileVerification fv) {
+        String node = fv.getNode();
+        String path = fv.getPath();
         FileVerificationVO fvo = Q.New(FileVerificationVO.class).eq(FileVerificationVO_.node, node).eq(FileVerificationVO_.path, path).find();
-        if(fvo == null){
-            if(! fv.isFileExists()){
+        if (fvo == null) {
+            if (!fv.isFileExists()) {
                 throw new CloudRuntimeException(String.format("No such file [%s] on node: %s", path, node));
             }
             logger.info(String.format("Will add [%s.%s] to CheckList.", node, path));
-            if( node.equals("mn")){
+            if (NODE_MANAGEMENT_NODE.equals(node)) {
                 addLocalFileToCheckList(fv);
-            }else{
+            } else {
                 addHostFileToCheckList(fv);
             }
             logger.info(String.format("Successfully add [%s.%s] to CheckList.", node, path));
-            evt.setSuccess(true);
-            bus.publish(evt);
-        }else{
-            ErrorCode err = argerr("File[%s.%s] is already in the CheckList", node, path);
-            evt.setError(err);
-            bus.publish(evt);
+            return null;
+        } else {
+            return argerr("File[%s.%s] is already in the CheckList", node, path);
         }
-        return;
     }
 
     public void handle(APIRemoveVerificationFileMsg msg){

@@ -1,6 +1,5 @@
 package org.zstack.authentication.checkfile;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -8,9 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.header.core.Completion;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
@@ -18,22 +15,16 @@ import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.kvm.KVMHostVO;
-import org.zstack.utils.Digest;
 import org.zstack.utils.Linux;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.nio.file.Files;
-
-import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class FileVerification {
     private static final CLogger logger = Utils.getLogger(FileVerification.class);
+    public static final String NODE_MANAGEMENT_NODE = "mn";
     private String uuid;
     private String path;
     private String node; //for managementNode, node="mn", for host, node=HostUuid
@@ -41,6 +32,7 @@ public class FileVerification {
     private String digest;
     private String category;
     private String state;
+    transient private boolean initFile;
 
     @Autowired
     private CloudBus bus;
@@ -106,7 +98,15 @@ public class FileVerification {
     public void setState(String state) {
         this.state = state;
     }
-
+    
+    public boolean isInitFile() {
+        return initFile;
+    }
+    
+    public void setInitFile(boolean initFile) {
+        this.initFile = initFile;
+    }
+    
     private static final String HOST_ADD_FILE = "/host/file/add";
 
     public EventFacade getEvtf() {
@@ -168,7 +168,7 @@ public class FileVerification {
 
 
     public boolean isFileExists(){
-        if (node.equals("mn")) {
+        if (NODE_MANAGEMENT_NODE.equals(node)) {
             File file = new File(path);
             return file.getAbsoluteFile().exists();
         }else {
@@ -188,6 +188,10 @@ public class FileVerification {
         msg.setCommand(cmd);
         msg.setHostUuid(node);
         msg.setPath(HOST_ADD_FILE);
+        if (initFile) {
+            msg.setNoStatusCheck(true);
+        }
+        
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, node);
         bus.send(msg, new CloudBusCallBack(null) {
             @Override

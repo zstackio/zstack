@@ -2917,4 +2917,12 @@ public class KVMAgentCommands {
         public long availableSize;
         public long dirSize;
     }
+
+    public static class ConfirmVerificationFilesCommand extends AgentCommand {
+        public List<String> patterns;
+    }
+    
+    public static class ConfirmVerificationFilesResponse extends AgentResponse {
+        public List<String> paths;
+    }
 }

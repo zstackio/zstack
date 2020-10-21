@@ -27,4 +27,33 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="FileVerificationInitialService"
+            class="org.zstack.authentication.checkfile.FileVerificationInitialServiceImpl">
+        <property name="mnInitialVerificationFiles">
+            <list>
+                <value>/boot/vmlinuz*</value>
+                <value>/usr/local/zstack/imagestore/bin/zstcli</value>
+                <value>/usr/bin/zstack-ctl</value>
+                <value>/usr/local/zstack/zstack.war</value>
+            </list>
+        </property>
+        <property name="hostInitialVerificationFiles">
+            <list>
+                <value>/boot/vmlinuz*</value>
+                <value>/usr/bin/virsh</value>
+                <value>/usr/sbin/libvirtd</value>
+                <value>/usr/libexec/qemu-kvm</value>
+                <value>/usr/local/zstack/ansible/files/kvm/zstack-kvmagent</value>
+                <value>/usr/lib/modules/*/kernel/arch/x86/kvm/kvm.ko.xz</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="HostFileVerificationInitializer"
+          class="org.zstack.authentication.checkfile.HostFileVerificationInitializer">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.host.HostAddExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>
