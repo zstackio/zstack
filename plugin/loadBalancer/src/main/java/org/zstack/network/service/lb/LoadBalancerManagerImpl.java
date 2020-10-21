@@ -390,6 +390,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         LoadBalancerSystemTags.BALANCER_ALGORITHM.installJudger(judger);
         LoadBalancerSystemTags.HEALTHY_THRESHOLD.installJudger(judger);
         LoadBalancerSystemTags.MAX_CONNECTION.installJudger(judger);
+        LoadBalancerSystemTags.PROCESS_NUMBER.installJudger(judger);
         LoadBalancerSystemTags.HEALTH_INTERVAL.installJudger(judger);
         LoadBalancerSystemTags.HEALTH_TARGET.installJudger(judger);
         LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.installJudger(judger);
@@ -571,6 +572,20 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     Long.parseLong(s);
                 } catch (NumberFormatException e) {
                     throw new OperationFailureException(argerr("invalid max connection[%s], %s is not a number", systemTag, s));
+                }
+            }
+        });
+
+        LoadBalancerSystemTags.PROCESS_NUMBER.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                String s = LoadBalancerSystemTags.PROCESS_NUMBER.getTokenByTag(systemTag,
+                        LoadBalancerSystemTags.PROCESS_NUMBER_TOKEN);
+
+                try {
+                    Long.parseLong(s);
+                } catch (NumberFormatException e) {
+                    throw new OperationFailureException(argerr("invalid process number[%s], %s is not a number", systemTag, s));
                 }
             }
         });

@@ -57,7 +57,7 @@ public class LoadBalancerConstants {
     public static final int ZVR_PORT = 7272;
 
     /*max concurrent connect no more than MAX_CONNECTION_LIMIT per listener*/
-    public static final long MAX_CONNECTION_LIMIT = 100000;
+    public static final long MAX_CONNECTION_LIMIT = 10000000;
     public static final long BALANCER_WEIGHT_MAX = 100;
     public static final long BALANCER_WEIGHT_MIN = 0;
     public static final long BALANCER_WEIGHT_default = 100;

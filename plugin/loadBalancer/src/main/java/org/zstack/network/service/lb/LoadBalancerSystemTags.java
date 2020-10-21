@@ -38,6 +38,10 @@ public class LoadBalancerSystemTags {
     public static PatternedSystemTag MAX_CONNECTION = new PatternedSystemTag(String.format("maxConnection::{%s}", MAX_CONNECTION_TOKEN),
             LoadBalancerListenerVO.class);
 
+    public static final String PROCESS_NUMBER_TOKEN = "processNumber";
+    public static PatternedSystemTag PROCESS_NUMBER = new PatternedSystemTag(String.format("processNumber::{%s}", PROCESS_NUMBER_TOKEN),
+            LoadBalancerListenerVO.class);
+
     public static final String BALANCER_ALGORITHM_TOKEN = "balancerAlgorithm";
     public static PatternedSystemTag BALANCER_ALGORITHM = new PatternedSystemTag(String.format("balancerAlgorithm::{%s}", BALANCER_ALGORITHM_TOKEN), LoadBalancerListenerVO.class);
 
