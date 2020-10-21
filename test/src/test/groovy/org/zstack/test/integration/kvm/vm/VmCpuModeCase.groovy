@@ -1,7 +1,7 @@
 package org.zstack.test.integration.kvm.vm
 
 import org.springframework.http.HttpEntity
-import org.zstack.compute.vm.VmSystemTags
+import org.zstack.compute.vm.*;
 import org.zstack.core.cloudbus.CloudBusGlobalConfig
 import org.zstack.core.db.Q
 import org.zstack.header.image.ImageConstant
@@ -22,6 +22,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.VmSpec
 import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.kvm.KVMGlobalConfig
 
 class VmCpuModeCase extends SubCase {
     EnvSpec env
@@ -45,10 +46,11 @@ class VmCpuModeCase extends SubCase {
             stopVM()
             testCpuModeWhenVmStart("none")
 
-            setVmCpuModeFromResouceConfig();
+            setVmCpuModeFromResouceConfig("host-model");
 
             stopVM()
             testCpuModeWhenVmStart("host-model")
+
         }
     }
 
@@ -57,7 +59,16 @@ class VmCpuModeCase extends SubCase {
         env.delete()
     }
 
-    void setVmCpuModeFromResouceConfig() {
+    void setVmCpuModeFromResouceConfig(String CpuMode) {
+
+        VmSpec spec = env.specByName("vm")
+
+        updateResourceConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.NESTED_VIRTUALIZATION.name
+            value = CpuMode
+            resourceUuid = spec.inventory.uuid
+        }
 
     }
 
