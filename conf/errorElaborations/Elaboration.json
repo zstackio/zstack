@@ -32,6 +32,14 @@
     "message_en": "unable to update name. An account already existed."
   },
   {
+    "category": "ACCOUNT",
+    "code": "1004",
+    "method": "regex",
+    "regex": "this user is locked, remaining time: .* seconds.*",
+    "message_cn": "该用户已被锁定，请 %1$s 秒后在重试",
+    "message_en": "this user is locked, remaining time: %1$s seconds."
+  },
+  {
     "category": "APPLIANCE_VM",
     "code": "1000",
     "method": "regex",
