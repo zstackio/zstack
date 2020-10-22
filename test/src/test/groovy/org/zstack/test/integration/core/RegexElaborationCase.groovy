@@ -2,9 +2,13 @@ package org.zstack.test.integration.core
 
 import org.zstack.core.Platform
 import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.errorcode.ErrorCodeList
+import org.zstack.header.storage.primary.PrimaryStorageErrors
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.string.ElaborationSearchMethod
+
+import static org.zstack.core.Platform.err
 
 /**
  * Created by mingjian.deng on 2019/7/13.*/
@@ -34,6 +38,7 @@ class RegexElaborationCase extends SubCase {
         testElaboration4()
         testElaboration5()
         testElaboration6()
+        testElaboration7()
     }
 
     void testElaboration1() {
@@ -77,5 +82,23 @@ class RegexElaborationCase extends SubCase {
         assert err.elaboration != null
         assert err.messages.method == ElaborationSearchMethod.regex
         assert err.messages.message_cn == "pip安装失败。因为pip安装文件不完整，或者pip版本不正确"
+    }
+
+    void testElaboration7() {
+        ErrorCode errorCodes = new ErrorCodeList()
+        List<ErrorCode> causes = Collections.synchronizedList(new ArrayList<>())
+
+        def errCode1 = Platform.operr(".*can not find vg .* and create vg with forceWipw=.*") as ErrorCode
+        def errCode2 = Platform.operr(".*can not find vg .* and create vg with forceWipw=.*") as ErrorCode
+
+        causes.add(errCode1)
+        causes.add(errCode2)
+        errorCodes.setCauses(causes)
+
+        ErrorCode result = err(PrimaryStorageErrors.ATTACH_ERROR, errorCodes, errorCodes.getDetails())
+
+        assert result.elaboration.trim().equals("错误信息: 无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
+        assert result.messages.message_cn.trim().equals("无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。")
+        assert result.messages.message_en.trim().equals("Unable to connect the shared block group primary storage to the cluster, because device is not empty, please check the checkbox of \"Clear SharedBlock\" and try again.")
     }
 }
