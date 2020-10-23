@@ -14,6 +14,7 @@ public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage,
     private List<String> avoidHostUuids;
     private AllocationScene allocationScene;
     private String targetHostUuid;
+    private boolean migrateFromDestination;
 
     @Override
     public AllocationScene getAllocationScene() {
@@ -47,7 +48,11 @@ public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage,
 
     @Override
     public boolean isMigrateFromDestination() {
-        return false;
+        return migrateFromDestination;
+    }
+
+    public void setMigrateFromDestination(boolean migrateFromDestination) {
+        this.migrateFromDestination = migrateFromDestination;
     }
 
     @Override
