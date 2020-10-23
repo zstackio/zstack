@@ -167,7 +167,6 @@ public class CreateApplianceVmJob implements Job {
                 }
 
                 ResourceConfig multiQueues = rcf.getResourceConfig(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getIdentity());
-                multiQueues.updateValue(avo.getUuid(), ApplianceVmConstant.APPLIANCEVM_NIC_DEFAULT_QUEUE_NUM);
 
                 trigger.next();
             }

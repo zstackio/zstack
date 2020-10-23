@@ -91,6 +91,8 @@ public interface KVMConstant {
 
     String IPTABLES_COMMENTS = "kvmagent.allow.port";
 
+    Integer DEFAULT_MAX_NIC_QUEUE_NUMBER = 12;
+
     enum KvmVmState {
         NoState,
         Running,
