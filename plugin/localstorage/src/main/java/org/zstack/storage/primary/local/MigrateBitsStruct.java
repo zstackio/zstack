@@ -42,6 +42,9 @@ public class MigrateBitsStruct {
     private List<ResourceInfo> infos = new ArrayList<ResourceInfo>();
     private String srcHostUuid;
     private String destHostUuid;
+    private String destPrimaryStorageUuid;
+    private boolean crossPrimaryStorage = false;
+
 
     public String getSrcHostUuid() {
         return srcHostUuid;
@@ -66,4 +69,21 @@ public class MigrateBitsStruct {
     public void setDestHostUuid(String destHostUuid) {
         this.destHostUuid = destHostUuid;
     }
+
+    public String getDestPrimaryStorageUuid() {
+        return destPrimaryStorageUuid;
+    }
+
+    public void setDestPrimaryStorageUuid(String destPrimaryStorageUuid) {
+        this.destPrimaryStorageUuid = destPrimaryStorageUuid;
+    }
+
+    public boolean CrossPrimaryStorage() {
+        return crossPrimaryStorage;
+    }
+
+    public void setCrossPrimaryStorage(boolean crossPrimaryStorage) {
+        this.crossPrimaryStorage = crossPrimaryStorage;
+    }
+
 }
