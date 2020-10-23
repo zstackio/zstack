@@ -58,7 +58,9 @@ public interface CloudBus extends Component {
     void replyErrorByMessageType(Message msg, ErrorCode err);
     
     void logExceptionWithMessageDump(Message msg, Throwable e);
-    
+
+    String getServiceId(String targetServiceId);
+
     String makeLocalServiceId(String serviceId);
 
     void makeLocalServiceId(Message msg, String serviceId);
