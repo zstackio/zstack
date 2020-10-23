@@ -164,6 +164,14 @@
 
     <config>
         <category>kvm</category>
+        <name>auto.set.vm.nic.multiqueue</name>
+        <description>auto set vm nic multiqueue, set nic queue number based on number of vm cpu cores when platform is linux</description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>true</defaultValue>
+    </config>
+
+    <config>
+        <category>kvm</category>
         <name>kvmagent.allow.ports</name>
         <description>tcp or udp ports allowed by kvmagent, udp port start with 'u' like 'u67', port range can be like this: 1100:1200, multiple port or port range can be separated by ”,“</description>
         <defaultValue>22,7070,16509,49152:49261,2049,20000:30000,u4789,u8472,7069,9100,9103</defaultValue>
