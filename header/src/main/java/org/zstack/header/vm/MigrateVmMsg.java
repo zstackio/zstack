@@ -15,6 +15,7 @@ public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage,
     private AllocationScene allocationScene;
     private String targetHostUuid;
     private boolean migrateFromDestination;
+    private boolean allowUnknown;
 
     @Override
     public AllocationScene getAllocationScene() {
@@ -55,9 +56,13 @@ public class MigrateVmMsg extends NeedReplyMessage implements VmInstanceMessage,
         this.migrateFromDestination = migrateFromDestination;
     }
 
+    public void setAllowUnknown(boolean allowUnknown) {
+        this.allowUnknown = allowUnknown;
+    }
+
     @Override
     public boolean isAllowUnknown() {
-        return false;
+        return allowUnknown;
     }
 
     @Override
