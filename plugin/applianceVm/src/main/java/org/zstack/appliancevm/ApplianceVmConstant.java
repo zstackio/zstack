@@ -16,8 +16,6 @@ public class ApplianceVmConstant {
 
     public static final String ANSIBLE_MODULE_PATH = "ansible/appliancevm";
 
-    public static final String APPLIANCEVM_NIC_DEFAULT_QUEUE_NUM = "4";
-
     public enum BootstrapParams {
         managementNic,
         additionalNics,
