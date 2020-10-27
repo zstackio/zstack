@@ -128,13 +128,13 @@ class NoDhcpServiceCase extends SubCase {
         FlatUserdataBackend.ApplyUserdataCmd cmd = null
 
         def prepareDhcp = false
-        env.afterSimulator(FlatDhcpBackend.PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e ->
+        env.afterSimulator(FlatDhcpBackend.BATCH_PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e ->
             prepareDhcp = true
             return rsp
         }
 
         def applyDhcp = false
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
             applyDhcp = true
             return rsp
         }

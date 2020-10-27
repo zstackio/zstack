@@ -313,8 +313,8 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
         }
 
 
-        env.simulator(FlatDhcpBackend.PREPARE_DHCP_PATH) { HttpEntity<String> entity, EnvSpec spec ->
-            record.add(FlatDhcpBackend.PREPARE_DHCP_PATH)
+        env.simulator(FlatDhcpBackend.BATCH_PREPARE_DHCP_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            record.add(FlatDhcpBackend.BATCH_PREPARE_DHCP_PATH)
             return new FlatDhcpBackend.PrepareDhcpRsp()
         }
 
@@ -344,7 +344,7 @@ class OneVxlanNetworkLifeCycleCase extends SubCase {
         }
 
         assert record.get(2).equals(VxlanNetworkPoolConstant.VXLAN_KVM_REALIZE_L2VXLAN_NETWORK_PATH)
-        assert record.get(3).equals(FlatDhcpBackend.PREPARE_DHCP_PATH)
+        assert record.get(3).equals(FlatDhcpBackend.BATCH_PREPARE_DHCP_PATH)
 
         poolinv = queryL2VxlanNetworkPool{}[0]
 

@@ -75,8 +75,10 @@ class OneVmDhcpCase extends SubCase {
             assert cmd.bridgeName == brName
         }
 
-        // make sure the DHCP server IP has been returned
-        assert dbFindByUuid(dhcpServerIpUuid, UsedIpVO.class) == null
+        retryInSecs {
+            // make sure the DHCP server IP has been returned
+            assert dbFindByUuid(dhcpServerIpUuid, UsedIpVO.class) == null
+        }
 
         // assure relevant tags are deleted
         assert !FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.hasTag(l3.uuid)
@@ -156,10 +158,10 @@ class OneVmDhcpCase extends SubCase {
     }
 
     void testSetDhcpMtu() {
-        FlatDhcpBackend.ApplyDhcpCmd cmd = null
+        FlatDhcpBackend.BatchApplyDhcpCmd cmd = null
 
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
-            cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
             return rsp
         }
 
@@ -197,7 +199,7 @@ class OneVmDhcpCase extends SubCase {
             uuid = vm.uuid
         }
 
-        DhcpInfo info = cmd.dhcp[0]
+        DhcpInfo info = cmd.dhcpInfos.get(0).dhcp[0]
         assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_NO_VLAN.value()))
         assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VLAN.value()))
         assert info.mtu.equals(Integer.valueOf(NetworkServiceGlobalConfig.DHCP_MTU_VXLAN.value()))
@@ -211,7 +213,7 @@ class OneVmDhcpCase extends SubCase {
             uuid = vm.uuid
         }
 
-        info = cmd.dhcp[0]
+        info = cmd.dhcpInfos.get(0).dhcp[0]
         assert info.mtu.equals(1450)
 
         GetL3NetworkMtuResult r = getL3NetworkMtu {
@@ -226,21 +228,22 @@ class OneVmDhcpCase extends SubCase {
         reconnectHost {
             delegate.uuid = vm.getHostUuid()
         }
-        info = cmd.dhcp[0]
+        info = cmd.dhcpInfos.get(0).dhcp[0]
         assert info.mtu.equals(1400)
     }
 
     private void testSetDhcpWhenVmOperations(Closure vmOperation) {
         FlatDhcpBackend.ApplyDhcpCmd cmd = null
-
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
-            cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            FlatDhcpBackend.BatchApplyDhcpCmd batchApplyDhcpCmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
+            cmd = batchApplyDhcpCmd.dhcpInfos.get(0)
             return rsp
         }
 
         FlatDhcpBackend.PrepareDhcpCmd pcmd = null
-        env.afterSimulator(FlatDhcpBackend.PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e ->
-            pcmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.PrepareDhcpCmd.class)
+        env.afterSimulator(FlatDhcpBackend.BATCH_PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            FlatDhcpBackend.BatchPrepareDhcpCmd batchPrepareDhcpCmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchPrepareDhcpCmd.class)
+            pcmd = batchPrepareDhcpCmd.dhcpInfos.get(0)
             return rsp
         }
 

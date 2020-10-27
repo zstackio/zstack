@@ -136,9 +136,9 @@ class GetDhcpInfoForConnectedKvmHostCase extends SubCase {
         creator.recreate = true
         creator.create()
 
-        FlatDhcpBackend.ApplyDhcpCmd cmd = null
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
-            cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+        FlatDhcpBackend.BatchApplyDhcpCmd cmd = null
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
             return rsp
         }
 
@@ -146,9 +146,10 @@ class GetDhcpInfoForConnectedKvmHostCase extends SubCase {
             uuid = host.uuid
         }
         assert null != cmd
-        assert 1 == cmd.dhcp.size()
-        assert cmd.dhcp.get(0).hostname == VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.uuid, VmSystemTags.HOSTNAME_TOKEN)
-        assert cmd.dhcp.get(0).vmMultiGateway == true
+        assert 1 == cmd.dhcpInfos.size()
+        assert 1 == cmd.dhcpInfos.get(0).dhcp.size()
+        assert cmd.dhcpInfos.get(0).dhcp.get(0).hostname == VmSystemTags.HOSTNAME.getTokenByResourceUuid(vm.uuid, VmSystemTags.HOSTNAME_TOKEN)
+        assert cmd.dhcpInfos.get(0).dhcp.get(0).vmMultiGateway
 
         GetVmHostnameResult result = getVmHostname {
             uuid = vm.uuid
@@ -166,8 +167,9 @@ class GetDhcpInfoForConnectedKvmHostCase extends SubCase {
             uuid = host.uuid
         }
         assert null != cmd
-        assert 1 == cmd.dhcp.size()
-        assert cmd.dhcp.get(0).hostname == vm.vmNics[0].ip.replaceAll("\\.", "-")
+        assert 1 == cmd.dhcpInfos.size()
+        assert 1 == cmd.dhcpInfos.get(0).dhcp.size()
+        assert cmd.dhcpInfos.get(0).dhcp.get(0).hostname == vm.vmNics[0].ip.replaceAll("\\.", "-")
     }
 
     @Override

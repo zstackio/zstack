@@ -40,9 +40,9 @@ class FlatAddDnsCase extends SubCase {
     }
 
     void testAddDns() {
-        FlatDhcpBackend.ApplyDhcpCmd cmd = null
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
-            cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+        FlatDhcpBackend.BatchApplyDhcpCmd cmd = null
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
             return rsp
         }
 
@@ -52,8 +52,8 @@ class FlatAddDnsCase extends SubCase {
         }
 
         assert cmd != null
-        assert cmd.dhcp.get(0).dns.size() == 1
-        assert cmd.dhcp.get(0).dns.get(0) == dns1
+        assert cmd.dhcpInfos.get(0).dhcp.get(0).dns.size() == 1
+        assert cmd.dhcpInfos.get(0).dhcp.get(0).dns.get(0) == dns1
 
         def l2 = env.inventoryByName("l2") as L2NetworkInventory
 

@@ -168,7 +168,7 @@ class BatchCreateVmFailDeadlockCase extends SubCase{
         ImageInventory image = env.inventoryByName("iso")
         DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering")
 
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) {FlatDhcpBackend.ApplyDhcpRsp rsp, HttpEntity<java.lang.String> e ->
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) {FlatDhcpBackend.ApplyDhcpRsp rsp, HttpEntity<java.lang.String> e ->
             Random r = new Random()
             int ran = r.nextInt(2)
             if (ran == 0) {
