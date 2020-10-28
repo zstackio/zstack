@@ -269,19 +269,35 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public void asyncJsonPost(final String url, final String body, Map<String, String> headers, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
-        asyncJson(url, body, headers, HttpMethod.POST, callback, unit, timeout);
+        asyncJsonPost(url, body, headers, callback, unit, timeout, null);
+    }
+
+    @Override
+    public void asyncJsonPost(final String url, final String body, Map<String, String> headers, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout, MediaType mediaType) {
+        asyncJson(url, body, headers, HttpMethod.POST, callback, unit, timeout, mediaType);
     }
 
     @Override
     public void asyncJsonDelete(final String url, final String body, Map<String, String> headers, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
-        asyncJson(url, body, headers, HttpMethod.DELETE, callback, unit, timeout);
-    }
-    @Override
-    public void asyncJsonGet(final String url, final String body, Map<String, String> headers, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
-        asyncJson(url, body, headers, HttpMethod.GET, callback, unit, timeout);
+        asyncJsonDelete(url, body, headers, callback, unit, timeout, null);
     }
 
-    private void asyncJson(final String url, final String body, Map<String, String> headers, HttpMethod method, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
+    @Override
+    public void asyncJsonDelete(final String url, final String body, Map<String, String> headers, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout, MediaType mediaType) {
+        asyncJson(url, body, headers, HttpMethod.DELETE, callback, unit, timeout, mediaType);
+    }
+
+    @Override
+    public void asyncJsonGet(final String url, final String body, Map<String, String> headers, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
+        asyncJsonGet(url, body, headers, callback, unit, timeout, null);
+    }
+
+    @Override
+    public void asyncJsonGet(final String url, final String body, Map<String, String> headers, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout, MediaType mediaType) {
+        asyncJson(url, body, headers, HttpMethod.GET, callback, unit, timeout, mediaType);
+    }
+
+    private void asyncJson(final String url, final String body, Map<String, String> headers, HttpMethod method, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout, MediaType mediaType) {
         synchronized (interceptors) {
             for (BeforeAsyncJsonPostInterceptor ic : interceptors) {
                 ic.beforeAsyncJsonPost(url, body, unit, timeout);
@@ -306,8 +322,10 @@ public class RESTFacadeImpl implements RESTFacade {
         requestHeaders.setContentLength(body.length());
         requestHeaders.set(RESTConstant.TASK_UUID, taskUuid);
         requestHeaders.set(RESTConstant.CALLBACK_URL, callbackUrl);
-        MediaType JSON = MediaType.parseMediaType("application/json; charset=utf-8");
-        requestHeaders.setContentType(JSON);
+        requestHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
+        if (mediaType != null) {
+            requestHeaders.setContentType(mediaType);
+        }
         if (headers != null) {
             for (Map.Entry<String, String> e : headers.entrySet()) {
                 requestHeaders.set(e.getKey(), e.getValue());
@@ -503,18 +521,30 @@ public class RESTFacadeImpl implements RESTFacade {
     public <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass) {
         return syncJsonPost(url, body, headers, returnClass, null, -1);
     }
+
     @Override
     public <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
-        return syncJson(url, body, headers, HttpMethod.POST, returnClass, unit, timeout);
+        return syncJsonPost(url, body, headers,returnClass, unit, timeout, null);
+    }
+
+    @Override
+    public <T> T syncJsonPost(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout, MediaType mediaType) {
+        return syncJson(url, body, headers, HttpMethod.POST, returnClass, unit, timeout, mediaType);
     }
 
     @Override
     public <T> T syncJsonDelete(String url, String body, Map<String, String> headers, Class<T> returnClass) {
         return syncJsonDelete(url, body, headers, returnClass, null, -1);
     }
+
     @Override
     public <T> T syncJsonDelete(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
-        return syncJson(url, body, headers, HttpMethod.DELETE, returnClass, unit, timeout);
+        return syncJsonDelete(url, body, headers, returnClass, unit, timeout, null);
+    }
+
+    @Override
+    public <T> T syncJsonDelete(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout, MediaType mediaType) {
+        return syncJson(url, body, headers, HttpMethod.DELETE, returnClass, unit, timeout, mediaType);
     }
 
     @Override
@@ -523,7 +553,12 @@ public class RESTFacadeImpl implements RESTFacade {
     }
     @Override
     public <T> T syncJsonGet(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout) {
-        return syncJson(url, body, headers, HttpMethod.GET, returnClass, unit, timeout);
+        return syncJsonGet(url, body, headers, returnClass, unit, timeout, null);
+    }
+
+    @Override
+    public <T> T syncJsonGet(String url, String body, Map<String, String> headers, Class<T> returnClass, TimeUnit unit, long timeout, MediaType mediaType) {
+        return syncJson(url, body, headers, HttpMethod.GET, returnClass, unit, timeout, mediaType);
     }
 
     @Override
@@ -531,7 +566,7 @@ public class RESTFacadeImpl implements RESTFacade {
         return template.headForHeaders(URI.create(url));
     }
 
-    protected  <T> T syncJson(String url, String body, Map<String, String> headers, HttpMethod method, Class<T> returnClass, TimeUnit unit, long timeout) {
+    protected  <T> T syncJson(String url, String body, Map<String, String> headers, HttpMethod method, Class<T> returnClass, TimeUnit unit, long timeout, MediaType mediaType) {
         body = body == null ? "" : body;
 
         HttpHeaders requestHeaders = new HttpHeaders();
@@ -539,6 +574,11 @@ public class RESTFacadeImpl implements RESTFacade {
             requestHeaders.setAll(headers);
         }
         requestHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        if (mediaType != null) {
+            requestHeaders.setContentType(mediaType);
+        }
+
         requestHeaders.setContentLength(body.length());
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
         if (logger.isTraceEnabled()) {
