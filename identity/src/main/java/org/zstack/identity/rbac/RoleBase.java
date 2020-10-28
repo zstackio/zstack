@@ -198,11 +198,7 @@ public class RoleBase implements Role {
     }
 
     private void handle(APIDeleteRoleMsg msg) {
-        for(DeleteRoleExtensionPoint ext : pluginRgty.getExtensionList(DeleteRoleExtensionPoint.class)) {
-            ext.beforeDeleteRole(msg.getRoleUuid());
-        }
-
-        SQL.New(RoleVO.class).eq(RoleVO_.uuid, msg.getUuid()).hardDelete();
+        new RoleUtils().deleteRole(msg.getUuid());
         bus.publish(new APIDeleteRoleEvent(msg.getId()));
     }
 }
