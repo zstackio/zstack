@@ -220,6 +220,9 @@ public class SourceClassMap {
 			put("org.zstack.header.network.l3.datatypes.IpCapacityData", "org.zstack.sdk.IpCapacityData");
 			put("org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory", "org.zstack.sdk.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.header.network.service.NetworkServiceProviderInventory", "org.zstack.sdk.NetworkServiceProviderInventory");
+			put("org.zstack.header.oauth2.APISaveAuthClientDetailsMsg$ScopeParam", "org.zstack.sdk.ScopeParam");
+			put("org.zstack.header.oauth2.AuthClientDetailsInventory", "org.zstack.sdk.AuthClientDetailsInventory");
+			put("org.zstack.header.oauth2.AuthScopeDetailsInventory", "org.zstack.sdk.AuthScopeDetailsInventory");
 			put("org.zstack.header.portMirror.MirrorNetworkUsedIpInventory", "org.zstack.sdk.MirrorNetworkUsedIpInventory");
 			put("org.zstack.header.portMirror.PortMirrorInventory", "org.zstack.sdk.PortMirrorInventory");
 			put("org.zstack.header.portMirror.PortMirrorSessionInventory", "org.zstack.sdk.PortMirrorSessionInventory");
@@ -587,6 +590,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AppBuildSystemZoneRefInventory", "org.zstack.header.buildsystem.AppBuildSystemZoneRefInventory");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
 			put("org.zstack.sdk.AttachTagResult", "org.zstack.tag2.AttachTagResult");
+			put("org.zstack.sdk.AuthClientDetailsInventory", "org.zstack.header.oauth2.AuthClientDetailsInventory");
+			put("org.zstack.sdk.AuthScopeDetailsInventory", "org.zstack.header.oauth2.AuthScopeDetailsInventory");
 			put("org.zstack.sdk.AutoScalingGroupActivityInventory", "org.zstack.autoscaling.group.activity.AutoScalingGroupActivityInventory");
 			put("org.zstack.sdk.AutoScalingGroupInstanceInventory", "org.zstack.autoscaling.group.instance.AutoScalingGroupInstanceInventory");
 			put("org.zstack.sdk.AutoScalingGroupInventory", "org.zstack.autoscaling.group.AutoScalingGroupInventory");
@@ -857,6 +862,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SchedulerJobInventory", "org.zstack.header.scheduler.SchedulerJobInventory");
 			put("org.zstack.sdk.SchedulerJobSchedulerTriggerInventory", "org.zstack.header.scheduler.SchedulerJobSchedulerTriggerInventory");
 			put("org.zstack.sdk.SchedulerTriggerInventory", "org.zstack.header.scheduler.SchedulerTriggerInventory");
+			put("org.zstack.sdk.ScopeParam", "org.zstack.header.oauth2.APISaveAuthClientDetailsMsg$ScopeParam");
 			put("org.zstack.sdk.ScsiLunClusterStatusInventory", "org.zstack.header.storageDevice.ScsiLunClusterStatusInventory");
 			put("org.zstack.sdk.ScsiLunHostRefInventory", "org.zstack.header.storageDevice.ScsiLunHostRefInventory");
 			put("org.zstack.sdk.ScsiLunInventory", "org.zstack.header.storageDevice.ScsiLunInventory");
