@@ -1,12 +1,13 @@
 package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.message.ReplayableMessage;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
 
 /**
  * Created by frank on 5/23/2015.
  */
-public class DownloadIsoToPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
+public class DownloadIsoToPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage, ReplayableMessage {
     private String primaryStorageUuid;
     private ImageSpec isoSpec;
     private String vmInstanceUuid;
@@ -43,5 +44,15 @@ public class DownloadIsoToPrimaryStorageMsg extends NeedReplyMessage implements 
 
     public void setIsoSpec(ImageSpec isoSpec) {
         this.isoSpec = isoSpec;
+    }
+
+    @Override
+    public String getResourceUuid() {
+        return vmInstanceUuid;
+    }
+
+    @Override
+    public Class getReplayableClass() {
+        return DownloadIsoToPrimaryStorageMsg.class;
     }
 }
