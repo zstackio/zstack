@@ -2,9 +2,10 @@ package org.zstack.header.storage.primary;
 
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.message.ReplayableMessage;
 import org.zstack.header.volume.VolumeInventory;
 
-public class InstantiateVolumeOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
+public class InstantiateVolumeOnPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage, ReplayableMessage {
     private HostInventory destHost;
     private VolumeInventory volume;
     private String primaryStorageUuid;
@@ -43,4 +44,13 @@ public class InstantiateVolumeOnPrimaryStorageMsg extends NeedReplyMessage imple
         this.skipIfExisting = skipIfExisting;
     }
 
+    @Override
+    public String getResourceUuid() {
+        return volume.getUuid();
+    }
+
+    @Override
+    public Class getReplayableClass() {
+        return InstantiateVolumeOnPrimaryStorageMsg.class;
+    }
 }
