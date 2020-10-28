@@ -2178,7 +2178,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         }
         for (HostVO host : candidates) {
             String hostArch = HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(host.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN);
-            if (architecture == null || architecture.equals(hostArch)){
+            if (architecture == null || hostArch == null || architecture.equals(hostArch)){
                 result.add(host);
             }
         }
