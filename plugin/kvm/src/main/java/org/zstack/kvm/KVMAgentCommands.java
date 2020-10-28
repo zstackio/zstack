@@ -2826,6 +2826,10 @@ public class KVMAgentCommands {
         public String vmUuidsString;
     }
 
+    public static class ReportHostMaintainCmd {
+        public String hostUuid;
+    }
+
     public static class ReportFailoverCmd {
         public String vmInstanceUuid;
         public String hostUuid;
