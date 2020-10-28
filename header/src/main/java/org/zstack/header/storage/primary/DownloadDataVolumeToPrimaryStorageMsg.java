@@ -3,8 +3,9 @@ package org.zstack.header.storage.primary;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.message.ReplayableMessage;
 
-public class DownloadDataVolumeToPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
+public class DownloadDataVolumeToPrimaryStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage, ReplayableMessage {
     private String primaryStorageUuid;
     private ImageBackupStorageRefInventory backupStorageRef;
     private ImageInventory image;
@@ -49,5 +50,15 @@ public class DownloadDataVolumeToPrimaryStorageMsg extends NeedReplyMessage impl
 
     public void setImage(ImageInventory image) {
         this.image = image;
+    }
+
+    @Override
+    public String getResourceUuid() {
+        return volumeUuid;
+    }
+
+    @Override
+    public Class getReplayableClass() {
+        return DownloadDataVolumeToPrimaryStorageMsg.class;
     }
 }
