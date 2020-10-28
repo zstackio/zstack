@@ -102,5 +102,6 @@
             <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
         </zstack:plugin>
     </bean>
+    <bean id = "RoleUtils" class="org.zstack.identity.rbac.RoleUtils"/>
 </beans>
 
