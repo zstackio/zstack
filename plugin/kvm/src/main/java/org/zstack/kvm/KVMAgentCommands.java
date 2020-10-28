@@ -3112,6 +3112,10 @@ public class KVMAgentCommands {
         public boolean fencerFailure = true;
     }
 
+    public static class ReportHostMaintainCmd {
+        public String hostUuid;
+    }
+
     public static class ReportFailoverCmd {
         public String vmInstanceUuid;
         public String hostUuid;
