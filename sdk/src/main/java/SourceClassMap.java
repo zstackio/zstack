@@ -18,6 +18,7 @@ public class SourceClassMap {
 			put("org.zstack.aliyunproxy.vpc.AliyunProxyVSwitchInventory", "org.zstack.sdk.AliyunProxyVSwitchInventory");
 			put("org.zstack.aliyunproxy.vpc.AliyunProxyVpcInventory", "org.zstack.sdk.AliyunProxyVpcInventory");
 			put("org.zstack.appliancevm.ApplianceVmInventory", "org.zstack.sdk.ApplianceVmInventory");
+			put("org.zstack.auth.header.AuthInfoInventory", "org.zstack.sdk.AuthInfoInventory");
 			put("org.zstack.autoscaling.group.AutoScalingGroupInventory", "org.zstack.sdk.AutoScalingGroupInventory");
 			put("org.zstack.autoscaling.group.activity.AutoScalingGroupActivityInventory", "org.zstack.sdk.AutoScalingGroupActivityInventory");
 			put("org.zstack.autoscaling.group.instance.AutoScalingGroupInstanceInventory", "org.zstack.sdk.AutoScalingGroupInstanceInventory");
@@ -587,6 +588,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AppBuildSystemZoneRefInventory", "org.zstack.header.buildsystem.AppBuildSystemZoneRefInventory");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
 			put("org.zstack.sdk.AttachTagResult", "org.zstack.tag2.AttachTagResult");
+			put("org.zstack.sdk.AuthInfoInventory", "org.zstack.auth.header.AuthInfoInventory");
 			put("org.zstack.sdk.AutoScalingGroupActivityInventory", "org.zstack.autoscaling.group.activity.AutoScalingGroupActivityInventory");
 			put("org.zstack.sdk.AutoScalingGroupInstanceInventory", "org.zstack.autoscaling.group.instance.AutoScalingGroupInstanceInventory");
 			put("org.zstack.sdk.AutoScalingGroupInventory", "org.zstack.autoscaling.group.AutoScalingGroupInventory");
