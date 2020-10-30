@@ -1,7 +1,75 @@
---INSERT INTO `zstack`.`IAM2OrganizationVO` (uuid, name, state, type, srcType, createDate, lastOpDate, rootOrganizationUuid)
--- values ('6e3d19dab98348d8bd67657378843f82', 'default', 'Enabled', 'Default', 'ZStack', NOW(), NOW(), '6e3d19dab98348d8bd67657378843f82');
---INSERT INTO `zstack`.`ResourceVO`(uuid, resourceName, resourceType, concreteResourceType) values ('6e3d19dab98348d8bd67657378843f82','default', 'IAM2OrganizationVO', 'org.zstack.iam2.entity.IAM2OrganizationVO');
---INSERT INTO `zstack`.`AccountResourceRefVO`(accountUuid, ownerAccountUuid, resourceUuid, resourceType, permission, isShared, concreteResourceType)  values ('36c27e8ff05c4780bf6d2fa65700f22e', '36c27e8ff05c4780bf6d2fa65700f22e', '6e3d19dab98348d8bd67657378843f82', 'IAM2OrganizationVO', 2, false, 'org.zstack.iam2.entity.IAM2OrganizationVO');
+# upgrade PROJECT_OPERATOR_OF_PROJECT and PROJECT_ADMIN_OF_PROJECT to new data structure
+DROP PROCEDURE IF EXISTS upgradeProjectOperatorSystemTags;
+DELIMITER $$
+CREATE PROCEDURE upgradeProjectOperatorSystemTags()
+BEGIN
+    DECLARE projectOperatorTag VARCHAR(62);
+    DECLARE targetProjectUuid VARCHAR(32);
+    DECLARE targetAccountUuid VARCHAR(32);
+    DECLARE iam2VirtualIDUuid VARCHAR(32);
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur CURSOR FOR SELECT systemTag.tag, systemTag.resourceUuid FROM `zstack`.`SystemTagVO` systemTag where systemTag.tag like 'projectOperatorOfProjectUuid::%';
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO projectOperatorTag, iam2VirtualIDUuid;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        SET targetProjectUuid = SUBSTRING_INDEX(projectOperatorTag, '::', 1);
+        SELECT `accountUuid` into targetAccountUuid FROM `IAM2ProjectAccountRefVO` WHERE `projectUuid` = targetProjectUuid LIMIT 1;
+
+        INSERT INTO IAM2VirtualIDRoleRefVO (`virtualIDUuid`, `roleUuid`, `targetAccountUuid`) VALUES (iam2VirtualIDUuid, 'f2f474c60e7340c0a1d44080d5bde3a9', targetAccountUuid);
+    END LOOP;
+    CLOSE cur;
+    SELECT CURTIME();
+END $$
+DELIMITER ;
+CALL upgradeProjectOperatorSystemTags();
+
+DROP PROCEDURE IF EXISTS upgradeProjectAdminSystemTags;
+DELIMITER $$
+CREATE PROCEDURE upgradeProjectAdminSystemTags()
+BEGIN
+    DECLARE projectAdminTag VARCHAR(59);
+    DECLARE targetProjectUuid VARCHAR(32);
+    DECLARE targetAccountUuid VARCHAR(32);
+    DECLARE iam2VirtualIDUuid VARCHAR(32);
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur CURSOR FOR SELECT systemTag.tag, systemTag.resourceUuid FROM `zstack`.`SystemTagVO` systemTag where systemTag.tag like 'projectAdminOfProjectUuid::%';
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO projectAdminTag, iam2VirtualIDUuid;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        SET targetProjectUuid = SUBSTRING_INDEX(projectOperatorTag, '::', 1);
+        SELECT `accountUuid` into targetAccountUuid FROM `IAM2ProjectAccountRefVO` WHERE `projectUuid` = targetProjectUuid LIMIT 1;
+
+        INSERT INTO IAM2VirtualIDRoleRefVO (`virtualIDUuid`, `roleUuid`, `targetAccountUuid`) VALUES (iam2VirtualIDUuid, 'f2f474c60e7340c0a1d44080d5bde3a9', targetAccountUuid);
+    END LOOP;
+    CLOSE cur;
+    SELECT CURTIME();
+END $$
+DELIMITER ;
+CALL upgradeProjectAdminSystemTags();
+
+CREATE TABLE `IAM2ProjectRoleVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `iam2ProjectRoleType` VARCHAR(64) NOT NULL,
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE IAM2VirtualIDRoleRefVO DROP FOREIGN KEY fkIAM2VirtualIDRoleRefVOIAM2VirtualIDVO;
+ALTER TABLE IAM2VirtualIDRoleRefVO DROP FOREIGN KEY fkIAM2VirtualIDRoleRefVORoleVO;
+ALTER TABLE IAM2VirtualIDRoleRefVO ADD COLUMN `targetAccountUuid` varchar(32) NOT NULL;
+ALTER TABLE IAM2VirtualIDRoleRefVO DROP PRIMARY KEY, ADD PRIMARY KEY(virtualIDUuid, roleUuid, targetAccountUuid);
+ALTER TABLE IAM2VirtualIDRoleRefVO ADD CONSTRAINT fkIAM2VirtualIDRoleRefVOIAM2VirtualIDVO FOREIGN KEY (virtualIDUuid) REFERENCES IAM2VirtualIDVO (uuid) ON DELETE CASCADE;
+ALTER TABLE IAM2VirtualIDRoleRefVO ADD CONSTRAINT fkIAM2VirtualIDRoleRefVORoleVO FOREIGN KEY (roleUuid) REFERENCES RoleVO (uuid) ON DELETE CASCADE;
+CREATE INDEX idxIAM2VirtualIDRoleRefVOTargetAccountUuid ON IAM2VirtualIDRoleRefVO (targetAccountUuid);
 
 DELIMITER $$
 CREATE PROCEDURE insertDefaultIAM2Organization()
