@@ -35,6 +35,7 @@
                 <value>/usr/local/zstack/imagestore/bin/zstcli</value>
                 <value>/usr/bin/zstack-ctl</value>
                 <value>/usr/local/zstack/zstack.war</value>
+                <value>/usr/local/zstack/ansible/files/kvm/zstack-kvmagent</value>
             </list>
         </property>
         <property name="hostInitialVerificationFiles">
@@ -43,8 +44,8 @@
                 <value>/usr/bin/virsh</value>
                 <value>/usr/sbin/libvirtd</value>
                 <value>/usr/libexec/qemu-kvm</value>
-                <value>/usr/local/zstack/ansible/files/kvm/zstack-kvmagent</value>
                 <value>/usr/lib/modules/*/kernel/arch/x86/kvm/kvm.ko.xz</value>
+                <value>/etc/rc.d/init.d/zstack-kvmagent</value>
             </list>
         </property>
     </bean>
