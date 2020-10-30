@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.workflow.Flow;
@@ -13,6 +14,7 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.network.service.FirewallCanonicalEvents;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.CreatePortForwardingRuleRsp;
@@ -41,6 +43,8 @@ public class ApplyPortforwardingRuleOnVirtualRouterVmFlow implements Flow {
     private ErrorFacade errf;
     @Autowired
     private ApiTimeoutManager apiTimeoutManager;
+    @Autowired
+    private EventFacade evtf;
 
     private final static String VR_APPLY_PORT_FORWARDING_RULE_SUCCESS = "ApplyPortForwardingRuleSuccess";
 
@@ -76,6 +80,7 @@ public class ApplyPortforwardingRuleOnVirtualRouterVmFlow implements Flow {
                     logger.debug(info);
                     data.put(VR_APPLY_PORT_FORWARDING_RULE_SUCCESS, Boolean.TRUE);
                     chain.next();
+                    fireFirewallEvent(vr.getUuid());
                 } else {
                     ErrorCode err = operr("failed to create port forwarding rule[vip ip: %s, private ip: %s, vip start port: %s, vip end port: %s, private start port: %s, private end port: %s], because %s",
                             to.getVipIp(), to.getPrivateIp(), to.getVipPortStart(), to.getVipPortEnd(),
@@ -114,6 +119,7 @@ public class ApplyPortforwardingRuleOnVirtualRouterVmFlow implements Flow {
                         if (ret.isSuccess()) {
                             String info = String.format("successfully revoke port forwarding rules: %s", JSONObjectUtil.toJsonString(to));
                             logger.debug(info);
+                            fireFirewallEvent(vr.getUuid());
                         } else {
                             String err = String.format("failed to revoke port forwarding rules %, because %s", JSONObjectUtil.toJsonString(to), ret.getError());
                             logger.warn(err);
@@ -127,5 +133,11 @@ public class ApplyPortforwardingRuleOnVirtualRouterVmFlow implements Flow {
         } else {
             chain.rollback();
         }
+    }
+
+    private void fireFirewallEvent(String vRouterUuid) {
+        FirewallCanonicalEvents.FirewallRuleChangedData data = new FirewallCanonicalEvents.FirewallRuleChangedData();
+        data.setVirtualRouterUuid(vRouterUuid);
+        evtf.fire(FirewallCanonicalEvents.FIREWALL_RULE_CHANGED_PATH, data);
     }
 }

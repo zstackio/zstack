@@ -20,14 +20,6 @@ public class VpcFirewallInventory  {
         return this.name;
     }
 
-    public java.util.List ruleSets;
-    public void setRuleSets(java.util.List ruleSets) {
-        this.ruleSets = ruleSets;
-    }
-    public java.util.List getRuleSets() {
-        return this.ruleSets;
-    }
-
     public java.util.List refs;
     public void setRefs(java.util.List refs) {
         this.refs = refs;

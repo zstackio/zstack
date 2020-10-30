@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
+public class ApplyRuleSetChangesAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult value;
+        public org.zstack.sdk.ApplyRuleSetChangesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,8 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean force = false;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +60,8 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult value = res.getResult(org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult() : value; 
+        org.zstack.sdk.ApplyRuleSetChangesResult value = res.getResult(org.zstack.sdk.ApplyRuleSetChangesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ApplyRuleSetChangesResult() : value; 
 
         return ret;
     }
@@ -94,10 +91,10 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/primary-storage/{uuid}/actions";
+        info.path = "/vpcfirewalls/ruleSets/apply/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "cleanUpImageCacheOnPrimaryStorage";
+        info.parameterName = "applyRuleSetChanges";
         return info;
     }
 

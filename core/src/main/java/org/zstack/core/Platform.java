@@ -404,8 +404,8 @@ public class Platform {
             msId = UUID.nameUUIDFromBytes(getManagementServerIp().getBytes()).toString().replaceAll("-", "");
 
             collectDynamicObjectMetadata();
-            validateGlobalProperty();
             linkGlobalProperty();
+            validateGlobalProperty();
             prepareDefaultDbProperties();
             callStaticInitMethods();
             encryptedMethodsMap = getAllEncryptPassword();

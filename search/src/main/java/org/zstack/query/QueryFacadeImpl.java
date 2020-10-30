@@ -397,14 +397,6 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
     }
 
-    private void filter(List inventories, String filterType) {
-        if (filterType.split(":").length < 2) {
-            throw new OperationFailureException(argerr("filterName must be formatted as [filterType:condition(s)]"));
-        }
-        QueryBelongFilter filter = getBelongFilter(filterType);
-        filter.filter(inventories, filterType.split(":")[1]);
-    }
-
     private boolean addUuidBeforeZQLQuery(APIQueryMessage msg, Class inventoryClass) {
         if (msg.getFilterName() == null) {
             return false;
@@ -456,26 +448,17 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                 reply.setTotal(result.total);
             }
             if (result.inventories != null) {
-                if (msg.getFilterName() != null) {
-                    filter(result.inventories, msg.getFilterName());
-                    if (msg.isCount()) {
-                        reply.setTotal(result.inventories.size());
-                    } else {
-                        if (addUuid) {
-                            result.inventories.forEach(i -> {
-                                removeUuidAfterZQLQuery(i);
-                            });
-                        }
-                        replySetter.invoke(reply, result.inventories);
-                    }
-
-                    if (msg.isReplyWithCount()) {
-                        reply.setTotal(result.inventories.size());
-                    }
+                if (msg.isCount()) {
+                    reply.setTotal(result.inventories.size());
                 } else {
                     replySetter.invoke(reply, result.inventories);
                 }
+                if (msg.isReplyWithCount()) {
+                    reply.setTotal(result.inventories.size());
+                    replySetter.invoke(reply, result.inventories);
+                }
             }
+
             bus.reply(msg, reply);
         } catch (OperationFailureException of) {
             throw of;
@@ -582,6 +565,14 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             }
         }
 
+        String filterName = msg.getFilterName();
+        if (!StringUtils.isEmpty(filterName)) {
+            QueryBelongFilter exp = validateFilterNameAndGetExp(filterName);
+            String condition = exp.convertFilterNameToZQL(filterName);
+            sb.add(sb.contains("where")?" and ":" where ");
+            sb.add(String.format(" %s %s ", SYSTEM_TAG, condition));
+        }
+
         if (!msg.isCount() && msg.isReplyWithCount() && msg.getFilterName() == null) {
             sb.add("return with (total)");
         }
@@ -610,6 +601,13 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
         ZQLContext.cleanAPISession();
         return result;
+    }
+
+    private QueryBelongFilter validateFilterNameAndGetExp(String filterName) {
+        if (filterName.split(":").length < 2) {
+            throw new OperationFailureException(argerr("filterName must be formatted as [filterType:condition(s)]"));
+        }
+        return getBelongFilter(filterName);
     }
 
     private void collectInventoryAPINoSee() {

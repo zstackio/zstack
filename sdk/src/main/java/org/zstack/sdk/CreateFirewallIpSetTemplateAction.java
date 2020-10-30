@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
+public class CreateFirewallIpSetTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult value;
+        public org.zstack.sdk.CreateFirewallIpSetTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,23 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sourceValue;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String destValue;
+
+    @Param(required = true, validValues = {"ip","port"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public org.zstack.sdk.IpSetType type;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean force = false;
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +75,8 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult value = res.getResult(org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult() : value; 
+        org.zstack.sdk.CreateFirewallIpSetTemplateResult value = res.getResult(org.zstack.sdk.CreateFirewallIpSetTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CreateFirewallIpSetTemplateResult() : value; 
 
         return ret;
     }
@@ -93,11 +105,11 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/primary-storage/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/vpcfirewalls/ipset/templates";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "cleanUpImageCacheOnPrimaryStorage";
+        info.parameterName = "params";
         return info;
     }
 

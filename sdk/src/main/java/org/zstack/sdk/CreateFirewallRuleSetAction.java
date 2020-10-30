@@ -28,10 +28,7 @@ public class CreateFirewallRuleSetAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vpcFirewallUuid;
-
-    @Param(required = true, validValues = {"drop","accept","reject"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"drop","accept","reject"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String actionType;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

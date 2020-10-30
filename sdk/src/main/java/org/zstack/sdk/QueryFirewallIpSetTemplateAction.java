@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
+public class QueryFirewallIpSetTemplateAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult value;
+        public org.zstack.sdk.QueryFirewallIpSetTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,35 +25,6 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean force = false;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -63,8 +34,8 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult value = res.getResult(org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CleanUpImageCacheOnPrimaryStorageResult() : value; 
+        org.zstack.sdk.QueryFirewallIpSetTemplateResult value = res.getResult(org.zstack.sdk.QueryFirewallIpSetTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryFirewallIpSetTemplateResult() : value; 
 
         return ret;
     }
@@ -93,11 +64,11 @@ public class CleanUpImageCacheOnPrimaryStorageAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/primary-storage/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/vpcfirewalls/ipset/templates";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "cleanUpImageCacheOnPrimaryStorage";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

@@ -20,14 +20,6 @@ public class VpcFirewallRuleSetInventory  {
         return this.name;
     }
 
-    public java.lang.String vpcFirewallUuid;
-    public void setVpcFirewallUuid(java.lang.String vpcFirewallUuid) {
-        this.vpcFirewallUuid = vpcFirewallUuid;
-    }
-    public java.lang.String getVpcFirewallUuid() {
-        return this.vpcFirewallUuid;
-    }
-
     public ActionType actionType;
     public void setActionType(ActionType actionType) {
         this.actionType = actionType;
@@ -52,6 +44,14 @@ public class VpcFirewallRuleSetInventory  {
         return this.isDefault;
     }
 
+    public boolean isApplied;
+    public void setIsApplied(boolean isApplied) {
+        this.isApplied = isApplied;
+    }
+    public boolean getIsApplied() {
+        return this.isApplied;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
@@ -66,6 +66,14 @@ public class VpcFirewallRuleSetInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
+    }
+
+    public java.util.List rules;
+    public void setRules(java.util.List rules) {
+        this.rules = rules;
+    }
+    public java.util.List getRules() {
+        return this.rules;
     }
 
 }
