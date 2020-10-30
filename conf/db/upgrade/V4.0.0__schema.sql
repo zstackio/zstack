@@ -90,3 +90,61 @@ DROP PROCEDURE IF EXISTS updateArchiveTicketStatusHistoryVO;
 
 ALTER TABLE `zstack`.`TicketStatusHistoryVO` CHANGE sequence sequence INT AUTO_INCREMENT UNIQUE;
 ALTER TABLE `zstack`.`ArchiveTicketStatusHistoryVO` CHANGE sequence sequence INT AUTO_INCREMENT UNIQUE;
+
+CREATE TABLE IF NOT EXISTS  `zstack`.`SlbOfferingVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `managementNetworkUuid` varchar(32) NOT NULL,
+    `imageUuid` varchar(32) NOT NULL,
+    `zoneUuid` varchar(32) NOT NULL,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT fkSlbOfferingVOL3NetworkEO FOREIGN KEY (managementNetworkUuid) REFERENCES L3NetworkEO (uuid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`SlbGroupVO` (
+    `uuid` VARCHAR(32) NOT NULL UNIQUE,
+    `name` VARCHAR(255) NOT NULL,
+    `backendType` VARCHAR(255) NOT NULL,
+    `deployType` VARCHAR(255) NOT NULL,
+    `description` VARCHAR(2048) DEFAULT NULL,
+    `slbOfferingUuid` VARCHAR(32) NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`),
+    CONSTRAINT fkSlbGroupVOSlbOfferingVO FOREIGN KEY (slbOfferingUuid) REFERENCES SlbOfferingVO (uuid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS  `zstack`.`SlbLoadBalancerVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `slbGroupUuid` varchar(32) NOT NULL,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT fkSlbLoadBalancerVOSlbGroupVO FOREIGN KEY (slbGroupUuid) REFERENCES SlbGroupVO (uuid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS  `zstack`.`SlbVmInstanceVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `slbGroupUuid` varchar(32) NOT NULL,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT fkSlbVmInstanceVOSlbGroupVO FOREIGN KEY (slbGroupUuid) REFERENCES SlbGroupVO (uuid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`SlbGroupL3NetworkRefVO` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `slbGroupUuid` varchar(32) NOT NULL,
+    `l3NetworkUuid` varchar(32) NOT NULL,
+    `type` varchar(255) NOT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    CONSTRAINT fkSlbGroupL3NetworkRefVOSlbGroupVO FOREIGN KEY (slbGroupUuid) REFERENCES SlbGroupVO (uuid) ON DELETE CASCADE,
+    CONSTRAINT fkSlbGroupL3NetworkRefVOL3NetworkEO FOREIGN KEY (l3NetworkUuid) REFERENCES L3NetworkEO (uuid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS  `zstack`.`SlbGroupVipVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `slbGroupUuid` varchar(32) DEFAULT NULL,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT fkSlbGroupVipVOSlbGroupVO FOREIGN KEY (slbGroupUuid) REFERENCES SlbGroupVO (uuid) ON DELETE CASCADE,
+    CONSTRAINT fkSlbGroupVipVOVipVO FOREIGN KEY (uuid) REFERENCES VipVO (uuid) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`LoadBalancerVO` ADD COLUMN `type` varchar(255) DEFAULT "Shared";

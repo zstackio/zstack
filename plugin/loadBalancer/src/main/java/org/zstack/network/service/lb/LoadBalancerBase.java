@@ -161,10 +161,11 @@ public class LoadBalancerBase {
                     return;
                 }
 
+                LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(self.getType().toString());
                 if (self.getProviderType() == null) {
                     // not initialized yet
                     deleteListenersForLoadBalancer(msg.getLoadBalancerUuid());
-                    dbf.remove(Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).find());
+                    f.deleteLoadBalancer(self);
                     bus.reply(msg, reply);
                     chain.next();
                     return;
@@ -175,7 +176,7 @@ public class LoadBalancerBase {
                     @Override
                     public void success() {
                         deleteListenersForLoadBalancer(msg.getLoadBalancerUuid());
-                        dbf.removeByPrimaryKey(msg.getLoadBalancerUuid(), LoadBalancerVO.class);
+                        f.deleteLoadBalancer(self);
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -811,6 +812,7 @@ public class LoadBalancerBase {
     }
 
     private void delete(final Completion completion) {
+        LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(self.getType().toString());
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("delete-lb-%s", self.getUuid()));
         chain.then(new ShareFlow() {
@@ -867,10 +869,10 @@ public class LoadBalancerBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-                        struct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        struct.setUseFor(f.getNetworkServiceType());
                         struct.setServiceUuid(self.getUuid());
                         if (self.getProviderType() != null) {
-                            /*release vip peer networks*/
+                            /* release vip peer networks */
                             struct.setServiceProvider(self.getProviderType());
                             List<String> guestNetworkUuids = getGuestNetworkUuids();
                             if (!guestNetworkUuids.isEmpty()) {
@@ -911,9 +913,9 @@ public class LoadBalancerBase {
                                             .eq(LoadBalancerListenerVO_.uuid,lbListener.getUuid())
                                             .delete();
                                 }
-                                sql(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid,self.getUuid()).delete();
                             }
                         }.execute();
+                        f.deleteLoadBalancer(self);
                         completion.success();
                     }
                 });
@@ -1095,6 +1097,7 @@ public class LoadBalancerBase {
 
     @Transactional(readOnly = true)
     private String findProviderTypeByVmNicUuid(String nicUuid) {
+        /* TODO: this function can not work for server group only has ip address */
         String sql = "select l3 from L3NetworkVO l3, VmNicVO nic where nic.l3NetworkUuid = l3.uuid and nic.uuid = :uuid";
         TypedQuery<L3NetworkVO> q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
         q.setParameter("uuid", nicUuid);
@@ -1322,9 +1325,8 @@ public class LoadBalancerBase {
 
 
     private LoadBalancerBackend getBackend() {
-        DebugUtils.Assert(self.getProviderType() != null, "providerType cannot be null");
-
-        return lbMgr.getBackend(self.getProviderType());
+        LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(self.getType().toString());
+        return f.getLoadBalancerBackend(self);
     }
 
     private LoadBalancerStruct makeStruct() {

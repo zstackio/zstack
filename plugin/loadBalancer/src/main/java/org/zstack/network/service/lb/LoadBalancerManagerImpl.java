@@ -86,6 +86,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     @Autowired
     private ResourceConfigFacade rcf;
     private Map<String, LoadBalancerBackend> backends = new HashMap<String, LoadBalancerBackend>();
+    private Map<String, LoadBalancerFactory> lbFactories = new HashMap<String, LoadBalancerFactory>();
 
     @Override
     @MessageSafe
@@ -140,6 +141,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     private void handle(final APICreateLoadBalancerMsg msg) {
         final APICreateLoadBalancerEvent evt = new APICreateLoadBalancerEvent(msg.getId());
 
+        String type = msg.getType() != null ? msg.getType() : LoadBalancerType.Shared.toString();
+        LoadBalancerFactory f = getLoadBalancerFactory(type);
         final VipInventory vip = VipInventory.valueOf(dbf.findByUuid(msg.getVipUuid(), VipVO.class));
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("create-lb-%s", msg.getName()));
@@ -154,15 +157,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        vo = new LoadBalancerVO();
-                        vo.setName(msg.getName());
-                        vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
-                        vo.setDescription(msg.getDescription());
-                        vo.setVipUuid(msg.getVipUuid());
-                        vo.setState(LoadBalancerState.Enabled);
-                        vo.setAccountUuid(msg.getSession().getAccountUuid());
-                        vo = dbf.persistAndRefresh(vo);
-
+                        vo = f.persistLoadBalancer(msg);
                         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), LoadBalancerVO.class.getSimpleName());
                         /* put vo to data for rollback */
                         data.put(LoadBalancerConstants.Param.LOAD_BALANCER_VO, vo);
@@ -172,7 +167,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         LoadBalancerVO vo = (LoadBalancerVO)data.get(LoadBalancerConstants.Param.LOAD_BALANCER_VO);
-                        dbf.remove(vo);
+                        f.deleteLoadBalancer(vo);
                         trigger.rollback();
                     }
                 });
@@ -185,7 +180,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-                        struct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        struct.setUseFor(f.getNetworkServiceType());
                         struct.setServiceUuid(vo.getUuid());
                         Vip v = new Vip(vip.getUuid());
                         v.setStruct(struct);
@@ -207,7 +202,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     public void rollback(FlowRollback trigger, Map data) {
                         LoadBalancerVO vo = (LoadBalancerVO)data.get(LoadBalancerConstants.Param.LOAD_BALANCER_VO);
                         ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
-                        struct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        struct.setUseFor(f.getNetworkServiceType());
                         struct.setServiceUuid(vo.getUuid());
                         Vip v = new Vip(vip.getUuid());
                         v.setStruct(struct);
@@ -373,6 +368,15 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             }
 
             backends.put(bkd.getNetworkServiceProviderType(), bkd);
+        }
+
+        for (LoadBalancerFactory f : pluginRgty.getExtensionList(LoadBalancerFactory.class)) {
+            LoadBalancerFactory old = lbFactories.get(f.getType());
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate LoadBalancerFactory[%s, %s]", old.getClass(), f.getType()));
+            }
+
+            lbFactories.put(f.getType(), f);
         }
 
         prepareSystemTags();
@@ -619,6 +623,15 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             throw new CloudRuntimeException(String.format("cannot find LoadBalancerBackend[provider type:%s]", providerType));
         }
         return bkd;
+    }
+
+    @Override
+    public LoadBalancerFactory getLoadBalancerFactory(String type) {
+        LoadBalancerFactory f = lbFactories.get(type);
+        if (f == null) {
+            throw new CloudRuntimeException(String.format("cannot find LoadBalancerFactory[type:%s]", type.toString()));
+        }
+        return f;
     }
 
     @Override

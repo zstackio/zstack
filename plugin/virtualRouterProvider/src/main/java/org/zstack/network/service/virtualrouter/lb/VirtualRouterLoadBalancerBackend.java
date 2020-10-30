@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -90,6 +91,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     private LbConfigProxy proxy;
     @Autowired
     private VirtualRouterHaBackend haBackend;
+    @Autowired
+    private LoadBalancerManager lbMgr;
 
     private String REFRESH_CERTIFICATE_TASK = "refreshCertificate";
     private String DELETE_CERTIFICATE_TASK = "deleteCertificate";
@@ -113,6 +116,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         }
 
         return msg;
+    }
+
+    protected String getLoadLancerServiceProvider(List<String> l3Uuids) {
+        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
+                l3Uuids.get(0), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
+        return providerType.toString();
     }
 
     @Transactional(readOnly = true)
@@ -705,8 +714,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     private void stopVip(final LoadBalancerStruct struct, final List<VmNicInventory> nics, final Completion completion) {
+        LoadBalancerVO loadBalancerVO = dbf.findByUuid(struct.getLb().getUuid(), LoadBalancerVO.class);
+        LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(loadBalancerVO.getType().toString());
         ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
-        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+        vipStruct.setUseFor(f.getNetworkServiceType());
         vipStruct.setServiceUuid(struct.getLb().getUuid());
 
         Set<String> guestL3NetworkUuids = nics.stream()
@@ -729,27 +740,25 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             return;
         }
         vipStruct.setPeerL3NetworkUuids(new ArrayList<>(guestL3NetworkUuids));
-        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
-                vipStruct.getPeerL3NetworkUuids().get(0), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
-        vipStruct.setServiceProvider(providerType.toString());
+        vipStruct.setServiceProvider(getLoadLancerServiceProvider(vipStruct.getPeerL3NetworkUuids()));
         Vip v = new Vip(struct.getLb().getVipUuid());
         v.setStruct(vipStruct);
         v.stop(completion);
     }
 
     private void acquireVip(final VirtualRouterVmInventory vr, final LoadBalancerStruct struct, final List<VmNicInventory> nics, final Completion completion) {
-        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
-        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
-        vipStruct.setServiceUuid(struct.getLb().getUuid());
-        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vr.getGuestL3Networks().get(0),
-                LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
-        vipStruct.setServiceProvider(providerType.toString());
+        LoadBalancerVO loadBalancerVO = dbf.findByUuid(struct.getLb().getUuid(), LoadBalancerVO.class);
+        LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(loadBalancerVO.getType().toString());
 
+        ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+        vipStruct.setUseFor(f.getNetworkServiceType());
+        vipStruct.setServiceUuid(struct.getLb().getUuid());
         Set<String> guestL3NetworkUuids = nics.stream()
                 .map(VmNicInventory::getL3NetworkUuid)
                 .collect(Collectors.toSet());
 
         vipStruct.setPeerL3NetworkUuids(new ArrayList<>(guestL3NetworkUuids));
+        vipStruct.setServiceProvider(getLoadLancerServiceProvider(vipStruct.getPeerL3NetworkUuids()));
         Vip v = new Vip(struct.getLb().getVipUuid());
         v.setStruct(vipStruct);
         v.acquire(new Completion(completion) {
@@ -787,6 +796,9 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         final VipInventory vip = VipInventory.valueOf(dbf.findByUuid(struct.getLb().getVipUuid(), VipVO.class));
 
+        LoadBalancerVO loadBalancerVO = dbf.findByUuid(struct.getLb().getUuid(), LoadBalancerVO.class);
+        LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(loadBalancerVO.getType().toString());
+
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("start-vr-%s-and-refresh-lb-%s", vr.getUuid(), struct.getLb().getUuid()));
         chain.then(new ShareFlow() {
@@ -820,11 +832,9 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
                         ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
-                        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        vipStruct.setUseFor(f.getNetworkServiceType());
                         vipStruct.setServiceUuid(struct.getLb().getUuid());
-                        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vr.getGuestL3Networks().get(0),
-                                LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
-                        vipStruct.setServiceProvider(providerType.toString());
+                        vipStruct.setServiceProvider(getLoadLancerServiceProvider(vr.getGuestL3Networks()));
                         vipStruct.setPeerL3NetworkUuids(vr.getGuestL3Networks());
 
                         Vip v = new Vip(struct.getLb().getVipUuid());
@@ -851,12 +861,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         }
 
                         ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
-                        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        vipStruct.setUseFor(f.getNetworkServiceType());
                         vipStruct.setServiceUuid(struct.getLb().getUuid());
                         vipStruct.setPeerL3NetworkUuids(vr.getGuestL3Networks());
-                        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vr.getGuestL3Networks().get(0),
-                                LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
-                        vipStruct.setServiceProvider(providerType.toString());
+                        vipStruct.setServiceProvider(getLoadLancerServiceProvider(vr.getGuestL3Networks()));
                         Vip v = new Vip(vip.getUuid());
                         v.setStruct(vipStruct);
                         v.stop(new Completion(trigger) {
@@ -930,6 +938,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         final boolean separateVr = LoadBalancerSystemTags.SEPARATE_VR.hasTag(struct.getLb().getUuid());
 
+        LoadBalancerVO loadBalancerVO = dbf.findByUuid(struct.getLb().getUuid(), LoadBalancerVO.class);
+        LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(loadBalancerVO.getType().toString());
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("add-nic-to-vr-lb-%s", struct.getLb().getUuid()));
         chain.then(new ShareFlow() {
@@ -947,7 +957,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
                             ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
-                            vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                            vipStruct.setUseFor(f.getNetworkServiceType());
                             vipStruct.setServiceUuid(struct.getLb().getUuid());
                             Set<String> guestL3NetworkUuids = nics.stream()
                                                                   .map(VmNicInventory::getL3NetworkUuid)
@@ -991,12 +1001,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                 return;
                             }
                             ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
-                            vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                            vipStruct.setUseFor(f.getNetworkServiceType());
                             vipStruct.setServiceUuid(struct.getLb().getUuid());
                             vipStruct.setPeerL3NetworkUuids(new ArrayList<>(guestL3NetworkUuids));
-                            NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
-                                    vr.getGuestL3Networks().get(0), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
-                            vipStruct.setServiceProvider(providerType.toString());
+                            vipStruct.setServiceProvider(getLoadLancerServiceProvider(vipStruct.getPeerL3NetworkUuids()));
                             Vip v = new Vip(vip.getUuid());
                             v.setStruct(vipStruct);
                             v.stop(new Completion(trigger) {
@@ -1148,16 +1156,13 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
                             ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
-                            vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                            vipStruct.setUseFor(f.getNetworkServiceType());
                             vipStruct.setServiceUuid(struct.getLb().getUuid());
-                            NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vr.getGuestL3Networks().get(0),
-                                    LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
-                            vipStruct.setServiceProvider(providerType.toString());
-
                             Set<String> guestL3NetworkUuids = nics.stream()
                                     .map(VmNicInventory::getL3NetworkUuid)
                                     .collect(Collectors.toSet());
                             vipStruct.setPeerL3NetworkUuids(new ArrayList<>(guestL3NetworkUuids));
+                            vipStruct.setServiceProvider(getLoadLancerServiceProvider(vipStruct.getPeerL3NetworkUuids()));
 
                             Vip v = new Vip(vip.getUuid());
                             v.setStruct(vipStruct);
@@ -1202,12 +1207,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             }
                             
                             ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
-                            vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                            vipStruct.setUseFor(f.getNetworkServiceType());
                             vipStruct.setServiceUuid(struct.getLb().getUuid());
-                            NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vr.getGuestL3Networks().get(0),
-                                    LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
-                            vipStruct.setServiceProvider(providerType.toString());
                             vipStruct.setPeerL3NetworkUuids(new ArrayList<>(guestL3NetworkUuids));
+                            vipStruct.setServiceProvider(getLoadLancerServiceProvider(vipStruct.getPeerL3NetworkUuids()));
 
                             Vip v = new Vip(vip.getUuid());
                             v.setStruct(vipStruct);
@@ -1393,6 +1396,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             return;
         }
 
+        LoadBalancerVO loadBalancerVO = dbf.findByUuid(struct.getLb().getUuid(), LoadBalancerVO.class);
+        LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(loadBalancerVO.getType().toString());
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("remove-Listener-from-vr-lb-%s", struct.getLb().getUuid()));
         chain.then(new ShareFlow() {
@@ -1428,7 +1433,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
-                        vipStruct.setUseFor(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+                        vipStruct.setUseFor(f.getNetworkServiceType());
                         vipStruct.setServiceUuid(struct.getLb().getUuid());
 
                         Set<String> nicUuids = listener.getVmNicRefs().stream().map(LoadBalancerListenerVmNicRefInventory::getVmNicUuid).collect(Collectors.toSet());
@@ -1454,9 +1459,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         }
 
                         vipStruct.setPeerL3NetworkUuids(new ArrayList<>(guestL3NetworkUuids));
-                        NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
-                                vipStruct.getPeerL3NetworkUuids().get(0), LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE);
-                        vipStruct.setServiceProvider(providerType.toString());
+                        vipStruct.setServiceProvider(getLoadLancerServiceProvider(vipStruct.getPeerL3NetworkUuids()));
                         Vip v = new Vip(struct.getLb().getVipUuid());
                         v.setStruct(vipStruct);
                         v.stop(new Completion(trigger) {

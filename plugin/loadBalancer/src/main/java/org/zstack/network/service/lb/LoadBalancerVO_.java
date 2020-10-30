@@ -16,6 +16,7 @@ public class LoadBalancerVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<LoadBalancerVO, String> providerType;
     public static volatile SingularAttribute<LoadBalancerVO, String> vipUuid;
     public static volatile SingularAttribute<LoadBalancerVO, LoadBalancerState> state;
+    public static volatile SingularAttribute<LoadBalancerVO, LoadBalancerType> type;
     public static volatile SingularAttribute<LoadBalancerVO, Timestamp> createDate;
     public static volatile SingularAttribute<LoadBalancerVO, Timestamp> lastOpDate;
 }
