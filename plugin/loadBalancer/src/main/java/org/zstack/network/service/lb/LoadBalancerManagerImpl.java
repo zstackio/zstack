@@ -167,7 +167,9 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         LoadBalancerVO vo = (LoadBalancerVO)data.get(LoadBalancerConstants.Param.LOAD_BALANCER_VO);
-                        f.deleteLoadBalancer(vo);
+                        if (vo != null) {
+                            f.deleteLoadBalancer(vo);
+                        }
                         trigger.rollback();
                     }
                 });

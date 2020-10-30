@@ -1766,10 +1766,13 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     private List<LoadBalancerStruct> getLoadBalancersByL3Networks(String l3Uuid, boolean detach) {
         List<LoadBalancerStruct> ret = new ArrayList<>();
-        String sql = "select distinct l from LoadBalancerListenerVO l, LoadBalancerListenerVmNicRefVO ref, VmNicVO nic, UsedIpVO ip " +
-                "where l.uuid=ref.listenerUuid and ref.status in (:status) and ref.vmNicUuid=nic.uuid and nic.uuid=ip.vmNicUuid and ip.l3NetworkUuid=(:l3Uuid)";
+        String sql = "select distinct l from LoadBalancerListenerVO l, LoadBalancerListenerVmNicRefVO ref, VmNicVO nic, " +
+                " UsedIpVO ip, LoadBalancerVO lb where lb.type = :lbType and lb.uuid = l.loadBalancerUuid " +
+                " and l.uuid=ref.listenerUuid and ref.status in (:status) " +
+                " and ref.vmNicUuid=nic.uuid and nic.uuid=ip.vmNicUuid and ip.l3NetworkUuid=(:l3Uuid)";
 
         List<LoadBalancerListenerVO> listenerVOS = SQL.New(sql, LoadBalancerListenerVO.class).param("l3Uuid", l3Uuid)
+                .param("lbType", LoadBalancerType.Shared)
                 .param("status", asList(LoadBalancerVmNicStatus.Active, LoadBalancerVmNicStatus.Pending)).list();
         if (listenerVOS == null || listenerVOS.isEmpty()){
             return ret;
