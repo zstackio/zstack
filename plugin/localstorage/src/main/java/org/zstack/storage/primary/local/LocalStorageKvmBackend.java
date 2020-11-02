@@ -2275,6 +2275,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        logger.info(String.format("bjw cross primary %s, %s , %s ", struct.CrossPrimaryStorage(), struct.getDestHostUuid(), struct.getDestPrimaryStorageUuid()));
                         if (struct.CrossPrimaryStorage()) {
                             downloadImageToRemoteCache(ImageInventory.valueOf(context.image), struct.getDestHostUuid(), struct.getDestPrimaryStorageUuid(), new ReturnValueCompletion<String>(trigger) {
                                 @Override
@@ -2347,7 +2348,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             return;
                         }
 
-                        reserveCapacityOnHost(struct.getDestHostUuid(), context.baseImageCacheSize, struct.getDestPrimaryStorageUuid());
+                        reserveCapacityOnHost(struct.getDestHostUuid(), context.baseImageCacheSize, struct.CrossPrimaryStorage() ? struct.getDestPrimaryStorageUuid(): self.getUuid());
                         s = true;
                         trigger.next();
                     }
