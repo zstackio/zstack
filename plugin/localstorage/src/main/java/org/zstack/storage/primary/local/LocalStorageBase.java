@@ -13,6 +13,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
@@ -43,6 +44,7 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
 import org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply.HostDiskCapacity;
 import org.zstack.storage.primary.local.MigrateBitsStruct.ResourceInfo;
+import org.zstack.storage.volume.VolumeBase;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.utils.CollectionDSL;
@@ -171,7 +173,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                 //2.select hosts that have enough capacity
                 double physicalThreshold = physicalCapacityMgr.getRatio(self.getUuid());
-                // remove ps uuid check when filter dest host, fix ZSTAC-29483
                 List<String> hostUuids = SQL.New("select href.hostUuid" +
                         " from LocalStorageHostRefVO href" +
                         " where href.hostUuid !=" +
@@ -184,11 +185,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         " and (href.totalPhysicalCapacity * (1.0 - :thres)) <= href.availablePhysicalCapacity" +
                         " and href.availablePhysicalCapacity != 0" +
                         " and href.availableCapacity >= :size" +
+                        " and href.primaryStorageUuid = :psUuid" +
                         " group by href.hostUuid")
                         .param("volUuid", msg.getVolumeUuid())
                         .param("rtype", VolumeVO.class.getSimpleName())
                         .param("thres", physicalThreshold)
-                        .param("size", size).list();
+                        .param("size", size)
+                        .param("psUuid", self.getUuid()).list();
 
                 if (hostUuids.isEmpty()) {
                     reply.setInventories(new ArrayList<HostInventory>());
@@ -260,6 +263,14 @@ public class LocalStorageBase extends PrimaryStorageBase {
             bus.publish(evt);
             return;
         }
+
+        VolumeStatus status = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).select(VolumeVO_.status).findValue();
+        if (status == VolumeStatus.Migrating) {
+            evt.setError(operr("The volume [uuid:%s] status is migrating! wait for migrate action finish", msg.getVolumeUuid()));
+            bus.publish(evt);
+            return;
+        }
+
 
         class MigrateStruct {
             private boolean isRootVolume = false;
@@ -423,13 +434,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             public void run(FlowTrigger trigger, Map data) {
                 String __name__ = "migrate-volume-on-local-storage";
 
-                if (struct.isRootVolume) {
-                }
                 MigrateVolumeOnLocalStorageMsg mmsg = new MigrateVolumeOnLocalStorageMsg();
-                String destPrimaryStorageUuid = msg.getDestPrimaryStorageUuid();
-                if (destPrimaryStorageUuid != null) {
-                    mmsg.setDestPrimaryStorageUuid(destPrimaryStorageUuid);
-                }
                 mmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                 mmsg.setDestHostUuid(msg.getDestHostUuid());
                 mmsg.setVolumeUuid(msg.getVolumeUuid());
@@ -568,14 +573,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
             return;
         }
 
-        if (ref.getHostUuid().equals(msg.getDestHostUuid())) {
-            logger.debug(String.format("the volume[uuid:%s] is already on the host[uuid:%s], no need to migrate",
-                    msg.getVolumeUuid(), msg.getDestHostUuid()));
-            bus.reply(msg, reply);
-            completion.done();
-            return;
-        }
-
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("migrate-volume-%s-local-storage-%s-to-host-%s",
                 msg.getVolumeUuid(), msg.getPrimaryStorageUuid(), msg.getDestHostUuid()));
@@ -662,6 +659,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             private void checkIfCrossPrimaryStorage(MigrateBitsStruct struct) {
                 String originPrimaryStorageUuid = struct.getVolume().getPrimaryStorageUuid();
+                if (struct.getDestPrimaryStorageUuid() == null) {
+                    struct.setCrossPrimaryStorage(false);
+                    return;
+                }
                 if (!StringUtils.equals(struct.getDestPrimaryStorageUuid(), originPrimaryStorageUuid)) {
                     struct.setCrossPrimaryStorage(true);
                 }
@@ -675,7 +676,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(msg.getDestHostUuid(), requiredSize, struct.getDestPrimaryStorageUuid());
+                        reserveCapacityOnHost(msg.getDestHostUuid(), requiredSize, struct.CrossPrimaryStorage() ? struct.getDestPrimaryStorageUuid(): self.getUuid());
                         trigger.next();
                     }
 
@@ -815,14 +816,15 @@ public class LocalStorageBase extends PrimaryStorageBase {
                                             .update();
                                 }
 
-                                LocalStorageResourceRefVO vo = Q.New(LocalStorageResourceRefVO.class)
-                                        .eq(LocalStorageResourceRefVO_.resourceUuid, volumeRefVO.getResourceUuid())
-                                        .eq(LocalStorageResourceRefVO_.primaryStorageUuid, struct.getDestPrimaryStorageUuid())
-                                        .eq(LocalStorageResourceRefVO_.hostUuid, msg.getDestHostUuid())
-                                        .find();
-                                reply.setInventory(LocalStorageResourceRefInventory.valueOf(vo));
                             }
                         }.execute();
+
+                        LocalStorageResourceRefVO vo = Q.New(LocalStorageResourceRefVO.class)
+                                .eq(LocalStorageResourceRefVO_.resourceUuid, volumeRefVO.getResourceUuid())
+                                .eq(LocalStorageResourceRefVO_.primaryStorageUuid, struct.CrossPrimaryStorage() ? struct.getDestPrimaryStorageUuid(): self.getUuid())
+                                .eq(LocalStorageResourceRefVO_.hostUuid, msg.getDestHostUuid())
+                                .find();
+                        reply.setInventory(LocalStorageResourceRefInventory.valueOf(vo));
 
                         bus.reply(msg, reply);
                     }

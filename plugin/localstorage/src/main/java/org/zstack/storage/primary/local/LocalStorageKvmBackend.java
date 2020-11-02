@@ -2347,7 +2347,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             return;
                         }
 
-                        reserveCapacityOnHost(struct.getDestHostUuid(), context.baseImageCacheSize, struct.getDestPrimaryStorageUuid());
+                        reserveCapacityOnHost(struct.getDestHostUuid(), context.baseImageCacheSize, struct.CrossPrimaryStorage() ? struct.getDestPrimaryStorageUuid(): self.getUuid());
                         s = true;
                         trigger.next();
                     }
