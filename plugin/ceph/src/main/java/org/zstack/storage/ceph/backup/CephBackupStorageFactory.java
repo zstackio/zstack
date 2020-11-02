@@ -9,17 +9,19 @@ import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
 import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.storage.ceph.*;
 import org.zstack.tag.SystemTagCreator;
 
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
+import java.util.Iterator;
 import java.util.List;
 
 /**
  * Created by frank on 7/27/2015.
  */
-public class CephBackupStorageFactory implements BackupStorageFactory, CephCapacityUpdateExtensionPoint, Component {
+public class CephBackupStorageFactory implements BackupStorageFactory, CephCapacityUpdateExtensionPoint, Component, CephBackupStorageAllocatorFilterExtensionPoint {
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -149,5 +151,33 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
     @Override
     public boolean stop() {
         return true;
+    }
+
+    @Override
+    public List<BackupStorageInventory> filterBackupStorageCandidates(List<BackupStorageInventory> candidates, PrimaryStorageVO ps) {
+        if(!ps.getType().equals("Ceph")){
+            return candidates;
+        }
+
+        String sql = "select cbs.uuid from CephBackupStorageVO cbs, CephPrimaryStorageVO cps " +
+                " where cps.uuid = :psUuid and cps.fsid = cbs.fsid";
+
+        TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
+        q.setParameter("psUuid", ps.getUuid());
+
+        if(q.getResultList().isEmpty() || q.getResultList().get(0) == null){
+            return candidates;
+        }
+
+        String bsUuid = q.getResultList().get(0);
+        Iterator<BackupStorageInventory> iterator = candidates.iterator();
+        while(iterator.hasNext()){
+            if(iterator.next().getType().equals("Ceph")){
+                if(!iterator.next().getUuid().equals(bsUuid)){
+                    iterator.remove();
+                }
+            }
+        }
+        return candidates;
     }
 }

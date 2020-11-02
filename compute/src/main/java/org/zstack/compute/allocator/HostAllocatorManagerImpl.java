@@ -32,7 +32,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
-import org.zstack.header.storage.primary.PrimaryStorageFindBackupStorage;
 import org.zstack.header.storage.primary.PrimaryStorageType;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
@@ -102,6 +101,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             bus.dealWithUnknownMessage(msg);
         }
     }
+
 
     @Transactional(readOnly = true)
     private void handle(APIGetCandidateBackupStorageForCreatingImageMsg msg) {
