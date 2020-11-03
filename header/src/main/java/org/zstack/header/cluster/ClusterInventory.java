@@ -115,6 +115,7 @@ public class ClusterInventory implements Serializable {
         inv.setZoneUuid(vo.getZoneUuid());
         inv.setType(vo.getType());
         inv.setLastOpDate(vo.getLastOpDate());
+        inv.setArchitecture(vo.getArchitecture());
         return inv;
     }
 
