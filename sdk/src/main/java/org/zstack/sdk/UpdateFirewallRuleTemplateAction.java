@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateFirewallRuleAction extends AbstractAction {
+public class UpdateFirewallRuleTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateFirewallRuleAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateFirewallRuleResult value;
+        public org.zstack.sdk.UpdateFirewallRuleTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,10 @@ public class UpdateFirewallRuleAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String ruleSetUuid;
-
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
+
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
 
     @Param(required = true, validValues = {"drop","reject","accept"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String action;
@@ -43,10 +43,10 @@ public class UpdateFirewallRuleAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String sourcePort;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String sourceIp;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String destIp;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -64,11 +64,17 @@ public class UpdateFirewallRuleAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public boolean enableLog = false;
 
-    @Param(required = true, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String state;
+    @Param(required = false, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String state = "enable";
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -102,8 +108,8 @@ public class UpdateFirewallRuleAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateFirewallRuleResult value = res.getResult(org.zstack.sdk.UpdateFirewallRuleResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateFirewallRuleResult() : value; 
+        org.zstack.sdk.UpdateFirewallRuleTemplateResult value = res.getResult(org.zstack.sdk.UpdateFirewallRuleTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateFirewallRuleTemplateResult() : value; 
 
         return ret;
     }
@@ -133,10 +139,10 @@ public class UpdateFirewallRuleAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/vpcfirewalls/rules/{uuid}/actions";
+        info.path = "/vpcfirewalls/rules/template/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateFirewallRule";
+        info.parameterName = "updateFirewallRuleTemplate";
         return info;
     }
 

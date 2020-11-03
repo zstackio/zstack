@@ -4,23 +4,7 @@ import org.zstack.sdk.ActionType;
 import org.zstack.sdk.ProtocolType;
 import org.zstack.sdk.FirewallRuleState;
 
-public class VpcFirewallRuleInventory  {
-
-    public java.lang.String uuid;
-    public void setUuid(java.lang.String uuid) {
-        this.uuid = uuid;
-    }
-    public java.lang.String getUuid() {
-        return this.uuid;
-    }
-
-    public java.lang.String ruleSetUuid;
-    public void setRuleSetUuid(java.lang.String ruleSetUuid) {
-        this.ruleSetUuid = ruleSetUuid;
-    }
-    public java.lang.String getRuleSetUuid() {
-        return this.ruleSetUuid;
-    }
+public class VpcFirewallRuleTemplateInventory  {
 
     public ActionType action;
     public void setAction(ActionType action) {
@@ -36,6 +20,14 @@ public class VpcFirewallRuleInventory  {
     }
     public ProtocolType getProtocol() {
         return this.protocol;
+    }
+
+    public java.lang.String name;
+    public void setName(java.lang.String name) {
+        this.name = name;
+    }
+    public java.lang.String getName() {
+        return this.name;
     }
 
     public java.lang.String destPort;
@@ -70,14 +62,6 @@ public class VpcFirewallRuleInventory  {
         return this.destIp;
     }
 
-    public java.lang.Integer ruleNumber;
-    public void setRuleNumber(java.lang.Integer ruleNumber) {
-        this.ruleNumber = ruleNumber;
-    }
-    public java.lang.Integer getRuleNumber() {
-        return this.ruleNumber;
-    }
-
     public java.lang.String allowStates;
     public void setAllowStates(java.lang.String allowStates) {
         this.allowStates = allowStates;
@@ -102,20 +86,20 @@ public class VpcFirewallRuleInventory  {
         return this.icmpTypeName;
     }
 
-    public boolean isApplied;
-    public void setIsApplied(boolean isApplied) {
-        this.isApplied = isApplied;
+    public int ruleNumber;
+    public void setRuleNumber(int ruleNumber) {
+        this.ruleNumber = ruleNumber;
     }
-    public boolean getIsApplied() {
-        return this.isApplied;
+    public int getRuleNumber() {
+        return this.ruleNumber;
     }
 
-    public boolean expired;
-    public void setExpired(boolean expired) {
-        this.expired = expired;
+    public boolean enableLog;
+    public void setEnableLog(boolean enableLog) {
+        this.enableLog = enableLog;
     }
-    public boolean getExpired() {
-        return this.expired;
+    public boolean getEnableLog() {
+        return this.enableLog;
     }
 
     public FirewallRuleState state;
@@ -156,6 +140,22 @@ public class VpcFirewallRuleInventory  {
     }
     public java.sql.Timestamp getLastOpDate() {
         return this.lastOpDate;
+    }
+
+    public java.lang.String accountUuid;
+    public void setAccountUuid(java.lang.String accountUuid) {
+        this.accountUuid = accountUuid;
+    }
+    public java.lang.String getAccountUuid() {
+        return this.accountUuid;
+    }
+
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
+        this.uuid = uuid;
+    }
+    public java.lang.String getUuid() {
+        return this.uuid;
     }
 
 }

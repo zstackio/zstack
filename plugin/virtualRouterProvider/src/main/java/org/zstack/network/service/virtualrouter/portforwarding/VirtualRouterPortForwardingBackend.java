@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.*;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -63,6 +64,8 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
     private PortForwardingConfigProxy proxy;
     @Autowired
     private VirtualRouterHaBackend haBackend;
+    @Autowired
+    private EventFacade evtf;
 
 
     private String APPLY_PF_TASK = "applyPF";
@@ -408,10 +411,17 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
                     logger.debug(info);
                     proxy.attachNetworkService(vrVO.getUuid(), PortForwardingRuleVO.class.getSimpleName(),
                             pfs.stream().map(PortForwardingRuleTO::getUuid).collect(Collectors.toList()));
+                    fireFirewallEvent(vr.getUuid());
                     completion.success();
                 }
             }
         });
+    }
+
+    private void fireFirewallEvent(String vRouterUuid) {
+        FirewallCanonicalEvents.FirewallRuleChangedData data = new FirewallCanonicalEvents.FirewallRuleChangedData();
+        data.setVirtualRouterUuid(vRouterUuid);
+        evtf.fire(FirewallCanonicalEvents.FIREWALL_RULE_CHANGED_PATH, data);
     }
 
     @Override
@@ -489,6 +499,7 @@ public class VirtualRouterPortForwardingBackend extends AbstractVirtualRouterBac
                     String info = String.format("sync port forwardings on virtual router[uuid:%s] successfully",
                             vrVO.getUuid());
                     logger.debug(info);
+                    fireFirewallEvent(vr.getUuid());
                     completion.success();
                 }
             }
