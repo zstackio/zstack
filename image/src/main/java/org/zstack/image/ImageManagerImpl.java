@@ -2172,8 +2172,8 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     @Override
     public List<HostVO> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
         List<HostVO> result = new ArrayList<>();
-        String architecture = null;
-        if (spec.getImage() != null) {
+        String architecture = spec.getArchitecture();
+        if (architecture == null && spec.getImage() != null) {
             architecture = spec.getImage().getArchitecture();
         }
         for (HostVO host : candidates) {
