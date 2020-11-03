@@ -29,7 +29,7 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"off","all", "filter"})
     public static GlobalConfig VM_SPICE_STREAMING_MODE= new GlobalConfig(CATEGORY, "spiceStreamingMode");
     @GlobalConfigValidation
-    @BindResourceConfig(value = {VmInstanceVO.class})
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig NUMA = new GlobalConfig(CATEGORY, "numa");
     @GlobalConfigValidation
     public static GlobalConfig VM_BOOT_MENU = new GlobalConfig(CATEGORY, "bootMenu");
