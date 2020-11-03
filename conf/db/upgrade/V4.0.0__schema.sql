@@ -175,6 +175,19 @@ CALL checkVirtualhostsExist();
 DROP PROCEDURE IF EXISTS checkVirtualhostsExist;
 
 ALTER TABLE `zstack`.`VpcRouterVmVO` ADD COLUMN `generalVersion` varchar(32) DEFAULT NULL;
+CREATE TABLE `IAM2ProjectRoleVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `iam2ProjectRoleType` VARCHAR(64) NOT NULL,
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE IAM2VirtualIDRoleRefVO DROP FOREIGN KEY fkIAM2VirtualIDRoleRefVOIAM2VirtualIDVO;
+ALTER TABLE IAM2VirtualIDRoleRefVO DROP FOREIGN KEY fkIAM2VirtualIDRoleRefVORoleVO;
+ALTER TABLE IAM2VirtualIDRoleRefVO ADD COLUMN `targetAccountUuid` varchar(32) NOT NULL;
+ALTER TABLE IAM2VirtualIDRoleRefVO DROP PRIMARY KEY, ADD PRIMARY KEY(virtualIDUuid, roleUuid, targetAccountUuid);
+ALTER TABLE IAM2VirtualIDRoleRefVO ADD CONSTRAINT fkIAM2VirtualIDRoleRefVOIAM2VirtualIDVO FOREIGN KEY (virtualIDUuid) REFERENCES IAM2VirtualIDVO (uuid) ON DELETE CASCADE;
+ALTER TABLE IAM2VirtualIDRoleRefVO ADD CONSTRAINT fkIAM2VirtualIDRoleRefVORoleVO FOREIGN KEY (roleUuid) REFERENCES RoleVO (uuid) ON DELETE CASCADE;
+CREATE INDEX idxIAM2VirtualIDRoleRefVOTargetAccountUuid ON IAM2VirtualIDRoleRefVO (targetAccountUuid);
 
 # upgrade PROJECT_OPERATOR_OF_PROJECT and PROJECT_ADMIN_OF_PROJECT to new data structure
 DROP PROCEDURE IF EXISTS upgradeProjectOperatorSystemTags;
@@ -235,19 +248,6 @@ END $$
 DELIMITER ;
 CALL upgradeProjectAdminSystemTags();
 
-CREATE TABLE `IAM2ProjectRoleVO` (
-    `uuid` VARCHAR(32) NOT NULL,
-    `iam2ProjectRoleType` VARCHAR(64) NOT NULL,
-    PRIMARY KEY (`uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-ALTER TABLE IAM2VirtualIDRoleRefVO DROP FOREIGN KEY fkIAM2VirtualIDRoleRefVOIAM2VirtualIDVO;
-ALTER TABLE IAM2VirtualIDRoleRefVO DROP FOREIGN KEY fkIAM2VirtualIDRoleRefVORoleVO;
-ALTER TABLE IAM2VirtualIDRoleRefVO ADD COLUMN `targetAccountUuid` varchar(32) NOT NULL;
-ALTER TABLE IAM2VirtualIDRoleRefVO DROP PRIMARY KEY, ADD PRIMARY KEY(virtualIDUuid, roleUuid, targetAccountUuid);
-ALTER TABLE IAM2VirtualIDRoleRefVO ADD CONSTRAINT fkIAM2VirtualIDRoleRefVOIAM2VirtualIDVO FOREIGN KEY (virtualIDUuid) REFERENCES IAM2VirtualIDVO (uuid) ON DELETE CASCADE;
-ALTER TABLE IAM2VirtualIDRoleRefVO ADD CONSTRAINT fkIAM2VirtualIDRoleRefVORoleVO FOREIGN KEY (roleUuid) REFERENCES RoleVO (uuid) ON DELETE CASCADE;
-CREATE INDEX idxIAM2VirtualIDRoleRefVOTargetAccountUuid ON IAM2VirtualIDRoleRefVO (targetAccountUuid);
 
 DELIMITER $$
 CREATE PROCEDURE insertDefaultIAM2Organization()
