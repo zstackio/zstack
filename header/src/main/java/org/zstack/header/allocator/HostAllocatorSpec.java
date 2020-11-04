@@ -33,6 +33,7 @@ public class HostAllocatorSpec {
     private boolean fullAllocate;
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
+    private String architecture;
 
     public AllocationScene getAllocationScene() {
         return allocationScene;
@@ -200,6 +201,14 @@ public class HostAllocatorSpec {
         this.image = image;
     }
 
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
+    }
+
     public static HostAllocatorSpec fromAllocationMsg(AllocateHostMsg msg) {
         HostAllocatorSpec spec = new HostAllocatorSpec();
         spec.setAllocatorStrategy(msg.getAllocatorStrategy());
@@ -226,6 +235,7 @@ public class HostAllocatorSpec {
         spec.setRequiredBackupStorageUuid(msg.getRequiredBackupStorageUuid());
         spec.setRequiredPrimaryStorageUuids(msg.getRequiredPrimaryStorageUuids());
         spec.setAllocationScene(msg.getAllocationScene());
+        spec.setArchitecture(msg.getArchitecture());
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()){
             spec.setSystemTags(new ArrayList<String>(msg.getSystemTags()));
         }
