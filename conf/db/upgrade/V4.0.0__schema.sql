@@ -179,7 +179,7 @@ BEGIN
             LEAVE read_loop;
         END IF;
 
-        SET targetProjectUuid = SUBSTRING_INDEX(projectOperatorTag, '::', 1);
+        SET targetProjectUuid = SUBSTRING_INDEX(projectOperatorTag, '::', -1);
         SELECT `accountUuid` into targetAccountUuid FROM `IAM2ProjectAccountRefVO` WHERE `projectUuid` = targetProjectUuid LIMIT 1;
 
         INSERT INTO IAM2VirtualIDRoleRefVO (`virtualIDUuid`, `roleUuid`, `targetAccountUuid`) VALUES (iam2VirtualIDUuid, 'f2f474c60e7340c0a1d44080d5bde3a9', targetAccountUuid);
@@ -208,7 +208,7 @@ BEGIN
             LEAVE read_loop;
         END IF;
 
-        SET targetProjectUuid = SUBSTRING_INDEX(projectOperatorTag, '::', 1);
+        SET targetProjectUuid = SUBSTRING_INDEX(projectAdminTag, '::', -1);
         SELECT `accountUuid` into targetAccountUuid FROM `IAM2ProjectAccountRefVO` WHERE `projectUuid` = targetProjectUuid LIMIT 1;
 
         INSERT INTO IAM2VirtualIDRoleRefVO (`virtualIDUuid`, `roleUuid`, `targetAccountUuid`) VALUES (iam2VirtualIDUuid, 'f2f474c60e7340c0a1d44080d5bde3a9', targetAccountUuid);
