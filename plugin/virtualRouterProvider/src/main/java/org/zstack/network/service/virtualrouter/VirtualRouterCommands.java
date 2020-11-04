@@ -35,6 +35,7 @@ public class VirtualRouterCommands {
         private int restartDnsmasqAfterNumberOfSIGUSER1;
 		private String mgtCidr;
 		private String logLevel;
+		private List<String> timeServers;
 
 		public String getUuid() {
 			return uuid;
@@ -66,6 +67,14 @@ public class VirtualRouterCommands {
 
 		public void setLogLevel(String logLevel) {
 			this.logLevel = logLevel;
+		}
+
+		public List<String> getTimeServers() {
+			return timeServers;
+		}
+
+		public void setTimeServers(List<String> timeServers) {
+			this.timeServers = timeServers;
 		}
 	}
 
@@ -961,6 +970,23 @@ public class VirtualRouterCommands {
 	}
 
 	public static class ChangeDefaultNicRsp extends AgentResponse {
+
+	}
+
+	public static class ConfigureNtpCmd extends AgentCommand {
+		private List<String> timeServers;
+
+		public List<String> getTimeServers() {
+			return timeServers;
+		}
+
+		public void setTimeServers(List<String> timeServers) {
+			this.timeServers = timeServers;
+		}
+
+	}
+
+	public static class ConfigureNtpRsp extends AgentResponse {
 
 	}
 }

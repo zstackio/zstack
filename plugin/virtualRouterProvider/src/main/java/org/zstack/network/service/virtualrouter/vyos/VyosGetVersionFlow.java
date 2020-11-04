@@ -7,6 +7,8 @@ import org.zstack.appliancevm.ApplianceVmConstant;
 import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.appliancevm.ApplianceVmSpec;
 import org.zstack.appliancevm.ApplianceVmVO;
+import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -14,14 +16,12 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
-import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
-import org.zstack.network.service.virtualrouter.VirtualRouterManager;
-import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
+import org.zstack.network.service.virtualrouter.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -31,6 +31,8 @@ import org.zstack.utils.network.NetworkUtils;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by shixin.ruan on 2018/05/22.
@@ -135,6 +137,37 @@ public class VyosGetVersionFlow extends NoRollbackFlow {
                                     flowData.put(ApplianceVmConstant.Params.rebuildVip.toString(), returnValue.isRebuildVip());
                                 }
                                 trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "configure-ntp";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_CONFIGURE_NTP);
+                        VirtualRouterCommands.ConfigureNtpCmd cmd = new VirtualRouterCommands.ConfigureNtpCmd();
+
+                        cmd.setTimeServers(CoreGlobalProperty.CHRONY_SERVERS);
+                        restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<VirtualRouterCommands.ConfigureNtpRsp>(trigger) {
+                            @Override
+                            public void fail(ErrorCode err) {
+                                logger.debug(String.format("operation error, because:%s", err.getDetails()));
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void success(VirtualRouterCommands.ConfigureNtpRsp ret) {
+                                if (!ret.isSuccess()) {
+                                    logger.debug(String.format("operation error, because:%s", ret.getError()));
+                                }
+                                trigger.next();
+                            }
+
+                            @Override
+                            public Class<VirtualRouterCommands.ConfigureNtpRsp> getReturnClass() {
+                                return VirtualRouterCommands.ConfigureNtpRsp.class;
                             }
                         });
                     }
