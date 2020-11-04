@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.zwatch.monitorgroup.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateSharedBlockAction extends AbstractAction {
+public class DeleteEventRuleTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateSharedBlockAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateSharedBlockResult value;
+        public org.zstack.sdk.zwatch.monitorgroup.api.DeleteEventRuleTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,17 +28,8 @@ public class UpdateSharedBlockAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String sharedBlockGroupUuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String diskUuid;
+    @Param(required = false)
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -72,8 +63,8 @@ public class UpdateSharedBlockAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateSharedBlockResult value = res.getResult(org.zstack.sdk.UpdateSharedBlockResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateSharedBlockResult() : value; 
+        org.zstack.sdk.zwatch.monitorgroup.api.DeleteEventRuleTemplateResult value = res.getResult(org.zstack.sdk.zwatch.monitorgroup.api.DeleteEventRuleTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.monitorgroup.api.DeleteEventRuleTemplateResult() : value; 
 
         return ret;
     }
@@ -102,11 +93,11 @@ public class UpdateSharedBlockAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/primary-storage/sharedblockgroup/{sharedBlockGroupUuid}/sharedblocks/{uuid}/actions";
+        info.httpMethod = "DELETE";
+        info.path = "/zwatch/monitortemplates/evenrules/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateSharedBlock";
+        info.parameterName = "";
         return info;
     }
 

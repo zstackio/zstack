@@ -1,10 +1,10 @@
-package org.zstack.sdk.zwatch.alarm;
+package org.zstack.sdk.zwatch.monitorgroup.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateAlarmAction extends AbstractAction {
+public class AddMetricRuleTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateAlarmAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.zwatch.alarm.UpdateAlarmResult value;
+        public org.zstack.sdk.zwatch.monitorgroup.api.AddMetricRuleTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,47 @@ public class UpdateAlarmAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = false, maxLength = 2047, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String monitorTemplateUuid;
 
-    @Param(required = false, validValues = {"GreaterThanOrEqualTo","GreaterThan","LessThan","LessThanOrEqualTo"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"GreaterThanOrEqualTo","GreaterThan","LessThan","LessThanOrEqualTo"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String comparisonOperator;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
     public java.lang.Integer period;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String namespace;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String metricName;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
     public java.lang.Double threshold;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
     public java.lang.Integer repeatInterval;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List labels;
+
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {-1L,2147483647L}, noTrim = false)
-    public java.lang.Integer repeatCount;
+    public java.lang.Integer repeatCount = -1;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean enableRecovery;
+    public java.lang.Boolean enableRecovery = false;
 
     @Param(required = false, validValues = {"Emergent","Important","Normal"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String emergencyLevel;
+    public java.lang.String emergencyLevel = "Important";
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List actions;
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -90,8 +99,8 @@ public class UpdateAlarmAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.zwatch.alarm.UpdateAlarmResult value = res.getResult(org.zstack.sdk.zwatch.alarm.UpdateAlarmResult.class);
-        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.UpdateAlarmResult() : value; 
+        org.zstack.sdk.zwatch.monitorgroup.api.AddMetricRuleTemplateResult value = res.getResult(org.zstack.sdk.zwatch.monitorgroup.api.AddMetricRuleTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.monitorgroup.api.AddMetricRuleTemplateResult() : value; 
 
         return ret;
     }
@@ -120,11 +129,11 @@ public class UpdateAlarmAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/zwatch/alarms/{uuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/zwatch/monitortemplates/{monitorTemplateUuid}/metricrules";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateAlarm";
+        info.parameterName = "params";
         return info;
     }
 
