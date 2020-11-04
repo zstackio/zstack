@@ -22587,6 +22587,16 @@
     "fileName": "src/main/java/org/zstack/vmware/VMwareHelper.java"
   },
   {
+    "raw": "portgroup[%s] already exists on host[%s],please create again with other name or delete portgroup manually and attach to cluster again",
+    "en_US": "portgroup[%s] already exists on host[%s],please create again with other name or delete portgroup manually and attach to cluster again",
+    "zh_CN": "端口组[{0}]已经存在于物理机[{1}]，请重新使用另外的名字创建或者手动删除端口组然后重新加载到集群",
+    "arguments": [
+      "hvo.getName()"
+    ],
+    "line": 1833,
+    "fileName": "src/main/java/org/zstack/vmware/VMwareHelper.java"
+  },
+  {
     "raw": "create dvPortGroup failed for %s",
     "en_US": "create dvPortGroup failed for {0}",
     "zh_CN": "",
