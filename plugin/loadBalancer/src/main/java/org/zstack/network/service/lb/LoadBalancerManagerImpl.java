@@ -830,4 +830,5 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
         return new VipGetServiceReferencePoint.ServiceReference(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING, count, uuids == null?new ArrayList<>() : uuids);
     }
+
 }

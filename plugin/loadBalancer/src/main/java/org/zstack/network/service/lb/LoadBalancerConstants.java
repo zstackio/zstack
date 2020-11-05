@@ -74,6 +74,7 @@ public class LoadBalancerConstants {
 
     public static enum Param {
         LOAD_BALANCER_VO,
+        LOAD_BALANCER_LISTENER_LOAD_BALANCER_SERVERGROUP,
     }
 
     public static final int CONNECTION_IDLE_TIMEOUT_MIN = 0;
