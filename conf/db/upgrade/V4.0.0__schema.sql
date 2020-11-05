@@ -289,7 +289,7 @@ BEGIN
     DECLARE groupUuid VARCHAR(32);
     DECLARE projectUuid VARCHAR(32);
     DECLARE done INT DEFAULT FALSE;
-    DECLARE cur CURSOR FOR SELECT uuid, projectUuid  FROM zstack.IAM2VirtualIDGroupVO;
+    DECLARE cur CURSOR FOR SELECT virtualIDGroup.uuid, virtualIDGroup.projectUuid FROM zstack.IAM2VirtualIDGroupVO virtualIDGroup;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
     OPEN cur;
     read_loop: LOOP
