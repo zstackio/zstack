@@ -32,7 +32,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
-import org.zstack.header.storage.primary.PrimaryStorageFindBackupStorage;
 import org.zstack.header.storage.primary.PrimaryStorageType;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
@@ -142,6 +141,9 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
         APIGetCandidateBackupStorageForCreatingImageReply reply = new APIGetCandidateBackupStorageForCreatingImageReply();
         reply.setInventories(BackupStorageInventory.valueOf(q.getResultList()));
+        for(BackupStorageAllocatorFilterExtensionPoint ext : pluginRgty.getExtensionList(BackupStorageAllocatorFilterExtensionPoint.class)) {
+            reply.setInventories(ext.afterAllocatorBackupStorage(reply.getInventories(), ps));
+        }
         bus.reply(msg, reply);
     }
 

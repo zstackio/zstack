@@ -6,24 +6,30 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
+import org.zstack.header.allocator.BackupStorageAllocatorFilterExtensionPoint;
 import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.storage.ceph.*;
 import org.zstack.tag.SystemTagCreator;
 
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
+import java.util.Iterator;
 import java.util.List;
 
 /**
  * Created by frank on 7/27/2015.
  */
-public class CephBackupStorageFactory implements BackupStorageFactory, CephCapacityUpdateExtensionPoint, Component {
+public class CephBackupStorageFactory implements BackupStorageFactory, CephCapacityUpdateExtensionPoint, Component, BackupStorageAllocatorFilterExtensionPoint {
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
     private AnsibleFacade asf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public static final BackupStorageType type = new BackupStorageType(CephConstants.CEPH_BACKUP_STORAGE_TYPE);
 
@@ -149,5 +155,33 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
     @Override
     public boolean stop() {
         return true;
+    }
+
+    @Override
+    public List<BackupStorageInventory> afterAllocatorBackupStorage(List<BackupStorageInventory> candidates, PrimaryStorageVO ps) {
+        if(!ps.getType().equals(CephConstants.CEPH_PRIMARY_STORAGE_TYPE)) {
+            return candidates;
+        }
+
+        List<String> bss = null;
+        for(BackupStoragePrimaryStorageExtensionPoint ext : pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class)) {
+            bss = ext.getBackupStorageSupportedPS(ps.getUuid());
+        }
+        if(bss.isEmpty() || bss.get(0) == null){
+            return candidates;
+        }
+        String bsUuid = bss.get(0);
+
+        Iterator<BackupStorageInventory> iterator = candidates.iterator();
+        while(iterator.hasNext()) {
+            BackupStorageInventory bs = iterator.next();
+            if(!bs.getType().equals(CephConstants.CEPH_BACKUP_STORAGE_TYPE)) {
+                continue ;
+            }
+            if(!bs.getUuid().equals(bsUuid)) {
+                iterator.remove();
+            }
+        }
+        return candidates;
     }
 }
