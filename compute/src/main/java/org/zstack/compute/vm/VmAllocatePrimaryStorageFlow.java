@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -8,6 +9,7 @@ import org.zstack.core.asyncbatch.AsyncLoop;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -33,6 +35,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocatePrimaryStorageFlow implements Flow {
@@ -53,13 +56,12 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         HostInventory destHost = spec.getDestHost();
         final ImageInventory iminv = spec.getImageSpec().getInventory();
 
-        // get ps types from bs
-        SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
-        q.select(BackupStorageVO_.type);
-        q.add(BackupStorageVO_.uuid, Op.EQ, spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
-        String bsType = q.findValue();
-        List<String> primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
-        DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
+        // get ps types from image bs or cdroms bs
+        List<String> primaryStorageTypes = selectPsTypesFromImageBSOrCdRomBs(spec);
+        if (primaryStorageTypes.isEmpty()) {
+            trigger.fail(operr("the primaryStorageTypes is empty"));
+            return;
+        }
 
         // allocate ps for root volume
         AllocatePrimaryStorageMsg rmsg = new AllocatePrimaryStorageMsg();
@@ -162,5 +164,27 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         }
 
         chain.rollback();
+    }
+
+    private List<String> selectPsTypesFromImageBSOrCdRomBs(final VmInstanceSpec vmSpec) {
+        String imageBsType = findImageBsType(vmSpec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
+        List<String> PsTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(imageBsType);
+        List<VmInstanceSpec.CdRomSpec> cdRomsSpecs = vmSpec.getCdRomSpecs();
+        for (VmInstanceSpec.CdRomSpec cdRom : cdRomsSpecs) {
+            String cdRomBsType = findImageBsType(cdRom.getBackupStorageUuid());
+            if (cdRomBsType != null) {
+                PsTypes = (List<String>) CollectionUtils
+                        .intersection(hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(cdRomBsType), PsTypes);
+            }
+        }
+        return PsTypes;
+    }
+
+    private String findImageBsType(String bsUuid) {
+        String type = Q.New(BackupStorageVO.class)
+                .select(BackupStorageVO_.type)
+                .eq(BackupStorageVO_.uuid, bsUuid)
+                .findValue();
+        return type;
     }
 }
