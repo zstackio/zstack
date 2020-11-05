@@ -45,7 +45,9 @@ public class SharedLoadBalancerFactory implements LoadBalancerFactory {
 
     @Override
     public LoadBalancerBackend getLoadBalancerBackend(LoadBalancerVO vo) {
-        DebugUtils.Assert(vo.getProviderType() != null, "providerType cannot be null");
+        if (vo.getProviderType() == null) {
+            return null;
+        }
 
         return lbMgr.getBackend(vo.getProviderType());
     }

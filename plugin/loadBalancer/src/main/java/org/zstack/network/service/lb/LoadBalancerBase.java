@@ -1,10 +1,12 @@
 package org.zstack.network.service.lb;
 
+import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.AsyncLoop;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -57,8 +59,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.e;
-import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created by frank on 8/8/2015.
@@ -139,6 +140,8 @@ public class LoadBalancerBase {
             handle((AddVmNicToLoadBalancerMsg) msg);
         } else if (msg instanceof LoadBalancerGetPeerL3NetworksMsg) {
             handle((LoadBalancerGetPeerL3NetworksMsg) msg);
+        } else if (msg instanceof AddServerIpToLoadBalancerListenerMsg) {
+            handle((AddServerIpToLoadBalancerListenerMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -289,6 +292,11 @@ public class LoadBalancerBase {
 
     private void refresh(final Completion completion) {
         LoadBalancerBackend bkd = getBackend();
+        if (bkd == null) {
+            completion.success();
+            return;
+        }
+
         bkd.refresh(makeStruct(), completion);
     }
 
@@ -587,6 +595,20 @@ public class LoadBalancerBase {
             handle((APIAddAccessControlListToLoadBalancerMsg) msg);
         } else if (msg instanceof APIChangeLoadBalancerListenerMsg) {
             handle((APIChangeLoadBalancerListenerMsg) msg);
+        } else if (msg instanceof  APICreateLoadBalancerServerGroupMsg) {
+            handle((APICreateLoadBalancerServerGroupMsg) msg);
+        } else if (msg instanceof APIAddServerGroupToLoadBalancerListenerMsg){
+            handle((APIAddServerGroupToLoadBalancerListenerMsg) msg);
+        } else if (msg instanceof APIAddBackendServerToServerGroupMsg){
+            handle((APIAddBackendServerToServerGroupMsg) msg);
+        } else if (msg instanceof APIUpdateLoadBalancerServerGroupMsg) {
+            handle((APIUpdateLoadBalancerServerGroupMsg) msg);
+        } else if (msg instanceof APIRemoveServerGroupFromLoadBalancerListenerMsg){
+            handle((APIRemoveServerGroupFromLoadBalancerListenerMsg) msg);
+        } else if (msg instanceof APIRemoveBackendServerFromServerGroupMsg) {
+            handle((APIRemoveBackendServerFromServerGroupMsg) msg);
+        } else if (msg instanceof APIDeleteLoadBalancerServerGroupMsg) {
+            handle((APIDeleteLoadBalancerServerGroupMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -913,6 +935,20 @@ public class LoadBalancerBase {
                                             .eq(LoadBalancerListenerVO_.uuid,lbListener.getUuid())
                                             .delete();
                                 }
+
+                                List<String> serverGroupUuids = q(LoadBalancerServerGroupVO.class)
+                                        .eq(LoadBalancerServerGroupVO_.loadBalancerUuid, self.getUuid())
+                                        .select(LoadBalancerServerGroupVO_.uuid).listValues();
+                                if (serverGroupUuids != null && !serverGroupUuids.isEmpty()) {
+                                    sql(LoadBalancerServerGroupVmNicRefVO.class)
+                                            .in(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, serverGroupUuids)
+                                            .delete();
+                                    sql(LoadBalancerServerGroupServerIpVO.class)
+                                            .in(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid, serverGroupUuids)
+                                            .delete();
+                                    sql(LoadBalancerServerGroupVO.class)
+                                            .in(LoadBalancerServerGroupVO_.uuid, serverGroupUuids).delete();
+                                }
                             }
                         }.execute();
                         f.deleteLoadBalancer(self);
@@ -1064,7 +1100,6 @@ public class LoadBalancerBase {
                         .condAnd(LoadBalancerListenerVmNicRefVO_.vmNicUuid, Op.IN, vmNicUuids)
                         .condAnd(LoadBalancerListenerVmNicRefVO_.listenerUuid, Op.IN, listenerUuids)
                         .delete();
-                listenerUuids.stream().forEach(listenerUuid -> new LoadBalancerWeightOperator().deleteNicsWeight(vmNicUuids, listenerUuid));
                 completion.success();
             }
 
@@ -1113,6 +1148,7 @@ public class LoadBalancerBase {
 
         return null;
     }
+
 
     private void handle(final APIAddVmNicToLoadBalancerMsg msg) {
         final APIAddVmNicToLoadBalancerEvent evt = new APIAddVmNicToLoadBalancerEvent(msg.getId());
@@ -1233,7 +1269,7 @@ public class LoadBalancerBase {
 
                         dbf.persistCollection(refs);
                         if (msg.getSystemTags() != null) {
-                            new LoadBalancerWeightOperator().setWeight(msg.getSystemTags(), msg.getListenerUuid());
+
                         }
                         s = true;
                         trigger.next();
@@ -1924,5 +1960,523 @@ public class LoadBalancerBase {
                 return "change-lb-listener-certificate";
             }
         });
+    }
+
+    private void handle(final APICreateLoadBalancerServerGroupMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                createLoadBalanacerServerGroup(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "create loadbalancer servergroup";
+            }
+        });
+
+    }
+
+    private void createLoadBalanacerServerGroup(final APICreateLoadBalancerServerGroupMsg msg, final NoErrorCompletion completion){
+        final APICreateLoadBalancerServerGroupEvent evt = new APICreateLoadBalancerServerGroupEvent(msg.getId());
+        LoadBalancerServerGroupVO vo = new LoadBalancerServerGroupVO();
+        vo.setName(msg.getName());
+        vo.setDescription(msg.getDescription());
+        vo.setWeight(msg.getWeight());
+        vo.setLoadBalancerUuid(msg.getLoadBalancerUuid());
+        vo.setAccountUuid(msg.getSession().getAccountUuid());
+        vo.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
+        vo = dbf.persistAndRefresh(vo);
+
+        evt.setInventory(LoadBalancerServerGroupInventory.valueOf(vo));
+        bus.publish(evt);
+        completion.done();
+    }
+
+
+    private void handle(final APIAddServerGroupToLoadBalancerListenerMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                addserverGroupToListener(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "add-servergroup-to-loadbalancerlistener";
+            }
+        });
+    }
+
+
+    private void addserverGroupToListener(final APIAddServerGroupToLoadBalancerListenerMsg msg, final NoErrorCompletion completion){
+        final APIAddServerGroupToLoadBalancerListenerEvent event = new APIAddServerGroupToLoadBalancerListenerEvent(msg.getId());
+
+        LoadBalancerListenerServerGroupRefVO serverGroupRefVO = new LoadBalancerListenerServerGroupRefVO();
+        serverGroupRefVO.setListenerUuid(msg.getlistenerUuid());
+        serverGroupRefVO.setLoadBalancerServerGroupUuid(msg.getServerGroupUuid());
+        dbf.persist(serverGroupRefVO);
+
+        refresh(new Completion(completion) {
+            @Override
+            public void success() {
+                event.setInventory(LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getlistenerUuid(), LoadBalancerListenerVO.class)));
+                bus.publish(event);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                event.setError(errorCode);
+                completion.done();
+                bus.publish(event);
+            }
+        });
+    }
+
+    private void handle(final  AddServerIpToLoadBalancerListenerMsg msg){
+       //nothing
+    }
+
+
+    private void handle(final APIAddBackendServerToServerGroupMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+
+                addBackendServerToServergroup(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "add-backendServer-to-servergroup";
+            }
+        });
+    }
+
+    private void addBackendServerToServergroup(final APIAddBackendServerToServerGroupMsg msg, final NoErrorCompletion completion){
+        final APIAddBackendServerToServerGroupEvent event = new APIAddBackendServerToServerGroupEvent(msg.getId());
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+
+        chain.setName("add-backendserver-to-servergroup");
+        chain.then(new ShareFlow() {
+            List<LoadBalancerServerGroupVmNicRefVO> refVOs = new ArrayList<>();
+            List<LoadBalancerServerGroupServerIpVO> serverIpVOs = new ArrayList();
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "write-to-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (msg.getVmNicUuids() != null) {
+                            for (String vmNicUuid : msg.getVmNicUuids()) {
+                                LoadBalancerServerGroupVmNicRefVO refVO = new LoadBalancerServerGroupVmNicRefVO();
+                                refVO.setLoadBalancerServerGroupUuid(msg.getServerGroupUuid());
+                                refVO.setVmNicUuid(vmNicUuid);
+                                refVO.setStatus(LoadBalancerVmNicStatus.Active);
+                                refVOs.add(refVO);
+                            }
+                            dbf.persistCollection(refVOs);
+                        }
+
+                        if (msg.getServerIps() != null) {
+                            for (String serverIp : msg.getServerIps()) {
+                                LoadBalancerServerGroupServerIpVO serverIpVO = new LoadBalancerServerGroupServerIpVO();
+                                serverIpVO.setIpAddress(serverIp);
+                                serverIpVO.setLoadBalancerServerGroupUuid(msg.getServerGroupUuid());
+                                serverIpVO.setStatus(LoadBalancerBackendServerStatus.Active);
+                                serverIpVOs.add(serverIpVO);
+                            }
+                            dbf.persistCollection(serverIpVOs);
+                        }
+
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (msg.getVmNicUuids() != null && !msg.getVmNicUuids().isEmpty()) {
+                            SQL.New(LoadBalancerServerGroupVmNicRefVO.class)
+                                    .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                                    .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, msg.getVmNicUuids()).delete();
+                        }
+
+                        if (msg.getServerIps() != null && !msg.getServerIps().isEmpty()) {
+                            SQL.New(LoadBalancerServerGroupServerIpVO.class)
+                                    .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                                    .in(LoadBalancerServerGroupServerIpVO_.ipAddress, msg.getServerIps()).delete();
+                        }
+
+                        trigger.rollback();
+                    }
+
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "add-to-backend";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        refresh(new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        LoadBalancerServerGroupVO vo = dbf.findByUuid(msg.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+                        event.setInventory(LoadBalancerServerGroupInventory.valueOf(vo));
+                        completion.done();
+                        bus.publish(event);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        event.setError(errCode);
+                        completion.done();
+                        bus.publish(event);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void handle(APIUpdateLoadBalancerServerGroupMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                APIUpdateLoadBalancerServerGroupEvent evt = new APIUpdateLoadBalancerServerGroupEvent(msg.getId());
+                LoadBalancerServerGroupVO serverGroupVO = dbf.findByUuid(msg.getUuid(), LoadBalancerServerGroupVO.class);
+
+                boolean update = false;
+                boolean updateBackend = false;
+                if (msg.getName() != null && !msg.getName().equals(serverGroupVO.getName())) {
+                    serverGroupVO.setName(msg.getName());
+                    update = true;
+                }
+                if (msg.getDescription() != null && msg.getDescription().equals(serverGroupVO.getDescription())) {
+                    serverGroupVO.setDescription(msg.getDescription());
+                    update = true;
+                }
+
+                //update weight
+                if (msg.getWeight() != null && msg.getWeight() != serverGroupVO.getWeight()) {
+                    serverGroupVO.setWeight(msg.getWeight());
+                    update = true;
+                    updateBackend = true;
+                }
+
+                if (update) {
+                    dbf.update(serverGroupVO);
+                }
+
+                if (updateBackend) {
+                    refresh(new Completion(msg) {
+                        @Override
+                        public void success() {
+                            evt.setInventory(LoadBalancerServerGroupInventory.valueOf(serverGroupVO));
+                            bus.publish(evt);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            evt.setError(errorCode);
+                            bus.publish(evt);
+                            chain.next();
+                        }
+                    });
+                } else {
+                    evt.setInventory(LoadBalancerServerGroupInventory.valueOf(serverGroupVO));
+                    bus.publish(evt);
+                    chain.next();
+                }
+            }
+
+            @Override
+            public String getName() {
+                return "update-server-group";
+            }
+        });
+    }
+
+    private void handle(APIRemoveServerGroupFromLoadBalancerListenerMsg msg){
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                removeServerGroupFromListener(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "remove-servergroup-from-listener";
+            }
+        });
+    }
+
+    private void  removeServerGroupFromListener(APIRemoveServerGroupFromLoadBalancerListenerMsg msg,final NoErrorCompletion completion) {
+        final APIRemoveServerGroupFromLoadBalancerListenerEvent event = new APIRemoveServerGroupFromLoadBalancerListenerEvent(msg.getId());
+
+        SQL.New(LoadBalancerListenerServerGroupRefVO.class)
+                .eq(LoadBalancerListenerServerGroupRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid())
+                .delete();
+
+        refresh(new Completion(completion) {
+            @Override
+            public void success() {
+                event.setInventory(LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class)));
+                bus.publish(event);
+                completion.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                event.setError(errorCode);
+                bus.publish(event);
+                completion.done();
+            }
+        });
+    }
+
+    private void handle(APIRemoveBackendServerFromServerGroupMsg msg){
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                removeBackendServerGroupFromServergroup(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "remove-backendserver-from-servergroup";
+            }
+        });
+    }
+
+
+    private void removeBackendServerGroupFromServergroup(APIRemoveBackendServerFromServerGroupMsg msg,final NoErrorCompletion completion){
+        final APIRemoveBackendServerFromServerGroupEvent event = new APIRemoveBackendServerFromServerGroupEvent(msg.getId());
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName("remove-backendserver-to-servergroup");
+        chain.then(new ShareFlow() {
+            List<LoadBalancerServerGroupVmNicRefVO> refVOs = new ArrayList<>();
+            List<LoadBalancerServerGroupServerIpVO> serverIpVOs = new ArrayList();
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                     String __name__ = "write-to-db";
+
+                     @Override
+                     public void run(FlowTrigger trigger, Map data) {
+                         if (msg.getVmNicUuids() != null && !msg.getVmNicUuids().isEmpty()) {
+                             SQL.New(LoadBalancerServerGroupVmNicRefVO.class)
+                                     .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                                     .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, msg.getVmNicUuids()).delete();
+                         }
+
+                         if (msg.getServerIps() != null && !msg.getServerIps().isEmpty()) {
+                             SQL.New(LoadBalancerServerGroupServerIpVO.class)
+                                     .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                                     .in(LoadBalancerServerGroupServerIpVO_.ipAddress, msg.getServerIps()).delete();
+                         }
+
+                         trigger.next();
+                     }
+                });
+
+                flow(new NoRollbackFlow() {
+                     String __name__ = "refresh-backend";
+
+                     @Override
+                     public void run(FlowTrigger trigger, Map data) {
+                         refresh(new Completion(trigger) {
+                             @Override
+                             public void success() {
+                                 trigger.next();
+                             }
+
+                             @Override
+                             public void fail(ErrorCode errorCode) {
+                                 trigger.fail(errorCode);
+                             }
+                         });
+                     }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        LoadBalancerServerGroupVO vo = Q.New(LoadBalancerServerGroupVO.class)
+                                .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
+                                .find();
+                        event.setInventory(LoadBalancerServerGroupInventory.valueOf(vo));
+                        completion.done();
+                        bus.publish(event);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        event.setError(errCode);
+                        completion.done();
+                        bus.publish(event);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void handle(final APIDeleteLoadBalancerServerGroupMsg msg){
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                deleteServerGroup(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "delete-servergroup";
+            }
+        });
+    }
+
+    private void deleteServerGroup(APIDeleteLoadBalancerServerGroupMsg msg,final NoErrorCompletion completion){
+        APIDeleteLoadBalancerServerGroupEvent event = new APIDeleteLoadBalancerServerGroupEvent(msg.getId());
+
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName(String.format("delete-server-group-%s", msg.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "delete-from-db";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                boolean skipBackend = false;
+                LoadBalancerServerGroupVO groupVO = dbf.findByUuid(msg.getUuid(), LoadBalancerServerGroupVO.class);
+                if (groupVO.getLoadBalancerListenerServerGroupRefs().isEmpty()) {
+                    skipBackend = true;
+                } else if (groupVO.getLoadBalancerServerGroupServerIps().isEmpty() && groupVO.getLoadBalancerServerGroupVmNicRefs().isEmpty()) {
+                    skipBackend = true;
+                }
+                data.put(LoadBalancerConstants.Param.LOAD_BALANCER_LISTENER_LOAD_BALANCER_SERVERGROUP.toString(), skipBackend);
+                dbf.removeByPrimaryKey(msg.getUuid(), LoadBalancerServerGroupVO.class);
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
+            String __name__ = "refresh-to-backend";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                boolean skipBackend = (Boolean) data.get(LoadBalancerConstants.Param.LOAD_BALANCER_LISTENER_LOAD_BALANCER_SERVERGROUP.toString());
+                if (skipBackend) {
+                    trigger.next();
+                    return;
+                }
+
+                refresh(new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                bus.publish(event);
+                completion.done();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                event.setError(errCode);
+                bus.publish(event);
+                completion.done();
+            }
+        }).start();
     }
 }
