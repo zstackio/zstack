@@ -26,6 +26,8 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.AddressPoolVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO_;
 import org.zstack.network.service.vip.VipVO;
@@ -114,8 +116,21 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             validate((APIAddAccessControlListEntryMsg) msg);
         } else if (msg instanceof APIDeleteAccessControlListMsg) {
             validate((APIDeleteAccessControlListMsg) msg);
+        } else if (msg instanceof APIAddServerGroupToLoadBalancerListenerMsg){
+            validate((APIAddServerGroupToLoadBalancerListenerMsg) msg);
+        } else if (msg instanceof APICreateLoadBalancerServerGroupMsg){
+            validate((APICreateLoadBalancerServerGroupMsg) msg);
+        } else if (msg instanceof APIAddBackendServerToServerGroupMsg){
+            validate((APIAddBackendServerToServerGroupMsg) msg);
+        } else if (msg instanceof APIUpdateLoadBalancerServerGroupMsg) {
+            validate((APIUpdateLoadBalancerServerGroupMsg) msg);
+        } else if (msg instanceof APIRemoveServerGroupFromLoadBalancerListenerMsg){
+            validate((APIRemoveServerGroupFromLoadBalancerListenerMsg) msg);
+        } else if (msg instanceof APIRemoveBackendServerFromServerGroupMsg) {
+            validate((APIRemoveBackendServerFromServerGroupMsg) msg);
+        } else if (msg instanceof APIDeleteLoadBalancerServerGroupMsg) {
+            validate((APIDeleteLoadBalancerServerGroupMsg) msg);
         }
-
         return msg;
     }
 
@@ -718,4 +733,216 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         msg.setLoadBalancerUuid(listenerVO.getLoadBalancerUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, LoadBalancerConstants.SERVICE_ID, listenerVO.getLoadBalancerUuid());
     }
+
+
+    private void validate(APICreateLoadBalancerServerGroupMsg msg){
+        isexist(msg.getLoadBalancerUuid());
+    }
+
+    private void validate(APIDeleteLoadBalancerServerGroupMsg msg){
+        String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
+                .select(LoadBalancerServerGroupVO_.loadBalancerUuid)
+                .eq(LoadBalancerServerGroupVO_.uuid,msg.getUuid())
+                .findValue();
+        if (loadBalancerUuid == null || loadBalancerUuid.isEmpty())
+            throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent",msg.getUuid()));
+        msg.setLoadBalancerUuid(loadBalancerUuid);
+    }
+
+    private void validate(APIUpdateLoadBalancerServerGroupMsg msg){
+        String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
+                .select(LoadBalancerServerGroupVO_.loadBalancerUuid)
+                .eq(LoadBalancerServerGroupVO_.uuid,msg.getUuid())
+                .findValue();
+        if (loadBalancerUuid == null || loadBalancerUuid.isEmpty())
+            throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent",msg.getUuid()));
+        msg.setLoadBalancerUuid(loadBalancerUuid);
+    }
+
+    private void validate(APIAddBackendServerToServerGroupMsg msg){
+        boolean isNicExist = false;
+        boolean isIpExist = false;
+        logger.debug("anquan1");
+        if(msg.getVmNicUuids() != null && !msg.getVmNicUuids().isEmpty()){
+            Set<String> l3Uuids = new HashSet<>(Q.New(VmNicVO.class)
+                    .select(VmNicVO_.l3NetworkUuid)
+                    .in(VmNicVO_.uuid, msg.getVmNicUuids())
+                    .listValues());
+            DebugUtils.Assert(!l3Uuids.isEmpty(), "cannot find the l3Network");
+
+            Set<String> networksAttachedLbService = new HashSet<>(Q.New(NetworkServiceL3NetworkRefVO.class)
+                    .select(NetworkServiceL3NetworkRefVO_.l3NetworkUuid)
+                    .in(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, l3Uuids)
+                    .eq(NetworkServiceL3NetworkRefVO_.networkServiceType, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)
+                    .listValues());
+
+            l3Uuids.removeAll(networksAttachedLbService);
+            if (l3Uuids.size() > 0) {
+                throw new ApiMessageInterceptionException(
+                        operr("L3 networks[uuids:%s] of the vm nics has no network service[%s] enabled",
+                                l3Uuids, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING));
+            }
+
+            List<String> existingNics = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                    .select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid)
+                    .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,msg.getVmNicUuids())
+                    .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                    .listValues();
+            if (!existingNics.isEmpty()) {
+                throw new ApiMessageInterceptionException(operr("the vm nics[uuid:%s] are already on the load balancer servegroup [uuid:%s]", existingNics, msg.getServerGroupUuid()));
+            }
+
+            isNicExist = true;
+        }
+
+        List <String> serverIps = msg.getServerIps();
+        if(serverIps != null && !serverIps.isEmpty()){
+            for(String serverip:serverIps){
+                if(!isIp(serverip)){
+                    throw new ApiMessageInterceptionException(operr("the ip[ipaddr:%s] are already on the load balancer servegroup [uuid:%s]", serverip, msg.getServerGroupUuid()));
+                }
+
+            }
+
+            Set<String> existingServerIps = new HashSet<>(Q.New(LoadBalancerServerGroupServerIpVO.class)
+                    .select(LoadBalancerServerGroupServerIpVO_.ipAddress)
+                    .in(LoadBalancerServerGroupServerIpVO_.ipAddress,msg.getServerIps())
+                    .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                    .listValues());
+            if (!existingServerIps.isEmpty()) {
+                throw new ApiMessageInterceptionException(operr("the server ips [uuid:%s] are already on the load balancer servegroup [uuid:%s]", existingServerIps, msg.getServerGroupUuid()));
+            }
+
+            isIpExist = true;
+        }
+        logger.debug("anquan2");
+
+        if( isNicExist || isIpExist){
+            String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
+                    .select(LoadBalancerServerGroupVO_.loadBalancerUuid)
+                    .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
+                    .findValue();
+            if (loadBalancerUuid == null || loadBalancerUuid.isEmpty())
+                throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent",msg.getServerGroupUuid()));
+            msg.setLoadBalancerUuid(loadBalancerUuid);
+        }else{
+            throw new ApiMessageInterceptionException(argerr("vmnic or ip is null"));
+        }
+    }
+
+    private void validate(APIRemoveBackendServerFromServerGroupMsg msg){
+        boolean isNicExist = false;
+        boolean isIpExist = false;
+
+        List<String> vmNicUuids =  msg.getVmNicUuids();
+        if(vmNicUuids != null && !vmNicUuids.isEmpty()){
+            Set<String> existingNics = new HashSet<>(Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                    .select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid)
+                    .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,msg.getVmNicUuids())
+                    .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                    .listValues()
+            );
+
+            if(existingNics.isEmpty()) {
+                throw new ApiMessageInterceptionException(operr("vmnics are all not in servergroup [%s]",msg.getServerGroupUuid()));
+            }else{
+                isNicExist = true;
+                msg.setVmNicUuids(new ArrayList<>(existingNics));
+            }
+        }
+
+        List <String> serverIps = msg.getServerIps();
+        if(serverIps!=null && !serverIps.isEmpty()){
+            Set<String> existingServerIps = new HashSet<>(Q.New(LoadBalancerServerGroupServerIpVO.class)
+                    .select(LoadBalancerServerGroupServerIpVO_.ipAddress)
+                    .in(LoadBalancerServerGroupServerIpVO_.ipAddress,msg.getServerIps())
+                    .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                    .listValues());
+            if(existingServerIps.isEmpty()){
+                throw new ApiMessageInterceptionException(operr("serverips are all not in servergroup [%s]", msg.getServerGroupUuid()));
+            }else{
+                isIpExist = true;
+                msg.setServerIps(new ArrayList<>(existingServerIps));
+            }
+        }
+
+        if(isNicExist || isIpExist ){
+            String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
+                    .select(LoadBalancerServerGroupVO_.loadBalancerUuid)
+                    .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
+                    .findValue();
+            if (loadBalancerUuid == null || loadBalancerUuid.isEmpty())
+                throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent",msg.getServerGroupUuid()));
+            msg.setLoadBalancerUuid(loadBalancerUuid);
+        }else{
+            throw new ApiMessageInterceptionException(argerr("vmnic or ip is null"));
+        }
+    }
+
+    private void validate(APIAddServerGroupToLoadBalancerListenerMsg msg){
+        List<LoadBalancerListenerServerGroupRefVO> existingRefs
+                = Q.New(LoadBalancerListenerServerGroupRefVO.class)
+                    .eq(LoadBalancerListenerServerGroupRefVO_.loadBalancerServerGroupUuid,msg.getLoadBalancerUuid())
+                    .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid,msg.getlistenerUuid())
+                    .list();
+        if(existingRefs != null && !existingRefs.isEmpty()){
+            throw new ApiMessageInterceptionException(operr("server group[uuid:%s} are added to listener [uuid:%s]",msg.getServerGroupUuid(),msg.getlistenerUuid()));
+        }
+
+        String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
+                .select(LoadBalancerServerGroupVO_.loadBalancerUuid)
+                .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
+                .findValue();
+        if (loadBalancerUuid == null || loadBalancerUuid.isEmpty())
+            throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent",msg.getServerGroupUuid()));
+        msg.setLoadBalancerUuid(loadBalancerUuid);
+    }
+
+    private void validate(APIRemoveServerGroupFromLoadBalancerListenerMsg msg){
+        List<LoadBalancerListenerServerGroupRefVO> existingRefs
+                = Q.New(LoadBalancerListenerServerGroupRefVO.class)
+                .eq(LoadBalancerListenerServerGroupRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid())
+                .list();
+        if(existingRefs == null || existingRefs.isEmpty()){
+            throw new ApiMessageInterceptionException(operr("server group[uuid:%s} are not in to listener [uuid:%s]",msg.getServerGroupUuid(),msg.getListenerUuid()));
+        }
+
+        String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
+                .select(LoadBalancerServerGroupVO_.loadBalancerUuid)
+                .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
+                .findValue();
+        if (loadBalancerUuid == null || loadBalancerUuid.isEmpty())
+            throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent",msg.getServerGroupUuid()));
+        msg.setLoadBalancerUuid(loadBalancerUuid);
+    }
+
+
+    private boolean isexist(String loadBalancerUuid){
+        long count = Q.New(LoadBalancerVO.class)
+                .eq(LoadBalancerVO_.uuid,loadBalancerUuid)
+                .count();
+        if(count == 0){
+            throw new ApiMessageInterceptionException(argerr("loadbalacerUuid [%s] is non-existent",loadBalancerUuid));
+        }else{
+            return true;
+        }
+    }
+
+    private boolean isIp(String ip){
+        if ( ip != null && !ip.isEmpty()) {
+            String regex = "([1-9]|[1-9][0-9]|1\\d\\d|2[0-4]\\d|25[0-5])\\." +
+                    "([1-9]|[1-9][0-9]|1\\d\\d|2[0-4]\\d|25[0-5])\\." +
+                    "([1-9]|[1-9][0-9]|1\\d\\d|2[0-4]\\d|25[0-5])\\." +
+                    "([1-9]|[1-9][0-9]|1\\d\\d|2[0-4]\\d|25[0-5])";
+            if (ip.matches(regex)) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
+    }
+
+
 }
