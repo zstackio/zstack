@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -8,6 +9,7 @@ import org.zstack.core.asyncbatch.AsyncLoop;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -53,12 +55,22 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         HostInventory destHost = spec.getDestHost();
         final ImageInventory iminv = spec.getImageSpec().getInventory();
 
-        // get ps types from bs
+        // get ps types from image bs or cdroms bs
         SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
         q.select(BackupStorageVO_.type);
         q.add(BackupStorageVO_.uuid, Op.EQ, spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
         String bsType = q.findValue();
         List<String> primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
+        List<VmInstanceSpec.CdRomSpec> cdRomsSpecs = spec.getCdRomSpecs();
+        if (!cdRomsSpecs.isEmpty()) {
+            for (VmInstanceSpec.CdRomSpec cdRom : cdRomsSpecs) {
+                BackupStorageVO cdRomBs = Q.New(BackupStorageVO.class).eq(BackupStorageVO_.uuid, cdRom.getBackupStorageUuid()).find();
+                if (cdRomBs != null) {
+                    primaryStorageTypes = (List<String>) CollectionUtils
+                            .intersection(hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(cdRomBs.getType()), primaryStorageTypes);
+                }
+            }
+        }
         DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
 
         // allocate ps for root volume
