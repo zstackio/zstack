@@ -830,7 +830,7 @@ public class Platform {
                     ErrorCodeElaboration messages = null;
                     for (ErrorCode c: errList.getCauses()) {
                         ErrorCode lcError = getCoreError(c);
-                        if (lcError.getElaboration() != null) {
+                        if (lcError.getElaboration() != null && !lcError.getElaboration().equals(elas) && !lcError.getMessages().equals(messages)) {
                             costs = costs == null ? lcError.getCost() : addTwoCosts(costs, lcError.getCost());
                             elas = elas == null ? lcError.getElaboration() : String.join(",", elas, lcError.getElaboration());
                             messages = messages == null ? lcError.getMessages() : messages.addElaborationMessage(lcError.getMessages());
