@@ -736,7 +736,9 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
 
     private void validate(APICreateLoadBalancerServerGroupMsg msg){
-        isexist(msg.getLoadBalancerUuid());
+        if(!isexist(msg.getLoadBalancerUuid())){
+            throw new ApiMessageInterceptionException(argerr("can not find loadbalacerUuid [uuid:%s]",msg.getLoadBalancerUuid()));
+        }
     }
 
     private void validate(APIDeleteLoadBalancerServerGroupMsg msg){
@@ -745,7 +747,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .eq(LoadBalancerServerGroupVO_.uuid,msg.getUuid())
                 .findValue();
         if (loadBalancerUuid == null || loadBalancerUuid.isEmpty())
-            throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent",msg.getUuid()));
+            throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [uuid:%s] don't belong to any loadBalancer",msg.getUuid()));
         msg.setLoadBalancerUuid(loadBalancerUuid);
     }
 
@@ -755,7 +757,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .eq(LoadBalancerServerGroupVO_.uuid,msg.getUuid())
                 .findValue();
         if (loadBalancerUuid == null || loadBalancerUuid.isEmpty())
-            throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent",msg.getUuid()));
+            throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [uuid:%s] don't belong to any loadBalancer",msg.getUuid()));
         msg.setLoadBalancerUuid(loadBalancerUuid);
     }
 
@@ -798,7 +800,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if(serverIps != null && !serverIps.isEmpty()){
             for(String serverip:serverIps){
                 if(!isIp(serverip)){
-                    throw new ApiMessageInterceptionException(operr("the ip[ipaddr:%s] are already on the load balancer servegroup [uuid:%s]", serverip, msg.getServerGroupUuid()));
+                    throw new ApiMessageInterceptionException(operr("the ipaddr is not a correct ip address", serverip));
                 }
 
             }
@@ -809,7 +811,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
                     .listValues());
             if (!existingServerIps.isEmpty()) {
-                throw new ApiMessageInterceptionException(operr("the server ips [uuid:%s] are already on the load balancer servegroup [uuid:%s]", existingServerIps, msg.getServerGroupUuid()));
+                throw new ApiMessageInterceptionException(operr("the ip[ipAddress:%s] are already on the loadBalancerServerGroup [uuid:%s]", existingServerIps, msg.getServerGroupUuid()));
             }
 
             isIpExist = true;
@@ -821,7 +823,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
                     .findValue();
             if (loadBalancerUuid == null || loadBalancerUuid.isEmpty())
-                throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent",msg.getServerGroupUuid()));
+                throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] don't belong to any loadBalancer",msg.getServerGroupUuid()));
             msg.setLoadBalancerUuid(loadBalancerUuid);
         }else{
             throw new ApiMessageInterceptionException(argerr("vmnic or ip is null"));
@@ -842,7 +844,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             );
 
             if(existingNics.isEmpty()) {
-                throw new ApiMessageInterceptionException(operr("vmnics are all not in servergroup [%s]",msg.getServerGroupUuid()));
+                throw new ApiMessageInterceptionException(operr("vmNIc [uuid:%s] have already removed from ServerGroup [uuid:%s]",vmNicUuids, msg.getServerGroupUuid()));
             }else{
                 isNicExist = true;
                 msg.setVmNicUuids(new ArrayList<>(existingNics));
@@ -857,7 +859,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
                     .listValues());
             if(existingServerIps.isEmpty()){
-                throw new ApiMessageInterceptionException(operr("serverips are all not in servergroup [%s]", msg.getServerGroupUuid()));
+                throw new ApiMessageInterceptionException(operr("serverIps [ipAddress:%s] have already removed from ServerGroup [uuid:%s]",serverIps, msg.getServerGroupUuid()));
             }else{
                 isIpExist = true;
                 msg.setServerIps(new ArrayList<>(existingServerIps));
@@ -870,7 +872,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
                     .findValue();
             if (loadBalancerUuid == null || loadBalancerUuid.isEmpty())
-                throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent",msg.getServerGroupUuid()));
+                throw new ApiMessageInterceptionException(argerr("can not find loadbalacerServerGroup [uuid:%s]",msg.getServerGroupUuid()));
             msg.setLoadBalancerUuid(loadBalancerUuid);
         }else{
             throw new ApiMessageInterceptionException(argerr("vmnic or ip is null"));
@@ -884,7 +886,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid,msg.getlistenerUuid())
                     .list();
         if(existingRefs != null && !existingRefs.isEmpty()){
-            throw new ApiMessageInterceptionException(operr("server group[uuid:%s} are added to listener [uuid:%s]",msg.getServerGroupUuid(),msg.getlistenerUuid()));
+            throw new ApiMessageInterceptionException(operr("ServerGroup [uuid:%s] have already added to listener [uuid:%s]",msg.getServerGroupUuid(),msg.getlistenerUuid()));
         }
 
         String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
@@ -892,7 +894,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
                 .findValue();
         if (loadBalancerUuid == null || loadBalancerUuid.isEmpty())
-            throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent",msg.getServerGroupUuid()));
+            throw new ApiMessageInterceptionException(argerr("can not find loadbalacer [uuid:%s]",msg.getLoadBalancerUuid()));
         msg.setLoadBalancerUuid(loadBalancerUuid);
     }
 
@@ -903,7 +905,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid,msg.getListenerUuid())
                 .list();
         if(existingRefs == null || existingRefs.isEmpty()){
-            throw new ApiMessageInterceptionException(operr("server group[uuid:%s} are not in  listener [uuid:%s]",msg.getServerGroupUuid(),msg.getListenerUuid()));
+            throw new ApiMessageInterceptionException(operr("serverGroup[uuid:%s] hava already removed from listener [uuid:%s]",msg.getServerGroupUuid(),msg.getListenerUuid()));
         }
 
         String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
@@ -911,7 +913,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
                 .findValue();
         if (loadBalancerUuid == null || loadBalancerUuid.isEmpty())
-            throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent",msg.getServerGroupUuid()));
+            throw new ApiMessageInterceptionException(argerr("can not find loadBalacer [uuid:%s]",msg.getLoadBalancerUuid()));
         msg.setLoadBalancerUuid(loadBalancerUuid);
     }
 
@@ -921,7 +923,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .eq(LoadBalancerVO_.uuid,loadBalancerUuid)
                 .count();
         if(count == 0){
-            throw new ApiMessageInterceptionException(argerr("loadbalacerUuid [%s] is non-existent",loadBalancerUuid));
+            return false;
         }else{
             return true;
         }
