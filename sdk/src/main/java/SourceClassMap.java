@@ -360,7 +360,11 @@ public class SourceClassMap {
 			put("org.zstack.network.service.lb.LoadBalancerListenerACLRefInventory", "org.zstack.sdk.LoadBalancerListenerACLRefInventory");
 			put("org.zstack.network.service.lb.LoadBalancerListenerCertificateRefInventory", "org.zstack.sdk.LoadBalancerListenerCertificateRefInventory");
 			put("org.zstack.network.service.lb.LoadBalancerListenerInventory", "org.zstack.sdk.LoadBalancerListenerInventory");
+			put("org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefInventory", "org.zstack.sdk.LoadBalancerListenerServerGroupRefInventory");
 			put("org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory", "org.zstack.sdk.LoadBalancerListenerVmNicRefInventory");
+			put("org.zstack.network.service.lb.LoadBalancerServerGroupInventory", "org.zstack.sdk.LoadBalancerServerGroupInventory");
+			put("org.zstack.network.service.lb.LoadBalancerServerGroupServerIpInventory", "org.zstack.sdk.LoadBalancerServerGroupServerIpInventory");
+			put("org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefInventory", "org.zstack.sdk.LoadBalancerServerGroupVmNicRefInventory");
 			put("org.zstack.network.service.portforwarding.PortForwardingRuleInventory", "org.zstack.sdk.PortForwardingRuleInventory");
 			put("org.zstack.network.service.slb.SlbGroupInventory", "org.zstack.sdk.SlbGroupInventory");
 			put("org.zstack.network.service.slb.SlbGroupL3NetworkRefInventory", "org.zstack.sdk.SlbGroupL3NetworkRefInventory");
@@ -734,7 +738,11 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LoadBalancerListenerACLRefInventory", "org.zstack.network.service.lb.LoadBalancerListenerACLRefInventory");
 			put("org.zstack.sdk.LoadBalancerListenerCertificateRefInventory", "org.zstack.network.service.lb.LoadBalancerListenerCertificateRefInventory");
 			put("org.zstack.sdk.LoadBalancerListenerInventory", "org.zstack.network.service.lb.LoadBalancerListenerInventory");
+			put("org.zstack.sdk.LoadBalancerListenerServerGroupRefInventory", "org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefInventory");
 			put("org.zstack.sdk.LoadBalancerListenerVmNicRefInventory", "org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory");
+			put("org.zstack.sdk.LoadBalancerServerGroupInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupInventory");
+			put("org.zstack.sdk.LoadBalancerServerGroupServerIpInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupServerIpInventory");
+			put("org.zstack.sdk.LoadBalancerServerGroupVmNicRefInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefInventory");
 			put("org.zstack.sdk.LocalStorageResourceRefInventory", "org.zstack.storage.primary.local.LocalStorageResourceRefInventory");
 			put("org.zstack.sdk.LocateStatus", "org.zstack.storage.device.localRaid.LocateStatus");
 			put("org.zstack.sdk.LongJobInventory", "org.zstack.header.longjob.LongJobInventory");
