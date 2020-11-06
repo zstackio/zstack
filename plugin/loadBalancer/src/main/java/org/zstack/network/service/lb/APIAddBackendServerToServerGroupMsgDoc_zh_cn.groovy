@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIAddBackendServerToServerGroupEvent
 
 doc {
-    title "AddBackendServerToServerGroup"
+    title "添加后端服务器到服务器组"
 
-    category "loadBalancer"
+    category "负载均衡器"
 
-    desc """在这里填写API描述"""
+    desc """添加服务器网卡或者IP地址到服务器组"""
 
     rest {
         request {
@@ -24,7 +24,7 @@ doc {
 				column {
 					name "serverGroupUuid"
 					enclosedIn "params"
-					desc ""
+					desc "服务器组UUID"
 					location "url"
 					type "String"
 					optional false
@@ -34,7 +34,7 @@ doc {
 				column {
 					name "vmNicUuids"
 					enclosedIn "params"
-					desc ""
+					desc "虚拟机网卡UUID列表"
 					location "body"
 					type "List"
 					optional true
@@ -44,7 +44,7 @@ doc {
 				column {
 					name "serverIps"
 					enclosedIn "params"
-					desc ""
+					desc "服务器IP地址列表"
 					location "body"
 					type "List"
 					optional true

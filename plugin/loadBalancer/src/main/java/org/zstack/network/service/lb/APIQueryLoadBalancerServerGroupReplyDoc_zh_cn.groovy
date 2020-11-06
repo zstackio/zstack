@@ -5,7 +5,7 @@ import org.zstack.network.service.lb.LoadBalancerServerGroupInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "负载均衡服务器组清单"
 
 	ref {
 		name "error"

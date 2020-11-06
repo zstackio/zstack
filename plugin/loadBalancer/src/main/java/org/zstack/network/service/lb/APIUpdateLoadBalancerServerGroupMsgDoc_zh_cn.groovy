@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIUpdateLoadBalancerServerGroupEvent
 
 doc {
-    title "UpdateLoadBalancerServerGroup"
+    title "更新负载均衡服务器组"
 
     category "loadBalancer"
 
-    desc """在这里填写API描述"""
+    desc """更新负载均衡服务器组"""
 
     rest {
         request {
@@ -24,7 +24,7 @@ doc {
 				column {
 					name "uuid"
 					enclosedIn "updateLoadBalancerServerGroup"
-					desc "资源的UUID，唯一标示该资源"
+					desc "服务器组UUID"
 					location "url"
 					type "String"
 					optional false
@@ -54,7 +54,7 @@ doc {
 				column {
 					name "weight"
 					enclosedIn "updateLoadBalancerServerGroup"
-					desc ""
+					desc "服务器组权重"
 					location "body"
 					type "Integer"
 					optional true

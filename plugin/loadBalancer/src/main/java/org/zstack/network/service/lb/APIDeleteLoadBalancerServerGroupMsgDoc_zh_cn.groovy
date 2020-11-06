@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIDeleteLoadBalancerServerGroupEvent
 
 doc {
-    title "DeleteLoadBalancerServerGroup"
+    title "删除负载均衡服务器组"
 
-    category "loadBalancer"
+    category "负载均衡器"
 
-    desc """在这里填写API描述"""
+    desc """删除一个负载均衡服务器组"""
 
     rest {
         request {

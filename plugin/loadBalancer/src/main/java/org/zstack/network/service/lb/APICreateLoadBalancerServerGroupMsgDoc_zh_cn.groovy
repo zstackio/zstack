@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APICreateLoadBalancerServerGroupEvent
 
 doc {
-    title "CreateLoadBalancerServerGroup"
+    title "创建负载均衡服务器组"
 
-    category "loadBalancer"
+    category "负载均衡器"
 
-    desc """在这里填写API描述"""
+    desc """创建一个服务器组"""
 
     rest {
         request {
@@ -24,7 +24,7 @@ doc {
 				column {
 					name "name"
 					enclosedIn "params"
-					desc "资源名称"
+					desc "服务器组的名称"
 					location "body"
 					type "String"
 					optional false
@@ -34,7 +34,7 @@ doc {
 				column {
 					name "description"
 					enclosedIn "params"
-					desc "资源的详细描述"
+					desc "服务器组的详细描述"
 					location "body"
 					type "String"
 					optional true
@@ -44,7 +44,7 @@ doc {
 				column {
 					name "weight"
 					enclosedIn "params"
-					desc ""
+					desc "服务器组权重"
 					location "body"
 					type "Integer"
 					optional false

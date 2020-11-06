@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIRemoveServerGroupFromLoadBalancerListenerEvent
 
 doc {
-    title "RemoveServerGroupFromLoadBalancerListener"
+    title "从负载均衡监听器移除服务器组"
 
-    category "loadBalancer"
+    category "负载均衡器"
 
-    desc """在这里填写API描述"""
+    desc """从负载均衡器移除一个服务器组"""
 
     rest {
         request {
@@ -24,7 +24,7 @@ doc {
 				column {
 					name "serverGroupUuid"
 					enclosedIn ""
-					desc ""
+					desc "服务器组UUID"
 					location "body"
 					type "String"
 					optional false

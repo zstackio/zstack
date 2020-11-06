@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIAddServerGroupToLoadBalancerListenerEvent
 
 doc {
-    title "AddServerGroupToLoadBalancerListener"
+    title "添加服务器组到负载均衡监听器"
 
-    category "loadBalancer"
+    category "负载均衡器"
 
-    desc """在这里填写API描述"""
+    desc """添加一个服务器组到负载均衡监听器器"""
 
     rest {
         request {
@@ -24,7 +24,7 @@ doc {
 				column {
 					name "serverGroupUuid"
 					enclosedIn "params"
-					desc ""
+					desc "服务器组UUID"
 					location "body"
 					type "String"
 					optional false
@@ -34,7 +34,7 @@ doc {
 				column {
 					name "listenerUuid"
 					enclosedIn "params"
-					desc ""
+					desc "监听器UUID"
 					location "url"
 					type "String"
 					optional false

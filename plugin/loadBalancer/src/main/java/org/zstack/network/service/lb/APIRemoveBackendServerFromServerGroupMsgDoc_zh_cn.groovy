@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIRemoveBackendServerFromServerGroupEvent
 
 doc {
-    title "RemoveBackendServerFromServerGroup"
+    title "从服务器组移除服务器"
 
-    category "loadBalancer"
+    category "负载均衡器"
 
-    desc """在这里填写API描述"""
+    desc """从服务器组移除网卡或者服务器IP"""
 
     rest {
         request {
@@ -24,7 +24,7 @@ doc {
 				column {
 					name "serverGroupUuid"
 					enclosedIn "removeBackendServerFromServerGroup"
-					desc ""
+					desc "服务器组UUID"
 					location "url"
 					type "String"
 					optional false
@@ -34,7 +34,7 @@ doc {
 				column {
 					name "vmNicUuids"
 					enclosedIn "removeBackendServerFromServerGroup"
-					desc ""
+					desc "虚拟机网卡UUID"
 					location "body"
 					type "List"
 					optional true
@@ -44,7 +44,7 @@ doc {
 				column {
 					name "serverIps"
 					enclosedIn "removeBackendServerFromServerGroup"
-					desc ""
+					desc "服务器IP"
 					location "body"
 					type "List"
 					optional true
