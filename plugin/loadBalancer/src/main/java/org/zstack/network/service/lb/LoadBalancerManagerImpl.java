@@ -145,6 +145,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         chain.setName(String.format("create-lb-%s", msg.getName()));
         chain.then(new ShareFlow() {
             LoadBalancerVO vo;
+            LoadBalancerServerGroupVO defaultServerGroupVo;
 
             @Override
             public void setup() {
@@ -162,10 +163,18 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         vo.setState(LoadBalancerState.Enabled);
                         vo.setAccountUuid(msg.getSession().getAccountUuid());
                         vo = dbf.persistAndRefresh(vo);
-
                         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), LoadBalancerVO.class.getSimpleName());
                         /* put vo to data for rollback */
                         data.put(LoadBalancerConstants.Param.LOAD_BALANCER_VO, vo);
+
+                        // default server grouo uuid is loadBalancer uuid
+                        defaultServerGroupVo = new LoadBalancerServerGroupVO();
+                        defaultServerGroupVo.setName("default serverGroup");
+                        defaultServerGroupVo.setDescription("loadBalancer "+ vo.getUuid() + "default serverGroup");
+                        defaultServerGroupVo.setLoadBalancerUuid(vo.getUuid());
+                        defaultServerGroupVo.setAccountUuid(msg.getSession().getAccountUuid());
+                        defaultServerGroupVo.setUuid(vo.getUuid());
+
                         trigger.next();
                     }
 
@@ -173,6 +182,10 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     public void rollback(FlowRollback trigger, Map data) {
                         LoadBalancerVO vo = (LoadBalancerVO)data.get(LoadBalancerConstants.Param.LOAD_BALANCER_VO);
                         dbf.remove(vo);
+                        if(defaultServerGroupVo !=null){
+                            dbf.remove(defaultServerGroupVo);
+                        }
+
                         trigger.rollback();
                     }
                 });

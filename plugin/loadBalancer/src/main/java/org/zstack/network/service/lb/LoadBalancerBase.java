@@ -1019,6 +1019,12 @@ public class LoadBalancerBase {
                     dbf.removeCollection(vo.getAclRefs(), LoadBalancerListenerACLRefVO.class);
                 }
                 dbf.removeByPrimaryKey(vo.getUuid(), LoadBalancerListenerVO.class);
+
+                UpdateQuery.New(LoadBalancerListenerServerGroupRefVO.class)
+                        .condAnd(LoadBalancerListenerServerGroupRefVO_.listenerUuid, Op.EQ, msg.getUuid())
+                        .condAnd(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid, Op.EQ,msg.getLoadBalancerUuid())
+                        .delete();
+
                 evt.setInventory(reloadAndGetInventory());
                 bus.publish(evt);
                 completion.done();
@@ -1148,6 +1154,13 @@ public class LoadBalancerBase {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
+                    for(String vmNicUuid : msg.getVmNicUuids()){
+                        LoadBalancerServerGroupVmNicRefVO serverGroupVmNicRefVO = new LoadBalancerServerGroupVmNicRefVO();
+                        serverGroupVmNicRefVO.setStatus(LoadBalancerVmNicStatus.Active);
+                        serverGroupVmNicRefVO.setVmNicUuid(vmNicUuid);
+                        serverGroupVmNicRefVO.setLoadBalancerServerGroupUuid(msg.getLoadBalancerUuid());
+                        dbf.persist(serverGroupVmNicRefVO);
+                    }
                     evt.setInventory(LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class)));
                     bus.publish(evt);
                     return;
@@ -1450,6 +1463,11 @@ public class LoadBalancerBase {
 
         tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), LoadBalancerListenerVO.class.getSimpleName());
         vo = dbf.updateAndRefresh(vo);
+
+        LoadBalancerListenerServerGroupRefVO listenerServerGroupRefVO = new LoadBalancerListenerServerGroupRefVO();
+        listenerServerGroupRefVO.setListenerUuid(vo.getUuid());
+        listenerServerGroupRefVO.setLoadBalancerServerGroupUuid(vo.getLoadBalancerUuid());
+        dbf.persist(listenerServerGroupRefVO);
         evt.setInventory(LoadBalancerListenerInventory.valueOf(vo));
         bus.publish(evt);
         completion.done();
