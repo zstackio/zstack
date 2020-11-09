@@ -49,6 +49,10 @@ import org.zstack.sdk.zwatch.alarm.UnsubscribeEventAction
 import org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateAction
 import org.zstack.sdk.zwatch.alarm.sns.DeleteSNSTextTemplateAction
 import org.zstack.sdk.zwatch.alarm.sns.template.aliyunsms.CreateAliyunSmsSNSTextTemplateAction
+import org.zstack.sdk.zwatch.monitorgroup.api.CreateMonitorGroupAction
+import org.zstack.sdk.zwatch.monitorgroup.api.CreateMonitorTemplateAction
+import org.zstack.sdk.zwatch.monitorgroup.api.DeleteMonitorGroupAction
+import org.zstack.sdk.zwatch.monitorgroup.api.DeleteMonitorTemplateAction
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.testlib.identity.AccountSpec
 import org.zstack.testlib.identity.IdentitySpec
@@ -157,7 +161,9 @@ class EnvSpec extends ApiHelper implements Node  {
             [CreateResourcePriceAction.metaClass, CreateResourcePriceAction.Result.metaClass, DeleteResourcePriceAction.class],
             [CreatePriceTableAction.metaClass, CreatePriceTableAction.Result.metaClass, DeletePriceTableAction.class],
             [CreateAliyunProxyVpcAction.metaClass, CreateAliyunProxyVpcAction.Result.metaClass, DeleteAliyunProxyVpcAction.class],
-            [CreateAliyunProxyVSwitchAction.metaClass, CreateAliyunProxyVSwitchAction.Result.metaClass, DeleteAliyunProxyVSwitchAction.class]
+            [CreateAliyunProxyVSwitchAction.metaClass, CreateAliyunProxyVSwitchAction.Result.metaClass, DeleteAliyunProxyVSwitchAction.class],
+            [CreateMonitorGroupAction.metaClass, CreateMonitorGroupAction.Result.metaClass, DeleteMonitorGroupAction.class],
+            [CreateMonitorTemplateAction.metaClass, CreateMonitorTemplateAction.Result.metaClass, DeleteMonitorTemplateAction.class]
     ]
 
     static Closure GLOBAL_DELETE_HOOK
