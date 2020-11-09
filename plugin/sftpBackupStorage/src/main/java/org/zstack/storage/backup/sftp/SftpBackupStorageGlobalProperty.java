@@ -22,4 +22,5 @@ public class SftpBackupStorageGlobalProperty {
     public static int DOWNLOAD_CMD_TIMEOUT;
     @GlobalProperty(name="MN.network.", defaultValue = "")
     public static List<String> MN_NETWORKS;
+    public static String SFTP_BACKUPSTORAGE_PRIORITY;
 }

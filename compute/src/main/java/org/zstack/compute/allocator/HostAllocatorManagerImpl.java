@@ -32,7 +32,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
-import org.zstack.header.storage.primary.PrimaryStorageFindBackupStorage;
 import org.zstack.header.storage.primary.PrimaryStorageType;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
@@ -128,20 +127,25 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             throw new CloudRuntimeException("cannot find primary storage");
         }
 
-        List<String> backupStorageTypes = getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType());
-
-        String sql = "select bs from BackupStorageVO bs, BackupStorageZoneRefVO ref, PrimaryStorageVO ps" +
-                " where bs.uuid = ref.backupStorageUuid and ps.zoneUuid = ref.zoneUuid and ps.uuid = :psUuid" +
-                " and bs.type in (:bsTypes) and bs.state = :bsState and bs.status = :bsStatus";
-
-        TypedQuery<BackupStorageVO> q = dbf.getEntityManager().createQuery(sql, BackupStorageVO.class);
-        q.setParameter("psUuid", ps.getUuid());
-        q.setParameter("bsTypes", backupStorageTypes);
-        q.setParameter("bsState", BackupStorageState.Enabled);
-        q.setParameter("bsStatus", BackupStorageStatus.Connected);
+        List<String> bsUuids = new ArrayList<>();
+        for(BackupStoragePrimaryStorageExtensionPoint ext : pluginRgty.getExtensionList(BackupStoragePrimaryStorageExtensionPoint.class)) {
+            List<String> singleTypeBsUuids = ext.getBackupStorageSupportedPS(ps.getUuid());
+            if(singleTypeBsUuids != null) {
+                bsUuids.addAll(singleTypeBsUuids);
+            }
+        }
 
         APIGetCandidateBackupStorageForCreatingImageReply reply = new APIGetCandidateBackupStorageForCreatingImageReply();
-        reply.setInventories(BackupStorageInventory.valueOf(q.getResultList()));
+        List<BackupStorageInventory> result = new ArrayList<>();
+        List<String> bsTypes = getBackupStorageTypesByPrimaryStorageTypeFromMetrics(ps.getType());
+        for(String bsUuid : bsUuids) {
+            BackupStorageInventory bs = BackupStorageInventory.valueOf((BackupStorageVO)
+                    Q.New(BackupStorageVO.class).eq(BackupStorageVO_.uuid, bsUuid).find());
+            if(bsTypes.contains(bs.getType())) {
+                result.add(bs);
+            }
+        }
+        reply.setInventories(result);
         bus.reply(msg, reply);
     }
 

@@ -26,6 +26,12 @@
 		</zstack:plugin>
 	</bean>
 
+	<bean id="SftpBackupStoragePrimaryStorageExtension" class="org.zstack.storage.backup.sftp.SftpBackupStoragePrimaryStorageExtension">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint" />
+		</zstack:plugin>
+	</bean>
+
 	<bean id="SftpBackupStorageFactory"
 		class="org.zstack.storage.backup.sftp.SftpBackupStorageFactory">
 		<zstack:plugin>
