@@ -169,3 +169,27 @@ DELIMITER ;
 
 CALL insertIAM2ProjectRoleVOForProjectSystemRoles();
 DROP PROCEDURE IF EXISTS insertIAM2ProjectRoleVOForProjectSystemRoles;
+
+DELIMITER $$
+CREATE PROCEDURE insertIAM2ProjectRole()
+BEGIN
+    DECLARE roleUuid VARCHAR(32);
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE cur CURSOR FOR SELECT resourceUuid FROM zstack.AccountResourceRefVO where resourceType = 'RoleVO' and resourceUuid in (select uuid from zstack.RoleVO) and  accountUuid in (SELECT accountUuid FROM zstack.IAM2ProjectAccountRefVO ) and accountUuid <> '36c27e8ff05c4780bf6d2fa65700f22e';
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    OPEN cur;
+    read_loop: LOOP
+        FETCH cur INTO roleUuid;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+        INSERT INTO `zstack`.IAM2ProjectRoleVO (uuid, iam2ProjectRoleType) VALUES (roleUuid, 'CreateInProject');
+
+    END LOOP;
+    CLOSE cur;
+    SELECT CURTIME();
+END $$
+DELIMITER ;
+
+CALL insertIAM2ProjectRole();
+DROP PROCEDURE IF EXISTS insertIAM2ProjectRole;
