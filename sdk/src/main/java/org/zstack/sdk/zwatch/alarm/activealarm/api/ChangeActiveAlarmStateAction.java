@@ -28,7 +28,7 @@ public class ChangeActiveAlarmStateAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String namespace;
 
-    @Param(required = false, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String stateEvent;
 
     @Param(required = false)

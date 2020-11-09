@@ -34,7 +34,7 @@ public class UpdateMonitorGroupAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List actions;
 
     @Param(required = false, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
