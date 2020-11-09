@@ -162,20 +162,25 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
     }
 
     private List<String> selectPsTypesFromImageBSOrCdRomBs(final VmInstanceSpec vmSpec) {
-        String imageBsType = Q.New(BackupStorageVO.class)
-                .select(BackupStorageVO_.type)
-                .eq(BackupStorageVO_.uuid, vmSpec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid())
-                .findValue();
+        String imageBsType = findImageBsType(vmSpec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
         List<String> PsTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(imageBsType);
         List<VmInstanceSpec.CdRomSpec> cdRomsSpecs = vmSpec.getCdRomSpecs();
         for (VmInstanceSpec.CdRomSpec cdRom : cdRomsSpecs) {
-            String cdRomBsType = Q.New(BackupStorageVO.class).select(BackupStorageVO_.type).eq(BackupStorageVO_.uuid, cdRom.getBackupStorageUuid()).findValue();
+            String cdRomBsType = findImageBsType(cdRom.getBackupStorageUuid());
             if (cdRomBsType != null) {
                 PsTypes = (List<String>) CollectionUtils
                         .intersection(hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(cdRomBsType), PsTypes);
             }
         }
-        DebugUtils.Assert(PsTypes != null, "why primaryStorageTypes is null");
+        DebugUtils.Assert(PsTypes.size() != 0, "why primaryStorageTypes is empty");
         return PsTypes;
+    }
+
+    private String findImageBsType(String bsUuid) {
+        String type = Q.New(BackupStorageVO.class)
+                .select(BackupStorageVO_.type)
+                .eq(BackupStorageVO_.uuid, bsUuid)
+                .findValue();
+        return type;
     }
 }
