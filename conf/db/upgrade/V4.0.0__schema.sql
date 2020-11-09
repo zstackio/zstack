@@ -162,10 +162,36 @@ BEGIN
 
     END LOOP;
     CLOSE cur;
-    SELECT CURTIME();
+        SELECT CURTIME();
 END $$
 DELIMITER ;
 
 CALL insertIAM2ProjectRole();
 DROP PROCEDURE IF EXISTS insertIAM2ProjectRole;
 
+DELIMITER $$
+CREATE PROCEDURE insertIAM2ProjectRoleVOForProjectSystemRoles()
+BEGIN
+    DECLARE project_system_role_exists INT DEFAULT 0;
+    DECLARE iam2_project_role_exists INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO iam2_project_role_exists FROM IAM2ProjectRoleVO WHERE uuid = '55553cefbbfb42468873897c95408a43';
+    SELECT COUNT(*) INTO project_system_role_exists FROM RoleVO WHERE uuid = '55553cefbbfb42468873897c95408a43';
+    IF iam2_project_role_exists = 0 and project_system_role_exists = 1 THEN
+        INSERT INTO IAM2ProjectRoleVO (`uuid`, `iam2ProjectRoleType`) VALUES ('55553cefbbfb42468873897c95408a43', 'CreatedByAdmin');
+    END IF;
+
+    SET project_system_role_exists = 0;
+    SET iam2_project_role_exists = 0;
+    SELECT COUNT(*) INTO iam2_project_role_exists FROM IAM2ProjectRoleVO WHERE uuid = 'f2f474c60e7340c0a1d44080d5bde3a9';
+    SELECT COUNT(*) INTO project_system_role_exists FROM RoleVO WHERE uuid = '55553cefbbfb42468873897c95408a43';
+    IF iam2_project_role_exists = 0 and project_system_role_exists = 1 THEN
+        INSERT INTO IAM2ProjectRoleVO (`uuid`, `iam2ProjectRoleType`) VALUES ('f2f474c60e7340c0a1d44080d5bde3a9', 'CreatedByAdmin');
+    END IF;
+
+    SELECT CURTIME();
+END $$
+DELIMITER ;
+
+CALL insertIAM2ProjectRoleVOForProjectSystemRoles();
+DROP PROCEDURE IF EXISTS insertIAM2ProjectRoleVOForProjectSystemRoles;
