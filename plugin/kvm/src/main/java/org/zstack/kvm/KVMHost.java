@@ -1228,6 +1228,8 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void attachIso(final AttachIsoOnHypervisorMsg msg, final NoErrorCompletion completion) {
+        checkStatus();
+
         final AttachIsoOnHypervisorReply reply = new AttachIsoOnHypervisorReply();
 
         IsoTO iso = new IsoTO();
@@ -3771,8 +3773,14 @@ public class KVMHost extends HostBase implements Host {
                     reply.setError(operr("operation error, because:%s", ret.getError()));
                     bus.reply(msg, reply);
                     completion.done();
+                    return;
+                }
+
+                changeConnectionState(HostStatusEvent.disconnected);
+                if (msg.isReturnEarly()) {
+                    bus.reply(msg, reply);
+                    completion.done();
                 } else {
-                    changeConnectionState(HostStatusEvent.disconnected);
                     waitForHostShutdown(reply, completion);
                 }
             }

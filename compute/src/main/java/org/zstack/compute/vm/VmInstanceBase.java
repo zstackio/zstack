@@ -185,10 +185,17 @@ public class VmInstanceBase extends AbstractVmInstance {
         self = changeVmStateInDb(VmInstanceStateEvent.destroying);
 
         FlowChain chain = new SimpleFlowChain();
-        setFlowBeforeFormalWorkFlow(chain, spec);
+
+        if (msg instanceof VmInstanceDeletionMsg && ((VmInstanceDeletionMsg) msg).isAdditionalFlowRequested()) {
+            setFlowBeforeFormalWorkFlow(chain, spec);
+        }
+
         chain.getFlows().addAll(getDestroyVmWorkFlowChain(inv).getFlows());
         setFlowMarshaller(chain);
-        setAdditionalFlow(chain, spec);
+
+        if (msg instanceof VmInstanceDeletionMsg && ((VmInstanceDeletionMsg) msg).isAdditionalFlowRequested()) {
+            setAdditionalFlow(chain, spec);
+        }
 
         chain.setName(String.format("destroy-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
@@ -6285,20 +6292,22 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void handle(final APIRebootVmInstanceMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public String getName() {
-                return String.format("reboot-vm-%s", self.getUuid());
-            }
+        APIRebootVmInstanceEvent evt = new APIRebootVmInstanceEvent(msg.getId());
 
+        RebootVmInstanceMsg rmsg = new RebootVmInstanceMsg();
+        rmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        bus.makeTargetServiceIdByResourceUuid(rmsg, VmInstanceConstant.SERVICE_ID, rmsg.getVmInstanceUuid());
+        bus.send(rmsg, new CloudBusCallBack(msg) {
             @Override
-            public String getSyncSignature() {
-                return syncThreadName;
-            }
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    evt.setError(err(VmErrors.REBOOT_ERROR, reply.getError(), reply.getError().getDetails()));
+                } else {
+                    refreshVO();
+                    evt.setInventory(getSelfInventory());
+                }
 
-            @Override
-            public void run(SyncTaskChain chain) {
-                rebootVm(msg, chain);
+                bus.publish(evt);
             }
         });
     }
@@ -6611,7 +6620,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void handle(final APIDeleteVmCdRomMsg msg) {
+    protected void handle(final APIDeleteVmCdRomMsg msg) {
         APIDeleteVmCdRomEvent event = new APIDeleteVmCdRomEvent(msg.getId());
 
         DeleteVmCdRomMsg deleteVmCdRomMsg = new DeleteVmCdRomMsg();
@@ -6734,7 +6743,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         completion.success(VmCdRomInventory.valueOf(cdRomVO));
     }
 
-    private void handle(final APICreateVmCdRomMsg msg) {
+    protected void handle(final APICreateVmCdRomMsg msg) {
         APICreateVmCdRomEvent event = new APICreateVmCdRomEvent(msg.getId());
 
         CreateVmCdRomMsg cmsg = new CreateVmCdRomMsg();

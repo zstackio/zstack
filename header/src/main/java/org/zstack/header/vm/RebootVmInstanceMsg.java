@@ -8,6 +8,7 @@ import org.zstack.header.message.NeedReplyMessage;
  * Time: 9:47 PM
  * To change this template use File | Settings | File Templates.
  */
+@SkipVmTracer(replyClass = RebootVmInstanceReply.class)
 public class RebootVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
     private String vmInstanceUuid;
 
