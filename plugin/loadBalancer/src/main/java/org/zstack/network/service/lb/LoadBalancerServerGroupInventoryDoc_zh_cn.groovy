@@ -1,6 +1,5 @@
 package org.zstack.network.service.lb
 
-import java.lang.Integer
 import java.sql.Timestamp
 import java.sql.Timestamp
 import org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefInventory
@@ -33,12 +32,6 @@ doc {
 		name "loadBalancerUuid"
 		desc "负载均衡器UUID"
 		type "String"
-		since "0.6"
-	}
-	field {
-		name "weight"
-		desc ""
-		type "Integer"
 		since "0.6"
 	}
 	field {

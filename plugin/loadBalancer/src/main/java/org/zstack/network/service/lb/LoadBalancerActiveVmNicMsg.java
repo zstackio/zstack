@@ -9,16 +9,8 @@ import java.util.List;
  */
 public class LoadBalancerActiveVmNicMsg extends NeedReplyMessage implements LoadBalancerMessage {
     private List<String> vmNicUuids;
-    private String listenerUuid;
     private String loadBalancerUuid;
-
-    public String getListenerUuid() {
-        return listenerUuid;
-    }
-
-    public void setListenerUuid(String listenerUuid) {
-        this.listenerUuid = listenerUuid;
-    }
+    private String serverGroupUuid;
 
     public List<String> getVmNicUuids() {
         return vmNicUuids;
@@ -35,5 +27,13 @@ public class LoadBalancerActiveVmNicMsg extends NeedReplyMessage implements Load
 
     public void setLoadBalancerUuid(String loadBalancerUuid) {
         this.loadBalancerUuid = loadBalancerUuid;
+    }
+
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
+    }
+
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
     }
 }

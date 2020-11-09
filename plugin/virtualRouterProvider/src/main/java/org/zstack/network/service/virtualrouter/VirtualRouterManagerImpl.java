@@ -1861,11 +1861,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private List<VmNicInventory> getCandidateVmNicsIfPeerL3NetworkExists(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates, List<String> peerL3NetworkUuids) {
-
-        List<String> attachedVmNicUuids = Q.New(LoadBalancerListenerVmNicRefVO.class)
-                                           .select(LoadBalancerListenerVmNicRefVO_.vmNicUuid)
-                                           .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getListenerUuid())
-                                           .listValues();
+        LoadBalancerListenerVO listenerVO = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+        final List<String> attachedVmNicUuids = listenerVO.getAttachedVmNics();
         return candidates.stream()
                 .filter(n -> peerL3NetworkUuids.contains(n.getL3NetworkUuid()))
                 .filter(n -> !attachedVmNicUuids.contains(n.getUuid()))
@@ -1902,14 +1899,12 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                         .param("l3s", guestL3Uuids)
                         .list();
 
-                List<String> attachedVmNicUuids = Q.New(LoadBalancerListenerVmNicRefVO.class)
-                        .select(LoadBalancerListenerVmNicRefVO_.vmNicUuid)
-                        .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getListenerUuid())
-                        .listValues();
+                LoadBalancerListenerVO listenerVO = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+                final List<String> finalAttachedVmNicUuids = listenerVO.getAttachedVmNics();
 
                 return candidates.stream()
                         .filter( nic -> vmNicUuids.contains(nic.getUuid()))
-                        .filter( nic -> !attachedVmNicUuids.contains(nic.getUuid()))
+                        .filter( nic -> !finalAttachedVmNicUuids.contains(nic.getUuid()))
                         .collect(Collectors.toList());
             }
         }.execute();

@@ -24,7 +24,6 @@ public class APIQueryLoadBalancerServerGroupReply extends APIQueryReply {
 
         inv.setName("Test-LbServerGroup");
         inv.setUuid(uuid());
-        inv.setWeight(50);
         reply.setInventories(Arrays.asList(inv));
         return reply;
     }

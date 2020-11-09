@@ -66,6 +66,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     private ErrorFacade errf;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private LoadBalancerManager lbMgr;
 
     private static final CLogger logger = CLoggerImpl.getLogger(LoadBalancerApiInterceptor.class);
     private static String SPLIT = "-";
@@ -130,12 +132,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             validate((APIRemoveBackendServerFromServerGroupMsg) msg);
         } else if (msg instanceof APIDeleteLoadBalancerServerGroupMsg) {
             validate((APIDeleteLoadBalancerServerGroupMsg) msg);
+        } else if (msg instanceof APIGetCandidateVmNicsForLoadBalancerServerGroupMsg) {
+            validate((APIGetCandidateVmNicsForLoadBalancerServerGroupMsg)msg);
         }
         return msg;
     }
 
     private void validate(APIDeleteAccessControlListMsg msg) {
-        List<String> refs = Q.New(LoadBalancerListenerACLRefVO.class).select(LoadBalancerListenerVmNicRefVO_.listenerUuid)
+        List<String> refs = Q.New(LoadBalancerListenerACLRefVO.class).select(LoadBalancerListenerACLRefVO_.listenerUuid)
                              .eq(LoadBalancerListenerACLRefVO_.aclUuid, msg.getUuid()).listValues();
         if ( !refs.isEmpty()) {
             throw new ApiMessageInterceptionException(argerr("the access control list group[%s] is being used by the load balancer listeners[%s]", msg.getUuid(), refs));
@@ -148,6 +152,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         lq.add(LoadBalancerListenerVO_.uuid, Op.EQ, msg.getListenerUuid());
         String lbuuid = lq.findValue();
         msg.setLoadBalancerUuid(lbuuid);
+    }
+
+    private void validate(APIGetCandidateVmNicsForLoadBalancerServerGroupMsg msg) {
+        LoadBalancerServerGroupVO groupVO = dbf.findByUuid(msg.getServergroupUuid(), LoadBalancerServerGroupVO.class);
+        msg.setLoadBalancerUuid(groupVO.getLoadBalancerUuid());
     }
 
     private void validate(APIGetCandidateL3NetworksForLoadBalancerMsg msg) {
@@ -174,23 +183,15 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     private void validate(APIRemoveVmNicFromLoadBalancerMsg msg) {
-        SimpleQuery<LoadBalancerListenerVO> lq = dbf.createQuery(LoadBalancerListenerVO.class);
-        lq.select(LoadBalancerListenerVO_.loadBalancerUuid);
-        lq.add(LoadBalancerListenerVO_.uuid, Op.EQ, msg.getListenerUuid());
-        String lbuuid = lq.findValue();
-        msg.setLoadBalancerUuid(lbuuid);
-
-        SimpleQuery<LoadBalancerListenerVmNicRefVO> q = dbf.createQuery(LoadBalancerListenerVmNicRefVO.class);
-        q.select(LoadBalancerListenerVmNicRefVO_.vmNicUuid);
-        q.add(LoadBalancerListenerVmNicRefVO_.vmNicUuid, Op.IN, msg.getVmNicUuids());
-        q.add(LoadBalancerListenerVmNicRefVO_.listenerUuid, Op.EQ, msg.getListenerUuid());
-        List<String> vmNicUuids = q.listValue();
-        if (vmNicUuids.isEmpty()) {
-            APIRemoveVmNicFromLoadBalancerEvent evt = new APIRemoveVmNicFromLoadBalancerEvent(msg.getId());
-            evt.setInventory(LoadBalancerInventory.valueOf(dbf.findByUuid(lbuuid, LoadBalancerVO.class)));
-            bus.publish(evt);
-            throw new StopRoutingException();
+        LoadBalancerListenerVO listenerVO = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+        LoadBalancerServerGroupVO groupVO = lbMgr.getDefaultServerGroup(listenerVO);
+        if (groupVO == null) {
+            throw new ApiMessageInterceptionException(
+                    operr("could not detach vm nic to load balancer listener[uuid:%s], because default server group for listener has been deleted",
+                            msg.getListenerUuid()));
         }
+
+        msg.setLoadBalancerUuid(listenerVO.getLoadBalancerUuid());
     }
 
     private void validate(APICreateLoadBalancerMsg msg) {
@@ -386,13 +387,15 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                             l3Uuids, LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING));
         }
 
-        sql = "select ref.vmNicUuid from LoadBalancerListenerVmNicRefVO ref where ref.vmNicUuid in (:nicUuids) and ref.listenerUuid = :uuid";
-        q = dbf.getEntityManager().createQuery(sql, String.class);
-        q.setParameter("nicUuids", msg.getVmNicUuids());
-        q.setParameter("uuid", msg.getListenerUuid());
-        List<String> existingNics = q.getResultList();
-        if (!existingNics.isEmpty()) {
-            throw new ApiMessageInterceptionException(operr("the vm nics[uuid:%s] are already on the load balancer listener[uuid:%s]", existingNics, msg.getListenerUuid()));
+        LoadBalancerListenerVO listenerVO = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+        LoadBalancerServerGroupVO groupVO = lbMgr.getDefaultServerGroup(listenerVO);
+        if (groupVO != null) {
+            List<String> oldL3Uuids = groupVO.getLoadBalancerServerGroupVmNicRefs().stream().map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList());
+            for (String nicUuid : msg.getVmNicUuids()) {
+                if (oldL3Uuids.contains(nicUuid)) {
+                    throw new ApiMessageInterceptionException(operr("could not attach vm nic to load balancer listener, because the vm nic[uuid:%s] are already on the default server group [uuid:%s]", nicUuid, groupVO.getUuid()));
+                }
+            }
         }
 
         if (LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(
@@ -740,6 +743,12 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     private void validate(APIDeleteLoadBalancerServerGroupMsg msg){
+        /* default server group can not be deleted */
+        LoadBalancerVO lbVo = dbf.findByUuid(msg.getUuid(), LoadBalancerVO.class);
+        if (lbVo != null) {
+            throw new ApiMessageInterceptionException(argerr("could not delete the default server group for load balancer %s", lbVo.getName()));
+        }
+
         String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
                 .select(LoadBalancerServerGroupVO_.loadBalancerUuid)
                 .eq(LoadBalancerServerGroupVO_.uuid,msg.getUuid())
@@ -849,6 +858,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 isNicExist = true;
                 msg.setVmNicUuids(new ArrayList<>(existingNics));
             }
+        } else {
+            msg.setVmNicUuids(new ArrayList<>());
         }
 
         List <String> serverIps = msg.getServerIps();
@@ -864,6 +875,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 isIpExist = true;
                 msg.setServerIps(new ArrayList<>(existingServerIps));
             }
+        } else {
+            msg.setServerIps(new ArrayList<>());
         }
 
         if(isNicExist || isIpExist ){

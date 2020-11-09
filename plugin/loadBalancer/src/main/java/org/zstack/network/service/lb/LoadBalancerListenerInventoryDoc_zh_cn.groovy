@@ -1,12 +1,17 @@
 package org.zstack.network.service.lb
 
+import java.lang.Integer
+import java.lang.Integer
+import java.sql.Timestamp
+import java.sql.Timestamp
+import org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory
 import org.zstack.network.service.lb.LoadBalancerListenerACLRefInventory
 import org.zstack.network.service.lb.LoadBalancerListenerCertificateRefInventory
-import org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory
+import org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefInventory
 
 doc {
 
-	title "负载均衡监听器的内容清单"
+	title "在这里输入结构的名称"
 
 	field {
 		name "uuid"
@@ -73,9 +78,9 @@ doc {
 	ref {
 		name "aclRefs"
 		path "org.zstack.network.service.lb.LoadBalancerListenerInventory.aclRefs"
-		desc "访问控制策略组"
+		desc "null"
 		type "List"
-		since "3.9"
+		since "0.6"
 		clz LoadBalancerListenerACLRefInventory.class
 	}
 	ref {
@@ -85,5 +90,13 @@ doc {
 		type "List"
 		since "0.6"
 		clz LoadBalancerListenerCertificateRefInventory.class
+	}
+	ref {
+		name "serverGroupRefs"
+		path "org.zstack.network.service.lb.LoadBalancerListenerInventory.serverGroupRefs"
+		desc "null"
+		type "List"
+		since "0.6"
+		clz LoadBalancerListenerServerGroupRefInventory.class
 	}
 }

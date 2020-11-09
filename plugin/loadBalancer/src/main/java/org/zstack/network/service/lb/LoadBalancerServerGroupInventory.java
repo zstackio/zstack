@@ -15,7 +15,6 @@ public class LoadBalancerServerGroupInventory implements Serializable {
     private String description;
 
     private String loadBalancerUuid;
-    private Integer weight;
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private List<LoadBalancerListenerServerGroupRefInventory> listenerServerGroupRefs;
@@ -27,7 +26,6 @@ public class LoadBalancerServerGroupInventory implements Serializable {
         this.setName(vo.getName());
         this.setUuid(vo.getUuid());
         this.setDescription(vo.getDescription());
-        this.setWeight(vo.getWeight());
         this.setLoadBalancerUuid(vo.getLoadBalancerUuid());
         this.setCreateDate(vo.getCreateDate());
         this.setLastOpDate(vo.getLastOpDate());
@@ -45,7 +43,6 @@ public class LoadBalancerServerGroupInventory implements Serializable {
         inv.setName(vo.getName());
         inv.setUuid(vo.getUuid());
         inv.setDescription(vo.getDescription());
-        inv.setWeight(vo.getWeight());
         inv.setLoadBalancerUuid(vo.getLoadBalancerUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
@@ -86,14 +83,6 @@ public class LoadBalancerServerGroupInventory implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Integer getWeight() {
-        return weight;
-    }
-
-    public void setWeight(Integer weight) {
-        this.weight = weight;
     }
 
     public Timestamp getCreateDate() {

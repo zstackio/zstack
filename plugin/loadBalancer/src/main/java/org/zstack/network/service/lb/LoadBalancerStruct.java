@@ -3,8 +3,11 @@ package org.zstack.network.service.lb;
 import org.zstack.header.vm.VmNicInventory;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by frank on 8/8/2015.
@@ -13,6 +16,8 @@ public class LoadBalancerStruct implements Serializable {
     private LoadBalancerInventory lb;
     private Map<String, VmNicInventory> vmNics;
     private List<LoadBalancerListenerInventory> listeners;
+    private Map<String, List<LoadBalancerServerGroupInventory>> listenerServerGroupMap = new HashMap<>();
+    private Map<String, List<LoadBalancerServerGroupInventory>> deletedListenerServerGroupMap = new HashMap<>();
     private Map<String, List<String>> tags;
     private boolean init;
 
@@ -54,5 +59,71 @@ public class LoadBalancerStruct implements Serializable {
 
     public void setVmNics(Map<String, VmNicInventory> vmNics) {
         this.vmNics = vmNics;
+    }
+
+    public Map<String, List<LoadBalancerServerGroupInventory>> getListenerServerGroupMap() {
+        return listenerServerGroupMap;
+    }
+
+    public void setListenerServerGroupMap(Map<String, List<LoadBalancerServerGroupInventory>> listenerServerGroupMap) {
+        this.listenerServerGroupMap = listenerServerGroupMap;
+    }
+
+    public Map<String, List<LoadBalancerServerGroupInventory>> getDeletedListenerServerGroupMap() {
+        return deletedListenerServerGroupMap;
+    }
+
+    public void setDeletedListenerServerGroupMap(Map<String, List<LoadBalancerServerGroupInventory>> deletedListenerServerGroupMap) {
+        this.deletedListenerServerGroupMap = deletedListenerServerGroupMap;
+    }
+
+    public List<String> getActiveVmNics() {
+        List<String> attachedVmNicUuids = new ArrayList<>();
+        for (LoadBalancerListenerInventory ll : lb.getListeners()) {
+            List<LoadBalancerServerGroupInventory> groupInvs = listenerServerGroupMap.get(ll.getUuid());
+            if (groupInvs == null || groupInvs.isEmpty()) {
+                continue;
+            }
+
+            for (LoadBalancerServerGroupInventory group : groupInvs) {
+                attachedVmNicUuids.addAll(group.getVmNicRefs().stream()
+                        .filter(r -> !LoadBalancerVmNicStatus.Pending.toString().equals(r.getStatus()))
+                        .map(LoadBalancerServerGroupVmNicRefInventory::getVmNicUuid).collect(Collectors.toList()));
+            }
+        }
+
+        return attachedVmNicUuids;
+    }
+
+    public List<String> getAllVmNics() {
+        List<String> attachedVmNicUuids = new ArrayList<>();
+        for (LoadBalancerListenerInventory ll : lb.getListeners()) {
+            List<LoadBalancerServerGroupInventory> groupInvs = listenerServerGroupMap.get(ll.getUuid());
+            if (groupInvs == null || groupInvs.isEmpty()) {
+                continue;
+            }
+
+            for (LoadBalancerServerGroupInventory group : groupInvs) {
+                attachedVmNicUuids.addAll(group.getVmNicRefs().stream()
+                        .map(LoadBalancerServerGroupVmNicRefInventory::getVmNicUuid).collect(Collectors.toList()));
+            }
+        }
+
+        return attachedVmNicUuids;
+    }
+
+    public List<String> getAllVmNicsOfListener(LoadBalancerListenerInventory listener) {
+        List<String> attachedVmNicUuids = new ArrayList<>();
+        List<LoadBalancerServerGroupInventory> groupInvs = deletedListenerServerGroupMap.get(listener.getUuid());
+        if (groupInvs == null || groupInvs.isEmpty()) {
+            return attachedVmNicUuids;
+        }
+
+        for (LoadBalancerServerGroupInventory group : groupInvs) {
+            attachedVmNicUuids.addAll(group.getVmNicRefs().stream()
+                    .map(LoadBalancerServerGroupVmNicRefInventory::getVmNicUuid).collect(Collectors.toList()));
+        }
+
+        return attachedVmNicUuids;
     }
 }

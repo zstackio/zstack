@@ -140,14 +140,11 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SlbGroupL3NetworkRefVO` (
     CONSTRAINT fkSlbGroupL3NetworkRefVOL3NetworkEO FOREIGN KEY (l3NetworkUuid) REFERENCES `zstack`.`L3NetworkEO` (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `zstack`.`LoadBalancerVO` ADD COLUMN `type` varchar(255) DEFAULT "Shared";
-
 CREATE TABLE IF NOT EXISTS `zstack`.`LoadBalancerServerGroupVO`(
     `uuid` varchar(32) NOT NULL UNIQUE,
     `name` varchar(255) NOT NULL,
     `description` varchar(2048) DEFAULT NULL,
     `loadBalancerUuid` varchar(32) NOT NULL,
-  	`weight` TINYINT unsigned NOT NULL DEFAULT 1,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
     PRIMARY KEY (`uuid`),
@@ -169,6 +166,7 @@ CREATE TABLE  `zstack`.`LoadBalancerServerGroupVmNicRefVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
 	`loadBalancerServerGroupUuid` varchar(32) NOT NULL,
     `vmNicUuid` varchar(32) NOT NULL,
+    `weight` bigint unsigned NOT NULL DEFAULT 100,
     `status` varchar(64) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
@@ -179,12 +177,18 @@ CREATE TABLE  `zstack`.`LoadBalancerServerGroupVmNicRefVO` (
 
 CREATE TABLE  `zstack`.`LoadBalancerServerGroupServerIpVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-  	`description` varchar(2048) DEFAULT NULL,
+    `loadBalancerServerGroupUuid` varchar(32) NOT NULL,
   	`ipAddress` varchar(128) NOT NULL,
+    `weight` bigint unsigned NOT NULL DEFAULT 100,
   	`status` varchar(64) NOT NULL,
-	`loadBalancerServerGroupUuid` varchar(32) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
     PRIMARY KEY (`id`),
     CONSTRAINT fkLoadBalancerServerGroupServerIpVOLoadBalancerServerGroupVO FOREIGN KEY (loadBalancerServerGroupUuid) REFERENCES `zstack`.`LoadBalancerServerGroupVO` (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`LoadBalancerVO` ADD COLUMN `type` varchar(255) DEFAULT "Shared";
+ALTER TABLE `zstack`.`LoadBalancerVO` ADD COLUMN `serverGroupUuid` varchar(32) DEFAULT NULL;
+ALTER TABLE `zstack`.`LoadBalancerVO` ADD CONSTRAINT fkLoadBalancerVOLoadBalancerServerGroupVO FOREIGN KEY (serverGroupUuid) REFERENCES LoadBalancerServerGroupVO (uuid) ON DELETE SET NULL;
+ALTER TABLE `zstack`.`LoadBalancerListenerVO` ADD COLUMN `serverGroupUuid` varchar(32) DEFAULT NULL;
+ALTER TABLE `zstack`.`LoadBalancerListenerVO` ADD CONSTRAINT fkLoadBalancerListenerVOLoadBalancerServerGroupVO FOREIGN KEY (serverGroupUuid) REFERENCES LoadBalancerServerGroupVO (uuid) ON DELETE SET NULL;

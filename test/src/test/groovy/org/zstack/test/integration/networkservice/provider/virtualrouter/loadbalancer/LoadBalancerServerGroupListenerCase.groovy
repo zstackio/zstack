@@ -1,29 +1,23 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.loadbalancer
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
-import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.network.service.eip.EipConstant
+import org.zstack.network.service.lb.LoadBalancerConstants
+import org.zstack.network.service.portforwarding.PortForwardingConstant
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.*
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-import org.zstack.test.integration.network.NetworkTest
-import org.zstack.network.service.eip.EipConstant
-import org.zstack.network.service.lb.LoadBalancerConstants
-import org.zstack.network.service.lb.LoadBalancerVO
-import org.zstack.network.service.lb.LoadBalancerVO_
-import org.zstack.network.service.portforwarding.PortForwardingConstant
-import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO
-import org.zstack.network.service.virtualrouter.vyos.VyosConstants
+import org.zstack.utils.gson.JSONObjectUtil
 
-
-class LoadBalancerServerGroupLifeCycleCase extends SubCase{
+class LoadBalancerServerGroupListenerCase extends SubCase{
     DatabaseFacade dbf
     EnvSpec env
-    LoadBalancerServerGroupInventory servergroup1
-    LoadBalancerServerGroupInventory servergroup2
 
     @Override
     void setup() {
@@ -120,7 +114,6 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
                 }
 
                 attachBackupStorage("sftp")
-
                 virtualRouterOffering {
                     name = "vro"
                     memory = SizeUnit.MEGABYTE.toByte(512)
@@ -139,13 +132,6 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
                         protocol = "tcp"
                         loadBalancerPort = 22
                         instancePort = 22
-                    }
-
-                    listener {
-                        name = "listener-33"
-                        protocol = "tcp"
-                        loadBalancerPort = 33
-                        instancePort = 33
                     }
                 }
             }
@@ -170,68 +156,71 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
     void test() {
         dbf = bean(DatabaseFacade.class)
         env.create {
-            createServerGroup()
-            TestUpdateLoadBalancerServerGroup()
-            TestServerGroupWithBackendServer()
-            TestDeleteLoadBalancerServerGroup()
+            TestAddVmNicThenAttachListener()
         }
     }
 
-    void createServerGroup(){
+    void TestAddVmNicThenAttachListener(){
+        VmInstanceInventory vm1 = env.inventoryByName("vm-1")
+        VmInstanceInventory vm2 = env.inventoryByName("vm-2")
+        LoadBalancerListenerInventory lb22 = env.inventoryByName("listener-22")
         def lb = env.inventoryByName("lb") as LoadBalancerInventory
 
-        servergroup1 = createLoadBalancerServerGroup{
+        LoadBalancerServerGroupInventory sg = createLoadBalancerServerGroup{
             loadBalancerUuid =  lb.uuid
             name = "lb-group-1"
         }
-        assert servergroup1.name == "lb-group-1"
-        LoadBalancerServerGroupInventory servergroup = queryLoadBalancerServerGroup { conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
-        assert servergroup.name == "lb-group-1"
 
-        servergroup2 = createLoadBalancerServerGroup {
-            loadBalancerUuid =  lb.uuid
-            name = "lb-group-2"
+        VirtualRouterLoadBalancerBackend.RefreshLbCmd refreshLbCmd = null
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            refreshLbCmd = JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class)
+            return rsp
         }
-        assert servergroup2.name == "lb-group-2"
+
+        VmNicInventory nic1 = vm1.vmNics.get(0)
+        VmNicInventory nic2 = vm2.vmNics.get(0)
+        addBackendServerToServerGroup {
+            vmNicUuids = [nic1.uuid, nic2.uuid]
+            serverGroupUuid = sg.uuid
+        }
+        assert refreshLbCmd == null
+
+        addServerGroupToLoadBalancerListener {
+            listenerUuid = lb22.uuid
+            serverGroupUuid = sg.uuid
+        }
+        assert refreshLbCmd != null
+        assert refreshLbCmd.lbs.size() == 1
+        VirtualRouterLoadBalancerBackend.LbTO to = refreshLbCmd.lbs.get(0)
+        assert to.nicIps.size() == 2
+        for (String ip : to.nicIps) {
+            assert nic1.ip == ip || nic2.ip == ip
+        }
+
+        refreshLbCmd = null
+        removeBackendServerFromServerGroup {
+            serverGroupUuid = sg.uuid
+            vmNicUuids = [nic1.uuid]
+        }
+        assert refreshLbCmd != null
+        assert refreshLbCmd.lbs.size() == 1
+        to = refreshLbCmd.lbs.get(0)
+        assert to.nicIps.size() == 1
+        assert to.nicIps.get(0) == nic2.ip
+
+        refreshLbCmd = null
+        addBackendServerToServerGroup {
+            vmNicUuids = [nic1.uuid]
+            serverGroupUuid = sg.uuid
+        }
+        assert refreshLbCmd != null
+        assert refreshLbCmd.lbs.size() == 1
+        to = refreshLbCmd.lbs.get(0)
+        assert to.nicIps.size() == 2
+        for (String ip : to.nicIps) {
+            assert nic1.ip == ip || nic2.ip == ip
+        }
     }
-
-    void TestUpdateLoadBalancerServerGroup(){
-        updateLoadBalancerServerGroup {
-            uuid = servergroup1.uuid
-            name = "updated name"
-        }
-        LoadBalancerServerGroupInventory servergroup = queryLoadBalancerServerGroup { conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
-        assert servergroup.name == "updated name"
-    }
-
-    void TestServerGroupWithBackendServer(){
-        def l3 = env.inventoryByName("l3") as L3NetworkInventory
-        def vm = env.inventoryByName("vm-1") as VmInstanceInventory
-
-        addBackendServerToServerGroup{
-            vmNicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
-            serverIps  = ["20.20.20.1"]
-            serverGroupUuid = servergroup1.uuid
-        }
-        LoadBalancerServerGroupInventory servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
-        assert servergroup.serverIps[0].ipAddress == "20.20.20.1"
-
-        removeBackendServerFromServerGroup{
-            vmNicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
-            serverGroupUuid = servergroup1.uuid
-        }
-        servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
-        assert servergroup.vmNicRefs.isEmpty()
-    }
-
-    void TestDeleteLoadBalancerServerGroup(){
-        deleteLoadBalancerServerGroup{
-            uuid = servergroup1.uuid
-        }
-    }
-
-
-
 
     @Override
     void clean() {

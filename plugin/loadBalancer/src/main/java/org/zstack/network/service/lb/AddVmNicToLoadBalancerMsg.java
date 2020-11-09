@@ -11,6 +11,7 @@ public class AddVmNicToLoadBalancerMsg extends NeedReplyMessage implements LoadB
     private String loadBalancerUuid;
 
     private List<String> vmNicUuids;
+    private List<String> serverIps;
 
     private String listenerUuid;
 
@@ -37,5 +38,13 @@ public class AddVmNicToLoadBalancerMsg extends NeedReplyMessage implements LoadB
 
     public void setVmNicUuids(List<String> vmNicUuids) {
         this.vmNicUuids = vmNicUuids;
+    }
+
+    public List<String> getServerIps() {
+        return serverIps;
+    }
+
+    public void setServerIps(List<String> serverIps) {
+        this.serverIps = serverIps;
     }
 }

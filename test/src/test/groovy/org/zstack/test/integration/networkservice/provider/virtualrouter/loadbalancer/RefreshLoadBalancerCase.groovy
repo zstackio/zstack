@@ -238,9 +238,6 @@ class RefreshLoadBalancerCase extends SubCase {
 
         assert count == 1
         assert cmd.lbs.size() == 3
-        assert Q.New(LoadBalancerListenerVmNicRefVO.class)
-                .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, listener.uuid)
-                .eq(LoadBalancerListenerVmNicRefVO_.status, LoadBalancerVmNicStatus.Inactive).isExists()
 
         // one lb doesn't have nic
         removeVmNicFromLoadBalancer {

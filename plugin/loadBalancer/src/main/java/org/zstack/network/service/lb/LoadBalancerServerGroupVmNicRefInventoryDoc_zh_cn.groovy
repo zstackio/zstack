@@ -1,6 +1,7 @@
 package org.zstack.network.service.lb
 
 import java.lang.Long
+import java.lang.Long
 import java.sql.Timestamp
 import java.sql.Timestamp
 
@@ -24,6 +25,12 @@ doc {
 		name "vmNicUuid"
 		desc "云主机网卡UUID"
 		type "String"
+		since "0.6"
+	}
+	field {
+		name "weight"
+		desc ""
+		type "Long"
 		since "0.6"
 	}
 	field {

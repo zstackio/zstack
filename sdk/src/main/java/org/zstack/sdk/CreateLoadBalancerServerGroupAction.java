@@ -31,9 +31,6 @@ public class CreateLoadBalancerServerGroupAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,255L}, noTrim = false)
-    public java.lang.Integer weight;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String loadBalancerUuid;
 

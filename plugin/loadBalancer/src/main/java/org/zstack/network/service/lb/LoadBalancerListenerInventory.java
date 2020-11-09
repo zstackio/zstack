@@ -40,6 +40,7 @@ public class LoadBalancerListenerInventory implements Serializable {
     private List<LoadBalancerListenerVmNicRefInventory> vmNicRefs;
     private List<LoadBalancerListenerACLRefInventory> aclRefs;
     private List<LoadBalancerListenerCertificateRefInventory> certificateRefs;
+    private List<LoadBalancerListenerServerGroupRefInventory> serverGroupRefs;
 
     public static LoadBalancerListenerInventory valueOf(LoadBalancerListenerVO vo) {
         LoadBalancerListenerInventory inv = new LoadBalancerListenerInventory();
@@ -55,6 +56,7 @@ public class LoadBalancerListenerInventory implements Serializable {
         inv.setVmNicRefs(LoadBalancerListenerVmNicRefInventory.valueOf(vo.getVmNicRefs()));
         inv.setAclRefs(LoadBalancerListenerACLRefInventory.valueOf(vo.getAclRefs()));
         inv.setCertificateRefs(LoadBalancerListenerCertificateRefInventory.valueOf(vo.getCertificateRefs()));
+        inv.setServerGroupRefs(LoadBalancerListenerServerGroupRefInventory.valueOf(vo.getServerGroupRefs()));
         return inv;
     }
 
@@ -160,5 +162,21 @@ public class LoadBalancerListenerInventory implements Serializable {
 
     public void setCertificateRefs(List<LoadBalancerListenerCertificateRefInventory> certificateRefs) {
         this.certificateRefs = certificateRefs;
+    }
+
+    public void setInstancePort(Integer instancePort) {
+        this.instancePort = instancePort;
+    }
+
+    public void setLoadBalancerPort(Integer loadBalancerPort) {
+        this.loadBalancerPort = loadBalancerPort;
+    }
+
+    public List<LoadBalancerListenerServerGroupRefInventory> getServerGroupRefs() {
+        return serverGroupRefs;
+    }
+
+    public void setServerGroupRefs(List<LoadBalancerListenerServerGroupRefInventory> serverGroupRefs) {
+        this.serverGroupRefs = serverGroupRefs;
     }
 }

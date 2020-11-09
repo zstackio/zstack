@@ -21,8 +21,6 @@ public class APIUpdateLoadBalancerServerGroupMsg extends APIMessage implements L
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
-    @APIParam(numberRange = {0, 255}, required = false)
-    private Integer weight;
 
     @APINoSee
     private String loadBalancerUuid;
@@ -49,14 +47,6 @@ public class APIUpdateLoadBalancerServerGroupMsg extends APIMessage implements L
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Integer getWeight() {
-        return weight;
-    }
-
-    public void setWeight(Integer weight) {
-        this.weight = weight;
     }
 
     @Override

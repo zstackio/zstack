@@ -42,16 +42,6 @@ doc {
 					
 				}
 				column {
-					name "weight"
-					enclosedIn "params"
-					desc ""
-					location "body"
-					type "Integer"
-					optional false
-					since "0.6"
-					
-				}
-				column {
 					name "loadBalancerUuid"
 					enclosedIn "params"
 					desc "负载均衡器UUID"

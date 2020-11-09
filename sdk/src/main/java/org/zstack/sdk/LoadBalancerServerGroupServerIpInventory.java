@@ -36,6 +36,14 @@ public class LoadBalancerServerGroupServerIpInventory  {
         return this.ipAddress;
     }
 
+    public java.lang.Long weight;
+    public void setWeight(java.lang.Long weight) {
+        this.weight = weight;
+    }
+    public java.lang.Long getWeight() {
+        return this.weight;
+    }
+
     public java.lang.String status;
     public void setStatus(java.lang.String status) {
         this.status = status;

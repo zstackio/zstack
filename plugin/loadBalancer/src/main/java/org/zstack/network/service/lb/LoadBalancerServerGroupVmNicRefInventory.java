@@ -11,6 +11,7 @@ public class LoadBalancerServerGroupVmNicRefInventory {
     private Long id;
     private String serverGroupUuid;
     private String vmNicUuid;
+    private Long weight;
     private String status;
     private Timestamp createDate;
     private Timestamp lastOpDate;
@@ -20,6 +21,7 @@ public class LoadBalancerServerGroupVmNicRefInventory {
         inv.setId(vo.getId());
         inv.setListenerUuid(vo.getLoadBalancerServerGroupUuid());
         inv.setVmNicUuid(vo.getVmNicUuid());
+        inv.setWeight(vo.getWeight());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setStatus(vo.getStatus().toString());
@@ -80,5 +82,25 @@ public class LoadBalancerServerGroupVmNicRefInventory {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
+    }
+
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
+    }
+
+    public Long getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Long weight) {
+        this.weight = weight;
     }
 }

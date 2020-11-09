@@ -100,4 +100,12 @@ public class LoadBalancerListenerInventory  {
         return this.certificateRefs;
     }
 
+    public java.util.List serverGroupRefs;
+    public void setServerGroupRefs(java.util.List serverGroupRefs) {
+        this.serverGroupRefs = serverGroupRefs;
+    }
+    public java.util.List getServerGroupRefs() {
+        return this.serverGroupRefs;
+    }
+
 }

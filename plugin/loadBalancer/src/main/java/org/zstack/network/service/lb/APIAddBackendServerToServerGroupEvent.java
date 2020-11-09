@@ -27,7 +27,6 @@ public class APIAddBackendServerToServerGroupEvent extends APIEvent {
         LoadBalancerServerGroupInventory loadBalancerServerGroupIv = new LoadBalancerServerGroupInventory();
         loadBalancerServerGroupIv.setName("test-servergroup");
         loadBalancerServerGroupIv.setUuid(uuid());
-        loadBalancerServerGroupIv.setWeight(5000);
         loadBalancerServerGroupIv.setLoadBalancerUuid(uuid());
         return event;
     }

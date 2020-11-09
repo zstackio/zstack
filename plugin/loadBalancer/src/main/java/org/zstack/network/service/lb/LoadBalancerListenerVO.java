@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.core.db.Q;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EntityGraph;
@@ -10,8 +11,11 @@ import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by frank on 8/8/2015.
@@ -24,7 +28,8 @@ import java.util.Set;
                 @EntityGraph.Neighbour(type = LoadBalancerVO.class, myField = "loadBalancerUuid", targetField = "uuid"),
                 @EntityGraph.Neighbour(type = LoadBalancerListenerVmNicRefVO.class, myField = "uuid", targetField = "listenerUuid"),
                 @EntityGraph.Neighbour(type = LoadBalancerListenerCertificateRefVO.class, myField = "uuid", targetField = "listenerUuid"),
-                @EntityGraph.Neighbour(type = LoadBalancerListenerACLRefVO.class, myField = "uuid", targetField = "listenerUuid")
+                @EntityGraph.Neighbour(type = LoadBalancerListenerACLRefVO.class, myField = "uuid", targetField = "listenerUuid"),
+                @EntityGraph.Neighbour(type = LoadBalancerListenerServerGroupRefVO.class, myField = "uuid", targetField = "listenerUuid")
         }
 )
 public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount {
@@ -47,6 +52,10 @@ public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount
     @Column
     private String protocol;
 
+    @Column
+    @ForeignKey(parentEntityClass = LoadBalancerServerGroupVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
+    private String serverGroupUuid;
+
     @OneToMany(fetch=FetchType.EAGER)
     @JoinColumn(name="listenerUuid", insertable=false, updatable=false)
     @NoView
@@ -61,6 +70,11 @@ public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount
     @JoinColumn(name="listenerUuid", insertable=false, updatable=false)
     @NoView
     private Set<LoadBalancerListenerCertificateRefVO> certificateRefs;
+
+    @OneToMany(fetch=FetchType.EAGER)
+    @JoinColumn(name="listenerUuid", insertable=false, updatable=false)
+    @NoView
+    private Set<LoadBalancerListenerServerGroupRefVO> serverGroupRefs;
 
     @Column
     private Timestamp createDate;
@@ -173,5 +187,33 @@ public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount
 
     public void setCertificateRefs(Set<LoadBalancerListenerCertificateRefVO> certificateRefs) {
         this.certificateRefs = certificateRefs;
+    }
+
+    public Set<LoadBalancerListenerServerGroupRefVO> getServerGroupRefs() {
+        return serverGroupRefs;
+    }
+
+    public void setServerGroupRefs(Set<LoadBalancerListenerServerGroupRefVO> serverGroupRefs) {
+        this.serverGroupRefs = serverGroupRefs;
+    }
+
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
+    }
+
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
+    }
+
+    public List<String> getAttachedVmNics() {
+        List<String> serverGroupUuids = getServerGroupRefs().stream().map(LoadBalancerListenerServerGroupRefVO::getLoadBalancerServerGroupUuid).collect(Collectors.toList());
+        List<String> attachedNicUuids = new ArrayList<>();
+        if (!serverGroupUuids.isEmpty()) {
+            attachedNicUuids = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                    .select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid)
+                    .in(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, serverGroupUuids)
+                    .listValues();
+        }
+        return attachedNicUuids;
     }
 }

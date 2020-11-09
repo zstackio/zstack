@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateLoadBalancerServerGroupAction extends AbstractAction {
+public class GetCandidateVmNicsForLoadBalancerServerGroupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateLoadBalancerServerGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateLoadBalancerServerGroupResult value;
+        public org.zstack.sdk.GetCandidateVmNicsForLoadBalancerServerGroupResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,13 +26,7 @@ public class UpdateLoadBalancerServerGroupAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
+    public java.lang.String servergroupUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -52,12 +46,6 @@ public class UpdateLoadBalancerServerGroupAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -66,8 +54,8 @@ public class UpdateLoadBalancerServerGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateLoadBalancerServerGroupResult value = res.getResult(org.zstack.sdk.UpdateLoadBalancerServerGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateLoadBalancerServerGroupResult() : value; 
+        org.zstack.sdk.GetCandidateVmNicsForLoadBalancerServerGroupResult value = res.getResult(org.zstack.sdk.GetCandidateVmNicsForLoadBalancerServerGroupResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetCandidateVmNicsForLoadBalancerServerGroupResult() : value; 
 
         return ret;
     }
@@ -96,11 +84,11 @@ public class UpdateLoadBalancerServerGroupAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/load-balancers/servergroups/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/load-balancers/servergroups/{servergroupUuid}/vm-instances/candidate-nics";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "updateLoadBalancerServerGroup";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 
