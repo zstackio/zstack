@@ -110,6 +110,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MonitorGroupInstanceVO` (
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`uuid`),
+  KEY `groupUuid` (`groupUuid`),
   CONSTRAINT `fkMonitorGroupInstanceVOMonitorGroupVO` FOREIGN KEY (`groupUuid`) REFERENCES `zstack`.`MonitorGroupVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -129,6 +130,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MonitorGroupTemplateRefVO` (
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`uuid`),
+  UNIQUE KEY `groupUuidTemplateUuid` (`groupUuid`,`templateUuid`),
   CONSTRAINT `fkMonitorGroupTemplateRefVOMonitorGroupVO` FOREIGN KEY (`groupUuid`) REFERENCES `zstack`.`MonitorGroupVO` (`uuid`),
   CONSTRAINT `fkMonitorGroupTemplateRefVOMonitorTemplateVO` FOREIGN KEY (`templateUuid`) REFERENCES `zstack`.`MonitorTemplateVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -150,6 +152,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MetricRuleTemplateVO` (
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`uuid`),
+  KEY `monitorTemplateUuid` (`monitorTemplateUuid`),
   CONSTRAINT `fkMetricRuleTemplateVOMonitorTemplateVO` FOREIGN KEY (`monitorTemplateUuid`) REFERENCES `zstack`.`MonitorTemplateVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -164,6 +167,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`EventRuleTemplateVO` (
   `emergencyLevel` varchar(64) DEFAULT NULL,
   `labels` varchar(4096) DEFAULT NULL,
   PRIMARY KEY (`uuid`),
+  KEY `monitorTemplateUuid` (`monitorTemplateUuid`),
   CONSTRAINT `fkEventRuleTemplateVOMonitorTemplateVO` FOREIGN KEY (`monitorTemplateUuid`) REFERENCES `zstack`.`MonitorTemplateVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -174,6 +178,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MonitorGroupEventSubscriptionVO` (
   `eventRuleTemplateUuid` varchar(32) NOT NULL,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`uuid`),
+  KEY `groupUuid` (`groupUuid`),
   CONSTRAINT `fkMonitorGroupEventSubscriptionVOMonitorGroupVO` FOREIGN KEY (`groupUuid`) REFERENCES `zstack`.`MonitorGroupVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -184,6 +189,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MonitorGroupAlarmVO` (
   `metricRuleTemplateUuid` varchar(32) NOT NULL,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`uuid`),
+  KEY `groupUuid` (`groupUuid`),
   CONSTRAINT `fkMonitorGroupAlarmVOMonitorGroupVO` FOREIGN KEY (`groupUuid`) REFERENCES `zstack`.`MonitorGroupVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -212,6 +218,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ActiveAlarmVO` (
   `namespace` varchar(128) NOT NULL,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`uuid`),
+  KEY `alarmUuid` (`alarmUuid`),
   CONSTRAINT `fkActiveAlarmVOActiveAlarmTemplateVO` FOREIGN KEY (`templateUuid`) REFERENCES `zstack`.`ActiveAlarmTemplateVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -223,7 +230,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AlertDataAckVO` (
   `ackDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `resumeAlert` tinyint(1) NOT NULL DEFAULT '0',
   `operatorAccountUuid` varchar(32) NOT NULL,
-  PRIMARY KEY (`alertDataUuid`)
+  PRIMARY KEY (`alertDataUuid`),
+  KEY `resourceUuid` (`resourceUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`EventDataAckVO` (
