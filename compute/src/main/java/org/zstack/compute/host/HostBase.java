@@ -24,7 +24,6 @@ import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -464,15 +463,28 @@ public abstract class HostBase extends AbstractHost {
         }
 
         chain.done(new FlowDoneHandler(msg) {
-            @Override
-            public void handle(Map data) {
-                casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
+            private void complete() {
                 bus.publish(evt);
 
                 HostDeletedData d = new HostDeletedData();
                 d.setInventory(HostInventory.valueOf(self));
                 d.setHostUuid(self.getUuid());
                 evtf.fire(HostCanonicalEvents.HOST_DELETED_PATH, d);
+            }
+
+            @Override
+            public void handle(Map data) {
+                casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new Completion(msg) {
+                    @Override
+                    public void success() {
+                        complete();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        complete();
+                    }
+                });
             }
         }).error(new FlowErrorHandler(msg) {
             @Override
