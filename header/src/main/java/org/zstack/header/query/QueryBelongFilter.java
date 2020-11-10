@@ -7,5 +7,5 @@ import java.util.List;
  */
 public interface QueryBelongFilter {
     String filterName();
-    void filter(List result, String condition);
+    String convertFilterNameToZQL(String filterName);
 }
