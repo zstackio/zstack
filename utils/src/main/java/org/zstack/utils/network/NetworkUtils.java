@@ -1,7 +1,6 @@
 package org.zstack.utils.network;
 
 import com.googlecode.ipv6.IPv6Address;
-import com.googlecode.ipv6.IPv6AddressRange;
 import com.googlecode.ipv6.IPv6Network;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
@@ -20,7 +19,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.zstack.utils.network.IPv6NetworkUtils.*;
+import static org.zstack.utils.network.IPv6NetworkUtils.isIpv6Address;
+import static org.zstack.utils.network.IPv6NetworkUtils.isIpv6UnicastAddress;
 
 public class NetworkUtils {
     private static final CLogger logger = Utils.getLogger(NetworkUtils.class);
@@ -95,11 +95,11 @@ public class NetworkUtils {
     }
 
     public static boolean isNetmask(String netmask) {
-        return validNetmasks.keySet().contains(netmask);
+        return validNetmasks.containsKey(netmask);
     }
 
     public static boolean isNetmaskExcept(String netmask, String except) {
-        return validNetmasks.keySet().contains(netmask) && !netmask.equals(except);
+        return validNetmasks.containsKey(netmask) && !netmask.equals(except);
     }
 
     public static boolean isCidr(String cidr) {
@@ -197,11 +197,7 @@ public class NetworkUtils {
         long s2 = ipv4StringToLong(startIp2);
         long e2 = ipv4StringToLong(endIp2);
 
-        if ((s1 >= s2 && s1 <= e2) || (s1 <= s2 && s2 <= e1)) {
-            return true;
-        }
-
-        return false;
+        return (s1 >= s2 && s1 <= e2) || (s1 <= s2 && s2 <= e1);
     }
 
     public static boolean isConsecutiveRange(List<Long> allocatedIps) {
@@ -462,7 +458,7 @@ public class NetworkUtils {
         long e = ipv4StringToLong(endIp);
         long f = ipv4StringToLong(start);
         List<String> res = new ArrayList<String>();
-        for (long i = s > f ? s : f; i<=e; i++) {
+        for (long i = Math.max(s, f); i<=e; i++) {
             String ip = longToIpv4String(i);
             if (!usedIps.contains(ip)) {
                 res.add(ip);
@@ -480,7 +476,6 @@ public class NetworkUtils {
         IPv6Address s = IPv6Address.fromString(startIp);
         IPv6Address e = IPv6Address.fromString(endIp);
         IPv6Address f = IPv6Address.fromString(start);
-        IPv6AddressRange range = IPv6AddressRange.fromFirstAndLast(s, e);
 
         List<String> res = new ArrayList<String>();
         while (s.compareTo(e) <= 0) {
@@ -702,14 +697,14 @@ public class NetworkUtils {
     }
 
     private static String longToIP(long longIP) {
-        StringBuffer sb = new StringBuffer("");
-        sb.append(String.valueOf(longIP >>> 24));
+        StringBuilder sb = new StringBuilder();
+        sb.append((longIP >>> 24));
         sb.append(".");
-        sb.append(String.valueOf((longIP & 0x00FFFFFF) >>> 16));
+        sb.append(((longIP & 0x00FFFFFF) >>> 16));
         sb.append(".");
-        sb.append(String.valueOf((longIP & 0x0000FFFF) >>> 8));
+        sb.append(((longIP & 0x0000FFFF) >>> 8));
         sb.append(".");
-        sb.append(String.valueOf(longIP & 0x000000FF));
+        sb.append((longIP & 0x000000FF));
 
         return sb.toString();
     }
@@ -726,12 +721,10 @@ public class NetworkUtils {
 
     public static String getSmallestIp(List<String> ips) {
         if (isIpv4Address(ips.get(0))) {
-            List<Long> addresses = ips.stream().map(ip -> ipToLong(ip)).collect(Collectors.toList());
-            addresses.sort(Long::compareTo);
+            List<Long> addresses = ips.stream().map(NetworkUtils::ipToLong).sorted(Long::compareTo).collect(Collectors.toList());
             return longToIP(addresses.get(0));
         } else {
-            List<IPv6Address> addresses = ips.stream().map(ip -> IPv6Address.fromString(ip)).collect(Collectors.toList());
-            addresses.sort(IPv6Address::compareTo);
+            List<IPv6Address> addresses = ips.stream().map(IPv6Address::fromString).sorted(IPv6Address::compareTo).collect(Collectors.toList());
             return addresses.get(0).toString();
         }
     }
@@ -739,12 +732,10 @@ public class NetworkUtils {
     public static String getBiggesttIp(List<String> ips) {
         int length = ips.size();
         if (isIpv4Address(ips.get(0))) {
-            List<Long> addresses = ips.stream().map(ip -> ipToLong(ip)).collect(Collectors.toList());
-            addresses.sort(Long::compareTo);
+            List<Long> addresses = ips.stream().map(NetworkUtils::ipToLong).sorted(Long::compareTo).collect(Collectors.toList());
             return longToIP(addresses.get(length -1));
         } else {
-            List<IPv6Address> addresses = ips.stream().map(ip -> IPv6Address.fromString(ip)).collect(Collectors.toList());
-            addresses.sort(IPv6Address::compareTo);
+            List<IPv6Address> addresses = ips.stream().map(IPv6Address::fromString).sorted(IPv6Address::compareTo).collect(Collectors.toList());
             return addresses.get(length -1).toString();
         }
     }
@@ -792,31 +783,19 @@ public class NetworkUtils {
     }
 
     static boolean isIpv4MulticastAddress(String ip) {
-        if (isInRange(ip, "224.0.0.0", "239.255.255.255")) {
-            return true;
-        }
-        return false;
+        return isInRange(ip, "224.0.0.0", "239.255.255.255");
     }
 
     static boolean isIpv4ClassEAddress(String ip) {
-        if (isInRange(ip, "240.0.0.0", "254.255.255.254")) {
-            return true;
-        }
-        return false;
+        return isInRange(ip, "240.0.0.0", "254.255.255.254");
     }
 
     static boolean isIpv4LocalAddress(String ip) {
-        if (isInRange(ip, "127.0.0.0", "127.255.255.255")) {
-            return true;
-        }
-        return false;
+        return isInRange(ip, "127.0.0.0", "127.255.255.255");
     }
 
     static boolean isIpv4LinkLocalAddress(String ip) {
-        if (isInRange(ip, "169.254.0.0","169.254.255.255")) {
-            return true;
-        }
-        return false;
+        return isInRange(ip, "169.254.0.0", "169.254.255.255");
     }
 
     public static boolean isUnicastIPAddress(String ip) {
