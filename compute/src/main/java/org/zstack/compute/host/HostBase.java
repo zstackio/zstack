@@ -464,15 +464,28 @@ public abstract class HostBase extends AbstractHost {
         }
 
         chain.done(new FlowDoneHandler(msg) {
-            @Override
-            public void handle(Map data) {
-                casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
+            private void complete() {
                 bus.publish(evt);
 
                 HostDeletedData d = new HostDeletedData();
                 d.setInventory(HostInventory.valueOf(self));
                 d.setHostUuid(self.getUuid());
                 evtf.fire(HostCanonicalEvents.HOST_DELETED_PATH, d);
+            }
+
+            @Override
+            public void handle(Map data) {
+                casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new Completion(msg) {
+                    @Override
+                    public void success() {
+                        complete();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        complete();
+                    }
+                });
             }
         }).error(new FlowErrorHandler(msg) {
             @Override
