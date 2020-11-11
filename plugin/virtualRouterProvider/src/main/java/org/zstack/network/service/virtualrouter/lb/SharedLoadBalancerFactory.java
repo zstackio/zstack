@@ -1,4 +1,4 @@
-package org.zstack.network.service.lb;
+package org.zstack.network.service.virtualrouter.lb;
 
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,9 +7,12 @@ import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
-import org.zstack.utils.DebugUtils;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.network.service.lb.*;
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 
 import javax.persistence.TypedQuery;
+import java.util.List;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SharedLoadBalancerFactory implements LoadBalancerFactory {
@@ -76,5 +79,16 @@ public class SharedLoadBalancerFactory implements LoadBalancerFactory {
         }
 
         return null;
+    }
+
+    @Override
+    public List<VmNicVO> getAttachableVmNicsForServerGroup(LoadBalancerVO lbVO, LoadBalancerServerGroupVO groupVO) {
+        String providerType = VyosConstants.VYOS_ROUTER_PROVIDER_TYPE;
+        if (lbVO.getProviderType() != null) {
+            providerType = lbVO.getProviderType();
+        }
+
+        LoadBalancerBackend backend = lbMgr.getBackend(providerType);
+        return backend.getAttachableVmNicsForServerGroup(lbVO, groupVO);
     }
 }

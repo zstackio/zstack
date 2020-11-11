@@ -273,4 +273,10 @@
             <zstack:extension interface="org.zstack.appliancevm.ApplianceVmSyncConfigToHaGroupExtensionPoint" />
         </zstack:plugin>
     </bean>
+
+    <bean id="SharedLoadBalancerFactory" class="org.zstack.network.service.virtualrouter.lb.SharedLoadBalancerFactory">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.network.service.lb.LoadBalancerFactory" />
+        </zstack:plugin>
+    </bean>
 </beans>

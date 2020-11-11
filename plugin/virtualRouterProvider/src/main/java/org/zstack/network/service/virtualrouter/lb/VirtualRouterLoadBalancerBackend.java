@@ -2021,8 +2021,23 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     @Override
     public List<VmNicVO> getAttachableVmNicsForServerGroup(LoadBalancerVO lbVO, LoadBalancerServerGroupVO groupVO) {
-        VirtualRouterVmInventory vr = findVirtualRouterVm(lbVO.getUuid());
+        List<String> attachedL3Uuids = LoadBalancerServerGroupInventory.valueOf(groupVO).getAttachedL3Uuids();
         List<String> l3NetworkUuids = new ArrayList<>();
+        /* get vr of attached l3 */
+        List<String> vrUuids = new ArrayList<>();
+        VirtualRouterVmInventory vr = null;
+        if (!attachedL3Uuids.isEmpty()) {
+            vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
+                    .notNull(VmNicVO_.vmInstanceUuid)
+                    .in(VmNicVO_.l3NetworkUuid, attachedL3Uuids)
+                    .in(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST).listValues();
+        }
+        if (vrUuids.isEmpty()) {
+            vr = findVirtualRouterVm(lbVO.getUuid());
+        } else {
+            vr = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vrUuids.get(0), VirtualRouterVmVO.class));
+        }
+
         if (vr != null) {
             l3NetworkUuids.addAll(vr.getAllL3Networks());
             if (lbVO.getType() == LoadBalancerType.Shared) {
@@ -2031,7 +2046,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             }
         } else {
             VipVO vipVO = dbf.findByUuid(lbVO.getVipUuid(), VipVO.class);
-            List<String> vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
+            vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
                     .eq(VmNicVO_.l3NetworkUuid, vipVO.getL3NetworkUuid()).notNull(VmNicVO_.metaData).listValues();
             if (!vrUuids.isEmpty()) {
                 List<String> l3Uuids = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid)
@@ -2046,10 +2061,23 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             return new ArrayList<>();
         }
 
+        String sql = "select l3.uuid from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref" +
+                " where l3.uuid = ref.l3NetworkUuid and l3.uuid in (:l3NetworkUuids) and ref.networkServiceType = :type";
+        l3NetworkUuids = SQL.New(sql, String.class).param("l3NetworkUuids", l3NetworkUuids)
+                .param("type", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING).list();
+        if (l3NetworkUuids.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        sql = "select nic from VmInstanceVO vm, VmNicVO nic " +
+                " where vm.uuid=nic.vmInstanceUuid and vm.type = 'UserVm' and vm.state in (:vmStates)  " +
+                " and nic.l3NetworkUuid in (:l3NetworkUuids) and nic.metaData is null ";
+        List<VmNicVO> nicVOS = SQL.New(sql, VmNicVO.class).param("l3NetworkUuids", l3NetworkUuids)
+                .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
+        nicVOS = nicVOS.stream().filter(n -> !VmNicInventory.valueOf(n).isIpv6OnlyNic()).collect(Collectors.toList());
+
         List<String> attachedNicUuids = groupVO.getLoadBalancerServerGroupVmNicRefs().stream()
                 .map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList());
-        List<VmNicVO> nicVOS = Q.New(VmNicVO.class).in(VmNicVO_.l3NetworkUuid, l3NetworkUuids)
-                .isNull(VmNicVO_.metaData).notIn(VmNicVO_.uuid, attachedNicUuids).list();
-        return nicVOS;
+        return nicVOS.stream().filter(n -> !attachedNicUuids.contains(n.getUuid())).collect(Collectors.toList());
     }
 }
