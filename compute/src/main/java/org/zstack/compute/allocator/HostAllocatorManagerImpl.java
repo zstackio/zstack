@@ -32,7 +32,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
-import org.zstack.header.storage.primary.PrimaryStorageFindBackupStorage;
 import org.zstack.header.storage.primary.PrimaryStorageType;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
@@ -141,8 +140,13 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         q.setParameter("bsState", BackupStorageState.Enabled);
         q.setParameter("bsStatus", BackupStorageStatus.Connected);
 
+        List<BackupStorageInventory> candidates = BackupStorageInventory.valueOf(q.getResultList());
+        for(BackupStorageAllocatorFilterExtensionPoint ext : pluginRgty.getExtensionList(BackupStorageAllocatorFilterExtensionPoint.class)) {
+            candidates = ext.filterBackupStorageCandidatesByPS(candidates, ps.getUuid());
+        }
+        
         APIGetCandidateBackupStorageForCreatingImageReply reply = new APIGetCandidateBackupStorageForCreatingImageReply();
-        reply.setInventories(BackupStorageInventory.valueOf(q.getResultList()));
+        reply.setInventories(candidates);
         bus.reply(msg, reply);
     }
 
