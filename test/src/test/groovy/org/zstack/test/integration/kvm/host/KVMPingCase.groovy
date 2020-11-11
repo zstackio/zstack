@@ -98,10 +98,9 @@ class KVMPingCase extends SubCase {
 
         boolean pingSuccess = false
 
-        env.simulator(KVMConstant.KVM_PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
+        env.afterSimulator(KVMConstant.KVM_PING_PATH) { KVMAgentCommands.PingResponse rsp, HttpEntity<String> e ->
             KVMAgentCommands.PingCmd cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.PingCmd.class)
 
-            def rsp = new KVMAgentCommands.PingResponse()
             if (cmd.hostUuid == kvm1.uuid && !pingSuccess) {
                 throw new RuntimeException("failure on purpose")
             } else {
