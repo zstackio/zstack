@@ -73,6 +73,7 @@
     <bean id="CephBackupStoragePrimaryStorageExtension" class="org.zstack.storage.ceph.backup.CephBackupStoragePrimaryStorageExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.storage.backup.BackupStoragePrimaryStorageExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.allocator.BackupStorageAllocatorFilterExtensionPoint" />
         </zstack:plugin>
     </bean>
 
