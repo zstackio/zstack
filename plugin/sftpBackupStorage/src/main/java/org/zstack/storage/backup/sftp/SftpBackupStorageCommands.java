@@ -1,9 +1,9 @@
 package org.zstack.storage.backup.sftp;
 
 import org.zstack.header.HasThreadContext;
-import org.zstack.header.agent.CancelCommand;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
+
+import java.io.Serializable;
 
 public class SftpBackupStorageCommands {
     public static class AgentCommand {
@@ -90,7 +90,7 @@ public class SftpBackupStorageCommands {
     public static class ConnectResponse extends AgentResponse {
     }
 
-    public static class DownloadCmd extends AgentCommand implements HasSensitiveInfo, HasThreadContext {
+    public static class DownloadCmd extends AgentCommand implements Serializable, HasThreadContext {
         private String imageUuid;
         private String installPath;
         @NoLogging(type = NoLogging.Type.Uri)

@@ -1,15 +1,15 @@
 package org.zstack.core.agent;
 
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.NeedReplyMessage;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
  * Created by frank on 12/5/2015.
  */
-public class DeployAgentMsg extends NeedReplyMessage implements HasSensitiveInfo {
+public class DeployAgentMsg extends NeedReplyMessage {
     private String owner;
     private String ip;
     private String username;

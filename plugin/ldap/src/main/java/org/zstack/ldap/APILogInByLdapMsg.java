@@ -5,7 +5,6 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.APISessionMessage;
 import org.zstack.header.identity.SessionVO;
 import org.zstack.header.identity.SuppressCredentialCheck;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -22,7 +21,7 @@ import java.util.Map;
         isAction = true,
         responseClass = APILogInByLdapReply.class
 )
-public class APILogInByLdapMsg extends APISessionMessage implements APILoginAuditor, HasSensitiveInfo {
+public class APILogInByLdapMsg extends APISessionMessage implements APILoginAuditor {
     @APIParam
     private String uid;
     @APIParam(password = true)

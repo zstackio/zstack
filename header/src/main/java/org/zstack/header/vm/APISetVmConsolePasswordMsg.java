@@ -2,12 +2,12 @@ package org.zstack.header.vm;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+
+import java.io.Serializable;
 
 
 /**
@@ -20,7 +20,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.PUT,
         responseClass = APISetVmConsolePasswordEvent.class
 )
-public class APISetVmConsolePasswordMsg extends APIMessage implements VmInstanceMessage, HasSensitiveInfo {
+public class APISetVmConsolePasswordMsg extends APIMessage implements VmInstanceMessage, Serializable {
     @APIParam(resourceType = VmInstanceVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam

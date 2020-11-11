@@ -18,7 +18,6 @@ import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
-import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.core.trash.StorageTrash;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -31,6 +30,7 @@ import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.trash.CleanTrashResult;
+import org.zstack.header.core.trash.InstallPathRecycleInventory;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -43,7 +43,6 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -78,6 +77,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -86,8 +86,8 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.i18n;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.*;
-import static org.zstack.utils.CollectionDSL.*;
 import static org.zstack.longjob.LongJobUtils.buildErrIfCanceled;
+import static org.zstack.utils.CollectionDSL.*;
 
 /**
  * Created by frank on 7/28/2015.
@@ -739,7 +739,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
-    public static class KvmSetupSelfFencerCmd extends AgentCommand implements HasSensitiveInfo {
+    public static class KvmSetupSelfFencerCmd extends AgentCommand implements Serializable {
         public String heartbeatImagePath;
         public String hostUuid;
         public long interval;
@@ -784,7 +784,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public List<String> watchers;
     }
 
-    public static class CephToCephMigrateVolumeSegmentCmd extends AgentCommand implements HasThreadContext, HasSensitiveInfo {
+    public static class CephToCephMigrateVolumeSegmentCmd extends AgentCommand implements HasThreadContext, Serializable {
         String parentUuid;
         String resourceUuid;
         String srcInstallPath;

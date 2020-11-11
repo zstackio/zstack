@@ -1,6 +1,5 @@
 package org.zstack.header.vm;
 
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 
 import java.io.Serializable;
@@ -8,7 +7,7 @@ import java.io.Serializable;
 /**
  * Created by mingjian.deng on 16/10/19.
  */
-public class VmAccountPreference implements Serializable, Cloneable, HasSensitiveInfo {
+public class VmAccountPreference implements Serializable, Cloneable {
     private String userAccount;
     @NoLogging
     private String accountPassword;

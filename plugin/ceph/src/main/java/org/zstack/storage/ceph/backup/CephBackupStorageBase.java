@@ -20,14 +20,16 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.HasThreadContext;
-import org.zstack.header.core.*;
+import org.zstack.header.core.AsyncLatch;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.*;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -46,6 +48,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
+import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -273,7 +276,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
     }
 
-    public static class DownloadCmd extends AgentCommand implements HasThreadContext, HasSensitiveInfo {
+    public static class DownloadCmd extends AgentCommand implements HasThreadContext, Serializable {
         @NoLogging(type = NoLogging.Type.Uri)
         String url;
         String installPath;
@@ -542,7 +545,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         }
     }
 
-    public static class CephToCephMigrateImageCmd extends AgentCommand implements HasSensitiveInfo {
+    public static class CephToCephMigrateImageCmd extends AgentCommand implements Serializable {
         String imageUuid;
         long imageSize;
         String srcInstallPath;
