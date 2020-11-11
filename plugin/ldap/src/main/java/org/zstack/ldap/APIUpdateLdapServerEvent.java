@@ -1,11 +1,12 @@
 package org.zstack.ldap;
 
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.rest.RestResponse;
 
+import java.io.Serializable;
+
 @RestResponse(allTo = "inventory")
-public class APIUpdateLdapServerEvent extends APIEvent implements HasSensitiveInfo {
+public class APIUpdateLdapServerEvent extends APIEvent {
     private LdapServerInventory inventory;
 
     public APIUpdateLdapServerEvent(String apiId) {

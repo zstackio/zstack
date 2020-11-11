@@ -2,7 +2,6 @@ package org.zstack.header.image;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.*;
 import org.zstack.header.other.APIAuditor;
@@ -24,7 +23,7 @@ import java.util.concurrent.TimeUnit;
         responseClass = APIAddImageEvent.class
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
-public class APIAddImageMsg extends APICreateMessage implements APIAuditor, HasSensitiveInfo {
+public class APIAddImageMsg extends APICreateMessage implements APIAuditor {
     @APIParam(maxLength = 255)
     private String name;
     @APIParam(required = false, maxLength = 2048)

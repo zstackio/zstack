@@ -1,15 +1,14 @@
 package org.zstack.storage.ceph.backup;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.BackupStorageMessage;
-import org.zstack.header.storage.backup.BackupStorageVO;
+
+import java.io.Serializable;
 
 /**
  * Created by Mei Lei on 6/3/2016.
@@ -20,7 +19,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
         isAction = true,
         responseClass = APIUpdateCephBackupStorageMonEvent.class
 )
-public class APIUpdateCephBackupStorageMonMsg extends APIMessage implements BackupStorageMessage, HasSensitiveInfo {
+public class APIUpdateCephBackupStorageMonMsg extends APIMessage implements BackupStorageMessage, Serializable {
     @APINoSee
     private String backupStorageUuid;
 

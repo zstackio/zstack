@@ -1,10 +1,11 @@
 package org.zstack.header.vm;
 
 import org.zstack.header.host.HostMessage;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.message.NeedReplyMessage;
 
-public class CreateVmOnHypervisorMsg extends NeedReplyMessage implements HostMessage, HasSensitiveInfo {
+import java.io.Serializable;
+
+public class CreateVmOnHypervisorMsg extends NeedReplyMessage implements HostMessage, Serializable {
     private VmInstanceSpec vmSpec;
 
     @Override

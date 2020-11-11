@@ -1,12 +1,8 @@
 package org.zstack.core.log;
 
 import com.google.gson.*;
-import org.apache.commons.codec.binary.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.springframework.security.access.method.P;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
-import org.zstack.header.message.Event;
 import org.zstack.header.message.GsonTransient;
 import org.zstack.header.message.Message;
 import org.zstack.utils.BeanUtils;
@@ -16,12 +12,10 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.GsonUtil;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Created by MaJin on 2019/9/21.
@@ -30,7 +24,7 @@ public class LogSafeGson {
     private static Map<Class, Set<FieldNoLogging>> maskFields = new HashMap<>();
     private static Map<Class, Set<FieldNoLogging>> autoFields = new HashMap<>();
 
-    private static final List<Class<?>> searchClasses = Arrays.asList(HasSensitiveInfo.class, Message.class);
+    private static final List<Class<?>> searchClasses = Arrays.asList(Serializable.class, Message.class);
     private static final Gson logSafeGson;
     private static Function<String, String> tagInfoHider = s -> s;
     private static class FieldNoLogging {
@@ -101,7 +95,10 @@ public class LogSafeGson {
 
         for (Class<?> baseClz : searchClasses) {
             for (Class<?> clz : BeanUtils.reflections.getSubTypesOf(baseClz)) {
-                cacheNoLoggingInfo(clz);
+                if (!clz.isInterface()) {
+                    cacheNoLoggingInfo(clz);
+                }
+
             }
         }
     }
@@ -116,7 +113,7 @@ public class LogSafeGson {
                 } else {
                     maskFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an, si));
                 }
-            } else if (mayHasSensitiveInfo(f.getType())) {
+            } else if (mayHasSensitiveInfo(f.getType()) && !f.getType().isEnum() && !f.getType().isAssignableFrom(si)) {
                 f.setAccessible(true);
                 autoFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f));
             }
@@ -199,7 +196,7 @@ public class LogSafeGson {
             NoLogging an = f.getAnnotation(NoLogging.class);
             if (an != null && an.type() == NoLogging.Type.Simple) {
                 paths.put(f.getName(), NoLogging.Type.Simple);
-            } else if (mayHasSensitiveInfo(f.getType())) {
+            } else if (mayHasSensitiveInfo(f.getType()) && !f.getType().isEnum() && !f.getType().isAssignableFrom(clz)) {
                 String path = f.getName();
                 getSensitiveFields(f.getType()).forEach((k, v) -> paths.put(path + '.' + k, v));
             }
@@ -213,7 +210,8 @@ public class LogSafeGson {
     }
 
     private static boolean mayHasSensitiveInfo(Class<?> clz) {
-        return searchClasses.stream().anyMatch(it -> it.isAssignableFrom(clz));
+        Package p = clz.getPackage();
+        return p != null && p.getName().startsWith("org.zstack") && searchClasses.stream().anyMatch(it -> it.isAssignableFrom(clz));
     }
 
     private static boolean mayHasSensitiveInfo(Object obj) {
