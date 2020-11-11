@@ -26,7 +26,6 @@ public class APICreateLoadBalancerServerGroupEvent extends APIEvent{
         LoadBalancerServerGroupInventory loadBalancerServerGroupIv = new LoadBalancerServerGroupInventory();
         loadBalancerServerGroupIv.setName("create-servergroup");
         loadBalancerServerGroupIv.setUuid(uuid());
-        loadBalancerServerGroupIv.setWeight(5000);
         loadBalancerServerGroupIv.setLoadBalancerUuid(uuid());
         return event;
     }

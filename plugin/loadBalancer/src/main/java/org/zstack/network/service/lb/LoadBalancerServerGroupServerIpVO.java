@@ -23,10 +23,10 @@ public class LoadBalancerServerGroupServerIpVO  {
     private long id;
 
     @Column
-    private String description;
+    private String ipAddress;
 
     @Column
-    private String ipAddress;
+    private Long weight;
 
     @Column
     @ForeignKey(parentEntityClass = LoadBalancerServerGroupVO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
@@ -56,14 +56,6 @@ public class LoadBalancerServerGroupServerIpVO  {
 
     public void setLoadBalancerServerGroupUuid(String loadBalancerServerGroupUuid) {
         this.loadBalancerServerGroupUuid = loadBalancerServerGroupUuid;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public String getIpAddress() {
@@ -96,5 +88,13 @@ public class LoadBalancerServerGroupServerIpVO  {
 
     public void setStatus(LoadBalancerBackendServerStatus status) {
         this.status = status;
+    }
+
+    public Long getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Long weight) {
+        this.weight = weight;
     }
 }

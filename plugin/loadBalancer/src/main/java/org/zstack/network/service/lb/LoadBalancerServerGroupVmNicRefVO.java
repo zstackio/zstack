@@ -32,6 +32,9 @@ public class LoadBalancerServerGroupVmNicRefVO {
     private String vmNicUuid;
 
     @Column
+    private Long weight;
+
+    @Column
     @Enumerated(EnumType.STRING)
     private LoadBalancerVmNicStatus status;
 
@@ -87,5 +90,13 @@ public class LoadBalancerServerGroupVmNicRefVO {
 
     public void setLoadBalancerServerGroupUuid(String loadBalancerServerGroupUuid) {
         this.loadBalancerServerGroupUuid = loadBalancerServerGroupUuid;
+    }
+
+    public Long getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Long weight) {
+        this.weight = weight;
     }
 }

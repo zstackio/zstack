@@ -3,6 +3,7 @@ package org.zstack.network.service.lb;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.network.service.vip.VipInventory;
 
 import java.util.List;
@@ -29,4 +30,5 @@ public interface LoadBalancerBackend {
 
     String getNetworkServiceProviderType();
 
+    List<VmNicVO> getAttachableVmNicsForServerGroup(LoadBalancerVO lbVO, LoadBalancerServerGroupVO groupVO);
 }

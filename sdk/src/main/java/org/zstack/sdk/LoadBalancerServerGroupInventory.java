@@ -36,14 +36,6 @@ public class LoadBalancerServerGroupInventory  {
         return this.loadBalancerUuid;
     }
 
-    public java.lang.Integer weight;
-    public void setWeight(java.lang.Integer weight) {
-        this.weight = weight;
-    }
-    public java.lang.Integer getWeight() {
-        return this.weight;
-    }
-
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

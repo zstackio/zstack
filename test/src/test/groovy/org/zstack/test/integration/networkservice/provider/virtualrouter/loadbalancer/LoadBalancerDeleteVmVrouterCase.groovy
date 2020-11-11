@@ -114,6 +114,6 @@ class LoadBalancerDeleteVmVrouterCase extends SubCase {
 
         //delete vm fail
         LoadBalancerListenerInventory lbl1 = lb1.listeners.get(0)
-        assert lbl1.vmNicRefs.size() == 1
+        assert lbl1.serverGroupRefs.size() == 1
     }
 }

@@ -11,9 +11,9 @@ import java.util.List;
 @Inventory(mappingVOClass = LoadBalancerServerGroupServerIpVO.class)
 public class LoadBalancerServerGroupServerIpInventory implements Serializable {
     private long id;
-    private String description;
     private String serverGroupUuid;
     private String ipAddress;
+    private Long weight;
     private String status;
     private Timestamp createDate;
     private Timestamp lastOpDate;
@@ -21,12 +21,12 @@ public class LoadBalancerServerGroupServerIpInventory implements Serializable {
     public static LoadBalancerServerGroupServerIpInventory valueOf(LoadBalancerServerGroupServerIpVO vo) {
         LoadBalancerServerGroupServerIpInventory inv = new LoadBalancerServerGroupServerIpInventory();
         inv.setId(vo.getId());
-        inv.setDescription(vo.getDescription());
         inv.setServerGroupUuid(vo.getLoadBalancerServerGroupUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setIpAddress(vo.getIpAddress());
         inv.setStatus(vo.getStatus().toString());
+        inv.setWeight(vo.getWeight());
         return inv;
     }
 
@@ -36,15 +36,6 @@ public class LoadBalancerServerGroupServerIpInventory implements Serializable {
             invs.add(valueOf(vo));
         }
         return invs;
-    }
-
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public String getServerGroupUuid() {
@@ -93,5 +84,13 @@ public class LoadBalancerServerGroupServerIpInventory implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Long getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Long weight) {
+        this.weight = weight;
     }
 }

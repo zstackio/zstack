@@ -27,7 +27,6 @@ public class APIUpdateLoadBalancerServerGroupEvent extends APIEvent {
         LoadBalancerServerGroupInventory loadBalancerServerGroupIv = new LoadBalancerServerGroupInventory();
         loadBalancerServerGroupIv.setName("update-servergroup");
         loadBalancerServerGroupIv.setUuid(uuid());
-        loadBalancerServerGroupIv.setWeight(25);
         loadBalancerServerGroupIv.setLoadBalancerUuid(uuid());
         return event;
     }

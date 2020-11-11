@@ -52,16 +52,6 @@ doc {
 					
 				}
 				column {
-					name "weight"
-					enclosedIn "updateLoadBalancerServerGroup"
-					desc ""
-					location "body"
-					type "Integer"
-					optional true
-					since "0.6"
-					
-				}
-				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"

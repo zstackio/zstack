@@ -28,6 +28,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.lb.APIGetCandidateVmNicsForLoadBalancerServerGroupMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.lb.APIRefreshLoadBalancerMsg</name>
     </message>
 

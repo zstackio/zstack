@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb
 
+import java.lang.Long
 import java.sql.Timestamp
 import java.sql.Timestamp
 
@@ -29,6 +30,12 @@ doc {
 		name "ipAddress"
 		desc ""
 		type "String"
+		since "0.6"
+	}
+	field {
+		name "weight"
+		desc ""
+		type "Long"
 		since "0.6"
 	}
 	field {

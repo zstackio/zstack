@@ -24,8 +24,6 @@ public class APICreateLoadBalancerServerGroupMsg extends APICreateMessage implem
     private String name;
     @APIParam(maxLength = 2048, required = false)
     private String description;
-    @APIParam(numberRange = {0, 255})
-    private Integer weight;
     @APIParam(resourceType = LoadBalancerVO.class, checkAccount = true, operationTarget = true)
     private String loadBalancerUuid;
 
@@ -45,14 +43,6 @@ public class APICreateLoadBalancerServerGroupMsg extends APICreateMessage implem
         this.description = description;
     }
 
-    public Integer getWeight() {
-        return weight;
-    }
-
-    public void setWeight(Integer weight) {
-        this.weight = weight;
-    }
-
     public String getLoadBalancerUuid() {
         return loadBalancerUuid;
     }
@@ -65,7 +55,6 @@ public class APICreateLoadBalancerServerGroupMsg extends APICreateMessage implem
     public static APICreateLoadBalancerServerGroupMsg __example__() {
         APICreateLoadBalancerServerGroupMsg msg = new APICreateLoadBalancerServerGroupMsg();
         msg.setName("create-Lb");
-        msg.setWeight(500);
         msg.setLoadBalancerUuid(uuid());
 
         return msg;

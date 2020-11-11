@@ -51,6 +51,10 @@ public class LoadBalancerVO extends ResourceVO implements OwnedByAccount {
     @ForeignKey(parentEntityClass = VipVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String vipUuid;
 
+    @Column
+    @ForeignKey(parentEntityClass = LoadBalancerServerGroupVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
+    private String serverGroupUuid;
+
     @OneToMany(fetch=FetchType.EAGER)
     @JoinColumn(name="loadBalancerUuid", insertable=false, updatable=false)
     @NoView
@@ -151,5 +155,13 @@ public class LoadBalancerVO extends ResourceVO implements OwnedByAccount {
 
     public void setType(LoadBalancerType type) {
         this.type = type;
+    }
+
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
+    }
+
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
     }
 }

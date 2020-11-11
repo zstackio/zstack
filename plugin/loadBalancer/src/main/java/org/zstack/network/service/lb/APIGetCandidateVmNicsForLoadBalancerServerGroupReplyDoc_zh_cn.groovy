@@ -1,7 +1,7 @@
 package org.zstack.network.service.lb
 
 import org.zstack.header.errorcode.ErrorCode
-import org.zstack.network.service.lb.LoadBalancerListenerInventory
+import org.zstack.header.vm.VmNicInventory
 
 doc {
 
@@ -9,18 +9,18 @@ doc {
 
 	ref {
 		name "error"
-		path "org.zstack.network.service.lb.APIAddCertificateToLoadBalancerListenerEvent.error"
+		path "org.zstack.network.service.lb.APIGetCandidateVmNicsForLoadBalancerServerGroupReply.error"
 		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
 		type "ErrorCode"
 		since "0.6"
 		clz ErrorCode.class
 	}
 	ref {
-		name "inventory"
-		path "org.zstack.network.service.lb.APIAddCertificateToLoadBalancerListenerEvent.inventory"
+		name "inventories"
+		path "org.zstack.network.service.lb.APIGetCandidateVmNicsForLoadBalancerServerGroupReply.inventories"
 		desc "null"
-		type "LoadBalancerListenerInventory"
+		type "List"
 		since "0.6"
-		clz LoadBalancerListenerInventory.class
+		clz VmNicInventory.class
 	}
 }

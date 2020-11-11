@@ -31,9 +31,6 @@ public class LoadBalancerServerGroupVO extends ResourceVO  implements OwnedByAcc
     private String description;
 
     @Column
-    private int weight;
-
-    @Column
     @ForeignKey(parentEntityClass = LoadBalancerVO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.RESTRICT)
     private String loadBalancerUuid;
 
@@ -128,14 +125,6 @@ public class LoadBalancerServerGroupVO extends ResourceVO  implements OwnedByAcc
 
     public void setLoadBalancerServerGroupVmNicRefs(Set<LoadBalancerServerGroupVmNicRefVO> loadBalancerServerGroupVmNicRefs) {
         this.loadBalancerServerGroupVmNicRefs = loadBalancerServerGroupVmNicRefs;
-    }
-
-    public int getWeight() {
-        return weight;
-    }
-
-    public void setWeight(int weight) {
-        this.weight = weight;
     }
 
     public String getLoadBalancerUuid() {

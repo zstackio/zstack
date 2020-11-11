@@ -5,7 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.utils.DebugUtils;
+
+import javax.persistence.TypedQuery;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SharedLoadBalancerFactory implements LoadBalancerFactory {
@@ -50,5 +54,27 @@ public class SharedLoadBalancerFactory implements LoadBalancerFactory {
         }
 
         return lbMgr.getBackend(vo.getProviderType());
+    }
+
+    @Override
+    public String getProviderTypeByVmNicUuid(String nicUuid) {
+        if (nicUuid == null) {
+            return null;
+        }
+
+        String sql = "select l3 from L3NetworkVO l3, VmNicVO nic where nic.l3NetworkUuid = l3.uuid and nic.uuid = :uuid";
+        TypedQuery<L3NetworkVO> q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
+        q.setParameter("uuid", nicUuid);
+        L3NetworkVO l3 = q.getSingleResult();
+        for (NetworkServiceL3NetworkRefVO ref : l3.getNetworkServices()) {
+            if (LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING.equals(ref.getNetworkServiceType())) {
+                sql = "select p.type from NetworkServiceProviderVO p where p.uuid = :uuid";
+                TypedQuery<String> nq = dbf.getEntityManager().createQuery(sql, String.class);
+                nq.setParameter("uuid", ref.getNetworkServiceProviderUuid());
+                return nq.getSingleResult();
+            }
+        }
+
+        return null;
     }
 }

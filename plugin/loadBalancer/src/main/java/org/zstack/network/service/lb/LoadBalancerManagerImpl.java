@@ -13,6 +13,7 @@ import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -35,12 +36,10 @@ import org.zstack.header.message.NeedQuotaCheckMessage;
 import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
-import org.zstack.header.tag.AbstractSystemTagOperationJudger;
-import org.zstack.header.tag.SystemTagInventory;
-import org.zstack.header.tag.SystemTagLifeCycleListener;
-import org.zstack.header.tag.SystemTagValidator;
+import org.zstack.header.tag.*;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.vip.*;
@@ -159,6 +158,20 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     public void run(FlowTrigger trigger, Map data) {
                         vo = f.persistLoadBalancer(msg);
                         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), LoadBalancerVO.class.getSimpleName());
+
+                        /* this is hack, create default server group with same uuid as loadbalancer */
+                        LoadBalancerServerGroupVO groupVO = new LoadBalancerServerGroupVO();
+                        groupVO.setUuid(Platform.getUuid());
+                        groupVO.setAccountUuid(msg.getSession().getAccountUuid());
+                        groupVO.setDescription(String.format("default server group for load balancer %s", msg.getName()));
+                        groupVO.setLoadBalancerUuid(vo.getUuid());
+                        groupVO.setName(String.format("default-server-group-%s", msg.getName()));
+                        dbf.persist(groupVO);
+
+                        vo = dbf.reload(vo);
+                        vo.setServerGroupUuid(groupVO.getUuid());
+                        vo = dbf.updateAndRefresh(vo);
+
                         /* put vo to data for rollback */
                         data.put(LoadBalancerConstants.Param.LOAD_BALANCER_VO, vo);
                         trigger.next();
@@ -169,6 +182,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         LoadBalancerVO vo = (LoadBalancerVO)data.get(LoadBalancerConstants.Param.LOAD_BALANCER_VO);
                         if (vo != null) {
                             f.deleteLoadBalancer(vo);
+                            dbf.removeByPrimaryKey(vo.getUuid(), LoadBalancerServerGroupVO.class);
                         }
                         trigger.rollback();
                     }
@@ -470,30 +484,6 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
             @Override
             public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
-                if (!LoadBalancerSystemTags.BALANCER_ALGORITHM.isMatch(newTag.getTag())) {
-                    return;
-                }
-
-                String oldValue = LoadBalancerSystemTags.BALANCER_ALGORITHM.getTokenByTag(old.getTag(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN);
-                String newValue = LoadBalancerSystemTags.BALANCER_ALGORITHM.getTokenByTag(newTag.getTag(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN);
-                if (!LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(oldValue) && LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(newValue)) {
-                      List<String> nicUuids = Q.New(LoadBalancerListenerVmNicRefVO.class).select(LoadBalancerListenerVmNicRefVO_.vmNicUuid)
-                                               .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, newTag.getResourceUuid()).listValues();
-                      if (nicUuids.isEmpty()) {
-                          return;
-                      }
-                      nicUuids.stream().forEach(nicUuid -> {
-                          new LoadBalancerWeightOperator().setWeight(newTag.getResourceUuid(), nicUuid, LoadBalancerConstants.BALANCER_WEIGHT_default);
-                      });
-                }
-                if (LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(oldValue) && !LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(newValue)) {
-                    List<String> nicUuids = Q.New(LoadBalancerListenerVmNicRefVO.class).select(LoadBalancerListenerVmNicRefVO_.vmNicUuid)
-                                             .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, newTag.getResourceUuid()).listValues();
-                    if (nicUuids.isEmpty()) {
-                        return;
-                    }
-                    new LoadBalancerWeightOperator().deleteNicsWeight(nicUuids, newTag.getResourceUuid());
-                }
             }
         });
 
@@ -809,18 +799,24 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     public ServiceReference getServiceReference(String vipUuid) {
         long count = 0;
         List<String> l3Uuids = SQL.New("select nic.l3NetworkUuid" +
-                " from LoadBalancerVO lb, LoadBalancerListenerVmNicRefVO ref, LoadBalancerListenerVO listener, VmNicVO nic" +
+                " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
+                " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
                 " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid" +
-                " and listener.uuid = ref.listenerUuid and ref.status != 'Pending' and nic.uuid = ref.vmNicUuid")
+                " and listener.uuid = lgref.listenerUuid and lgref.loadBalancerServerGroupUuid = g.uuid " +
+                " and g.uuid = nicRef.loadBalancerServerGroupUuid and nicRef.vmNicUuid = nic.uuid" +
+                " and nicRef.status != 'Pending'")
                         .param("vipUuid", vipUuid).list();
         if (l3Uuids != null && !l3Uuids.isEmpty()) {
             count = l3Uuids.stream().collect(Collectors.toSet()).size();
         }
         List<String> uuids = SQL.New("select distinct lb.uuid" +
-                " from LoadBalancerVO lb, LoadBalancerListenerVmNicRefVO ref, LoadBalancerListenerVO listener, VmNicVO nic" +
+                " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
+                " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
                 " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid" +
-                " and listener.uuid = ref.listenerUuid and ref.status != 'Pending' and nic.uuid = ref.vmNicUuid")
-                                .param("vipUuid", vipUuid).list();
+                " and listener.uuid = lgref.listenerUuid and lgref.loadBalancerServerGroupUuid = g.uuid " +
+                " and g.uuid = nicRef.loadBalancerServerGroupUuid and nicRef.vmNicUuid = nic.uuid" +
+                " and nicRef.status != 'Pending'")
+                .param("vipUuid", vipUuid).list();
 
         return new VipGetServiceReferencePoint.ServiceReference(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING, count, uuids == null?new ArrayList<>() : uuids);
     }
@@ -829,21 +825,102 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     public ServiceReference getServicePeerL3Reference(String vipUuid, String peerL3Uuid) {
         long count = 0;
         List<String> l3Uuids = SQL.New("select nic.l3NetworkUuid" +
-                " from LoadBalancerVO lb, LoadBalancerListenerVmNicRefVO ref, LoadBalancerListenerVO listener, VmNicVO nic" +
-                " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid " +
-                " and listener.uuid = ref.listenerUuid and nic.uuid = ref.vmNicUuid and nic.l3NetworkUuid = :l3uuid")
-                                .param("vipUuid", vipUuid).param("l3uuid", peerL3Uuid).list();
+                " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
+                " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
+                " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid" +
+                " and listener.uuid = lgref.listenerUuid and lgref.loadBalancerServerGroupUuid = g.uuid " +
+                " and g.uuid = nicRef.loadBalancerServerGroupUuid and nicRef.vmNicUuid = nic.uuid" +
+                " and nicRef.status != 'Pending' and nic.l3NetworkUuid = :l3uuid")
+                .param("vipUuid", vipUuid).param("l3uuid", peerL3Uuid).list();
         if (l3Uuids != null && !l3Uuids.isEmpty()) {
             count = l3Uuids.stream().collect(Collectors.toSet()).size();
         }
         List<String> uuids = SQL.New("select distinct lb.uuid" +
-                " from LoadBalancerVO lb, LoadBalancerListenerVmNicRefVO ref, LoadBalancerListenerVO listener, VmNicVO nic" +
-                " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid " +
-                " and listener.uuid = ref.listenerUuid and nic.uuid = ref.vmNicUuid and nic.l3NetworkUuid = :l3uuid")
-                                .param("vipUuid", vipUuid).param("l3uuid", peerL3Uuid).list();
+                " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
+                " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
+                " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid" +
+                " and listener.uuid = lgref.listenerUuid and lgref.loadBalancerServerGroupUuid = g.uuid " +
+                " and g.uuid = nicRef.loadBalancerServerGroupUuid and nicRef.vmNicUuid = nic.uuid" +
+                " and nicRef.status != 'Pending' and nic.l3NetworkUuid = :l3uuid")
+                .param("vipUuid", vipUuid).param("l3uuid", peerL3Uuid).list();
 
 
         return new VipGetServiceReferencePoint.ServiceReference(LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING, count, uuids == null?new ArrayList<>() : uuids);
     }
 
+    @Override
+    public LoadBalancerStruct makeStruct(LoadBalancerVO vo) {
+        LoadBalancerStruct struct = new LoadBalancerStruct();
+        struct.setLb(LoadBalancerInventory.valueOf(vo));
+
+        List<String> activeNicUuids = new ArrayList<String>();
+        for (LoadBalancerListenerVO l : vo.getListeners()) {
+            List<LoadBalancerServerGroupInventory> groupInventories = new ArrayList<>();
+            for (LoadBalancerListenerServerGroupRefVO groupRef : l.getServerGroupRefs()) {
+                LoadBalancerServerGroupVO groupVO = dbf.findByUuid(groupRef.getLoadBalancerServerGroupUuid(), LoadBalancerServerGroupVO.class);
+                for (LoadBalancerServerGroupVmNicRefVO nicRef : groupVO.getLoadBalancerServerGroupVmNicRefs()) {
+                    if (nicRef.getStatus() == LoadBalancerVmNicStatus.Active || nicRef.getStatus() == LoadBalancerVmNicStatus.Pending) {
+                        activeNicUuids.add(nicRef.getVmNicUuid());
+                    }
+                }
+                groupInventories.add(LoadBalancerServerGroupInventory.valueOf(groupVO));
+            }
+            struct.getListenerServerGroupMap().put(l.getUuid(), groupInventories);
+        }
+
+        if (activeNicUuids.isEmpty()) {
+            struct.setVmNics(new HashMap<String, VmNicInventory>());
+        } else {
+            SimpleQuery<VmNicVO> nq = dbf.createQuery(VmNicVO.class);
+            nq.add(VmNicVO_.uuid, SimpleQuery.Op.IN, activeNicUuids);
+            List<VmNicVO> nicvos = nq.list();
+            Map<String, VmNicInventory> m = new HashMap<>();
+            for (VmNicVO n : nicvos) {
+                m.put(n.getUuid(), VmNicInventory.valueOf(n));
+            }
+            struct.setVmNics(m);
+        }
+
+        Map<String, List<String>> systemTags = new HashMap<>();
+        for (LoadBalancerListenerVO l : vo.getListeners()) {
+            SimpleQuery<SystemTagVO> q  = dbf.createQuery(SystemTagVO.class);
+            q.select(SystemTagVO_.tag);
+            q.add(SystemTagVO_.resourceUuid, SimpleQuery.Op.EQ, l.getUuid());
+            q.add(SystemTagVO_.resourceType, SimpleQuery.Op.EQ, LoadBalancerListenerVO.class.getSimpleName());
+            systemTags.put(l.getUuid(), q.listValue());
+        }
+        struct.setTags(systemTags);
+
+        struct.setListeners(LoadBalancerListenerInventory.valueOf(vo.getListeners()));
+
+        return struct;
+    }
+
+    @Override
+    public LoadBalancerServerGroupVO getDefaultServerGroup(LoadBalancerVO vo) {
+        if (vo.getServerGroupUuid() == null) {
+            return null;
+        }
+        return dbf.findByUuid(vo.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+    }
+
+    @Override
+    public LoadBalancerServerGroupVO getDefaultServerGroup(LoadBalancerListenerVO vo) {
+        if (vo.getServerGroupUuid() == null) {
+            return null;
+        }
+
+        return dbf.findByUuid(vo.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+    }
+
+    @Override
+    public List<String> getLoadBalancerListenterByVmNics(List<String> vmNicUuids) {
+        List<String> listenerUuids = SQL.New("select distinct listener.uuid" +
+                " fromLoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic " +
+                " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
+                " where listener.uuid = lgref.listenerUuid and lgref.loadBalancerServerGroupUuid = g.uuid " +
+                " and g.uuid = nicRef.loadBalancerServerGroupUuid and nicRef.vmNicUuid in (:vmNicUuids)")
+                .param("vmNicUuids", vmNicUuids).list();
+        return listenerUuids;
+    }
 }
