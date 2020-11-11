@@ -84,6 +84,8 @@ public abstract class HostBase extends AbstractHost {
     protected EventFacade evtf;
     @Autowired
     protected HostMaintenancePolicyManager hostMaintenancePolicyMgr;
+    @Autowired
+    protected HostSingleFlight singleFlight;
 
     public static class HostDisconnectedCanonicalEvent extends CanonicalEventEmitter {
         HostCanonicalEvents.HostDisconnectedData data;
@@ -931,6 +933,26 @@ public abstract class HostBase extends AbstractHost {
     }
 
     private void handle(final ConnectHostMsg msg) {
+        singleFlight.executeConnect(this,
+            (comp) -> this.connect(msg, comp),
+            new ReturnValueCompletion<ConnectHostReply>(msg) {
+                @Override
+                public void success(ConnectHostReply returnValue) {
+                    ConnectHostReply coped = new ConnectHostReply();
+                    bus.reply(msg, coped);
+                }
+        
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    ConnectHostReply coped = new ConnectHostReply();
+                    coped.setError(errorCode);
+                    bus.reply(msg, coped);
+                }
+            }
+        );
+    }
+    
+    private void connect(final ConnectHostMsg msg, ReturnValueCompletion<ConnectHostReply> completion) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
@@ -1052,9 +1074,8 @@ public abstract class HostBase extends AbstractHost {
                                 tracker.trackHost(self.getUuid());
 
                                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostAfterConnectedExtensionPoint.class),
-                                        ext -> ext.afterHostConnected(getSelfInventory()));
-
-                                bus.reply(msg, reply);
+                                    ext -> ext.afterHostConnected(getSelfInventory()));
+                                completion.success(reply);
                             }
                         });
 
@@ -1066,9 +1087,7 @@ public abstract class HostBase extends AbstractHost {
                                     tracker.trackHost(self.getUuid());
                                     new HostDisconnectedCanonicalEvent(self.getUuid(), errCode).fire();
                                 }
-
-                                reply.setError(errCode);
-                                bus.reply(msg, reply);
+                                completion.fail(errCode);
                             }
                         });
 
