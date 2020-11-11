@@ -32,8 +32,6 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.header.tag.SystemTagVO;
-import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
@@ -1095,14 +1093,14 @@ public class LoadBalancerBase {
         return s;
     }
 
-    private void removeNics(List<String> serverGroupUuids, List<String> listnerUuids, final List<String> vmNicUuids, final List<String> serverIps, final Completion completion) {
+    private void removeNics(List<String> serverGroupUuids, List<String> listenerUuids, final List<String> vmNicUuids, final List<String> serverIps, final Completion completion) {
         SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
         q.add(VmNicVO_.uuid, Op.IN, vmNicUuids);
         List<VmNicVO> vos = q.list();
         List<VmNicInventory> nics = VmNicInventory.valueOf(vos);
 
         LoadBalancerBackend bkd = getBackend();
-        bkd.removeVmNics(removeNicStruct(serverGroupUuids, listnerUuids, vmNicUuids, serverIps), nics,completion);
+        bkd.removeVmNics(removeNicStruct(serverGroupUuids, listenerUuids, vmNicUuids, serverIps), nics,completion);
     }
 
     private void removeNic(APIRemoveVmNicFromLoadBalancerMsg msg, final NoErrorCompletion completion) {
@@ -1422,13 +1420,6 @@ public class LoadBalancerBase {
             });
             dbf.persistCollection(refs);
         }
-
-        /* add default server group
-        LoadBalancerListenerServerGroupRefVO ref = new LoadBalancerListenerServerGroupRefVO();
-        LoadBalancerServerGroupVO groupVO = lbMgr.getDefaultServerGroup(self);
-        ref.setLoadBalancerServerGroupUuid(groupVO.getUuid());
-        ref.setListenerUuid(vo.getUuid());
-        dbf.persist(ref); */
 
         tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), LoadBalancerListenerVO.class.getSimpleName());
         vo = dbf.updateAndRefresh(vo);
@@ -2404,7 +2395,7 @@ public class LoadBalancerBase {
                         .map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList());
                 List<String> serverIps = groupVO.getLoadBalancerServerGroupServerIps().stream()
                         .map(LoadBalancerServerGroupServerIpVO::getIpAddress).collect(Collectors.toList());
-                removeNics(asList(groupVO.getUuid()), asList(msg.getUuid()), vmNicUuids, serverIps, new Completion(chain) {
+                removeNics(asList(groupVO.getUuid()), null, vmNicUuids, serverIps, new Completion(chain) {
                     @Override
                     public void success() {
                         dbf.removeByPrimaryKey(msg.getUuid(), LoadBalancerServerGroupVO.class);

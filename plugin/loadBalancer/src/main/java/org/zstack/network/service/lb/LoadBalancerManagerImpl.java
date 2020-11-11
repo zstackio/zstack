@@ -159,7 +159,6 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         vo = f.persistLoadBalancer(msg);
                         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), LoadBalancerVO.class.getSimpleName());
 
-                        /* this is hack, create default server group with same uuid as loadbalancer */
                         LoadBalancerServerGroupVO groupVO = new LoadBalancerServerGroupVO();
                         groupVO.setUuid(Platform.getUuid());
                         groupVO.setAccountUuid(msg.getSession().getAccountUuid());
@@ -181,8 +180,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     public void rollback(FlowRollback trigger, Map data) {
                         LoadBalancerVO vo = (LoadBalancerVO)data.get(LoadBalancerConstants.Param.LOAD_BALANCER_VO);
                         if (vo != null) {
+                            dbf.removeByPrimaryKey(vo.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
                             f.deleteLoadBalancer(vo);
-                            dbf.removeByPrimaryKey(vo.getUuid(), LoadBalancerServerGroupVO.class);
                         }
                         trigger.rollback();
                     }
@@ -850,6 +849,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
     @Override
     public LoadBalancerStruct makeStruct(LoadBalancerVO vo) {
+        vo = dbf.reload(vo);
         LoadBalancerStruct struct = new LoadBalancerStruct();
         struct.setLb(LoadBalancerInventory.valueOf(vo));
 

@@ -1,21 +1,15 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.loadbalancer
 
 import org.zstack.core.db.DatabaseFacade
-import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.sdk.*
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-import org.zstack.test.integration.network.NetworkTest
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
-import org.zstack.network.service.lb.LoadBalancerVO
-import org.zstack.network.service.lb.LoadBalancerVO_
 import org.zstack.network.service.portforwarding.PortForwardingConstant
-import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 
 
@@ -208,13 +202,21 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
         def l3 = env.inventoryByName("l3") as L3NetworkInventory
         def vm = env.inventoryByName("vm-1") as VmInstanceInventory
 
-        addBackendServerToServerGroup{
-            vmNicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
-            serverIps  = ["20.20.20.1"]
+        /* shared load balancer can not add server group */
+        expect(AssertionError.class) {
+            addBackendServerToServerGroup {
+                vmNicUuids = [vm.vmNics.find { nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
+                serverIps = ["20.20.20.1"]
+                serverGroupUuid = servergroup1.uuid
+            }
+        }
+        addBackendServerToServerGroup {
+            vmNicUuids = [vm.vmNics.find { nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
             serverGroupUuid = servergroup1.uuid
         }
         LoadBalancerServerGroupInventory servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
-        assert servergroup.serverIps[0].ipAddress == "20.20.20.1"
+        assert servergroup.vmNicRefs.size() == 1
+        assert servergroup.vmNicRefs.get(0).vmNicUuid == vm.vmNics.find { nic -> nic.l3NetworkUuid == l3.uuid }.uuid
 
         removeBackendServerFromServerGroup{
             vmNicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
