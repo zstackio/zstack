@@ -12,6 +12,7 @@ public class VmTracerCanonicalEvents {
     public static final String VM_STATE_IN_SHUTDOWN_PATH = "/vmTracer/vmStateInShutdown";
     public static final String VM_SKIP_TRACE_PATH = "/vmTracer/skipTrace";
     public static final String VM_CONTINUE_TRACE_PATH = "/vmTrace/continueTrace";
+    public static final String MIGRATE_VM_FAILED_WITH_HOST_MAINTAIN_PATH = "/vmTrace/MigrateVMFailedWithHostMaintain";
 
     @NeedJsonSchema
     public static class VmSkipTraceData {
@@ -220,6 +221,37 @@ public class VmTracerCanonicalEvents {
             if (to != null) {
                 this.to = to.toString();
             }
+        }
+    }
+
+    @NeedJsonSchema
+    public static class MigrateVMFailedWithHostMaintainData {
+        private String vmUuid;
+        private String hostUuid;
+        private String reason;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getReason() {
+            return reason;
+        }
+
+        public void setReason(String reason) {
+            this.reason = reason;
         }
     }
 }
