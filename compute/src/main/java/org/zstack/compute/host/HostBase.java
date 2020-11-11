@@ -3,6 +3,7 @@ package org.zstack.compute.host;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -15,6 +16,7 @@ import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.singleflight.CompletionSingleFlight;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -84,6 +86,9 @@ public abstract class HostBase extends AbstractHost {
     protected EventFacade evtf;
     @Autowired
     protected HostMaintenancePolicyManager hostMaintenancePolicyMgr;
+    @Autowired
+    @Qualifier("HostSingleFlight")
+    protected CompletionSingleFlight<ConnectHostReply> singleFlight;
 
     public static class HostDisconnectedCanonicalEvent extends CanonicalEventEmitter {
         HostCanonicalEvents.HostDisconnectedData data;
@@ -802,8 +807,6 @@ public abstract class HostBase extends AbstractHost {
                         ReconnectHostReply r = new ReconnectHostReply();
                         if (reply.isSuccess()) {
                             logger.debug(String.format("Successfully reconnect host[uuid:%s]", self.getUuid()));
-                        } else if (reply.isCanceled()) {
-                            logger.warn(String.format("Canceled reconnect host[uuid:%s]", self.getUuid()));
                         } else {
                             r.setError(err(HostErrors.UNABLE_TO_RECONNECT_HOST, reply.getError(), reply.getError().getDetails()));
                             logger.debug(String.format("Failed to reconnect host[uuid:%s] because %s",
@@ -942,10 +945,35 @@ public abstract class HostBase extends AbstractHost {
     }
 
     private void handle(final ConnectHostMsg msg) {
+        singleFlight.execute(
+            connectHostSignature(),
+            (comp) -> this.connect(msg, comp),
+            new ReturnValueCompletion<ConnectHostReply>(msg) {
+                @Override
+                public void success(ConnectHostReply returnValue) {
+                    ConnectHostReply coped = new ConnectHostReply();
+                    bus.reply(msg, coped);
+                }
+        
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    ConnectHostReply coped = new ConnectHostReply();
+                    coped.setError(errorCode);
+                    bus.reply(msg, coped);
+                }
+            }
+        );
+    }
+    
+    private String connectHostSignature() {
+        return String.format("connect-host-%s", self.getUuid());
+    }
+    
+    private void connect(final ConnectHostMsg msg, ReturnValueCompletion<ConnectHostReply> completion) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return String.format("connect-host-%s", self.getUuid());
+                return connectHostSignature();
             }
 
             @Override
@@ -1063,9 +1091,8 @@ public abstract class HostBase extends AbstractHost {
                                 tracker.trackHost(self.getUuid());
 
                                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostAfterConnectedExtensionPoint.class),
-                                        ext -> ext.afterHostConnected(getSelfInventory()));
-
-                                bus.reply(msg, reply);
+                                    ext -> ext.afterHostConnected(getSelfInventory()));
+                                completion.success(reply);
                             }
                         });
 
@@ -1077,9 +1104,7 @@ public abstract class HostBase extends AbstractHost {
                                     tracker.trackHost(self.getUuid());
                                     new HostDisconnectedCanonicalEvent(self.getUuid(), errCode).fire();
                                 }
-
-                                reply.setError(errCode);
-                                bus.reply(msg, reply);
+                                completion.fail(errCode);
                             }
                         });
 
@@ -1099,19 +1124,8 @@ public abstract class HostBase extends AbstractHost {
             }
 
             @Override
-            protected int getMaxPendingTasks() {
-                return 0;
-            }
-
-            @Override
             protected String getDeduplicateString() {
                 return String.format("connect-host-%s", self.getUuid());
-            }
-
-            protected void exceedMaxPendingCallback() {
-                ConnectHostReply reply = new ConnectHostReply();
-                reply.setCanceled(operr("an other connect host task is running, cancel the new task and wait return"));
-                bus.reply(msg, reply);
             }
         });
     }
