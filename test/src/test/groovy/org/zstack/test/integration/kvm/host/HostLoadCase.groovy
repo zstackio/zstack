@@ -172,6 +172,7 @@ class HostLoadCase extends SubCase {
     @Override
     void test() {
         env.create {
+
             HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1)
             HostGlobalConfig.MAXIMUM_PING_FAILURE.updateValue(1)
             HostGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.updateValue(0)

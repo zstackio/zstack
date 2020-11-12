@@ -207,6 +207,7 @@ public class KVMAgentCommands {
         private List<String> iptablesRules;
         private boolean ignoreMsrs;
         private boolean pageTableExtensionDisabled;
+        private int tcpServerPort;
         private String version;
 
         public boolean isIgnoreMsrs() {
@@ -247,6 +248,14 @@ public class KVMAgentCommands {
 
         public void setPageTableExtensionDisabled(boolean pageTableExtensionDisabled) {
             this.pageTableExtensionDisabled = pageTableExtensionDisabled;
+        }
+
+        public int getTcpServerPort() {
+            return tcpServerPort;
+        }
+
+        public void setTcpServerPort(int tcpServerPort) {
+            this.tcpServerPort = tcpServerPort;
         }
 
         public String getVersion() {
@@ -2852,6 +2861,7 @@ public class KVMAgentCommands {
         public List<String> psUuids;
         public String reason;
         public String vmUuidsString;
+        public boolean fencerFailure = true;
     }
 
     public static class ReportFailoverCmd {
