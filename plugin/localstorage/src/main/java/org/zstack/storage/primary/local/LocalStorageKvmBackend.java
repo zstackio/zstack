@@ -2127,6 +2127,27 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         });
     }
 
+    void downloadImageToRemoteCache(ImageInventory img, String hostUuid, String psUuid, final ReturnValueCompletion<String> completion) {
+        DownloadVolumeTemplateToPrimaryStorageMsg dmsg = new DownloadVolumeTemplateToPrimaryStorageMsg();
+        dmsg.setPrimaryStorageUuid(psUuid);
+        dmsg.setHostUuid(hostUuid);
+        ImageSpec imageSpec = new ImageSpec();
+        imageSpec.setInventory(img);
+        dmsg.setTemplateSpec(imageSpec);
+        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, dmsg.getPrimaryStorageUuid());
+        bus.send(dmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                completion.success(((DownloadVolumeTemplateToPrimaryStorageReply) reply).getImageCache().getInstallUrl());
+            }
+        });
+    }
+
     @Override
     void handle(final LocalStorageDeleteImageCacheOnPrimaryStorageMsg msg, String hostUuid, final ReturnValueCompletion<DeleteImageCacheOnPrimaryStorageReply> completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -2254,17 +2275,31 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        downloadImageToCache(ImageInventory.valueOf(context.image), struct.getDestHostUuid(), new ReturnValueCompletion<String>(trigger) {
-                            @Override
-                            public void success(String returnValue) {
-                                trigger.next();
-                            }
+                        if (struct.CrossPrimaryStorage()) {
+                            downloadImageToRemoteCache(ImageInventory.valueOf(context.image), struct.getDestHostUuid(), struct.getDestPrimaryStorageUuid(), new ReturnValueCompletion<String>(trigger) {
+                                @Override
+                                public void success(String returnValue) {
+                                    trigger.next();
+                                }
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        } else {
+                            downloadImageToCache(ImageInventory.valueOf(context.image), struct.getDestHostUuid(), new ReturnValueCompletion<String>(trigger) {
+                                @Override
+                                public void success(String returnValue) {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
                     }
                 });
             } else {
@@ -2312,7 +2347,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                             return;
                         }
 
-                        reserveCapacityOnHost(struct.getDestHostUuid(), context.baseImageCacheSize, self.getUuid());
+                        reserveCapacityOnHost(struct.getDestHostUuid(), context.baseImageCacheSize, struct.getDestPrimaryStorageUuid());
                         s = true;
                         trigger.next();
                     }
@@ -2320,7 +2355,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         if (s) {
-                            returnStorageCapacityToHost(struct.getDestHostUuid(), context.baseImageCacheSize);
+                            if (struct.CrossPrimaryStorage()) {
+                                PrimaryStorageVO ps = dbf.findByUuid(struct.getDestPrimaryStorageUuid(), PrimaryStorageVO.class);
+                                returnStorageCapacityToDestHost(struct.getDestHostUuid(),context.baseImageCacheSize, ps);
+                            } else {
+                                returnStorageCapacityToHost(struct.getDestHostUuid(), context.baseImageCacheSize);
+                            }
                         }
                         trigger.rollback();
                     }
@@ -2856,7 +2896,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
                     Long managedResourceSize = calculateManagedResourceActualSize(hostUuid);
                     Long usedSize = rsp.getTotalCapacity() - rsp.getAvailableCapacity() - managedResourceSize;
-                    
+
                     total += rsp.getTotalCapacity();
 
                     avail += rsp.getAvailableCapacity();

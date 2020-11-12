@@ -20,6 +20,7 @@ import org.zstack.core.encrypt.EncryptRSA;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.statemachine.StateMachine;
 import org.zstack.core.statemachine.StateMachineImpl;
+import org.zstack.core.propertyvalidator.ValidatorTool;
 import org.zstack.header.Component;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.core.encrypt.ENCRYPT;
@@ -228,6 +229,15 @@ public class Platform {
         return ret;
     }
 
+    private static void validateGlobalProperty() {
+        ValidatorTool validatorTool = new ValidatorTool();
+
+        System.getProperties().stringPropertyNames().forEach(name->{
+            String value = System.getProperty(name);
+            validatorTool.checkProperty(name, value);
+        });
+    }
+
     private static void linkGlobalProperty() {
         Set<Class<?>> clzs = reflections.getTypesAnnotatedWith(GlobalPropertyDefinition.class);
 
@@ -395,6 +405,7 @@ public class Platform {
 
             collectDynamicObjectMetadata();
             linkGlobalProperty();
+            validateGlobalProperty();
             prepareDefaultDbProperties();
             callStaticInitMethods();
             encryptedMethodsMap = getAllEncryptPassword();
@@ -830,7 +841,7 @@ public class Platform {
                     ErrorCodeElaboration messages = null;
                     for (ErrorCode c: errList.getCauses()) {
                         ErrorCode lcError = getCoreError(c);
-                        if (lcError.getElaboration() != null) {
+                        if (lcError.getElaboration() != null && !lcError.getElaboration().equals(elas) && !lcError.getMessages().equals(messages)) {
                             costs = costs == null ? lcError.getCost() : addTwoCosts(costs, lcError.getCost());
                             elas = elas == null ? lcError.getElaboration() : String.join(",", elas, lcError.getElaboration());
                             messages = messages == null ? lcError.getMessages() : messages.addElaborationMessage(lcError.getMessages());

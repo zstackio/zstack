@@ -34,7 +34,7 @@ doc {
 				column {
 					name "networkServices"
 					enclosedIn "params"
-					desc "网络服务"
+					desc "网络服务，接口参数支持使用NetworkServiceProviderUuid或NetworkServiceProviderType"
 					location "body"
 					type "Map"
 					optional false

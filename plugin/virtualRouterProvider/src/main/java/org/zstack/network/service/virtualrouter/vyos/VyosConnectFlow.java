@@ -100,6 +100,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
                         InitCommand cmd = new InitCommand();
 
                         cmd.setMgtCidr(Platform.getManagementServerCidr());
+                        cmd.setTimeServers(CoreGlobalProperty.CHRONY_SERVERS);
                         cmd.setUuid(vrUuid);
                         cmd.setLogLevel(rcf.getResourceConfigValue(VirtualRouterGlobalConfig.LOG_LEVEL, vrUuid, String.class));
                         restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {

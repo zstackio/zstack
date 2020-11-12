@@ -44,9 +44,9 @@ class FlatAddHostRouteCase extends SubCase {
     }
 
     void testAddDns() {
-        List<FlatDhcpBackend.ApplyDhcpCmd> cmds = new ArrayList<>()
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
-            FlatDhcpBackend.ApplyDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+        List<FlatDhcpBackend.BatchApplyDhcpCmd> cmds = new ArrayList<>()
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            FlatDhcpBackend.BatchApplyDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
             cmds.add(cmd)
             return rsp
         }
@@ -65,9 +65,9 @@ class FlatAddHostRouteCase extends SubCase {
         }
 
         assert cmds.size() == 3
-        for (FlatDhcpBackend.ApplyDhcpCmd cmd : cmds) {
-            assert cmd.l3NetworkUuid == l3.uuid
-            for (FlatDhcpBackend.DhcpInfo dinfo: cmd.dhcp) {
+        for (FlatDhcpBackend.BatchApplyDhcpCmd cmd : cmds) {
+            assert cmd.dhcpInfos.get(0).l3NetworkUuid == l3.uuid
+            for (FlatDhcpBackend.DhcpInfo dinfo: cmd.dhcpInfos.get(0).dhcp) {
                 for (FlatDhcpBackend.HostRouteInfo rinfo : dinfo.hostRoutes) {
                     assert (rinfo.prefix == "10.1.1.1/32" || rinfo.prefix == NetworkServiceConstants.METADATA_HOST_PREFIX)
                     if (rinfo.prefix == "10.1.1.1/32") {
@@ -77,9 +77,9 @@ class FlatAddHostRouteCase extends SubCase {
             }
         }
 
-        List<FlatDhcpBackend.ApplyDhcpCmd> cmds1 = new ArrayList<>()
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
-            FlatDhcpBackend.ApplyDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+        List<FlatDhcpBackend.BatchApplyDhcpCmd> cmds1 = new ArrayList<>()
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            FlatDhcpBackend.BatchApplyDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
             cmds1.add(cmd)
             return rsp
         }
@@ -91,9 +91,9 @@ class FlatAddHostRouteCase extends SubCase {
         assert l3Inv.getHostRoute().size() == 3
 
         assert cmds1.size() == 3
-        for (FlatDhcpBackend.ApplyDhcpCmd cmd : cmds1) {
-            assert cmd.l3NetworkUuid == l3.uuid
-            for (FlatDhcpBackend.DhcpInfo dinfo: cmd.dhcp) {
+        for (FlatDhcpBackend.BatchApplyDhcpCmd cmd : cmds1) {
+            assert cmd.dhcpInfos.get(0).dhcp.l3NetworkUuid.get(0) == l3.uuid
+            for (FlatDhcpBackend.DhcpInfo dinfo: cmd.dhcpInfos.get(0).dhcp) {
                 assert dinfo.hostRoutes.size() == 3
                 for (FlatDhcpBackend.HostRouteInfo rinfo : dinfo.hostRoutes) {
                     assert (rinfo.prefix == "10.1.1.1/32" || rinfo.prefix == "10.0.1.0/24"
@@ -108,9 +108,9 @@ class FlatAddHostRouteCase extends SubCase {
             }
         }
 
-        List<FlatDhcpBackend.ApplyDhcpCmd> cmds2 = new ArrayList<>()
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
-            FlatDhcpBackend.ApplyDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+        List<FlatDhcpBackend.BatchApplyDhcpCmd> cmds2 = new ArrayList<>()
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            FlatDhcpBackend.BatchApplyDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
             cmds2.add(cmd)
             return rsp
         }
@@ -127,9 +127,9 @@ class FlatAddHostRouteCase extends SubCase {
         }
 
         assert cmds2.size() == 3
-        for (FlatDhcpBackend.ApplyDhcpCmd cmd : cmds2) {
-            assert cmd.l3NetworkUuid == l3.uuid
-            for (FlatDhcpBackend.DhcpInfo dinfo: cmd.dhcp) {
+        for (FlatDhcpBackend.BatchApplyDhcpCmd cmd : cmds2) {
+            assert cmd.dhcpInfos.get(0).dhcp.l3NetworkUuid.get(0) == l3.uuid
+            for (FlatDhcpBackend.DhcpInfo dinfo: cmd.dhcpInfos.get(0).dhcp) {
                 for (FlatDhcpBackend.HostRouteInfo rinfo : dinfo.hostRoutes) {
                     assert (rinfo.prefix == "10.0.1.0/24" || rinfo.prefix == NetworkServiceConstants.METADATA_HOST_PREFIX)
                     if (rinfo.prefix == "10.0.1.0/24") {
@@ -139,9 +139,9 @@ class FlatAddHostRouteCase extends SubCase {
             }
         }
 
-        List<FlatDhcpBackend.ApplyDhcpCmd> cmds3 = new ArrayList<>()
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
-            FlatDhcpBackend.ApplyDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+        List<FlatDhcpBackend.BatchApplyDhcpCmd> cmds3 = new ArrayList<>()
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            FlatDhcpBackend.BatchApplyDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
             cmds3.add(cmd)
             return rsp
         }
@@ -152,9 +152,9 @@ class FlatAddHostRouteCase extends SubCase {
         assert l3Inv.getHostRoute().size() == 1
 
         assert cmds3.size() == 3
-        for (FlatDhcpBackend.ApplyDhcpCmd cmd : cmds3) {
-            assert cmd.l3NetworkUuid == l3.uuid
-            for (FlatDhcpBackend.DhcpInfo dinfo: cmd.dhcp) {
+        for (FlatDhcpBackend.BatchApplyDhcpCmd cmd : cmds3) {
+            assert cmd.dhcpInfos.get(0).dhcp.l3NetworkUuid.get(0) == l3.uuid
+            for (FlatDhcpBackend.DhcpInfo dinfo: cmd.dhcpInfos.get(0).dhcp) {
                 assert dinfo.hostRoutes.size() == 1
                 assert dinfo.hostRoutes.get(0).prefix == NetworkServiceConstants.METADATA_HOST_PREFIX
             }

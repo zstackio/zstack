@@ -60,10 +60,30 @@ logicalOperator
 complexValue
     : value #simpleValue
     | '(' subQuery ')' #subQueryValue
+    | getQuery '(' input',' output (',' apiparams)* ')' #apiGetValue
+    | getQuery '(' output',' input (',' apiparams)* ')' #apiGetValue
+    ;
+
+getQuery: GET;
+
+apiparams
+    : namedAsKey equal value
+    ;
+
+input
+    : INPUT equal namedAsValue
+    ;
+
+output
+    : OUTPUT equal namedAsValue
     ;
 
 expr
     : field operator complexValue?
+    ;
+
+equal
+    : '='
     ;
 
 condition
@@ -103,7 +123,6 @@ offset
     : OFFSET INT
     ;
 
-
 restrictByExpr
     : entity '.' ID operator value?
     | ID operator value?
@@ -142,7 +161,6 @@ subQuery
     : QUERY subQueryTarget (WHERE condition+)?
     ;
 
-
 filterByExprBlock
     : '{' (~'}' | filterByExprBlock)* '}'
     ;
@@ -153,6 +171,10 @@ filterByExpr
 
 filterBy
     : FILTER_BY filterByExpr (',' filterByExpr)*
+    ;
+
+namedAsKey
+    : ID
     ;
 
 namedAsValue
@@ -192,6 +214,8 @@ LIMIT: 'limit';
 
 QUERY: 'query';
 
+GET: 'getapi';
+
 COUNT: 'count';
 
 SUM: 'sum';
@@ -220,6 +244,10 @@ ASC: 'asc';
 
 DESC: 'desc';
 
+INPUT: 'api';
+
+OUTPUT: 'output';
+
 BOOLEAN
     : 'true'
     | 'false'
@@ -242,7 +270,6 @@ STRING
     : '"' (~'"')* '"'
     | '\'' (~'\'')* '\''
     ;
-
 
 fragment CHAR
     : 'a'..'z'+

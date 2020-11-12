@@ -60,9 +60,9 @@ class IPv6MigrateVmCase extends SubCase {
             hostUuid = h1.uuid
         }
 
-        List<FlatDhcpBackend.ApplyDhcpCmd> cmds = new ArrayList()
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
-            FlatDhcpBackend.ApplyDhcpCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+        List<FlatDhcpBackend.BatchApplyDhcpCmd> cmds = new ArrayList()
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
+            FlatDhcpBackend.BatchApplyDhcpCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
             cmds.add(cmd)
             return rsp
         }

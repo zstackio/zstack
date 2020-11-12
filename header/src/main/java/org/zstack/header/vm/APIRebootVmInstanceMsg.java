@@ -39,6 +39,7 @@ import org.zstack.header.rest.RestRequest;
         isAction = true,
         responseClass = APIRebootVmInstanceEvent.class
 )
+@SkipVmTracer(replyClass = APIRebootVmInstanceEvent.class)
 public class APIRebootVmInstanceMsg extends APIMessage implements VmInstanceMessage {
     /**
      * @desc vm uuid

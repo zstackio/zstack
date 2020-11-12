@@ -1,5 +1,6 @@
 package org.zstack.core;
 
+import org.zstack.core.propertyvalidator.AvailableValues;
 import java.util.List;
 
 /**
@@ -7,6 +8,7 @@ import java.util.List;
 @GlobalPropertyDefinition
 public class CoreGlobalProperty {
     @GlobalProperty(name = "unitTestOn", defaultValue = "false")
+    @AvailableValues(value ={"true","false"})
     public static boolean UNIT_TEST_ON;
     @GlobalProperty(name = "beanRefContextConf", defaultValue = "beanRefContext.xml")
     public static String BEAN_REF_CONTEXT_CONF;

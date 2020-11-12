@@ -5,6 +5,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -13,6 +14,10 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.service.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.Utils;
+
+
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -21,8 +26,9 @@ import java.util.*;
 
 /**
  */
-public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
-    @Autowired
+public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {   
+   private final static CLogger logger = Utils.getLogger(NetworkServiceApiInterceptor.class);
+   @Autowired
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
@@ -30,8 +36,9 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAttachNetworkServiceToL3NetworkMsg) {
-            validate((APIAttachNetworkServiceToL3NetworkMsg)msg);
-        }
+       	   convertNetworkProviderTypeToUuid((APIAttachNetworkServiceToL3NetworkMsg)msg);
+           validate((APIAttachNetworkServiceToL3NetworkMsg)msg);
+	}
 
         return msg;
     }
@@ -93,6 +100,36 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
                     throw new ApiMessageInterceptionException(operr("there has been a network service[%s] attached to L3 network[uuid:%s]", type, msg.getL3NetworkUuid()));
                 }
             }
+        }
+    }
+
+    private void convertNetworkProviderTypeToUuid(APIAttachNetworkServiceToL3NetworkMsg msg){
+        Map<String, List<String>> map = msg.getNetworkServices();
+        if (map.isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr("networkServices cannot be empty"));
+        }
+
+        boolean isNetworkServiceProveiderType = false;
+
+        List<NetworkServiceProviderVO> networkServiceProviderVOs = Q.New(NetworkServiceProviderVO.class).list();
+
+
+        List<String> keys  = new ArrayList<String>(map.keySet());
+        List<String> uuids = new ArrayList<String>();
+        for (NetworkServiceProviderVO vo :networkServiceProviderVOs){
+            uuids.add(vo.getUuid());
+        }
+
+        if(Collections.disjoint(keys,uuids)) {
+            isNetworkServiceProveiderType = true;
+        }
+        if(isNetworkServiceProveiderType){
+            for (NetworkServiceProviderVO vo :networkServiceProviderVOs) {
+                if(map.containsKey(vo.getType())){
+                    map.put(vo.getUuid(), map.remove(vo.getType()));
+                }
+            }
+            msg.setNetworkServices(map);
         }
     }
 }

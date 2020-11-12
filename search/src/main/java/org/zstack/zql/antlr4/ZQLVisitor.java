@@ -1,4 +1,4 @@
-// Generated from D:/ZStack/zstack/search/src/main/antlr4\ZQL.g4 by ANTLR 4.7
+// Generated from ZQL.g4 by ANTLR 4.7
 
 package org.zstack.zql.antlr4;
 
@@ -90,11 +90,48 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitSubQueryValue(ZQLParser.SubQueryValueContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code apiGetValue}
+	 * labeled alternative in {@link ZQLParser#complexValue}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitApiGetValue(ZQLParser.ApiGetValueContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#getQuery}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitGetQuery(ZQLParser.GetQueryContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#apiparams}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitApiparams(ZQLParser.ApiparamsContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#input}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitInput(ZQLParser.InputContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#output}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitOutput(ZQLParser.OutputContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ZQLParser#expr}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitExpr(ZQLParser.ExprContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#equal}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitEqual(ZQLParser.EqualContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code nestCondition}
 	 * labeled alternative in {@link ZQLParser#condition}.
@@ -261,6 +298,12 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitFilterBy(ZQLParser.FilterByContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ZQLParser#namedAsKey}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNamedAsKey(ZQLParser.NamedAsKeyContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ZQLParser#namedAsValue}.
 	 * @param ctx the parse tree

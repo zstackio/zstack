@@ -8,6 +8,7 @@ import org.zstack.header.message.NeedReplyMessage;
 public class SelectBackupStorageMsg extends NeedReplyMessage implements PrimaryStorageMessage {
     private String primaryStorageUuid;
     private String volumeUuid;
+    private long requiredSize;
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
@@ -24,5 +25,13 @@ public class SelectBackupStorageMsg extends NeedReplyMessage implements PrimaryS
 
     public void setVolumeUuid(String volumeUuid) {
         this.volumeUuid = volumeUuid;
+    }
+
+    public long getRequiredSize() {
+        return requiredSize;
+    }
+
+    public void setRequiredSize(long requiredSize) {
+        this.requiredSize = requiredSize;
     }
 }

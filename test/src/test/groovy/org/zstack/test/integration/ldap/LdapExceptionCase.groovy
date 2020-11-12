@@ -3,7 +3,7 @@ package org.zstack.test.integration.ldap
 import com.unboundid.ldap.sdk.LDAPInterface
 import com.unboundid.ldap.sdk.SearchResult
 import com.unboundid.ldap.sdk.SearchScope
-import org.junit.Rule
+import org.junit.ClassRule
 import org.zapodot.junit.ldap.EmbeddedLdapRule
 import org.zapodot.junit.ldap.EmbeddedLdapRuleBuilder
 import org.zstack.sdk.AddLdapServerAction
@@ -21,7 +21,7 @@ class LdapExceptionCase extends SubCase {
 
     public static String DOMAIN_DSN = "dc=example,dc=com"
 
-    @Rule
+    @ClassRule
     public static EmbeddedLdapRule embeddedLdapRule = EmbeddedLdapRuleBuilder.newInstance().bindingToPort(1888).
             usingDomainDsn(DOMAIN_DSN).importingLdifs("users-import.ldif").build()
 

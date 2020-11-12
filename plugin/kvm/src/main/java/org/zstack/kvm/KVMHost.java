@@ -59,9 +59,11 @@ import org.zstack.header.vm.VmDeviceAddress;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.l3.NetworkGlobalProperty;
+import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
@@ -87,7 +89,6 @@ import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
-
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
     private static final ZTester tester = Utils.getTester();
@@ -1227,6 +1228,8 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void attachIso(final AttachIsoOnHypervisorMsg msg, final NoErrorCompletion completion) {
+        checkStatus();
+
         final AttachIsoOnHypervisorReply reply = new AttachIsoOnHypervisorReply();
 
         IsoTO iso = new IsoTO();
@@ -2362,11 +2365,36 @@ public class KVMHost extends HostBase implements Host {
 
     }
 
+    @Transactional
+    private void setVmNicMultiqueueNum(final VmInstanceSpec spec) {
+        try {
+            if (!ImagePlatform.isType(spec.getImageSpec().getInventory().getPlatform(), ImagePlatform.Linux)) {
+                return;
+            }
+
+            if (!KVMGlobalConfig.AUTO_VM_NIC_MULTIQUEUE.value(Boolean.class)) {
+                return;
+            }
+
+            if (spec.getVmInventory().getCpuNum().equals(1)) {
+                return;
+            }
+
+            ResourceConfig multiQueues = rcf.getResourceConfig(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getIdentity());
+            Integer queues = spec.getVmInventory().getCpuNum() > KVMConstant.DEFAULT_MAX_NIC_QUEUE_NUMBER ? KVMConstant.DEFAULT_MAX_NIC_QUEUE_NUMBER : spec.getVmInventory().getCpuNum();
+            multiQueues.updateValue(spec.getVmInventory().getUuid(), queues.toString());
+
+        } catch (Exception e) {
+            logger.warn(String.format("got exception when trying set nic multiqueue for vm: %s, %s", spec.getVmInventory().getUuid(), e));
+        }
+    }
+
     private void handle(final CreateVmOnHypervisorMsg msg) {
         inQueue().name(String.format("start-vm-on-kvm-%s", self.getUuid()))
                 .asyncBackup(msg)
                 .run(chain -> {
                     setDataVolumeUseVirtIOSCSI(msg.getVmSpec());
+                    setVmNicMultiqueueNum(msg.getVmSpec());
                     startVm(msg.getVmSpec(), msg, new NoErrorCompletion(chain) {
                         @Override
                         public void done() {
@@ -2501,7 +2529,6 @@ public class KVMHost extends HostBase implements Host {
         final StartVmCmd cmd = new StartVmCmd();
 
         boolean virtio;
-        String nestedVirtualization;
         String platform = spec.getVmInventory().getPlatform() == null ? spec.getImageSpec().getInventory().getPlatform() :
                 spec.getVmInventory().getPlatform();
         if(ImagePlatform.Other.toString().equals(platform)){
@@ -2593,8 +2620,7 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setWwn(computeWwnIfAbsent(spec.getDestRootVolume().getUuid()));
         rootVolume.setCacheMode(KVMGlobalConfig.LIBVIRT_CACHE_MODE.value());
 
-        nestedVirtualization = KVMGlobalConfig.NESTED_VIRTUALIZATION.value(String.class);
-        cmd.setNestedVirtualization(nestedVirtualization);
+        cmd.setNestedVirtualization( rcf.getResourceConfigValue(KVMGlobalConfig.NESTED_VIRTUALIZATION, spec.getVmInventory().getUuid(), String.class) );
         cmd.setRootVolume(rootVolume);
         cmd.setUseBootMenu(VmGlobalConfig.VM_BOOT_MENU.value(Boolean.class));
 
@@ -3747,8 +3773,14 @@ public class KVMHost extends HostBase implements Host {
                     reply.setError(operr("operation error, because:%s", ret.getError()));
                     bus.reply(msg, reply);
                     completion.done();
+                    return;
+                }
+
+                changeConnectionState(HostStatusEvent.disconnected);
+                if (msg.isReturnEarly()) {
+                    bus.reply(msg, reply);
+                    completion.done();
                 } else {
-                    changeConnectionState(HostStatusEvent.disconnected);
                     waitForHostShutdown(reply, completion);
                 }
             }

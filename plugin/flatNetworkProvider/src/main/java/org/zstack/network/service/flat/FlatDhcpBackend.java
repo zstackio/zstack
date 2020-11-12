@@ -91,7 +91,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     private DhcpExtension dhcpExtension;
 
     public static final String APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/apply";
+    public static final String BATCH_APPLY_DHCP_PATH = "/flatnetworkprovider/dhcp/batchApply";
     public static final String PREPARE_DHCP_PATH = "/flatnetworkprovider/dhcp/prepare";
+    public static final String BATCH_PREPARE_DHCP_PATH = "/flatnetworkprovider/dhcp/batchPrepare";
     public static final String RELEASE_DHCP_PATH = "/flatnetworkprovider/dhcp/release";
     public static final String DHCP_CONNECT_PATH = "/flatnetworkprovider/dhcp/connect";
     public static final String RESET_DEFAULT_GATEWAY_PATH = "/flatnetworkprovider/dhcp/resetDefaultGateway";
@@ -1298,6 +1300,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public String l3NetworkUuid;
     }
 
+    public static class BatchApplyDhcpCmd extends KVMAgentCommands.AgentCommand {
+        public List<ApplyDhcpCmd> dhcpInfos;
+    }
+
     public static class ApplyDhcpRsp extends KVMAgentCommands.AgentResponse {
     }
 
@@ -1317,6 +1323,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public String dhcp6ServerIp;
         public Integer prefixLen;
         public String addressMode;
+    }
+
+    public static class BatchPrepareDhcpCmd extends KVMAgentCommands.AgentCommand {
+        public List<PrepareDhcpCmd> dhcpInfos;
     }
 
     public static class PrepareDhcpRsp extends KVMAgentCommands.AgentResponse {
@@ -1475,42 +1485,28 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     private void applyDhcpToHosts(List<DhcpInfo> dhcpInfo, final String hostUuid, final boolean rebuild, final Completion completion) {
-        final Map<String, List<DhcpInfo>> l3DhcpMap = new HashMap<String, List<DhcpInfo>>();
+        final Map<String, List<DhcpInfo>> l3DhcpMap = new HashMap<>();
         for (DhcpInfo d : dhcpInfo) {
             List<DhcpInfo> lst = l3DhcpMap.get(d.l3NetworkUuid);
             if (lst == null) {
-                lst = new ArrayList<DhcpInfo>();
+                lst = new ArrayList<>();
                 l3DhcpMap.put(d.l3NetworkUuid, lst);
             }
 
             lst.add(d);
         }
 
-        ErrorCodeList errorCodeList = new ErrorCodeList();
-        new While<>(l3DhcpMap.entrySet()).step((entry, c) -> {
-            DhcpApply dhcpApply = new DhcpApply();
-            dhcpApply.bus = bus;
-            dhcpApply.apply(entry, hostUuid, rebuild, new Completion(c) {
-                @Override
-                public void success() {
-                    c.done();
-                }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    errorCodeList.getCauses().add(errorCode);
-                    c.allDone();
-                }
-            });
-        }, 10).run(new NoErrorCompletion(completion) {
+        DhcpApply dhcpApply = new DhcpApply();
+        dhcpApply.bus = bus;
+        dhcpApply.apply(l3DhcpMap, hostUuid, rebuild, new Completion(completion) {
             @Override
-            public void done() {
-                if (!errorCodeList.getCauses().isEmpty()) {
-                    completion.fail(errorCodeList.getCauses().get(0));
-                    return;
-                }
-
+            public void success() {
                 completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
             }
         });
     }

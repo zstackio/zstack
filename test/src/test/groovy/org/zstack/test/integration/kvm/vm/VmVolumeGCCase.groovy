@@ -138,7 +138,7 @@ class VmVolumeGCCase extends SubCase {
 
         long expectVolumeNum = Q.New(VolumeVO.class).count()
 
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { FlatDhcpBackend.ApplyDhcpRsp rsp, HttpEntity<java.lang.String> e ->
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { FlatDhcpBackend.ApplyDhcpRsp rsp, HttpEntity<java.lang.String> e ->
             rsp.setError("case mock error")
             return rsp
         }

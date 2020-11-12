@@ -59,7 +59,17 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-					
+
+				}
+				column {
+					name "destPrimaryStorageUuid"
+					enclosedIn "localStorageMigrateVolume"
+					desc "目标主存储UUID"
+					location "body"
+					type "String"
+					optional true
+					since "4.0.0"
+
 				}
 			}
         }

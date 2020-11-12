@@ -208,9 +208,10 @@ class VirtualrouterMultiNicCase extends SubCase {
         }
 
         FlatDhcpBackend.ApplyDhcpCmd acmd
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
-            acmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
-
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            FlatDhcpBackend.BatchApplyDhcpCmd bcmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
+            assert bcmd.dhcpInfos.size() == 1
+            acmd = bcmd.dhcpInfos.get(0)
             assert !acmd.dhcp.isEmpty()
             if (acmd.dhcp.stream().filter({dhcp -> dhcp.ip.equals(earliestNic.ip)}).count()>0) {
                 assert acmd.dhcp.stream().filter({ dhcp -> dhcp.isDefaultL3Network }).count() == 1

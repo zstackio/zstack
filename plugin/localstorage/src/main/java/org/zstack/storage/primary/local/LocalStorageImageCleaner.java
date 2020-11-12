@@ -54,9 +54,25 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
         return LocalStorageConstants.LOCAL_STORAGE_TYPE;
     }
 
+    private boolean force;
+
+    public boolean isForce() {
+        return force;
+    }
+
+    public void setForce(boolean force) {
+        this.force = force;
+    }
+
     @Transactional
     protected List<ImageCacheShadowVO> createShadowImageCacheVOsForNewDeletedAndOld(String psUUid) {
-        List<Long> staleImageCacheIds = getStaleImageCacheIds(psUUid);
+        List<Long> staleImageCacheIds;
+        if (force){
+            staleImageCacheIds = getStaleImageCacheIdsForLocalStorage(psUUid);
+        } else {
+            staleImageCacheIds = getStaleImageCacheIds(psUUid);
+        }
+
         if (staleImageCacheIds == null || staleImageCacheIds.isEmpty()) {
             return null;
         }
@@ -73,11 +89,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
             p.disassemble();
             String hostUuid = p.hostUuid;
 
-            List<ImageCacheVO> refs = refMap.get(hostUuid);
-            if (refs == null) {
-                refs = new ArrayList<ImageCacheVO>();
-                refMap.put(hostUuid, refs);
-            }
+            List<ImageCacheVO> refs = refMap.computeIfAbsent(hostUuid, k -> new ArrayList<ImageCacheVO>());
             refs.add(c);
         }
 
@@ -274,4 +286,6 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
             }
         });
     }
+
+
 }

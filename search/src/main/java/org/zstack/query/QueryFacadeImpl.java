@@ -513,7 +513,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             sb.add(String.format("order by %s %s", msg.getSortBy(), msg.getSortDirection()));
         }
 
-        if (msg.getLimit() != null) {
+        if (msg.getLimit() != null && msg.getFilterName() == null) {
             sb.add(String.format("limit %s", msg.getLimit()));
         }
 

@@ -24,7 +24,6 @@ import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -229,7 +228,7 @@ public abstract class HostBase extends AbstractHost {
 
                         int migrateQuantity = quantity;
                         HostInventory host = getSelfInventory();
-                        List<String> vmFailedToMigrate = Collections.synchronizedList(new ArrayList<String>());
+                        Map<String,ErrorCode> vmFailedToMigrate = Collections.synchronizedMap(new HashMap<>());
                         for (OrderVmBeforeMigrationDuringHostMaintenanceExtensionPoint ext : pluginRgty.getExtensionList(OrderVmBeforeMigrationDuringHostMaintenanceExtensionPoint.class)) {
                             List<String> ordered = ext.orderVmBeforeMigrationDuringHostMaintenance(host, vmUuids);
                             if (ordered != null) {
@@ -250,7 +249,7 @@ public abstract class HostBase extends AbstractHost {
                                 @Override
                                 public void run(MessageReply reply) {
                                     if (!reply.isSuccess()) {
-                                        vmFailedToMigrate.add(msg.getVmInstanceUuid());
+                                        vmFailedToMigrate.put(msg.getVmInstanceUuid(), reply.getError());
                                     }
                                     compl.done();
                                 }
@@ -261,14 +260,22 @@ public abstract class HostBase extends AbstractHost {
                                 if (!vmFailedToMigrate.isEmpty()) {
                                     if (HostMaintenancePolicyManager.HostMaintenancePolicy.JustMigrate.equals(hostMaintenancePolicyMgr.getHostMaintenancePolicy(self.getUuid()))) {
                                         trigger.fail(operr("failed to migrate vm[uuids:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it.",
-                                                vmFailedToMigrate, self.getUuid(), self.getName(), self.getManagementIp()));
+                                                vmFailedToMigrate.keySet(), self.getUuid(), self.getName(), self.getManagementIp()));
                                         return;
                                     }
 
+                                    vmFailedToMigrate.forEach((vmUuid, errorCode) -> {
+                                        VmTracerCanonicalEvents.MigrateVMFailedWithHostMaintainData data = new VmTracerCanonicalEvents.MigrateVMFailedWithHostMaintainData();
+                                        data.setVmUuid(vmUuid);
+                                        data.setHostUuid(self.getUuid());
+                                        data.setReason(String.format("failed to migrate vm[%s] when host[%s] enters the maintenance state, reason: %s", vmUuid, self.getUuid(), errorCode.getReadableDetails()));
+                                        evtf.fire(VmTracerCanonicalEvents.MIGRATE_VM_FAILED_WITH_HOST_MAINTAIN_PATH, data);
+                                    });
+
                                     logger.warn(String.format("failed to migrate vm[uuids:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it.",
-                                            vmFailedToMigrate, self.getUuid(), self.getName(), self.getManagementIp()));
-                                    policyVmMap.get(HostMaintenancePolicy.StopVm).addAll(vmFailedToMigrate);
-                                    policyVmMap.get(HostMaintenancePolicy.MigrateVm).removeAll(vmFailedToMigrate);
+                                            vmFailedToMigrate.keySet(), self.getUuid(), self.getName(), self.getManagementIp()));
+                                    policyVmMap.get(HostMaintenancePolicy.StopVm).addAll(vmFailedToMigrate.keySet());
+                                    policyVmMap.get(HostMaintenancePolicy.MigrateVm).removeAll(vmFailedToMigrate.keySet());
                                 }
                                 trigger.next();
                             }
@@ -464,15 +471,28 @@ public abstract class HostBase extends AbstractHost {
         }
 
         chain.done(new FlowDoneHandler(msg) {
-            @Override
-            public void handle(Map data) {
-                casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
+            private void complete() {
                 bus.publish(evt);
 
                 HostDeletedData d = new HostDeletedData();
                 d.setInventory(HostInventory.valueOf(self));
                 d.setHostUuid(self.getUuid());
                 evtf.fire(HostCanonicalEvents.HOST_DELETED_PATH, d);
+            }
+
+            @Override
+            public void handle(Map data) {
+                casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new Completion(msg) {
+                    @Override
+                    public void success() {
+                        complete();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        complete();
+                    }
+                });
             }
         }).error(new FlowErrorHandler(msg) {
             @Override

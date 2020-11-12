@@ -32,7 +32,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
-import org.zstack.header.storage.primary.PrimaryStorageFindBackupStorage;
 import org.zstack.header.storage.primary.PrimaryStorageType;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
@@ -59,6 +58,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     private static final CLogger logger = Utils.getLogger(HostAllocatorManagerImpl.class);
 
     private Map<String, HostAllocatorStrategyFactory> factories = Collections.synchronizedMap(new HashMap<String, HostAllocatorStrategyFactory>());
+    private Set<String> unsupportedVmTypeForCapacityCalculation = new HashSet<>();
     private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
     private Map<String, List<String>> primaryStorageBackupStorageMetrics = new HashMap<>();
 
@@ -140,8 +140,13 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         q.setParameter("bsState", BackupStorageState.Enabled);
         q.setParameter("bsStatus", BackupStorageStatus.Connected);
 
+        List<BackupStorageInventory> candidates = BackupStorageInventory.valueOf(q.getResultList());
+        for(BackupStorageAllocatorFilterExtensionPoint ext : pluginRgty.getExtensionList(BackupStorageAllocatorFilterExtensionPoint.class)) {
+            candidates = ext.filterBackupStorageCandidatesByPS(candidates, ps.getUuid());
+        }
+        
         APIGetCandidateBackupStorageForCreatingImageReply reply = new APIGetCandidateBackupStorageForCreatingImageReply();
-        reply.setInventories(BackupStorageInventory.valueOf(q.getResultList()));
+        reply.setInventories(candidates);
         bus.reply(msg, reply);
     }
 
@@ -177,8 +182,13 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                 String sql = "select sum(vm.memorySize), vm.hostUuid, sum(vm.cpuNum)" +
                         " from VmInstanceVO vm" +
                         " where vm.hostUuid in (:hostUuids)" +
-                        " and vm.state not in (:vmStates)" +
-                        " group by vm.hostUuid";
+                        " and vm.state not in (:vmStates)";
+
+                if (!unsupportedVmTypeForCapacityCalculation.isEmpty()) {
+                    sql += " and vm.type not in (:vmTypes)";
+                }
+
+                sql += " group by vm.hostUuid";
                 TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
                 q.setParameter("hostUuids", hostUuids);
                 q.setParameter("vmStates", list(
@@ -186,6 +196,11 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                         VmInstanceState.Created,
                         VmInstanceState.Destroying,
                         VmInstanceState.Stopped));
+
+                if (!unsupportedVmTypeForCapacityCalculation.isEmpty()) {
+                    q.setParameter("vmTypes", unsupportedVmTypeForCapacityCalculation);
+                }
+
                 List<Tuple> ts = q.getResultList();
 
                 List<HostUsedCpuMem> ret = new ArrayList<>();
@@ -745,7 +760,14 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         populateHostAllocatorStrategyFactory();
         populatePrimaryStorageBackupStorageMetrics();
         installPrimaryStorageTypeDefaultField();
+        populateVmTypeNeedSkipCapacityCalculate();
         return true;
+    }
+
+    private void populateVmTypeNeedSkipCapacityCalculate() {
+        for (CollectCapacityUnsupportedVmTypeExtensionPoint ext : pluginRgty.getExtensionList(CollectCapacityUnsupportedVmTypeExtensionPoint.class)) {
+            unsupportedVmTypeForCapacityCalculation.add(ext.getCapacityUnsupportedVmTypeString());
+        }
     }
 
     private void populatePrimaryStorageBackupStorageMetrics() {

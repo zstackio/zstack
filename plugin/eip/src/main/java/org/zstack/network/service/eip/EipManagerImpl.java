@@ -415,7 +415,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         UsedIpInventory guestIp = getEipGuestIp(eip.getUuid());
         EipStruct struct = generateEipStruct(nicInventory, vipInventory, eip, guestIp);
         struct.setSnatInboundTraffic(EipGlobalConfig.SNAT_INBOUND_TRAFFIC.value(Boolean.class));
-        detachEipAndUpdateDb(struct, providerType.toString(), DetachEipOperation.DB_UPDATE, new Completion(msg) {
+        detachEipAndUpdateDb(struct, providerType.toString(), DetachEipOperation.DB_UPDATE, true, new Completion(msg) {
             @Override
             public void success() {
                 evt.setInventory(EipInventory.valueOf(dbf.reload(vo)));
@@ -1114,7 +1114,7 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
     }
 
 
-    private void detachEip(final EipStruct struct, final String providerType, final DetachEipOperation operation, final Completion completion) {
+    private void detachEip(final EipStruct struct, final String providerType, final DetachEipOperation operation, final boolean fromApiMessage, final Completion completion) {
         VmNicInventory nic = struct.getNic();
         final EipInventory eip = struct.getEip();
 
@@ -1159,8 +1159,10 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                     }
                 });
 
-                for (Flow f : getAdditionalDeleteEipFlow(struct, NetworkServiceProviderType.valueOf(providerType))) {
-                    flow(f);
+                if (fromApiMessage) {
+                    for (Flow f : getAdditionalDeleteEipFlow(struct, NetworkServiceProviderType.valueOf(providerType))) {
+                        flow(f);
+                    }
                 }
 
                 flow(new NoRollbackFlow() {
@@ -1214,12 +1216,16 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
 
     @Override
     public void detachEip(EipStruct struct, String providerType, final Completion completion) {
-        detachEip(struct, providerType, DetachEipOperation.NO_DB_UPDATE, completion);
+        detachEip(struct, providerType, DetachEipOperation.NO_DB_UPDATE, false, completion);
+    }
+
+    public void detachEipAndUpdateDb(EipStruct struct, String providerType, DetachEipOperation dbOperation, boolean fromApiMessage, Completion completion) {
+        detachEip(struct, providerType, dbOperation, fromApiMessage, completion);
     }
 
     @Override
     public void detachEipAndUpdateDb(EipStruct struct, String providerType, DetachEipOperation dbOperation, Completion completion) {
-        detachEip(struct, providerType, dbOperation, completion);
+        detachEip(struct, providerType, dbOperation, false, completion);
     }
 
     @Override

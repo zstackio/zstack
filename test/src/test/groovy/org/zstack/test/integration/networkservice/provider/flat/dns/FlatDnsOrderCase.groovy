@@ -69,8 +69,9 @@ class FlatDnsOrderCase extends SubCase {
         assert l3.dns.get(2) == '1.1.1.3'
 
         FlatDhcpBackend.ApplyDhcpCmd cmd = null
-        env.simulator(FlatDhcpBackend.APPLY_DHCP_PATH){HttpEntity<String> e,EnvSpec spec ->
-            cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+        env.simulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH){HttpEntity<String> e,EnvSpec spec ->
+            FlatDhcpBackend.BatchApplyDhcpCmd batchApplyDhcpCmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
+            cmd = batchApplyDhcpCmd.dhcpInfos.get(0)
             def rsp = new FlatDhcpBackend.ApplyDhcpRsp()
             rsp.success = true
             return rsp

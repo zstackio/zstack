@@ -65,16 +65,16 @@ class IPv6DhcpCase extends SubCase {
         ImageInventory image = env.inventoryByName("image1")
 
         List<FlatDhcpBackend.PrepareDhcpCmd> pcmds = new ArrayList<>()
-        env.afterSimulator(FlatDhcpBackend.PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e ->
-            FlatDhcpBackend.PrepareDhcpCmd pcmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.PrepareDhcpCmd.class)
-            pcmds.add(pcmd)
+        env.afterSimulator(FlatDhcpBackend.BATCH_PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            FlatDhcpBackend.BatchPrepareDhcpCmd pcmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchPrepareDhcpCmd.class)
+            pcmds.addAll(pcmd.dhcpInfos)
             return rsp
         }
 
         List<FlatDhcpBackend.ApplyDhcpCmd> cmds = new ArrayList<>()
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
-            FlatDhcpBackend.ApplyDhcpCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.ApplyDhcpCmd.class)
-            cmds.add(cmd)
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
+            FlatDhcpBackend.BatchApplyDhcpCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
+            cmds.addAll(cmd.dhcpInfos)
             return rsp
         }
 
@@ -111,6 +111,10 @@ class IPv6DhcpCase extends SubCase {
         assert pcmd.prefixLen == 64
         assert pcmd.addressMode == IPv6Constants.Stateful_DHCP
         assert pcmd.dhcpServerIp == null
+        assert pcmd.dhcpNetmask == null
+        assert pcmd.dhcpNetmask == null
+        assert pcmd.dhcpNetmask == null
+        assert pcmd.dhcpNetmask == null
         assert pcmd.dhcpNetmask == null
 
         /* simulate an old dual stack nic */

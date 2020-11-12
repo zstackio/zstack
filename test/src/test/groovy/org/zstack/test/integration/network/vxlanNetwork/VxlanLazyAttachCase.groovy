@@ -195,11 +195,11 @@ class VxlanLazyAttachCase extends SubCase {
             delegate.l3NetworkUuids = [(env.specByName("l3-novlan") as L3NetworkSpec).inventory.uuid]
         }
 
-        FlatDhcpBackend.PrepareDhcpCmd dhcpCmd
-        env.afterSimulator(FlatDhcpBackend.PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e ->
-            FlatDhcpBackend.PrepareDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.PrepareDhcpCmd.class)
+        FlatDhcpBackend.BatchPrepareDhcpCmd dhcpCmd
+        env.afterSimulator(FlatDhcpBackend.BATCH_PREPARE_DHCP_PATH) { rsp, HttpEntity<String> e ->
+            FlatDhcpBackend.BatchPrepareDhcpCmd cmd = JSONObjectUtil.toObject(e.body, FlatDhcpBackend.BatchPrepareDhcpCmd.class)
 
-            if (cmd.namespaceName.contains(l3.uuid)) {
+            if (cmd.dhcpInfos.get(0).namespaceName.contains(l3.uuid)) {
                 dhcpCmd = cmd
             }
 
@@ -224,7 +224,7 @@ class VxlanLazyAttachCase extends SubCase {
             delegate.vmInstanceUuid = vm.uuid
         }
 
-        assert dhcpCmd != null && dhcpCmd.bridgeName != null
+        assert dhcpCmd != null && dhcpCmd.dhcpInfos.get(0).bridgeName != null
 
         deleteL2Network {
             delegate.uuid = poolinv.getUuid()

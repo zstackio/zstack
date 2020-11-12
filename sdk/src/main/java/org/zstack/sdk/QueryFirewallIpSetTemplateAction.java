@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateSharedBlockDiskUuidAction extends AbstractAction {
+public class QueryFirewallIpSetTemplateAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateSharedBlockDiskUuidAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateSharedBlockDiskUuidResult value;
+        public org.zstack.sdk.QueryFirewallIpSetTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,6 @@ public class UpdateSharedBlockDiskUuidAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String sharedBlockGroupUuid;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String diskUuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -66,8 +34,8 @@ public class UpdateSharedBlockDiskUuidAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateSharedBlockDiskUuidResult value = res.getResult(org.zstack.sdk.UpdateSharedBlockDiskUuidResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateSharedBlockDiskUuidResult() : value; 
+        org.zstack.sdk.QueryFirewallIpSetTemplateResult value = res.getResult(org.zstack.sdk.QueryFirewallIpSetTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.QueryFirewallIpSetTemplateResult() : value; 
 
         return ret;
     }
@@ -96,11 +64,11 @@ public class UpdateSharedBlockDiskUuidAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/primary-storage/sharedblockgroup/{sharedBlockGroupUuid}/sharedblocks/{uuid}/actions";
+        info.httpMethod = "GET";
+        info.path = "/vpcfirewalls/ipset/templates";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "updateSharedBlockDiskUuid";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

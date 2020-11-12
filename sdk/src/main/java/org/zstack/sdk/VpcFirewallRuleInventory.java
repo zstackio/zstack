@@ -14,14 +14,6 @@ public class VpcFirewallRuleInventory  {
         return this.uuid;
     }
 
-    public java.lang.String vpcFirewallUuid;
-    public void setVpcFirewallUuid(java.lang.String vpcFirewallUuid) {
-        this.vpcFirewallUuid = vpcFirewallUuid;
-    }
-    public java.lang.String getVpcFirewallUuid() {
-        return this.vpcFirewallUuid;
-    }
-
     public java.lang.String ruleSetUuid;
     public void setRuleSetUuid(java.lang.String ruleSetUuid) {
         this.ruleSetUuid = ruleSetUuid;
@@ -36,14 +28,6 @@ public class VpcFirewallRuleInventory  {
     }
     public ActionType getAction() {
         return this.action;
-    }
-
-    public java.lang.String ruleSetName;
-    public void setRuleSetName(java.lang.String ruleSetName) {
-        this.ruleSetName = ruleSetName;
-    }
-    public java.lang.String getRuleSetName() {
-        return this.ruleSetName;
     }
 
     public ProtocolType protocol;
@@ -116,6 +100,22 @@ public class VpcFirewallRuleInventory  {
     }
     public java.lang.String getIcmpTypeName() {
         return this.icmpTypeName;
+    }
+
+    public boolean isApplied;
+    public void setIsApplied(boolean isApplied) {
+        this.isApplied = isApplied;
+    }
+    public boolean getIsApplied() {
+        return this.isApplied;
+    }
+
+    public boolean expired;
+    public void setExpired(boolean expired) {
+        this.expired = expired;
+    }
+    public boolean getExpired() {
+        return this.expired;
     }
 
     public FirewallRuleState state;

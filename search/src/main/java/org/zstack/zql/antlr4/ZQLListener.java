@@ -1,4 +1,4 @@
-// Generated from D:/ZStack/zstack/search/src/main/antlr4\ZQL.g4 by ANTLR 4.7
+// Generated from ZQL.g4 by ANTLR 4.7
 
 package org.zstack.zql.antlr4;
 
@@ -140,6 +140,58 @@ public interface ZQLListener extends ParseTreeListener {
 	 */
 	void exitSubQueryValue(ZQLParser.SubQueryValueContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code apiGetValue}
+	 * labeled alternative in {@link ZQLParser#complexValue}.
+	 * @param ctx the parse tree
+	 */
+	void enterApiGetValue(ZQLParser.ApiGetValueContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code apiGetValue}
+	 * labeled alternative in {@link ZQLParser#complexValue}.
+	 * @param ctx the parse tree
+	 */
+	void exitApiGetValue(ZQLParser.ApiGetValueContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#getQuery}.
+	 * @param ctx the parse tree
+	 */
+	void enterGetQuery(ZQLParser.GetQueryContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#getQuery}.
+	 * @param ctx the parse tree
+	 */
+	void exitGetQuery(ZQLParser.GetQueryContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#apiparams}.
+	 * @param ctx the parse tree
+	 */
+	void enterApiparams(ZQLParser.ApiparamsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#apiparams}.
+	 * @param ctx the parse tree
+	 */
+	void exitApiparams(ZQLParser.ApiparamsContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#input}.
+	 * @param ctx the parse tree
+	 */
+	void enterInput(ZQLParser.InputContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#input}.
+	 * @param ctx the parse tree
+	 */
+	void exitInput(ZQLParser.InputContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#output}.
+	 * @param ctx the parse tree
+	 */
+	void enterOutput(ZQLParser.OutputContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#output}.
+	 * @param ctx the parse tree
+	 */
+	void exitOutput(ZQLParser.OutputContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link ZQLParser#expr}.
 	 * @param ctx the parse tree
 	 */
@@ -149,6 +201,16 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitExpr(ZQLParser.ExprContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#equal}.
+	 * @param ctx the parse tree
+	 */
+	void enterEqual(ZQLParser.EqualContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#equal}.
+	 * @param ctx the parse tree
+	 */
+	void exitEqual(ZQLParser.EqualContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code nestCondition}
 	 * labeled alternative in {@link ZQLParser#condition}.
@@ -429,6 +491,16 @@ public interface ZQLListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitFilterBy(ZQLParser.FilterByContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ZQLParser#namedAsKey}.
+	 * @param ctx the parse tree
+	 */
+	void enterNamedAsKey(ZQLParser.NamedAsKeyContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#namedAsKey}.
+	 * @param ctx the parse tree
+	 */
+	void exitNamedAsKey(ZQLParser.NamedAsKeyContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ZQLParser#namedAsValue}.
 	 * @param ctx the parse tree

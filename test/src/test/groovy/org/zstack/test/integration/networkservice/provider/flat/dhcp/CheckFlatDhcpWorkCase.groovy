@@ -162,15 +162,16 @@ class CheckFlatDhcpWorkCase extends SubCase{
         assert n.getDeviceId() == 1
 
         List<FlatDhcpBackend.DhcpInfo> dhcpInfoList = new ArrayList<FlatDhcpBackend.DhcpInfo>()
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
-            FlatDhcpBackend.ApplyDhcpCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
+            FlatDhcpBackend.BatchApplyDhcpCmd cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
             assert null != cmd
-            dhcpInfoList.addAll(cmd.dhcp)
+            cmd.dhcpInfos.each { info ->
+                dhcpInfoList.addAll(info.dhcp)
+            }
             return rsp
         }
         goOn:
-        for (FlatDhcpBackend.ApplyDhcpCmd cmd : dhcpInfoList) {
-            FlatDhcpBackend.DhcpInfo info = cmd.dhcp.get(0)
+        for (FlatDhcpBackend.DhcpInfo info : dhcpInfoList) {
             if (!info.isDefaultL3Network && info.hostname != null) {
                 Assert.fail(String.format("wrong hostname set. %s", JSONObjectUtil.toJsonString(info)))
             }

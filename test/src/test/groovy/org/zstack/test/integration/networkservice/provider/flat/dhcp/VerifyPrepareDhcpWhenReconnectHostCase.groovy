@@ -160,9 +160,9 @@ class VerifyPrepareDhcpWhenReconnectHostCase extends SubCase {
         }
 
         def called = 0
-        FlatDhcpBackend.ApplyDhcpCmd cmd = null
-        env.afterSimulator(FlatDhcpBackend.APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
-            cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.ApplyDhcpCmd.class)
+        FlatDhcpBackend.BatchApplyDhcpCmd cmd = null
+        env.afterSimulator(FlatDhcpBackend.BATCH_APPLY_DHCP_PATH) { rsp, HttpEntity<String> e1 ->
+            cmd = JSONObjectUtil.toObject(e1.body, FlatDhcpBackend.BatchApplyDhcpCmd.class)
             called += 1
             return rsp
         }
@@ -174,13 +174,14 @@ class VerifyPrepareDhcpWhenReconnectHostCase extends SubCase {
             uuid = vm.uuid
         }
         assert called == 1
-        assert cmd.dhcp.get(0).hostname == "test-name"
+        assert cmd.dhcpInfos.size() == 1
+        assert cmd.dhcpInfos.get(0).dhcp.get(0).hostname == "test-name"
 
         called = 0
         cmd = null
         reconnectHost { uuid=host.uuid }
         assert called == 1
-        assert cmd.dhcp.get(0).hostname == "test-name"
+        assert cmd.dhcpInfos.get(0).dhcp.get(0).hostname == "test-name"
 
         def vr = queryVirtualRouterVm {}[0] as VirtualRouterVmInventory
         assert vr != null

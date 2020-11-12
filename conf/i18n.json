@@ -18588,11 +18588,21 @@
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
+    "raw": "the dest host[uuid:%s] has attach multi local primary storage, parameter [destPrimaryStorageUuid] can't be null!",
+    "en_US": "the dest host[uuid:%s] has attach multi local primary storage, parameter [destPrimaryStorageUuid] can't be null!",
+    "zh_CN": "迁移目标主机[uuid:{0}]有多个本地主存储,需要指定主存储[destPrimaryStorageUuid]",
+    "arguments": [
+      "msg.getDestHostUuid()"
+    ],
+    "line": 114,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
+  },
+  {
     "raw": "the primary storage[uuid:%s] is not found",
     "en_US": "the primary storage[uuid:{0}] is not found",
     "zh_CN": "主存储[uuid:{0}]未找到",
     "arguments": [
-      "msg.getPrimaryStorageUuid()"
+      "IsMultiPrimaryStorage ? DestPrimaryStorageUuid : msg.getPrimaryStorageUuid()"
     ],
     "line": 101,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
@@ -18602,9 +18612,20 @@
     "en_US": "the primary storage[uuid:{0}] is disabled or maintenance cold migrate is not allowed",
     "zh_CN": "主存储[uuid:{0}]为Disabled或维护状态时不允许冷迁移",
     "arguments": [
-      "ref.getPrimaryStorageUuid()"
+      "isMultiPrimaryStorage ? destPrimaryStorageUuid : ref.getPrimaryStorageUuid()"
     ],
     "line": 105,
+    "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
+  },
+  {
+    "raw": "the dest host[uuid:%s] doesn\u0027t attach a local primary storage, please change another dest host!",
+    "en_US": "the dest host[uuid:{0}] doesn\u0027t attach local primary storage[uuid:{1}], please change another dest host!",
+    "zh_CN": "目标物理机[uuid:{0}]没有挂载主存储[uuid:{1}],换一台主机！",
+    "arguments": [
+      "msg.getDestHostUuid()",
+      "isMultiPrimaryStorage ? destPrimaryStorageUuid : msg.getPrimaryStorageUuid()"
+    ],
+    "line": 151,
     "fileName": "src/main/java/org/zstack/storage/primary/local/LocalStorageApiInterceptor.java"
   },
   {
@@ -18625,7 +18646,7 @@
     "zh_CN": "目标物理机[uuid:{0}]没有足够的物理容量，因为设置的主存储[uuid:{1}]可用阈值为{2}，但实际可用物理容量是{3}",
     "arguments": [
       "msg.getDestHostUuid()",
-      "msg.getPrimaryStorageUuid()",
+      "isMultiPrimaryStorage ? destPrimaryStorageUuid : msg.getPrimaryStorageUuid()",
       "physicalThreshold",
       "refVO.getAvailablePhysicalCapacity()"
     ],
@@ -22563,6 +22584,16 @@
       "vlanId"
     ],
     "line": 1773,
+    "fileName": "src/main/java/org/zstack/vmware/VMwareHelper.java"
+  },
+  {
+    "raw": "portgroup[%s] already exists on host[%s],please create again with other name or delete portgroup manually and attach to cluster again",
+    "en_US": "portgroup[%s] already exists on host[%s],please create again with other name or delete portgroup manually and attach to cluster again",
+    "zh_CN": "端口组[{0}]已经存在于物理机[{1}]，请重新使用另外的名字创建或者手动删除端口组然后重新加载到集群",
+    "arguments": [
+      "hvo.getName()"
+    ],
+    "line": 1833,
     "fileName": "src/main/java/org/zstack/vmware/VMwareHelper.java"
   },
   {
