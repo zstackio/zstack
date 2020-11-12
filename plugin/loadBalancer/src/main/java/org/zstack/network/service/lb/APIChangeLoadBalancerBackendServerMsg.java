@@ -25,7 +25,7 @@ public class APIChangeLoadBalancerBackendServerMsg extends APIMessage implements
     @APIParam(required = false)
     private List<Map<String,String>> vmNics;
     @APIParam(required = false)
-    private List<Map<String,String>> serverIps;
+    private List<Map<String,String>> servers;
     @APINoSee
     private String loadBalancerUuid;
 
@@ -45,12 +45,12 @@ public class APIChangeLoadBalancerBackendServerMsg extends APIMessage implements
         this.vmNics = vmNics;
     }
 
-    public List<Map<String, String>> getServerIps() {
-        return serverIps;
+    public List<Map<String, String>> getServers() {
+        return servers;
     }
 
-    public void setServerIps(List<Map<String, String>> serverIps) {
-        this.serverIps = serverIps;
+    public void setServers(List<Map<String, String>> servers) {
+        this.servers = servers;
     }
 
     @Override

@@ -1,5 +1,7 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.vo.NoView;
 
@@ -9,6 +11,11 @@ import java.sql.Timestamp;
 import java.util.*;
 
 @Inventory(mappingVOClass = LoadBalancerServerGroupVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "listenerServerGroupRefs", inventoryClass = LoadBalancerListenerServerGroupRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "serverGroupUuid"),
+})
+
 public class LoadBalancerServerGroupInventory implements Serializable {
     private String uuid;
     private String name;

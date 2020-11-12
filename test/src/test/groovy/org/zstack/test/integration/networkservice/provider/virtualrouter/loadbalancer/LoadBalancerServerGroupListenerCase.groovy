@@ -180,7 +180,7 @@ class LoadBalancerServerGroupListenerCase extends SubCase{
         VmNicInventory nic1 = vm1.vmNics.get(0)
         VmNicInventory nic2 = vm2.vmNics.get(0)
         addBackendServerToServerGroup {
-            vmNicUuids = [nic1.uuid, nic2.uuid]
+            vmNics = [['uuid':nic1.uuid,'weight':'20'], ['uuid':nic2.uuid,weight:'30']]
             serverGroupUuid = sg.uuid
         }
         assert refreshLbCmd == null
@@ -210,7 +210,7 @@ class LoadBalancerServerGroupListenerCase extends SubCase{
 
         refreshLbCmd = null
         addBackendServerToServerGroup {
-            vmNicUuids = [nic1.uuid]
+            vmNics = [['uuid':nic1.uuid,'weight':'20']]
             serverGroupUuid = sg.uuid
         }
         assert refreshLbCmd != null

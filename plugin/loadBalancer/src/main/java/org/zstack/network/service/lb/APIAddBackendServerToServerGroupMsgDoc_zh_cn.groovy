@@ -32,7 +32,7 @@ doc {
 					
 				}
 				column {
-					name "vmNicUuids"
+					name "vmNics"
 					enclosedIn "params"
 					desc ""
 					location "body"
@@ -42,7 +42,7 @@ doc {
 					
 				}
 				column {
-					name "serverIps"
+					name "servers"
 					enclosedIn "params"
 					desc ""
 					location "body"

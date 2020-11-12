@@ -32,7 +32,7 @@ public class AddBackendServerToServerGroupAction extends AbstractAction {
     public java.util.List vmNics;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List serverIps;
+    public java.util.List servers;
 
     @Param(required = false)
     public java.util.List systemTags;

@@ -829,7 +829,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             canAddVmNic = true;
         }
 
-        List<Map<String,String>> servers = msg.getServerIps();
+        List<Map<String,String>> servers = msg.getServers();
         List <String> serverIps = new ArrayList<>();
         if(serverIps != null && !serverIps.isEmpty()){
             for(Map<String,String> server:servers){
@@ -1023,7 +1023,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             canChangeVmNic = true;
         }
 
-        List<Map<String,String>> servers = msg.getServerIps();
+        List<Map<String,String>> servers = msg.getServers();
         List <String> serverIps = new ArrayList<>();
         if(serverIps != null && !serverIps.isEmpty()){
 

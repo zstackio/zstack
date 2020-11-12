@@ -2112,7 +2112,7 @@ public class LoadBalancerBase {
         chain.then(new ShareFlow() {
             List<Map<String,String>> vmNics = msg.getVmNics();
             List<String> vmNicUuids = new ArrayList<>();
-            List<Map<String,String>> servers = msg.getServerIps();
+            List<Map<String,String>> servers = msg.getServers();
             List <String> serverIps = new ArrayList<>();
 
             List<LoadBalancerServerGroupVmNicRefVO> refVOs = new ArrayList<>();
@@ -2149,7 +2149,7 @@ public class LoadBalancerBase {
                             dbf.persistCollection(refVOs);
                         }
 
-                        if (serverIps != null) {
+                        if (servers != null) {
                             for (Map<String,String> server: servers) {
                                 String ipAddr = server.get("ipAddress");
                                 serverIps.add(ipAddr);
@@ -2207,21 +2207,27 @@ public class LoadBalancerBase {
                         LoadBalancerServerGroupInventory groupInv = LoadBalancerServerGroupInventory.valueOf(groupVO);
                         AttachServerGroupToListenerStruct struct = new AttachServerGroupToListenerStruct();
                         struct.setListenerUuid(groupInv.getListenerServerGroupRefs().get(0).getListenerUuid());
-                        for (Map<String, String> vmNic : vmNics) {
-                            if(vmNic.containsKey("weight")){
-                                struct.getVmNicWeight().put((String) vmNic.get("uuid"), Long.valueOf(vmNic.get("weight")));
-                            }else{
-                                struct.getVmNicWeight().put((String) vmNic.get("uuid"), LoadBalancerConstants.BALANCER_WEIGHT_default);
+
+                       if(vmNics!=null){
+                           for (Map<String, String> vmNic : vmNics) {
+                               if(vmNic.containsKey("weight")){
+                                   struct.getVmNicWeight().put((String) vmNic.get("uuid"), Long.valueOf(vmNic.get("weight")));
+                               }else{
+                                   struct.getVmNicWeight().put((String) vmNic.get("uuid"), LoadBalancerConstants.BALANCER_WEIGHT_default);
+                               }
+                           }
+                       }
+
+                        if(servers!=null){
+                            for (Map<String,String> server: servers) {
+                                if(server.containsKey("weight")){
+                                    struct.getServerIpWeight().put((String)server.get("ipAddress"), Long.valueOf(server.get("weight")));
+                                }else{
+                                    struct.getVmNicWeight().put((String)server.get("ipAddress"), LoadBalancerConstants.BALANCER_WEIGHT_default);
+                                }
                             }
                         }
 
-                        for (Map<String,String> server: servers) {
-                            if(server.containsKey("weight")){
-                                struct.getServerIpWeight().put((String)server.get("ipAddress"), Long.valueOf(server.get("weight")));
-                            }else{
-                                struct.getVmNicWeight().put((String)server.get("ipAddress"), LoadBalancerConstants.BALANCER_WEIGHT_default);
-                            }
-                        }
 
                         /* addVmNicToListener will reresh all the listener, no need to call it for all listener */
                         addVmNicToListener(struct, new Completion(trigger) {
@@ -2277,7 +2283,7 @@ public class LoadBalancerBase {
                     serverGroupVO.setName(msg.getName());
                     update = true;
                 }
-                if (msg.getDescription() != null && msg.getDescription().equals(serverGroupVO.getDescription())) {
+                if (msg.getDescription() != null && !msg.getDescription().equals(serverGroupVO.getDescription())) {
                     serverGroupVO.setDescription(msg.getDescription());
                     update = true;
                 }
@@ -2467,7 +2473,7 @@ public class LoadBalancerBase {
                 APIChangeLoadBalancerBackendServerEvent evt = new APIChangeLoadBalancerBackendServerEvent(msg.getId());
                 boolean canRefresh = false;
                 List<Map<String,String>> vmNics = msg.getVmNics();
-                List<Map<String,String>> servers = msg.getServerIps();
+                List<Map<String,String>> servers = msg.getServers();
 
 
                 if (vmNics != null) {

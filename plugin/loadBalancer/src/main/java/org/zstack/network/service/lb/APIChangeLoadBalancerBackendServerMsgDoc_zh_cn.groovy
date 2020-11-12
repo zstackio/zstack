@@ -5,13 +5,13 @@ import org.zstack.network.service.lb.APIChangeLoadBalancerBackendServerEvent
 doc {
     title "ChangeLoadBalancerBackendServer"
 
-    category "未知类别"
+    category "loadBalancer"
 
     desc """在这里填写API描述"""
 
     rest {
         request {
-			url "PUT /v1/load-balancers/servergroup/{uuid}/backendserver/actions"
+			url "PUT /v1/load-balancers/servergroups/{serverGroupUuid}/backendserver/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
@@ -22,9 +22,9 @@ doc {
 			params {
 
 				column {
-					name "uuid"
+					name "serverGroupUuid"
 					enclosedIn "changeLoadBalancerBackendServer"
-					desc "资源的UUID，唯一标示该资源"
+					desc ""
 					location "url"
 					type "String"
 					optional false
@@ -42,7 +42,7 @@ doc {
 					
 				}
 				column {
-					name "serverIps"
+					name "servers"
 					enclosedIn "changeLoadBalancerBackendServer"
 					desc ""
 					location "body"

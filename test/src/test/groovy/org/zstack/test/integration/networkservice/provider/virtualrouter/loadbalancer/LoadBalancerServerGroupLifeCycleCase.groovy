@@ -211,7 +211,7 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
         LoadBalancerServerGroupInventory servergroup
         addBackendServerToServerGroup{
             vmNics = [['uuid':vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid,'weight':'20']]
-            serverIps  = [['ipAddress':"20.20.20.1",'weight':'30']]
+            servers  = [['ipAddress':"20.20.20.1",'weight':'30']]
             serverGroupUuid = servergroup1.uuid
         }
         servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
@@ -221,7 +221,7 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
 
         changeLoadBalancerBackendServer{
             vmNics = [['uuid':vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid,'weight':'40']]
-            serverIps  = [['ipAddress':"20.20.20.1",'weight':'50']]
+            servers  = [['ipAddress':"20.20.20.1",'weight':'50']]
             serverGroupUuid = servergroup1.uuid
         }
         servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
