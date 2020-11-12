@@ -1,5 +1,9 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.vm.VmNicVO;
+
+import java.util.List;
+
 public interface LoadBalancerFactory {
     String getType();
 
@@ -11,4 +15,6 @@ public interface LoadBalancerFactory {
     LoadBalancerBackend getLoadBalancerBackend(LoadBalancerVO vo);
 
     String getProviderTypeByVmNicUuid(String nicUuid);
+
+    List<VmNicVO> getAttachableVmNicsForServerGroup(LoadBalancerVO lbVO, LoadBalancerServerGroupVO groupVO);
 }

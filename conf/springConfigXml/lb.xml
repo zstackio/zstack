@@ -44,10 +44,4 @@
 		</zstack:plugin>
 	</bean>
 
-	<bean id="SharedLoadBalancerFactory" class="org.zstack.network.service.lb.SharedLoadBalancerFactory">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.network.service.lb.LoadBalancerFactory" />
-		</zstack:plugin>
-	</bean>
-
 </beans>

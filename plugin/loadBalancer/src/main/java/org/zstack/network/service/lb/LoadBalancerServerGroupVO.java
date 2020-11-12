@@ -1,6 +1,9 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.core.db.Q;
 import org.zstack.header.identity.OwnedByAccount;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
@@ -9,8 +12,11 @@ import org.zstack.header.vo.ResourceVO;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table
@@ -134,6 +140,5 @@ public class LoadBalancerServerGroupVO extends ResourceVO  implements OwnedByAcc
     public void setLoadBalancerUuid(String loadBalancerUuid) {
         this.loadBalancerUuid = loadBalancerUuid;
     }
-
 }
     

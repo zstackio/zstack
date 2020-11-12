@@ -1,12 +1,16 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.core.db.Q;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.header.vo.NoView;
 
 import javax.persistence.*;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Inventory(mappingVOClass = LoadBalancerServerGroupVO.class)
 public class LoadBalancerServerGroupInventory implements Serializable {
@@ -135,4 +139,15 @@ public class LoadBalancerServerGroupInventory implements Serializable {
         this.loadBalancerUuid = loadBalancerUuid;
     }
 
+    public List<String> getAttachedL3Uuids() {
+        List<String> attachedVmNics = this.vmNicRefs.stream()
+                .map(LoadBalancerServerGroupVmNicRefInventory::getVmNicUuid).collect(Collectors.toList());
+        if (attachedVmNics.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<String> l3Uuids = Q.New(VmNicVO.class).select(VmNicVO_.l3NetworkUuid)
+                .in(VmNicVO_.uuid, attachedVmNics).listValues();
+        return l3Uuids.stream().distinct().collect(Collectors.toList());
+    }
 }
