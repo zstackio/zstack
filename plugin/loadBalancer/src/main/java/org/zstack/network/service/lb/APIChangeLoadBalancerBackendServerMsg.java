@@ -8,19 +8,18 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.vm.VmNicVO;
 
 import java.util.List;
 import java.util.Map;
 
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY)
 @RestRequest(
-        path = "/load-balancers/servergroups/{serverGroupUuid}/backendservers",
-        method = HttpMethod.POST,
-        parameterName = "params",
-        responseClass = APIAddBackendServerToServerGroupEvent.class
+        path = "/load-balancers/servergroups/{serverGroupUuid}/backendserver/actions",
+        method = HttpMethod.PUT,
+        responseClass = APIChangeLoadBalancerBackendServerEvent.class,
+        isAction = true
 )
-public class APIAddBackendServerToServerGroupMsg extends APIMessage implements LoadBalancerMessage, APIAuditor {
+public class APIChangeLoadBalancerBackendServerMsg extends APIMessage implements LoadBalancerMessage , APIAuditor{
     @APIParam(resourceType = LoadBalancerServerGroupVO.class, checkAccount = true, operationTarget = true, nonempty = true)
     private String serverGroupUuid;
     @APIParam(required = false)
@@ -64,9 +63,8 @@ public class APIAddBackendServerToServerGroupMsg extends APIMessage implements L
     }
 
     @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(((APIAddBackendServerToServerGroupMsg)msg).getLoadBalancerUuid(), LoadBalancerVO.class);
+    public APIAuditor.Result audit(APIMessage msg, APIEvent rsp) {
+        return new APIAuditor.Result(((APIChangeLoadBalancerBackendServerMsg)msg).getLoadBalancerUuid(), LoadBalancerVO.class);
     }
 
 }
-

@@ -208,13 +208,27 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
         def l3 = env.inventoryByName("l3") as L3NetworkInventory
         def vm = env.inventoryByName("vm-1") as VmInstanceInventory
 
+        LoadBalancerServerGroupInventory servergroup
         addBackendServerToServerGroup{
-            vmNicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
-            serverIps  = ["20.20.20.1"]
+            vmNics = [['uuid':vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid,'weight':'20']]
+            serverIps  = [['ipAddress':"20.20.20.1",'weight':'30']]
             serverGroupUuid = servergroup1.uuid
         }
-        LoadBalancerServerGroupInventory servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
+        servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
+        assert servergroup.serverIps.size() == 1
         assert servergroup.serverIps[0].ipAddress == "20.20.20.1"
+        assert servergroup.serverIps[0].weight == 30
+
+        changeLoadBalancerBackendServer{
+            vmNics = [['uuid':vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid,'weight':'40']]
+            serverIps  = [['ipAddress':"20.20.20.1",'weight':'50']]
+            serverGroupUuid = servergroup1.uuid
+        }
+        servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
+        assert servergroup.serverIps.size() == 1
+        assert servergroup.serverIps[0].weight == 50
+        assert servergroup.vmNicRefs.size() == 1
+        assert servergroup.vmNicRefs[0].weight == 40
 
         removeBackendServerFromServerGroup{
             vmNicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
@@ -229,8 +243,6 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
             uuid = servergroup1.uuid
         }
     }
-
-
 
 
     @Override

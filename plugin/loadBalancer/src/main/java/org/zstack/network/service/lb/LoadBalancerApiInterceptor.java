@@ -134,6 +134,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             validate((APIDeleteLoadBalancerServerGroupMsg) msg);
         } else if (msg instanceof APIGetCandidateVmNicsForLoadBalancerServerGroupMsg) {
             validate((APIGetCandidateVmNicsForLoadBalancerServerGroupMsg)msg);
+        } else if (msg instanceof APIChangeLoadBalancerBackendServerMsg) {
+            validate((APIChangeLoadBalancerBackendServerMsg)msg);
         }
         return msg;
     }
@@ -739,7 +741,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
 
     private void validate(APICreateLoadBalancerServerGroupMsg msg){
-        isexist(msg.getLoadBalancerUuid());
+        isExist(msg.getLoadBalancerUuid());
     }
 
     private void validate(APIDeleteLoadBalancerServerGroupMsg msg){
@@ -769,13 +771,36 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     private void validate(APIAddBackendServerToServerGroupMsg msg){
-        boolean isNicExist = false;
-        boolean isIpExist = false;
-        logger.debug("anquan1");
-        if(msg.getVmNicUuids() != null && !msg.getVmNicUuids().isEmpty()){
+        boolean canAddVmNic = false;
+        boolean canAddServerIp = false;
+
+        List<Map<String,String>> vmNics = msg.getVmNics();
+        List<String> vmNicUuids = new ArrayList<>();
+        if(vmNics != null && !vmNics.isEmpty()){
+            for(Map<String,String> vmNic:vmNics){
+                if(vmNic.containsKey("uuid")){
+                    vmNicUuids.add(vmNic.get("uuid"));
+                }else{
+                    throw new ApiMessageInterceptionException(argerr("could not add backend server vmnic to serverGroup[uuid:%s],because vmnic uuid is null",msg.getServerGroupUuid()));
+                }
+
+                if(vmNic.containsKey("weight") && vmNic.get("weight")!=null){
+                    try{
+                        Long vmNicWeight = Long.valueOf(vmNic.get("weight"));
+                        if (vmNicWeight < LoadBalancerConstants.BALANCER_WEIGHT_MIN || vmNicWeight > LoadBalancerConstants.BALANCER_WEIGHT_MAX) {
+                            throw new ApiMessageInterceptionException(argerr("invalid balancer weight[vimNic:%s,weight:%s], weight is not in the range [%d, %d]",
+                                    vmNic.get("uuid"), vmNicWeight, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
+                        }
+                    }catch (Exception e) {
+                        throw new ApiMessageInterceptionException(argerr("could not add backend server vmnic to serverGroup[uuid:%s] ,because vmnic weight[%s] not a correct number",vmNic.get("weight")));
+                    }
+                }
+
+            }
+
             Set<String> l3Uuids = new HashSet<>(Q.New(VmNicVO.class)
                     .select(VmNicVO_.l3NetworkUuid)
-                    .in(VmNicVO_.uuid, msg.getVmNicUuids())
+                    .in(VmNicVO_.uuid, vmNicUuids)
                     .listValues());
             DebugUtils.Assert(!l3Uuids.isEmpty(), "cannot find the l3Network");
 
@@ -794,39 +819,52 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
             List<String> existingNics = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
                     .select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid)
-                    .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,msg.getVmNicUuids())
+                    .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,vmNicUuids)
                     .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
                     .listValues();
             if (!existingNics.isEmpty()) {
                 throw new ApiMessageInterceptionException(operr("the vm nics[uuid:%s] are already on the load balancer servegroup [uuid:%s]", existingNics, msg.getServerGroupUuid()));
             }
 
-            isNicExist = true;
+            canAddVmNic = true;
         }
 
-        List <String> serverIps = msg.getServerIps();
+        List<Map<String,String>> servers = msg.getServerIps();
+        List <String> serverIps = new ArrayList<>();
         if(serverIps != null && !serverIps.isEmpty()){
-            for(String serverip:serverIps){
-                if(!isIp(serverip)){
-                    throw new ApiMessageInterceptionException(operr("the ip[ipaddr:%s] are already on the load balancer servegroup [uuid:%s]", serverip, msg.getServerGroupUuid()));
+            for(Map<String,String> server:servers){
+                if(server.containsKey("ipAddress") && isIp(server.get("ipAddress"))){
+                    serverIps.add(server.get("ipAddress"));
+                }else{
+                    throw new ApiMessageInterceptionException(operr("could not add backend server ip to serverGroup [uuid:%s], because ip [ipAddress:%s] is invalid",msg.getServerGroupUuid(),serverIps));
                 }
 
+                if(server.containsKey("weight") && server.get("weight")!=null){
+                    try{
+                        Long serverIpWeight = Long.valueOf(server.get("weight"));
+                        if (serverIpWeight < LoadBalancerConstants.BALANCER_WEIGHT_MIN || serverIpWeight > LoadBalancerConstants.BALANCER_WEIGHT_MAX) {
+                            throw new ApiMessageInterceptionException(argerr("invalid  weight[serverIp:%s,weight:%s], weight is not in the range [%d, %d]",
+                                    server.get("ipAddress"), serverIpWeight, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
+                        }
+                    }catch (Exception e) {
+                        throw new ApiMessageInterceptionException(argerr("could not add backend server ip to serverGroup[uuid:%s] ,because vmnic weight[%s] not a correct number",server.get("weight")));
+                    }
+                }
             }
 
             Set<String> existingServerIps = new HashSet<>(Q.New(LoadBalancerServerGroupServerIpVO.class)
                     .select(LoadBalancerServerGroupServerIpVO_.ipAddress)
-                    .in(LoadBalancerServerGroupServerIpVO_.ipAddress,msg.getServerIps())
+                    .in(LoadBalancerServerGroupServerIpVO_.ipAddress,serverIps)
                     .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
                     .listValues());
             if (!existingServerIps.isEmpty()) {
                 throw new ApiMessageInterceptionException(operr("the server ips [uuid:%s] are already on the load balancer servegroup [uuid:%s]", existingServerIps, msg.getServerGroupUuid()));
             }
 
-            isIpExist = true;
+            canAddServerIp = true;
         }
-        logger.debug("anquan2");
 
-        if( isNicExist || isIpExist){
+        if( canAddVmNic || canAddServerIp){
             String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
                     .select(LoadBalancerServerGroupVO_.loadBalancerUuid)
                     .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
@@ -930,8 +968,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         msg.setLoadBalancerUuid(loadBalancerUuid);
     }
 
-
-    private boolean isexist(String loadBalancerUuid){
+    private boolean isExist(String loadBalancerUuid){
         long count = Q.New(LoadBalancerVO.class)
                 .eq(LoadBalancerVO_.uuid,loadBalancerUuid)
                 .count();
@@ -941,6 +978,103 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             return true;
         }
     }
+
+    private void validate(APIChangeLoadBalancerBackendServerMsg msg){
+        boolean canChangeVmNic = false;
+        boolean canChangeServerIp = false;
+
+        List<Map<String,String>> vmNics = msg.getVmNics();
+        List<String> vmNicUuids = new ArrayList<>();
+        if(vmNics != null && !vmNics.isEmpty()){
+
+            for(Map<String,String> vmNic:vmNics){
+                if(vmNic.containsKey("uuid")){
+                    long vmNicCount = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                            .eq(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,vmNic.get("uuid"))
+                            .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                            .count();
+                    if(vmNicCount == 0){
+                        throw new ApiMessageInterceptionException(argerr("could not update backend server vmnic of serverGroup,because serverGroup[uuid:%s] don not have vmnic [uuid:%s] ",msg.getServerGroupUuid(),vmNic.containsKey("uuid")));
+                    }
+
+                    vmNicUuids.add(vmNic.get("uuid"));
+
+                    if(vmNic.containsKey("weight")){
+                        if(vmNic.containsKey("weight") && vmNic.get("weight")!=null){
+                            try{
+                                Long vmNicWeight = Long.valueOf(vmNic.get("weight"));
+                                if (vmNicWeight < LoadBalancerConstants.BALANCER_WEIGHT_MIN || vmNicWeight > LoadBalancerConstants.BALANCER_WEIGHT_MAX) {
+                                    throw new ApiMessageInterceptionException(argerr("invalid balancer weight[vimNic:%s,weight:%s], weight is not in the range [%d, %d]",
+                                            vmNic.get("uuid"), vmNicWeight, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
+                                }
+                            }catch (Exception e) {
+                                throw new ApiMessageInterceptionException(argerr("could not change backend server vmnic to serverGroup[uuid:%s] ,because vmnic weight[%s] not a correct number",vmNic.get("weight")));
+                            }
+                        }
+                    }else{
+                        throw new ApiMessageInterceptionException(argerr("invalid balancer weight[vimNic:%s], weight is null",vmNic.get("uuid")));
+                    }
+
+                }else{
+                    throw new ApiMessageInterceptionException(argerr("could not update backend server vmnic of serverGroup[uuid:%s],because vmnic uuid is null",msg.getServerGroupUuid()));
+                }
+            }
+
+            canChangeVmNic = true;
+        }
+
+        List<Map<String,String>> servers = msg.getServerIps();
+        List <String> serverIps = new ArrayList<>();
+        if(serverIps != null && !serverIps.isEmpty()){
+
+            for(Map<String,String> server:servers){
+                if(server.containsKey("ipAddress") && isIp(server.get("ipAddress"))){
+                    String ipAddress = server.get("ipAddress");
+                    Long serverIpCount = Q.New(LoadBalancerServerGroupServerIpVO.class)
+                            .eq(LoadBalancerServerGroupServerIpVO_.ipAddress,ipAddress)
+                            .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                            .count();
+                    if(serverIpCount == 0){
+                        throw new ApiMessageInterceptionException(argerr("could not update backend server ip of serverGroup,because serverGroup[uuid:%s] don not have ip [ipAddress:%s] ",msg.getServerGroupUuid(),ipAddress));
+                    }
+
+                    serverIps.add(ipAddress);
+
+                    if(server.containsKey("weight")){
+                        try{
+                            Long serverIpWeight = Long.valueOf(server.get("weight"));
+                            if (serverIpWeight < LoadBalancerConstants.BALANCER_WEIGHT_MIN || serverIpWeight > LoadBalancerConstants.BALANCER_WEIGHT_MAX) {
+                                throw new ApiMessageInterceptionException(argerr("invalid balancer weight[serverIp:%s,weight:%s], weight is not in the range [%d, %d]",
+                                        server.get("ipAddress"), serverIpWeight, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
+                            }
+                        }catch (Exception e) {
+                            throw new ApiMessageInterceptionException(argerr("could not add backend server ip to serverGroup[uuid:%s] ,because vmnic weight[%s] not a correct number",server.get("weight")));
+                        }
+                    }else{
+                        throw new ApiMessageInterceptionException(argerr("invalid balancer weight[serverIp:%s], weight is null",server.get("ipAddress")));
+                    }
+
+                }else{
+                    throw new ApiMessageInterceptionException(operr("could not add backend server ip to serverGroup [uuid:%s], because ip [ipAddress:%s] is invalid",msg.getServerGroupUuid(),serverIps));
+                }
+            }
+
+            canChangeServerIp = true;
+        }
+
+        if( canChangeVmNic || canChangeServerIp){
+            String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
+                    .select(LoadBalancerServerGroupVO_.loadBalancerUuid)
+                    .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
+                    .findValue();
+            if (loadBalancerUuid == null || loadBalancerUuid.isEmpty())
+                throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent",msg.getServerGroupUuid()));
+            msg.setLoadBalancerUuid(loadBalancerUuid);
+        }else{
+            throw new ApiMessageInterceptionException(argerr("vmnic or ip is null"));
+        }
+    }
+
 
     private boolean isIp(String ip){
         if ( ip != null && !ip.isEmpty()) {
