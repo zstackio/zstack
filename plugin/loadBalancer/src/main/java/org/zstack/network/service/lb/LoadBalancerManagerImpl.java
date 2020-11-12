@@ -40,6 +40,7 @@ import org.zstack.header.tag.*;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
+import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.vip.*;
@@ -396,6 +397,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
         prepareSystemTags();
 
+        upgradeLoadBalancerServerGroup();
         return true;
     }
 
@@ -922,5 +924,59 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 " and g.uuid = nicRef.loadBalancerServerGroupUuid and nicRef.vmNicUuid in (:vmNicUuids)")
                 .param("vmNicUuids", vmNicUuids).list();
         return listenerUuids;
+    }
+
+
+    private void upgradeLoadBalancerServerGroup() {
+        if (!LoadBalancerGlobalProperty.UPGRADE_LB_SERVER_GROUP) {
+            return;
+        }
+
+        List<LoadBalancerVO> lbVos = Q.New(LoadBalancerVO.class).list();
+        for (LoadBalancerVO vo : lbVos) {
+            /* create a server group */
+            LoadBalancerServerGroupVO groupVO = new LoadBalancerServerGroupVO();
+            groupVO.setUuid(Platform.getUuid());
+            groupVO.setAccountUuid(Account.getAccountUuidOfResource(vo.getUuid()));
+            groupVO.setDescription(String.format("default server group for load balancer %s", vo.getName()));
+            groupVO.setLoadBalancerUuid(vo.getUuid());
+            groupVO.setName(String.format("default-server-group-%s", vo.getName()));
+            dbf.persist(groupVO);
+
+            vo.setServerGroupUuid(groupVO.getUuid());
+            dbf.update(vo);
+        }
+
+        List<LoadBalancerListenerVO> listenerVOS = Q.New(LoadBalancerListenerVO.class).list();
+        List<LoadBalancerServerGroupVmNicRefVO> vmNicRefVOS = new ArrayList<>();
+        for (LoadBalancerListenerVO vo : listenerVOS) {
+            /* create a server group */
+            LoadBalancerServerGroupVO groupVO = new LoadBalancerServerGroupVO();
+            groupVO.setUuid(Platform.getUuid());
+            groupVO.setAccountUuid(Account.getAccountUuidOfResource(vo.getUuid()));
+            groupVO.setDescription(String.format("default server group for load balancer listener %s", vo.getName()));
+            groupVO.setLoadBalancerUuid(vo.getLoadBalancerUuid());
+            groupVO.setName(String.format("default-server-group-%s", vo.getName()));
+            dbf.persist(groupVO);
+
+            vo.setServerGroupUuid(groupVO.getUuid());
+            dbf.update(vo);
+
+            Map<String, Long> weight = new LoadBalancerWeightOperator().getWeight(vo.getUuid());
+            for(LoadBalancerListenerVmNicRefVO ref : vo.getVmNicRefs()) {
+                LoadBalancerServerGroupVmNicRefVO vmNicRef = new LoadBalancerServerGroupVmNicRefVO();
+                vmNicRef.setLoadBalancerServerGroupUuid(groupVO.getUuid());
+                vmNicRef.setVmNicUuid(ref.getVmNicUuid());
+                if (weight.get(ref.getVmNicUuid()) != null) {
+                    vmNicRef.setWeight(weight.get(ref.getVmNicUuid()));
+                } else {
+                    vmNicRef.setWeight(LoadBalancerConstants.BALANCER_WEIGHT_default);
+                }
+                vmNicRef.setStatus(ref.getStatus());
+                vmNicRefVOS.add(vmNicRef);
+            }
+        }
+
+        dbf.persistCollection(vmNicRefVOS);
     }
 }

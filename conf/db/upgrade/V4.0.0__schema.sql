@@ -97,8 +97,7 @@ CREATE TABLE IF NOT EXISTS  `zstack`.`SlbOfferingVO` (
     `imageUuid` varchar(32) NOT NULL,
     `zoneUuid` varchar(32) NOT NULL,
     PRIMARY KEY  (`uuid`),
-    CONSTRAINT fkSlbOfferingVOL3NetworkEO FOREIGN KEY (managementNetworkUuid) REFERENCES `zstack`.`L3NetworkEO` (uuid) ON DELETE CASCADE,
-    CONSTRAINT fkSlbOfferingVOImageEO FOREIGN KEY (imageUuid) REFERENCES `zstack`.`ImageEO` (uuid) ON DELETE CASCADE
+    CONSTRAINT fkSlbOfferingVOL3NetworkEO FOREIGN KEY (managementNetworkUuid) REFERENCES `zstack`.`L3NetworkEO` (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`SlbGroupVO` (
