@@ -46,6 +46,20 @@ public class LoadBalancerWeightOperator {
         return LoadBalancerConstants.BALANCER_WEIGHT_default;
     }
 
+    public Map<String, Long> getWeight(String listenerUuid) {
+        Map<String, Long> weights = new HashMap<>();
+        List<Map<String, String>> tokens = LoadBalancerSystemTags.BALANCER_WEIGHT
+                .getTokensOfTagsByResourceUuid(listenerUuid, LoadBalancerListenerVO.class);
+
+        for (Map<String, String>  token: tokens) {
+            String nicUuid = token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN);
+            String weight = token.get(LoadBalancerSystemTags.BALANCER_WEIGHT_TOKEN);
+            weights.put(nicUuid, Long.parseLong(weight));
+        }
+
+        return weights;
+    }
+
     public Map<String, Long> getWeight(List<String> systemTags) {
         Map<String, Long> ret = new HashMap<>();
 
