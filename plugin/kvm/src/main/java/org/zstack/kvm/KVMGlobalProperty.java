@@ -23,6 +23,8 @@ public class KVMGlobalProperty {
     public static List<String> IPTABLES_RULES;
     @GlobalProperty(name="KvmHost.maxThreads.ratio", defaultValue = "0.6")
     public static double KVM_HOST_MAX_THREDS_RATIO;
+    @GlobalProperty(name="KvmAgent.tcpServerPort", defaultValue = "7123")
+    public static int TCP_SERVER_PORT;
     @GlobalProperty(name="MN.network.", defaultValue = "")
     public static List<String> MN_NETWORKS;
 }

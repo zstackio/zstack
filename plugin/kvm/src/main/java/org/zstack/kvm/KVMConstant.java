@@ -12,6 +12,7 @@ public interface KVMConstant {
 
     String KVM_CONNECT_PATH = "/host/connect";
     String KVM_PING_PATH = "/host/ping";
+    String KVM_UPDATE_HOST_CONFIGURATION_PATH = "/host/update/configuration";
     String KVM_ECHO_PATH = "/host/echo";
     String KVM_CHECK_PHYSICAL_NETWORK_INTERFACE_PATH = "/network/checkphysicalnetworkinterface";
     String KVM_ADD_INTERFACE_TO_BRIDGE_PATH = "/network/bridge/addif";

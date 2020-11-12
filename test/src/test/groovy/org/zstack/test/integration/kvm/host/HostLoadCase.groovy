@@ -77,10 +77,9 @@ class HostLoadCase extends SubCase {
         HostInventory kvm2 = env.inventoryByName("kvm2")
 
         boolean pingFailure = true
-        env.simulator(KVMConstant.KVM_PING_PATH) { HttpEntity<String> e, EnvSpec espec ->
+        env.afterSimulator(KVMConstant.KVM_PING_PATH) { KVMAgentCommands.PingResponse rsp, HttpEntity<String> e->
             KVMAgentCommands.PingCmd cmd = JSONObjectUtil.toObject(e.getBody(), KVMAgentCommands.PingCmd.class)
 
-            def rsp = new KVMAgentCommands.PingResponse()
             if (cmd.hostUuid == kvm1.uuid && pingFailure) {
                 rsp.success = false
                 rsp.error = "on purpose"
@@ -173,6 +172,7 @@ class HostLoadCase extends SubCase {
     @Override
     void test() {
         env.create {
+
             HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1)
             HostGlobalConfig.MAXIMUM_PING_FAILURE.updateValue(1)
             HostGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.updateValue(0)

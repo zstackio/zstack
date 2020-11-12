@@ -18,6 +18,7 @@ public class VmTracerCanonicalEvents {
         private String vmUuid;
         private String apiId;
         private String msgName;
+        private String managementNodeId;
 
         public String getMsgName() {
             return msgName;
@@ -42,12 +43,21 @@ public class VmTracerCanonicalEvents {
         public void setApiId(String apiId) {
             this.apiId = apiId;
         }
+
+        public String getManagementNodeId() {
+            return managementNodeId;
+        }
+
+        public void setManagementNodeId(String managementNodeId) {
+            this.managementNodeId = managementNodeId;
+        }
     }
 
     @NeedJsonSchema
     public static class VmContinueTraceData {
         private String vmUuid;
         private String apiId;
+        private String managementNodeId;
 
         public String getVmUuid() {
             return vmUuid;
@@ -63,6 +73,14 @@ public class VmTracerCanonicalEvents {
 
         public void setApiId(String apiId) {
             this.apiId = apiId;
+        }
+
+        public String getManagementNodeId() {
+            return managementNodeId;
+        }
+
+        public void setManagementNodeId(String managementNodeId) {
+            this.managementNodeId = managementNodeId;
         }
     }
 

@@ -122,6 +122,7 @@ public class KVMHost extends HostBase implements Host {
     private String baseUrl;
     private String connectPath;
     private String pingPath;
+    private String updateHostConfigurationPath;
     private String checkPhysicalNetworkInterfacePath;
     private String startVmPath;
     private String stopVmPath;
@@ -176,6 +177,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_PING_PATH);
         pingPath = ub.build().toUriString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_UPDATE_HOST_CONFIGURATION_PATH);
+        updateHostConfigurationPath = ub.build().toUriString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_CHECK_PHYSICAL_NETWORK_INTERFACE_PATH);
@@ -2930,6 +2935,72 @@ public class KVMHost extends HostBase implements Host {
         return KVMHostInventory.valueOf(getSelf());
     }
 
+    private void doUpdateHostConfiguration() {
+        thdf.chainSubmit(new ChainTask(null) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("update-kvm-host-configuration-%s", self.getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                UpdateHostConfigurationCmd cmd = new UpdateHostConfigurationCmd();
+                cmd.hostUuid = self.getUuid();
+                cmd.sendCommandUrl = restf.getSendCommandUrl();
+                restf.asyncJsonPost(updateHostConfigurationPath, cmd, new JsonAsyncRESTCallback<UpdateHostConfigurationResponse>(chain) {
+                    @Override
+                    public void fail(ErrorCode err) {
+                        String info = "Failed to update host configuration request for host reconnect";
+                        logger.warn(info);
+
+                        changeConnectionState(HostStatusEvent.disconnected);
+                        new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(info)).fire();
+
+                        ReconnectHostMsg rmsg = new ReconnectHostMsg();
+                        rmsg.setHostUuid(self.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
+                        bus.send(rmsg);
+
+                        chain.next();
+                    }
+
+                    @Override
+                    public void success(UpdateHostConfigurationResponse rsp) {
+                        logger.debug("Update host configuration success");
+                        chain.next();
+                    }
+
+                    @Override
+                    public Class<UpdateHostConfigurationResponse> getReturnClass() {
+                        return UpdateHostConfigurationResponse.class;
+                    }
+                }, TimeUnit.SECONDS, 30);
+            }
+
+            protected int getMaxPendingTasks() {
+                return 1;
+            }
+
+            protected String getDeduplicateString() {
+                return getSyncSignature();
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
+    boolean needReconnectHost(PingResponse rsp) {
+        return !self.getUuid().equals(rsp.getHostUuid()) || !dbf.getDbVersion().equals(rsp.getVersion());
+    }
+
+    boolean needUpdateHostConfiguration(PingResponse rsp) {
+        // host uuid or send command url or version changed
+        return !restf.getSendCommandUrl().equals(rsp.getSendCommandUrl());
+    }
+
     @Override
     protected void pingHook(final Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -2956,10 +3027,13 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void success(PingResponse ret) {
                                 if (ret.isSuccess()) {
-                                    if (!self.getUuid().equals(ret.getHostUuid())) {
+                                    if (needUpdateHostConfiguration(ret)) {
+                                        afterDone.add(KVMHost.this::doUpdateHostConfiguration);
+                                    } else if (needReconnectHost(ret)) {
                                         afterDone.add(() -> {
-                                            String info = i18n("detected abnormal status[host uuid change, expected: %s but: %s] of kvmagent," +
-                                                    "it's mainly caused by kvmagent restarts behind zstack management server. Report this to ping task, it will issue a reconnect soon", self.getUuid(), ret.getHostUuid());
+                                            String info = i18n("detected abnormal status[host uuid change, expected: %s but: %s or agent version change, expected: %s but: %s] of kvmagent," +
+                                                            "it's mainly caused by kvmagent restarts behind zstack management server. Report this to ping task, it will issue a reconnect soon",
+                                                    self.getUuid(), ret.getHostUuid(), dbf.getDbVersion(), ret.getVersion());
                                             logger.warn(info);
 
                                             changeConnectionState(HostStatusEvent.disconnected);
@@ -2971,10 +3045,9 @@ public class KVMHost extends HostBase implements Host {
                                             bus.send(rmsg);
                                         });
                                     }
-
                                     trigger.next();
                                 } else {
-                                     trigger.fail(operr("%s", ret.getError()));
+                                    trigger.fail(operr("%s", ret.getError()));
                                 }
                             }
 
@@ -3078,6 +3151,8 @@ public class KVMHost extends HostBase implements Host {
             cmd.setSendCommandUrl(restf.getSendCommandUrl());
             cmd.setIptablesRules(KVMGlobalProperty.IPTABLES_RULES);
             cmd.setIgnoreMsrs(KVMGlobalConfig.KVM_IGNORE_MSRS.value(Boolean.class));
+            cmd.setTcpServerPort(KVMGlobalProperty.TCP_SERVER_PORT);
+            cmd.setVersion(dbf.getDbVersion());
             if (HostSystemTags.PAGE_TABLE_EXTENSION_DISABLED.hasTag(self.getUuid(), HostVO.class) || !KVMSystemTags.EPT_CPU_FLAG.hasTag(self.getUuid())) {
                 cmd.setPageTableExtensionDisabled(true);
             }
@@ -3430,6 +3505,18 @@ public class KVMHost extends HostBase implements Host {
                             runner.installChecker(chronyChecker);
                             runner.installChecker(repoChecker);
                             runner.installChecker(callbackChecker);
+
+                            if (KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {
+                                CallBackNetworkChecker hostTcpConnectionCallbackChecker = new CallBackNetworkChecker();
+                                hostTcpConnectionCallbackChecker.setTargetIp(getSelf().getManagementIp());
+                                hostTcpConnectionCallbackChecker.setUsername(getSelf().getUsername());
+                                hostTcpConnectionCallbackChecker.setPassword(getSelf().getPassword());
+                                hostTcpConnectionCallbackChecker.setPort(getSelf().getPort());
+                                hostTcpConnectionCallbackChecker.setCallbackIp(Platform.getManagementServerIp());
+                                hostTcpConnectionCallbackChecker.setCallBackPort(KVMGlobalProperty.TCP_SERVER_PORT);
+                                runner.installChecker(hostTcpConnectionCallbackChecker);
+                            }
+
                             for (KVMHostAddSshFileMd5CheckerExtensionPoint exp : pluginRgty.getExtensionList(KVMHostAddSshFileMd5CheckerExtensionPoint.class)) {
                                 SshFileMd5Checker sshFileMd5Checker = exp.getSshFileMd5Checker(getSelf());
                                 if (sshFileMd5Checker != null) {

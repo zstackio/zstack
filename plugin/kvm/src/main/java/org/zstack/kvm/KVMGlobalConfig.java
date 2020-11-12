@@ -63,4 +63,11 @@ public class KVMGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig KVMAGENT_ALLOW_PORTS_LIST = new GlobalConfig(CATEGORY, "kvmagent.allow.ports");
+
+    @GlobalConfigValidation
+    public static GlobalConfig ENABLE_HOST_TCP_CONNECTION_CHECK = new GlobalConfig(CATEGORY, "enable.host.tcp.connection.check");
+    @GlobalConfigValidation
+    public static GlobalConfig HOST_CONNECTION_CHECK_INTERVAL = new GlobalConfig(CATEGORY, "host.connection.check.interval");
+    @GlobalConfigValidation
+    public static GlobalConfig CONNECTION_SERVER_UPDATE_INTERVAL = new GlobalConfig(CATEGORY, "connection.server.update.interval");
 }

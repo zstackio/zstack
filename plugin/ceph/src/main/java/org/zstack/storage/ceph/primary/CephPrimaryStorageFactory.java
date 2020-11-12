@@ -14,8 +14,7 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.asyncbatch.While;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -35,8 +34,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
+import org.zstack.header.host.*;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
@@ -57,6 +55,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -104,6 +103,8 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     private PluginRegistry pluginRgty;
     @Autowired
     private StorageTrash trash;
+    @Autowired
+    private EventFacade evtf;
 
     private Future imageCacheCleanupThread;
 
@@ -577,6 +578,35 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
             asf.deployModule(CephGlobalProperty.PRIMARY_STORAGE_MODULE_PATH, CephGlobalProperty.PRIMARY_STORAGE_PLAYBOOK_NAME);
         }
+
+        evtf.onLocal(HostCanonicalEvents.HOST_STATUS_CHANGED_PATH, new EventCallback() {
+            @Override
+            protected void run(Map tokens, Object data) {
+                HostCanonicalEvents.HostStatusChangedData d = (HostCanonicalEvents.HostStatusChangedData) data;
+                if (!HostStatus.Disconnected.toString().equals(d.getNewStatus())) {
+                    return;
+                }
+
+                final String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(
+                        d.getHostUuid(), HostSystemTags.EXTRA_IPS_TOKEN);
+                if (extraIps == null) {
+                    logger.debug(String.format("Host [uuid:%s] has no IPs in data network", d.getHostUuid()));
+                    return;
+                }
+
+                final String[] ips = extraIps.split(",");
+                for (String ip: ips) {
+                    if (!Q.New(CephPrimaryStorageMonVO.class).eq(CephPrimaryStorageMonVO_.monAddr, ip).isExists()) {
+                        continue;
+                    }
+
+                    SQL.New(CephPrimaryStorageMonVO.class)
+                            .eq(CephPrimaryStorageMonVO_.monAddr, ip)
+                            .set(CephPrimaryStorageMonVO_.status, MonStatus.Disconnected)
+                            .update();
+                }
+            }
+        });
 
         return true;
     }
