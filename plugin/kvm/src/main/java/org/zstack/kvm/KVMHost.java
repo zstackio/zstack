@@ -3054,6 +3054,7 @@ public class KVMHost extends HostBase implements Host {
             cmd.setSendCommandUrl(restf.getSendCommandUrl());
             cmd.setIptablesRules(KVMGlobalProperty.IPTABLES_RULES);
             cmd.setIgnoreMsrs(KVMGlobalConfig.KVM_IGNORE_MSRS.value(Boolean.class));
+            cmd.setTcpServerPort(KVMGlobalProperty.TCP_SERVER_PORT);
             if (HostSystemTags.PAGE_TABLE_EXTENSION_DISABLED.hasTag(self.getUuid(), HostVO.class) || !KVMSystemTags.EPT_CPU_FLAG.hasTag(self.getUuid())) {
                 cmd.setPageTableExtensionDisabled(true);
             }
@@ -3399,11 +3400,20 @@ public class KVMHost extends HostBase implements Host {
                             callbackChecker.setCallbackIp(Platform.getManagementServerIp());
                             callbackChecker.setCallBackPort(CloudBusGlobalProperty.HTTP_PORT);
 
+                            CallBackNetworkChecker hostTcpConnectionCallbackChecker = new CallBackNetworkChecker();
+                            hostTcpConnectionCallbackChecker.setTargetIp(getSelf().getManagementIp());
+                            hostTcpConnectionCallbackChecker.setUsername(getSelf().getUsername());
+                            hostTcpConnectionCallbackChecker.setPassword(getSelf().getPassword());
+                            hostTcpConnectionCallbackChecker.setPort(getSelf().getPort());
+                            hostTcpConnectionCallbackChecker.setCallbackIp(Platform.getManagementServerIp());
+                            hostTcpConnectionCallbackChecker.setCallBackPort(KVMGlobalProperty.TCP_SERVER_PORT);
+
                             AnsibleRunner runner = new AnsibleRunner();
                             runner.installChecker(checker);
                             runner.installChecker(chronyChecker);
                             runner.installChecker(repoChecker);
                             runner.installChecker(callbackChecker);
+                            runner.installChecker(hostTcpConnectionCallbackChecker);
                             for (KVMHostAddSshFileMd5CheckerExtensionPoint exp : pluginRgty.getExtensionList(KVMHostAddSshFileMd5CheckerExtensionPoint.class)) {
                                 SshFileMd5Checker sshFileMd5Checker = exp.getSshFileMd5Checker(getSelf());
                                 if (sshFileMd5Checker != null) {
