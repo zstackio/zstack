@@ -27,7 +27,7 @@ doc {
 					desc ""
 					location "url"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 					
 				}

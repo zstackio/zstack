@@ -605,7 +605,10 @@ public class LoadBalancerBase {
     private void handle(APIGetCandidateVmNicsForLoadBalancerServerGroupMsg msg) {
         APIGetCandidateVmNicsForLoadBalancerServerGroupReply reply = new APIGetCandidateVmNicsForLoadBalancerServerGroupReply();
         LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(self.getType().toString());
-        LoadBalancerServerGroupVO groupVO = dbf.findByUuid(msg.getServergroupUuid(), LoadBalancerServerGroupVO.class);
+        LoadBalancerServerGroupVO groupVO = null;
+        if (msg.getServergroupUuid() != null) {
+            groupVO = dbf.findByUuid(msg.getServergroupUuid(), LoadBalancerServerGroupVO.class);
+        }
         List<VmNicVO> nicVOS = f.getAttachableVmNicsForServerGroup(self, groupVO);
         reply.setInventories(VmNicInventory.valueOf(nicVOS));
         bus.reply(msg, reply);
