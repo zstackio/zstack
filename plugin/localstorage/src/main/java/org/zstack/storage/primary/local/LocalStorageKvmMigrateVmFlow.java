@@ -21,8 +21,6 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
-import org.zstack.header.log.HasSensitiveInfo;
-import org.zstack.header.log.NoLogging;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -34,9 +32,13 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.*;
-import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTree;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
@@ -52,6 +54,7 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -99,7 +102,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         public List<SnapshotTO> snapshots;
     }
 
-    public static class CopyBitsFromRemoteCmd extends LocalStorageKvmBackend.AgentCommand implements HasThreadContext, HasSensitiveInfo {
+    public static class CopyBitsFromRemoteCmd extends LocalStorageKvmBackend.AgentCommand implements HasThreadContext, Serializable {
         public String sendCommandUrl;
         public List<String> paths;
         public String dstIp;

@@ -3,9 +3,13 @@
     <Appenders>
         <RollingFile name="RollingFile" fileName="${sys:catalina.home}/logs/management-server.log"
                      filePattern="${sys:catalina.home}/logs/management-server-%d{yyyy-MM-dd}-%i.log.gz">
-            <PatternLayout>
+            <Masksensitivepatternlayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] %X{api,} (%t) %m%n</pattern>
-            </PatternLayout>
+                <replaces>
+                   <!-- <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
+                    <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                </replaces>
+            </Masksensitivepatternlayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="450 MB"/>
             </Policies>
@@ -19,29 +23,37 @@
             </DefaultRolloverStrategy>
         </RollingFile>
 
-	    <RollingFile name="ApiRequestLogger" fileName="${sys:catalina.home}/logs/zstack-api.log"
-            filePattern="${sys:catalina.home}/logs/zstack-api-%d{yyyy-MM-dd}-%i.log.gz" >
-            <PatternLayout>
+        <RollingFile name="ApiRequestLogger" fileName="${sys:catalina.home}/logs/zstack-api.log"
+                     filePattern="${sys:catalina.home}/logs/zstack-api-%d{yyyy-MM-dd}-%i.log.gz" >
+            <Masksensitivepatternlayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
-            </PatternLayout>
+                <replaces>
+                    <!--<replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
+                    <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                </replaces>
+            </Masksensitivepatternlayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB" />
             </Policies>
             <DefaultRolloverStrategy max="50">
-	           	<Delete basePath="${sys:catalina.home}/logs/" maxDepth="1">
-	          		<IfFileName glob="zstack-api-*.log.gz">
+                <Delete basePath="${sys:catalina.home}/logs/" maxDepth="1">
+                    <IfFileName glob="zstack-api-*.log.gz">
                         <IfAny>
                         </IfAny>
                     </IfFileName>
-	        	</Delete>
+                </Delete>
             </DefaultRolloverStrategy>
         </RollingFile>
 
         <RollingFile name="DiskCapacityLogger" fileName="${sys:catalina.home}/logs/zstack-disk-capacity.log"
                      filePattern="${sys:catalina.home}/logs/zstack-disk-capacity-%d{yyyy-MM-dd}-%i.log.gz">
-            <PatternLayout>
+            <Masksensitivepatternlayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
-            </PatternLayout>
+                <replaces>
+                   <!-- <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
+                    <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                </replaces>
+            </Masksensitivepatternlayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB"/>
             </Policies>
@@ -51,9 +63,13 @@
         <RollingFile name="DiskCapacityLoggerDetails"
                      fileName="${sys:catalina.home}/logs/zstack-disk-capacity-details.log"
                      filePattern="${sys:catalina.home}/logs/zstack-disk-capacity-details-%d{yyyy-MM-dd}-%i.log.gz">
-            <PatternLayout>
+            <Masksensitivepatternlayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%n</pattern>
-            </PatternLayout>
+                <replaces>
+                   <!-- <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "| )(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
+                    <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                </replaces>
+            </Masksensitivepatternlayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB"/>
             </Policies>
@@ -64,8 +80,8 @@
             <AppenderRef ref="RollingFile"/>
         </Async>
         <Rewrite name="Rewrite">
-            <MaskSensitiveInfoRewritePolicy />
-            <AppenderRef ref="Async" />
+            <MaskSensitiveInfoRewritePolicy/>
+            <AppenderRef ref="Async"/>
         </Rewrite>
     </Appenders>
 

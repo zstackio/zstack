@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
     <properties>
-      <property name="filters">org.apache.catalina,org.apache.tomcat,sun.reflect,javax.servlet.http,java.lang.reflect,org.codehaus.groovy,org.junit.runners,org.apache.maven.surefire,groovy.lang,org.eclipse.jetty,org.springframework.web</property>
+        <property name="filters">org.apache.catalina,org.apache.tomcat,sun.reflect,javax.servlet.http,java.lang.reflect,org.codehaus.groovy,org.junit.runners,org.apache.maven.surefire,groovy.lang,org.eclipse.jetty,org.springframework.web</property>
     </properties>
 
     <Appenders>
         <RollingFile name="RollingFile" fileName="management-server.log"
-            filePattern="./management-server-%i.log" >
-            <PatternLayout>
+                     filePattern="./management-server-%i.log" >
+            <Masksensitivepatternlayout>
                 <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] %X{api,} (%t) %m%n</pattern>
-            </PatternLayout>
+                <replaces>
+                    <!--<replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
+                    <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                </replaces>
+            </Masksensitivepatternlayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="200 MB" />
             </Policies>
@@ -24,10 +28,14 @@
         </RollingFile>
 
         <RollingFile name="DiskCapacityLogger" fileName="disk-capacity.log"
-            filePattern="disk-capacity-%d{yyyy-MM-dd}-%i.log" >
-            <PatternLayout>
+                     filePattern="disk-capacity-%d{yyyy-MM-dd}-%i.log" >
+            <Masksensitivepatternlayout>
                 <pattern>%highlight{%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%xEx{filters(${filters})}%n}{FATAL=red,ERROR=red,WARN=Yellow,INFO=blue,DEBUG=white,TRACE=white}</pattern>
-            </PatternLayout>
+                <replaces>
+                   <!-- <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
+                    <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                </replaces>
+            </Masksensitivepatternlayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB" />
             </Policies>
@@ -35,10 +43,14 @@
         </RollingFile>
 
         <RollingFile name="DiskCapacityLoggerDetails" fileName="disk-capacity-details.log"
-            filePattern="disk-capacity-details-%d{yyyy-MM-dd}-%i.log" >
-            <PatternLayout>
+                     filePattern="disk-capacity-details-%d{yyyy-MM-dd}-%i.log" >
+            <Masksensitivepatternlayout>
                 <pattern>%highlight{%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%xEx{filters(${filters})}%n}{FATAL=red,ERROR=red,WARN=Yellow,INFO=blue,DEBUG=white,TRACE=white}</pattern>
-            </PatternLayout>
+                <replaces>
+                    <!--<replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
+                    <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                </replaces>
+            </Masksensitivepatternlayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB" />
             </Policies>
@@ -46,10 +58,14 @@
         </RollingFile>
 
         <RollingFile name="ApiRequestLogger" fileName="zstack-api.log"
-            filePattern="zstack-api-%d{yyyy-MM-dd}-%i.log" >
-            <PatternLayout>
+                     filePattern="zstack-api-%d{yyyy-MM-dd}-%i.log" >
+            <Masksensitivepatternlayout>
                 <pattern>%highlight{%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] (%t) %m%xEx{filters(${filters})}%n}{FATAL=red,ERROR=red,WARN=Yellow,INFO=blue,DEBUG=white,TRACE=white}</pattern>
-            </PatternLayout>
+                <replaces>
+                   <!-- <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
+                    <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
+                </replaces>
+            </Masksensitivepatternlayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="150 MB" />
             </Policies>

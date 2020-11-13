@@ -1,9 +1,7 @@
 package org.zstack.header.identity;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
@@ -18,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.PUT,
         responseClass = APIUpdateUserEvent.class
 )
-public class APIUpdateUserMsg extends APIMessage implements AccountMessage, HasSensitiveInfo {
+public class APIUpdateUserMsg extends APIMessage implements AccountMessage {
     @APIParam(resourceType = UserVO.class, checkAccount = true, operationTarget = true, required = false)
     private String uuid;
     @APIParam(maxLength = 255, required = false, password = true)

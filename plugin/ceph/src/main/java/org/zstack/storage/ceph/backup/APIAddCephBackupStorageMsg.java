@@ -1,9 +1,10 @@
 package org.zstack.storage.ceph.backup;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
-import org.zstack.header.message.*;
+import org.zstack.header.message.APIParam;
+import org.zstack.header.message.OverriddenApiParam;
+import org.zstack.header.message.OverriddenApiParams;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.backup.APIAddBackupStorageEvent;
 import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
@@ -11,6 +12,7 @@ import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.tag.TagResourceType;
 import org.zstack.storage.ceph.CephConstants;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
@@ -27,7 +29,7 @@ import java.util.List;
         parameterName = "params",
         responseClass = APIAddBackupStorageEvent.class
 )
-public class APIAddCephBackupStorageMsg extends APIAddBackupStorageMsg implements HasSensitiveInfo {
+public class APIAddCephBackupStorageMsg extends APIAddBackupStorageMsg implements Serializable {
     @APIParam(nonempty = false, emptyString = false)
     @NoLogging(type = NoLogging.Type.Uri)
     private List<String> monUrls;
