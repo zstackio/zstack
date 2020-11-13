@@ -2021,7 +2021,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
     @Override
     public List<VmNicVO> getAttachableVmNicsForServerGroup(LoadBalancerVO lbVO, LoadBalancerServerGroupVO groupVO) {
-        List<String> attachedL3Uuids = LoadBalancerServerGroupInventory.valueOf(groupVO).getAttachedL3Uuids();
+        List<String> attachedL3Uuids = new ArrayList<>();
+        if (groupVO != null) {
+            attachedL3Uuids = LoadBalancerServerGroupInventory.valueOf(groupVO).getAttachedL3Uuids();
+        }
+
         List<String> l3NetworkUuids = new ArrayList<>();
         /* get vr of attached l3 */
         List<String> vrUuids = new ArrayList<>();
@@ -2076,8 +2080,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
         nicVOS = nicVOS.stream().filter(n -> !VmNicInventory.valueOf(n).isIpv6OnlyNic()).collect(Collectors.toList());
 
-        List<String> attachedNicUuids = groupVO.getLoadBalancerServerGroupVmNicRefs().stream()
-                .map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList());
-        return nicVOS.stream().filter(n -> !attachedNicUuids.contains(n.getUuid())).collect(Collectors.toList());
+        if (groupVO != null) {
+            List<String> attachedNicUuids = groupVO.getLoadBalancerServerGroupVmNicRefs().stream()
+                    .map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList());
+            return nicVOS.stream().filter(n -> !attachedNicUuids.contains(n.getUuid())).collect(Collectors.toList());
+        } else {
+            return nicVOS;
+        }
     }
 }

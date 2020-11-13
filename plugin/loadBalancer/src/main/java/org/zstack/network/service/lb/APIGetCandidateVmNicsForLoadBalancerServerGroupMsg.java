@@ -17,7 +17,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIGetCandidateVmNicsForLoadBalancerServerGroupReply.class
 )
 public class APIGetCandidateVmNicsForLoadBalancerServerGroupMsg extends APISyncCallMessage implements LoadBalancerMessage {
-    @APIParam(resourceType = LoadBalancerServerGroupVO.class)
+    @APIParam(resourceType = LoadBalancerServerGroupVO.class, required = false)
     private String servergroupUuid;
     @APINoSee
     private String loadBalancerUuid;

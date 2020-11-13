@@ -12,14 +12,6 @@ public class LoadBalancerServerGroupServerIpInventory  {
         return this.id;
     }
 
-    public java.lang.String description;
-    public void setDescription(java.lang.String description) {
-        this.description = description;
-    }
-    public java.lang.String getDescription() {
-        return this.description;
-    }
-
     public java.lang.String serverGroupUuid;
     public void setServerGroupUuid(java.lang.String serverGroupUuid) {
         this.serverGroupUuid = serverGroupUuid;
