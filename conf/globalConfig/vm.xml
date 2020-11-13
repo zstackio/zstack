@@ -216,7 +216,7 @@
 
 	<config>
 		<name>nicMultiQueueNum</name>
-		<description>default num of queues on virtio nic</description>
+		<description>num of queues on virtio nic</description>
 		<defaultValue>1</defaultValue>
 		<category>vm</category>
 		<type>java.lang.Integer</type>
