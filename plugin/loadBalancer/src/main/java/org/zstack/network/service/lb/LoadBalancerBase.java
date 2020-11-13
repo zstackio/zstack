@@ -2302,13 +2302,13 @@ public class LoadBalancerBase {
             @Override
             public void run(final SyncTaskChain chain) {
                 final APIRemoveServerGroupFromLoadBalancerListenerEvent event = new APIRemoveServerGroupFromLoadBalancerListenerEvent(msg.getId());
-                LoadBalancerServerGroupVO serverGroupVO = dbf.findByUuid(msg.getLoadBalancerUuid(), LoadBalancerServerGroupVO.class);
+                LoadBalancerServerGroupVO serverGroupVO = dbf.findByUuid(msg.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
                 List<String> nicUuids = serverGroupVO.getLoadBalancerServerGroupVmNicRefs().stream()
                         .map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList());
                 List<String> serverIps = serverGroupVO.getLoadBalancerServerGroupServerIps().stream()
                         .map(LoadBalancerServerGroupServerIpVO::getIpAddress).collect(Collectors.toList());
 
-                removeNics(asList(msg.getServerGroupUuid()), asList(msg.getLoadBalancerUuid()), nicUuids, serverIps, new Completion(chain) {
+                removeNics(asList(msg.getServerGroupUuid()), asList(msg.getListenerUuid()), nicUuids, serverIps, new Completion(chain) {
                     @Override
                     public void success() {
                         SQL.New(LoadBalancerListenerServerGroupRefVO.class)
