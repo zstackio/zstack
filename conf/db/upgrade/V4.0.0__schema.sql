@@ -111,6 +111,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MonitorGroupInstanceVO` (
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`uuid`),
   KEY `groupUuid` (`groupUuid`),
+  KEY `instanceUuid` (`instanceUuid`),
+  UNIQUE KEY `groupUuidInstanceUuid` (`groupUuid`,`instanceUuid`),
   CONSTRAINT `fkMonitorGroupInstanceVOMonitorGroupVO` FOREIGN KEY (`groupUuid`) REFERENCES `zstack`.`MonitorGroupVO` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
