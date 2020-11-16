@@ -106,6 +106,16 @@ public interface ZQLListener extends ParseTreeListener {
 	 */
 	void exitValue(ZQLParser.ValueContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link ZQLParser#listValue}.
+	 * @param ctx the parse tree
+	 */
+	void enterListValue(ZQLParser.ListValueContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ZQLParser#listValue}.
+	 * @param ctx the parse tree
+	 */
+	void exitListValue(ZQLParser.ListValueContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link ZQLParser#logicalOperator}.
 	 * @param ctx the parse tree
 	 */

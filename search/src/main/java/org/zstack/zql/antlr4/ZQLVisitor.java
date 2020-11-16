@@ -70,6 +70,12 @@ public interface ZQLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitValue(ZQLParser.ValueContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link ZQLParser#listValue}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitListValue(ZQLParser.ListValueContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ZQLParser#logicalOperator}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
