@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -202,6 +203,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 InstanceOfferingVO instanceOfferingVO = Q.New(InstanceOfferingVO.class).eq(InstanceOfferingVO_.uuid, msg.getInstanceOfferingUuid()).find();
 
                 boolean numa = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, msg.getVmInstanceUuid(), Boolean.class);
+                if (!VmInstanceState.Stopped.equals(vo.getState()) && HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(vo.getHostUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN).equals("aarch64")) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "the VM cannot do online cpu/memory update because it is aarch64 architecture. Please stop the VM then do the cpu/memory update again"
+                    ));
+                }
+
                 if (!numa && !VmInstanceState.Stopped.equals(vo.getState())) {
                     throw new ApiMessageInterceptionException(argerr(
                             "the VM cannot do online cpu/memory update because it is not of NUMA architecture. Please stop the VM then do the cpu/memory update again"
@@ -241,6 +248,12 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
                 VmInstanceState vmState = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
                 boolean numa = rcf.getResourceConfigValue(VmGlobalConfig.NUMA, msg.getUuid(), Boolean.class);
+                if (!VmInstanceState.Stopped.equals(vmState) && HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(vo.getHostUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN).equals("aarch64")) {
+                    throw new ApiMessageInterceptionException(argerr(
+                            "the VM cannot do online cpu/memory update because it is aarch64 architecture. Please stop the VM then do the cpu/memory update again"
+                    ));
+                }
+
                 if (!numa && !VmInstanceState.Stopped.equals(vmState)) {
                     throw new ApiMessageInterceptionException(argerr(
                             "the VM cannot do online cpu/memory update because it is not of NUMA architecture. Please stop the VM then do the cpu/memory update again"

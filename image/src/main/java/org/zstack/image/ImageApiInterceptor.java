@@ -26,6 +26,7 @@ import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotState;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
@@ -203,6 +204,11 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddImageMsg msg) {
+        if (msg.getSystemTags().contains("bootMode::Legacy")
+                && ImageArchitecture.aarch64.toString().equals(msg.getArchitecture())) {
+            throw new OperationFailureException(argerr("The aarch64 architecture does not support legacy."));
+        }
+
         if (ImageMediaType.ISO.toString().equals(msg.getMediaType())) {
             msg.setFormat(ImageConstant.ISO_FORMAT_STRING);
         }
