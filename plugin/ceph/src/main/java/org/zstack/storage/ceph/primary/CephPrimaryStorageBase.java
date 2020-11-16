@@ -3505,6 +3505,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((CleanUpTrashOnPrimaryStroageMsg) msg);
         } else if ((msg instanceof GetPrimaryStorageLicenseInfoMsg)) {
             handle((GetPrimaryStorageLicenseInfoMsg) msg);
+        } else if ((msg instanceof GetVolumeWatchersMsg)) {
+            handle((GetVolumeWatchersMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }

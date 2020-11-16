@@ -4,7 +4,6 @@ import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.host.HostSystemTags;
 import org.zstack.compute.vm.VmCapabilities;
 import org.zstack.compute.vm.VmCapabilitiesExtensionPoint;
 import org.zstack.configuration.DiskOfferingSystemTags;
@@ -1201,9 +1200,6 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
 
         List<String> avoidHostUuids = new ArrayList<>();
-        if (spec.getAvoidHostUuids() != null) {
-            avoidHostUuids.addAll(spec.getAvoidHostUuids());
-        }
         if (spec.getSoftAvoidHostUuids() != null ) {
             avoidHostUuids.addAll(spec.getSoftAvoidHostUuids());
         }
