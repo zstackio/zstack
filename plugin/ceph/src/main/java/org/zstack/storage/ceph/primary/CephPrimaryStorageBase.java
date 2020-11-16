@@ -1,7 +1,6 @@
 package org.zstack.storage.ceph.primary;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -756,7 +755,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     }
 
-    public static class CephToCephMigrateVolumeSegmentCmd extends AgentCommand {
+    public static class GetVolumeWatchersCmd extends AgentCommand {
+        public String volumePath;
+    }
+
+    public static class GetVolumeWatchersRsp extends AgentResponse {
+        public List<String> watchers;
+    }
+
+    public static class CephToCephMigrateVolumeSegmentCmd extends AgentCommand implements HasThreadContext {
         String parentUuid;
         String resourceUuid;
         String srcInstallPath;
@@ -1009,6 +1016,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download/cancel";
     public static final String CHECK_SNAPSHOT_COMPLETED = "/ceph/primarystorage/check/snapshot";
+    public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/ceph/primarystorage/kvmhost/download/progress";
+    public static final String GET_IMAGE_WATCHERS_PATH = "/ceph/primarystorage/getvolumewatchers";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
     List<PrimaryStorageLicenseInfoFactory> licenseExts = new ArrayList<>();
@@ -4303,5 +4312,30 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     @Override
     protected void handle(CheckVolumeSnapshotOperationOnPrimaryStorageMsg msg) {
         bus.reply(msg, new CheckVolumeSnapshotOperationOnPrimaryStorageReply());
+    }
+
+    protected void handle(GetVolumeWatchersMsg msg) {
+        GetVolumeWatchersReply reply = new GetVolumeWatchersReply();
+
+        String installPath = Q.New(VolumeVO.class)
+                .eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                .select(VolumeVO_.installPath)
+                .findValue();
+
+        GetVolumeWatchersCmd cmd = new GetVolumeWatchersCmd();
+        cmd.volumePath = installPath;
+        httpCall(GET_IMAGE_WATCHERS_PATH, cmd, GetVolumeWatchersRsp.class, new ReturnValueCompletion<GetVolumeWatchersRsp>(msg) {
+            @Override
+            public void success(GetVolumeWatchersRsp returnValue) {
+                reply.setWatchers(returnValue.watchers);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 }
