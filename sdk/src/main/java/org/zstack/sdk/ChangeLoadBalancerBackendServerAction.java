@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddBackendServerToServerGroupAction extends AbstractAction {
+public class ChangeLoadBalancerBackendServerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddBackendServerToServerGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddBackendServerToServerGroupResult value;
+        public org.zstack.sdk.ChangeLoadBalancerBackendServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -66,8 +66,8 @@ public class AddBackendServerToServerGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddBackendServerToServerGroupResult value = res.getResult(org.zstack.sdk.AddBackendServerToServerGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddBackendServerToServerGroupResult() : value; 
+        org.zstack.sdk.ChangeLoadBalancerBackendServerResult value = res.getResult(org.zstack.sdk.ChangeLoadBalancerBackendServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeLoadBalancerBackendServerResult() : value; 
 
         return ret;
     }
@@ -96,11 +96,11 @@ public class AddBackendServerToServerGroupAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/load-balancers/servergroups/{serverGroupUuid}/backendservers";
+        info.httpMethod = "PUT";
+        info.path = "/load-balancers/servergroups/{serverGroupUuid}/backendserver/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "changeLoadBalancerBackendServer";
         return info;
     }
 

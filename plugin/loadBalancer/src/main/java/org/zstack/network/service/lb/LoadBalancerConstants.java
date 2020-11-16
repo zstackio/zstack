@@ -60,7 +60,7 @@ public class LoadBalancerConstants {
     public static final long MAX_CONNECTION_LIMIT = 100000;
     public static final long BALANCER_WEIGHT_MAX = 100;
     public static final long BALANCER_WEIGHT_MIN = 0;
-    public static final long BALANCER_WEIGHT_default = 1;
+    public static final long BALANCER_WEIGHT_default = 100;
     static {
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_ROUND_ROBIN);
         BALANCE_ALGORITHMS.add(BALANCE_ALGORITHM_LEAST_CONN);
