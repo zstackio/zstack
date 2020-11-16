@@ -60,8 +60,8 @@ logicalOperator
 complexValue
     : value #simpleValue
     | '(' subQuery ')' #subQueryValue
-    | getQuery '(' input',' output (',' apiparams)* ')' #apiGetValue
-    | getQuery '(' output',' input (',' apiparams)* ')' #apiGetValue
+    | ('(')? getQuery '(' input',' output (',' apiparams)* ')' (')')? #apiGetValue
+    | ('(')? getQuery '(' output',' input (',' apiparams)* ')' (')')? #apiGetValue
     ;
 
 getQuery: GET;
