@@ -200,15 +200,15 @@ class LoadBalancerServerGroupVmCycleCase extends SubCase{
             name = "lb-group-3"
         }
         addBackendServerToServerGroup {
-            vmNicUuids = [nic1.uuid]
+            vmNics = [['uuid':nic1.uuid,'weight':'30']]
             serverGroupUuid = sg1.uuid
         }
         addBackendServerToServerGroup {
-            vmNicUuids = [nic2.uuid]
+            vmNics = [['uuid':nic2.uuid,'weight':'30']]
             serverGroupUuid = sg2.uuid
         }
         addBackendServerToServerGroup {
-            vmNicUuids = [nic3.uuid]
+            vmNics = [['uuid':nic3.uuid,'weight':'30']]
             serverGroupUuid = sg3.uuid
         }
         addServerGroupToLoadBalancerListener {

@@ -1,9 +1,9 @@
 package org.zstack.network.service.lb
 
-import org.zstack.network.service.lb.APIAddBackendServerToServerGroupEvent
+import org.zstack.network.service.lb.APIChangeLoadBalancerBackendServerEvent
 
 doc {
-    title "AddBackendServerToServerGroup"
+    title "ChangeLoadBalancerBackendServer"
 
     category "loadBalancer"
 
@@ -11,11 +11,11 @@ doc {
 
     rest {
         request {
-			url "POST /v1/load-balancers/servergroups/{serverGroupUuid}/backendservers"
+			url "PUT /v1/load-balancers/servergroups/{serverGroupUuid}/backendserver/actions"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
-            clz APIAddBackendServerToServerGroupMsg.class
+            clz APIChangeLoadBalancerBackendServerMsg.class
 
             desc """"""
             
@@ -23,7 +23,7 @@ doc {
 
 				column {
 					name "serverGroupUuid"
-					enclosedIn "params"
+					enclosedIn "changeLoadBalancerBackendServer"
 					desc ""
 					location "url"
 					type "String"
@@ -33,7 +33,7 @@ doc {
 				}
 				column {
 					name "vmNics"
-					enclosedIn "params"
+					enclosedIn "changeLoadBalancerBackendServer"
 					desc ""
 					location "body"
 					type "List"
@@ -43,7 +43,7 @@ doc {
 				}
 				column {
 					name "servers"
-					enclosedIn "params"
+					enclosedIn "changeLoadBalancerBackendServer"
 					desc ""
 					location "body"
 					type "List"
@@ -75,7 +75,7 @@ doc {
         }
 
         response {
-            clz APIAddBackendServerToServerGroupEvent.class
+            clz APIChangeLoadBalancerBackendServerEvent.class
         }
     }
 }

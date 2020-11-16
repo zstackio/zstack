@@ -205,18 +205,37 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
         /* shared load balancer can not add server group */
         expect(AssertionError.class) {
             addBackendServerToServerGroup {
-                vmNicUuids = [vm.vmNics.find { nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
-                serverIps = ["20.20.20.1"]
+                vmNics = [['uuid':vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid,'weight':'20']]
+                servers  = [['ipAddress':"20.20.20.1",'weight':'30']]
                 serverGroupUuid = servergroup1.uuid
             }
         }
         addBackendServerToServerGroup {
-            vmNicUuids = [vm.vmNics.find { nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
+            vmNics = [['uuid':vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid,'weight':'20']]
             serverGroupUuid = servergroup1.uuid
         }
         LoadBalancerServerGroupInventory servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
         assert servergroup.vmNicRefs.size() == 1
         assert servergroup.vmNicRefs.get(0).vmNicUuid == vm.vmNics.find { nic -> nic.l3NetworkUuid == l3.uuid }.uuid
+        assert servergroup.vmNicRefs[0].weight == 20
+
+        /* shared load balancer can not change server ip  */
+        expect(AssertionError.class) {
+            changeLoadBalancerBackendServer {
+                vmNics = [['uuid': vm.vmNics.find { nic -> nic.l3NetworkUuid == l3.uuid }.uuid, 'weight': '40']]
+                servers = [['ipAddress': "20.20.20.1", 'weight': '50']]
+                serverGroupUuid = servergroup1.uuid
+            }
+        }
+
+        changeLoadBalancerBackendServer {
+            vmNics = [['uuid': vm.vmNics.find { nic -> nic.l3NetworkUuid == l3.uuid }.uuid, 'weight': '40']]
+            serverGroupUuid = servergroup1.uuid
+        }
+
+        servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
+        assert servergroup.vmNicRefs.size() == 1
+        assert servergroup.vmNicRefs[0].weight == 40
 
         removeBackendServerFromServerGroup{
             vmNicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
@@ -231,8 +250,6 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
             uuid = servergroup1.uuid
         }
     }
-
-
 
 
     @Override

@@ -131,5 +131,8 @@
         <name>org.zstack.network.service.lb.APIRemoveServerGroupFromLoadBalancerListenerMsg</name>
     </message>
 
+    <message>
+        <name>org.zstack.network.service.lb.APIChangeLoadBalancerBackendServerMsg</name>
+    </message>
 
 </service>

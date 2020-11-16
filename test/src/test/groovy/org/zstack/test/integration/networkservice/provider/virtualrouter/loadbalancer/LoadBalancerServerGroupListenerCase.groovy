@@ -192,7 +192,7 @@ class LoadBalancerServerGroupListenerCase extends SubCase{
         VmNicInventory nic2 = vm2.vmNics.get(0)
         VmNicInventory nic3 = vm3.vmNics.get(0)
         addBackendServerToServerGroup {
-            vmNicUuids = [nic1.uuid, nic2.uuid]
+            vmNics = [['uuid':nic1.uuid,'weight':'20'], ['uuid':nic2.uuid,weight:'30']]
             serverGroupUuid = sg.uuid
         }
         assert refreshLbCmd == null
@@ -224,7 +224,7 @@ class LoadBalancerServerGroupListenerCase extends SubCase{
         /* add vmnic will refresh backend */
         refreshLbCmd = null
         addBackendServerToServerGroup {
-            vmNicUuids = [nic1.uuid]
+            vmNics = [['uuid':nic1.uuid,'weight':'20']]
             serverGroupUuid = sg.uuid
         }
         assert refreshLbCmd != null
@@ -268,12 +268,12 @@ class LoadBalancerServerGroupListenerCase extends SubCase{
         /* same vm nic can not be attached to listener multiple time */
         expect(AssertionError.class) {
             addBackendServerToServerGroup {
-                vmNicUuids = [nic1.uuid]
+                vmNics = [['uuid':nic1.uuid,'weight':'30']]
                 serverGroupUuid = sg2.uuid
             }
         }
         addBackendServerToServerGroup {
-            vmNicUuids = [nic3.uuid]
+            vmNics = [['uuid':nic3.uuid,'weight':'30']]
             serverGroupUuid = sg2.uuid
         }
         assert refreshLbCmd != null
@@ -298,7 +298,7 @@ class LoadBalancerServerGroupListenerCase extends SubCase{
         /* add nic to server group which is not attached to listener will not refresh backend  */
         refreshLbCmd = null
         addBackendServerToServerGroup {
-            vmNicUuids = [nic1.uuid, nic2.uuid]
+            vmNics = [['uuid':nic1.uuid,'weight':'30'],['uuid':nic2.uuid,'weight':'30']]
             serverGroupUuid = sg3.uuid
         }
         assert refreshLbCmd == null
@@ -388,7 +388,7 @@ class LoadBalancerServerGroupListenerCase extends SubCase{
         VmNicInventory nic3 = vm3.vmNics.get(0)
         /* add vm nic to server group will refresh backend */
         addBackendServerToServerGroup {
-            vmNicUuids = [nic1.uuid, nic2.uuid]
+            vmNics = [['uuid':nic1.uuid,'weight':'30'],['uuid':nic2.uuid,'weight':'30']]
             serverGroupUuid = sg1.uuid
         }
         assert refreshLbCmd != null
@@ -417,7 +417,7 @@ class LoadBalancerServerGroupListenerCase extends SubCase{
 
         /* add vm nic to server group will refresh backend */
         addBackendServerToServerGroup {
-            vmNicUuids = [nic3.uuid, nic1.uuid]
+            vmNics = [['uuid':nic1.uuid,'weight':'30'],['uuid':nic3.uuid,'weight':'30']]
             serverGroupUuid = sg2.uuid
         }
         assert refreshLbCmd != null
@@ -517,7 +517,7 @@ class LoadBalancerServerGroupListenerCase extends SubCase{
             serverGroupUuid = sg1.uuid
         }
         addBackendServerToServerGroup {
-            vmNicUuids = [nic1.uuid, nic2.uuid]
+            vmNics = [['uuid':nic1.uuid,'weight':'30'],['uuid':nic2.uuid,'weight':'30']]
             serverGroupUuid = sg1.uuid
         }
 
@@ -532,7 +532,7 @@ class LoadBalancerServerGroupListenerCase extends SubCase{
             serverGroupUuid = sg2.uuid
         }
         addBackendServerToServerGroup {
-            vmNicUuids = [nic3.uuid, nic1.uuid]
+            vmNics = [['uuid':nic1.uuid,'weight':'30'],['uuid':nic3.uuid,'weight':'30']]
             serverGroupUuid = sg2.uuid
         }
 
