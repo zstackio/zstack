@@ -52,6 +52,10 @@ value
     | '(' value (',' value)* ')'
     ;
 
+listValue
+    : 'list(' value (',' value)* ')'
+    ;
+
 logicalOperator
     : AND
     | OR
@@ -68,6 +72,7 @@ getQuery: GET;
 
 apiparams
     : namedAsKey equal value
+    | namedAsKey equal listValue
     ;
 
 input

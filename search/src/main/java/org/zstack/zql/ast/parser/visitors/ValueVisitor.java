@@ -106,25 +106,27 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
         Map<String, Object> params = new HashMap<>();
         pctx.forEach(p -> {
             String key = p.namedAsKey().getText();
-            String value = p.value().getText();
-            if (p.value().BOOLEAN() != null) {
-                params.put(key, Boolean.valueOf(value));
-            } else if (p.value().INT() != null) {
-                params.put(key, Long.valueOf(value));
-            } else {
-                if (p.value().value().size() > 1) {
-                    params.put(key, p.value().value().stream().map(v -> formatValue(v.getText())).collect(Collectors.toList()));
-                } else {
-                    params.put(key, formatValue(value));
-                }
+            if (p.value() != null) {
+                params.put(key, getParamsByType(p.value()));
+            } else {  // p.listValue is not empty
+                params.put(key, p.listValue().value().stream().map(this::getParamsByType).collect(Collectors.toList()));
             }
         });
         return params;
     }
 
-
     private String formatValue(String str) {
         return StringUtils.strip(str, "'");
+    }
+
+    private Object getParamsByType(ZQLParser.ValueContext context) {
+        if (context.BOOLEAN() != null) {
+            return Boolean.valueOf(context.getText());
+        } else if (context.INT() != null) {
+            return Long.valueOf(context.getText());
+        } else {
+            return formatValue(context.getText());
+        }
     }
 
     private Object callAction(String apiStr, String outputStr, Map<String, Object> params) {
