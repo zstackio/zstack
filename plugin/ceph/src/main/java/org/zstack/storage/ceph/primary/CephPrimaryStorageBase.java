@@ -766,6 +766,14 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     }
 
+    public static class GetVolumeWatchersCmd extends AgentCommand {
+        public String volumePath;
+    }
+
+    public static class GetVolumeWatchersRsp extends AgentResponse {
+        public List<String> watchers;
+    }
+
     public static class CephToCephMigrateVolumeSegmentCmd extends AgentCommand implements HasThreadContext, HasSensitiveInfo {
         String parentUuid;
         String resourceUuid;
@@ -1029,6 +1037,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download";
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/ceph/primarystorage/kvmhost/download/cancel";
     public static final String CHECK_SNAPSHOT_COMPLETED = "/ceph/primarystorage/check/snapshot";
+    public static final String GET_IMAGE_WATCHERS_PATH = "/ceph/primarystorage/getvolumewatchers";
 
     private final Map<String, BackupStorageMediator> backupStorageMediators = new HashMap<String, BackupStorageMediator>();
     List<PrimaryStorageLicenseInfoFactory> licenseExts = new ArrayList<>();
@@ -2619,6 +2628,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         private String randomFactor = null;
         private boolean tryNext = false;
+        private List<String> avoidMonUuids = null;
 
         HttpCaller(String path, AgentCommand cmd, Class<T> retClass, ReturnValueCompletion<T> callback) {
             this(path, cmd, retClass, callback, null, 0);
@@ -2650,6 +2660,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             return this;
         }
 
+        HttpCaller<T> setAvoidMonUuids(List<String> avoidMonUuids) {
+            this.avoidMonUuids = avoidMonUuids;
+            return this;
+        }
+
         private void prepareCmd() {
             cmd.setUuid(self.getUuid());
             cmd.setFsId(getSelf().getFsid());
@@ -2673,6 +2688,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         "all ceph mons of primary storage[uuid:%s] are not in Connected state", self.getUuid())
                 );
             }
+
+            if (mons.size() > 1 && avoidMonUuids != null) {
+                mons.removeIf(it -> avoidMonUuids.contains(it.getSelf().getUuid()));
+            }
+
             return mons;
         }
 
@@ -3528,6 +3548,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((CleanUpTrashOnPrimaryStroageMsg) msg);
         } else if ((msg instanceof GetPrimaryStorageLicenseInfoMsg)) {
             handle((GetPrimaryStorageLicenseInfoMsg) msg);
+        } else if (msg instanceof GetVolumeWatchersMsg) {
+            handle((GetVolumeWatchersMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -4347,5 +4369,31 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     @Override
     protected void handle(CheckVolumeSnapshotOperationOnPrimaryStorageMsg msg) {
         bus.reply(msg, new CheckVolumeSnapshotOperationOnPrimaryStorageReply());
+    }
+
+    protected void handle(GetVolumeWatchersMsg msg) {
+        GetVolumeWatchersReply reply = new GetVolumeWatchersReply();
+
+        String installPath = Q.New(VolumeVO.class)
+                .eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                .select(VolumeVO_.installPath)
+                .findValue();
+
+        GetVolumeWatchersCmd cmd = new GetVolumeWatchersCmd();
+        cmd.volumePath = installPath;
+
+        new HttpCaller<>(GET_IMAGE_WATCHERS_PATH, cmd, GetVolumeWatchersRsp.class, new ReturnValueCompletion<GetVolumeWatchersRsp>(msg) {
+            @Override
+            public void success(GetVolumeWatchersRsp returnValue) {
+                reply.setWatchers(returnValue.watchers);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        }).setAvoidMonUuids(msg.getAvoidCephMonUuids()).tryNext().call();
     }
 }

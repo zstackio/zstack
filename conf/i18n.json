@@ -17287,6 +17287,28 @@
     "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java"
   },
   {
+    "raw": "get rootVolume[%s] rbd image watchers fail, %s",
+    "en_US": "get rootVolume[{0}] rbd image watchers fail, {1}",
+    "zh_CN": "查询根云盘[{0}] rbd image watchers失败，{1}",
+    "arguments": [
+      "rootVolume.getInstallPath()",
+      "reply.getError().getDetails()"
+    ],
+    "line": 1203,
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java"
+  },
+  {
+    "raw": "rootVolume[%s] is already in use(ceph rbd image[%s] already has watchers), in order to prevent brain splitting, Starting VM is prohibited.",
+    "en_US": "rootVolume[{0}] is already in use(ceph rbd image[{1}] already has watchers), in order to prevent brain splitting, Starting VM is prohibited.",
+    "zh_CN": "根云盘[{0}]正在使用中(ceph rbd 镜像[{1}]存在watchers)，为了防止云主机脑裂，禁止启动云主机",
+    "arguments": [
+      "msg.getVolumeUuid()",
+      "installPath"
+    ],
+    "line": 1219,
+    "fileName": "src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java"
+  },
+  {
     "raw": "cannot update status of the ceph primary storage mon[uuid:%s], it has been deleted.This error can be ignored",
     "en_US": "cannot update status of the ceph primary storage mon[uuid:{0}], it has been deleted.This error can be ignored",
     "zh_CN": "不能更新一台已经被删除的Ceph主存储监控节点[uuid:{0}]，这个错误可被忽略",
