@@ -485,6 +485,31 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
             @Override
             public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+                if (!LoadBalancerSystemTags.BALANCER_ALGORITHM.isMatch(newTag.getTag())) {
+                    return;
+                }
+
+                String oldValue = LoadBalancerSystemTags.BALANCER_ALGORITHM.getTokenByTag(old.getTag(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN);
+                String newValue = LoadBalancerSystemTags.BALANCER_ALGORITHM.getTokenByTag(newTag.getTag(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN);
+
+                String defaultServerGroupUuid = Q.New(LoadBalancerListenerVO.class)
+                        .select(LoadBalancerListenerVO_.serverGroupUuid)
+                        .eq(LoadBalancerListenerVO_.uuid, newTag.getResourceUuid())
+                        .findValue();
+                List<String> nicUuids = Q.New(LoadBalancerServerGroupVmNicRefVO.class).select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid)
+                        .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, defaultServerGroupUuid).listValues();
+                if (nicUuids.isEmpty()) {
+                    return;
+                }
+
+                if (!LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(oldValue) && LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(newValue)) {
+                    nicUuids.stream().forEach(nicUuid -> {
+                        new LoadBalancerWeightOperator().setWeight(newTag.getResourceUuid(), nicUuid, LoadBalancerConstants.BALANCER_WEIGHT_default);
+                    });
+                }
+                if (LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(oldValue) && !LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(newValue)) {
+                    new LoadBalancerWeightOperator().deleteNicsWeight(nicUuids, newTag.getResourceUuid());
+                }
             }
         });
 
