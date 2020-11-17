@@ -27,13 +27,14 @@ import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.*;
@@ -66,7 +67,6 @@ import java.util.concurrent.Future;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.progress.ProgressReportService.getTaskStage;
 import static org.zstack.core.progress.ProgressReportService.markTaskStage;
-import static org.zstack.core.progress.ProgressReportService.reportProgress;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -78,7 +78,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         KvmSetupSelfFencerExtensionPoint, KVMPreAttachIsoExtensionPoint, Component, PostMarkRootVolumeAsSnapshotExtension,
         BeforeTakeLiveSnapshotsOnVolumes, VmInstanceCreateExtensionPoint, CreateDataVolumeExtensionPoint,
         InstanceOfferingUserConfigValidator, DiskOfferingUserConfigValidator, MarkRootVolumeAsSnapshotExtension,
-        AfterReimageVmInstanceExtensionPoint {
+        AfterReimageVmInstanceExtensionPoint, PreVmInstantiateResourceExtensionPoint {
     private static final CLogger logger = Utils.getLogger(CephPrimaryStorageFactory.class);
 
     public static final PrimaryStorageType type = new PrimaryStorageType(CephConstants.CEPH_PRIMARY_STORAGE_TYPE);
@@ -1157,5 +1157,92 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         spec.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(vol.getFormat()).toString());
         String labelKey = trash.createTrash(TrashType.ReimageVolume, spec).getLabelKey();
         logger.debug(String.format("move old volume install path to trash[key:%s]", labelKey));
+    }
+
+    @Override
+    public void preBeforeInstantiateVmResource(VmInstanceSpec spec) throws VmInstantiateResourceException {
+        // do nothing
+    }
+
+    @Override
+    public void preInstantiateVmResource(VmInstanceSpec spec, Completion completion) {
+        if (VmInstanceConstant.VmOperation.Start != spec.getCurrentVmOperation()) {
+            completion.success();
+            return;
+        }
+
+        VolumeInventory rootVolume = spec.getDestRootVolume();
+        if (rootVolume == null) {
+            completion.success();
+            return;
+        }
+
+        boolean flag = CephGlobalConfig.PREVENT_VM_SPLIT_BRAIN.value(Boolean.class);
+        if (!flag) {
+            completion.success();
+            return;
+        }
+
+        boolean isCeph = Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.uuid, rootVolume.getPrimaryStorageUuid())
+                .eq(PrimaryStorageVO_.type, CephConstants.CEPH_PRIMARY_STORAGE_TYPE)
+                .isExists();
+        if (!isCeph) {
+            completion.success();
+            return;
+        }
+
+        GetVolumeWatchersMsg msg = new GetVolumeWatchersMsg();
+        msg.setPrimaryStorageUuid(rootVolume.getPrimaryStorageUuid());
+        msg.setVolumeUuid(rootVolume.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
+
+        List<String> avoidHostUuids = new ArrayList<>();
+        if (spec.getSoftAvoidHostUuids() != null ) {
+            avoidHostUuids.addAll(spec.getSoftAvoidHostUuids());
+        }
+
+        if (!avoidHostUuids.isEmpty()) {
+            List<String> hostIps = Q.New(HostVO.class)
+                    .in(HostVO_.uuid, avoidHostUuids)
+                    .select(HostVO_.managementIp)
+                    .listValues();
+            List<String> monUuids = Q.New(CephPrimaryStorageMonVO.class)
+                    .select(CephPrimaryStorageMonVO_.uuid)
+                    .eq(CephPrimaryStorageMonVO_.primaryStorageUuid, rootVolume.getPrimaryStorageUuid())
+                    .in(CephPrimaryStorageMonVO_.hostname, hostIps)
+                    .listValues();
+            msg.setAvoidCephMonUuids(monUuids);
+        }
+
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(operr("get rootVolume[%s] rbd image watchers fail, %s",
+                            rootVolume.getInstallPath(), reply.getError().getDetails()));
+                    return;
+                }
+
+                GetVolumeWatchersReply rly = (GetVolumeWatchersReply)reply;
+                List<String> watchers = rly.getWatchers();
+                if (watchers == null || watchers.isEmpty()) {
+                    completion.success();
+                    return;
+                }
+
+                String installPath = Q.New(VolumeVO.class)
+                        .eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                        .select(VolumeVO_.installPath)
+                        .findValue();
+                completion.fail(operr("rootVolume[%s] is already in use(ceph rbd image[%s] already has watchers), in order to prevent brain splitting, Starting VM is prohibited.",
+                    msg.getVolumeUuid(), installPath));
+            }
+        });
+    }
+
+    @Override
+    public void preReleaseVmResource(VmInstanceSpec spec, Completion completion) {
+        completion.success();
     }
 }
