@@ -47,7 +47,7 @@ import java.util.Optional;
 public class VirtualRouterVmInventory extends ApplianceVmInventory {
     private String publicNetworkUuid;
 
-    @Queryable(mappingClass = VirtualRouterVipVO.class,
+    @Queryable(mappingClass = VirtualRouterVipInventory.class,
             joinColumn = @JoinColumn(name = "virtualRouterVmUuid", referencedColumnName = "uuid"))
     private List<String> virtualRouterVips;
 
