@@ -28,6 +28,9 @@ public class GetCandidateVmNicsForLoadBalancerServerGroupAction extends Abstract
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String servergroupUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String loadBalancerUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 
@@ -85,7 +88,7 @@ public class GetCandidateVmNicsForLoadBalancerServerGroupAction extends Abstract
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/load-balancers/servergroups/{servergroupUuid}/vm-instances/candidate-nics";
+        info.path = "/load-balancers/servergroups/candidate-nics";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

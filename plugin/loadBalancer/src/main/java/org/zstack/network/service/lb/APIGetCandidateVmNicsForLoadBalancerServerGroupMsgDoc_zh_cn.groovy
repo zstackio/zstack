@@ -11,7 +11,7 @@ doc {
 
     rest {
         request {
-			url "GET /v1/load-balancers/servergroups/{servergroupUuid}/vm-instances/candidate-nics"
+			url "GET /v1/load-balancers/servergroups/candidate-nics"
 
 			header (Authorization: 'OAuth the-session-uuid')
 
@@ -25,7 +25,17 @@ doc {
 					name "servergroupUuid"
 					enclosedIn ""
 					desc ""
-					location "url"
+					location "query"
+					type "String"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "loadBalancerUuid"
+					enclosedIn ""
+					desc "负载均衡器UUID"
+					location "query"
 					type "String"
 					optional true
 					since "0.6"
