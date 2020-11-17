@@ -23,7 +23,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -55,11 +54,9 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.VmDeviceAddress;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
-import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.l3.NetworkGlobalProperty;
@@ -100,8 +97,6 @@ public class KVMHost extends HostBase implements Host {
     private RESTFacade restf;
     @Autowired
     private KVMExtensionEmitter extEmitter;
-    @Autowired
-    private ErrorFacade errf;
     @Autowired
     private TagManager tagmgr;
     @Autowired
@@ -3257,7 +3252,7 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void createTagWithoutNonValue(SystemTag tag, String token, String value, boolean inherent) {
-        if (value == null) {
+        if (value == null || value.isEmpty()) {
             return;
         }
         recreateTag(tag, token, value, inherent);
