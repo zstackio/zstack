@@ -6208,7 +6208,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Reboot);
-        spec.setDestHost(HostInventory.valueOf(dbf.findByUuid(self.getHostUuid(), HostVO.class)));
+        spec.setDestHost(HostInventory.valueOf(dbf.findByUuid(spec.getVmInventory().getHostUuid(), HostVO.class)));
 
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.rebooting);

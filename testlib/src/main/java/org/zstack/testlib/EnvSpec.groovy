@@ -64,6 +64,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.regex.Pattern
 import java.util.stream.Collectors
 /**
  * Created by xing5 on 2017/2/12.
@@ -929,6 +930,16 @@ class EnvSpec extends ApiHelper implements Node  {
             }
 
             Closure postHandler = httpPostHandlers[url]
+
+            if (postHandler == null) {
+                for (String httpUrl : httpPostHandlers.keys()) {
+                    if (Pattern.matches(httpUrl, url)) {
+                        postHandler = httpPostHandlers[httpUrl];
+                        break;
+                    }
+                }
+            }
+
             if (postHandler != null) {
                 if (postHandler.maximumNumberOfParameters <= 1) {
                     ret = postHandler(ret)
@@ -968,6 +979,16 @@ class EnvSpec extends ApiHelper implements Node  {
         def url = req.getRequestURI()
         def entity = getEntityFromRequest(req)
         def handler = httpHandlers[url]
+
+        if (handler == null) {
+            for (String httpUrl : httpHandlers.keys()) {
+                if (Pattern.matches(httpUrl, url)) {
+                    handler = httpHandlers[httpUrl];
+                    break;
+                }
+            }
+        }
+
         if (handler == null) {
             handleConditionSimulatorHttpRequests(req, entity, rsp)
         } else {
