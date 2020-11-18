@@ -178,7 +178,6 @@ CREATE TABLE IF NOT EXISTS `BareMetal2ChassisVO` (
     `zoneUuid` varchar(32) NOT NULL,
     `clusterUuid` varchar(32) NOT NULL,
     `chassisOfferingUuid` varchar(32) DEFAULT NULL,
-    `bootMode` varchar(32) NOT NULL,
     `type` varchar(32) NOT NULL,
     `state` varchar(32) NOT NULL,
     `status` varchar(32) NOT NULL,

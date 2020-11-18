@@ -46,9 +46,6 @@ public class AddBareMetal2IpmiChassisAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String clusterUuid;
 
-    @Param(required = true, validValues = {"Legacy","UEFI"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String bootMode;
-
     @Param(required = false)
     public java.lang.String resourceUuid;
 

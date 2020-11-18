@@ -52,14 +52,6 @@ public class BareMetal2ChassisInventory  {
         return this.chassisOfferingUuid;
     }
 
-    public java.lang.String bootMode;
-    public void setBootMode(java.lang.String bootMode) {
-        this.bootMode = bootMode;
-    }
-    public java.lang.String getBootMode() {
-        return this.bootMode;
-    }
-
     public java.lang.String type;
     public void setType(java.lang.String type) {
         this.type = type;

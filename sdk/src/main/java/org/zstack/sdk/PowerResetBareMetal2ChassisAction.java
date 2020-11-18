@@ -29,7 +29,10 @@ public class PowerResetBareMetal2ChassisAction extends AbstractAction {
     public java.lang.String uuid;
 
     @Param(required = false, validValues = {"disk","ipxe"}, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String bootDev;
+    public java.lang.String bootDev = "ipxe";
+
+    @Param(required = false, validValues = {"UEFI","Legacy"}, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String bootMode = "UEFI";
 
     @Param(required = false)
     public java.util.List systemTags;
