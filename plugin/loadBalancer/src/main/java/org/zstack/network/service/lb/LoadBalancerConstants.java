@@ -41,7 +41,7 @@ public class LoadBalancerConstants {
         http_5xx
     }
 
-    public static final String HEALTH_CHECK_URI_REGEX = "^/[A-Za-z0-9-/.%?#&]+";
+    public static final String HEALTH_CHECK_URI_REGEX = "^/[A-Za-z0-9-/.%?#&]*";
 
     public static final List<String> HEALTH_CHECK_TARGET_PROTOCOLS = new ArrayList<String>();
 
