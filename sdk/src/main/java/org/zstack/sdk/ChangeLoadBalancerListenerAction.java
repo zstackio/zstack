@@ -2,7 +2,6 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.zstack.sdk.*;
 
 public class ChangeLoadBalancerListenerAction extends AbstractAction {
 
@@ -55,7 +54,7 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, validValues = {"GET","HEAD"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String healthCheckMethod;
 
-    @Param(required = false, validRegexValues = "^/[A-Za-z0-9-/.%?#&]+", maxLength = 80, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validRegexValues = "^/[A-Za-z0-9-/.%?#&]*", maxLength = 80, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String healthCheckURI;
 
     @Param(required = false, maxLength = 80, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
