@@ -157,8 +157,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     private void validate(APIGetCandidateVmNicsForLoadBalancerServerGroupMsg msg) {
-        LoadBalancerServerGroupVO groupVO = dbf.findByUuid(msg.getServergroupUuid(), LoadBalancerServerGroupVO.class);
-        msg.setLoadBalancerUuid(groupVO.getLoadBalancerUuid());
+        if (msg.getServergroupUuid() != null) {
+            LoadBalancerServerGroupVO groupVO = dbf.findByUuid(msg.getServergroupUuid(), LoadBalancerServerGroupVO.class);
+            msg.setLoadBalancerUuid(groupVO.getLoadBalancerUuid());
+        } else if (msg.getLoadBalancerUuid() == null) {
+            throw new ApiMessageInterceptionException(
+                    operr("could not get candidate vmnic, because both load balancer uuid and server group uuid are not specified"));
+        }
     }
 
     private void validate(APIGetCandidateL3NetworksForLoadBalancerMsg msg) {

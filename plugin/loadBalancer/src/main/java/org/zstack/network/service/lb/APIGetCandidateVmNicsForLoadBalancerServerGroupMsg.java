@@ -12,14 +12,14 @@ import org.zstack.header.rest.RestRequest;
  */
 @Action(category = LoadBalancerConstants.ACTION_CATEGORY, names = {"read"})
 @RestRequest(
-        path = "/load-balancers/servergroups/{servergroupUuid}/vm-instances/candidate-nics",
+        path = "/load-balancers/servergroups/candidate-nics",
         method = HttpMethod.GET,
         responseClass = APIGetCandidateVmNicsForLoadBalancerServerGroupReply.class
 )
 public class APIGetCandidateVmNicsForLoadBalancerServerGroupMsg extends APISyncCallMessage implements LoadBalancerMessage {
     @APIParam(resourceType = LoadBalancerServerGroupVO.class, required = false)
     private String servergroupUuid;
-    @APINoSee
+    @APIParam(resourceType = LoadBalancerVO.class, required = false)
     private String loadBalancerUuid;
 
     public String getServergroupUuid() {
