@@ -1853,9 +1853,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
     }
 
-    private void reconenctVirtualRouter(String vrUUid) {
+    private void reconenctVirtualRouter(String vrUUid, boolean statusChange) {
         ReconnectVirtualRouterVmMsg msg = new ReconnectVirtualRouterVmMsg();
         msg.setVirtualRouterVmUuid(vrUUid);
+        msg.setStatusChange(statusChange);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrUUid);
         bus.send(msg, new CloudBusCallBack(msg) {
             @Override
@@ -1882,7 +1883,12 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }
 
         if (vrVo.getStatus() == ApplianceVmStatus.Connecting) {
-            reconenctVirtualRouter(inv.getUuid());
+            reconenctVirtualRouter(inv.getUuid(), false);
+            return;
+        }
+
+        if (vrVo.getHaStatus() == ApplianceVmHaStatus.Backup) {
+            reconenctVirtualRouter(inv.getUuid(), false);
             return;
         }
 
@@ -1891,7 +1897,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             public void success(VyosVersionCheckResult returnValue) {
                 if (returnValue.isNeedReconnect()) {
                     logger.warn(String.format("virtual router[uuid: %s] need to be reconnected", inv.getUuid()));
-                    reconenctVirtualRouter(inv.getUuid());
+                    reconenctVirtualRouter(inv.getUuid(), true);
                 }
             }
 

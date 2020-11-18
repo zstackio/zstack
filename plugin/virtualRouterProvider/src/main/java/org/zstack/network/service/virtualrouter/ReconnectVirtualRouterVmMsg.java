@@ -8,6 +8,7 @@ import org.zstack.header.vm.VmInstanceMessage;
  */
 public class ReconnectVirtualRouterVmMsg extends NeedReplyMessage implements VmInstanceMessage {
     private String virtualRouterVmUuid;
+    private boolean statusChange = false;
 
 
     public String getVirtualRouterVmUuid() {
@@ -21,5 +22,13 @@ public class ReconnectVirtualRouterVmMsg extends NeedReplyMessage implements VmI
     @Override
     public String getVmInstanceUuid() {
         return virtualRouterVmUuid;
+    }
+
+    public boolean isStatusChange() {
+        return statusChange;
+    }
+
+    public void setStatusChange(boolean statusChange) {
+        this.statusChange = statusChange;
     }
 }

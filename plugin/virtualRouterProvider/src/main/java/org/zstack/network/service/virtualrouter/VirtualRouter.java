@@ -235,6 +235,9 @@ public class VirtualRouter extends ApplianceVmBase {
                 refreshVO();
                 ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
                 if (allowed != null) {
+                    if (msg.isStatusChange()) {
+                        changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
+                    }
                     reply.setError(allowed);
                     bus.reply(msg, reply);
                     chain.next();
