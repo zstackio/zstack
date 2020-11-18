@@ -82,7 +82,14 @@ class VmOperationMultyTypeStorageCase extends SubCase{
         a.l3NetworkUuids = [l3.uuid]
         a.dataDiskOfferingUuids = [diskOfferingInventory.uuid]
         a.sessionId = currentEnvSpec.session.uuid
-        assert a.call().error != null
+
+        CreateVmInstanceAction.Result result = a.call()
+        assert result.error == null
+        stopVmInstance {
+            uuid = result.value.inventory.uuid
+        }
+
+
     }
 
     void testDisableNfsPrimaryStorageThenAttachDataVolumeToVm(){

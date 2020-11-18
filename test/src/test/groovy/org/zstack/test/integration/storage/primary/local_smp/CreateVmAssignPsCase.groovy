@@ -170,15 +170,13 @@ class CreateVmAssignPsCase extends SubCase{
         checkVmDataDiskPs(vm, smp.uuid)
 
         // assign root volume local ps
-        expect (AssertionError.class) {
-            vm = createVmInstance {
-                name = "vm1"
-                instanceOfferingUuid = instanceOffering.uuid
-                imageUuid = image.uuid
-                l3NetworkUuids = [l3.uuid]
-                primaryStorageUuidForRootVolume = local.uuid
-                dataDiskOfferingUuids = [diskOffering.uuid]
-            }
+        vm = createVmInstance {
+            name = "vm1"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            primaryStorageUuidForRootVolume = local.uuid
+            dataDiskOfferingUuids = [diskOffering.uuid]
         }
 
         // assign root volume smp ps
@@ -203,18 +201,16 @@ class CreateVmAssignPsCase extends SubCase{
                 systemTags: [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])],
                 sessionId: currentEnvSpec.session.uuid
         )
-        assert a2.call().error != null
+        assert a2.call().error == null
 
         // assign data volume smp ps
-        expect (AssertionError.class) {
-            vm = createVmInstance {
-                name = "vm3"
-                instanceOfferingUuid = instanceOffering.uuid
-                imageUuid = image.uuid
-                l3NetworkUuids = [l3.uuid]
-                dataDiskOfferingUuids = [diskOffering.uuid]
-                systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): smp.uuid])]
-            }
+        vm = createVmInstance {
+            name = "vm3"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            dataDiskOfferingUuids = [diskOffering.uuid]
+            systemTags = [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): smp.uuid])]
         }
 
         // assign root volume local ps, data volume local ps,
