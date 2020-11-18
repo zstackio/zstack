@@ -63,7 +63,7 @@ BEGIN
         SET targetProjectUuid = SUBSTRING_INDEX(projectAdminTag, '::', -1);
         SELECT `accountUuid` into targetAccountUuid FROM `IAM2ProjectAccountRefVO` WHERE `projectUuid` = targetProjectUuid LIMIT 1;
 
-        INSERT INTO IAM2VirtualIDRoleRefVO (`virtualIDUuid`, `roleUuid`, `targetAccountUuid`) VALUES (iam2VirtualIDUuid, 'f2f474c60e7340c0a1d44080d5bde3a9', targetAccountUuid);
+        INSERT INTO IAM2VirtualIDRoleRefVO (`virtualIDUuid`, `roleUuid`, `targetAccountUuid`, createDate, lastOpDate) VALUES (iam2VirtualIDUuid, 'f2f474c60e7340c0a1d44080d5bde3a9', targetAccountUuid, NOW(), NOW());
     END LOOP;
     CLOSE cur;
     SELECT CURTIME();
@@ -86,7 +86,7 @@ BEGIN
         IF done THEN
             LEAVE read_loop;
         END IF;
-        INSERT INTO `zstack`.IAM2VirtualIDOrganizationRefVO (virtualIDUuid, organizationUuid) VALUES (virtualIDUuid, organizationUuid);
+        INSERT INTO `zstack`.IAM2VirtualIDOrganizationRefVO (virtualIDUuid, organizationUuid, createDate, lastOpDate) VALUES (virtualIDUuid, organizationUuid, NOW(), NOW());
 
     END LOOP;
     CLOSE cur;
@@ -120,7 +120,7 @@ BEGIN
         IF done THEN
             LEAVE read_loop;
         END IF;
-        INSERT INTO `zstack`.IAM2ProjectVirtualIDGroupRefVO (groupUuid, projectUuid) VALUES (groupUuid, projectUuid);
+        INSERT INTO `zstack`.IAM2ProjectVirtualIDGroupRefVO (groupUuid, projectUuid, createDate, lastOpDate) VALUES (groupUuid, projectUuid, NOW(), NOW());
 
     END LOOP;
     CLOSE cur;
