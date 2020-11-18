@@ -123,7 +123,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
             PingHostMsg msg = new PingHostMsg();
             msg.setHostUuid(uuid);
-            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, uuid);
+            bus.makeLocalServiceId(msg, HostConstant.SERVICE_ID);
             bus.send(msg, new CloudBusCallBack(null) {
                 @Override
                 public void run(MessageReply reply) {
@@ -238,7 +238,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
         t = new Tracker(hostUuid);
         trackers.put(hostUuid, t);
-        t.start();
+        t.startRightNow();
         logger.debug(String.format("starting tracking hosts[uuid:%s]", hostUuid));
     }
 

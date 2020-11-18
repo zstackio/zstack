@@ -16,16 +16,16 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.thread.AsyncThread;
+import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.timeout.TimeHelper;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.core.Completion;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
-import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
@@ -44,11 +44,24 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.form.Form;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.function.ValidateFunction;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.StandardSocketOptions;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.sql.Timestamp;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -64,6 +77,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private List<KVMHostConnectExtensionPoint> connectExtensions = new ArrayList<>();
     private Map<L2NetworkType, KVMCompleteNicInformationExtensionPoint> completeNicInfoExtensions = new HashMap<>();
     private int maxDataVolumeNum;
+
+    static final Map<SocketChannel, Long> socketTimeoutMap = new ConcurrentHashMap<>();
 
     static {
         RAW_FORMAT.newFormatInputOutputMapping(hypervisorType, QCOW2_FORMAT.toString());
@@ -84,6 +99,12 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private RESTFacade restf;
     @Autowired
     private EventFacade evf;
+    @Autowired
+    private TimeHelper timeHelper;
+    @Autowired
+    private ThreadFacade thdf;
+
+    private Future<Void> checkSocketChannelTimeoutThread;
 
     @Override
     public HostVO createHost(HostVO vo, AddHostMessage msg) {
@@ -238,6 +259,15 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         populateExtensions();
         configKVMDeviceType();
 
+        if (KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {
+            try {
+                startTcpServer();
+                startTcpChannelTimeoutChecker();
+            } catch (IOException e) {
+                throw new CloudRuntimeException("Failed to start tcp server on management node");
+            }
+        }
+
         maxDataVolumeNum = KVMGlobalConfig.MAX_DATA_VOLUME_NUM.value(int.class);
         KVMGlobalConfig.MAX_DATA_VOLUME_NUM.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
@@ -353,6 +383,19 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
         }));
 
+        KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.installUpdateExtension((oldConfig, newConfig) -> {
+            if (newConfig.value(Boolean.class)) {
+                try {
+                    startTcpServer();
+                    startTcpChannelTimeoutChecker();
+                } catch (IOException e) {
+                    logger.debug(String.format("Failed to start tcp server, because %s", e));
+                }
+            } else {
+                checkSocketChannelTimeoutThread.cancel(true);
+            }
+        });
+
         return true;
     }
 
@@ -364,6 +407,132 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
             return tos;
         });
+    }
+
+    private void startTcpChannelTimeoutChecker() {
+        if (checkSocketChannelTimeoutThread != null) {
+            checkSocketChannelTimeoutThread.cancel(true);
+        }
+
+        checkSocketChannelTimeoutThread = thdf.submitPeriodicTask(new PeriodicTask() {
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.SECONDS;
+            }
+
+            @Override
+            public long getInterval() {
+                return KVMGlobalConfig.HOST_CONNECTION_CHECK_INTERVAL.value(Long.class);
+            }
+
+            @Override
+            public String getName() {
+                return "host-tcp-channel-timeout-checker";
+            }
+
+            @Override
+            public void run() {
+                long currentTime = timeHelper.getCurrentTimeMillis();
+                Predicate<Map.Entry<SocketChannel, Long>> isQualified = entry -> isTimeout(entry.getValue(), currentTime);
+                socketTimeoutMap.entrySet().stream().filter(isQualified)
+                .forEach(entry -> {
+                    try {
+                        checkHostConnection(entry.getKey());
+                    } catch (Exception ignore) {
+                        logger.debug("ignore exception for socket timeout check");
+                    }
+                });
+
+                socketTimeoutMap.entrySet().removeIf(isQualified);
+            }
+
+            private boolean isTimeout(Long timeInMap, long currentTime) {
+                return timeInMap + 5000 < currentTime;
+            }
+        });
+    }
+
+    @AsyncThread
+    private void startTcpServer() throws IOException {
+        Selector selector = Selector.open();
+        ServerSocketChannel serverSocket = ServerSocketChannel.open();
+        serverSocket.bind(new InetSocketAddress("0.0.0.0", KVMGlobalProperty.TCP_SERVER_PORT));
+        serverSocket.configureBlocking(false);
+        serverSocket.register(selector, SelectionKey.OP_ACCEPT);
+        ByteBuffer buffer = ByteBuffer.allocate(256);
+
+        Integer interval = KVMGlobalConfig.CONNECTION_SERVER_UPDATE_INTERVAL.value(Integer.class);
+        while (true) {
+            if (!KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {
+                serverSocket.close();
+                selector.close();
+                break;
+            }
+
+            selector.select(interval);
+            Set<SelectionKey> selectedKeys = selector.selectedKeys();
+            Iterator<SelectionKey> iter = selectedKeys.iterator();
+            while (iter.hasNext()) {
+                SelectionKey key = iter.next();
+
+                if (key.isAcceptable()) {
+                    register(selector, serverSocket);
+                }
+
+                if (key.isReadable()) {
+                    tryToRead(buffer, key);
+                }
+
+                iter.remove();
+            }
+        }
+    }
+
+    private void tryToRead(ByteBuffer buffer, SelectionKey key)
+            throws IOException {
+
+        SocketChannel client = (SocketChannel) key.channel();
+        int return_code = client.read(buffer);
+        if (return_code != -1) {
+            socketTimeoutMap.put(client, timeHelper.getCurrentTimeMillis());
+            return;
+        }
+
+        checkHostConnection(client);
+    }
+
+    private void checkHostConnection(SocketChannel client) throws IOException {
+        SocketAddress remoteAddress = client.getRemoteAddress();
+        logger.debug("Closed socket remote ip is " + remoteAddress);
+        client.close();
+        socketTimeoutMap.remove(client, timeHelper.getCurrentTimeMillis());
+
+        String managementIp = remoteAddress.toString().split("/")[1].split(":")[0];
+        String hostUuid = Q.New(HostVO.class)
+                .select(HostVO_.uuid)
+                .eq(HostVO_.managementIp, managementIp)
+                .findValue();
+
+        if (hostUuid == null) {
+            return;
+        }
+
+        PingHostMsg pingHostMsg = new PingHostMsg();
+        pingHostMsg.setHostUuid(hostUuid);
+        bus.makeLocalServiceId(pingHostMsg, HostConstant.SERVICE_ID);
+        bus.send(pingHostMsg);
+    }
+
+    private void register(Selector selector, ServerSocketChannel serverSocket)
+            throws IOException {
+        SocketChannel client = serverSocket.accept();
+
+        logger.debug("Accepting new client connection from " + client.getRemoteAddress());
+        client.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
+        client.configureBlocking(false);
+        client.register(selector, SelectionKey.OP_READ);
+
+        socketTimeoutMap.put(client, timeHelper.getCurrentTimeMillis());
     }
 
     private Map<String, String> getHostsWithDiffModel(String clusterUuid) {

@@ -209,6 +209,7 @@ public class KVMAgentCommands {
         private List<String> iptablesRules;
         private boolean ignoreMsrs;
         private boolean pageTableExtensionDisabled;
+        private int tcpServerPort;
 
         public boolean isIgnoreMsrs() {
             return ignoreMsrs;
@@ -248,6 +249,14 @@ public class KVMAgentCommands {
 
         public void setPageTableExtensionDisabled(boolean pageTableExtensionDisabled) {
             this.pageTableExtensionDisabled = pageTableExtensionDisabled;
+        }
+
+        public int getTcpServerPort() {
+            return tcpServerPort;
+        }
+
+        public void setTcpServerPort(int tcpServerPort) {
+            this.tcpServerPort = tcpServerPort;
         }
     }
 
