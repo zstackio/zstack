@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @Inventory(mappingVOClass = LoadBalancerServerGroupVO.class)
 @ExpandedQueries({
         @ExpandedQuery(expandedField = "listenerServerGroupRefs", inventoryClass = LoadBalancerListenerServerGroupRefInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "serverGroupUuid"),
+                foreignKey = "uuid", expandedInventoryKey = "loadBalancerServerGroupUuid"),
 })
 
 public class LoadBalancerServerGroupInventory implements Serializable {
