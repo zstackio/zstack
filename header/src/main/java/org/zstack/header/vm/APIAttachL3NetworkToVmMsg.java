@@ -60,6 +60,9 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
 
     private String staticIp;
 
+    @APIParam(required = false)
+    private String driverType;
+
     @APINoSee
     @Deprecated
     private List<String> secondaryL3Uuids;
@@ -119,10 +122,19 @@ public class APIAttachL3NetworkToVmMsg extends APIMessage implements VmInstanceM
         this.applyToBackend = applyToBackend;
     }
 
+    public String getDriverType() {
+        return driverType;
+    }
+
+    public void setDriverType(String driverType) {
+        this.driverType = driverType;
+    }
+
     public static APIAttachL3NetworkToVmMsg __example__() {
         APIAttachL3NetworkToVmMsg msg = new APIAttachL3NetworkToVmMsg();
         msg.vmInstanceUuid = uuid();
         msg.l3NetworkUuid = uuid();
+        msg.driverType = "e1000";
         return msg;
     }
 }

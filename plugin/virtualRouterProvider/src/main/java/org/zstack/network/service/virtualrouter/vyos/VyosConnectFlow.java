@@ -7,11 +7,12 @@ import org.zstack.appliancevm.ApplianceVmConstant;
 import org.zstack.appliancevm.ApplianceVmSpec;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -25,16 +26,16 @@ import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
 import org.zstack.network.service.virtualrouter.VirtualRouterManager;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
-import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.zsha2.ZSha2Helper;
-import org.zstack.utils.zsha2.ZSha2Info;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
-import static org.zstack.core.Platform.operr;
-
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static org.zstack.core.Platform.operr;
 
 /**
  * Created by xing5 on 2016/10/31.
@@ -49,6 +50,11 @@ public class VyosConnectFlow extends NoRollbackFlow {
     private ErrorFacade errf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private VyosVersionManager vyosVersionManager;
+    @Autowired
+    private PluginRegistry pluginRgty;
+    private static final CLogger logger = Utils.getLogger(VyosConnectFlow.class);
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -126,6 +132,36 @@ public class VyosConnectFlow extends NoRollbackFlow {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "sync-version-to-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        vyosVersionManager.vyosRouterVersionCheck(vrUuid, new ReturnValueCompletion<VyosVersionCheckResult>(trigger) {
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void success(VyosVersionCheckResult returnValue) {
+                                if (returnValue.isNeedReconnect()) {
+                                    trigger.next();
+                                    return;
+                                }
+
+                                List<VyosConnectExtensionPoint> exts = pluginRgty.getExtensionList(VyosConnectExtensionPoint.class);
+                                if (exts.isEmpty()) {
+                                    trigger.next();
+                                    return;
+                                }
+                                logger.debug(String.format("start to sync version to db, general zvr version is %s", returnValue.getVersion()));
+                                exts.get(0).syncVersionToDb(vrUuid, returnValue.getVersion());
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
                 done(new FlowDoneHandler(trigger) {
                     @Override
                     public void handle(Map data) {

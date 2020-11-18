@@ -16,6 +16,7 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
+import org.zstack.core.errorcode.schema.Error;
 import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -1431,6 +1432,16 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
+                if (self.getState().equals(VmInstanceState.Running)) {
+                    ErrorCode error = validateOperationByVmTypeAndL3Type(nicVO.getL3NetworkUuid());
+                    if (error != null) {
+                        reply.setError(error);
+                        bus.reply(msg, reply);
+                        chain.next();
+                        return;
+                    }
+                }
+
                 doDetachNic(VmNicInventory.valueOf(nicVO), true, false, new Completion(chain) {
                     @Override
                     public void success() {
@@ -1928,6 +1939,13 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         spec.setL3Networks(list(new VmNicSpec(l3s)));
         spec.setDestNics(new ArrayList<VmNicInventory>());
+
+        if (msg instanceof APIAttachL3NetworkToVmMsg ) {
+            APIAttachL3NetworkToVmMsg msg1 = (APIAttachL3NetworkToVmMsg)msg;
+            for (VmNicSpec vmNicSpec : spec.getL3Networks()) {
+                vmNicSpec.setNicDriverType(msg1.getDriverType());
+            }
+        }
 
         CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmBeforeAttachL3NetworkExtensionPoint.class),
                 new ForEachFunction<VmBeforeAttachL3NetworkExtensionPoint>() {
@@ -4270,6 +4288,16 @@ public class VmInstanceBase extends AbstractVmInstance {
                 String releaseNicFlag = msg.getSystemTags() == null ? null : SystemTagUtils.findTagValue(msg.getSystemTags(), VmSystemTags.RELEASE_NIC_AFTER_DETACH_NIC, VmSystemTags.RELEASE_NIC_AFTER_DETACH_NIC_TOKEN);
                 boolean releaseNic = releaseNicFlag == null || Boolean.parseBoolean(releaseNicFlag);
 
+                if (self.getState().equals(VmInstanceState.Running)) {
+                    ErrorCode error = validateOperationByVmTypeAndL3Type(vmNicVO.getL3NetworkUuid());
+                    if (error != null) {
+                        evt.setError(error);
+                        bus.publish(evt);
+                        chain.next();
+                        return;
+                    }
+                }
+
                 doDetachNic(VmNicInventory.valueOf(vmNicVO), releaseNic, false, new Completion(chain) {
                     @Override
                     public void success() {
@@ -4300,6 +4328,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                 return "detach-nic";
             }
         });
+    }
+
+    protected ErrorCode validateOperationByVmTypeAndL3Type(String l3Uuid) {
+        return null;
     }
 
     protected void beforeDetachNic(VmNicInventory nicInventory, Completion completion) {
