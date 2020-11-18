@@ -787,7 +787,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if(usedVmNicUuids!=null && !usedVmNicUuids.isEmpty()){
             usedIps.addAll(Q.New(VmNicVO.class)
                     .select(VmNicVO_.ip)
-                    .eq(VmNicVO_.uuid,usedVmNicUuids)
+                    .in(VmNicVO_.uuid,usedVmNicUuids)
                     .listValues());
         }
         List<String> useServerIps = Q.New(LoadBalancerServerGroupServerIpVO.class)
