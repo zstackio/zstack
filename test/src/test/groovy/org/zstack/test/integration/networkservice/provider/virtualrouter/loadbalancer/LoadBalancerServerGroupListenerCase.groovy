@@ -210,6 +210,14 @@ class LoadBalancerServerGroupListenerCase extends SubCase{
             assert nic1.ip == ip || nic2.ip == ip
         }
 
+        /* same server group and listener can not added again */
+        expect(AssertionError.class) {
+            addServerGroupToLoadBalancerListener {
+                listenerUuid = lb22.uuid
+                serverGroupUuid = sg.uuid
+            }
+        }
+
         /* remove vmnic will refresh backend */
         refreshLbCmd = null
         removeBackendServerFromServerGroup {
