@@ -33,16 +33,16 @@ import java.util.regex.Pattern;
                 foreignKey = "uuid", expandedInventoryKey = "poolUuid")
 })
 public class L2VxlanNetworkPoolInventory extends L2NetworkInventory {
-    @Queryable(mappingClass = VtepVO.class,
-            joinColumn = @JoinColumn(name = "poolUuid", referencedColumnName = "uuid"))
+    @Queryable(mappingClass = VtepInventory.class,
+            joinColumn = @JoinColumn(name = "poolUuid"))
     private List<VtepInventory> attachedVtepRefs;
 
-    @Queryable(mappingClass = VxlanNetworkVO.class,
-            joinColumn = @JoinColumn(name = "poolUuid", referencedColumnName = "uuid"))
+    @Queryable(mappingClass = L2VxlanNetworkInventory.class,
+            joinColumn = @JoinColumn(name = "poolUuid"))
     private List<L2VxlanNetworkInventory> attachedVxlanNetworkRefs;
 
-    @Queryable(mappingClass = VniRangeVO.class,
-            joinColumn = @JoinColumn(name = "l2NetworkUuid", referencedColumnName = "uuid"))
+    @Queryable(mappingClass = VniRangeInventory.class,
+            joinColumn = @JoinColumn(name = "l2NetworkUuid"))
     private List<VniRangeInventory> attachedVniRanges;
 
     @NoJsonSchema

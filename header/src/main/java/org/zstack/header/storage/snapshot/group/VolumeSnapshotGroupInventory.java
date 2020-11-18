@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @Inventory(mappingVOClass = VolumeSnapshotGroupVO.class)
 @ExpandedQueries({
         @ExpandedQuery(expandedField = "volumeSnapshotRef", inventoryClass = VolumeSnapshotGroupRefInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "volumeSnapshotGroupUuid"),
+                foreignKey = "uuid", expandedInventoryKey = "volumeSnapshotGroupUuid", hidden = true),
 })
 @ExpandedQueryAliases({
         @ExpandedQueryAlias(alias = "volumeSnapshot", expandedField = "volumeSnapshotRef.volumeSnapshot")

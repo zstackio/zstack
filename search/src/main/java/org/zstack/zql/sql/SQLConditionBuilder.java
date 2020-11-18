@@ -5,6 +5,7 @@ import org.zstack.core.db.EntityMetadata;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.query.Queryable;
+import org.zstack.header.search.Inventory;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.UserTagVO;
 import org.zstack.utils.BeanUtils;
@@ -70,6 +71,10 @@ public class SQLConditionBuilder {
             qf.annotation = f.getAnnotation(Queryable.class);
             qf.field = f;
             qf.inventoryClass = f.getDeclaringClass();
+            if (!qf.annotation.mappingClass().isAnnotationPresent(Inventory.class)) {
+                throw new CloudRuntimeException(String.format("field[%s] is annotated of @Queryable, however it's mapping class[%s] is " +
+                        " not annotated by @Inventory", f.getName(), qf.annotation.mappingClass()));
+            }
             queryableFields.put(String.format("%s.%s", qf.inventoryClass.getName(), f.getName()), qf);
         });
 
