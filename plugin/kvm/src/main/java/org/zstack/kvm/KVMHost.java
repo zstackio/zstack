@@ -3969,11 +3969,12 @@ public class KVMHost extends HostBase implements Host {
     @Override
     protected void updateOsHook(UpdateHostOSMsg msg, Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        self = dbf.reload(self);
         chain.setName(String.format("update-operating-system-for-host-%s", self.getUuid()));
         chain.then(new ShareFlow() {
             // is the host in maintenance already?
-            HostState oldState = self.getState();
-            boolean maintenance = oldState == HostState.Maintenance;
+            final HostState oldState = self.getState();
+            final boolean maintenance = oldState == HostState.Maintenance;
 
             @Override
             public void setup() {
