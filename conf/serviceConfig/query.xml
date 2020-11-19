@@ -9,4 +9,8 @@
     <message>
         <name>org.zstack.query.APIZQLQueryMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.query.APIRefreshSearchIndexesMsg</name>
+    </message>
 </service>

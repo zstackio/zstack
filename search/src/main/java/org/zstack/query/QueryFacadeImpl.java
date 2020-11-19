@@ -2,16 +2,20 @@ package org.zstack.query;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.search.cfg.SearchMapping;
+import org.hibernate.search.jpa.FullTextEntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.SyncTask;
-import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.thread.ThreadGlobalProperty;
+import org.zstack.core.search.SearchGlobalProperty;
+import org.zstack.core.thread.*;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -29,9 +33,11 @@ import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.search.Parent;
 import org.zstack.header.search.SearchConstant;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.stopwatch.StopWatch;
 import org.zstack.zql.ZQL;
 import org.zstack.zql.ZQLContext;
 import org.zstack.zql.ZQLQueryReturn;
@@ -64,6 +70,8 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
     private ErrorFacade errf;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private DatabaseFacade dbf;
 
     public static final String USER_TAG = "__userTag__";
     public static final String SYSTEM_TAG = "__systemTag__";
@@ -168,12 +176,73 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         checkBoxTypeInInventory();
         populateExtensions();
         collectInventoryAPINoSee();
+        refreshSearchIndexes();
         return true;
     }
 
     @Override
     public boolean stop() {
         return true;
+    }
+
+    private void refreshSearchIndexes() {
+        thdf.syncSubmit(new SyncTask<Void>() {
+            @Override
+            public String getName() {
+                return "refresh-search-indexes";
+            }
+
+            @Override
+            public Void call() throws Exception {
+                createSearchIndexes();
+                return null;
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return "refresh-search-indexex";
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return 1;
+            }
+        });
+    }
+
+    @Transactional(readOnly = true)
+    private void createSearchIndexes() {
+        try {
+            if (!Platform.isVIPNode()) {
+                logger.info("current managementNode is not vip node, skip refresh search indexes");
+                return;
+            }
+
+            if (!SearchGlobalProperty.SearchAutoRegister) {
+                logger.info("search module has been disabled, skip refresh search indexes");
+                return;
+            }
+
+            StopWatch watch = Utils.getStopWatch();
+            watch.start();
+            logger.info("start refresh search indexes");
+            FullTextEntityManager textEntityManager = dbf.getFullTextEntityManager();
+            //required typesToIndexInParallel * (threadsToLoadObjects + 1) jdbc connections
+            textEntityManager.createIndexer()
+                    //.typesToIndexInParallel(2), default 1
+                    .batchSizeToLoadObjects(SearchGlobalProperty.massIndexerBatchSizeToLoadObjects)
+                    .threadsToLoadObjects(SearchGlobalProperty.massIndexerThreadsToLoadObjects)
+                    .idFetchSize(150)
+                    .startAndWait();
+            watch.stop();
+            logger.info(String.format("refresh search indexes success, cost %d ms", watch.getLapse()));
+        } catch (Throwable e) {
+            logger.warn("a unhandled exception happened", e);
+        }
+    }
+
+    public void setQueryBuilderType(String queryBuilderType) {
+        this.queryBuilderType = queryBuilderType;
     }
 
     @Override
@@ -205,6 +274,8 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             handle((APIBatchQueryMsg) msg);
         } else if (msg instanceof APIZQLQueryMsg) {
             handle((APIZQLQueryMsg) msg);
+        } else if (msg instanceof APIRefreshSearchIndexesMsg) {
+            handle((APIRefreshSearchIndexesMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -254,6 +325,33 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             @Override
             public int getSyncLevel() {
                 return 3;
+            }
+        });
+    }
+
+    private void handle(APIRefreshSearchIndexesMsg msg) {
+        thdf.syncSubmit(new SyncTask<Void>() {
+            @Override
+            public Void call() throws Exception {
+                APIRefreshSearchIndexesReply reply = new APIRefreshSearchIndexesReply();
+                refreshSearchIndexes();
+                bus.reply(msg, reply);
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return "refresh-search-indexs";
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return 5;
             }
         });
     }

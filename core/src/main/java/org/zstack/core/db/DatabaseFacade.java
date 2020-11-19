@@ -1,5 +1,6 @@
 package org.zstack.core.db;
 
+import org.hibernate.search.jpa.FullTextEntityManager;
 import org.zstack.core.db.TransactionalCallback.Operation;
 import org.zstack.header.message.APIListMessage;
 
@@ -84,4 +85,6 @@ public interface DatabaseFacade {
     String getDbVersion();
 
     void installEntityLifeCycleCallback(Class entityClass, EntityEvent evt, EntityLifeCycleCallback cb);
+
+    FullTextEntityManager getFullTextEntityManager();
 }
