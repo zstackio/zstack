@@ -371,3 +371,5 @@ DELIMITER ;
 
 CALL insertIAM2ProjectRole();
 DROP PROCEDURE IF EXISTS insertIAM2ProjectRole;
+
+ALTER TABLE RolePolicyStatementVO ADD INDEX (`roleUuid`);
