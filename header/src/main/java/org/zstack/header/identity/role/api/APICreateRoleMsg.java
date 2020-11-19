@@ -1,7 +1,6 @@
 package org.zstack.header.identity.role.api;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.identity.PolicyInventory;
 import org.zstack.header.identity.PolicyStatement;
 import org.zstack.header.identity.PolicyVO;
 import org.zstack.header.identity.StatementEffect;

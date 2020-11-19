@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RemoveRolesFromIAM2VirtualIDGroupAction extends AbstractAction {
+public class QueryIAM2ProjectRoleAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RemoveRolesFromIAM2VirtualIDGroupAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.iam2.api.RemoveRolesFromIAM2VirtualIDGroupResult value;
+        public org.zstack.sdk.iam2.api.QueryIAM2ProjectRoleResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,6 @@ public class RemoveRolesFromIAM2VirtualIDGroupAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List roleUuids;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String groupUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String projectUuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -66,8 +34,8 @@ public class RemoveRolesFromIAM2VirtualIDGroupAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.iam2.api.RemoveRolesFromIAM2VirtualIDGroupResult value = res.getResult(org.zstack.sdk.iam2.api.RemoveRolesFromIAM2VirtualIDGroupResult.class);
-        ret.value = value == null ? new org.zstack.sdk.iam2.api.RemoveRolesFromIAM2VirtualIDGroupResult() : value; 
+        org.zstack.sdk.iam2.api.QueryIAM2ProjectRoleResult value = res.getResult(org.zstack.sdk.iam2.api.QueryIAM2ProjectRoleResult.class);
+        ret.value = value == null ? new org.zstack.sdk.iam2.api.QueryIAM2ProjectRoleResult() : value; 
 
         return ret;
     }
@@ -96,10 +64,10 @@ public class RemoveRolesFromIAM2VirtualIDGroupAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
-        info.path = "/iam2/projects/groups/{groupUuid}/roles";
+        info.httpMethod = "GET";
+        info.path = "/iam2/project-roles";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }
