@@ -2604,7 +2604,7 @@ public class KVMHost extends HostBase implements Host {
             cmd.setPredefinedPciBridgeNum(Integer.valueOf(KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.getTokenByResourceUuid(spec.getVmInventory().getUuid(), KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN)));
         }
 
-        if (VmMachineType.q35.toString().equals(machineType)) {
+        if (VmMachineType.q35.toString().equals(machineType) || VmMachineType.virt.toString().equals(machineType)) {
             cmd.setPciePortNums(VmGlobalConfig.PCIE_PORT_NUMS.value(Integer.class));
 
             if (cmd.getPredefinedPciBridgeNum() == null) {
