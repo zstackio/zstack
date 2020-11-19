@@ -1,5 +1,6 @@
 package org.zstack.test.integration.networkservice.provider.virtualrouter.loadbalancer
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.sdk.*
@@ -11,6 +12,7 @@ import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
 
 
 class LoadBalancerServerGroupLifeCycleCase extends SubCase{
@@ -30,8 +32,8 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
 
             instanceOffering {
                 name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
+                memory = SizeUnit.GIGABYTE.toByte(2)
+                cpu = 1
             }
 
             sftpBackupStorage {
@@ -157,6 +159,20 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
                 useL3Networks("l3")
                 useInstanceOffering("instanceOffering")
             }
+
+            vm {
+                name = "vm-3"
+                useImage("image")
+                useL3Networks("l3")
+                useInstanceOffering("instanceOffering")
+            }
+
+            vm {
+                name = "vm-4"
+                useImage("image")
+                useL3Networks("l3")
+                useInstanceOffering("instanceOffering")
+            }
         }
     }
 
@@ -200,49 +216,84 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
 
     void TestServerGroupWithBackendServer(){
         def l3 = env.inventoryByName("l3") as L3NetworkInventory
-        def vm = env.inventoryByName("vm-1") as VmInstanceInventory
+        def lbl1 = env.inventoryByName("listener-22") as LoadBalancerListenerInventory
+
+        VmInstanceInventory vm1 = queryVmInstance {conditions = ["name=vm-1"]} [0]
+        VmNicInventory nic1 = vm1.vmNics.get(0)
+
+        VmInstanceInventory vm2 = queryVmInstance {conditions = ["name=vm-2"]} [0]
+        VmNicInventory nic2 = vm2.vmNics.get(0)
+
+        VmInstanceInventory vm3 = queryVmInstance {conditions = ["name=vm-3"]} [0]
+        VmNicInventory nic3 = vm3.vmNics.get(0)
+
+        VmInstanceInventory vm4 = queryVmInstance {conditions = ["name=vm-4"]} [0]
+        VmNicInventory nic4 = vm4.vmNics.get(0)
 
         /* shared load balancer can not add server group */
         expect(AssertionError.class) {
             addBackendServerToServerGroup {
-                vmNics = [['uuid':vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid,'weight':'20']]
+                vmNics = [['uuid':nic1.uuid,'weight':'20']]
                 servers  = [['ipAddress':"20.20.20.1",'weight':'30']]
                 serverGroupUuid = servergroup1.uuid
             }
         }
         addBackendServerToServerGroup {
-            vmNics = [['uuid':vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid,'weight':'20']]
+            vmNics = [['uuid':nic1.uuid,'weight':'10']]
             serverGroupUuid = servergroup1.uuid
         }
         LoadBalancerServerGroupInventory servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
         assert servergroup.vmNicRefs.size() == 1
-        assert servergroup.vmNicRefs.get(0).vmNicUuid == vm.vmNics.find { nic -> nic.l3NetworkUuid == l3.uuid }.uuid
-        assert servergroup.vmNicRefs[0].weight == 20
+        assert servergroup.vmNicRefs.get(0).vmNicUuid == nic1.uuid
+        assert servergroup.vmNicRefs[0].weight == 10
 
         /* shared load balancer can not change server ip  */
         expect(AssertionError.class) {
             changeLoadBalancerBackendServer {
-                vmNics = [['uuid': vm.vmNics.find { nic -> nic.l3NetworkUuid == l3.uuid }.uuid, 'weight': '40']]
+                vmNics = [['uuid': nic1.uuid, 'weight': '40']]
                 servers = [['ipAddress': "20.20.20.1", 'weight': '50']]
                 serverGroupUuid = servergroup1.uuid
             }
         }
 
         changeLoadBalancerBackendServer {
-            vmNics = [['uuid': vm.vmNics.find { nic -> nic.l3NetworkUuid == l3.uuid }.uuid, 'weight': '40']]
+            vmNics = [['uuid': nic1.uuid, 'weight': '40']]
+            serverGroupUuid = servergroup1.uuid
+        }
+
+        addBackendServerToServerGroup {
+            vmNics = [['uuid':nic2.uuid,'weight':'20'],['uuid':nic3.uuid,'weight':'30'],['uuid':nic4.uuid,'weight':'40']]
+            serverGroupUuid = servergroup1.uuid
+        }
+
+        expect(AssertionError.class) {
+            addBackendServerToServerGroup {
+                vmNics = [['uuid':vm1.uuid,'weight':'20']]
+                serverGroupUuid = servergroup1.uuid
+            }
+        }
+
+        addServerGroupToLoadBalancerListener {
+            listenerUuid = lbl1.uuid
+            serverGroupUuid = servergroup1.uuid
+        }
+
+
+        /* delete server group refresh backend */
+        removeServerGroupFromLoadBalancerListener {
+            listenerUuid = lbl1.uuid
             serverGroupUuid = servergroup1.uuid
         }
 
         servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
-        assert servergroup.vmNicRefs.size() == 1
-        assert servergroup.vmNicRefs[0].weight == 40
+        assert servergroup.vmNicRefs.size() == 4
 
         removeBackendServerFromServerGroup{
-            vmNicUuids = [vm.vmNics.find{ nic -> nic.l3NetworkUuid == l3.uuid }.uuid]
+            vmNicUuids = [nic1.uuid]
             serverGroupUuid = servergroup1.uuid
         }
         servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
-        assert servergroup.vmNicRefs.isEmpty()
+        assert servergroup.vmNicRefs.size() == 3
     }
 
     void TestDeleteLoadBalancerServerGroup(){

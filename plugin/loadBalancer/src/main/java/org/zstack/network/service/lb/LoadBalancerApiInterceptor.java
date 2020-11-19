@@ -808,6 +808,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     throw new ApiMessageInterceptionException(argerr("could not add backend server vmnic to serverGroup[uuid:%s],because vmnic uuid is null",msg.getServerGroupUuid()));
                 }
 
+                boolean isVmNicExist = Q.New(VmNicVO.class)
+                        .eq(VmNicVO_.uuid,vmNic.get("uuid"))
+                        .isExists();
+                if(!isVmNicExist){
+                    throw new ApiMessageInterceptionException(argerr("could not add backend server vmnic[uuid:%s] to serverGroup[uuid:%s],because vmnic uuid is not exist",vmNic.get("uuid"),msg.getServerGroupUuid()));
+                }
+
                 if(vmNic.containsKey("weight") && vmNic.get("weight")!=null){
                     try{
                         Long vmNicWeight = Long.valueOf(vmNic.get("weight"));

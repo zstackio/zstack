@@ -257,7 +257,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         String vip;
         String publicNic;
         List<String> nicIps;
-        Map<String, Long> serverIpWeight = new HashMap<>();
         int instancePort;
         int loadBalancerPort;
         String mode;
@@ -302,14 +301,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         public void setNicIps(List<String> nicIps) {
             this.nicIps = nicIps;
-        }
-
-        public Map<String, Long> getServerIpWeight() {
-            return serverIpWeight;
-        }
-
-        public void setServerIpWeight(Map<String, Long> serverIpWeight) {
-            this.serverIpWeight = serverIpWeight;
         }
 
         public int getInstancePort() {
@@ -470,8 +461,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 if (l.getCertificateRefs() != null && !l.getCertificateRefs().isEmpty()) {
                     to.setCertificateUuid(l.getCertificateRefs().get(0).getCertificateUuid());
                 }
-                Map<String, Long> serverIpWeight = new HashMap<>();
+
                 List<LoadBalancerServerGroupInventory> groupInvs = struct.getListenerServerGroupMap().get(l.getUuid());
+                List<String> params = new ArrayList<>();
+                List<String> ips = new ArrayList<>();
                 if (groupInvs != null) {
                     for (LoadBalancerServerGroupInventory groupInv : groupInvs) {
                         for (LoadBalancerServerGroupVmNicRefInventory nicRef : groupInv.getVmNicRefs()) {
@@ -483,8 +476,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                             if (nic == null) {
                                 throw new CloudRuntimeException(String.format("cannot find nic[uuid:%s]", nicRef.getVmNicUuid()));
                             }
-
-                            serverIpWeight.put(nic.getIp(), nicRef.getWeight());
+                            if(nic.getIp() == null || nic.getIp().isEmpty()){
+                                continue;
+                            }
+                            ips.add(nic.getIp());
+                            params.add(String.format("balancerWeight::%s::%s", nic.getIp(), nicRef.getWeight()));
                         }
 
                         for (LoadBalancerServerGroupServerIpInventory ipRef : groupInv.getServerIps()) {
@@ -492,30 +488,31 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                 continue;
                             }
 
-                            serverIpWeight.put(ipRef.getIpAddress(), ipRef.getWeight());
+                            if(ipRef.getIpAddress() == null || ipRef.getIpAddress().isEmpty()){
+                                continue;
+                            }
+                            ips.add(ipRef.getIpAddress());
+                            params.add(String.format("balancerWeight::%s::%s",ipRef.getIpAddress(), ipRef.getWeight()));
                         }
                     }
                 }
-                to.setServerIpWeight(serverIpWeight);
-                to.setNicIps(new ArrayList<>(serverIpWeight.keySet()));
+                to.setNicIps(ips);
                 to.setPublicNic(publicMac);
-                to.setParameters(CollectionUtils.transformToList(struct.getTags().get(l.getUuid()), new Function<String, String>() {
+                params.addAll(CollectionUtils.transformToList(struct.getTags().get(l.getUuid()), new Function<String, String>() {
                     // vnicUuid::weight
                     @Override
                     public String call(String arg) {
                         if(LoadBalancerSystemTags.BALANCER_WEIGHT.isMatch(arg)) {
-                            Map<String, String> token = TagUtils.parse(LoadBalancerSystemTags.BALANCER_WEIGHT.getTagFormat(), arg);
-                            String nicUuid = token.get(LoadBalancerSystemTags.BALANCER_NIC_TOKEN);
-                            VmNicInventory nic = struct.getVmNics().get(nicUuid);
-                            if (nic == null || !to.getNicIps().contains(nic.getIp())) {
-                                return null;
-                            }
-                            arg = arg.replace(nicUuid, nic.getIp());
+                            /*
+                                4.0 lb server ip weight configuration from nicRefVO and serverIpVO,not systemTag
+                             */
+                            return null;
                         }
                         return arg;
                     }
                 }));
-                to.getParameters().addAll(makeAcl(l));
+                params.addAll(makeAcl(l));
+                to.setParameters(params);
                 return to;
             }
         });
