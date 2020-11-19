@@ -182,6 +182,12 @@ class LdapBasicCase extends SubCase {
             assert 1 == map.get("values").size()
             assert cn == map.get("values").get(0)
         }
+
+        result = getLdapEntry {
+            ldapFilter = "(objectClass=person)"
+            ldapServerUuid = LdapUuid
+        }
+        assert 3 == result.size()
     }
 
     void testGetCandidateLdapEntryForBinding(){

@@ -75,13 +75,7 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
         inv.setUsername(msg.getUsername());
         inv.setPassword(msg.getPassword());
         inv.setEncryption(msg.getEncryption());
-
-        ErrorCode errorCode = testAddLdapServerConnection(inv);
-        if (errorCode != null) {
-            throw new ApiMessageInterceptionException(
-                    err(LdapErrors.TEST_LDAP_CONNECTION_FAILED,
-                            errorCode.getDetails()));
-        }
+        validate(inv);
 
         validateLdapType(msg.getSystemTags());
     }
@@ -96,6 +90,23 @@ public class LdapApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIGetLdapEntryMsg msg){
         validateLdapServerExist();
+
+        if (msg.getLdapServerUuid() != null) {
+            LdapServerVO ldapServerVO = Q.New(LdapServerVO.class)
+                    .eq(LdapServerVO_.uuid, msg.getLdapServerUuid())
+                    .find();
+            LdapServerInventory inv = LdapServerInventory.valueOf(ldapServerVO);
+            validate(inv);
+        }
+    }
+
+    private void validate(LdapServerInventory inv) {
+        ErrorCode errorCode = testAddLdapServerConnection(inv);
+        if (errorCode != null) {
+            throw new ApiMessageInterceptionException(
+                    err(LdapErrors.TEST_LDAP_CONNECTION_FAILED,
+                            errorCode.getDetails()));
+        }
     }
 
     private void validate(APIGetCandidateLdapEntryForBindingMsg msg){

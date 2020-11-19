@@ -342,7 +342,12 @@ public class LdapManagerImpl extends AbstractService implements LdapManager {
     private void handle(APIGetLdapEntryMsg msg) {
         APIGetLdapEntryReply reply = new APIGetLdapEntryReply();
 
-        List<Object> result = ldapUtil.searchLdapEntry(msg.getLdapFilter(), msg.getLimit(), null);
+        List<Object> result;
+        if (msg.getLdapServerUuid() != null) {
+            result = ldapUtil.searchLdapEntry(msg.getLdapServerUuid(), msg.getLdapFilter(), msg.getLimit(), null);
+        } else {
+            result = ldapUtil.searchLdapEntry(msg.getLdapFilter(), msg.getLimit(), null);
+        }
         reply.setInventories(result);
 
         bus.reply(msg, reply);

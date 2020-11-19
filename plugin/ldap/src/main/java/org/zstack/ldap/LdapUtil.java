@@ -415,7 +415,12 @@ public class LdapUtil {
     }
 
     public List<Object> searchLdapEntry(String filter, Integer count, String[] returningAttributes, ResultFilter resultFilter, boolean searchAllAttributes) {
-        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
+        LdapServerVO ldapServerVO = getLdapServer();
+        return searchLdapEntry(ldapServerVO.getUuid(), filter, count, returningAttributes, resultFilter, searchAllAttributes);
+    }
+
+    public List<Object> searchLdapEntry(String ldapSeverUuid, String filter, Integer count, String[] returningAttributes, ResultFilter resultFilter, boolean searchAllAttributes) {
+        LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration(ldapSeverUuid);
         LdapTemplate ldapTemplate = ldapTemplateContextSource.getLdapTemplate();
         ldapTemplate.setContextSource(new SingleContextSource(ldapTemplateContextSource.getLdapContextSource().getReadOnlyContext()));
 
@@ -469,6 +474,10 @@ public class LdapUtil {
         return searchLdapEntry(filter, count, null,resultFilter, false);
     }
 
+    public List<Object> searchLdapEntry(String ldapServerUuid, String filter, Integer count, ResultFilter resultFilter){
+        return searchLdapEntry(ldapServerUuid, filter, count, null,resultFilter, false);
+    }
+
     private String[] getReturningAttributes() {
         Set<String> returnedAttSet = new HashSet<>();
 
@@ -490,6 +499,14 @@ public class LdapUtil {
 
     public LdapTemplateContextSource readLdapServerConfiguration() {
         LdapServerVO ldapServerVO = getLdapServer();
+        LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
+        return loadLdap(ldapServerInventory);
+    }
+
+    public LdapTemplateContextSource readLdapServerConfiguration(String ldapServerUuid) {
+        LdapServerVO ldapServerVO = Q.New(LdapServerVO.class)
+                .eq(LdapServerVO_.uuid, ldapServerUuid)
+                .find();
         LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
         return loadLdap(ldapServerInventory);
     }
