@@ -28,6 +28,14 @@ public class LoadBalancerInventory  {
         return this.description;
     }
 
+    public java.lang.String serverGroupUuid;
+    public void setServerGroupUuid(java.lang.String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
+    }
+    public java.lang.String getServerGroupUuid() {
+        return this.serverGroupUuid;
+    }
+
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;

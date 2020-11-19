@@ -203,6 +203,7 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
             name = "lb-group-2"
         }
         assert servergroup2.name == "lb-group-2"
+
     }
 
     void TestUpdateLoadBalancerServerGroup(){
@@ -299,6 +300,14 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
     void TestDeleteLoadBalancerServerGroup(){
         deleteLoadBalancerServerGroup{
             uuid = servergroup1.uuid
+        }
+
+        def lb = env.inventoryByName("lb") as LoadBalancerInventory
+
+        expect(AssertionError.class) {
+            deleteLoadBalancerServerGroup {
+                uuid = lb.serverGroupUuid
+            }
         }
     }
 

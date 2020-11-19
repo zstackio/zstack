@@ -29,6 +29,7 @@ public class LoadBalancerInventory implements Serializable {
     private String name;
     private String uuid;
     private String description;
+    private String serverGroupUuid;
     private String state;
     private String type;
     private String vipUuid;
@@ -42,6 +43,7 @@ public class LoadBalancerInventory implements Serializable {
         this.setDescription(vo.getDescription());
         this.setState(vo.getState().toString());
         this.setVipUuid(vo.getVipUuid());
+        this.setServerGroupUuid(vo.getServerGroupUuid());
         this.setType(vo.getType().toString());
         this.setCreateDate(vo.getCreateDate());
         this.setLastOpDate(vo.getLastOpDate());
@@ -134,5 +136,13 @@ public class LoadBalancerInventory implements Serializable {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
+    }
+
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
     }
 }
