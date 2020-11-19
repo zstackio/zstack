@@ -952,7 +952,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     }
 
 
-    private void upgradeLoadBalancerServerGroup() {
+    @Override
+    public void upgradeLoadBalancerServerGroup() {
         if (!LoadBalancerGlobalProperty.UPGRADE_LB_SERVER_GROUP) {
             return;
         }
@@ -980,7 +981,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             groupVO.setUuid(Platform.getUuid());
             groupVO.setAccountUuid(Account.getAccountUuidOfResource(vo.getUuid()));
             groupVO.setDescription(String.format("default server group for load balancer listener %s", vo.getName()));
-            groupVO.setLoadBalancerUuid(vo.getUuid());
+            groupVO.setLoadBalancerUuid(vo.getLoadBalancerUuid());
             groupVO.setName(String.format("default-server-group-%s", vo.getName()));
             dbf.persist(groupVO);
 
