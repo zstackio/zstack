@@ -65,6 +65,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
+import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -88,6 +89,8 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionDSL.map;
+import static org.zstack.utils.CollectionDSL.e;
 
 public class VmInstanceManagerImpl extends AbstractService implements
         VmInstanceManager,
@@ -921,6 +924,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     ImageVO.class.getSimpleName(),
                     vo.getUuid(),
                     VmInstanceVO.class.getSimpleName(), false);
+
+            String architecture = dbf.findByUuid(msg.getImageUuid(), ImageVO.class).getArchitecture();
+            if (ImageArchitecture.aarch64.toString().equals(architecture)) {
+                SystemTagCreator creator = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(vo.getUuid());
+                creator.setTagByTokens(map(e(VmSystemTags.MACHINE_TYPE_TOKEN, VmMachineType.virt.toString())));
+                creator.recreate = true;
+                creator.create();
+            }
         }
 
         if (cmsg != null && cmsg.getSystemTags() != null && !cmsg.getSystemTags().isEmpty()) {
@@ -1777,10 +1788,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
 
                 String type = VmSystemTags.MACHINE_TYPE.getTokenByTag(systemTag, VmSystemTags.MACHINE_TYPE_TOKEN);
-                if (!"q35".equals(type) && !"pc".equals(type)) {
-                    throw new ApiMessageInterceptionException(argerr(
-                            "vm machine type requires [q35, pc], but get [%s]", type)
-                    );
+                if (VmMachineType.get(type) == null) {
+                    throw new ApiMessageInterceptionException(argerr("vm machine type requires [q35, pc, virt], but get [%s]", type));
                 }
             }
         }
