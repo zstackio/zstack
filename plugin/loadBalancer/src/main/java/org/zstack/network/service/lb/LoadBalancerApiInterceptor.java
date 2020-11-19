@@ -982,20 +982,18 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     private void validate(APIAddServerGroupToLoadBalancerListenerMsg msg){
         List<LoadBalancerListenerServerGroupRefVO> existingRefs
                 = Q.New(LoadBalancerListenerServerGroupRefVO.class)
-                    .eq(LoadBalancerListenerServerGroupRefVO_.loadBalancerServerGroupUuid,msg.getLoadBalancerUuid())
-                    .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid,msg.getlistenerUuid())
+                    .eq(LoadBalancerListenerServerGroupRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                    .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getlistenerUuid())
                     .list();
         if(existingRefs != null && !existingRefs.isEmpty()){
-            throw new ApiMessageInterceptionException(operr("server group[uuid:%s} are added to listener [uuid:%s]",msg.getServerGroupUuid(),msg.getlistenerUuid()));
+            throw new ApiMessageInterceptionException(operr("could not add server group[uuid:%s} to listener [uuid:%s] because it is already added ",
+                    msg.getServerGroupUuid(),msg.getlistenerUuid()));
         }
 
         String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
                 .select(LoadBalancerServerGroupVO_.loadBalancerUuid)
                 .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
                 .findValue();
-        if (loadBalancerUuid == null ) {
-            throw new ApiMessageInterceptionException(argerr("loadbalacerServerGroup [%s] is non-existent", msg.getServerGroupUuid()));
-        }
         msg.setLoadBalancerUuid(loadBalancerUuid);
     }
 
@@ -1006,7 +1004,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid())
                 .list();
         if(existingRefs == null || existingRefs.isEmpty()){
-            throw new ApiMessageInterceptionException(operr("server group[uuid:%s} are not in to listener [uuid:%s]",msg.getServerGroupUuid(),msg.getListenerUuid()));
+            throw new ApiMessageInterceptionException(operr("could not remove server group[uuid:%s} from listener [uuid:%s] because it is not added",msg.getServerGroupUuid(),msg.getListenerUuid()));
         }
 
         String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
