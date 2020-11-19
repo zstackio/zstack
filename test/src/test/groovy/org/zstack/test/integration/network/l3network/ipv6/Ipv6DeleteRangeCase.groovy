@@ -45,7 +45,7 @@ class Ipv6DeleteRangeCase extends SubCase {
         L2NetworkInventory l2 = env.inventoryByName("l2")
 
         L3NetworkInventory l3_ipv4 = createL3Network {
-            category = "Private"
+            category = "Public"
             l2NetworkUuid = l2.uuid
             name = "ipv4"
         }
@@ -58,6 +58,31 @@ class Ipv6DeleteRangeCase extends SubCase {
             gateway = "192.168.1.1"
             netmask = "255.255.255.0"
         }
+
+        IpRangeInventory addressPool = addIpRange {
+            name = "address-pool"
+            l3NetworkUuid = l3_ipv4.uuid
+            startIp = "192.168.201.20"
+            endIp = "192.168.201.50"
+            netmask = "255.255.255.0"
+            ipRangeType = org.zstack.header.network.l3.IpRangeType.AddressPool.toString()
+        }
+        IpRangeInventory range6 = addIpv6Range {
+            name = "ipr-6-1"
+            l3NetworkUuid = l3_ipv4.uuid
+            startIp = "2020:09:17::0060"
+            endIp = "2020:09:17::00e0"
+            gateway = "2020:09:17::2"
+            prefixLen = 64
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+        deleteIpRange {
+            uuid = range6.uuid
+        }
+        deleteIpRange {
+            uuid = addressPool.uuid
+        }
+
         IpRangeInventory ip42 = addIpRange {
             name = "ipr-4-2"
             l3NetworkUuid = l3_ipv4.getUuid()
