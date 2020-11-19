@@ -124,6 +124,8 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
             return Boolean.valueOf(context.getText());
         } else if (context.INT() != null) {
             return Long.valueOf(context.getText());
+        } else if (context.FLOAT() != null) {
+            return Double.valueOf(context.getText());
         } else {
             return formatValue(context.getText());
         }
@@ -187,7 +189,13 @@ public class ValueVisitor extends ZQLBaseVisitor<ASTNode.Value> {
         try {
             Field f = o.getClass().getDeclaredField(key);
             f.setAccessible(true);
-            f.set(o, value);
+            if (f.getType().getSimpleName().equals("Integer") && value instanceof Long) {
+                f.set(o, ((Long)value).intValue());
+            } else if (f.getType().getSimpleName().equals("Long") && value instanceof Integer) {
+                f.set(o, ((Integer)value).longValue());
+            } else {
+                f.set(o, value);
+            }
         } catch (Exception e) {
             throw new OperationFailureException(operr(e.getMessage()));
         }
