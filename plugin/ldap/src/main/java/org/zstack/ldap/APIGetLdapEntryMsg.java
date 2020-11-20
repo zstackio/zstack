@@ -21,6 +21,9 @@ public class APIGetLdapEntryMsg extends APISyncCallMessage {
     @APIParam(required = false, numberRange = {1, Integer.MAX_VALUE})
     private Integer limit = 2500;
 
+    @APIParam(resourceType = LdapServerVO.class, required = false)
+    private String ldapServerUuid;
+
     public String getLdapFilter() {
         return ldapFilter;
     }
@@ -40,8 +43,14 @@ public class APIGetLdapEntryMsg extends APISyncCallMessage {
     public static APIGetLdapEntryMsg __example__() {
         APIGetLdapEntryMsg msg = new APIGetLdapEntryMsg();
         msg.setLdapFilter("(cn=user_xxx)");
-
         return msg;
     }
 
+    public String getLdapServerUuid() {
+        return ldapServerUuid;
+    }
+
+    public void setLdapServerUuid(String ldapServerUuid) {
+        this.ldapServerUuid = ldapServerUuid;
+    }
 }

@@ -31,6 +31,9 @@ public class GetLdapEntryAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
     public java.lang.Integer limit = 2500;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String ldapServerUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 
