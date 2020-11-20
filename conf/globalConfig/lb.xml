@@ -57,14 +57,6 @@
 
     <config>
         <category>loadBalancer</category>
-        <name>processNumber</name>
-        <description>The number of processes for load balancer.</description>
-        <defaultValue>6</defaultValue>
-        <type>java.lang.Long</type>
-    </config>
-
-    <config>
-        <category>loadBalancer</category>
         <name>balancerAlgorithm</name>
         <description>The algorithm used to select a server when doing load balancing. Options are roundrobin, weightroundrobin, leastconn and source</description>
         <defaultValue>roundrobin</defaultValue>
