@@ -135,6 +135,10 @@ public class CloudBusJMX implements Component, BeforeSendMessageInterceptor,
             return;
         }
 
+        if (!(msg instanceof APIMessage)) {
+            return;
+        }
+
         Bundle bundle = new Bundle();
         bundle.startTime = System.currentTimeMillis();
         bundle.msg = msg;
