@@ -1,4 +1,4 @@
-package org.zstack.query;
+package org.zstack.search;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APISyncCallMessage;

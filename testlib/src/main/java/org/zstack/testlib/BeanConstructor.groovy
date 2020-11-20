@@ -19,6 +19,7 @@ class BeanConstructor {
             "ProgressBar.xml",
             "RESTFacade.xml",
             "QueryFacade.xml",
+            "SearchFacade.xml",
             "ansibleFacade.xml",
             "CascadeFacade.xml",
             "tag.xml",
