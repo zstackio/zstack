@@ -18,6 +18,7 @@ import org.zstack.utils.Utils
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.stopwatch.StopWatch
 
+import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -187,7 +188,9 @@ class CreateVmConcurrentlyCase extends SubCase {
     void test() {
         env.create {
             def flatl3 = env.inventoryByName("l3") as L3NetworkInventory
+            def vrl3 = env.inventoryByName("l3-vr") as L3NetworkInventory
             def host = env.inventoryByName("host1") as HostInventory
+            def l3uuid = System.getProperty("useVR") == null ? flatl3.uuid : vrl3.uuid
 
             def startCreateHosts = System.currentTimeMillis()
             String newHosts = System.getProperty("newHosts")
@@ -199,6 +202,7 @@ class CreateVmConcurrentlyCase extends SubCase {
             logger.debug(String.format("create ${num} Hosts spends: %s ms", System.currentTimeMillis() - startCreateHosts))
 
             StopWatch sw = Utils.getStopWatch()
+            List<String> vmUuids
             int n = 50
             try {
                 String numberOfVM = System.getProperty("numberOfVM")
@@ -207,14 +211,15 @@ class CreateVmConcurrentlyCase extends SubCase {
                 }
 
                 sw.start()
-                testCreateVMConcurrently(n, flatl3.uuid)
+                vmUuids = testCreateVMConcurrently(n, l3uuid)
             } finally {
                 sw.stop()
                 logger.info(String.format("XXX: Creating %d VMs costs %d seconds", n, sw.getLapse(TimeUnit.SECONDS)))
             }
 
-            //def vrl3 = env.inventoryByName("l3-vr") as L3NetworkInventory
-            //testCreateVMConcurrently(300, vrl3.uuid)
+            if (System.getProperty("testStartVM") != null && vmUuids != null) {
+                testStartVM(vmUuids)
+            }
 
             testCreateVMWithQuota()
         }
@@ -424,11 +429,11 @@ class CreateVmConcurrentlyCase extends SubCase {
     // This case is for ZSTAC-8576
     // PR system will met API timeout (api timeout is 25s)
     // Can be execute separately if needed
-    void testCreateVMConcurrently(int numberOfVM, String l3Uuid) {
+    List<String> testCreateVMConcurrently(int numberOfVM, String l3Uuid) {
         def instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
         def image = env.inventoryByName("image") as ImageInventory
 
-        def list = []
+        def vmUuids = new ConcurrentSkipListSet()
         def existingVM = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.state, VmInstanceState.Running).count()
         def count = new AtomicInteger(0)
 
@@ -447,7 +452,7 @@ class CreateVmConcurrentlyCase extends SubCase {
                     count.incrementAndGet()
                     if (ret.error == null) {
                         def uuid = ret.value.inventory.uuid
-                        list.add(uuid)
+                        vmUuids.add(uuid)
                         assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, uuid).eq(VmInstanceVO_.state, VmInstanceState.Running).isExists()
                     }
                 }
@@ -460,5 +465,64 @@ class CreateVmConcurrentlyCase extends SubCase {
 
         logger.info("XXX: created $numberOfVM VMs ...")
         assert Q.New(VmInstanceVO.class).eq(VmInstanceVO_.type, "UserVm").eq(VmInstanceVO_.state, VmInstanceState.Running).count() == existingVM + numberOfVM
+
+        return vmUuids.toList()
+    }
+
+    void testStartVM(List<String> vmUuids) {
+        def count = new AtomicInteger(0)
+        def numberOfVM = vmUuids.size()
+        logger.info("XXX: stopping $numberOfVM VMs ...")
+        for (String vmUuid: vmUuids) {
+            new StopVmInstanceAction(
+                    uuid: vmUuid,
+                    sessionId: adminSession(),
+            ).call(new Completion<StopVmInstanceAction.Result>() {
+                @Override
+                void complete(StopVmInstanceAction.Result ret) {
+                    count.incrementAndGet()
+                }
+            })
+        }
+
+        while (count.get() < numberOfVM) {
+            TimeUnit.SECONDS.sleep(1)
+        }
+
+        assert Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.type, "UserVm")
+                .eq(VmInstanceVO_.state, VmInstanceState.Stopped)
+                .in(VmInstanceVO_.uuid, vmUuids)
+                .count().intValue() == vmUuids.size()
+        logger.info("XXX: stopped $numberOfVM VMs ...")
+        logger.info("XXX: starting $numberOfVM VMs ...")
+        count.set(0)
+
+        StopWatch sw = Utils.getStopWatch()
+        sw.start()
+        for (String vmUuid: vmUuids) {
+            new StartVmInstanceAction(
+                    uuid: vmUuid,
+                    sessionId: adminSession(),
+            ).call(new Completion<StartVmInstanceAction.Result>() {
+                @Override
+                void complete(StartVmInstanceAction.Result ret) {
+                    count.incrementAndGet()
+                }
+            })
+        }
+
+        while (count.get() < numberOfVM) {
+            TimeUnit.SECONDS.sleep(1)
+        }
+        sw.stop()
+
+        assert Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.type, "UserVm")
+                .eq(VmInstanceVO_.state, VmInstanceState.Running)
+                .in(VmInstanceVO_.uuid, vmUuids)
+                .count().intValue() == vmUuids.size()
+        logger.info("XXX: started $numberOfVM VMs ...")
+        logger.info(String.format("XXX: Start $numberOfVM VMs costs %d seconds", sw.getLapse(TimeUnit.SECONDS)))
     }
 }
