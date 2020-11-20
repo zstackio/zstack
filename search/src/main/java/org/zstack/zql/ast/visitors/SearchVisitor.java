@@ -68,6 +68,7 @@ public class SearchVisitor implements ASTVisitor<SearchResult, ASTNode.Search> {
                 }
                 Class entityClass = Class.forName(index.getName());
                 List<String> props = index.getProp().stream().map(IndexType.Prop::getName).collect(Collectors.toList());
+                props.add(DocumentId);
                 String[] fieldArray = props.toArray(new String[0]);
                 indexFieldsMap.put(entityClass, fieldArray);
             }
