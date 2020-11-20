@@ -1,4 +1,4 @@
-package org.zstack.query;
+package org.zstack.search;
 
 import org.zstack.header.message.APIReply;
 import org.zstack.header.rest.RestResponse;

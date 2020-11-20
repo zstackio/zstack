@@ -3,7 +3,6 @@ package org.zstack.zql.ast.visitors;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.lucene.search.Query;
-import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.jpa.FullTextEntityManager;
 import org.hibernate.search.jpa.FullTextQuery;
 import org.hibernate.search.query.dsl.EntityContext;
@@ -13,17 +12,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DBGraph;
-import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.StaticInit;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.search.SearchConstant;
 import org.zstack.header.zql.ASTNode;
 import org.zstack.header.zql.ASTVisitor;
+import org.zstack.search.SearchFacade;
 import org.zstack.search.schema.IndexType;
 import org.zstack.search.schema.Indexes;
-import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
@@ -34,7 +31,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -47,7 +43,7 @@ public class SearchVisitor implements ASTVisitor<SearchResult, ASTNode.Search> {
     private static final CLogger logger = Utils.getLogger(SearchVisitor.class);
 
     @Autowired
-    DatabaseFacade dbf;
+    SearchFacade sf;
 
     private static Map<Class, String[]> indexFieldsMap = Maps.newConcurrentMap();
     private static Set<Class> indexedEntities;
@@ -85,7 +81,7 @@ public class SearchVisitor implements ASTVisitor<SearchResult, ASTNode.Search> {
     @Transactional(readOnly = true)
     public SearchResult visit(ASTNode.Search node) {
         String keyword = node.getKeyword().getValue().replaceAll("^'|'$", "");
-        FullTextEntityManager manager = dbf.getFullTextEntityManager();
+        FullTextEntityManager manager = sf.getFullTextEntityManager();
         Set<Class> indexs;
         if (node.getIndex() == null) {
             indexs = indexedEntities;
