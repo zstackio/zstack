@@ -969,8 +969,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             return;
         }
 
-        VmNicInventory nic = nics.get(0);
-        final L3NetworkInventory l3 = L3NetworkInventory.valueOf(dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class));
+        L3NetworkInventory nicL3 = null;
+        if (!nics.isEmpty()) {
+            nicL3 = L3NetworkInventory.valueOf(dbf.findByUuid(nics.get(0).getL3NetworkUuid(), L3NetworkVO.class));
+        }
+        final L3NetworkInventory l3 = nicL3;
         final VipInventory vip = VipInventory.valueOf(dbf.findByUuid(struct.getLb().getVipUuid(), VipVO.class));
         List<String> useFor = Q.New(VipNetworkServicesRefVO.class).select(VipNetworkServicesRefVO_.serviceType).eq(VipNetworkServicesRefVO_.vipUuid, struct.getLb().getVipUuid()).listValues();
         VipUseForList useForList = new VipUseForList(useFor);
@@ -992,11 +995,15 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             public void setup() {
                 if (separateVr) {
                     flow(new Flow() {
-                             String __name__ = "lock-vip";
-                        /*
-                        now the vip support multi services and it doesn't need to lock vip
-                         that will be locked by itself in vip module via to VipNetworkServicesRefVO
-                        * */
+                        String __name__ = "lock-vip";
+
+                        @Override
+                        public boolean skip(Map data) {
+                            return nics.isEmpty();
+                        }
+
+                        /* now the vip support multi services and it doesn't need to lock vip that will be locked
+                           by itself in vip module via to VipNetworkServicesRefVO * */
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
                             ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
@@ -1162,13 +1169,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            VirtualRouterStruct s = new VirtualRouterStruct();
-                            s.setL3Network(l3);
-                            /*flat network*/
-                            if (l3.getNetworkServiceTypes().contains(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE)) {
-                                s.setNotGatewayForGuestL3Network(true);
-                            }
-
+                            VirtualRouterStruct s = new VirtualRouterStruct(l3);
+                            s.setLoadBalancerUuid(struct.getLb().getUuid());
                             acquireVirtualRouterVm(s, new ReturnValueCompletion<VirtualRouterVmInventory>(trigger) {
                                 @Override
                                 public void success(VirtualRouterVmInventory returnValue) {
@@ -1188,6 +1190,11 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     flow(new Flow() {
                         String __name__ = "acquire-vip";
                         boolean success = false;
+
+                        @Override
+                        public boolean skip(Map data) {
+                            return nics.isEmpty();
+                        }
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {

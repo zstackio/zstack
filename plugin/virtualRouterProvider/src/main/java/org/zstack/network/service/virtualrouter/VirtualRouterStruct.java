@@ -23,6 +23,19 @@ public class VirtualRouterStruct {
     private String applianceVmType = VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE;
     private int applianceVmAgentPort = ApplianceVmGlobalProperty.AGENT_PORT;
 
+    public VirtualRouterStruct() {
+    }
+
+    public VirtualRouterStruct(L3NetworkInventory l3) {
+        this.l3Network = l3;
+        if (l3 != null) {
+            /*flat network*/
+            if (l3.getNetworkServiceTypes().contains(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE)) {
+                this.setNotGatewayForGuestL3Network(true);
+            }
+        }
+    }
+
     public int getApplianceVmAgentPort() {
         return applianceVmAgentPort;
     }
