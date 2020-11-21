@@ -4,7 +4,6 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.appliancevm.ApplianceVmInventory;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -521,12 +520,16 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     private List<String> getCertificates(List<LoadBalancerStruct> structs) {
         List<String> certificateUuids = new ArrayList<>();
         for (LoadBalancerStruct struct : structs) {
-            for (LoadBalancerListenerInventory listenerInventory : struct.getListeners()) {
-                if (listenerInventory.getCertificateRefs() == null || listenerInventory.getCertificateRefs().isEmpty()) {
+            for (LoadBalancerListenerInventory listenerInv : struct.getListeners()) {
+                if (listenerInv.getCertificateRefs() == null || listenerInv.getCertificateRefs().isEmpty()) {
                     continue;
                 }
 
-                List<LoadBalancerServerGroupInventory> serverGroups = struct.getListenerServerGroupMap().get(listenerInventory.getUuid());
+                List<LoadBalancerServerGroupInventory> serverGroups = struct.getListenerServerGroupMap().get(listenerInv.getUuid());
+                if (serverGroups == null) {
+                    continue;
+                }
+
                 List<String> nics = new ArrayList<>();
                 List<String> serverIps = new ArrayList<>();
                 for (LoadBalancerServerGroupInventory group : serverGroups) {
@@ -537,8 +540,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     continue;
                 }
 
-                if (!certificateUuids.contains(listenerInventory.getCertificateRefs().get(0).getCertificateUuid())) {
-                    certificateUuids.add(listenerInventory.getCertificateRefs().get(0).getCertificateUuid());
+                if (!certificateUuids.contains(listenerInv.getCertificateRefs().get(0).getCertificateUuid())) {
+                    certificateUuids.add(listenerInv.getCertificateRefs().get(0).getCertificateUuid());
                 }
             }
         }
