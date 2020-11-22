@@ -107,6 +107,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MonitorGroupInstanceVO` (
   `groupUuid` varchar(32) NOT NULL,
   `instanceResourceType` varchar(128) NOT NULL,
   `instanceUuid` varchar(32) NOT NULL,
+  `status` varchar(64) NOT NULL,
   `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (`uuid`),

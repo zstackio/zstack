@@ -1,6 +1,6 @@
 package org.zstack.sdk.zwatch.monitorgroup.entity;
 
-
+import org.zstack.sdk.zwatch.alarm.AlarmStatus;
 
 public class MonitorGroupInstanceInventory  {
 
@@ -26,6 +26,14 @@ public class MonitorGroupInstanceInventory  {
     }
     public java.lang.String getInstanceUuid() {
         return this.instanceUuid;
+    }
+
+    public AlarmStatus status;
+    public void setStatus(AlarmStatus status) {
+        this.status = status;
+    }
+    public AlarmStatus getStatus() {
+        return this.status;
     }
 
     public java.sql.Timestamp createDate;
