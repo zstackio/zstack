@@ -87,7 +87,7 @@ doc {
 					desc "镜像的格式，比如：raw"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "0.6"
 					
 				}
@@ -145,6 +145,26 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "architecture"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "4.0"
+					values ("x86_64","aarch64","mips64el")
+				}
+				column {
+					name "tagUuids"
+					enclosedIn "params"
+					desc "标签UUID列表"
 					location "body"
 					type "List"
 					optional true
