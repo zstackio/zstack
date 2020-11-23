@@ -78,7 +78,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private Map<L2NetworkType, KVMCompleteNicInformationExtensionPoint> completeNicInfoExtensions = new HashMap<>();
     private int maxDataVolumeNum;
 
-    static final Map<SocketChannel, Long> socketTimeoutMap = new ConcurrentHashMap<>();
+    private final Map<SocketChannel, Long> socketTimeoutMap = new ConcurrentHashMap<>();
 
     static {
         RAW_FORMAT.newFormatInputOutputMapping(hypervisorType, QCOW2_FORMAT.toString());
@@ -495,6 +495,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         int return_code = client.read(buffer);
         if (return_code != -1) {
             socketTimeoutMap.put(client, timeHelper.getCurrentTimeMillis());
+            buffer.clear();
             return;
         }
 
