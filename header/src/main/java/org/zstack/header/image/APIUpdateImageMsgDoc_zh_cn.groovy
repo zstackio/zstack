@@ -121,6 +121,16 @@ doc {
 					since "0.6"
 					
 				}
+				column {
+					name "architecture"
+					enclosedIn "updateImage"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "4.0"
+					values ("x86_64","aarch64","mips64el")
+				}
 			}
         }
 

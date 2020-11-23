@@ -30,6 +30,7 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private boolean fullAllocate = true;
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
+    private String architecture;
 
     public AllocationScene getAllocationScene() {
         return allocationScene;
@@ -191,5 +192,13 @@ public class AllocateHostMsg extends NeedReplyMessage {
 
     public void setOldMemoryCapacity(long oldMemoryCapacity) {
         this.oldMemoryCapacity = oldMemoryCapacity;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 }

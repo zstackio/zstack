@@ -36,6 +36,7 @@ public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateM
     private List<String> backupStorageUuids;
     @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
     private String platform;
+    private String architecture;
     private boolean system;
 
     public boolean isSystem() {
@@ -80,6 +81,14 @@ public class APICreateRootVolumeTemplateFromVolumeSnapshotMsg extends APICreateM
 
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 
     public List<String> getBackupStorageUuids() {

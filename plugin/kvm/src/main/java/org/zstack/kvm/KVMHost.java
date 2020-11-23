@@ -30,6 +30,8 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
@@ -2535,6 +2537,8 @@ public class KVMHost extends HostBase implements Host {
             checkPlatformWithOther(spec);
         }
 
+        String architecture = dbf.findByUuid(spec.getDestHost().getClusterUuid(), ClusterVO.class).getArchitecture();
+
         if (ImagePlatform.Windows.toString().equals(platform)) {
             virtio = VmSystemTags.WINDOWS_VOLUME_ON_VIRTIO.hasTag(spec.getVmInventory().getUuid());
         } else {
@@ -2563,6 +2567,7 @@ public class KVMHost extends HostBase implements Host {
             cpuOnSocket = cpuNum;
         }
         cmd.setImagePlatform(platform);
+        cmd.setImageArchitecture(architecture);
         cmd.setSocketNum(socket);
         cmd.setCpuOnSocket(cpuOnSocket);
         cmd.setVmName(spec.getVmInventory().getName());
@@ -2598,7 +2603,7 @@ public class KVMHost extends HostBase implements Host {
             cmd.setPredefinedPciBridgeNum(Integer.valueOf(KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.getTokenByResourceUuid(spec.getVmInventory().getUuid(), KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN)));
         }
 
-        if (VmMachineType.q35.toString().equals(machineType)) {
+        if (VmMachineType.q35.toString().equals(machineType) || VmMachineType.virt.toString().equals(machineType)) {
             cmd.setPciePortNums(VmGlobalConfig.PCIE_PORT_NUMS.value(Integer.class));
 
             if (cmd.getPredefinedPciBridgeNum() == null) {
@@ -3459,6 +3464,32 @@ public class KVMHost extends HostBase implements Host {
                                 throw new OperationFailureException(operr("the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
                                                 " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), restf.getHostName(),
                                         ret.getStderr(), ret.getExitErrorMessage()));
+                            }
+
+                            trigger.next();
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "check-host-cpu-arch";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            SshShell sshShell = new SshShell();
+                            sshShell.setHostname(getSelf().getManagementIp());
+                            sshShell.setUsername(getSelf().getUsername());
+                            sshShell.setPassword(getSelf().getPassword());
+                            sshShell.setPort(getSelf().getPort());
+                            SshResult ret = sshShell.runCommand("uname -m");
+
+                            if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+                                throw new OperationFailureException(operr("unable to get host cpu architecture, please check if username/password is wrong; %s", ret.getExitErrorMessage()));
+                            }
+
+                            String hostArchitecture = ret.getStdout().trim();
+                            String clusterArchitecture = Q.New(ClusterVO.class).select(ClusterVO_.architecture).eq(ClusterVO_.uuid, self.getClusterUuid()).findValue();
+                            if (clusterArchitecture != null && !hostArchitecture.equals(clusterArchitecture)) {
+                                throw new OperationFailureException(operr("host cpu architecture[%s] is not matched the cluster[%s]", hostArchitecture, clusterArchitecture));
                             }
 
                             trigger.next();
