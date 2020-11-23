@@ -1001,6 +1001,13 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 vmNicRef.setStatus(ref.getStatus());
                 vmNicRefVOS.add(vmNicRef);
             }
+
+            /* attach server group to listener */
+            LoadBalancerListenerServerGroupRefVO ref = new LoadBalancerListenerServerGroupRefVO();
+            ref.setListenerUuid(vo.getUuid());
+            ref.setLoadBalancerServerGroupUuid(groupVO.getUuid());
+            dbf.persist(ref);
+
         }
 
         dbf.persistCollection(vmNicRefVOS);
