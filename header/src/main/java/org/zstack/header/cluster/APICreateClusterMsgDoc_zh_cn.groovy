@@ -102,6 +102,16 @@ doc {
 					
 				}
 				column {
+					name "architecture"
+					enclosedIn "params"
+					desc "集群架构"
+					location "body"
+					type "String"
+					optional true
+					since "4.0"
+					values ("x86_64","aarch64","mips64el")
+				}
+				column {
 					name "tagUuids"
 					enclosedIn "params"
 					desc "标签UUID列表"
