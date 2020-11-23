@@ -1,13 +1,13 @@
 package org.zstack.header.tag;
 
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 
+import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
  */
-public class TagInventory implements HasSensitiveInfo {
+public class TagInventory implements Serializable {
     private String uuid;
     private String resourceUuid;
     private String resourceType;

@@ -5,10 +5,11 @@ import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
-import org.zstack.header.rest.APINoSee;
 import org.zstack.header.search.Inventory;
 import org.zstack.utils.gson.JSONObjectUtil;
-import org.zstack.utils.network.*;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 import java.io.Serializable;
 import java.sql.Timestamp;

@@ -1,15 +1,14 @@
 package org.zstack.storage.ceph.primary;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
-import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
+
+import java.io.Serializable;
 
 /**
  * Created by Mei Lei on 6/6/2016.
@@ -20,7 +19,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
         method = HttpMethod.PUT,
         responseClass = APIUpdateCephPrimaryStorageMonEvent.class
 )
-public class APIUpdateCephPrimaryStorageMonMsg extends APIMessage implements PrimaryStorageMessage, HasSensitiveInfo {
+public class APIUpdateCephPrimaryStorageMonMsg extends APIMessage implements PrimaryStorageMessage, Serializable {
     @APINoSee
     private String primaryStorageUuid;
 

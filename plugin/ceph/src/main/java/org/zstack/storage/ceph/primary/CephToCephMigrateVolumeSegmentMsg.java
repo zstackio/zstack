@@ -1,14 +1,15 @@
 package org.zstack.storage.ceph.primary;
 
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.storage.primary.PrimaryStorageMessage;
 
+import java.io.Serializable;
+
 /**
  * Created by GuoYi on 10/19/17.
  */
-public class CephToCephMigrateVolumeSegmentMsg extends NeedReplyMessage implements PrimaryStorageMessage, HasSensitiveInfo {
+public class CephToCephMigrateVolumeSegmentMsg extends NeedReplyMessage implements PrimaryStorageMessage, Serializable {
     private String parentUuid;
     private String resourceUuid;
     private String srcInstallPath;

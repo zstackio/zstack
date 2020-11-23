@@ -1,19 +1,19 @@
 package org.zstack.kvm;
 
-import org.zstack.header.host.VmNicRedirectConfig;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
 import org.zstack.header.core.validation.Validation;
-import org.zstack.header.vm.PriorityConfigStruct;
+import org.zstack.header.host.VmNicRedirectConfig;
 import org.zstack.header.log.NoLogging;
+import org.zstack.header.vm.PriorityConfigStruct;
 import org.zstack.header.vm.VmBootDevice;
 import org.zstack.header.vm.VmPriorityConfigVO;
 import org.zstack.network.securitygroup.SecurityGroupMembersTO;
 import org.zstack.network.securitygroup.SecurityGroupRuleTO;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import java.io.Serializable;
 import java.util.*;
 
 public class KVMAgentCommands {
@@ -1142,7 +1142,7 @@ public class KVMAgentCommands {
         }
     }
 
-    public static class vdiCmd extends AgentCommand implements HasSensitiveInfo {
+    public static class vdiCmd extends AgentCommand implements Serializable {
         private String consoleMode;
         private String videoType;
         private String soundType;
@@ -2713,7 +2713,7 @@ public class KVMAgentCommands {
     public static class LogoutIscsiTargetRsp extends AgentResponse {
     }
 
-    public static class LoginIscsiTargetCmd extends AgentCommand implements HasSensitiveInfo {
+    public static class LoginIscsiTargetCmd extends AgentCommand implements Serializable {
         private String hostname;
         private int port;
         private String target;

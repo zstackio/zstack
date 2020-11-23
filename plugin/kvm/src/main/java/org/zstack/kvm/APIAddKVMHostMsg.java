@@ -4,9 +4,8 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.host.APIAddHostEvent;
 import org.zstack.header.host.APIAddHostMsg;
 import org.zstack.header.host.HostVO;
-import org.zstack.header.log.HasSensitiveInfo;
-import org.zstack.header.message.APIParam;
 import org.zstack.header.log.NoLogging;
+import org.zstack.header.message.APIParam;
 import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
@@ -69,7 +68,7 @@ import java.util.concurrent.TimeUnit;
         responseClass = APIAddHostEvent.class
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 3)
-public class APIAddKVMHostMsg extends APIAddHostMsg implements AddKVMHostMessage, HasSensitiveInfo {
+public class APIAddKVMHostMsg extends APIAddHostMsg implements AddKVMHostMessage {
     /**
      * @desc user name used for ssh login.
      * Max length of 255 characters

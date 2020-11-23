@@ -2,7 +2,6 @@ package org.zstack.ldap;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.AccountConstant;
-import org.zstack.header.log.HasSensitiveInfo;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
@@ -16,7 +15,7 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIAddLdapServerEvent.class,
         parameterName = "params"
 )
-public class APIAddLdapServerMsg extends APIMessage implements APIAuditor, HasSensitiveInfo {
+public class APIAddLdapServerMsg extends APIMessage implements APIAuditor {
     @APIParam(maxLength = 255)
     private String name;
 
