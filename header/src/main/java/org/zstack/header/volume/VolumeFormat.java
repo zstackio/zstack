@@ -122,6 +122,12 @@ public class VolumeFormat {
             }
         }
 
+        for (VolumeFormat f : types.values()) {
+            if (f.getAttachableHypervisorTypes() != null && f.getAttachableHypervisorTypes().contains(HypervisorType.valueOf(hvType))) {
+                return f;
+            }
+        }
+
         throw new CloudRuntimeException(String.format("cannot find volume format which has master hypervisor type[%s]", hvType));
     }
 
@@ -191,5 +197,9 @@ public class VolumeFormat {
 
         String output = io.get(toString());
         return output == null ? toString() : output;
+    }
+
+    public void addAttachableHypervisorTypesToVolumeFormat(HypervisorType hypervisorType) {
+        attachableHypervisorTypes.add(hypervisorType);
     }
 }
