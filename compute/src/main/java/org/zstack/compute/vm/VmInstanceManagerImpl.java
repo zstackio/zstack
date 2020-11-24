@@ -939,6 +939,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
         smsg.setHostUuid(msg.getHostUuid());
         smsg.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
+        smsg.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
+        smsg.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
         smsg.setL3NetworkUuids(msg.getL3NetworkSpecs());
 
         if (msg.getRootDiskOfferingUuid() != null) {

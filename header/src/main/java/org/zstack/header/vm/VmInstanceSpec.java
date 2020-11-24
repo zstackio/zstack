@@ -25,6 +25,22 @@ import java.util.Map;
 
 public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
 
+    public List<String> getDataVolumeTemplateUuids() {
+        return dataVolumeTemplateUuids;
+    }
+
+    public void setDataVolumeTemplateUuids(List<String> dataVolumeTemplateUuids) {
+        this.dataVolumeTemplateUuids = dataVolumeTemplateUuids;
+    }
+
+    public Map<String, List<String>> getDataVolumeFromTemplateSystemTags() {
+        return dataVolumeFromTemplateSystemTags;
+    }
+
+    public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
+        this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
+    }
+
     public static class VolumeSpec {
         private PrimaryStorageInventory primaryStorageInventory;
         private String type;
@@ -237,6 +253,8 @@ public class VmInstanceSpec implements Serializable, HasSensitiveInfo {
     private VmInstanceInventory vmInventory;
     private List<VmNicSpec> l3Networks;
     private List<DiskOfferingInventory> dataDiskOfferings;
+    private List<String> dataVolumeTemplateUuids;
+    private Map<String, List<String>> dataVolumeFromTemplateSystemTags = new HashMap<>();
     private DiskOfferingInventory rootDiskOffering;
     private String hostAllocatorStrategy;
     private String ipAllocatorStrategy;

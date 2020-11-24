@@ -4,12 +4,15 @@ import org.zstack.header.vm.*;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by xing5 on 2016/9/13.
  */
 public class InstantiateVmFromNewCreatedStruct {
     private List<String> dataDiskOfferingUuids;
+    private List<String> dataVolumeTemplateUuids;
+    private Map<String, List<String>> dataVolumeFromTemplateSystemTags;
     private List<VmNicSpec> l3NetworkUuids;
     private String rootDiskOfferingUuid;
     private String primaryStorageUuidForRootVolume;
@@ -49,6 +52,14 @@ public class InstantiateVmFromNewCreatedStruct {
         this.dataDiskOfferingUuids = dataDiskOfferingUuids;
     }
 
+    public List<String> getDataVolumeTemplateUuids() {
+        return dataVolumeTemplateUuids;
+    }
+
+    public void setDataVolumeTemplateUuids(List<String> dataVolumeTemplateUuids) {
+        this.dataVolumeTemplateUuids = dataVolumeTemplateUuids;
+    }
+
     public List<VmNicSpec> getL3NetworkUuids() {
         return l3NetworkUuids;
     }
@@ -76,6 +87,8 @@ public class InstantiateVmFromNewCreatedStruct {
     public static InstantiateVmFromNewCreatedStruct fromMessage(InstantiateNewCreatedVmInstanceMsg msg) {
         InstantiateVmFromNewCreatedStruct struct = new InstantiateVmFromNewCreatedStruct();
         struct.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
+        struct.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
+        struct.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
         struct.setL3NetworkUuids(msg.getL3NetworkUuids());
         struct.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
@@ -92,6 +105,8 @@ public class InstantiateVmFromNewCreatedStruct {
     public static InstantiateVmFromNewCreatedStruct fromMessage(CreateVmInstanceMsg msg) {
         InstantiateVmFromNewCreatedStruct struct = new InstantiateVmFromNewCreatedStruct();
         struct.setDataDiskOfferingUuids(msg.getDataDiskOfferingUuids());
+        struct.setDataVolumeTemplateUuids(msg.getDataVolumeTemplateUuids());
+        struct.setDataVolumeFromTemplateSystemTags(msg.getDataVolumeFromTemplateSystemTags());
         struct.setL3NetworkUuids(msg.getL3NetworkSpecs());
         struct.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         struct.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuidForRootVolume());
@@ -142,5 +157,13 @@ public class InstantiateVmFromNewCreatedStruct {
 
     public void setAvoidHostUuids(List<String> avoidHostUuids) {
         this.avoidHostUuids = avoidHostUuids;
+    }
+
+    public Map<String, List<String>> getDataVolumeFromTemplateSystemTags() {
+        return dataVolumeFromTemplateSystemTags;
+    }
+
+    public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
+        this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
     }
 }

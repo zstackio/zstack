@@ -1,6 +1,5 @@
 package org.zstack.header.volume;
 
-import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.ConfigurableTimeoutMessage;
 import org.zstack.header.message.DefaultTimeout;
 import org.zstack.header.message.NeedReplyMessage;
@@ -18,7 +17,7 @@ public class CreateDataVolumeFromVolumeTemplateMsg extends NeedReplyMessage impl
     private String primaryStorageUuid;
     private String hostUuid;
     private String resourceUuid;
-    private SessionInventory session;
+    private String accountUuid;
     private APICreateDataVolumeFromVolumeTemplateMsg apiMsg;
 
     public CreateDataVolumeFromVolumeTemplateMsg() {
@@ -31,16 +30,16 @@ public class CreateDataVolumeFromVolumeTemplateMsg extends NeedReplyMessage impl
         primaryStorageUuid = amsg.getPrimaryStorageUuid();
         hostUuid = amsg.getHostUuid();
         resourceUuid = amsg.getResourceUuid();
-        session = amsg.getSession();
+        accountUuid = amsg.getSession().getAccountUuid();
         apiMsg = amsg;
     }
 
-    public SessionInventory getSession() {
-        return session;
+    public String getAccountUuid() {
+        return accountUuid;
     }
 
-    public void setSession(SessionInventory session) {
-        this.session = session;
+    public void setAccountUuid(String accountUuid) {
+        this.accountUuid = accountUuid;
     }
 
     public String getResourceUuid() {

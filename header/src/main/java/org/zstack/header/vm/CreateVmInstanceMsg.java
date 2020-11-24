@@ -3,6 +3,7 @@ package org.zstack.header.vm;
 import org.zstack.header.message.NeedReplyMessage;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by david on 8/4/16.
@@ -20,6 +21,8 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String rootDiskOfferingUuid;
     private long rootDiskSize;
     private List<String> dataDiskOfferingUuids;
+    private List<String> dataVolumeTemplateUuids;
+    private Map<String, List<String>> dataVolumeFromTemplateSystemTags;
     private String zoneUuid;
     private String clusterUuid;
     private String hostUuid;
@@ -241,5 +244,21 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setPrimaryStorageUuidForDataVolume(String primaryStorageUuidForDataVolume) {
         this.primaryStorageUuidForDataVolume = primaryStorageUuidForDataVolume;
+    }
+
+    public List<String> getDataVolumeTemplateUuids() {
+        return dataVolumeTemplateUuids;
+    }
+
+    public void setDataVolumeTemplateUuids(List<String> dataVolumeTemplateUuids) {
+        this.dataVolumeTemplateUuids = dataVolumeTemplateUuids;
+    }
+
+    public Map<String, List<String>> getDataVolumeFromTemplateSystemTags() {
+        return dataVolumeFromTemplateSystemTags;
+    }
+
+    public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
+        this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
     }
 }
