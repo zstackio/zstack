@@ -17,7 +17,7 @@
         <aspectj.plugin.version>1.10</aspectj.plugin.version>
         <groovy.eclipse.compiler>2.9.2-01</groovy.eclipse.compiler>
         <groovy.eclipse.batch>2.4.3-01</groovy.eclipse.batch>
-        <hibernate.search.version>5.7.3.Final</hibernate.search.version>
+        <hibernate.search.version>5.8.2.Final</hibernate.search.version>
     </properties>
 
     <modelVersion>4.0.0</modelVersion>

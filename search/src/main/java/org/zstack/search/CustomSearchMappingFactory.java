@@ -77,11 +77,6 @@ public class CustomSearchMappingFactory {
     private void constructBaseIndex(SearchMapping mapping, Class entity, List<IndexType.Prop> props) {
         EntityMapping entityMapping = mapping.entity(entity);
         for (IndexType.Prop prop : props) {
-            if (prop.getName().equals("uuid")) {
-                entityMapping.property(prop.getName(), ElementType.METHOD).field();
-                continue;
-            }
-
             entityMapping.property(prop.getName(), ElementType.METHOD)
                     .field()
                         .analyzer(prop.getAnalyzer() == null? defaultAnalyzerName : prop.getAnalyzer());
@@ -91,11 +86,6 @@ public class CustomSearchMappingFactory {
     private void constructIndex(SearchMapping mapping, Class entity, List<IndexType.Prop> props) {
         IndexedMapping indexedMapping = mapping.entity(entity).indexed();
         for (IndexType.Prop prop : props) {
-            if (prop.getName().equals("uuid")) {
-                indexedMapping.property(prop.getName(), ElementType.METHOD).field();
-                continue;
-            }
-
             indexedMapping.property(prop.getName(), ElementType.METHOD)
                     .field()
                     .analyzer(prop.getAnalyzer() == null? defaultAnalyzerName : prop.getAnalyzer());

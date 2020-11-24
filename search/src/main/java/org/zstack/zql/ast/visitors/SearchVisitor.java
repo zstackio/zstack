@@ -135,7 +135,7 @@ public class SearchVisitor implements ASTVisitor<SearchResult, ASTNode.Search> {
 
     private String getRestrictSql(ASTNode.Search node, Class v) {
         if (node.getRestrictBy().getExprs().size() > 1) {
-            throw new ZQLError("zql search not support mulitple restrict expressions");
+            throw new ZQLError("zql search not support multiple restrict expressions");
         }
 
         ASTNode.RestrictExpr restrictExpr = node.getRestrictBy().getExprs().get(0);
