@@ -1442,6 +1442,7 @@ public class KVMAgentCommands {
         private long vmInternalId;
         private String vmName;
         private String imagePlatform;
+        private String imageArchitecture;
         private long memory;
         private long maxMemory;
         private int cpuNum;
@@ -1679,6 +1680,14 @@ public class KVMAgentCommands {
 
         public void setImagePlatform(String imagePlatform) {
             this.imagePlatform = imagePlatform;
+        }
+
+        public String getImageArchitecture() {
+            return imageArchitecture;
+        }
+
+        public void setImageArchitecture(String imageArchitecture) {
+            this.imageArchitecture = imageArchitecture;
         }
 
         public long getMemory() {
