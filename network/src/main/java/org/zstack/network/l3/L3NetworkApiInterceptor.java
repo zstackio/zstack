@@ -250,11 +250,11 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getIpRangeUuid() != null && msg.getL3NetworkUuid() == null) {
-            SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
-            q.select(IpRangeVO_.l3NetworkUuid);
-            q.add(IpRangeVO_.uuid, Op.EQ, msg.getIpRangeUuid());
-            String l3Uuid = q.findValue();
-            msg.setL3NetworkUuid(l3Uuid);
+            IpRangeVO ipRangeVO = Q.New(IpRangeVO.class)
+                    .eq(IpRangeVO_.uuid,msg.getIpRangeUuid())
+                    .find();
+            msg.setL3NetworkUuid(ipRangeVO.getL3NetworkUuid());
+            msg.setIpVersion(ipRangeVO.getIpVersion());
         }
 
         if (msg.getLimit() < 0) {
@@ -265,21 +265,19 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             if (msg.getL3NetworkUuid() != null) {
                 int l3Version = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid())
                     .select(L3NetworkVO_.ipVersion).findValue();
-                if (l3Version == IPv6Constants.IPv6) {
-                    msg.setIpVersion(IPv6Constants.IPv6);
-                } else {
-                    msg.setIpVersion(IPv6Constants.IPv4);
-                }
+                msg.setIpVersion(l3Version);
             }else {
                 msg.setIpVersion(IPv6Constants.IPv4);
             }
         }
 
-        if (msg.getStart() == null) {
-            if (msg.getIpVersion() == IPv6Constants.IPv6) {
-                msg.setStartIp("::");
-            } else {
-                msg.setStartIp("0.0.0.0");
+        if(msg.getStart() != null){
+            if(msg.getIpVersion() == IPv6Constants.DUAL_STACK){
+                throw new ApiMessageInterceptionException(argerr("could not get free ip with start[ip:%s],because l3Network[uuid:%s] is dual stack",msg.getStart(),msg.getL3NetworkUuid()));
+            } else if(msg.getIpVersion() == IPv6Constants.IPv4 && !NetworkUtils.isIpv4Address(msg.getStart())){
+                throw new ApiMessageInterceptionException(argerr("could not get free ip with start[ip:%s],because start[ip:%s] is not a correct ipv4 address",msg.getStart(),msg.getStart()));
+            } else if(msg.getIpVersion() == IPv6Constants.IPv6 && !IPv6NetworkUtils.isIpv6Address(msg.getStart())){
+                throw new ApiMessageInterceptionException(argerr("could not get free ip with start[ip:%s],because start[ip:%s] is not a correct ipv6 address",msg.getStart(),msg.getStart()));
             }
         }
     }
