@@ -46,6 +46,7 @@
                 install_view_locally_first="true"
                 join_timeout="5000"
     />
+    <pbcast.FLUSH timeout="0" start_flush_timeout="10000"/>
     <MFC max_credits="2m"
          min_threshold="0.40"
     />

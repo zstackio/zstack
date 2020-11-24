@@ -17,9 +17,6 @@
         <filter factory="org.apache.lucene.analysis.core.LowerCaseFilterFactory"/>
     </analyzerDef>
 
-    <index name="org.zstack.header.vo.ResourceVO" baseClass="true">
-        <prop name="uuid"/>
-    </index>
     <index name="org.zstack.header.storage.primary.PrimaryStorageAO" baseClass="true">
         <prop name="name"/>
     </index>
@@ -129,6 +126,9 @@
         <prop name="name"/>
     </index>
     <index name="org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolVO" baseClass="false">
+        <prop name="name"/>
+    </index>
+    <index name="org.zstack.network.service.portforwarding.PortForwardingRuleVO" baseClass="false">
         <prop name="name"/>
     </index>
 </indexes>
