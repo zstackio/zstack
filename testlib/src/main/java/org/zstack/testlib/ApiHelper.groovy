@@ -35063,7 +35063,7 @@ abstract class ApiHelper {
 
     def loginIAM2Platform(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.iam2.api.LoginIAM2PlatformAction.class) Closure c) {
         def a = new org.zstack.sdk.iam2.api.LoginIAM2PlatformAction()
-        
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()

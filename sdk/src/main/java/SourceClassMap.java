@@ -36,7 +36,9 @@ public class SourceClassMap {
 			put("org.zstack.baremetal2.chassis.ipmi.BareMetal2IpmiChassisInventory", "org.zstack.sdk.BareMetal2IpmiChassisInventory");
 			put("org.zstack.baremetal2.configuration.BareMetal2ChassisOfferingInventory", "org.zstack.sdk.BareMetal2ChassisOfferingInventory");
 			put("org.zstack.baremetal2.gateway.BareMetal2GatewayInventory", "org.zstack.sdk.BareMetal2GatewayInventory");
+			put("org.zstack.baremetal2.gateway.BareMetal2GatewayProvisionNicInventory", "org.zstack.sdk.BareMetal2GatewayProvisionNicInventory");
 			put("org.zstack.baremetal2.instance.BareMetal2InstanceInventory", "org.zstack.sdk.BareMetal2InstanceInventory");
+			put("org.zstack.baremetal2.instance.BareMetal2InstanceProvisionNicInventory", "org.zstack.sdk.BareMetal2InstanceProvisionNicInventory");
 			put("org.zstack.baremetal2.provisionnetwork.BareMetal2ProvisionNetworkInventory", "org.zstack.sdk.BareMetal2ProvisionNetworkInventory");
 			put("org.zstack.baremetal2.provisionnetwork.BareMetal2ProvisionNetworkIpCapacity", "org.zstack.sdk.BareMetal2ProvisionNetworkIpCapacity");
 			put("org.zstack.billing.Pagination", "org.zstack.sdk.Pagination");
@@ -618,7 +620,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BareMetal2ChassisNicInventory", "org.zstack.baremetal2.chassis.BareMetal2ChassisNicInventory");
 			put("org.zstack.sdk.BareMetal2ChassisOfferingInventory", "org.zstack.baremetal2.configuration.BareMetal2ChassisOfferingInventory");
 			put("org.zstack.sdk.BareMetal2GatewayInventory", "org.zstack.baremetal2.gateway.BareMetal2GatewayInventory");
+			put("org.zstack.sdk.BareMetal2GatewayProvisionNicInventory", "org.zstack.baremetal2.gateway.BareMetal2GatewayProvisionNicInventory");
 			put("org.zstack.sdk.BareMetal2InstanceInventory", "org.zstack.baremetal2.instance.BareMetal2InstanceInventory");
+			put("org.zstack.sdk.BareMetal2InstanceProvisionNicInventory", "org.zstack.baremetal2.instance.BareMetal2InstanceProvisionNicInventory");
 			put("org.zstack.sdk.BareMetal2IpmiChassisInventory", "org.zstack.baremetal2.chassis.ipmi.BareMetal2IpmiChassisInventory");
 			put("org.zstack.sdk.BareMetal2ProvisionNetworkInventory", "org.zstack.baremetal2.provisionnetwork.BareMetal2ProvisionNetworkInventory");
 			put("org.zstack.sdk.BareMetal2ProvisionNetworkIpCapacity", "org.zstack.baremetal2.provisionnetwork.BareMetal2ProvisionNetworkIpCapacity");
