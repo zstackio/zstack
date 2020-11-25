@@ -3,6 +3,7 @@ package org.zstack.network.service.virtualrouter.vyos;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.resourceconfig.BindResourceConfig;
 import org.zstack.header.network.l3.L3NetworkVO;
 
@@ -19,4 +20,8 @@ public class VyosGlobalConfig {
     @GlobalConfigValidation
     @BindResourceConfig({L3NetworkVO.class})
     public static GlobalConfig CONFIG_FIREWALL_WITH_IPTABLES = new GlobalConfig(CATEGORY, "configure.firewall.with.iptables");
+
+    @GlobalConfigValidation
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig AUTO_RESTART_IPSEC = new GlobalConfig(CATEGORY, "auto.restart.ipsec");
 }
