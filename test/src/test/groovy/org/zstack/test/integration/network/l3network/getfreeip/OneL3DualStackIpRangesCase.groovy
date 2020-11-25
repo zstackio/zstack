@@ -69,8 +69,15 @@ class OneL3DualStackIpRangesCase extends SubCase {
             List<FreeIpInventory> freeIps = getFreeIpOfIpRange {
                 ipRangeUuid = ipr6.uuid
             }
-
             assert freeIps.size() ==  17
+
+            freeIps = getFreeIpOfL3Network {
+                l3NetworkUuid = l3.uuid
+            }
+
+            assert freeIps.size() ==  28
+
+
         }
     }
 
