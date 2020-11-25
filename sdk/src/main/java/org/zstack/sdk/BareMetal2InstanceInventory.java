@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.BareMetal2InstanceProvisionNicInventory;
 
 public class BareMetal2InstanceInventory extends org.zstack.sdk.VmInstanceInventory {
 
@@ -58,6 +58,14 @@ public class BareMetal2InstanceInventory extends org.zstack.sdk.VmInstanceInvent
     }
     public java.lang.String getStatus() {
         return this.status;
+    }
+
+    public BareMetal2InstanceProvisionNicInventory provisionNic;
+    public void setProvisionNic(BareMetal2InstanceProvisionNicInventory provisionNic) {
+        this.provisionNic = provisionNic;
+    }
+    public BareMetal2InstanceProvisionNicInventory getProvisionNic() {
+        return this.provisionNic;
     }
 
 }

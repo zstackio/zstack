@@ -426,7 +426,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2GatewayClusterRefVO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2GatewayProvisionNicVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
-    `gatewayUuid` varchar(32) NOT NULL,
     `networkUuid` varchar(32) NOT NULL,
     `interfaceName` varchar(17) NOT NULL,
     `ip` varchar(128) NOT NULL,
@@ -436,7 +435,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2GatewayProvisionNicVO` (
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`),
-    CONSTRAINT `fkBareMetal2GatewayProvisionNicVOGatewayVO` FOREIGN KEY (`gatewayUuid`) REFERENCES `BareMetal2GatewayVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkBareMetal2GatewayProvisionNicVOGatewayVO` FOREIGN KEY (`uuid`) REFERENCES `BareMetal2GatewayVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkBareMetal2GatewayProvisionNicVONetworkVO` FOREIGN KEY (`networkUuid`) REFERENCES `BareMetal2ProvisionNetworkVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -527,7 +526,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2InstanceVO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2InstanceProvisionNicVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
-    `instanceUuid` varchar(32) NOT NULL,
     `networkUuid` varchar(32) NOT NULL,
     `mac` varchar(17) NOT NULL UNIQUE,
     `ip` varchar(128) NOT NULL,
@@ -537,6 +535,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2InstanceProvisionNicVO` (
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
     PRIMARY KEY  (`uuid`),
-    CONSTRAINT `fkBareMetal2InstanceProvisionNicVOInstanceVO` FOREIGN KEY (`instanceUuid`) REFERENCES `BareMetal2InstanceVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkBareMetal2InstanceProvisionNicVOInstanceVO` FOREIGN KEY (`uuid`) REFERENCES `BareMetal2InstanceVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkBareMetal2InstanceProvisionNicVONetworkVO` FOREIGN KEY (`networkUuid`) REFERENCES `BareMetal2ProvisionNetworkVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
