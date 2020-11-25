@@ -59,7 +59,7 @@ doc {
 					type "String"
 					optional false
 					since "0.6"
-					values ("KVM","Simulator")
+					values ("KVM","Simulator","baremetal","baremetal2","xdragon")
 				}
 				column {
 					name "type"
@@ -69,7 +69,7 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
-					values ("zstack")
+					values ("zstack","baremetal","baremetal2")
 				}
 				column {
 					name "resourceUuid"
@@ -95,6 +95,16 @@ doc {
 					name "userTags"
 					enclosedIn ""
 					desc "用户标签"
+					location "body"
+					type "List"
+					optional true
+					since "0.6"
+					
+				}
+				column {
+					name "tagUuids"
+					enclosedIn "params"
+					desc "标签UUID列表"
 					location "body"
 					type "List"
 					optional true
