@@ -363,11 +363,6 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
             return;
         }
 
-        if (!host.getHypervisorType().equals(KVMConstant.KVM_HYPERVISOR_TYPE)) {
-            completion.done();
-            return;
-        }
-
         thdf.chainSubmit(new ChainTask(null) {
             @Override
             public String getSyncSignature() {
