@@ -76,6 +76,14 @@ public class BareMetal2ProvisionNetworkInventory  {
         return this.dhcpRangeGateway;
     }
 
+    public java.lang.String dhcpRangeNetworkCidr;
+    public void setDhcpRangeNetworkCidr(java.lang.String dhcpRangeNetworkCidr) {
+        this.dhcpRangeNetworkCidr = dhcpRangeNetworkCidr;
+    }
+    public java.lang.String getDhcpRangeNetworkCidr() {
+        return this.dhcpRangeNetworkCidr;
+    }
+
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;

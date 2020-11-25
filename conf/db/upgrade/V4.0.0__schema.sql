@@ -387,6 +387,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2ProvisionNetworkVO` (
     `dhcpRangeEndIp` varchar(32) NOT NULL,
     `dhcpRangeNetmask` varchar(32) NOT NULL,
     `dhcpRangeGateway` varchar(32) DEFAULT NULL,
+    `dhcpRangeNetworkCidr` varchar(64) DEFAULT NULL,
     `state` varchar(32) DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
