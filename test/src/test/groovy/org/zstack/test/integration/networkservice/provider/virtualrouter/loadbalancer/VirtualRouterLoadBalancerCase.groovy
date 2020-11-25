@@ -207,7 +207,7 @@ class VirtualRouterLoadBalancerCase extends SubCase{
         CreateLoadBalancerListenerAction.Result lblRes = listenerAction.call()
         assert lblRes.error != null
 
-        listenerAction.systemTags = ["maxConnection::500000"]
+        listenerAction.systemTags = ["maxConnection::50000000"]
         lblRes = listenerAction.call()
         assert lblRes.error != null
 
