@@ -175,7 +175,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vol.setState(VolumeState.Enabled);
         vol.setType(VolumeType.Data);
         vol.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-        vol.setAccountUuid(msg.getSession().getAccountUuid());
+        vol.setAccountUuid(msg.getAccountUuid());
         vol.setShareable(getShareableCapabilityFromMsg(msg));
         VolumeVO vvo = new SQLBatchWithReturn<VolumeVO>() {
             @Override

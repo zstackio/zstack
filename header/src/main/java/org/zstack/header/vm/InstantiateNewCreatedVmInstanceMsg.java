@@ -3,11 +3,14 @@ package org.zstack.header.vm;
 import org.zstack.header.message.NeedReplyMessage;
 
 import java.util.List;
+import java.util.Map;
 
 public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
     private VmInstanceInventory vmInstanceInventory;
     private List<VmNicSpec> l3NetworkUuids;
     private List<String> dataDiskOfferingUuids;
+    private List<String> dataVolumeTemplateUuids;
+    private Map<String, List<String>> dataVolumeFromTemplateSystemTags;
     private String rootDiskOfferingUuid;
     private String hostUuid;
     private String primaryStorageUuidForRootVolume;
@@ -48,6 +51,14 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
 
     public void setDataDiskOfferingUuids(List<String> dataDiskOfferingUuids) {
         this.dataDiskOfferingUuids = dataDiskOfferingUuids;
+    }
+
+    public List<String> getDataVolumeTemplateUuids() {
+        return dataVolumeTemplateUuids;
+    }
+
+    public void setDataVolumeTemplateUuids(List<String> dataVolumeTemplateUuids) {
+        this.dataVolumeTemplateUuids = dataVolumeTemplateUuids;
     }
 
     public String getRootDiskOfferingUuid() {
@@ -117,5 +128,13 @@ public class InstantiateNewCreatedVmInstanceMsg extends NeedReplyMessage impleme
 
     public void setAvoidHostUuids(List<String> avoidHostUuids) {
         this.avoidHostUuids = avoidHostUuids;
+    }
+
+    public Map<String, List<String>> getDataVolumeFromTemplateSystemTags() {
+        return dataVolumeFromTemplateSystemTags;
+    }
+
+    public void setDataVolumeFromTemplateSystemTags(Map<String, List<String>> dataVolumeFromTemplateSystemTags) {
+        this.dataVolumeFromTemplateSystemTags = dataVolumeFromTemplateSystemTags;
     }
 }

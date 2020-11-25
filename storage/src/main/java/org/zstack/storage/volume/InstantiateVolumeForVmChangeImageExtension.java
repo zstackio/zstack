@@ -6,6 +6,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.image.ImageConstant;
+import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.vm.ChangeVmImageExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.*;
@@ -44,6 +45,6 @@ public class InstantiateVolumeForVmChangeImageExtension extends InstantiateVolum
         rmsg.setSkipIfExisting(spec.isInstantiateResourcesSkipExisting());
         bus.makeTargetServiceIdByResourceUuid(rmsg, VolumeConstant.SERVICE_ID, spec.getDestRootVolume().getUuid());
 
-        doInstantiate(Collections.singletonList(rmsg).iterator(), spec, completion);
+        doInstantiate(Collections.singletonList((NeedReplyMessage)rmsg).iterator(), spec, completion);
     }
 }

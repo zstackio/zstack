@@ -5711,6 +5711,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setL3Networks(new ArrayList<>());
         }
 
+        spec.setDataVolumeTemplateUuids(struct.getDataVolumeTemplateUuids());
+        spec.setDataVolumeFromTemplateSystemTags(struct.getDataVolumeFromTemplateSystemTags());
         if (struct.getDataDiskOfferingUuids() != null && !struct.getDataDiskOfferingUuids().isEmpty()) {
             SimpleQuery<DiskOfferingVO> dquery = dbf.createQuery(DiskOfferingVO.class);
             dquery.add(DiskOfferingVO_.uuid, SimpleQuery.Op.IN, struct.getDataDiskOfferingUuids());
