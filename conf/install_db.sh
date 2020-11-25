@@ -21,6 +21,9 @@ get_mn_ip(){
     else
         MANAGEMENT_IP=`ip -4 addr show ${MANAGEMENT_INTERFACE} | grep inet | head -1 | awk '{print $2}' | cut -f1  -d'/'`
     fi
+
+    sed -i "s/.*management.server.ip.*/management.server.ip = $MANAGEMENT_IP/" /usr/local/zstack/apache-tomcat/webapps/zstack/WEB-INF/classes/zstack.properties
+    sed -i "s/.*chrony.serverIp.0.*/chrony.serverIp.0 = $MANAGEMENT_IP/" /usr/local/zstack/apache-tomcat/webapps/zstack/WEB-INF/classes/zstack.properties
 }
 
 cs_gen_sshkey(){
