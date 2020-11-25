@@ -5937,9 +5937,28 @@ public class VmInstanceBase extends AbstractVmInstance {
                     checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
                         @Override
                         public void done() {
+                            self = dbf.reload(self);
+                            if (self.getState() == VmInstanceState.Running) {
+                                for (DeleteInhibitHASystemTagExtensionPoint ext : pluginRgty.getExtensionList(DeleteInhibitHASystemTagExtensionPoint.class)) {
+                                    ext.deleteInhibitHaSystemTag(self.getUuid());
+                                }
+                            }
+
                             completion.fail(errCode);
                         }
                     });
+                } else if (HostErrors.OPERATION_FAILURE_GC_ELIGIBLE.isEqual(errCode.getCode()) && !spec.isGcOnStopFailure()) {
+                    self.setState(originState);
+                    self = dbf.updateAndRefresh(self);
+
+                    if (self.getState() == VmInstanceState.Running) {
+                        for (DeleteInhibitHASystemTagExtensionPoint ext : pluginRgty.getExtensionList(DeleteInhibitHASystemTagExtensionPoint.class)) {
+                            ext.deleteInhibitHaSystemTag(self.getUuid());
+                        }
+                    }
+
+                    completion.fail(errCode);
+                    extEmitter.failedToStopVm(inv, errCode);
                 } else {
                     self.setState(HostErrors.HOST_IS_DISCONNECTED.isEqual(errCode.getCode()) ? VmInstanceState.Unknown : originState);
                     self = dbf.updateAndRefresh(self);
