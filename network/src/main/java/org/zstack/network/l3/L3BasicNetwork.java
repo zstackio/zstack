@@ -471,41 +471,62 @@ public class L3BasicNetwork implements L3Network {
     private void handle(APIGetFreeIpMsg msg) {
         APIGetFreeIpReply reply = new APIGetFreeIpReply();
 
+        List<IpRangeVO> ipRangeVOs = new ArrayList<>();
+        List<Integer> ipVersions = new ArrayList<>();
+        if(msg.getIpVersion()!=null){
+            if(msg.getIpVersion()== IPv6Constants.DUAL_STACK){
+                ipVersions.add(IPv6Constants.IPv4);
+                ipVersions.add(IPv6Constants.IPv6);
+            }else{
+                ipVersions.add(msg.getIpVersion());
+            }
+        }
+
         if (msg.getIpRangeUuid() != null) {
             final IpRangeVO ipr = dbf.findByUuid(msg.getIpRangeUuid(), IpRangeVO.class);
-            List<FreeIpInventory> free = getFreeIp(ipr, msg.getLimit(),msg.getStart());
-            reply.setInventories(free);
+            ipRangeVOs.add(ipr);
         } else {
-            List<IpRangeVO> iprs;
             if (msg.getIpRangeType() == null) {
-                SimpleQuery<IpRangeVO> q = dbf.createQuery(IpRangeVO.class);
-                q.add(IpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-                q.add(IpRangeVO_.ipVersion, Op.EQ, msg.getIpVersion());
-                iprs = q.list();
-            } else if (msg.getIpRangeType().equals(IpRangeType.Normal.toString())){
-                SimpleQuery<NormalIpRangeVO> q = dbf.createQuery(NormalIpRangeVO.class);
-                q.add(NormalIpRangeVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-                q.add(NormalIpRangeVO_.ipVersion, Op.EQ, msg.getIpVersion());
-                iprs = q.list();
+                List<IpRangeVO> tempIpRangeVO = Q.New(IpRangeVO.class)
+                        .eq(IpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                        .in(IpRangeVO_.ipVersion, ipVersions)
+                        .list();
+                ipRangeVOs.addAll(tempIpRangeVO);
+            } else if (msg.getIpRangeType().equals(IpRangeType.Normal.toString())) {
+                List<IpRangeVO> tempIpRangeVO = Q.New(NormalIpRangeVO.class)
+                        .eq(NormalIpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                        .in(NormalIpRangeVO_.ipVersion, ipVersions)
+                        .list();
+                ipRangeVOs.addAll(tempIpRangeVO);
+
             } else {
-                SimpleQuery<AddressPoolVO> q = dbf.createQuery(AddressPoolVO.class);
-                q.add(AddressPoolVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-                q.add(AddressPoolVO_.ipVersion, Op.EQ, msg.getIpVersion());
-                iprs = q.list();
+                List<IpRangeVO> tempIpRangeVO = Q.New(AddressPoolVO.class)
+                        .eq(AddressPoolVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                        .in(AddressPoolVO_.ipVersion, ipVersions)
+                        .list();
+                ipRangeVOs.addAll(tempIpRangeVO);
+            }
+        }
+
+        List<FreeIpInventory> freeIpInventorys = new ArrayList<FreeIpInventory>();
+        int limit = msg.getLimit();
+        for (IpRangeVO ipRangeVO : ipRangeVOs) {
+            if(msg.getStart() == null){
+                if (msg.getIpVersion() == IPv6Constants.IPv6) {
+                    msg.setStartIp("::");
+                } else {
+                    msg.setStartIp("0.0.0.0");
+                }
             }
 
-            List<FreeIpInventory> res = new ArrayList<FreeIpInventory>();
-            int limit = msg.getLimit();
-            for (IpRangeVO ipr : iprs) {
-                List<FreeIpInventory> i = getFreeIp(ipr, limit,msg.getStart());
-                res.addAll(i);
-                if (res.size() >= msg.getLimit()) {
-                    break;
-                }
-                limit -= res.size();
+            List<FreeIpInventory> tempFreeIpInventorys = getFreeIp(ipRangeVO, limit,msg.getStart());
+            freeIpInventorys.addAll(tempFreeIpInventorys);
+            if (freeIpInventorys.size() >= msg.getLimit()) {
+                break;
             }
-            reply.setInventories(res);
+            limit -= freeIpInventorys.size();
         }
+        reply.setInventories(freeIpInventorys);
 
         bus.reply(msg, reply);
     }
