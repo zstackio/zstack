@@ -483,7 +483,7 @@ public class L3BasicNetwork implements L3Network {
         }
 
         if (msg.getIpRangeUuid() != null) {
-            final IpRangeVO ipr = dbf.findByUuid(msg.getIpRangeUuid(), IpRangeVO.class);
+            IpRangeVO ipr = dbf.findByUuid(msg.getIpRangeUuid(), IpRangeVO.class);
             ipRangeVOs.add(ipr);
         } else {
             if (msg.getIpRangeType() == null) {
@@ -510,16 +510,16 @@ public class L3BasicNetwork implements L3Network {
 
         List<FreeIpInventory> freeIpInventorys = new ArrayList<FreeIpInventory>();
         int limit = msg.getLimit();
-        for (IpRangeVO ipRangeVO : ipRangeVOs) {
-            if(msg.getStart() == null){
-                if (msg.getIpVersion() == IPv6Constants.IPv6) {
-                    msg.setStartIp("::");
+        String start = msg.getStart();
+        for ( IpRangeVO ipRangeVO : ipRangeVOs) {
+            if( msg.getStart() == null){
+                if ( ipRangeVO.getIpVersion() == IPv6Constants.IPv6) {
+                    start = "::";
                 } else {
-                    msg.setStartIp("0.0.0.0");
+                    start = "0.0.0.0";
                 }
             }
-
-            List<FreeIpInventory> tempFreeIpInventorys = getFreeIp(ipRangeVO, limit,msg.getStart());
+            List<FreeIpInventory> tempFreeIpInventorys = getFreeIp(ipRangeVO, limit,start);
             freeIpInventorys.addAll(tempFreeIpInventorys);
             if (freeIpInventorys.size() >= msg.getLimit()) {
                 break;
