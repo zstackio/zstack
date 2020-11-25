@@ -263,7 +263,7 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
         }
 
         addBackendServerToServerGroup {
-            vmNics = [['uuid':nic2.uuid,'weight':'20'],['uuid':nic3.uuid,'weight':'30'],['uuid':nic4.uuid,'weight':'40']]
+            vmNics = [['uuid':nic2.uuid,'weight':'20'],['uuid':nic3.uuid,'weight':'30']]
             serverGroupUuid = servergroup1.uuid
         }
 
@@ -279,6 +279,35 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
             serverGroupUuid = servergroup1.uuid
         }
 
+        addBackendServerToServerGroup {
+            vmNics = [['uuid':nic1.uuid,'weight':'10'], ['uuid':nic4.uuid,'weight':'40']]
+            serverGroupUuid = servergroup2.uuid
+        }
+
+        /* nic1, has been added to server group1 and server group2, so server group2 can not be added to listener1 */
+        expect(AssertionError.class) {
+            addServerGroupToLoadBalancerListener {
+                listenerUuid = lbl1.uuid
+                serverGroupUuid = servergroup2.uuid
+            }
+        }
+
+        removeBackendServerFromServerGroup {
+            serverGroupUuid = servergroup2.uuid
+            vmNicUuids = [nic1.uuid]
+        }
+
+        addServerGroupToLoadBalancerListener {
+            listenerUuid = lbl1.uuid
+            serverGroupUuid = servergroup2.uuid
+        }
+        /* nic1 has been added to server group1 which is attached to listener1, so nic1 can not be added to server group2 */
+        expect(AssertionError.class) {
+            addBackendServerToServerGroup {
+                vmNics = [['uuid':nic1.uuid]]
+                serverGroupUuid = servergroup2.uuid
+            }
+        }
 
         /* delete server group refresh backend */
         removeServerGroupFromLoadBalancerListener {
@@ -287,14 +316,14 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
         }
 
         servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
-        assert servergroup.vmNicRefs.size() == 4
+        assert servergroup.vmNicRefs.size() == 3
 
         removeBackendServerFromServerGroup{
             vmNicUuids = [nic1.uuid]
             serverGroupUuid = servergroup1.uuid
         }
         servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
-        assert servergroup.vmNicRefs.size() == 3
+        assert servergroup.vmNicRefs.size() == 2
     }
 
     void TestDeleteLoadBalancerServerGroup(){

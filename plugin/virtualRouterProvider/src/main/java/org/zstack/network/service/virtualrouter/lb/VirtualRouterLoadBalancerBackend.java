@@ -2051,10 +2051,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         if (vr != null) {
             l3NetworkUuids.addAll(vr.getAllL3Networks());
-            if (lbVO.getType() == LoadBalancerType.Shared) {
-                l3NetworkUuids.remove(vr.getPublicNetworkUuid());
-                l3NetworkUuids.removeAll(vr.getAdditionalPublicNics().stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()));
-            }
+            l3NetworkUuids.remove(vr.getPublicNetworkUuid());
+            l3NetworkUuids.removeAll(vr.getAdditionalPublicNics().stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()));
         } else {
             VipVO vipVO = dbf.findByUuid(lbVO.getVipUuid(), VipVO.class);
             vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
@@ -2065,7 +2063,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         .in(VmNicVO_.metaData, VirtualRouterNicMetaData.GUEST_NIC_MASK_STRING_LIST).listValues();
                 l3NetworkUuids.addAll(l3Uuids);
             }
-            l3NetworkUuids.add(vipVO.getL3NetworkUuid());
         }
 
         if (l3NetworkUuids.isEmpty()) {

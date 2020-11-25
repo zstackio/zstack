@@ -1009,6 +1009,40 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     msg.getServerGroupUuid(),msg.getlistenerUuid()));
         }
 
+        List<String> oldServerGroupUuids = Q.New(LoadBalancerListenerServerGroupRefVO.class)
+                .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getlistenerUuid())
+                .select(LoadBalancerListenerServerGroupRefVO_.loadBalancerServerGroupUuid).listValues();
+        if (!oldServerGroupUuids.isEmpty()) {
+            List<String> oldVmNicUuids = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                    .in(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, oldServerGroupUuids)
+                    .select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid).listValues();
+            List<String> newVmNicUuids = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                    .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                    .select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid).listValues();
+            if (!newVmNicUuids.isEmpty() && !oldVmNicUuids.isEmpty()) {
+                for (String nicUuid : newVmNicUuids) {
+                    if (oldVmNicUuids.contains(nicUuid)) {
+                        throw new ApiMessageInterceptionException(operr("could not add server group[uuid:%s} to listener [uuid:%s] because nic [uuid:%s] is already added",
+                                msg.getServerGroupUuid(),msg.getlistenerUuid(), nicUuid));
+                    }
+                }
+            }
+
+            List<String> oldServerIps = Q.New(LoadBalancerServerGroupServerIpVO.class)
+                    .in(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid, oldServerGroupUuids)
+                    .select(LoadBalancerServerGroupServerIpVO_.ipAddress).listValues();
+            List<String> newServerIps = Q.New(LoadBalancerServerGroupServerIpVO.class)
+                    .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                    .select(LoadBalancerServerGroupServerIpVO_.ipAddress).listValues();
+            if (!newServerIps.isEmpty() && !oldServerIps.isEmpty()) {
+                for (String ipAddress : newServerIps) {
+                    if (oldServerIps.contains(ipAddress)) {
+                        throw new ApiMessageInterceptionException(operr("could not add server group[uuid:%s} to listener [uuid:%s] because server ip [%s] is already added",
+                                msg.getServerGroupUuid(),msg.getlistenerUuid(), ipAddress));
+                    }
+                }
+            }
+        }
         String loadBalancerUuid = Q.New(LoadBalancerServerGroupVO.class)
                 .select(LoadBalancerServerGroupVO_.loadBalancerUuid)
                 .eq(LoadBalancerServerGroupVO_.uuid,msg.getServerGroupUuid())
