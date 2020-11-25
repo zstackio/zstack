@@ -26,19 +26,19 @@ public class UpdateSharedBlockAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String uuid;
+    public java.lang.String uuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String sharedBlockGroupUuid;
+    public java.lang.String sharedBlockGroupUuid;
 
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String name;
+    public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String description;
+    public java.lang.String description;
 
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String diskUuid;
+    public java.lang.String diskUuid;
 
     @Param(required = false)
     public java.util.List systemTags;

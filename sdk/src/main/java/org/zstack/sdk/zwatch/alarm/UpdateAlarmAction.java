@@ -55,6 +55,9 @@ public class UpdateAlarmAction extends AbstractAction {
     @Param(required = false, validValues = {"Emergent","Important","Normal"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String emergencyLevel;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List actions;
+
     @Param(required = false)
     public java.util.List systemTags;
 

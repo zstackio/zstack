@@ -4,5 +4,4 @@ public enum EmergencyLevel {
 	Emergent,
 	Important,
 	Normal,
-	Recovery,
 }
