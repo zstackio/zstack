@@ -1016,7 +1016,9 @@ public class LoadBalancerBase {
             }
             /*http://jira.zstack.io/browse/ZSTAC-27065*/
             dbf.removeByPrimaryKey(vo.getUuid(), LoadBalancerListenerVO.class);
-            dbf.removeByPrimaryKey(vo.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+            if(vo.getServerGroupUuid() !=null && !vo.getServerGroupUuid().isEmpty()){
+                dbf.removeByPrimaryKey(vo.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+            }
             evt.setInventory(reloadAndGetInventory());
             bus.publish(evt);
             completion.done();
@@ -1033,7 +1035,9 @@ public class LoadBalancerBase {
                     dbf.removeCollection(vo.getAclRefs(), LoadBalancerListenerACLRefVO.class);
                 }
                 dbf.removeByPrimaryKey(vo.getUuid(), LoadBalancerListenerVO.class);
-                dbf.removeByPrimaryKey(vo.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+                if(vo.getServerGroupUuid() !=null && !vo.getServerGroupUuid().isEmpty()){
+                    dbf.removeByPrimaryKey(vo.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+                }
                 evt.setInventory(reloadAndGetInventory());
                 bus.publish(evt);
                 completion.done();

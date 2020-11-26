@@ -173,6 +173,13 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
                 useL3Networks("l3")
                 useInstanceOffering("instanceOffering")
             }
+
+            vm {
+                name = "vm-5"
+                useImage("image")
+                useL3Networks("l3")
+                useInstanceOffering("instanceOffering")
+            }
         }
     }
 
@@ -309,6 +316,21 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
                 uuid = lb.serverGroupUuid
             }
         }
+
+        def lbl2 = env.inventoryByName("listener-33") as LoadBalancerListenerInventory
+
+        VmInstanceInventory vm5 = queryVmInstance {conditions = ["name=vm-5"]} [0]
+        VmNicInventory nic5 = vm5.vmNics.get(0)
+
+        lbl2 =  addVmNicToLoadBalancer {
+            vmNicUuids = [nic5.uuid]
+            listenerUuid = lbl2.uuid
+        }
+
+        deleteLoadBalancerServerGroup {
+            uuid = lbl2.serverGroupUuid
+        }
+
     }
 
 
