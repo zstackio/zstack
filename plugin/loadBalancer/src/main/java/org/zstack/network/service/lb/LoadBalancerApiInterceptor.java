@@ -756,12 +756,6 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 .findValue();
         msg.setLoadBalancerUuid(loadBalancerUuid);
 
-	if(Q.New(LoadBalancerListenerVO.class)
-                .eq(LoadBalancerListenerVO_.serverGroupUuid,msg.getUuid())
-                .isExists()){
-            throw new ApiMessageInterceptionException(argerr("could not allow to delete default serverGroup[uuid:%s]",msg.getUuid()));
-        }
-
         if(Q.New(LoadBalancerVO.class)
                 .eq(LoadBalancerVO_.serverGroupUuid,msg.getUuid())
                 .isExists()){

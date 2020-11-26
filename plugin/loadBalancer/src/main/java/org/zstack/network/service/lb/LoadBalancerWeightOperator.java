@@ -128,6 +128,9 @@ public class LoadBalancerWeightOperator {
                     .select(LoadBalancerListenerVO_.serverGroupUuid)
                     .eq(LoadBalancerListenerVO_.uuid, listenerUuid)
                     .findValue();
+            if(defaultServerGroupUuid == null){
+                return;
+            }
             LoadBalancerServerGroupVmNicRefVO vmNicRefVOS = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
                     .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,defaultServerGroupUuid)
                     .eq(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,nicUuid)

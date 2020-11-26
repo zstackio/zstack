@@ -496,6 +496,9 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         .select(LoadBalancerListenerVO_.serverGroupUuid)
                         .eq(LoadBalancerListenerVO_.uuid, newTag.getResourceUuid())
                         .findValue();
+                if(defaultServerGroupUuid == null){
+                    return ;
+                }
                 List<String> nicUuids = Q.New(LoadBalancerServerGroupVmNicRefVO.class).select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid)
                         .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, defaultServerGroupUuid).listValues();
                 if (nicUuids.isEmpty()) {
