@@ -74,4 +74,6 @@ public class CoreGlobalProperty {
     public static int REST_API_RESULT_MAX_LENGTH;
     @GlobalProperty(name = "platformId", defaultValue = "0300020002")
     public static String PLATFORM_ID;
+    @GlobalProperty(name = "disable.SBLK.ZSNET", defaultValue = "true")
+    public static boolean DISABLE_SBLK_ZSNET;
 }
