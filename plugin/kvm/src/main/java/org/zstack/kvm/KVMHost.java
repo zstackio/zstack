@@ -57,9 +57,11 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.l3.NetworkGlobalProperty;
+import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
@@ -85,7 +87,6 @@ import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
-
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
     private static final ZTester tester = Utils.getTester();
@@ -2358,11 +2359,36 @@ public class KVMHost extends HostBase implements Host {
 
     }
 
+    @Transactional
+    private void setVmNicMultiqueueNum(final VmInstanceSpec spec) {
+        try {
+            if (!ImagePlatform.isType(spec.getImageSpec().getInventory().getPlatform(), ImagePlatform.Linux)) {
+                return;
+            }
+
+            if (!KVMGlobalConfig.AUTO_VM_NIC_MULTIQUEUE.value(Boolean.class)) {
+                return;
+            }
+
+            if (spec.getVmInventory().getCpuNum().equals(1)) {
+                return;
+            }
+
+            ResourceConfig multiQueues = rcf.getResourceConfig(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getIdentity());
+            Integer queues = spec.getVmInventory().getCpuNum() > KVMConstant.DEFAULT_MAX_NIC_QUEUE_NUMBER ? KVMConstant.DEFAULT_MAX_NIC_QUEUE_NUMBER : spec.getVmInventory().getCpuNum();
+            multiQueues.updateValue(spec.getVmInventory().getUuid(), queues.toString());
+
+        } catch (Exception e) {
+            logger.warn(String.format("got exception when trying set nic multiqueue for vm: %s, %s", spec.getVmInventory().getUuid(), e));
+        }
+    }
+
     private void handle(final CreateVmOnHypervisorMsg msg) {
         inQueue().name(String.format("start-vm-on-kvm-%s", self.getUuid()))
                 .asyncBackup(msg)
                 .run(chain -> {
                     setDataVolumeUseVirtIOSCSI(msg.getVmSpec());
+                    setVmNicMultiqueueNum(msg.getVmSpec());
                     startVm(msg.getVmSpec(), msg, new NoErrorCompletion(chain) {
                         @Override
                         public void done() {
