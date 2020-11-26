@@ -20,6 +20,7 @@ import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.longjob.LongJob;
+import org.zstack.longjob.LongJobUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -117,11 +118,6 @@ public class CreateRootVolumeTemplateFromRootVolumeLongJob implements LongJob {
                 }
             }
         });
-    }
-
-    @Override
-    public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
-        completion.fail(err(LongJobErrors.NOT_SUPPORTED,"not supported"));
     }
 
     @Override

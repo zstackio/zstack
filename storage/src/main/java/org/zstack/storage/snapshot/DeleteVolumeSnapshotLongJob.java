@@ -16,6 +16,7 @@ import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.longjob.LongJobUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import static org.zstack.core.Platform.err;
@@ -49,16 +50,6 @@ public class DeleteVolumeSnapshotLongJob implements LongJob {
                 }
             }
         });
-    }
-
-    @Override
-    public void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {
-        completion.fail(err(LongJobErrors.NOT_SUPPORTED,"not supported"));
-    }
-
-    @Override
-    public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
-        completion.fail(err(LongJobErrors.NOT_SUPPORTED,"not supported"));
     }
 
     private String getRoutedMnId(APIDeleteVolumeSnapshotMsg msg) {

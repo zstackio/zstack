@@ -1,18 +1,14 @@
 package org.zstack.longjob;
 
 import org.zstack.header.Component;
-import org.zstack.header.core.ExceptionSafe;
-import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.longjob.LongJob;
-import org.zstack.header.longjob.LongJobErrors;
 import org.zstack.header.longjob.LongJobFor;
-import org.zstack.header.message.APIEvent;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
@@ -63,8 +59,7 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
             allLongJob.put(jobName, job);
             fullJobName.put(jobName, at.value().getName());
 
-            checkCancelSupported(jobName, job);
-            checkResumeSupported(jobName, job);
+            checkBehaviorSupported(jobName, job);
         }
         return true;
     }
@@ -79,34 +74,16 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
         return !notSupportResumeJobType.contains(jobName);
     }
 
-    @ExceptionSafe
-    private void checkCancelSupported(String jobName, LongJob job) {
-        job.cancel(null, new ReturnValueCompletion<Boolean>(null) {
-            @Override
-            public void success(Boolean returnValue) {}
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                if (errorCode.isError(LongJobErrors.NOT_SUPPORTED)) {
-                    notSupportCancelJobType.add(jobName);
-                }
+    private void checkBehaviorSupported(String jobName, LongJob job) {
+        for (Method method : job.getClass().getMethods()) {
+            if (method.getName().equals("cancel") && method.isDefault()) {
+                notSupportCancelJobType.add(jobName);
             }
-        });
-    }
 
-    @ExceptionSafe
-    private void checkResumeSupported(String jobName, LongJob job) {
-        job.resume(null, new ReturnValueCompletion<APIEvent>(null) {
-            @Override
-            public void success(APIEvent returnValue) {}
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                if (errorCode.isError(LongJobErrors.NOT_SUPPORTED)) {
-                    notSupportResumeJobType.add(jobName);
-                }
+            if (method.getName().equals("resume") && method.isDefault()) {
+                notSupportResumeJobType.add(jobName);
             }
-        });
+        }
     }
 
     @Override

@@ -1,8 +1,6 @@
 package org.zstack.header.longjob;
 
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.message.APIEvent;
 
 /**
@@ -10,8 +8,8 @@ import org.zstack.header.message.APIEvent;
  */
 public interface LongJob {
     void start(LongJobVO job, ReturnValueCompletion<APIEvent> completion);
-    void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion);
-    void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion);
+    default void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {}
+    default void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {}
     default Class getAuditType() {
         return null;
     }

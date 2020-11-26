@@ -18,6 +18,7 @@ import org.zstack.header.longjob.LongJobFor;
 import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.MessageReply;
+import org.zstack.longjob.LongJobUtils;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 import static org.zstack.core.Platform.err;
@@ -51,15 +52,5 @@ public class UpdateClusterOSJob implements LongJob {
                 }
             }
         });
-    }
-
-    @Override
-    public void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {
-        completion.fail(err(LongJobErrors.NOT_SUPPORTED,"not supported"));
-    }
-
-    @Override
-    public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
-        completion.fail(err(LongJobErrors.NOT_SUPPORTED,"not supported"));
     }
 }

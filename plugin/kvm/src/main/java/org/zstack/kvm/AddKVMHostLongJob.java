@@ -51,14 +51,4 @@ public class AddKVMHostLongJob implements LongJob {
             }
         });
     }
-
-    @Override
-    public void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {
-        completion.fail(err(LongJobErrors.NOT_SUPPORTED,"not supported"));
-    }
-
-    @Override
-    public void resume(LongJobVO job, ReturnValueCompletion<APIEvent> completion) {
-        completion.fail(err(LongJobErrors.NOT_SUPPORTED,"not supported"));
-    }
 }
