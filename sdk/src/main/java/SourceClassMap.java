@@ -240,6 +240,7 @@ public class SourceClassMap {
 			put("org.zstack.header.sriov.VmVfNicInventory", "org.zstack.sdk.VmVfNicInventory");
 			put("org.zstack.header.storage.backup.BackupMode", "org.zstack.sdk.BackupMode");
 			put("org.zstack.header.storage.backup.BackupStorageInventory", "org.zstack.sdk.BackupStorageInventory");
+			put("org.zstack.header.storage.backup.GetBackupInfoResult", "org.zstack.sdk.GetBackupInfoResult");
 			put("org.zstack.header.storage.backup.SyncBackupResult", "org.zstack.sdk.SyncBackupResult");
 			put("org.zstack.header.storage.backup.VolumeBackupInventory", "org.zstack.sdk.VolumeBackupInventory");
 			put("org.zstack.header.storage.backup.VolumeBackupStorageRefInventory", "org.zstack.sdk.VolumeBackupStorageRefInventory");
@@ -423,6 +424,7 @@ public class SourceClassMap {
 			put("org.zstack.storage.backup.imagestore.ImageStoreBackupStorageInventory", "org.zstack.sdk.ImageStoreBackupStorageInventory");
 			put("org.zstack.storage.backup.imagestore.ImageStoreGcResult", "org.zstack.sdk.ImageStoreGcResult");
 			put("org.zstack.storage.backup.imagestore.ImageStoreImageStruct", "org.zstack.sdk.ImageStoreImageStruct");
+			put("org.zstack.storage.backup.s3.header.S3BackupStorageInventory", "org.zstack.sdk.S3BackupStorageInventory");
 			put("org.zstack.storage.backup.sftp.SftpBackupStorageInventory", "org.zstack.sdk.SftpBackupStorageInventory");
 			put("org.zstack.storage.ceph.backup.CephBackupStorageInventory", "org.zstack.sdk.CephBackupStorageInventory");
 			put("org.zstack.storage.ceph.backup.CephBackupStorageMonInventory", "org.zstack.sdk.CephBackupStorageMonInventory");
@@ -671,6 +673,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FlowMeterInventory", "org.zstack.header.flowMeter.FlowMeterInventory");
 			put("org.zstack.sdk.FreeIpInventory", "org.zstack.header.network.l3.FreeIpInventory");
 			put("org.zstack.sdk.GarbageCollectorInventory", "org.zstack.core.gc.GarbageCollectorInventory");
+			put("org.zstack.sdk.GetBackupInfoResult", "org.zstack.header.storage.backup.GetBackupInfoResult");
 			put("org.zstack.sdk.GlobalConfigInventory", "org.zstack.core.config.GlobalConfigInventory");
 			put("org.zstack.sdk.GlobalConfigTemplateInventory", "org.zstack.templateConfig.GlobalConfigTemplateInventory");
 			put("org.zstack.sdk.GuestToolsInventory", "org.zstack.guesttools.GuestToolsInventory");
@@ -850,6 +853,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.RouterAreaInventory", "org.zstack.header.protocol.RouterAreaInventory");
 			put("org.zstack.sdk.RunningState", "org.zstack.storage.device.localRaid.RunningState");
 			put("org.zstack.sdk.RunningTaskInfo", "org.zstack.header.core.progress.RunningTaskInfo");
+			put("org.zstack.sdk.S3BackupStorageInventory", "org.zstack.storage.backup.s3.header.S3BackupStorageInventory");
 			put("org.zstack.sdk.SchedulerJobGroupInventory", "org.zstack.header.scheduler.SchedulerJobGroupInventory");
 			put("org.zstack.sdk.SchedulerJobGroupJobRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupJobRefInventory");
 			put("org.zstack.sdk.SchedulerJobGroupSchedulerTriggerRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupSchedulerTriggerRefInventory");
