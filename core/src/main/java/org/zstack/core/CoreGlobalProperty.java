@@ -68,4 +68,6 @@ public class CoreGlobalProperty {
     public static boolean CHAIN_TASK_QOS;
     @GlobalProperty(name = "platformId", defaultValue = "0300020002")
     public static String PLATFORM_ID;
+    @GlobalProperty(name = "disable.SBLK.ZSNET", defaultValue = "true")
+    public static boolean DISABLE_SBLK_ZSNET;
 }
