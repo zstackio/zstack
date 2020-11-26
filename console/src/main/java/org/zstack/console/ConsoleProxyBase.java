@@ -55,6 +55,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
     }
 
     private void doEstablish(URI uri, final ReturnValueCompletion<ConsoleProxyInventory> completion) {
+        final String targetSchema = uri.getScheme();
         final String targetHostname = uri.getHost();
         final int targetPort = uri.getPort();
 
@@ -68,10 +69,15 @@ public class ConsoleProxyBase implements ConsoleProxy {
 
         ConsoleProxyCommands.EstablishProxyCmd cmd = new ConsoleProxyCommands.EstablishProxyCmd();
         cmd.setVmUuid(self.getVmInstanceUuid());
+        cmd.setTargetSchema(targetSchema);
         cmd.setTargetHostname(targetHostname);
         cmd.setTargetPort(targetPort);
         cmd.setProxyHostname("0.0.0.0");
-        cmd.setProxyPort(CoreGlobalProperty.CONSOLE_PROXY_PORT);
+        if (targetSchema.equals(ConsoleConstants.HTTP_SCHEMA)) {
+            cmd.setProxyPort(CoreGlobalProperty.HTTP_CONSOLE_PROXY_PORT);
+        } else {
+            cmd.setProxyPort(CoreGlobalProperty.CONSOLE_PROXY_PORT);
+        }
         cmd.setSslCertFile(CoreGlobalProperty.CONSOLE_PROXY_CERT_FILE);
         cmd.setScheme(self.getScheme());
         cmd.setToken(self.getToken());
@@ -88,6 +94,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
             @Override
             public void success(ConsoleProxyCommands.EstablishProxyRsp ret) {
                 if (ret.isSuccess()) {
+                    self.setTargetSchema(targetSchema);
                     self.setTargetHostname(targetHostname);
                     self.setTargetPort(targetPort);
                     self.setProxyPort(ret.getProxyPort());
@@ -128,6 +135,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
         ConsoleProxyCommands.CheckAvailabilityCmd cmd = new ConsoleProxyCommands.CheckAvailabilityCmd();
         cmd.setProxyHostname(self.getProxyHostname());
         cmd.setProxyPort(self.getProxyPort());
+        cmd.setTargetSchema(self.getTargetSchema());
         cmd.setTargetHostname(self.getTargetHostname());
         cmd.setTargetPort(self.getTargetPort());
         cmd.setProxyIdentity(self.getProxyIdentity());
@@ -162,6 +170,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
         DeleteProxyCmd cmd = new DeleteProxyCmd();
         cmd.setProxyHostname(self.getProxyHostname());
         cmd.setProxyPort(self.getProxyPort());
+        cmd.setTargetSchema(self.getTargetSchema());
         cmd.setTargetHostname(self.getTargetHostname());
         cmd.setTargetPort(self.getTargetPort());
         cmd.setToken(self.getToken());

@@ -193,6 +193,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     runner.setTargetUuid(Platform.getManagementServerId());
                     runner.setPlayBookName(ANSIBLE_PLAYBOOK_NAME);
                     runner.putArgument("pkg_consoleproxy", agentPackageName);
+                    runner.putArgument("http_console_proxy_port", CoreGlobalProperty.HTTP_CONSOLE_PROXY_PORT);
                     if (CoreGlobalProperty.SYNC_NODE_TIME) {
                         if (CoreGlobalProperty.CHRONY_SERVERS == null || CoreGlobalProperty.CHRONY_SERVERS.isEmpty()) {
                             completion.fail(operr("chrony server not configured!"));
