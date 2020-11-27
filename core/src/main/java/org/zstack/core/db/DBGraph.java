@@ -49,6 +49,32 @@ public class DBGraph {
         public EntityVertex next;
         public EntityVertex previous;
 
+        public String makeSQLForSearch(String field, String op, String value) {
+            return makeSQLForSearch(this, field, op, value);
+        }
+
+        public String makeSQLForSearch(EntityVertex vertex, String field, String op, String value) {
+            if (vertex.next == null) {
+                String entity = String.format("%s_", vertex.entityClass.getSimpleName());
+                String vo = vertex.entityClass.getSimpleName();
+                String key = vertex.previous.dstKey;
+                return String.format("(SELECT %s.%s FROM %s %s WHERE %s.%s %s %s)",
+                        entity, key, vo, entity, entity, field, op, value);
+            }
+
+            String subsql = makeSQLForSearch(vertex.next, field, op, value);
+            String entity = String.format("%s_", vertex.entityClass.getSimpleName());
+            String vo = vertex.entityClass.getSimpleName();
+            String primaryKey = vertex.previous != null ? vertex.previous.dstKey : EntityMetadata.getPrimaryKeyField(vertex.entityClass).getName();
+            if (vertex.previous == null) {
+                return String.format("SELECT %s.%s FROM %s %s WHERE %s.%s IN (%%s) AND %s.%s IN %s",
+                        entity, primaryKey, vo, entity, entity, primaryKey, entity, vertex.srcKey, subsql);
+            } else {
+                return String.format("(SELECT %s.%s FROM %s %s WHERE %s.%s IN %s)",
+                        entity, primaryKey, vo, entity, entity, vertex.srcKey, subsql);
+            }
+        }
+
         public String toSQL(String field, SimpleQuery.Op op, String value) {
             return makeSQL(this, field, op, value);
         }

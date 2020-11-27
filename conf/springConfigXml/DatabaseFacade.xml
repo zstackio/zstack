@@ -71,6 +71,22 @@
                 <prop key="hibernate.temp.use_jdbc_metadata_defaults">false</prop>
                 <prop key="hibernate.connection.show_sql">false</prop>
                 <prop key="hibernate.hql.bulk_id_strategy">org.zstack.core.db.hibernate.InlineIdsOrClauseBulkIdStrategy2</prop>
+                <!--<prop key="hibernate.search.default.directory_provider">filesystem</prop>-->
+                <prop key="hibernate.search.model_mapping">org.zstack.search.CustomSearchMappingFactory</prop>
+                <prop key="hibernate.search.autoregister_listeners">${Search.autoRegister:true}</prop>
+                <prop key="hibernate.search.default.directory_provider">infinispan</prop>
+                <prop key="hibernate.search.infinispan.configuration_resourcename">searchConfig/default-infinispan.xml</prop>
+                <prop key="hibernate.search.default.exclusive_index_use">${Exclusive.indexUse:false}</prop>
+                <prop key="hibernate.search.default.worker.backend">jgroups</prop>
+                <prop key="hibernate.search.services.jgroups.configurationFile">searchConfig/jgroup-backend-tcp.xml</prop>
+                <!--<prop key="hibernate.search.default.indexBase">${Search.indexBaseDir:/var/lib/zstack/search/indexes}</prop>-->
+                <!--disable automatic index update
+                <prop key="hibernate.search.indexing_strategy">manual</prop> -->
+                <prop key="hibernate.search.default.optimizer.operation_limit.max">1000</prop>
+                <prop key="hibernate.search.default.optimizer.transaction_limit.max">100</prop>
+                <!--.8.2.x infinispan not support async https://issues.redhat.com/browse/ISPN-4065 -->
+                <prop key="hibernate.search.default.worker.execution">sync</prop>
+                <!--<prop key="hibernate.search.default.index_flush_interval">${IndexWorker.flushInterval:1000}</prop>-->
             </props>
         </property>
     </bean>

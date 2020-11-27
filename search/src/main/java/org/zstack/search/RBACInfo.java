@@ -1,13 +1,14 @@
-package org.zstack.query;
+package org.zstack.search;
 
 import org.zstack.header.identity.rbac.RBACDescription;
-import org.zstack.search.APIRefreshSearchIndexesMsg;
+import org.zstack.query.APIBatchQueryMsg;
+import org.zstack.query.APIZQLQueryMsg;
 
 public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
-                .normalAPIs(APIBatchQueryMsg.class, APIZQLQueryMsg.class, APIRefreshSearchIndexesMsg.class)
+                .normalAPIs(APIRefreshSearchIndexesMsg.class)
                 .build();
     }
 
@@ -15,7 +16,7 @@ public class RBACInfo implements RBACDescription {
     public void contributeToRoles() {
         roleContributorBuilder()
                 .roleName("other")
-                .actions(APIBatchQueryMsg.class, APIZQLQueryMsg.class, APIRefreshSearchIndexesMsg.class)
+                .actions(APIRefreshSearchIndexesMsg.class)
                 .build();
     }
 
