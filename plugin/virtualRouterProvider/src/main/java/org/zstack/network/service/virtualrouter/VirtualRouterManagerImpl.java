@@ -6,7 +6,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.appliancevm.*;
 import org.zstack.compute.vm.VmNicExtensionPoint;
-import org.zstack.header.image.ImageBootMode;
+import org.zstack.header.image.*;
+import org.zstack.header.query.QueryBelongFilter;
 import org.zstack.image.ImageSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
@@ -43,8 +44,6 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
-import org.zstack.header.image.ImageInventory;
-import org.zstack.header.image.ImageVO;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APICreateMessage;
@@ -111,6 +110,7 @@ import static org.zstack.core.progress.ProgressReportService.createSubTaskProgre
 import static org.zstack.network.service.virtualrouter.VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
 import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.GUEST_NIC_MASK;
 import static org.zstack.network.service.virtualrouter.vyos.VyosConstants.VYOS_ROUTER_PROVIDER_TYPE;
+import static org.zstack.network.service.virtualrouter.vyos.VyosConstants.VYOS_VM_TYPE;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.VipUseForList.SNAT_NETWORK_SERVICE_TYPE;
@@ -119,7 +119,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         PrepareDbInitialValueExtensionPoint, L2NetworkCreateExtensionPoint,
         GlobalApiMessageInterceptor, AddExpandedQueryExtensionPoint, GetCandidateVmNicsForLoadBalancerExtensionPoint,
         GetPeerL3NetworksForLoadBalancerExtensionPoint, FilterVmNicsForEipInVirtualRouterExtensionPoint, ApvmCascadeFilterExtensionPoint, ManagementNodeReadyExtensionPoint,
-        VipCleanupExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint, VirtualRouterHaGetCallbackExtensionPoint, AfterAddIpRangeExtensionPoint {
+        VipCleanupExtensionPoint, GetL3NetworkForEipInVirtualRouterExtensionPoint, VirtualRouterHaGetCallbackExtensionPoint, AfterAddIpRangeExtensionPoint, QueryBelongFilter {
 	private final static CLogger logger = Utils.getLogger(VirtualRouterManagerImpl.class);
 	
 	private final static List<String> supportedL2NetworkTypes = new ArrayList<String>();
@@ -621,13 +621,40 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
             }
         });
-		return true;
+
+        upgradeVirtualRouterImageType();
+        return true;
 	}
 
 	@Override
 	public boolean stop() {
 		return true;
 	}
+
+	private void upgradeVirtualRouterImageType() {
+        if (!LoadBalancerGlobalProperty.UPGRADE_LB_SERVER_GROUP) {
+            return;
+        }
+
+        List<String> imageUuids = Q.New(ImageVO.class).eq(ImageVO_.system, true).select(ImageVO_.uuid).listValues();
+        if (imageUuids.isEmpty()) {
+            return;
+        }
+
+        for (String uuid : imageUuids) {
+            /* there are 2 kinds of system image, appcenter image, vyos router image */
+            String appId = ImageSystemTags.APPCENTER_BUILD.getTokenByResourceUuid(uuid,
+                    ImageSystemTags.APPCENTER_BUILD_TOKEN);
+            String applianceType = ImageSystemTags.APPLIANCE_IMAGE_TYPE.getTokenByResourceUuid(uuid,
+                    ImageSystemTags.APPLIANCE_IMAGE_TYPE_TOKEN);
+            if (appId == null && applianceType == null) {
+                SystemTagCreator creator = ImageSystemTags.APPLIANCE_IMAGE_TYPE.newSystemTagCreator(uuid);
+                creator.setTagByTokens(map(e(ImageSystemTags.APPLIANCE_IMAGE_TYPE_TOKEN, VYOS_VM_TYPE)));
+                creator.inherent = true;
+                creator.create();
+            }
+        }
+    }
 
     private void installSystemValidator() {
         class VirtualRouterOfferingValidator implements SystemTagCreateMessageValidator, SystemTagValidator {
@@ -1328,6 +1355,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         classes.add(APIAttachNetworkServiceToL3NetworkMsg.class);
         classes.add(APIAddIpv6RangeMsg.class);
         classes.add(APIAddIpv6RangeByNetworkCidrMsg.class);
+        classes.add(APIAddImageMsg.class);
         return classes;
     }
 
@@ -1344,6 +1372,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             validate((APIAddIpv6RangeMsg) msg);
         } else if (msg instanceof APIAddIpv6RangeByNetworkCidrMsg) {
             validate((APIAddIpv6RangeByNetworkCidrMsg) msg);
+        } else if (msg instanceof APIAddImageMsg) {
+            validate((APIAddImageMsg) msg);
         }
         return msg;
     }
@@ -1366,6 +1396,26 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     private void validate(APIAddIpv6RangeByNetworkCidrMsg msg) {
         validateIpv6Range(msg.getL3NetworkUuid());
+    }
+
+    private void validate(APIAddImageMsg msg) {
+        if (msg.getSystemTags() == null) {
+            return;
+        }
+
+        for (String tag : msg.getSystemTags()) {
+            if (!ImageSystemTags.APPLIANCE_IMAGE_TYPE.isMatch(tag)) {
+                continue;
+            }
+
+            String type = ImageSystemTags.APPLIANCE_IMAGE_TYPE.getTokenByTag(tag, ImageSystemTags.APPLIANCE_IMAGE_TYPE_TOKEN);
+            try {
+                ApplianceVmType.valueOf(type);
+            } catch (Exception e) {
+                throw new ApiMessageInterceptionException(argerr("couldn't add image, because systemTag [%s] " +
+                        "includes invalid appliance image type [%s]", tag, type));
+            }
+        }
     }
 
     private void validate(APIAttachNetworkServiceToL3NetworkMsg msg) {
@@ -1861,11 +1911,8 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private List<VmNicInventory> getCandidateVmNicsIfPeerL3NetworkExists(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates, List<String> peerL3NetworkUuids) {
-
-        List<String> attachedVmNicUuids = Q.New(LoadBalancerListenerVmNicRefVO.class)
-                                           .select(LoadBalancerListenerVmNicRefVO_.vmNicUuid)
-                                           .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getListenerUuid())
-                                           .listValues();
+        LoadBalancerListenerVO listenerVO = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+        final List<String> attachedVmNicUuids = listenerVO.getAttachedVmNics();
         return candidates.stream()
                 .filter(n -> peerL3NetworkUuids.contains(n.getL3NetworkUuid()))
                 .filter(n -> !attachedVmNicUuids.contains(n.getUuid()))
@@ -1902,14 +1949,12 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                         .param("l3s", guestL3Uuids)
                         .list();
 
-                List<String> attachedVmNicUuids = Q.New(LoadBalancerListenerVmNicRefVO.class)
-                        .select(LoadBalancerListenerVmNicRefVO_.vmNicUuid)
-                        .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getListenerUuid())
-                        .listValues();
+                LoadBalancerListenerVO listenerVO = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+                final List<String> finalAttachedVmNicUuids = listenerVO.getAttachedVmNics();
 
                 return candidates.stream()
                         .filter( nic -> vmNicUuids.contains(nic.getUuid()))
-                        .filter( nic -> !attachedVmNicUuids.contains(nic.getUuid()))
+                        .filter( nic -> !finalAttachedVmNicUuids.contains(nic.getUuid()))
                         .collect(Collectors.toList());
             }
         }.execute();
@@ -2464,6 +2509,22 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             for (VmNicExtensionPoint ext : pluginRgty.getExtensionList(VmNicExtensionPoint.class)) {
                 ext.afterAddIpAddress(nic.getUuid(), areply.getIpInventory().getUuid());
             }
+        }
+    }
+
+    @Override
+    public String filterName() {
+        return ImageSystemTags.APPLIANCE_IMAGE_TYPE_TOKEN;
+    }
+
+    @Override
+    public String convertFilterNameToZQL(String filterName) {
+        String[] ss = filterName.split(":");
+        try {
+            ApplianceVmType.valueOf(ss[1]);
+            return String.format("has ('applianceType::%s')", ss[1]);
+        } catch (Exception e) {
+            throw new OperationFailureException(argerr("invalid ApplianceVmType %s", ss[1]));
         }
     }
 }

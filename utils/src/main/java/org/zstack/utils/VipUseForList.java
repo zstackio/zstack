@@ -11,6 +11,7 @@ public class VipUseForList {
 
     public static final String EIP_NETWORK_SERVICE_TYPE = "Eip";
     public static final String LB_NETWORK_SERVICE_TYPE = "LoadBalancer";
+    public static final String SLB_NETWORK_SERVICE_TYPE = "SLB";
     public static final String PORTFORWARDING_NETWORK_SERVICE_TYPE = "PortForwarding";
     public static final String IPSEC_NETWORK_SERVICE_TYPE = "IPsec";
     public static final String SNAT_NETWORK_SERVICE_TYPE = "SNAT";
@@ -49,8 +50,10 @@ public class VipUseForList {
         /* eip and other services(SNAT,LB,IPSec,PF) can not be attached to same vip */
         if(EIP_NETWORK_SERVICE_TYPE.equals(item)){
             return useForList.isEmpty();
-        } else{
-            return !isIncluded(EIP_NETWORK_SERVICE_TYPE);
+        } if(SLB_NETWORK_SERVICE_TYPE.equals(item)){
+            return useForList.isEmpty();
+        } else {
+            return !isIncluded(EIP_NETWORK_SERVICE_TYPE) && !isIncluded(SLB_NETWORK_SERVICE_TYPE);
         }
     }
 

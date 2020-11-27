@@ -44,4 +44,8 @@ public class ImageSystemTags {
     public static PatternedSystemTag APPCENTER_BUILD = new PatternedSystemTag(String.format("buildapp::{%s}", APPCENTER_BUILD_TOKEN), ImageVO.class);
 
     public static PatternedSystemTag PACKER_BUILD = new PatternedSystemTag("packer", ImageVO.class);
+
+    public static String APPLIANCE_IMAGE_TYPE_TOKEN = "applianceType";
+    public static PatternedSystemTag APPLIANCE_IMAGE_TYPE = new PatternedSystemTag(String.format("applianceType::{%s}", APPLIANCE_IMAGE_TYPE_TOKEN), ImageVO.class);
+
 }

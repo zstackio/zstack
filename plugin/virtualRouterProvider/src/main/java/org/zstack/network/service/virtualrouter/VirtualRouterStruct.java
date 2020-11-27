@@ -2,6 +2,7 @@ package org.zstack.network.service.virtualrouter;
 
 import org.zstack.appliancevm.ApplianceVmGlobalProperty;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.network.service.lb.LoadBalancerInventory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,12 +15,26 @@ public class VirtualRouterStruct {
     private VirtualRouterOfferingValidator offeringValidator;
     private VirtualRouterVmSelector virtualRouterVmSelector;
     private VirtualRouterOfferingSelector virtualRouterOfferingSelector;
+    private String loadBalancerUuid;
     private List<String> inherentSystemTags = new ArrayList<>();
     private List<String> nonInherentSystemTags = new ArrayList<>();
     private boolean notGatewayForGuestL3Network;
     private String providerType = VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE;
     private String applianceVmType = VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE;
     private int applianceVmAgentPort = ApplianceVmGlobalProperty.AGENT_PORT;
+
+    public VirtualRouterStruct() {
+    }
+
+    public VirtualRouterStruct(L3NetworkInventory l3) {
+        this.l3Network = l3;
+        if (l3 != null) {
+            /*flat network*/
+            if (l3.getNetworkServiceTypes().contains(VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE)) {
+                this.setNotGatewayForGuestL3Network(true);
+            }
+        }
+    }
 
     public int getApplianceVmAgentPort() {
         return applianceVmAgentPort;
@@ -99,5 +114,13 @@ public class VirtualRouterStruct {
 
     public void setVirtualRouterVmSelector(VirtualRouterVmSelector virtualRouterVmSelector) {
         this.virtualRouterVmSelector = virtualRouterVmSelector;
+    }
+
+    public String getLoadBalancerUuid() {
+        return loadBalancerUuid;
+    }
+
+    public void setLoadBalancerUuid(String loadBalancerUuid) {
+        this.loadBalancerUuid = loadBalancerUuid;
     }
 }

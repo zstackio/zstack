@@ -17,6 +17,7 @@ public class LoadBalancerListenerVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<LoadBalancerListenerVO, Integer> instancePort;
     public static volatile SingularAttribute<LoadBalancerListenerVO, Integer> loadBalancerPort;
     public static volatile SingularAttribute<LoadBalancerListenerVO, String> protocol;
+    public static volatile SingularAttribute<LoadBalancerListenerVO, String> serverGroupUuid;
     public static volatile SingularAttribute<LoadBalancerListenerVO, Timestamp> createDate;
     public static volatile SingularAttribute<LoadBalancerListenerVO, Timestamp> lastOpDate;
 }

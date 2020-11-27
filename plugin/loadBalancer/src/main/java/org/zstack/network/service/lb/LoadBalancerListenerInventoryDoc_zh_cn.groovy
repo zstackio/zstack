@@ -1,8 +1,13 @@
 package org.zstack.network.service.lb
 
+import java.lang.Integer
+import java.lang.Integer
+import java.sql.Timestamp
+import java.sql.Timestamp
+import org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory
 import org.zstack.network.service.lb.LoadBalancerListenerACLRefInventory
 import org.zstack.network.service.lb.LoadBalancerListenerCertificateRefInventory
-import org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory
+import org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefInventory
 
 doc {
 
@@ -51,6 +56,12 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "serverGroupUuid"
+		desc ""
+		type "String"
+		since "4.0"
+	}
+	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"
@@ -85,5 +96,13 @@ doc {
 		type "List"
 		since "0.6"
 		clz LoadBalancerListenerCertificateRefInventory.class
+	}
+	ref {
+		name "serverGroupRefs"
+		path "org.zstack.network.service.lb.LoadBalancerListenerInventory.serverGroupRefs"
+		desc "null"
+		type "List"
+		since "4.0"
+		clz LoadBalancerListenerServerGroupRefInventory.class
 	}
 }

@@ -1,5 +1,7 @@
 package org.zstack.network.service.lb
 
+import java.sql.Timestamp
+import java.sql.Timestamp
 import org.zstack.network.service.lb.LoadBalancerListenerInventory
 
 doc {
@@ -31,10 +33,22 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "type"
+		desc ""
+		type "String"
+		since "4.0"
+	}
+	field {
 		name "vipUuid"
 		desc "VIP UUID"
 		type "String"
 		since "0.6"
+	}
+	field {
+		name "serverGroupUuid"
+		desc ""
+		type "String"
+		since "4.0"
 	}
 	field {
 		name "createDate"

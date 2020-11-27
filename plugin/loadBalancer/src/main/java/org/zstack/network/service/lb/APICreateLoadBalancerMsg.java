@@ -30,6 +30,8 @@ public class APICreateLoadBalancerMsg extends APICreateMessage implements APIAud
     @APIParam(resourceType = VipVO.class, checkAccount = true)
     private String vipUuid;
 
+    private String type;
+
     public String getName() {
         return name;
     }
@@ -53,7 +55,15 @@ public class APICreateLoadBalancerMsg extends APICreateMessage implements APIAud
     public void setVipUuid(String vipUuid) {
         this.vipUuid = vipUuid;
     }
- 
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
     public static APICreateLoadBalancerMsg __example__() {
         APICreateLoadBalancerMsg msg = new APICreateLoadBalancerMsg();
 

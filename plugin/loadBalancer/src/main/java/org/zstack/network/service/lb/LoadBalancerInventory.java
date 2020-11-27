@@ -29,22 +29,32 @@ public class LoadBalancerInventory implements Serializable {
     private String name;
     private String uuid;
     private String description;
+    private String serverGroupUuid;
     private String state;
+    private String type;
     private String vipUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
     private List<LoadBalancerListenerInventory> listeners;
 
+    public LoadBalancerInventory(LoadBalancerVO vo) {
+        this.setUuid(vo.getUuid());
+        this.setName(vo.getName());
+        this.setDescription(vo.getDescription());
+        this.setState(vo.getState().toString());
+        this.setVipUuid(vo.getVipUuid());
+        this.setServerGroupUuid(vo.getServerGroupUuid());
+        this.setType(vo.getType().toString());
+        this.setCreateDate(vo.getCreateDate());
+        this.setLastOpDate(vo.getLastOpDate());
+        this.setListeners(LoadBalancerListenerInventory.valueOf(vo.getListeners()));
+    }
+
+    public LoadBalancerInventory() {
+    }
+
     public static LoadBalancerInventory valueOf(LoadBalancerVO vo) {
-        LoadBalancerInventory inv = new LoadBalancerInventory();
-        inv.setUuid(vo.getUuid());
-        inv.setName(vo.getName());
-        inv.setDescription(vo.getDescription());
-        inv.setState(vo.getState().toString());
-        inv.setVipUuid(vo.getVipUuid());
-        inv.setCreateDate(vo.getCreateDate());
-        inv.setLastOpDate(vo.getLastOpDate());
-        inv.setListeners(LoadBalancerListenerInventory.valueOf(vo.getListeners()));
+        LoadBalancerInventory inv = new LoadBalancerInventory(vo);
         return inv;
     }
 
@@ -118,5 +128,21 @@ public class LoadBalancerInventory implements Serializable {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
+    }
+
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
     }
 }

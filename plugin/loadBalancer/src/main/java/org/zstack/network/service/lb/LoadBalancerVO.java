@@ -44,8 +44,16 @@ public class LoadBalancerVO extends ResourceVO implements OwnedByAccount {
     private LoadBalancerState state;
 
     @Column
+    @Enumerated(EnumType.STRING)
+    private LoadBalancerType type;
+
+    @Column
     @ForeignKey(parentEntityClass = VipVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String vipUuid;
+
+    @Column
+    @ForeignKey(parentEntityClass = LoadBalancerServerGroupVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
+    private String serverGroupUuid;
 
     @OneToMany(fetch=FetchType.EAGER)
     @JoinColumn(name="loadBalancerUuid", insertable=false, updatable=false)
@@ -139,5 +147,21 @@ public class LoadBalancerVO extends ResourceVO implements OwnedByAccount {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public LoadBalancerType getType() {
+        return type;
+    }
+
+    public void setType(LoadBalancerType type) {
+        this.type = type;
+    }
+
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
+    }
+
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
     }
 }
