@@ -416,17 +416,8 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                 reply.setTotal(result.total);
             }
             if (result.inventories != null) {
-                if (msg.isCount()) {
-                    reply.setTotal(result.inventories.size());
-                } else {
-                    replySetter.invoke(reply, result.inventories);
-                }
-                if (msg.isReplyWithCount()) {
-                    reply.setTotal(result.inventories.size());
-                    replySetter.invoke(reply, result.inventories);
-                }
+                replySetter.invoke(reply, result.inventories);
             }
-
             bus.reply(msg, reply);
         } catch (OperationFailureException of) {
             throw of;
@@ -481,7 +472,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
 
     public ZQLQueryReturn queryUseZQL(APIQueryMessage msg, Class inventoryClass) {
         List<String> sb = new ArrayList<>();
-        sb.add(msg.isCount() && msg.getFilterName() == null ? "count" : "query");
+        sb.add(msg.isCount() ? "count" : "query");
         Class targetInventoryClass = getQueryTargetInventoryClass(msg, inventoryClass);
         sb.add(msg.getFields() == null || msg.getFields().isEmpty() ? ZQL.queryTargetNameFromInventoryClass(targetInventoryClass) : ZQL.queryTargetNameFromInventoryClass(targetInventoryClass) + "." + StringUtils.join(msg.getFields(), ","));
 
@@ -505,7 +496,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             sb.add(String.format(" %s %s ", SYSTEM_TAG, condition));
         }
 
-        if (!msg.isCount() && msg.isReplyWithCount() && msg.getFilterName() == null) {
+        if (!msg.isCount() && msg.isReplyWithCount()) {
             sb.add("return with (total)");
         }
 
@@ -513,7 +504,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             sb.add(String.format("order by %s %s", msg.getSortBy(), msg.getSortDirection()));
         }
 
-        if (msg.getLimit() != null && msg.getFilterName() == null) {
+        if (msg.getLimit() != null) {
             sb.add(String.format("limit %s", msg.getLimit()));
         }
 
