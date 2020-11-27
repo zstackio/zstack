@@ -4040,33 +4040,6 @@ abstract class ApiHelper {
     }
 
 
-    def changeBareMetal2ChassisOffering(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeBareMetal2ChassisOfferingAction.class) Closure c) {
-        def a = new org.zstack.sdk.ChangeBareMetal2ChassisOfferingAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
     def changeBareMetal2ChassisOfferingState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeBareMetal2ChassisOfferingStateAction.class) Closure c) {
         def a = new org.zstack.sdk.ChangeBareMetal2ChassisOfferingStateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -4150,6 +4123,33 @@ abstract class ApiHelper {
 
     def changeBareMetal2GatewayState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeBareMetal2GatewayStateAction.class) Closure c) {
         def a = new org.zstack.sdk.ChangeBareMetal2GatewayStateAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def changeBareMetal2InstanceChassisOffering(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeBareMetal2InstanceChassisOfferingAction.class) Closure c) {
+        def a = new org.zstack.sdk.ChangeBareMetal2InstanceChassisOfferingAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -26178,6 +26178,33 @@ abstract class ApiHelper {
 
     def reconnectBareMetal2Gateway(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ReconnectBareMetal2GatewayAction.class) Closure c) {
         def a = new org.zstack.sdk.ReconnectBareMetal2GatewayAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def reconnectBareMetal2Instance(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ReconnectBareMetal2InstanceAction.class) Closure c) {
+        def a = new org.zstack.sdk.ReconnectBareMetal2InstanceAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

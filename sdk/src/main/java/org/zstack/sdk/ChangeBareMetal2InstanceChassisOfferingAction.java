@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ChangeBareMetal2ChassisOfferingAction extends AbstractAction {
+public class ChangeBareMetal2InstanceChassisOfferingAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ChangeBareMetal2ChassisOfferingAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ChangeBareMetal2ChassisOfferingResult value;
+        public org.zstack.sdk.ChangeBareMetal2InstanceChassisOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -63,8 +63,8 @@ public class ChangeBareMetal2ChassisOfferingAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ChangeBareMetal2ChassisOfferingResult value = res.getResult(org.zstack.sdk.ChangeBareMetal2ChassisOfferingResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ChangeBareMetal2ChassisOfferingResult() : value; 
+        org.zstack.sdk.ChangeBareMetal2InstanceChassisOfferingResult value = res.getResult(org.zstack.sdk.ChangeBareMetal2InstanceChassisOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ChangeBareMetal2InstanceChassisOfferingResult() : value; 
 
         return ret;
     }
@@ -97,7 +97,7 @@ public class ChangeBareMetal2ChassisOfferingAction extends AbstractAction {
         info.path = "/baremetal2/bm-instances/{instanceUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "changeBareMetal2ChassisOffering";
+        info.parameterName = "changeBareMetal2InstanceChassisOffering";
         return info;
     }
 
