@@ -416,17 +416,8 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                 reply.setTotal(result.total);
             }
             if (result.inventories != null) {
-                if (msg.isCount()) {
-                    reply.setTotal(result.inventories.size());
-                } else {
-                    replySetter.invoke(reply, result.inventories);
-                }
-                if (msg.isReplyWithCount()) {
-                    reply.setTotal(result.inventories.size());
-                    replySetter.invoke(reply, result.inventories);
-                }
+                replySetter.invoke(reply, result.inventories);
             }
-
             bus.reply(msg, reply);
         } catch (OperationFailureException of) {
             throw of;
