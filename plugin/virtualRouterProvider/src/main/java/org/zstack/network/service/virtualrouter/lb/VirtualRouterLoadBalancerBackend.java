@@ -2026,6 +2026,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         return structs;
     }
 
+    protected List<String> getAttachableL3UuidsForVirtualRouter(VirtualRouterVmInventory vr, LoadBalancerInventory lb) {
+        return vr.getGuestL3Networks();
+    }
+
     @Override
     public List<VmNicVO> getAttachableVmNicsForServerGroup(LoadBalancerVO lbVO, LoadBalancerServerGroupVO groupVO) {
         List<String> attachedL3Uuids = new ArrayList<>();
@@ -2050,9 +2054,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         }
 
         if (vr != null) {
-            l3NetworkUuids.addAll(vr.getAllL3Networks());
-            l3NetworkUuids.remove(vr.getPublicNetworkUuid());
-            l3NetworkUuids.removeAll(vr.getAdditionalPublicNics().stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()));
+            l3NetworkUuids = getAttachableL3UuidsForVirtualRouter(vr, LoadBalancerInventory.valueOf(lbVO));
         } else {
             VipVO vipVO = dbf.findByUuid(lbVO.getVipUuid(), VipVO.class);
             vrUuids = Q.New(VmNicVO.class).select(VmNicVO_.vmInstanceUuid)
