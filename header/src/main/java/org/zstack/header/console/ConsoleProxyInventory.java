@@ -24,6 +24,7 @@ public class ConsoleProxyInventory {
     private String agentType;
     private String proxyHostname;
     private Integer proxyPort;
+    private String targetSchema;
     private String targetHostname;
     private Integer targetPort;
     private String scheme;
@@ -42,6 +43,7 @@ public class ConsoleProxyInventory {
         inv.setToken(vo.getToken());
         inv.setProxyHostname(vo.getProxyHostname());
         inv.setProxyPort(vo.getProxyPort());
+        inv.setTargetSchema(vo.getTargetSchema());
         inv.setTargetHostname(vo.getTargetHostname());
         inv.setTargetPort(vo.getTargetPort());
         inv.setProxyIdentity(vo.getProxyIdentity());
@@ -137,6 +139,14 @@ public class ConsoleProxyInventory {
 
     public void setProxyPort(Integer proxyPort) {
         this.proxyPort = proxyPort;
+    }
+
+    public String getTargetSchema() {
+        return targetSchema;
+    }
+
+    public void setTargetSchema(String targetSchema) {
+        this.targetSchema = targetSchema;
     }
 
     public String getTargetHostname() {

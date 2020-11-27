@@ -36,6 +36,7 @@ public interface ConsoleProxyCommands {
         private Integer proxyPort;
         private Integer targetPort;
         private String targetHostname;
+        private String targetSchema;
         private String scheme;
         private String token;
         private String proxyIdentity;
@@ -70,6 +71,14 @@ public interface ConsoleProxyCommands {
 
         public void setTargetHostname(String targetHostname) {
             this.targetHostname = targetHostname;
+        }
+
+        public String getTargetSchema() {
+            return targetSchema;
+        }
+
+        public void setTargetSchema(String targetSchema) {
+            this.targetSchema = targetSchema;
         }
 
         public String getScheme() {
@@ -111,6 +120,7 @@ public interface ConsoleProxyCommands {
 
     public static class DeleteProxyCmd extends AgentCommand {
         private String token;
+        private String targetSchema;
         private String targetHostname;
         private int targetPort;
         private String proxyHostname;
@@ -123,6 +133,14 @@ public interface ConsoleProxyCommands {
 
         public void setToken(String token) {
             this.token = token;
+        }
+
+        public String getTargetSchema() {
+            return targetSchema;
+        }
+
+        public void setTargetSchema(String targetSchema) {
+            this.targetSchema = targetSchema;
         }
 
         public String getTargetHostname() {
@@ -171,6 +189,7 @@ public interface ConsoleProxyCommands {
 
     public static class EstablishProxyCmd extends AgentCommand {
         private String token;
+        private String targetSchema;            // vnc or http
         private String targetHostname;
         private int targetPort;
         private String proxyHostname;
@@ -203,6 +222,14 @@ public interface ConsoleProxyCommands {
 
         public void setSslCertFile(String sslCertFile) {
             this.sslCertFile = sslCertFile;
+        }
+
+        public String getTargetSchema() {
+            return targetSchema;
+        }
+
+        public void setTargetSchema(String targetSchema) {
+            this.targetSchema = targetSchema;
         }
 
         public String getTargetHostname() {

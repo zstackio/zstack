@@ -539,3 +539,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2InstanceProvisionNicVO` (
     CONSTRAINT `fkBareMetal2InstanceProvisionNicVOInstanceVO` FOREIGN KEY (`uuid`) REFERENCES `BareMetal2InstanceVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkBareMetal2InstanceProvisionNicVONetworkVO` FOREIGN KEY (`networkUuid`) REFERENCES `BareMetal2ProvisionNetworkVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`ConsoleProxyVO` ADD COLUMN `targetSchema` varchar(32) NOT NULL DEFAULT 'vnc';
