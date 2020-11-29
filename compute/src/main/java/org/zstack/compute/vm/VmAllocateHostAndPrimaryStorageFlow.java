@@ -1,8 +1,11 @@
 package org.zstack.compute.vm;
 
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.header.allocator.AllocateHostAndPrimaryStorageMsg;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.compute.allocator.HostAllocatorGlobalConfig;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -10,6 +13,9 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.allocator.HostAllocatorConstant;
@@ -50,6 +56,8 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
     protected CloudBus bus;
     @Autowired
     protected VmInstanceExtensionPointEmitter extEmitter;
+    @Autowired
+    protected ThreadFacade thdf;
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
@@ -57,7 +65,11 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 
         // The creation parameter specifies the primary storage, no need to automatically allocate the primary storage
         if (!needAutoAllocatePS(spec)) {
-            allocate(trigger, spec);
+            //allocate(trigger, spec);
+            AllocateHostAndPrimaryStorageMsg amsg = new AllocateHostAndPrimaryStorageMsg();
+            amsg.setVmInstanceSpec(spec);
+            amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+            bus.send(amsg);
             return;
         }
 
@@ -80,14 +92,22 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
             }
 
             if (!clusterWithSamePs) {
-                allocate(trigger, spec);
+                //allocate(trigger, spec);
+                AllocateHostAndPrimaryStorageMsg amsg = new AllocateHostAndPrimaryStorageMsg();
+                amsg.setVmInstanceSpec(spec);
+                amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+                bus.send(amsg);
                 return;
             }
         }
 
         // Not local + non-local，no need to automatically allocate the primary storage
         if (!isMixPrimaryStorage(spec)) {
-            allocate(trigger, spec);
+            //allocate(trigger, spec);
+            AllocateHostAndPrimaryStorageMsg amsg = new AllocateHostAndPrimaryStorageMsg();
+            amsg.setVmInstanceSpec(spec);
+            amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+            bus.send(amsg);
             return;
         }
 
@@ -114,7 +134,11 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         }
 
         if (avaliablePsUuids.isEmpty()) {
-            allocate(trigger, spec);
+            //allocate(trigger, spec);
+            AllocateHostAndPrimaryStorageMsg amsg = new AllocateHostAndPrimaryStorageMsg();
+            amsg.setVmInstanceSpec(spec);
+            amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+            bus.send(amsg);
             return;
         }
 
@@ -153,7 +177,12 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 spec.setRequiredPrimaryStorageUuidForRootVolume(psCombo[0]);
                 spec.setRequiredPrimaryStorageUuidForDataVolume(psCombo[1]);
 
-                FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
+            logger.debug("AAA come in n");
+            AllocateHostAndPrimaryStorageMsg amsg = new AllocateHostAndPrimaryStorageMsg();
+                amsg.setVmInstanceSpec(spec);
+                amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+                bus.send(amsg);
+                /*FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(spec);
                 chain.done(new FlowDoneHandler(whileCompletion) {
                     @Override
                     public void handle(Map data) {
@@ -165,14 +194,14 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                         errorCodes.add(errCode);
                         whileCompletion.done();
                     }
-                }).start();
+                }).start();*/
             }).run(new NoErrorCompletion(trigger) {
                 @Override
                 public void done() {
-                    if (errorCodes.size() == avaliablePsUuids.size()) {
+         /*           if (errorCodes.size() == avaliablePsUuids.size()) {
                         trigger.fail(errorCodes.get(0));
                         return;
-                    }
+                    }*/
 
                     trigger.next();
                 }
@@ -196,7 +225,12 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                 spec.setRequiredPrimaryStorageUuidForDataVolume(psUuid);
             }
 
-            FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
+            AllocateHostAndPrimaryStorageMsg amsg = new AllocateHostAndPrimaryStorageMsg();
+            amsg.setVmInstanceSpec(spec);
+            amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
+            bus.send(amsg);
+           /* FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
+            logger.debug("AAA come in 2");
             chain.done(new FlowDoneHandler(whileCompletion) {
                 @Override
                 public void handle(Map data) {
@@ -208,14 +242,14 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                     errorCodes.add(errCode);
                     whileCompletion.done();
                 }
-            }).start();
+            }).start();*/
         }).run(new NoErrorCompletion(trigger) {
             @Override
             public void done() {
-                if (errorCodes.size() == avaliablePsUuids.size()) {
+                /*if (errorCodes.size() == avaliablePsUuids.size()) {
                     trigger.fail(errorCodes.get(0));
                     return;
-                }
+                }*/
 
                 trigger.next();
             }
@@ -481,7 +515,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         return false;
     }
 
-    private FlowChain buildAllocateHostAndPrimaryStorageFlowChain(final FlowTrigger trigger, VmInstanceSpec spec) {
+    public FlowChain buildAllocateHostAndPrimaryStorageFlowChain(VmInstanceSpec spec) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("allocate-host-and-ps-for-vm-%s", spec.getVmInventory().getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
@@ -498,19 +532,5 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         return chain;
     }
 
-    private void allocate(final FlowTrigger trigger, VmInstanceSpec spec) {
-        FlowChain chain = buildAllocateHostAndPrimaryStorageFlowChain(trigger, spec);
-        chain.done(new FlowDoneHandler(trigger) {
-            @Override
-            public void handle(Map data) {
-                trigger.next();
-            }
-        }).error(new FlowErrorHandler(trigger) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                trigger.fail(errCode);
-            }
-        });
-        chain.start();
-    }
 }
+
