@@ -125,6 +125,7 @@ public class VmAllocateVolumeFlow implements Flow {
                     if (r.isSuccess()) {
                         CreateVolumeReply cr = r.castReply();
                         VolumeInventory inv = cr.getInventory();
+                        inv.setIsPreReservedOnLocal(vspec.isPreReservedOnLocal());
                         if (inv.getType().equals(VolumeType.Root.toString())) {
                             spec.setDestRootVolume(inv);
                             UpdateQuery.New(VmInstanceVO.class)

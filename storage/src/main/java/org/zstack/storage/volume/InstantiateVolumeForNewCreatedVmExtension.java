@@ -113,6 +113,7 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
             msg.setHostUuid(spec.getDestHost().getUuid());
             msg.setPrimaryStorageAllocated(true);
             msg.setSkipIfExisting(spec.isInstantiateResourcesSkipExisting());
+            msg.setSkipIfPreReserved(volume.isPreReservedOnLocal());
             bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, volume.getUuid());
             msgs.add(msg);
         }

@@ -1,5 +1,7 @@
 package org.zstack.compute.allocator;
 
+import org.zstack.compute.vm.VmAllocateHostAndPrimaryStorageFlow;
+import org.zstack.header.vm.VmInstanceSpec;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
@@ -61,6 +63,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     private Set<String> unsupportedVmTypeForCapacityCalculation = new HashSet<>();
     private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
     private Map<String, List<String>> primaryStorageBackupStorageMetrics = new HashMap<>();
+    private int syncLevel = 1;
 
     @Autowired
     private CloudBus bus;
@@ -98,6 +101,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             handle((ReturnHostCapacityMsg) msg);
         } else if (msg instanceof RecalculateHostCapacityMsg) {
             handle((RecalculateHostCapacityMsg) msg);
+        } else if (msg instanceof AllocateHostAndPrimaryStorageMsg) {
+            handle((AllocateHostAndPrimaryStorageMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -148,6 +153,60 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         APIGetCandidateBackupStorageForCreatingImageReply reply = new APIGetCandidateBackupStorageForCreatingImageReply();
         reply.setInventories(candidates);
         bus.reply(msg, reply);
+    }
+
+    private void handle(AllocateHostAndPrimaryStorageMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "host-and-primary-storage-allocator";
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doHandleAllocateHostAndPrimaryStorage(msg, new Completion(msg) {
+                    @Override
+                    public void success() {
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "allocate-host-and-primary-storage-for-vm-" + msg.getVmInstanceSpec().getVmInventory().getUuid();
+            }
+
+            @Override
+            protected int getSyncLevel() {
+                return syncLevel;
+            }
+        });
+    }
+
+    private void doHandleAllocateHostAndPrimaryStorage(final AllocateHostAndPrimaryStorageMsg msg, Completion completion) {
+        VmInstanceSpec spec = msg.getVmInstanceSpec();
+        VmAllocateHostAndPrimaryStorageFlow allocateHostAndPrimaryStorage = new VmAllocateHostAndPrimaryStorageFlow();
+        FlowChain chain = allocateHostAndPrimaryStorage.buildAllocateHostAndPrimaryStorageFlowChain(spec);
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                bus.reply(msg, new AllocateHostAndPrimaryStorageReply());
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                bus.reply(msg, new AllocateHostAndPrimaryStorageReply());
+                completion.fail(errCode);
+            }
+        });
+        chain.start();
     }
 
     private void handle(RecalculateHostCapacityMsg msg) {

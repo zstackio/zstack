@@ -9,6 +9,7 @@ public class InstantiateVolumeOnPrimaryStorageMsg extends NeedReplyMessage imple
     private VolumeInventory volume;
     private String primaryStorageUuid;
     private boolean skipIfExisting;
+    private boolean skipIfPreReserved;
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
@@ -43,4 +44,11 @@ public class InstantiateVolumeOnPrimaryStorageMsg extends NeedReplyMessage imple
         this.skipIfExisting = skipIfExisting;
     }
 
+    public boolean isSkipIfPreReserved() {
+        return skipIfPreReserved;
+    }
+
+    public void setSkipIfPreReserved(boolean skipIfPreReserved) {
+        this.skipIfPreReserved = skipIfPreReserved;
+    }
 }

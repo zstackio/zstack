@@ -31,6 +31,7 @@ public class VmInstanceSpec implements Serializable {
         private String diskOfferingUuid;
         private boolean isVolumeCreated;
         private List<String> tags;
+        private boolean isPreReservedOnLocal;
 
         public boolean isVolumeCreated() {
             return isVolumeCreated;
@@ -83,6 +84,14 @@ public class VmInstanceSpec implements Serializable {
 
         public boolean isRoot() {
             return VolumeType.Root.toString().equals(type);
+        }
+
+        public boolean isPreReservedOnLocal() {
+            return isPreReservedOnLocal;
+        }
+
+        public void setIsPreReservedOnLocal(boolean isPreReservedOnLocal) {
+            this.isPreReservedOnLocal = isPreReservedOnLocal;
         }
     }
 

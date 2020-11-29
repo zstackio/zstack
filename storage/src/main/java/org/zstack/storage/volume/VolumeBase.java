@@ -520,6 +520,7 @@ public class VolumeBase implements Volume {
                         imsg.setVolume(getSelfInventory());
                         imsg.setSystemTags(msg.getSystemTags());
                         imsg.setSkipIfExisting(msg.isSkipIfExisting());
+                        imsg.setSkipIfPreReserved(msg.isSkipIfPreReserved());
                         if (msg.getHostUuid() != null) {
                             imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
                         }

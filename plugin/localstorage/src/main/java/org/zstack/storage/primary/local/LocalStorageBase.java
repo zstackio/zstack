@@ -1858,7 +1858,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        reserveCapacityOnHost(finalHostUuid, requiredSize, self.getUuid());
+                        if(!msg.isSkipIfPreReserved()){
+                            reserveCapacityOnHost(finalHostUuid, requiredSize, self.getUuid());
+                        }
                         reservedSize = requiredSize;
                         trigger.next();
                     }

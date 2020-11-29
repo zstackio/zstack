@@ -1,5 +1,8 @@
 package org.zstack.storage.primary.local;
 
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
+import org.zstack.core.db.SQL;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -43,6 +46,8 @@ import static org.zstack.core.Platform.operr;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
+
+    private static final CLogger logger = Utils.getLogger(LocalStorageDesignatedAllocateCapacityFlow.class);
 
     @Autowired
     protected DatabaseFacade dbf;
@@ -96,8 +101,34 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
                             vspec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
                             vspec.setType(VolumeType.Data.toString());
                         }
-                        spec.getVolumeSpecs().add(vspec);
 
+                        //if requiredps of root/data is local ,pre-reserve host avaliable capacity
+                        if (ar.getPrimaryStorageInventory().getUuid() != null) {
+                            String psType = Q.New(PrimaryStorageVO.class)
+                                    .select(PrimaryStorageVO_.type)
+                                    .eq(PrimaryStorageVO_.uuid, spec.getRequiredPrimaryStorageUuidForRootVolume())
+                                    .findValue();
+
+                            PrimaryStorageVO ps = dbf.findByUuid(spec.getRequiredPrimaryStorageUuidForRootVolume(), PrimaryStorageVO.class);
+                            LocalStorageReserveHostCapacityMsg msg = new LocalStorageReserveHostCapacityMsg();
+                            msg.setHostUuid(spec.getDestHost().getUuid());
+                            msg.setSize(ar.getSize());
+                            msg.setPrimaryStorageUuid(ar.getPrimaryStorageInventory().getUuid());
+                            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ar.getPrimaryStorageInventory().getUuid());
+                            bus.send(msg, new CloudBusCallBack(completion) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        completion.fail(reply.getError());
+                                    } else {
+                                        vspec.setIsPreReservedOnLocal(true);
+                                        completion.success();
+                                    }
+                                }
+                            });
+
+                            spec.getVolumeSpecs().add(vspec);
+                        }
                         completion.success();
                     }
                 });
@@ -113,6 +144,42 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
                 trigger.fail(errorCode);
             }
         }.start();
+    }
+
+    private void reserveStorageCapacityOnHost(String dstHostUuid, String psUuid, Long size, final Completion completion) {
+        LocalStorageReserveHostCapacityMsg msg = new LocalStorageReserveHostCapacityMsg();
+        msg.setHostUuid(dstHostUuid);
+        msg.setSize(size);
+        msg.setPrimaryStorageUuid(psUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                } else {
+                    completion.success();
+                }
+            }
+        });
+    }
+
+    private void returnStorageCapacityToHost(final String dstHostUuid, final String primaryStorageUuid, final Long size) {
+        LocalStorageReturnHostCapacityMsg msg = new LocalStorageReturnHostCapacityMsg();
+        msg.setHostUuid(dstHostUuid);
+        msg.setSize(size);
+        msg.setPrimaryStorageUuid(primaryStorageUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
+        bus.send(msg, new CloudBusCallBack(null) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    //TODO recalculate host capacity
+                    logger.warn(String.format("failed to return capacity[%s] to the host[uuid:%s] of local storage[uuid:%s], %s",
+                            size, dstHostUuid, primaryStorageUuid, reply.getError()));
+                }
+            }
+        });
     }
 
     private ErrorCode checkIfSpecifyPrimaryStorage(VmInstanceSpec spec){
@@ -240,6 +307,14 @@ public class LocalStorageDesignatedAllocateCapacityFlow implements Flow {
         });
 
         bus.send(msgs);
+
+        //rollback local storage host capacity
+        spec.getVolumeSpecs().forEach(VolumeSpec -> {
+            if (VolumeSpec.isPreReservedOnLocal()) {
+                returnStorageCapacityToHost(spec.getDestHost().getUuid(), VolumeSpec.getPrimaryStorageInventory().getUuid(), VolumeSpec.getSize());
+            }
+        });
+
         trigger.rollback();
     }
 }

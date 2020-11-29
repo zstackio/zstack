@@ -148,6 +148,8 @@ public class VolumeInventory implements Serializable {
 
     private String volumeQos;
 
+    private boolean isPreReservedOnLocal;
+
     public VolumeInventory() {
     }
 
@@ -379,5 +381,13 @@ public class VolumeInventory implements Serializable {
 
     public static void setAttachedJudgers(List<VolumeAttachedJudger> attachedJudgers) {
         VolumeInventory.attachedJudgers = attachedJudgers;
+    }
+
+    public boolean isPreReservedOnLocal() {
+        return isPreReservedOnLocal;
+    }
+
+    public void setIsPreReservedOnLocal(boolean isPreReservedOnLocal) {
+        this.isPreReservedOnLocal = isPreReservedOnLocal;
     }
 }

@@ -11,6 +11,7 @@ public class InstantiateVolumeMsg extends NeedReplyMessage implements VolumeMess
     private String hostUuid;
     private boolean primaryStorageAllocated;
     private boolean skipIfExisting;
+    private boolean skipIfPreReserved;
 
     public boolean isPrimaryStorageAllocated() {
         return primaryStorageAllocated;
@@ -51,5 +52,13 @@ public class InstantiateVolumeMsg extends NeedReplyMessage implements VolumeMess
 
     public void setSkipIfExisting(boolean skipIfExisting) {
         this.skipIfExisting = skipIfExisting;
+    }
+
+    public boolean isSkipIfPreReserved() {
+        return skipIfPreReserved;
+    }
+
+    public void setSkipIfPreReserved(boolean skipIfPreReserved) {
+        this.skipIfPreReserved = skipIfPreReserved;
     }
 }
