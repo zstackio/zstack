@@ -622,26 +622,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
-        if (msg.getCustomMac() != null) {
-            if (!NetworkUtils.isValidMacAddress(msg.getCustomMac())) {
-                throw new ApiMessageInterceptionException(argerr("%s is not valid mac address", msg.getCustomMac()));
-            }
-
-            boolean exists = Q.New(VmNicVO.class).eq(VmNicVO_.mac, msg.getCustomMac()).isExists();
-            if (exists) {
-                throw new ApiMessageInterceptionException(argerr("duplicated mac address %s", msg.getCustomMac()));
-            }
-
-            SystemTagCreator creator = VmSystemTags.CUSTOM_MAC.newSystemTagCreator(msg.getVmInstanceUuid());
-            creator.setTagByTokens(map(
-                    e(VmSystemTags.STATIC_IP_L3_UUID_TOKEN, msg.getL3NetworkUuid()),
-                    e(VmSystemTags.MAC_TOKEN, msg.getCustomMac())
-            ));
-            creator.inherent = false;
-            creator.recreate = false;
-            creator.create();
-        }
-
         msg.setSecondaryL3Uuids(new ArrayList<>());
         msg.setStaticIpMap(new HashMap<>());
         for (String uuid : newAddedL3Uuids) {
