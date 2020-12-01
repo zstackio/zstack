@@ -688,3 +688,10 @@ ALTER TABLE `zstack`.`LoadBalancerVO` ADD COLUMN `serverGroupUuid` varchar(32) D
 ALTER TABLE `zstack`.`LoadBalancerVO` ADD CONSTRAINT fkLoadBalancerVOLoadBalancerServerGroupVO FOREIGN KEY (serverGroupUuid) REFERENCES LoadBalancerServerGroupVO (uuid) ON DELETE SET NULL;
 ALTER TABLE `zstack`.`LoadBalancerListenerVO` ADD COLUMN `serverGroupUuid` varchar(32) DEFAULT NULL;
 ALTER TABLE `zstack`.`LoadBalancerListenerVO` ADD CONSTRAINT fkLoadBalancerListenerVOLoadBalancerServerGroupVO FOREIGN KEY (serverGroupUuid) REFERENCES LoadBalancerServerGroupVO (uuid) ON DELETE SET NULL;
+
+UPDATE `VRouterRouteEntryVO` SET `type` = 'UserStatic' where `type` = '0';
+UPDATE `VRouterRouteEntryVO` SET `type` = 'UserBlackHole' where `type` = '1';
+UPDATE `VRouterRouteEntryVO` SET `type` = 'DirectConnect' where `type` = '2';
+UPDATE `VRouterRouteEntryVO` SET `type` = 'ZStack' where `type` = '3';
+UPDATE `VRouterRouteEntryVO` SET `type` = 'OSPF' where `type` = '4';
+UPDATE `VRouterRouteEntryVO` SET `type` = 'Unknown' where `type` = '5';
