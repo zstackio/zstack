@@ -35,6 +35,7 @@ public class Ssh {
     private String password;
     private int port = 22;
     private int timeout = 0;
+    private int socketTimeout = 300;
     private List<SshRunner> commands = new ArrayList<SshRunner>();
     private Session session;
     private File privateKeyFile;
@@ -382,6 +383,7 @@ public class Ssh {
             if (privateKey == null) {
                 session.setConfig("PreferredAuthentications", "password");
             }
+            session.setTimeout(getTimeoutInMilli(socketTimeout)/2);
             session.connect(getTimeoutInMilli(timeout));
         } catch (JSchException ex) {
             throw new IOException(ex);
@@ -496,6 +498,15 @@ public class Ssh {
 
     public Ssh setTimeout(int timeout) {
         this.timeout = timeout;
+        return this;
+    }
+
+    public int getSocketTimeout() {
+        return socketTimeout;
+    }
+
+    public Ssh setSocketTimeout(int socketTimeout) {
+        this.socketTimeout = socketTimeout;
         return this;
     }
 
