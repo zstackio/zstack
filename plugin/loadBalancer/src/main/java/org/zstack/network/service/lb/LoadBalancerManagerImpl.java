@@ -945,8 +945,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
     @Override
     public List<String> getLoadBalancerListenterByVmNics(List<String> vmNicUuids) {
-        List<String> listenerUuids = SQL.New("select distinct listener.uuid" +
-                " fromLoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic " +
+        List<String> listenerUuids = SQL.New("select distinct listener.uuid " +
+                " from LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
                 " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
                 " where listener.uuid = lgref.listenerUuid and lgref.loadBalancerServerGroupUuid = g.uuid " +
                 " and g.uuid = nicRef.loadBalancerServerGroupUuid and nicRef.vmNicUuid in (:vmNicUuids)")
