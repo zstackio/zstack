@@ -110,6 +110,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     static {
         type.setSupportHeartbeatFile(true);
         type.setOrder(799);
+        type.setSupportCreateVolumeSnapshotCheckCapacity(false);
     }
 
     void init() {
