@@ -37,7 +37,7 @@ class ChainTaskWaitListCase extends SubCase {
         void execute() {
             task = true
             logger.debug("start execute task: ${name}")
-            sleep 50
+            sleep 80
             logger.debug("finish execute task: ${name}")
         }
 
@@ -88,7 +88,7 @@ class ChainTaskWaitListCase extends SubCase {
                     return lat.name
                 }
             })
-            sleep 5
+            sleep 4
         }
 
         sleep 500
@@ -104,6 +104,7 @@ class ChainTaskWaitListCase extends SubCase {
         latches.each {
             it.release()
         }
+        sleep 100
     }
 
     // test max waiting list
@@ -154,7 +155,7 @@ class ChainTaskWaitListCase extends SubCase {
                     return "max tasks"
                 }
             })
-            sleep 5
+            sleep 4
         }
 
         sleep 500
@@ -259,7 +260,7 @@ class ChainTaskWaitListCase extends SubCase {
                     return "latches1 tasks"
                 }
             })
-            sleep 5
+            sleep 4
         }
 
         latches2.each {
@@ -296,7 +297,7 @@ class ChainTaskWaitListCase extends SubCase {
                     return "latches2 tasks"
                 }
             })
-            sleep 5
+            sleep 4
         }
 /**
  * now
