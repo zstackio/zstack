@@ -308,11 +308,6 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             return;
         }
 
-        if (!longJobFactory.supportCancel(t.get(1, String.class))) {
-            completion.fail(err(LongJobErrors.NOT_SUPPORTED, "not supported"));
-            return;
-        }
-
         LongJobVO vo = changeState(uuid, LongJobStateEvent.canceling);
         LongJob job = longJobFactory.getLongJob(vo.getJobName());
         logger.info(String.format("longjob [uuid:%s, name:%s] has been marked canceling", vo.getUuid(), vo.getName()));
@@ -331,6 +326,10 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
             @Override
             public void fail(ErrorCode errorCode) {
+                if (errorCode.isError(LongJobErrors.NOT_SUPPORTED)) {
+                    updateByUuid(uuid, jobvo -> jobvo.setState(originState));
+                }
+
                 logger.error(String.format("failed to cancel longjob [uuid:%s, name:%s]", vo.getUuid(), vo.getName()));
                 completion.fail(errorCode);
             }
@@ -406,15 +405,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     }
 
     private void resumeLongJob(String uuid, ReturnValueCompletion<LongJobVO> completion) {
-        String jobName = Q.New(LongJobVO.class).select(LongJobVO_.jobName)
-                .eq(LongJobVO_.uuid, uuid)
-                .findValue();
-
-        if (longJobFactory.supportResume(jobName)) {
-            completion.success(doResumeJob(uuid, null));
-        } else {
-            completion.fail(err(LongJobErrors.NOT_SUPPORTED, "not supported"));
-        }
+        completion.success(doResumeJob(uuid, null));
     }
 
     private void handle(APISubmitLongJobMsg msg) {
@@ -748,11 +739,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         if (operation == LongJobOperation.Start) {
             doStartJob(vo.getUuid(), null);
         } else if (operation == LongJobOperation.Resume) {
-            if (longJobFactory.supportResume(vo.getJobName())) {
-                doResumeJob(vo.getUuid(), null);
-            } else {
-                LongJobUtils.changeState(vo.getUuid(), LongJobStateEvent.fail);
-            }
+            doResumeJob(vo.getUuid(), null);
         } else if (operation == LongJobOperation.Cancel) {
             LongJobUtils.changeState(vo.getUuid(), LongJobStateEvent.canceled);
         }

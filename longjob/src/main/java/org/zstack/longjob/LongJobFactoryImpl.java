@@ -30,9 +30,6 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
     private TreeMap<String, LongJob> allLongJob = new TreeMap<>();
     private TreeMap<String, String> fullJobName = new TreeMap<>();
 
-    private Set<String> notSupportCancelJobType = new HashSet<>();
-    private Set<String> notSupportResumeJobType = new HashSet<>();
-
     @Override
     public LongJob getLongJob(String jobName) {
         LongJob job = allLongJob.get(jobName);
@@ -62,51 +59,8 @@ public class LongJobFactoryImpl implements LongJobFactory, Component {
             String jobName = at.value().getSimpleName();
             allLongJob.put(jobName, job);
             fullJobName.put(jobName, at.value().getName());
-
-            checkCancelSupported(jobName, job);
-            checkResumeSupported(jobName, job);
         }
         return true;
-    }
-
-    @Override
-    public boolean supportCancel(String jobName) {
-        return !notSupportCancelJobType.contains(jobName);
-    }
-
-    @Override
-    public boolean supportResume(String jobName) {
-        return !notSupportResumeJobType.contains(jobName);
-    }
-
-    @ExceptionSafe
-    private void checkCancelSupported(String jobName, LongJob job) {
-        job.cancel(null, new ReturnValueCompletion<Boolean>(null) {
-            @Override
-            public void success(Boolean returnValue) {}
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                if (errorCode.isError(LongJobErrors.NOT_SUPPORTED)) {
-                    notSupportCancelJobType.add(jobName);
-                }
-            }
-        });
-    }
-
-    @ExceptionSafe
-    private void checkResumeSupported(String jobName, LongJob job) {
-        job.resume(null, new ReturnValueCompletion<APIEvent>(null) {
-            @Override
-            public void success(APIEvent returnValue) {}
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                if (errorCode.isError(LongJobErrors.NOT_SUPPORTED)) {
-                    notSupportResumeJobType.add(jobName);
-                }
-            }
-        });
     }
 
     @Override

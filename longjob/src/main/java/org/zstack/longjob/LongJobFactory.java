@@ -10,6 +10,4 @@ import java.util.TreeMap;
 public interface LongJobFactory {
     LongJob getLongJob(String jobName);
     TreeMap<String, String> getFullJobName();
-    boolean supportCancel(String jobName);
-    boolean supportResume(String jobName);
 }
