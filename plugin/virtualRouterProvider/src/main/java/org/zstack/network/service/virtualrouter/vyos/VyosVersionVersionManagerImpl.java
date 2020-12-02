@@ -66,25 +66,27 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
                     return;
                 }
 
-                if (ret.getVersion() == null) {
+                String version = ret.getVersion();
+                if (version == null) {
                     logger.warn(String.format("virtual router[uuid: %s] doesn't have version", vrUuid));
                     result.setNeedReconnect(true);
                     completion.success(result);
                     return;
                 }
 
-                if (!versionFormatCheck(ret.getVersion())) {
-                    logger.warn(String.format("virtual router[uuid: %s] version [%s] format error", vrUuid, ret.getVersion()));
+                version = version.trim();
+                if (!versionFormatCheck(version)) {
+                    logger.warn(String.format("virtual router[uuid: %s] version [%s] format error", vrUuid, version));
                     result.setNeedReconnect(true);
                     completion.success(result);
                     return;
                 }
 
                 VersionComparator mnVersion = new VersionComparator(managementVersion);
-                VersionComparator remoteVersion = new VersionComparator(ret.getVersion().trim());
-                result.setVersion(ret.getVersion());
+                VersionComparator remoteVersion = new VersionComparator(version);
+                result.setVersion(version);
                 if (mnVersion.compare(remoteVersion) > 0) {
-                    logger.warn(String.format("virtual router[uuid: %s] version [%s] is older than management node version [%s]",vrUuid, ret.getVersion(), managementVersion));
+                    logger.warn(String.format("virtual router[uuid: %s] version [%s] is older than management node version [%s]",vrUuid, version, managementVersion));
                     result.setNeedReconnect(true);
                     int oldVersion = remoteVersion.compare(VyosConstants.VIP_REBUILD_VERSION);
                     int newVersion = mnVersion.compare(VyosConstants.VIP_REBUILD_VERSION);
