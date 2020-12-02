@@ -2582,6 +2582,9 @@ public class KVMAgentCommands {
         private String newVolumeUuid;
         private String newVolumeInstallPath;
 
+        // for baremetal2 instance
+        private boolean isBaremetal2InstanceOnlineSnapshot;
+
         public String getVolumeUuid() {
             return volumeUuid;
         }
@@ -2644,6 +2647,14 @@ public class KVMAgentCommands {
 
         public void setVolume(VolumeTO volume) {
             this.volume = volume;
+        }
+
+        public boolean isBaremetal2InstanceOnlineSnapshot() {
+            return isBaremetal2InstanceOnlineSnapshot;
+        }
+
+        public void setBaremetal2InstanceOnlineSnapshot(boolean baremetal2InstanceOnlineSnapshot) {
+            isBaremetal2InstanceOnlineSnapshot = baremetal2InstanceOnlineSnapshot;
         }
     }
 

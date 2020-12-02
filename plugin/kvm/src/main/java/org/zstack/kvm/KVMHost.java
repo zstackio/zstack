@@ -1556,6 +1556,10 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
+    protected void completeTakeSnapshotCmd(final TakeSnapshotOnHypervisorMsg msg, final TakeSnapshotCmd cmd) {
+
+    }
+
     private void doTakeSnapshot(final TakeSnapshotOnHypervisorMsg msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
 
@@ -1589,6 +1593,8 @@ public class KVMHost extends HostBase implements Host {
         cmd.setInstallPath(msg.getInstallPath());
         cmd.setFullSnapshot(msg.isFullSnapshot());
         cmd.setVolumeUuid(msg.getVolume().getUuid());
+
+        completeTakeSnapshotCmd(msg, cmd);
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("before-take-snapshot-%s-for-volume-%s", msg.getSnapshotName(), msg.getVolume().getUuid()));
