@@ -2366,11 +2366,8 @@ public class KVMHost extends HostBase implements Host {
                 return;
             }
 
-            if (!KVMGlobalConfig.AUTO_VM_NIC_MULTIQUEUE.value(Boolean.class)) {
-                return;
-            }
-
-            if (spec.getVmInventory().getCpuNum().equals(1)) {
+            if (!rcf.getResourceConfigValue(KVMGlobalConfig.AUTO_VM_NIC_MULTIQUEUE,
+                    spec.getDestHost().getClusterUuid(), Boolean.class)) {
                 return;
             }
 
