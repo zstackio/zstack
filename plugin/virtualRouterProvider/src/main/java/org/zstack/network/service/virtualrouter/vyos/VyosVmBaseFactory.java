@@ -51,7 +51,7 @@ public class VyosVmBaseFactory extends VirtualRouterApplianceVmFactory implement
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
-    private PluginRegistry pluginRgty;
+    protected PluginRegistry pluginRgty;
     @Autowired
     private ResourceConfigFacade rcf;
 
