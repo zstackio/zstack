@@ -359,10 +359,9 @@ DROP PROCEDURE IF EXISTS insertIAM2ProjectRole;
 ALTER TABLE RolePolicyStatementVO ADD INDEX (`roleUuid`);
 
 DELIMITER $$
-CREATE PROCEDURE insertIntoRole(OUT num bigint(20) unsigned)
+CREATE PROCEDURE insertIntoRole()
     BEGIN
-        SELECT count(*) INTO num from RoleVO where type = 'System' and name like 'read-api-role-%';
-        if num > 0 THEN
+        IF (SELECT count(*) from RoleVO where type = 'System' and name like 'read-api-role-%' and uuid <> '86d67c89dfe64b3ba67ecffd34cee418') > 0 THEN
           insert into RoleVO(uuid, name, state, type, createDate, lastOpDate) values ('86d67c89dfe64b3ba67ecffd34cee418', 'read-api-role-default', 'Enabled', 'System', NOW(), NOW());
           INSERT INTO ResourceVO (`uuid`, `resourceName`, `resourceType`) VALUES ('86d67c89dfe64b3ba67ecffd34cee418', 'read-api-role-default', 'RoleVO');
           INSERT INTO AccountResourceRefVO (`accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `permission`, `isShared`, `lastOpDate`, `createDate`, `concreteResourceType`) values ('36c27e8ff05c4780bf6d2fa65700f22e', '36c27e8ff05c4780bf6d2fa65700f22e', '86d67c89dfe64b3ba67ecffd34cee418', 'RoleVO', 2, 0, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'org.zstack.header.identity.role.RoleVO');
@@ -371,6 +370,7 @@ CREATE PROCEDURE insertIntoRole(OUT num bigint(20) unsigned)
     END $$
 DELIMITER ;
 
+CALL insertIntoRole();
 DROP PROCEDURE IF EXISTS insertIntoRole;
 
 
