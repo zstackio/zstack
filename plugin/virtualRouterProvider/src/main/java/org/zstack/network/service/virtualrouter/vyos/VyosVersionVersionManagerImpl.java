@@ -104,7 +104,7 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
             public Class<VirtualRouterCommands.PingRsp> getReturnClass() {
                 return VirtualRouterCommands.PingRsp.class;
             }
-        });
+        }, TimeUnit.SECONDS, Long.parseLong(VirtualRouterGlobalConfig.VYOS_ECHO_TIMEOUT.value()));
     }
 
     private String getManagementVersion() {
