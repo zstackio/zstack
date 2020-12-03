@@ -542,6 +542,6 @@ public class VipManagerImpl extends AbstractService implements VipManager, Repor
 
     @Override
     public boolean isSystemVip(VipVO vip) {
-        return  Q.New(VmNicVO.class).eq(VmNicVO_.ip, vip.getIp()).eq(VmNicVO_.l3NetworkUuid, vip.getL3NetworkUuid()).isExists();
+        return vip.isSystem();
     }
 }
