@@ -379,7 +379,7 @@ CREATE PROCEDURE deleteRoleReadAPI()
 BEGIN
     DECLARE roUuid VARCHAR(32);
     DECLARE done INT DEFAULT FALSE;
-    DECLARE cur CURSOR FOR select uuid from RoleVO where type = 'System' and name like 'read-api-role-%';
+    DECLARE cur CURSOR FOR select uuid from RoleVO where type = 'System' and name like 'read-api-role-%' and uuid <> '86d67c89dfe64b3ba67ecffd34cee418';
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
     OPEN cur;
     read_loop: LOOP
@@ -390,6 +390,8 @@ BEGIN
         update IAM2VirtualIDRoleRefVO refVO set refVO.roleUuid = '86d67c89dfe64b3ba67ecffd34cee418' where refVO.roleUuid = roUuid;
         delete from RolePolicyStatementVO where roleUuid = roUuid;
         delete from RoleVO where uuid = roUuid;
+        delete from ResourceVO where uuid = roUuid;
+        delete from AccountResourceRefVO where resourceUuid = roUuid and resourceType = 'RoleVO';
 
     END LOOP;
     CLOSE cur;
