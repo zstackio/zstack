@@ -12,4 +12,5 @@ public class ResourceVO_ {
     public static volatile SingularAttribute<ResourceVO, String> uuid;
     public static volatile SingularAttribute<ResourceVO, String> resourceName;
     public static volatile SingularAttribute<ResourceVO, String> resourceType;
+    public static volatile SingularAttribute<ResourceVO, String> concreteResourceType;
 }
