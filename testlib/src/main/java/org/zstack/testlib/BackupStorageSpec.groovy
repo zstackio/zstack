@@ -18,6 +18,9 @@ abstract class BackupStorageSpec extends Spec {
     @SpecParam
     Long availableCapacity = SizeUnit.GIGABYTE.toByte(1000)
 
+    final static long defaultImageSize = SizeUnit.GIGABYTE.toByte(1)
+    final static long defaultActualSize = SizeUnit.MEGABYTE.toByte(512)
+
     BackupStorageInventory inventory
 
     BackupStorageSpec(EnvSpec envSpec) {

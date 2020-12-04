@@ -47,10 +47,11 @@ class SftpBackupStorageSpec extends BackupStorageSpec {
             simulator(SftpBackupStorageConstant.DOWNLOAD_IMAGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.getBody(), SftpBackupStorageCommands.DownloadCmd.class)
                 BackupStorageSpec bsSpec = spec.specByUuid(cmd.uuid)
+                ImageSpec imageSpec = spec.specByUuid(cmd.imageUuid)
 
                 def rsp = new SftpBackupStorageCommands.DownloadResponse()
-                rsp.size = 0
-                rsp.actualSize = 0
+                rsp.size = imageSpec == null ? BackupStorageSpec.defaultImageSize : (imageSpec.size ?: BackupStorageSpec.defaultImageSize)
+                rsp.actualSize = imageSpec == null ? BackupStorageSpec.defaultActualSize : (imageSpec.actualSize ?: BackupStorageSpec.defaultActualSize)
                 rsp.availableCapacity = bsSpec.availableCapacity
                 rsp.totalCapacity = bsSpec.totalCapacity
                 return rsp
@@ -64,7 +65,7 @@ class SftpBackupStorageSpec extends BackupStorageSpec {
             }
 
             simulator(AgentConstant.CANCEL_JOB) {
-                def rsp = new SftpBackupStorageCommands.AgentResponse()
+                return new SftpBackupStorageCommands.AgentResponse()
             }
 
             simulator(SftpBackupStorageConstant.DELETE_PATH) {
