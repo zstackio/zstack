@@ -48,6 +48,8 @@ use:
                     name = "image1"
                     architecture = "x86_64"
                     url = "http://zstack.org/download/test.qcow2"
+                    size = SizeUnit.GIGABYTE.toByte(1)
+                    actualSize = SizeUnit.GIGABYTE.toByte(1)
                 }
 
                 image {

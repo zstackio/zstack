@@ -1,22 +1,18 @@
 package org.zstack.test.integration.storage.primary.local
 
+import org.zstack.core.db.Q
 import org.zstack.header.storage.primary.PrimaryStorageState
 import org.zstack.header.storage.primary.PrimaryStorageStatus
-import org.zstack.sdk.ExpungeDataVolumeAction
-import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.VolumeInventory
+import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
+import org.zstack.sdk.*
 import org.zstack.storage.primary.local.LocalStorageSystemTags
 import org.zstack.test.integration.kvm.Env
-import org.zstack.testlib.DiskOfferingSpec
-import org.zstack.testlib.EnvSpec
-import org.zstack.testlib.KVMHostSpec
-import org.zstack.testlib.PrimaryStorageSpec
-import org.zstack.testlib.SubCase
-import org.zstack.testlib.Test
+import org.zstack.testlib.*
 import org.zstack.utils.data.SizeUnit
+
 import static org.zstack.utils.CollectionDSL.e
 import static org.zstack.utils.CollectionDSL.map
-
 /**
  * Created by lining on 2017/3/3.
  */
@@ -33,6 +29,8 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
             virtualRouter()
             securityGroup()
             kvm()
+            include("vyos.xml")
+            include("lb.xml")
         }
     }
 
@@ -51,6 +49,7 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
     void test() {
         env.create {
             testPSAvailableCapacity()
+            testLocalStorageHostStorageCapacity()
         }
     }
 
@@ -79,6 +78,9 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
         String localStorageSystemTag = LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME.instantiateTag(
                 map(e(LocalStorageSystemTags.DEST_HOST_FOR_CREATING_DATA_VOLUME_TOKEN, kvmHostSpec.inventory.uuid))
         )
+        PrimaryStorageInventory oldPrimaryStorageInventory =  queryPrimaryStorage {
+            conditions=["uuid=${primaryStorageSpec.inventory.uuid}".toString()]
+        }[0]
         DiskOfferingSpec diskOfferingSpec = env.specByName("diskOffering")
         VolumeInventory volumeInventory = createDataVolume{
             primaryStorageUuid = primaryStorageSpec.inventory.uuid
@@ -94,8 +96,7 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
         PrimaryStorageInventory primaryStorageInventory =  queryPrimaryStorage {
                 conditions=["uuid=${primaryStorageSpec.inventory.uuid}".toString()]
         }[0]
-        assert volumeBitSize == primaryStorageInventory.totalCapacity - primaryStorageInventory.availableCapacity
-
+        assert volumeBitSize == oldPrimaryStorageInventory.availableCapacity - primaryStorageInventory.availableCapacity
 
         // 4.Delete cloud disk
         deleteDataVolume{
@@ -107,7 +108,7 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
         primaryStorageInventory =  queryPrimaryStorage {
                 conditions=["uuid=${primaryStorageSpec.inventory.uuid}".toString()]
         }[0]
-        assert volumeBitSize == primaryStorageInventory.totalCapacity - primaryStorageInventory.availableCapacity
+        assert volumeBitSize == oldPrimaryStorageInventory.availableCapacity - primaryStorageInventory.availableCapacity
 
 
         // 6.Reconnect primary storage
@@ -122,7 +123,7 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
         primaryStorageInventory =  queryPrimaryStorage {
                 conditions=["uuid=${primaryStorageSpec.inventory.uuid}".toString()]
         }[0]
-        assert volumeBitSize == primaryStorageInventory.totalCapacity - primaryStorageInventory.availableCapacity
+        assert volumeBitSize == oldPrimaryStorageInventory.availableCapacity - primaryStorageInventory.availableCapacity
 
 
         // 8.Completely remove the cloud disk
@@ -138,7 +139,32 @@ class LocalStorageRecalculateAvailableCapacityCase extends SubCase{
         primaryStorageInventory =  queryPrimaryStorage {
                 conditions=["uuid=${primaryStorageSpec.inventory.uuid}".toString()]
         }[0]
-        assert primaryStorageInventory.totalCapacity == primaryStorageInventory.availableCapacity
+        assert oldPrimaryStorageInventory.availableCapacity == primaryStorageInventory.availableCapacity
+    }
+
+    void testLocalStorageHostStorageCapacity(){
+        VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
+        VolumeVO rootVolume = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, vm.rootVolumeUuid).find()
+
+        HostDiskCapacity oldCapacity = getLocalStorageHostDiskCapacity {
+            primaryStorageUuid = rootVolume.primaryStorageUuid
+            hostUuid = vm.getHostUuid()
+        }[0]
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+
+        expungeVmInstance {
+            uuid = vm.uuid
+        }
+
+        HostDiskCapacity newCapacity = getLocalStorageHostDiskCapacity {
+            primaryStorageUuid = rootVolume.primaryStorageUuid
+            hostUuid = vm.getHostUuid()
+        }[0]
+
+        assert newCapacity.availableCapacity - rootVolume.size == oldCapacity.availableCapacity
     }
 
     @Override

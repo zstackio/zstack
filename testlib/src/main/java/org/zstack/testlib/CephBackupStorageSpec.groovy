@@ -88,10 +88,12 @@ class CephBackupStorageSpec extends BackupStorageSpec {
                 return rsp
             }
 
-            simulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) {
+            simulator(CephBackupStorageBase.DOWNLOAD_IMAGE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.getBody(), CephBackupStorageBase.DownloadCmd.class)
+                ImageSpec imageSpec = spec.specByUuid(cmd.imageUuid)
                 def rsp = new CephBackupStorageBase.DownloadRsp()
-                rsp.size = 0
-                rsp.actualSize = 0
+                rsp.size = imageSpec == null ? BackupStorageSpec.defaultImageSize : (imageSpec.size ?: BackupStorageSpec.defaultImageSize)
+                rsp.actualSize = imageSpec == null ? BackupStorageSpec.defaultActualSize : (imageSpec.actualSize ?: BackupStorageSpec.defaultActualSize)
                 return rsp
             }
 
