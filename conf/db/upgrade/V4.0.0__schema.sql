@@ -681,3 +681,5 @@ UPDATE `VRouterRouteEntryVO` SET `type` = 'DirectConnect' where `type` = '2';
 UPDATE `VRouterRouteEntryVO` SET `type` = 'ZStack' where `type` = '3';
 UPDATE `VRouterRouteEntryVO` SET `type` = 'OSPF' where `type` = '4';
 UPDATE `VRouterRouteEntryVO` SET `type` = 'Unknown' where `type` = '5';
+
+ALTER TABLE `zstack`.`UsbDeviceVO` modify column iSerial varchar(1024) DEFAULT NULL;
