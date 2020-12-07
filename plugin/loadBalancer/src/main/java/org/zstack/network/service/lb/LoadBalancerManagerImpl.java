@@ -963,6 +963,12 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
         List<LoadBalancerVO> lbVos = Q.New(LoadBalancerVO.class).list();
         for (LoadBalancerVO vo : lbVos) {
+            boolean isExist = Q.New(LoadBalancerServerGroupVO.class).eq(LoadBalancerServerGroupVO_.name, String.format("default-server-group-%s", vo.getName()))
+                    .eq(LoadBalancerServerGroupVO_.description, String.format("default server group for load balancer %s", vo.getName()))
+                    .eq(LoadBalancerServerGroupVO_.loadBalancerUuid, vo.getUuid()).isExists();
+            if (isExist) {
+                continue;
+            }
             /* create a server group */
             LoadBalancerServerGroupVO groupVO = new LoadBalancerServerGroupVO();
             groupVO.setUuid(Platform.getUuid());
@@ -979,6 +985,12 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         List<LoadBalancerListenerVO> listenerVOS = Q.New(LoadBalancerListenerVO.class).list();
         List<LoadBalancerServerGroupVmNicRefVO> vmNicRefVOS = new ArrayList<>();
         for (LoadBalancerListenerVO vo : listenerVOS) {
+            boolean isExist = Q.New(LoadBalancerServerGroupVO.class).eq(LoadBalancerServerGroupVO_.name, String.format("default-server-group-%s", vo.getName()))
+                    .eq(LoadBalancerServerGroupVO_.description, String.format("default server group for load balancer listener %s", vo.getName()))
+                    .eq(LoadBalancerServerGroupVO_.loadBalancerUuid, vo.getLoadBalancerUuid()).isExists();
+            if (isExist) {
+                continue;
+            }
             /* create a server group */
             LoadBalancerServerGroupVO groupVO = new LoadBalancerServerGroupVO();
             groupVO.setUuid(Platform.getUuid());
