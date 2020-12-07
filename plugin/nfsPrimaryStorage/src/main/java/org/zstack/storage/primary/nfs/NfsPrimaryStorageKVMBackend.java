@@ -28,6 +28,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.core.workflow.WhileCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
@@ -1427,6 +1428,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     checkQemuImgVersionInOtherClusters(context, invs);
                 }
 
+                ErrorCodeList errList = (ErrorCodeList) data.get(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR);
                 new While<>(invs).all((PrimaryStorageInventory inv, WhileCompletion completion) -> {
                     RemountCmd cmd = new RemountCmd();
                     cmd.mountPath = inv.getMountPath();
@@ -1445,6 +1447,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                         @Override
                         public void fail(ErrorCode errorCode) {
+                            errList.getCauses().add(errorCode);
                             logger.warn(String.format("fail to mount nfs[uuid:%s] from host[uuid:%s], because:%s"
                                     , inv.getUuid(), huuid, errorCode.toString()));
                             nfsFactory.updateNfsHostStatus(inv.getUuid(), huuid, PrimaryStorageHostStatus.Disconnected);
@@ -1454,6 +1457,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 }).run(new NoErrorCompletion(trigger) {
                     @Override
                     public void done() {
+                        data.put(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR, errList);
                         trigger.next();
                     }
                 });
