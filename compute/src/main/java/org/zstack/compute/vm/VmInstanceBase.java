@@ -5669,7 +5669,33 @@ public class VmInstanceBase extends AbstractVmInstance {
         List<CdRomSpec> cdRomSpecs = buildVmCdRomSpecsForNewCreated(spec);
         spec.setCdRomSpecs(cdRomSpecs);
 
-        spec.getImageSpec().setInventory(ImageInventory.valueOf(imvo));
+        if (imvo != null) {
+            spec.getImageSpec().setInventory(ImageInventory.valueOf(imvo));
+        } else {
+            ImageInventory image = new ImageInventory();
+            image.setUuid(spec.getVmInventory().getImageUuid());
+            image.setSize(spec.getRootDiskOffering().getDiskSize());
+
+            List<Long> resultList = Q.New(ImageCacheVO.class)
+                    .select(ImageCacheVO_.size)
+                    .eq(ImageCacheVO_.imageUuid, spec.getVmInventory().getImageUuid())
+                    .limit(1)
+                    .listValues();
+            if (resultList.isEmpty()) {
+                resultList = Q.New(ImageCacheShadowVO.class)
+                        .select(ImageCacheShadowVO_.size)
+                        .eq(ImageCacheShadowVO_.imageUuid, spec.getVmInventory().getImageUuid())
+                        .limit(1)
+                        .listValues();
+
+                if (resultList.isEmpty()) {
+                    throw new OperationFailureException(operr("no way to get image size of %s, report exception.", spec.getVmInventory().getImageUuid()));
+                }
+            }
+
+            image.setActualSize(resultList.get(0));
+            spec.getImageSpec().setInventory(image);
+        }
         spec.setCurrentVmOperation(VmOperation.NewCreate);
         if (struct.getRequiredHostUuid() != null) {
             spec.setHostAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
@@ -5707,12 +5733,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         String vmUuid = vmInventory.getUuid();
 
         // vm image is iso
-        ImageVO imvo = dbf.findByUuid(vmInventory.getImageUuid(), ImageVO.class);
-        if (imvo.getMediaType() == ImageMediaType.ISO) {
-            CdRomSpec cdRomSpec = new CdRomSpec();
-            cdRomSpec.setDeviceId(cdRomSpecs.size());
-            cdRomSpec.setImageUuid(imvo.getUuid());
-            cdRomSpecs.add(cdRomSpec);
+        if (vmInventory.getImageUuid() != null) {
+            ImageVO imvo = dbf.findByUuid(vmInventory.getImageUuid(), ImageVO.class);
+            if (imvo != null && imvo.getMediaType() == ImageMediaType.ISO) {
+                CdRomSpec cdRomSpec = new CdRomSpec();
+                cdRomSpec.setDeviceId(cdRomSpecs.size());
+                cdRomSpec.setImageUuid(imvo.getUuid());
+                cdRomSpecs.add(cdRomSpec);
+            }
         }
 
         // createWithoutCdRom
