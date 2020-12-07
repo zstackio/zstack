@@ -305,6 +305,8 @@ public class ImageBase implements Image {
             } else {
                 SQL.New(ImageVO.class).eq(ImageVO_.uuid, self.getUuid()).hardDelete();
             }
+            bus.reply(msg, reply);
+            return;
         } else if (bsRefs.stream().allMatch(
                 r -> r.getStatus() == ImageStatus.Creating || r.getStatus() == ImageStatus.Downloading)) {
             // the image is not on any backup storage; mostly likely the image is not in the status of Ready, for example
