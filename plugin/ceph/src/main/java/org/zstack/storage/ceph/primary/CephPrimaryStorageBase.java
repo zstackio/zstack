@@ -2123,17 +2123,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             .eq(ImageCacheVO_.imageUuid, image.getInventory().getUuid())
                             .find();
 
-                    if (cache != null ){
+                    if (cache != null) {
                         final CheckIsBitsExistingCmd cmd = new CheckIsBitsExistingCmd();
                         cmd.setInstallPath(cache.getInstallUrl());
                         httpCall(CHECK_BITS_PATH, cmd, CheckIsBitsExistingRsp.class, new ReturnValueCompletion<CheckIsBitsExistingRsp>(chain) {
                             @Override
                             public void success(CheckIsBitsExistingRsp returnValue) {
-                                if(returnValue.isExisting()) {
+                                if (returnValue.isExisting()) {
                                     logger.debug("image has been existing");
                                     completion.success(cache);
                                     chain.next();
-                                }else{
+                                } else {
                                     logger.debug("image not found, remove vo and re-download");
                                     SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
                                     q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
@@ -2170,7 +2170,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             }
                         });
 
-                    }else{
+                    } else {
                         doDownload(new ReturnValueCompletion<ImageCacheVO>(chain) {
                             @Override
                             public void success(ImageCacheVO returnValue) {
@@ -2185,7 +2185,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             }
                         });
                     }
-
                 }
 
                 @Override
@@ -2443,7 +2442,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-
+                                trigger.fail(errorCode);
                             }
                         });
                     }

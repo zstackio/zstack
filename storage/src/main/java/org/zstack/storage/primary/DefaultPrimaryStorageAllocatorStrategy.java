@@ -87,7 +87,7 @@ class DefaultPrimaryStorageAllocatorStrategy implements PrimaryStorageAllocatorS
     private List<PrimaryStorageVO> sortAll(PrimaryStorageAllocationSpec spec, List<PrimaryStorageVO> allocated) {
         List<PrimaryStorageVO> results = new ArrayList<>();
         FlowChain sorterChain = sortBuilder.build();
-        sorterChain.setName(String.format("allocate-primary-storage-msg-%s", spec.getAllocationMessage().getId()));
+        sorterChain.setName(String.format("sort-allocated-primary-storage-msg-%s", spec.getAllocationMessage().getId()));
         sorterChain.setData(map(e(AllocatorParams.SPEC, spec), e(AllocatorParams.CANDIDATES, allocated)));
         sorterChain.done(new FlowDoneHandler(null) {
             @Override
