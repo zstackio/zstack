@@ -1125,6 +1125,10 @@ public class LoadBalancerBase {
                 SQL.New(LoadBalancerServerGroupVmNicRefVO.class)
                         .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, groupVO.getUuid())
                         .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, msg.getVmNicUuids()).delete();
+                SQL.New(LoadBalancerListenerVmNicRefVO.class)
+                        .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getListenerUuid())
+                        .in(LoadBalancerListenerVmNicRefVO_.vmNicUuid, msg.getVmNicUuids())
+                        .delete();
                 evt.setInventory(reloadAndGetInventory());
                 bus.publish(evt);
                 completion.done();

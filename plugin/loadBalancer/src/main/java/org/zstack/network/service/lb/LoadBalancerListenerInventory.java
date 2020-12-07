@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.core.db.Q;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
 import org.zstack.header.query.ExpandedQueryAlias;
@@ -8,9 +9,7 @@ import org.zstack.header.search.Inventory;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by frank on 8/8/2015.
@@ -55,6 +54,24 @@ public class LoadBalancerListenerInventory implements Serializable {
         inv.setName(vo.getName());
         inv.setDescription(vo.getDescription());
         inv.setServerGroupUuid(vo.getServerGroupUuid());
+
+        List<LoadBalancerServerGroupVmNicRefVO> serverGroupVmNicRefVOs
+                = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,vo.getServerGroupUuid())
+                .list();
+        Set<LoadBalancerListenerVmNicRefVO> vmNicRefs = new HashSet<>();
+        for(LoadBalancerServerGroupVmNicRefVO serverGroupVmNicRefVO: serverGroupVmNicRefVOs){
+            LoadBalancerListenerVmNicRefVO vmNicRefVO = new LoadBalancerListenerVmNicRefVO();
+            vmNicRefVO.setId(serverGroupVmNicRefVO.getId());
+            vmNicRefVO.setListenerUuid(vo.getUuid());
+            vmNicRefVO.setCreateDate(serverGroupVmNicRefVO.getCreateDate());
+            vmNicRefVO.setLastOpDate(serverGroupVmNicRefVO.getLastOpDate());
+            vmNicRefVO.setStatus(serverGroupVmNicRefVO.getStatus());
+            vmNicRefVO.setVmNicUuid(serverGroupVmNicRefVO.getVmNicUuid());
+            vmNicRefs.add(vmNicRefVO);
+        }
+        vo.setVmNicRefs(vmNicRefs);
+
         inv.setVmNicRefs(LoadBalancerListenerVmNicRefInventory.valueOf(vo.getVmNicRefs()));
         inv.setAclRefs(LoadBalancerListenerACLRefInventory.valueOf(vo.getAclRefs()));
         inv.setCertificateRefs(LoadBalancerListenerCertificateRefInventory.valueOf(vo.getCertificateRefs()));

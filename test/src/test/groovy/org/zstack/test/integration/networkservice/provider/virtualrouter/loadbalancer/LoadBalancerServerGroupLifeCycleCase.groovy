@@ -356,6 +356,16 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
             listenerUuid = lbl2.uuid
         }
 
+        assert lbl2.vmNicRefs[0].vmNicUuid == nic5.uuid
+
+
+        removeVmNicFromLoadBalancer {
+            vmNicUuids = [nic5.uuid]
+            listenerUuid = lbl2.uuid
+        }
+        lbl2 = queryLoadBalancerListener { conditions = ["uuid=${lbl2.uuid}".toString()]}[0]
+        assert lbl2.vmNicRefs.size()==0
+
         deleteLoadBalancerServerGroup {
             uuid = lbl2.serverGroupUuid
         }
