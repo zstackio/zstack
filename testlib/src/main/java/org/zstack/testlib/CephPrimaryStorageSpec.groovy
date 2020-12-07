@@ -129,7 +129,9 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return [:]
             }
 
-            simulator(CephPrimaryStorageBase.CREATE_SNAPSHOT_PATH) {
+            simulator(CephPrimaryStorageBase.CREATE_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CreateSnapshotCmd)
+                assert !cmd.snapshotPath.contains("null")
                 def rsp = new CephPrimaryStorageBase.CreateSnapshotRsp()
                 rsp.size = 0
                 return rsp
