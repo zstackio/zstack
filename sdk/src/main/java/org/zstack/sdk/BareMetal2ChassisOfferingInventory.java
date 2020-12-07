@@ -60,6 +60,14 @@ public class BareMetal2ChassisOfferingInventory  {
         return this.memorySize;
     }
 
+    public java.lang.String bootMode;
+    public void setBootMode(java.lang.String bootMode) {
+        this.bootMode = bootMode;
+    }
+    public java.lang.String getBootMode() {
+        return this.bootMode;
+    }
+
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;
