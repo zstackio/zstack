@@ -94,6 +94,8 @@ public interface KVMConstant {
 
     Integer DEFAULT_MAX_NIC_QUEUE_NUMBER = 12;
 
+    String CONNECT_HOST_PRIMARYSTORAGE_ERROR = "psError";
+
     enum KvmVmState {
         NoState,
         Running,
