@@ -150,13 +150,14 @@ public class VirtualRouter extends ApplianceVmBase {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                return String.format("ping-virtualrouter-%s", self.getUuid());
             }
 
             @Override
             public void run(final SyncTaskChain chain) {
                 final PingVirtualRouterVmReply reply = new PingVirtualRouterVmReply();
-                if (VmInstanceState.Running != self.getState() || ApplianceVmStatus.Connecting == getSelf().getStatus()) {
+                if ((VmInstanceState.Running != self.getState() && VmInstanceState.Unknown != self.getState())
+                        || ApplianceVmStatus.Connecting == getSelf().getStatus()) {
                     reply.setDoReconnect(false);
                     bus.reply(msg, reply);
                     chain.next();
@@ -204,7 +205,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     public Class<PingRsp> getReturnClass() {
                         return PingRsp.class;
                     }
-                }, TimeUnit.MINUTES, 1);
+                }, TimeUnit.SECONDS, (long)ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class));
             }
 
             @Override
