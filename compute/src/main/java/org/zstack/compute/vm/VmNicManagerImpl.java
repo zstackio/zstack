@@ -173,6 +173,11 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
     }
 
     @Override
+    public boolean skipPlatformChange(VmInstanceInventory vm, String previousPlatform, String nowPlatform) {
+        return false;
+    }
+
+    @Override
     public void vmPlatformChange(VmInstanceInventory vm, String previousPlatform, String nowPlatform) {
         if (ImagePlatform.valueOf(nowPlatform).isParaVirtualization()) {
             resetVmNicDriverType(vm, defaultPVNicDriver);
