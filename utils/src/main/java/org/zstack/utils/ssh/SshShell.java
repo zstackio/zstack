@@ -84,14 +84,7 @@ public class SshShell {
             if (privateKeyFile != null) {
                 ssh = ln(
                         "ssh -i {0} -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no -p {1} -T {2}@{3} << 'EOF'",
-                        "s=`mktemp`",
-                        "cat << 'EOT' > $s",
                         "{4}",
-                        "EOT",
-                        "bash $s",
-                        "ret=$?",
-                        "rm -f $s",
-                        "exit $ret",
                         "EOF"
                 ).format(privateKeyFile, port, username, hostname, script);
             } else {
@@ -99,14 +92,7 @@ public class SshShell {
                 FileUtils.writeStringToFile(tempPasswordFile, password);
                 ssh = ln(
                         "sshpass -f{0} ssh -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -p {1} -T {2}@{3} << 'EOF'",
-                        "s=`mktemp`",
-                        "cat << 'EOT' > $s",
                         "{4}",
-                        "EOT",
-                        "bash $s",
-                        "ret=$?",
-                        "rm -f $s",
-                        "exit $ret",
                         "EOF"
                 ).format(tempPasswordFile.getAbsolutePath(), port, username, hostname, script);
             }
