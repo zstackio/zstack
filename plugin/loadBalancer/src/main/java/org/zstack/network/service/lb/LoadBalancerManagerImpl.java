@@ -8,13 +8,10 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfig;
-import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
@@ -41,12 +38,8 @@ import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
 import org.zstack.identity.Account;
-import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.vip.*;
-import org.zstack.resourceconfig.ResourceConfig;
-import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.resourceconfig.ResourceConfigUpdateExtensionPoint;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.RangeSet;
@@ -58,7 +51,6 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -76,15 +68,10 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
-    private AccountManager acntMgr;
-    @Autowired
-    private ErrorFacade errf;
-    @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
     private TagManager tagMgr;
-    @Autowired
-    private ResourceConfigFacade rcf;
+
     private Map<String, LoadBalancerBackend> backends = new HashMap<String, LoadBalancerBackend>();
     private Map<String, LoadBalancerFactory> lbFactories = new HashMap<String, LoadBalancerFactory>();
 
@@ -506,9 +493,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 }
 
                 if (!LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(oldValue) && LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(newValue)) {
-                    nicUuids.stream().forEach(nicUuid -> {
-                        new LoadBalancerWeightOperator().setWeight(newTag.getResourceUuid(), nicUuid, LoadBalancerConstants.BALANCER_WEIGHT_default);
-                    });
+                    nicUuids.forEach(nicUuid -> new LoadBalancerWeightOperator().setWeight(newTag.getResourceUuid(), nicUuid, LoadBalancerConstants.BALANCER_WEIGHT_default));
                 }
                 if (LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(oldValue) && !LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN.equals(newValue)) {
                     new LoadBalancerWeightOperator().deleteNicsWeight(nicUuids, newTag.getResourceUuid());
@@ -650,7 +635,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     public LoadBalancerFactory getLoadBalancerFactory(String type) {
         LoadBalancerFactory f = lbFactories.get(type);
         if (f == null) {
-            throw new CloudRuntimeException(String.format("cannot find LoadBalancerFactory[type:%s]", type.toString()));
+            throw new CloudRuntimeException(String.format("cannot find LoadBalancerFactory[type:%s]", type));
         }
         return f;
     }
@@ -810,9 +795,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 param("protocols", protocols).
                 param("vipUuid", vipUuid).list();
 
-        Iterator<Tuple> it = lbPortList.iterator();
-        while (it.hasNext()) {
-            Tuple strRange = it.next();
+        for (Tuple strRange : lbPortList) {
             int start = strRange.get(0, Integer.class);
             int end = strRange.get(1, Integer.class);
 
@@ -836,7 +819,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 " and nicRef.status != 'Pending'")
                         .param("vipUuid", vipUuid).list();
         if (l3Uuids != null && !l3Uuids.isEmpty()) {
-            count = l3Uuids.stream().collect(Collectors.toSet()).size();
+            count = new HashSet<>(l3Uuids).size();
         }
         List<String> uuids = SQL.New("select distinct lb.uuid" +
                 " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
@@ -862,7 +845,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 " and nicRef.status != 'Pending' and nic.l3NetworkUuid = :l3uuid")
                 .param("vipUuid", vipUuid).param("l3uuid", peerL3Uuid).list();
         if (l3Uuids != null && !l3Uuids.isEmpty()) {
-            count = l3Uuids.stream().collect(Collectors.toSet()).size();
+            count = new HashSet<>(l3Uuids).size();
         }
         List<String> uuids = SQL.New("select distinct lb.uuid" +
                 " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
