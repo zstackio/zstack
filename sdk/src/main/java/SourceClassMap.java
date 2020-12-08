@@ -27,6 +27,7 @@ public class SourceClassMap {
 			put("org.zstack.autoscaling.group.rule.AutoScalingRuleStatus", "org.zstack.sdk.AutoScalingRuleStatus");
 			put("org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory", "org.zstack.sdk.RemovalInstanceRuleInventory");
 			put("org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleAlarmTriggerInventory", "org.zstack.sdk.AutoScalingRuleAlarmTriggerInventory");
+			put("org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleSchedulerJobTriggerInventory", "org.zstack.sdk.AutoScalingRuleSchedulerJobTriggerInventory");
 			put("org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleTriggerInventory", "org.zstack.sdk.AutoScalingRuleTriggerInventory");
 			put("org.zstack.autoscaling.template.AutoScalingTemplateInventory", "org.zstack.sdk.AutoScalingTemplateInventory");
 			put("org.zstack.autoscaling.template.AutoScalingVmTemplateInventory", "org.zstack.sdk.AutoScalingVmTemplateInventory");
@@ -592,6 +593,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AutoScalingGroupInventory", "org.zstack.autoscaling.group.AutoScalingGroupInventory");
 			put("org.zstack.sdk.AutoScalingRuleAlarmTriggerInventory", "org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleAlarmTriggerInventory");
 			put("org.zstack.sdk.AutoScalingRuleInventory", "org.zstack.autoscaling.group.rule.AutoScalingRuleInventory");
+			put("org.zstack.sdk.AutoScalingRuleSchedulerJobTriggerInventory", "org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleSchedulerJobTriggerInventory");
 			put("org.zstack.sdk.AutoScalingRuleState", "org.zstack.autoscaling.group.rule.AutoScalingRuleState");
 			put("org.zstack.sdk.AutoScalingRuleStatus", "org.zstack.autoscaling.group.rule.AutoScalingRuleStatus");
 			put("org.zstack.sdk.AutoScalingRuleTriggerInventory", "org.zstack.autoscaling.group.rule.trigger.AutoScalingRuleTriggerInventory");
