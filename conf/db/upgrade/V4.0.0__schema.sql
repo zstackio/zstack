@@ -448,6 +448,7 @@ CREATE TABLE IF NOT EXISTS `BareMetal2ChassisOfferingVO` (
     `cpuModelName` varchar(255) NOT NULL,
     `cpuNum` int(10) unsigned NOT NULL,
     `memorySize` bigint unsigned NOT NULL COMMENT 'memory size in bytes',
+    `bootMode` varchar(32) DEFAULT NULL,
     `state` varchar(32) NOT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
