@@ -12,7 +12,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -33,8 +32,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.vm.*;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.identity.Account;
-import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.vip.ModifyVipAttributesStruct;
 import org.zstack.network.service.vip.Vip;
@@ -54,7 +53,8 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.zstack.core.Platform.*;
-import static org.zstack.utils.CollectionDSL.*;
+import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.map;
 
 /**
  * Created by frank on 8/8/2015.
@@ -71,10 +71,6 @@ public class LoadBalancerBase {
     private LoadBalancerManager lbMgr;
     @Autowired
     private ThreadFacade thdf;
-    @Autowired
-    private ErrorFacade errf;
-    @Autowired
-    private AccountManager acntMgr;
     @Autowired
     private TagManager tagMgr;
     @Autowired
@@ -201,7 +197,7 @@ public class LoadBalancerBase {
                 .list();
         if (listenerVOS != null && !listenerVOS.isEmpty()) {
             logger.debug(String.format("delete loadBalancerListeners[%s] for loadBalancer[uuid:%s]",
-                    listenerVOS.stream().map(vo -> vo.getUuid()).collect(Collectors.toList()), lbUuid));
+                    listenerVOS.stream().map(ResourceVO::getUuid).collect(Collectors.toList()), lbUuid));
             listenerVOS.forEach(vo -> {
                 /*there is no cascade deleting configure for acl ref in db */
                 if (!vo.getAclRefs().isEmpty()) {
@@ -630,7 +626,6 @@ public class LoadBalancerBase {
         bus.reply(msg, reply);
     }
 
-    @Transactional(readOnly = true)
     private void handle(final LoadBalancerGetPeerL3NetworksMsg msg) {
         LoadBalancerGetPeerL3NetworksReply reply = new LoadBalancerGetPeerL3NetworksReply();
         new SQLBatch(){
@@ -656,7 +651,6 @@ public class LoadBalancerBase {
         bus.reply(msg, reply);
     }
 
-    @Transactional(readOnly = true)
     private void handle(APIGetCandidateVmNicsForLoadBalancerMsg msg) {
         APIGetCandidateVmNicsForLoadBalancerReply reply = new APIGetCandidateVmNicsForLoadBalancerReply();
 
@@ -1425,14 +1419,13 @@ public class LoadBalancerBase {
 
         if (msg.getAclUuids() != null) {
             final String listenerUuid = vo.getUuid();
-            List<LoadBalancerListenerACLRefVO> refs = new ArrayList<>();
-            msg.getAclUuids().stream().forEach(aclUuid -> {
+            List<LoadBalancerListenerACLRefVO> refs = msg.getAclUuids().stream().map(aclUuid -> {
                 LoadBalancerListenerACLRefVO ref = new LoadBalancerListenerACLRefVO();
                 ref.setAclUuid(aclUuid);
                 ref.setType(LoadBalancerAclType.valueOf(msg.getAclType()));
                 ref.setListenerUuid(listenerUuid);
-                refs.add(ref);
-            });
+                return ref;
+            }).collect(Collectors.toList());
             dbf.persistCollection(refs);
         }
 
@@ -1527,14 +1520,13 @@ public class LoadBalancerBase {
             public void run(SyncTaskChain chain) {
                 DebugUtils.Assert(msg.getAclType() != null && msg.getAclUuids() != null, "parameters cannot be null");
                 APIAddAccessControlListToLoadBalancerEvent evt = new APIAddAccessControlListToLoadBalancerEvent(msg.getId());
-                List<LoadBalancerListenerACLRefVO> refs = new ArrayList<>();
-                msg.getAclUuids().stream().forEach(aclUuid -> {
+                List<LoadBalancerListenerACLRefVO> refs = msg.getAclUuids().stream().map(aclUuid -> {
                     LoadBalancerListenerACLRefVO ref = new LoadBalancerListenerACLRefVO();
                     ref.setAclUuid(aclUuid);
                     ref.setType(LoadBalancerAclType.valueOf(msg.getAclType()));
                     ref.setListenerUuid(msg.getListenerUuid());
-                    refs.add(ref);
-                });
+                    return ref;
+                }).collect(Collectors.toList());
                 dbf.persistCollection(refs);
 
                 final LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
@@ -1646,11 +1638,11 @@ public class LoadBalancerBase {
     private boolean isListenerNeedRefresh(LoadBalancerListenerVO lblVo) {
         for (LoadBalancerListenerServerGroupRefVO ref : lblVo.getServerGroupRefs()) {
             LoadBalancerServerGroupVO groupVO = dbf.findByUuid(ref.getLoadBalancerServerGroupUuid(), LoadBalancerServerGroupVO.class);
-            if (groupVO.getLoadBalancerServerGroupVmNicRefs().stream().filter(r -> r.getStatus() == LoadBalancerVmNicStatus.Active).count() > 0) {
+            if (groupVO.getLoadBalancerServerGroupVmNicRefs().stream().anyMatch(r -> r.getStatus() == LoadBalancerVmNicStatus.Active)) {
                 return true;
             }
 
-            if (groupVO.getLoadBalancerServerGroupServerIps().stream().filter(r -> r.getStatus() == LoadBalancerBackendServerStatus.Active).count() > 0) {
+            if (groupVO.getLoadBalancerServerGroupServerIps().stream().anyMatch(r -> r.getStatus() == LoadBalancerBackendServerStatus.Active)) {
                 return true;
             }
         }
@@ -1724,7 +1716,7 @@ public class LoadBalancerBase {
                     if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(ts[0]) &&
                             LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
                         DebugUtils.Assert(msg.getHealthCheckMethod() != null && msg.getHealthCheckURI() != null,
-                            String.format("the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI"));
+                                "the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI");
                         String code = LoadBalancerConstants.HealthCheckStatusCode.http_2xx.toString();
                         if (msg.getHealthCheckHttpCode() != null) {
                             code = msg.getHealthCheckHttpCode();
@@ -1853,15 +1845,14 @@ public class LoadBalancerBase {
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
-                if (reply.isSuccess()){
+                if (reply.isSuccess()) {
                     LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class));
                     evt.setInventory(inv);
-                    bus.publish(evt);
                 } else {
                     dbf.remove(original_ref);
                     evt.setError(reply.getError());
-                    bus.publish(evt);
                 }
+                bus.publish(evt);
             }
         });
     }
@@ -1890,15 +1881,14 @@ public class LoadBalancerBase {
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
-                if (reply.isSuccess()){
+                if (reply.isSuccess()) {
                     LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class));
                     evt.setInventory(inv);
-                    bus.publish(evt);
                 } else {
                     dbf.persist(original_ref);
                     evt.setError(reply.getError());
-                    bus.publish(evt);
                 }
+                bus.publish(evt);
             }
         });
     }
@@ -1988,7 +1978,7 @@ public class LoadBalancerBase {
         completion.done();
     }
 
-    private class AttachServerGroupToListenerStruct {
+    private static class AttachServerGroupToListenerStruct {
         String listenerUuid;
         Map<String, Long> vmNicWeight = new HashMap<>();
         Map<String, Long> serverIpWeight = new HashMap<>();
@@ -2121,8 +2111,6 @@ public class LoadBalancerBase {
 
             List<LoadBalancerServerGroupVmNicRefVO> refVOs = new ArrayList<>();
             List<LoadBalancerServerGroupServerIpVO> serverIpVOs = new ArrayList();
-            String providerType = null;
-            Boolean init = false;
             @Override
             public void setup() {
                 flow(new Flow() {
@@ -2207,9 +2195,9 @@ public class LoadBalancerBase {
                        if(vmNics!=null){
                            for (Map<String, String> vmNic : vmNics) {
                                if(vmNic.containsKey("weight")){
-                                   struct.getVmNicWeight().put((String) vmNic.get("uuid"), Long.valueOf(vmNic.get("weight")));
+                                   struct.getVmNicWeight().put(vmNic.get("uuid"), Long.valueOf(vmNic.get("weight")));
                                }else{
-                                   struct.getVmNicWeight().put((String) vmNic.get("uuid"), LoadBalancerConstants.BALANCER_WEIGHT_default);
+                                   struct.getVmNicWeight().put(vmNic.get("uuid"), LoadBalancerConstants.BALANCER_WEIGHT_default);
                                }
                            }
                        }
@@ -2217,9 +2205,9 @@ public class LoadBalancerBase {
                         if(servers!=null){
                             for (Map<String,String> server: servers) {
                                 if(server.containsKey("weight")){
-                                    struct.getServerIpWeight().put((String)server.get("ipAddress"), Long.valueOf(server.get("weight")));
+                                    struct.getServerIpWeight().put(server.get("ipAddress"), Long.valueOf(server.get("weight")));
                                 }else{
-                                    struct.getVmNicWeight().put((String)server.get("ipAddress"), LoadBalancerConstants.BALANCER_WEIGHT_default);
+                                    struct.getVmNicWeight().put(server.get("ipAddress"), LoadBalancerConstants.BALANCER_WEIGHT_default);
                                 }
                             }
                         }
@@ -2516,10 +2504,8 @@ public class LoadBalancerBase {
                         @Override
                         public void run(MessageReply reply) {
                             if (!reply.isSuccess()) {
-                                logger.warn(String.format( "update backendServer fail"));
                                 evt.setError(reply.getError());
                             } else {
-
                                 evt.setInventory(LoadBalancerServerGroupInventory.valueOf(serverGroupVO));
                             }
                             bus.publish(evt);
