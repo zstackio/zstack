@@ -4175,6 +4175,33 @@ abstract class ApiHelper {
     }
 
 
+    def changeBareMetal2InstancePassword(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeBareMetal2InstancePasswordAction.class) Closure c) {
+        def a = new org.zstack.sdk.ChangeBareMetal2InstancePasswordAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def changeBareMetal2ProvisionNetworkState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeBareMetal2ProvisionNetworkStateAction.class) Closure c) {
         def a = new org.zstack.sdk.ChangeBareMetal2ProvisionNetworkStateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
