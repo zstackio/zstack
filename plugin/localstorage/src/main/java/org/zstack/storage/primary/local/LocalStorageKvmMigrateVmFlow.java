@@ -7,17 +7,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
-import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
@@ -73,15 +70,9 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
     @Autowired
     private CloudBus bus;
     @Autowired
-    private ErrorFacade errf;
-    @Autowired
     private ThreadFacade thdf;
     @Autowired
     private LocalStorageFactory localStorageFactory;
-    @Autowired
-    private ApiTimeoutManager timeoutMgr;
-    @Autowired
-    private PluginRegistry pluginRgty;
 
     public static final String VERIFY_SNAPSHOT_CHAIN_PATH = "/localstorage/snapshot/verifychain";
     public static final String REBASE_SNAPSHOT_BACKING_FILES_PATH = "/localstorage/snapshot/rebasebackingfiles";
@@ -114,9 +105,8 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
         public String volumeUuid;
     }
 
-    class BackingImage {
+    static class BackingImage {
         String uuid;
-        String rootVolumeUuid;
         String path;
         Long size;
         String md5;
@@ -697,7 +687,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         List<String> volUuids = CollectionUtils.transformToList(volumesOnLocalStorage,
-                                (VolumeInventory vol) -> vol.getUuid()
+                                VolumeInventory::getUuid
                         );
 
                         updateVolumesInfo(volUuids);
@@ -742,7 +732,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
                             List<String> spUuids = CollectionUtils.transformToList(allSnapshots,
-                                    (VolumeSnapshotInventory sp) -> sp.getUuid()
+                                    VolumeSnapshotInventory::getUuid
                             );
 
                             updateSnapshotsInfo(spUuids);
@@ -1086,12 +1076,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
                     CopyBitsFromRemoteCmd cmd = new CopyBitsFromRemoteCmd();
-                    cmd.paths = CollectionUtils.transformToList(children, new Function<String, VolumeSnapshotInventory>() {
-                        @Override
-                        public String call(VolumeSnapshotInventory arg) {
-                            return arg.getPrimaryStorageInstallPath();
-                        }
-                    });
+                    cmd.paths = CollectionUtils.transformToList(children, VolumeSnapshotInventory::getPrimaryStorageInstallPath);
                     cmd.dstIp = destIp;
                     cmd.dstPassword = password;
                     cmd.dstUsername = username;
@@ -1251,8 +1236,7 @@ public class LocalStorageKvmMigrateVmFlow extends NoRollbackFlow {
 
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    List<SnapshotTO> s = new ArrayList<SnapshotTO>();
-                    s.addAll(snapshotTOs);
+                    List<SnapshotTO> s = new ArrayList<SnapshotTO>(snapshotTOs);
 
                     // the volume links to the latest snapshot
                     SnapshotTO to = new SnapshotTO();

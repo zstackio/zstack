@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -830,12 +829,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
     @Override
     void syncPhysicalCapacityInCluster(List<ClusterInventory> clusters, final ReturnValueCompletion<PhysicalCapacityUsage> completion) {
-        List<String> clusterUuids = CollectionUtils.transformToList(clusters, new Function<String, ClusterInventory>() {
-            @Override
-            public String call(ClusterInventory arg) {
-                return arg.getUuid();
-            }
-        });
+        List<String> clusterUuids = CollectionUtils.transformToList(clusters, ClusterInventory::getUuid);
 
         final PhysicalCapacityUsage ret = new PhysicalCapacityUsage();
 
@@ -986,7 +980,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     void handle(DownloadVolumeTemplateToPrimaryStorageMsg msg, ReturnValueCompletion<DownloadVolumeTemplateToPrimaryStorageReply> completion) {
         DownloadVolumeTemplateToPrimaryStorageReply reply = new DownloadVolumeTemplateToPrimaryStorageReply();
         ImageSpec ispec = msg.getTemplateSpec();
-        BackupStorageInventory bsinv = null;
+        BackupStorageInventory bsinv;
         String backupStorageInstallPath;
         if (ispec.getSelectedBackupStorage() != null) {
             SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
@@ -1015,6 +1009,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     return arg.getBackupStorageUuid().equals(bsUuid) ? arg : null;
                 }
             });
+
             backupStorageInstallPath = ref.getInstallPath();
         }
 
@@ -2630,12 +2625,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 } else {
                     cmd.stage = PrimaryStorageConstant.MIGRATE_VOLUME_COPY_STAGE;
                 }
-                cmd.paths = CollectionUtils.transformToList(struct.getInfos(), new Function<String, ResourceInfo>() {
-                    @Override
-                    public String call(ResourceInfo arg) {
-                        return arg.getPath();
-                    }
-                });
+                cmd.paths = CollectionUtils.transformToList(struct.getInfos(), ResourceInfo::getPath);
                 cmd.volumeUuid = struct.getInfos().get(0).getResourceRef().getResourceUuid();
 
                 httpCall(LocalStorageKvmMigrateVmFlow.COPY_TO_REMOTE_BITS_PATH, struct.getSrcHostUuid(), cmd, false,
@@ -2854,8 +2844,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         }
                     }
 
-                    Long managedResourceSize = calculateManagedResourceActualSize(hostUuid);
-                    Long usedSize = rsp.getTotalCapacity() - rsp.getAvailableCapacity() - managedResourceSize;
+                    long managedResourceSize = calculateManagedResourceActualSize(hostUuid);
+                    long usedSize = rsp.getTotalCapacity() - rsp.getAvailableCapacity() - managedResourceSize;
                     
                     total += rsp.getTotalCapacity();
 
