@@ -19,10 +19,14 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 import javax.persistence.Tuple
+import java.util.concurrent.ConcurrentHashMap
+
 /**
  * Created by xing5 on 2017/6/6.
  */
 class KVMSimulator implements Simulator {
+    static ConcurrentHashMap<String, KVMAgentCommands.ConnectCmd> connectCmdConcurrentHashMap = new ConcurrentHashMap<>()
+
     @Override
     void registerSimulators(EnvSpec spec) {
         spec.simulator(KVMConstant.KVM_HOST_CAPACITY_PATH) { HttpEntity<String> e, EnvSpec espec ->
@@ -146,11 +150,22 @@ class KVMSimulator implements Simulator {
 
             def rsp = new KVMAgentCommands.PingResponse()
             rsp.hostUuid = cmd.hostUuid
+            rsp.version = connectCmdConcurrentHashMap.get(rsp.hostUuid).version
+            rsp.sendCommandUrl = connectCmdConcurrentHashMap.get(rsp.hostUuid).sendCommandUrl
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_UPDATE_HOST_CONFIGURATION_PATH) { HttpEntity<String> e, EnvSpec espec ->
+            def rsp = new KVMAgentCommands.UpdateHostConfigurationResponse()
             return rsp
         }
 
         spec.simulator(KVMConstant.KVM_CONNECT_PATH) { HttpEntity<String> e ->
             Spec.checkHttpCallType(e, true)
+            KVMAgentCommands.ConnectCmd cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.ConnectCmd.class)
+
+            connectCmdConcurrentHashMap.put(cmd.hostUuid, cmd)
+
             def rsp = new KVMAgentCommands.ConnectResponse()
             rsp.success = true
             rsp.libvirtVersion = "1.0.0"
