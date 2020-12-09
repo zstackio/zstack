@@ -1199,8 +1199,12 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             }
 
             Class clz = Class.forName(type);
-            setProperty(msg, p, JSONObjectUtil.rehashObject(getProperty(raw, p), clz));
+            setProperty(msg, p, rehashObject(getProperty(raw, p), clz));
         }
+    }
+
+    public static <T> T rehashObject(Object obj, Class<T> clazz) {
+        return CloudBusGson.fromJson(CloudBusGson.toJson(obj), clazz);
     }
 
     @AsyncThread
