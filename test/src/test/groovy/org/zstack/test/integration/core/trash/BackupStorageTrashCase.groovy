@@ -22,6 +22,7 @@ class BackupStorageTrashCase extends SubCase {
     ImageInventory image
     StorageRecycleImpl trashMrg
     InstallPathRecycleInventory label
+    long imagesize
 
     @Override
     void clean() {
@@ -84,8 +85,10 @@ class BackupStorageTrashCase extends SubCase {
         assert label.storageType == "BackupStorageVO"
         assert label.resourceType == "ImageVO"
         assert label.trashType == TrashType.MigrateImage.toString()
-        assert label.size == 0L
+        assert label.size == i.size
         assert label.installPath == i.url
+
+        imagesize = i.size
     }
 
     void testGetTrash() {
@@ -106,7 +109,6 @@ class BackupStorageTrashCase extends SubCase {
     }
 
     void assertTrash(List<org.zstack.sdk.InstallPathRecycleInventory> trashs) {
-        assert trashs.get(0).size == 0L
         assert trashs.get(0).installPath == image.backupStorageRefs.get(0).installPath
         assert trashs.get(0).storageUuid == bs.uuid
         assert trashs.get(0).storageType == "BackupStorageVO"
@@ -145,7 +147,7 @@ class BackupStorageTrashCase extends SubCase {
         } as CleanUpTrashOnBackupStorageResult
 
         assert result.result != null
-        assert result.result.size == image.size * count
+        assert result.result.size == imagesize * count
         assert result.result.resourceUuids.size() == count
 
         trashs = getTrashOnBackupStorage {
