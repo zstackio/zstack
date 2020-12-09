@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -15,8 +16,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImageBackupStorageRefInventory;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageStatus;
-import org.zstack.header.storage.primary.ImageCacheVO;
-import org.zstack.header.storage.primary.ImageCacheVO_;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -47,7 +47,7 @@ public class VmImageSelectBackupStorageFlow extends NoRollbackFlow {
         taskProgress("Choose backup storage for downloading the image");
 
         spec.getImageSpec().setNeedDownload(imageNeedDownload(spec, imageUuid));
-        if (!spec.getImageSpec().isNeedDownload() && spec.getImageSpec().getInventory().getBackupStorageRefs().size() == 0) {
+        if (!spec.getImageSpec().isNeedDownload() && spec.getImageSpec().getInventory().getBackupStorageRefs().isEmpty()) {
             return null;
         }
 

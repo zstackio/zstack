@@ -293,6 +293,7 @@ public class CephPrimaryStorageSimulator {
         rsp.size = size == null ? 0 : size;
         Long asize = config.cpCmdActualSize.get(cmd.resourceUuid);
         rsp.actualSize = asize == null ? 0 : asize;
+        rsp.installPath = cmd.dstPath;
 
         reply(entity, rsp);
         return null;
