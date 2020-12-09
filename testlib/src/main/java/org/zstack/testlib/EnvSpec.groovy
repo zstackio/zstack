@@ -64,6 +64,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Collectors
 /**
  * Created by xing5 on 2017/2/12.
@@ -81,12 +82,12 @@ class EnvSpec extends ApiHelper implements Node  {
     private boolean hasCreated
     private ConcurrentHashMap<String, Closure> httpHandlers = [:]
     private ConcurrentHashMap<String, Closure> httpPostHandlers = [:]
-    private ConcurrentHashMap<String, Integer> httpHandlerCounters = [:]
-    private ConcurrentHashMap<String, Integer> httpPostHandlerCounters = [:]
+    private ConcurrentHashMap<String, AtomicInteger> httpHandlerCounters = [:]
+    private ConcurrentHashMap<String, AtomicInteger> httpPostHandlerCounters = [:]
     private ConcurrentHashMap<String, Closure> defaultHttpHandlers = [:]
     private ConcurrentHashMap<String, Closure> defaultHttpPostHandlers = [:]
     protected ConcurrentHashMap<Class, List<Tuple>> messageHandlers = [:]
-    protected ConcurrentHashMap<Class, Integer> messageHandlerCounters = [:]
+    protected ConcurrentHashMap<Class, AtomicInteger> messageHandlerCounters = [:]
     protected ConcurrentHashMap<Class, List<Closure>> notifiersOfReceivedMessages = [:]
     private ConcurrentHashMap<Class, List<Tuple>> defaultMessageHandlers = [:]
     private ConcurrentHashMap<String, List<Tuple>> httpConditionHandlers = [:]
@@ -937,11 +938,8 @@ class EnvSpec extends ApiHelper implements Node  {
                 } else {
                     ret = postHandler(ret, entity, this)
                 }
-                if (httpPostHandlerCounters[url] == null) {
-                    httpPostHandlerCounters[url] = 1
-                } else {
-                    httpPostHandlerCounters[url] ++
-                }
+                httpPostHandlerCounters.putIfAbsent(url, new AtomicInteger(0))
+                httpPostHandlerCounters.get(url).incrementAndGet()
             }
 
             if (ret == null) {
@@ -956,11 +954,8 @@ class EnvSpec extends ApiHelper implements Node  {
             logger.warn("error happened when handling $url", t)
             rsp.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), t.message)
         } finally {
-            if (httpHandlerCounters[url] == null) {
-                httpHandlerCounters[url] = 1
-            } else {
-                httpHandlerCounters[url] ++
-            }
+            httpHandlerCounters.putIfAbsent(url, new AtomicInteger(0))
+            httpHandlerCounters[url].incrementAndGet()
         }
     }
 
@@ -1038,15 +1033,15 @@ class EnvSpec extends ApiHelper implements Node  {
     }
 
     boolean verifyAfterSimulator(String path) {
-        return httpPostHandlerCounters[path] != null && httpPostHandlerCounters[path] > 0
+        return httpPostHandlerCounters[path] != null && httpPostHandlerCounters[path].get() > 0
     }
 
     boolean verifySimulator(String path) {
-        return httpHandlerCounters[path] != null && httpHandlerCounters[path] > 0
+        return httpHandlerCounters[path] != null && httpHandlerCounters[path].get() > 0
     }
 
     boolean verifyMessage(Class clz) {
-        return messageHandlerCounters[clz] != null && messageHandlerCounters[clz] > 0
+        return messageHandlerCounters[clz] != null && messageHandlerCounters[clz].get() > 0
     }
 
     void resetAllSimulatorSize() {
