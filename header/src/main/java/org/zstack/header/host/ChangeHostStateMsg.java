@@ -5,6 +5,7 @@ import org.zstack.header.message.NeedReplyMessage;
 public class ChangeHostStateMsg extends NeedReplyMessage implements HostMessage {
     private String uuid;
     private String stateEvent;
+    private boolean forceChange;
 
     public ChangeHostStateMsg() {
     }
@@ -33,5 +34,13 @@ public class ChangeHostStateMsg extends NeedReplyMessage implements HostMessage 
     @Override
     public String getHostUuid() {
         return getUuid();
+    }
+
+    public boolean isForceChange() {
+        return forceChange;
+    }
+
+    public void setForceChange(boolean forceChange) {
+        this.forceChange = forceChange;
     }
 }

@@ -183,7 +183,7 @@ public abstract class HostBase extends AbstractHost {
         bus.publish(evt);
     }
 
-    protected void maintenanceHook(final Completion completion) {
+    protected void maintenanceHook(ChangeHostStateMsg changeHostStateMsg, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("maintenance-mode-host-%s-ip-%s", self.getUuid(), self.getManagementIp()));
 
@@ -297,6 +297,10 @@ public abstract class HostBase extends AbstractHost {
                         new While<>(vmUuids).step((vmUuid, coml) -> {
                             StopVmInstanceMsg msg = new StopVmInstanceMsg();
                             msg.setVmInstanceUuid(vmUuid);
+                            if (changeHostStateMsg.isForceChange()) {
+                                msg.setGcOnFailure(true);
+                                msg.setIgnoreResourceReleaseFailure(true);
+                            }
                             bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vmUuid);
                             bus.send(msg, new CloudBusCallBack(coml) {
                                 @Override
@@ -1145,7 +1149,7 @@ public abstract class HostBase extends AbstractHost {
         if (HostStateEvent.preMaintain == stateEvent) {
             HostState originState = self.getState();
             changeState(HostStateEvent.preMaintain);
-            maintenanceHook(new Completion(msg) {
+            maintenanceHook(msg, new Completion(msg) {
                 @Override
                 public void success() {
                     changeState(HostStateEvent.maintain);
