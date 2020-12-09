@@ -464,10 +464,20 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
         }
 
         try {
-            if (!isNeedToDeploy(moduleName, src.getAbsolutePath())) {
+            Boolean ZUIGAOJIAN;
+            String output = ShellUtils.run("getenforce", true);
+            if (output.contains("Disabled")) {
+                ZUIGAOJIAN = false;
+            } else {
+                ZUIGAOJIAN = true;
+            }
+            Boolean deploy = isNeedToDeploy(moduleName, src.getAbsolutePath());
+            if (!deploy || ZUIGAOJIAN) {
+                logger.debug(String.format("not need to deploy %s, isNeedToDeploy: %s, ZUIGAOJIAN: %s", playBookName, deploy.toString(), ZUIGAOJIAN.toString()));
                 return;
             }
 
+            logger.debug(String.format("need to deploy %s, isNeedToDeploy: %s, ZUIGAOJIAN: %s", playBookName, deploy.toString(), ZUIGAOJIAN.toString()));
             String destModulePath = PathUtil.join(filesRoot.getAbsolutePath(), moduleName);
             File dest = new File(destModulePath);
             if (dest.exists()) {
@@ -485,7 +495,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
                     if (lnFile.exists()) {
                         lnFile.delete();
                     }
-                    Files.createSymbolicLink(Paths.get(lnPath), Paths.get(f.getAbsolutePath()));
+                    Files.copy(Paths.get(f.getAbsolutePath()), Paths.get(lnPath));
                     isPlaybookLinked = true;
                 }
             }
@@ -497,7 +507,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
 
             logger.debug(String.format("successfully deployed ansible module[%s]", modulePath));
         } catch (Exception e) {
-            String err = String.format("Unable to deploy ansible module[%s] from %s", moduleName, modulePath);
+            String err = String.format("Unable to deploy ansible module[%s] from %s, %s", moduleName, modulePath, e);
             throw new CloudRuntimeException(err, e);
         }
     }
