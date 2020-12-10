@@ -316,8 +316,23 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     @Override
     @Transactional
     public void createTagsFromAPICreateMessage(APICreateMessage msg, String resourceUuid, String resourceType) {
-        createTags(msg.getSystemTags(),msg.getUserTags(),resourceUuid,resourceType);
-        createTagExtensions.forEach(it -> it.afterCreateTagFromMsg(msg, resourceUuid, resourceType));
+        createTagsFromAPICreateMessage(msg, resourceUuid, resourceType, true);
+    }
+
+    @Override
+    public void createTagsFromAPICreateMessage(APICreateMessage msg, String resourceUuid, String resourceType, boolean forceMatch) {
+        if (forceMatch) {
+            createTags(msg.getSystemTags(), msg.getUserTags(), resourceUuid, resourceType);
+        } else {
+            if (msg.getSystemTags() != null) {
+                for (String tag: msg.getSystemTags()) {
+                    if (isValidSystemTag(resourceUuid, resourceType, tag)) {
+                        createTags(msg.getSystemTags(), msg.getUserTags(), resourceUuid, resourceType);
+                    }
+                }
+            }
+        }
+        createTagExtensions.forEach(it -> it.afterCreateTagFromMsg(msg, resourceUuid));
     }
 
     @Override
@@ -626,25 +641,27 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         return resourceTypeClassMap.keySet();
     }
 
-
-    @Override
-    public void validateSystemTag(String resourceUuid, String resourceType, String tag) {
+    private boolean isValidSystemTag(String resourceUuid, String resourceType, String tag) {
         boolean checked = false;
         List<SystemTag> tags = resourceTypeSystemTagMap.get(resourceType);
         if (tags != null) {
             for (SystemTag stag : tags) {
                 if (stag.isMatch(tag)) {
-                    checked = true;
                     stag.validate(resourceUuid, resourceTypeClassMap.get(resourceType), tag);
+                    checked = true;
                 }
             }
         }
+        return checked;
+    }
 
-        if (!checked) {
+
+    @Override
+    public void validateSystemTag(String resourceUuid, String resourceType, String tag) {
+        if (!isValidSystemTag(resourceUuid, resourceType, tag)) {
             throw new ApiMessageInterceptionException(
                     argerr("no system tag matches[%s] for resourceType[%s]", tag, resourceType));
         }
-
     }
 
     @Override
