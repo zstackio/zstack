@@ -42,13 +42,20 @@ public aspect DbDeadlockAspect {
                     int c = refCount.get();
                     DatabaseFacadeImpl.increaseDberror();
                     if (c > 1) {
-                        logger.warn(String.format("ref = %s, ask outer deadlock handler to handle it", c));
+                        logger.warn(String.format("ref = %s, ask outer deadlock handler to handle it", c),re);
+                        throw re;
+                    }
+                    
+                    times --;
+                    bad = re;
+
+                    Throwable root = DebugUtils.getRootCause(re);
+
+                    if(root.getMessage() == null){
+                        logger.debug("excepiton",re);
                         throw re;
                     }
 
-                    times --;
-                    bad = re;
-                    Throwable root = DebugUtils.getRootCause(re);
                     if (root instanceof MySQLTransactionRollbackException && root.getMessage().contains("Deadlock")) {
                         logger.warn("deadlock happened, retry");
                         DatabaseFacadeImpl.increaseDeadlock();

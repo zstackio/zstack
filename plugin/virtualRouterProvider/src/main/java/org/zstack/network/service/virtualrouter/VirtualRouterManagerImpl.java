@@ -968,7 +968,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             if (l3Vo.getNetworkServices().stream().filter(service -> VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE.equals(service.getNetworkServiceType())).count() > 0l) {
                 /*virtual networks*/
                 List<VirtualRouterOfferingInventory> offeringInventories = findOfferingByGuestL3Network(L3NetworkInventory.valueOf(l3Vo));
-                if (offeringInventories == null | offeringInventories.isEmpty()) {
+                if (offeringInventories == null || offeringInventories.isEmpty()) {
                     return false;
                 }
                 return l3.equals(publicUuid) || !offeringInventories.stream().filter(it -> offeringUuids.contains(it.getUuid())).collect(Collectors.toList()).isEmpty();
@@ -983,7 +983,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 return !offer.isEmpty();*/
                 List<String> offer = VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING.getTokensOfTagsByResourceUuid(l3)
                                                                      .stream().map(tokens -> tokens.get(VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING_TOKEN)).collect(Collectors.toList());
-                if (offer == null | offer.isEmpty()) {
+                if (offer == null || offer.isEmpty()) {
                     return false;
                 }
 
