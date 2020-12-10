@@ -43,6 +43,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -87,9 +88,9 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     private final Map<Class, List<BeforeSendMessageInterceptor>> beforeSendMessageInterceptors = new ConcurrentHashMap<>();
     private final Map<Class, List<BeforePublishEventInterceptor>> beforeEventPublishInterceptors = new ConcurrentHashMap<>();
 
-    private final List<BeforeDeliveryMessageInterceptor> beforeDeliveryMessageInterceptorsForAll = Collections.synchronizedList(new ArrayList<>());
-    private final List<BeforeSendMessageInterceptor> beforeSendMessageInterceptorsForAll = Collections.synchronizedList(new ArrayList<>());
-    private final List<BeforePublishEventInterceptor> beforeEventPublishInterceptorsForAll = Collections.synchronizedList(new ArrayList<>());
+    private final List<BeforeDeliveryMessageInterceptor> beforeDeliveryMessageInterceptorsForAll = new CopyOnWriteArrayList<>();
+    private final List<BeforeSendMessageInterceptor> beforeSendMessageInterceptorsForAll = new CopyOnWriteArrayList<>();
+    private final List<BeforePublishEventInterceptor> beforeEventPublishInterceptorsForAll = new CopyOnWriteArrayList<>();
     private final Map<String, Map<String, CloudBusEventListener>> eventListeners = new ConcurrentHashMap<>();
 
     private final Set<String> filterMsgNames = new HashSet<>();
