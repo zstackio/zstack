@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ChangeBareMetal2InstanceChassisOfferingAction extends AbstractAction {
+public class UpdateBareMetal2InstanceAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ChangeBareMetal2InstanceChassisOfferingAction extends AbstractActio
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ChangeBareMetal2InstanceChassisOfferingResult value;
+        public org.zstack.sdk.UpdateBareMetal2InstanceResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,10 +26,25 @@ public class ChangeBareMetal2InstanceChassisOfferingAction extends AbstractActio
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String instanceUuid;
+    public java.lang.String uuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String offeringUuid;
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
+
+    @Param(required = false, validValues = {"Stopped","Running"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String state;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String chassisOfferingUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String defaultL3NetworkUuid;
+
+    @Param(required = false, validValues = {"enable","disable"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String autoReleaseChassisEvent;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +78,8 @@ public class ChangeBareMetal2InstanceChassisOfferingAction extends AbstractActio
             return ret;
         }
         
-        org.zstack.sdk.ChangeBareMetal2InstanceChassisOfferingResult value = res.getResult(org.zstack.sdk.ChangeBareMetal2InstanceChassisOfferingResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ChangeBareMetal2InstanceChassisOfferingResult() : value; 
+        org.zstack.sdk.UpdateBareMetal2InstanceResult value = res.getResult(org.zstack.sdk.UpdateBareMetal2InstanceResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateBareMetal2InstanceResult() : value; 
 
         return ret;
     }
@@ -94,10 +109,10 @@ public class ChangeBareMetal2InstanceChassisOfferingAction extends AbstractActio
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/baremetal2/bm-instances/{instanceUuid}/actions";
+        info.path = "/baremetal2/bm-instances/{uuid}/action";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "changeBareMetal2InstanceChassisOffering";
+        info.parameterName = "updateBareMetal2Instance";
         return info;
     }
 
