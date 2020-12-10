@@ -1378,6 +1378,19 @@ public class LoadBalancerBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
+                if (Q.New(LoadBalancerListenerVO.class)
+                        .eq(LoadBalancerListenerVO_.loadBalancerUuid, msg.getLoadBalancerUuid())
+                        .eq(LoadBalancerListenerVO_.protocol, msg.getProtocol())
+                        .eq(LoadBalancerListenerVO_.loadBalancerPort, msg.getLoadBalancerPort()).isExists()) {
+                    APICreateLoadBalancerListenerEvent evt = new APICreateLoadBalancerListenerEvent(msg.getId());
+                    evt.setError(argerr("there is listener with same port [%s] and same load balancer [uuid:%s]",
+                            msg.getLoadBalancerPort(), msg.getLoadBalancerUuid()));
+                    bus.publish(evt);
+
+                    chain.next();
+                    return;
+                }
+
                 createListener(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
