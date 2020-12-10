@@ -13,8 +13,6 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.acl.AccessControlListEntryVO;
@@ -38,6 +36,7 @@ import org.zstack.header.network.service.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
@@ -46,8 +45,10 @@ import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentComma
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentResponse;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipBackend;
-import org.zstack.tag.TagManager;
-import org.zstack.utils.*;
+import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.VipUseForList;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
@@ -65,7 +66,7 @@ import static org.zstack.utils.CollectionDSL.list;
 public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBackend
         implements LoadBalancerBackend, GlobalApiMessageInterceptor, ApiMessageInterceptor, VirtualRouterHaGetCallbackExtensionPoint,
         VirtualRouterAfterAttachNicExtensionPoint, VirtualRouterBeforeDetachNicExtensionPoint {
-    private static CLogger logger = Utils.getLogger(VirtualRouterLoadBalancerBackend.class);
+    private static final CLogger logger = Utils.getLogger(VirtualRouterLoadBalancerBackend.class);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -74,14 +75,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     @Autowired
     @Qualifier("VirtualRouterVipBackend")
     private VirtualRouterVipBackend vipVrBkd;
-    @Autowired
-    private VipManager vipMgr;
-    @Autowired
-    private ErrorFacade errf;
-    @Autowired
-    private TagManager tagMgr;
-    @Autowired
-    private ApiTimeoutManager apiTimeoutManager;
     @Autowired
     private NetworkServiceManager nwServiceMgr;
     @Autowired
@@ -93,10 +86,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     @Autowired
     private LoadBalancerManager lbMgr;
 
-    private String REFRESH_CERTIFICATE_TASK = "refreshCertificate";
-    private String DELETE_CERTIFICATE_TASK = "deleteCertificate";
-    private String REFRESH_LB_TASK = "refreshLb";
-    private String DESTROY_LB_TASK = "destroyLb";
+    private static final String REFRESH_CERTIFICATE_TASK = "refreshCertificate";
+    private static final String DELETE_CERTIFICATE_TASK = "deleteCertificate";
+    private static final String REFRESH_LB_TASK = "refreshLb";
+    private static final String DESTROY_LB_TASK = "destroyLb";
 
     @Override
     public List<Class> getMessageClassToIntercept() {
@@ -205,14 +198,14 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         if (LoadBalancerSystemTags.SEPARATE_VR.hasTag(lbUuid)) {
             Optional<VirtualRouterVmInventory> vr = vrs.stream()
                     .filter(v -> VirtualRouterSystemTags.DEDICATED_ROLE_VR.hasTag(v.getUuid()))
-                    .map(v -> VirtualRouterVmInventory.valueOf(v))
+                    .map(VirtualRouterVmInventory::valueOf)
                     .findFirst();
 
             return vr.orElse(null);
         }
 
         DebugUtils.Assert(vrs.size() <= 1, String.format("multiple virtual routers[uuids:%s] found",
-                vrs.stream().map(v -> v.getUuid()).collect(Collectors.toList())));
+                vrs.stream().map(ResourceVO::getUuid).collect(Collectors.toList())));
         return vrs.isEmpty() ? null : VirtualRouterVmInventory.valueOf(vrs.get(0));
     }
 
@@ -241,12 +234,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
             if (!vmNicL3NetworkUuids.isEmpty()) {
                 logger.debug(String.format("found l3 networks[uuids:%s] not attached to separate vr[uuid:%s] for loadbalancer[uuid:%s]",
                         vmNicL3NetworkUuids, vr.get().getUuid(), lbUuid));
-                throw new CloudRuntimeException(String.format("not support separate vr with multiple networks vpc!"));
+                throw new CloudRuntimeException("not support separate vr with multiple networks vpc!");
             }
         }
 
         DebugUtils.Assert(vrs.size() <= 1, String.format("multiple virtual routers[uuids:%s] found",
-                vrs.stream().map(v -> v.getUuid()).collect(Collectors.toList())));
+                vrs.stream().map(ResourceVO::getUuid).collect(Collectors.toList())));
         return vrs.isEmpty() ? null : VirtualRouterVmInventory.valueOf(vrs.get(0));
     }
 
@@ -961,12 +954,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     @Override
     public void addVmNics(final LoadBalancerStruct struct, List<VmNicInventory> nics, final Completion completion) {
         if (struct.getLb().getType().equals(LoadBalancerType.Shared.toString()) && nics.isEmpty()) {
-            completion.fail(operr(String.format("vmnic must be specified for share loadbalancer")));
+            completion.fail(operr("vmnic must be specified for share loadbalancer"));
             return;
         }
 
         VirtualRouterVmInventory vr = findVirtualRouterVm(struct.getLb().getUuid(),
-                nics.stream().map(n -> n.getUuid()).collect(Collectors.toList()));
+                nics.stream().map(VmNicInventory::getUuid).collect(Collectors.toList()));
         if (vr != null) {
             startVrIfNeededAndRefresh(vr, struct, nics, completion);
             return;
@@ -1324,7 +1317,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         final boolean separateVr = LoadBalancerSystemTags.SEPARATE_VR.hasTag(struct.getLb().getUuid());
         if ( separateVr ) {
-            logger.error(String.format("not support the separate vrouter currently."));
+            logger.error("not support the separate vrouter currently.");
             // no support the case
             completion.success();
             return;
@@ -1436,8 +1429,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         final boolean separateVr = LoadBalancerSystemTags.SEPARATE_VR.hasTag(struct.getLb().getUuid());
         if ( separateVr ) {
-            logger.error(String.format("not support the separate vrouter currently."));
-            // no support the case
+            logger.error("not support the separate vrouter currently.");
             completion.success();
             return;
         }
