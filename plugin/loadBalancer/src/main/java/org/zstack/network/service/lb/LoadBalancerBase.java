@@ -25,6 +25,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
@@ -48,6 +49,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 
+import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -617,37 +619,33 @@ public class LoadBalancerBase {
         LoadBalancerGetPeerL3NetworksMsg amsg = new LoadBalancerGetPeerL3NetworksMsg();
         amsg.setLoadBalancerUuid(msg.getLoadBalancerUuid());
         bus.makeTargetServiceIdByResourceUuid(amsg, LoadBalancerConstants.SERVICE_ID, msg.getLoadBalancerUuid());
-        LoadBalancerGetPeerL3NetworksReply areply = (LoadBalancerGetPeerL3NetworksReply)bus.call(amsg);
-        if (areply.isSuccess()) {
-            reply.setInventories(msg.filter(areply.getInventories()));
-        } else {
-            reply.setError(areply.getError());
+        MessageReply messageReply = bus.call(amsg);
+        if(messageReply.isSuccess()){
+            reply.setInventories(msg.filter(((LoadBalancerGetPeerL3NetworksReply)messageReply).getInventories()));
+        }else{
+            reply.setError(messageReply.getError());
         }
+
         bus.reply(msg, reply);
     }
 
     private void handle(final LoadBalancerGetPeerL3NetworksMsg msg) {
         LoadBalancerGetPeerL3NetworksReply reply = new LoadBalancerGetPeerL3NetworksReply();
-        new SQLBatch(){
-            @Override
-            protected void scripts() {
-                List<L3NetworkVO> guestNetworks = sql("select l3" +
-                        " from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref" +
-                        " where l3.uuid = ref.l3NetworkUuid" +
-                        " and ref.networkServiceType = :type")
-                        .param("type", LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING)
-                        .list();
+        String sql = "select l3" +
+                " from L3NetworkVO l3, NetworkServiceL3NetworkRefVO ref" +
+                " where l3.uuid = ref.l3NetworkUuid" +
+                " and ref.networkServiceType = :type" ;
+        TypedQuery<L3NetworkVO> q = dbf.getEntityManager().createQuery(sql, L3NetworkVO.class);
+        q.setParameter("type",LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING);
+        List<L3NetworkVO> guestNetworks = q.getResultList();
 
-                List<L3NetworkInventory> ret = L3NetworkInventory.valueOf(guestNetworks);
-                if (ret != null && !ret.isEmpty()) {
-                    for (GetPeerL3NetworksForLoadBalancerExtensionPoint extp : pluginRgty.getExtensionList(GetPeerL3NetworksForLoadBalancerExtensionPoint.class)) {
-                        ret = extp.getPeerL3NetworksForLoadBalancer(self.getUuid(), ret);
-                    }
-                }
-                reply.setInventories(ret);
+        List<L3NetworkInventory> ret = L3NetworkInventory.valueOf(guestNetworks);
+        if (ret != null && !ret.isEmpty()) {
+            for (GetPeerL3NetworksForLoadBalancerExtensionPoint extp : pluginRgty.getExtensionList(GetPeerL3NetworksForLoadBalancerExtensionPoint.class)) {
+                ret = extp.getPeerL3NetworksForLoadBalancer(self.getUuid(), ret);
             }
-        }.execute();
-
+        }
+        reply.setInventories(ret);
         bus.reply(msg, reply);
     }
 
