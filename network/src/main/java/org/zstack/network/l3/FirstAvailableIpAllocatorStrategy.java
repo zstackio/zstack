@@ -10,6 +10,7 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,6 +27,7 @@ public class FirstAvailableIpAllocatorStrategy extends AbstractIpAllocatorStrate
         List<BigInteger> used = l3NwMgr.getUsedIpInRange(vo);
         used.add(new BigInteger(String.valueOf(NetworkUtils.ipv4StringToLong(excludeIp))));
         List<Long> usedIP = used.stream().map(BigInteger::longValue).collect(Collectors.toList());
+        Collections.sort(used);
         return NetworkUtils.findFirstAvailableIpv4Address(vo.getStartIp(), vo.getEndIp(), usedIP.toArray(new Long[usedIP.size()]));
     }
     
