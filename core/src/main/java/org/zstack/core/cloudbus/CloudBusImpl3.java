@@ -43,6 +43,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -79,17 +80,17 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     private final String EVENT_ID = makeLocalServiceId("cloudbus.events");
 
     private final List<Service> services = new ArrayList<>();
-    private final Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<Class, List<ReplyMessagePreSendingExtensionPoint>>();
-    private final List<RestAPIExtensionPoint> apiExts = new ArrayList<>();
-    private final List<CloudBusExtensionPoint> msgExts = new ArrayList<>();
+    private final Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<>();
+    private final List<RestAPIExtensionPoint> apiExts = new CopyOnWriteArrayList<>();
+    private final List<CloudBusExtensionPoint> msgExts = new CopyOnWriteArrayList<>();
 
-    private final Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new HashMap<Class, List<BeforeDeliveryMessageInterceptor>>();
-    private final Map<Class, List<BeforeSendMessageInterceptor>> beforeSendMessageInterceptors = new HashMap<Class, List<BeforeSendMessageInterceptor>>();
-    private final Map<Class, List<BeforePublishEventInterceptor>> beforeEventPublishInterceptors = new HashMap<Class, List<BeforePublishEventInterceptor>>();
+    private final Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new ConcurrentHashMap<>();
+    private final Map<Class, List<BeforeSendMessageInterceptor>> beforeSendMessageInterceptors = new ConcurrentHashMap<>();
+    private final Map<Class, List<BeforePublishEventInterceptor>> beforeEventPublishInterceptors = new ConcurrentHashMap<>();
 
-    private final List<BeforeDeliveryMessageInterceptor> beforeDeliveryMessageInterceptorsForAll = new ArrayList<BeforeDeliveryMessageInterceptor>();
-    private final List<BeforeSendMessageInterceptor> beforeSendMessageInterceptorsForAll = new ArrayList<BeforeSendMessageInterceptor>();
-    private final List<BeforePublishEventInterceptor> beforeEventPublishInterceptorsForAll = new ArrayList<BeforePublishEventInterceptor>();
+    private final List<BeforeDeliveryMessageInterceptor> beforeDeliveryMessageInterceptorsForAll = new CopyOnWriteArrayList<>();
+    private final List<BeforeSendMessageInterceptor> beforeSendMessageInterceptorsForAll = new CopyOnWriteArrayList<>();
+    private final List<BeforePublishEventInterceptor> beforeEventPublishInterceptorsForAll = new CopyOnWriteArrayList<>();
     private final Map<String, Map<String, CloudBusEventListener>> eventListeners = new ConcurrentHashMap<>();
 
     private final Set<String> filterMsgNames = new HashSet<>();

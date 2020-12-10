@@ -22,6 +22,8 @@ public interface TagManager {
 
     void createTagsFromAPICreateMessage(APICreateMessage msg, String resourceUuid, String resourceType);
 
+    void createTagsFromAPICreateMessage(APICreateMessage msg, String resourceUuid, String resourceType, boolean forceMatch);
+
     TagInventory createSysTag(String resourceUuid, String tag, String resourceType);
 
     TagInventory createUserTag(String resourceUuid, String tag, String resourceType);
