@@ -6,19 +6,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.appliancevm.*;
 import org.zstack.compute.vm.VmNicExtensionPoint;
-import org.zstack.header.image.ImageBootMode;
-import org.zstack.image.ImageSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.GlobalConfig;
-import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -43,6 +38,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
+import org.zstack.header.image.ImageBootMode;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
@@ -65,6 +61,7 @@ import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
+import org.zstack.image.ImageSystemTags;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.network.service.NetworkServiceManager;
@@ -74,12 +71,8 @@ import org.zstack.network.service.eip.GetL3NetworkForEipInVirtualRouterExtension
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.eip.VirtualRouterEipRefInventory;
-import org.zstack.network.service.virtualrouter.ha.VirtualRouterConfigProxy;
 import org.zstack.network.service.virtualrouter.ha.VirtualRouterHaBackend;
 import org.zstack.network.service.virtualrouter.lb.LbConfigProxy;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO_;
 import org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefInventory;
 import org.zstack.network.service.virtualrouter.vip.VipConfigProxy;
 import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipInventory;
@@ -88,7 +81,6 @@ import org.zstack.network.service.virtualrouter.vip.VirtualRouterVipVO_;
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.network.service.virtualrouter.vyos.VyosVersionCheckResult;
 import org.zstack.network.service.virtualrouter.vyos.VyosVersionManager;
-import org.zstack.resourceconfig.*;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
@@ -161,8 +153,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     @Autowired
     private AnsibleFacade asf;
     @Autowired
-    private ErrorFacade errf;
-    @Autowired
     private AccountManager acntMgr;
     @Autowired
     private ThreadFacade thdf;
@@ -186,10 +176,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     private ResourceDestinationMaker destMaker;
     @Autowired
     protected VirtualRouterHaBackend haBackend;
-    @Autowired
-    private LbConfigProxy proxy;
-    @Autowired
-    private ResourceConfigFacade rcf;
 
     @Override
     @MessageSafe
@@ -409,7 +395,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 });
 
                 guestNicSpec.setMetaData(guestNicSpec.getMetaData() == null ? GUEST_NIC_MASK.toString()
-                        : String.valueOf(Integer.valueOf(guestNicSpec.getMetaData()) | GUEST_NIC_MASK));
+                        : String.valueOf(Integer.parseInt(guestNicSpec.getMetaData()) | GUEST_NIC_MASK));
 
                 if (neededService.contains(NetworkServiceType.DHCP.toString())) {
                     openFirewall(aspec, l3Network.getUuid(), 68, ApplianceVmFirewallProtocol.udp);
@@ -938,13 +924,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             if ( !l3Vo.getType().equals(L3NetworkConstant.L3_BASIC_NETWORK_TYPE)) {
                 return false;
             }
-            if (l3Vo.getNetworkServices().stream().filter(service -> VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE.equals(service.getNetworkServiceType())).count() > 0l) {
+            if (l3Vo.getNetworkServices().stream().anyMatch(service -> VirtualRouterConstant.SNAT_NETWORK_SERVICE_TYPE.equals(service.getNetworkServiceType()))) {
                 /*virtual networks*/
                 List<VirtualRouterOfferingInventory> offeringInventories = findOfferingByGuestL3Network(L3NetworkInventory.valueOf(l3Vo));
-                if (offeringInventories == null | offeringInventories.isEmpty()) {
+                if (offeringInventories == null || offeringInventories.isEmpty()) {
                     return false;
                 }
-                return l3.equals(publicUuid) || !offeringInventories.stream().filter(it -> offeringUuids.contains(it.getUuid())).collect(Collectors.toList()).isEmpty();
+                return l3.equals(publicUuid) || offeringInventories.stream().anyMatch(it -> offeringUuids.contains(it.getUuid()));
             } else {
                 /*flat private network*/
                 /*List<String> offer = Q.New(SystemTagVO.class).
@@ -955,12 +941,14 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
                 return !offer.isEmpty();*/
                 List<String> offer = VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING.getTokensOfTagsByResourceUuid(l3)
-                                                                     .stream().map(tokens -> tokens.get(VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING_TOKEN)).collect(Collectors.toList());
-                if (offer == null | offer.isEmpty()) {
+                        .stream()
+                        .map(tokens -> tokens.get(VirtualRouterSystemTags.VIRTUAL_ROUTER_OFFERING_TOKEN))
+                        .collect(Collectors.toList());
+                if (offer.isEmpty()) {
                     return false;
                 }
 
-                return l3.equals(publicUuid) || !offer.stream().filter(uuid -> offeringUuids.contains(uuid)).collect(Collectors.toList()).isEmpty();
+                return l3.equals(publicUuid) || offer.stream().anyMatch(offeringUuids::contains);
             }
 
         }).collect(Collectors.toList());
@@ -1087,7 +1075,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 @Override
                 public VirtualRouterOfferingInventory selectVirtualRouterOffering(L3NetworkInventory l3, List<VirtualRouterOfferingInventory> candidates) {
                     Optional<VirtualRouterOfferingInventory> opt = candidates.stream().filter(VirtualRouterOfferingInventory::isDefault).findAny();
-                    return !opt.isPresent() ? candidates.get(0) : opt.get();
+                    return opt.orElseGet(() -> candidates.get(0));
                 }
             });
         }
@@ -1519,7 +1507,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                 innerl3Uuids.contains(nic.getL3NetworkUuid()))
                 .collect(Collectors.toList());
 
-        if (vipForVirtualRouter != null && vipForVirtualRouter == true) {
+        if (vipForVirtualRouter != null && vipForVirtualRouter) {
             List<String> vrUuids = vipProxy.getVrUuidsByNetworkService(VipVO.class.getSimpleName(), vip.getUuid());
             String vrUuid;
             if (vrUuids == null || vrUuids.isEmpty()) {
@@ -1544,7 +1532,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     .collect(Collectors.toSet());
 
             return new ArrayList<>(r);
-        } else if (vipForVirtualRouter != null && vipForVirtualRouter == false) {
+        } else if (vipForVirtualRouter != null && !vipForVirtualRouter) {
             logger.debug(String.format("remove all vmnics in virtual router network since vip[uuid:%s] has used in network which is not %s or %s",
                     vip.getUuid(), VYOS_ROUTER_PROVIDER_TYPE, VIRTUAL_ROUTER_PROVIDER_TYPE));
             candidates.removeAll(vmNicInVirtualRouter);
@@ -1873,7 +1861,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private List<VmNicInventory> getCandidateVmNicsIfLoadBalancerBound(APIGetCandidateVmNicsForLoadBalancerMsg msg, List<VmNicInventory> candidates, String vrUuid) {
-        List<String> candidatesUuids = candidates.stream().map(n -> n.getUuid()).collect(Collectors.toList());
+        List<String> candidatesUuids = candidates.stream().map(VmNicInventory::getUuid).collect(Collectors.toList());
         logger.debug(String.format("loadbalancer[uuid:%s] has bound to virtual router[uuid:%s], " +
                         "continue working with vmnics:%s", msg.getLoadBalancerUuid(), vrUuid, candidatesUuids));
 
@@ -1897,7 +1885,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                         "and vm.state in (:vmState) " +
                         "and nic.l3NetworkUuid in (:l3s) " +
                         "and nic.metaData is NULL")
-                        .param("vmType", VmInstanceConstant.USER_VM_TYPE.toString())
+                        .param("vmType", VmInstanceConstant.USER_VM_TYPE)
                         .param("vmState", asList(VmInstanceState.Running, VmInstanceState.Stopped))
                         .param("l3s", guestL3Uuids)
                         .list();
@@ -1977,8 +1965,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         for (ApplianceVmVO vo : applianceVmVOS) {
             VirtualRouterVmInventory vrInv = VirtualRouterVmInventory.valueOf(dbf.findByUuid(vo.getUuid(), VirtualRouterVmVO.class));
 
-            List<String> l3Uuids = new ArrayList<>();
-            l3Uuids.addAll(vrInv.getGuestL3Networks());
+            List<String> l3Uuids = new ArrayList<>(vrInv.getGuestL3Networks());
             l3Uuids.add(vrInv.getPublicNetworkUuid());
             l3Uuids.add(vrInv.getManagementNetworkUuid());
             l3Uuids.add(vrInv.getDefaultRouteL3NetworkUuid());
@@ -2134,9 +2121,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
             return vos;
         } else if (parentIssuer.equals(IpRangeVO.class.getSimpleName())) {
-            List<ApplianceVmVO> vos = applianceVmsToBeDeletedByIpRanges(applianceVmVOS, (List<String>) parentIssuerUuids);
+            List<ApplianceVmVO> vos = applianceVmsToBeDeletedByIpRanges(applianceVmVOS, parentIssuerUuids);
             applianceVmVOS.removeAll(vos);
-            List<VmNicVO> toDeleteNics = applianceVmsToDeleteNicByIpRanges(applianceVmVOS, (List<String>) parentIssuerUuids);
+            List<VmNicVO> toDeleteNics = applianceVmsToDeleteNicByIpRanges(applianceVmVOS, parentIssuerUuids);
             applianceVmsCascadeDeleteAdditionPubclicNic(VmNicInventory.valueOf(toDeleteNics));
 
             return vos;
