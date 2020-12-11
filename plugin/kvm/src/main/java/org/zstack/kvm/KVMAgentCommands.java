@@ -2825,6 +2825,7 @@ public class KVMAgentCommands {
         public List<String> psUuids;
         public String reason;
         public String vmUuidsString;
+        public boolean fencerFailure = true;
     }
 
     public static class ReportFailoverCmd {
