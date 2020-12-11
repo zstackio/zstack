@@ -20595,7 +20595,7 @@
   {
     "raw": "the vm[uuid:%s] doesn\u0027t support to online attach volume[%s] on the basis of that the image platform type of the vm is other ",
     "en_US": "the vm[uuid:{0}] doesn\u0027t support to online attach volume[{1}] on the basis of that the image platform type of the vm is other ",
-    "zh_CN": "云主机[uuid:{0}]不支持在线挂载云盘[{1}]。因为镜像平台类型和云主机平台类型不一致",
+    "zh_CN": "云主机[uuid:{0}]不支持在线挂载云盘[{1}]。因为这台虚拟机的基础镜像平台类型为“其他”。",
     "arguments": [
       "msg.getVmInstanceUuid()",
       "msg.getVolumeUuid()"
