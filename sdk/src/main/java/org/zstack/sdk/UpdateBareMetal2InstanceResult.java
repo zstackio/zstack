@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 import org.zstack.sdk.BareMetal2InstanceInventory;
 
-public class ChangeBareMetal2InstanceChassisOfferingResult {
+public class UpdateBareMetal2InstanceResult {
     public BareMetal2InstanceInventory inventory;
     public void setInventory(BareMetal2InstanceInventory inventory) {
         this.inventory = inventory;
