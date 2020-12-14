@@ -1594,8 +1594,10 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVolumeUuid(msg.getVolume().getUuid());
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("before-take-snapshot-%s-for-volume-%s", msg.getSnapshotName(), msg.getVolume().getUuid()));
+        chain.setName(String.format("take-snapshot-%s-for-volume-%s", msg.getSnapshotName(), msg.getVolume().getUuid()));
         chain.then(new NoRollbackFlow() {
+            String __name__ = String.format("before-take-snapshot-%s-for-volume-%s", msg.getSnapshotName(), msg.getVolume().getUuid());
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 extEmitter.beforeTakeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd, new Completion(trigger) {
@@ -1611,6 +1613,8 @@ public class KVMHost extends HostBase implements Host {
                 });
             }
         }).then(new NoRollbackFlow() {
+            String __name__ = "do-take-snapshot-" + msg.getSnapshotName();
+
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 new Http<>(snapshotPath, cmd, TakeSnapshotResponse.class).call(new ReturnValueCompletion<TakeSnapshotResponse>(msg, trigger) {
