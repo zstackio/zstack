@@ -11,7 +11,6 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.core.workflow.FlowTrigger;
@@ -28,7 +27,6 @@ import org.zstack.storage.primary.ImageCacheCleaner;
 import org.zstack.storage.primary.local.LocalStorageKvmBackend.CacheInstallPath;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.TypedQuery;
@@ -97,12 +95,7 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
         for (Map.Entry<String, List<ImageCacheVO>> e : refMap.entrySet()) {
             String hostUuid = e.getKey();
             List<ImageCacheVO> refs = e.getValue();
-            List<Long> cacheIds = CollectionUtils.transformToList(refs, new Function<Long, ImageCacheVO>() {
-                @Override
-                public Long call(ImageCacheVO arg) {
-                    return arg.getId();
-                }
-            });
+            List<Long> cacheIds = CollectionUtils.transformToList(refs, ImageCacheVO::getId);
 
             sql = "select c from ImageCacheVO c where c.imageUuid not in (select vol.rootImageUuid from VolumeVO vol, LocalStorageResourceRefVO ref" +
                     " where vol.uuid = ref.resourceUuid and ref.resourceType = :rtype and ref.hostUuid = :huuid and ref.primaryStorageUuid = :psUuid and vol.rootImageUuid is not null) and c.id in (:ids)";

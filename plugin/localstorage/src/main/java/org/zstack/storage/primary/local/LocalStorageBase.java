@@ -36,6 +36,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.vm.*;
+import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.storage.primary.PrimaryStorageBase;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
@@ -203,9 +204,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         .param("hstatus", HostStatus.Connected).list());
 
                 //3.check if the network environment meets the requirement of vm running after migrate When migrate the rootVolume
-                Boolean isRootVolume = (Q.New(VolumeVO.class).select(VolumeVO_.type)
+                boolean isRootVolume = Q.New(VolumeVO.class)
                         .eq(VolumeVO_.uuid, msg.getVolumeUuid())
-                        .findValue() == VolumeType.Root);
+                        .eq(VolumeVO_.type, VolumeType.Root)
+                        .isExists();
                 if (isRootVolume) {
                     Tuple tuple = Q.New(VmInstanceVO.class)
                             .select(VmInstanceVO_.clusterUuid, VmInstanceVO_.uuid)
@@ -423,9 +425,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
             public void run(FlowTrigger trigger, Map data) {
                 String __name__ = "migrate-volume-on-local-storage";
 
-                if (struct.isRootVolume) {
-                }
-
                 MigrateVolumeOnLocalStorageMsg mmsg = new MigrateVolumeOnLocalStorageMsg();
                 mmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                 mmsg.setDestHostUuid(msg.getDestHostUuid());
@@ -606,19 +605,13 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 info.setResourceRef(ref);
                 info.setPath(volume.getInstallPath());
 
-                struct = new MigrateBitsStruct();
                 struct.getInfos().add(info);
                 struct.setDestHostUuid(msg.getDestHostUuid());
                 struct.setSrcHostUuid(ref.getHostUuid());
                 struct.setVolume(VolumeInventory.valueOf(volume));
 
                 if (!snapshots.isEmpty()) {
-                    List<String> spUuids = CollectionUtils.transformToList(snapshots, new Function<String, VolumeSnapshotVO>() {
-                        @Override
-                        public String call(VolumeSnapshotVO arg) {
-                            return arg.getUuid();
-                        }
-                    });
+                    List<String> spUuids = CollectionUtils.transformToList(snapshots, ResourceVO::getUuid);
 
                     SimpleQuery<LocalStorageResourceRefVO> rq = dbf.createQuery(LocalStorageResourceRefVO.class);
                     rq.add(LocalStorageResourceRefVO_.resourceType, Op.EQ, VolumeSnapshotVO.class.getSimpleName());
@@ -1675,7 +1668,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
                             ref.setTotalPhysicalCapacity(c.totalPhysicalSize);
                             ref.setTotalCapacity(c.totalPhysicalSize);
-                            Long managedResourceSize = calculateManagedResourceActualSize(msg.getHostUuid());
+                            long managedResourceSize = calculateManagedResourceActualSize(msg.getHostUuid());
 
                             long originSystemUsed = ref.getSystemUsedCapacity();
                             logger.debug("total physical is " + c.totalPhysicalSize + "avail physical is " + c.availablePhysicalSize + "managede size is " + managedResourceSize);
@@ -1733,14 +1726,14 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }).start();
     }
 
-    protected Long calculateManagedResourceActualSize(String hostUuid) {
+    protected long calculateManagedResourceActualSize(String hostUuid) {
         List<String> volumeUuids = Q.New(LocalStorageResourceRefVO.class)
                 .select(LocalStorageResourceRefVO_.resourceUuid)
                 .eq(LocalStorageResourceRefVO_.hostUuid, hostUuid)
                 .eq(LocalStorageResourceRefVO_.resourceType, VolumeVO.class.getSimpleName())
                 .listValues();
 
-        Long volumeSize = 0L;
+        long volumeSize = 0;
         if (!volumeUuids.isEmpty()) {
             Long size = SQL.New("select sum(vol.actualSize) from VolumeVO vol where vol.uuid in (:volUuids)")
                     .param("volUuids", volumeUuids)
@@ -1758,7 +1751,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 .eq(LocalStorageResourceRefVO_.resourceType, VolumeSnapshotVO.class.getSimpleName())
                 .listValues();
 
-        Long volumeSnapshotSize = 0L;
+        long volumeSnapshotSize = 0;
         if (!snapshotUuids.isEmpty()) {
             Long size = SQL.New("select sum(snap.size) from VolumeSnapshotVO snap where snap.uuid in (:snapUuids)")
                     .param("snapUuids", snapshotUuids)
@@ -1775,7 +1768,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 .param("url", String.format("%%hostUuid://%s%%", hostUuid))
                 .find();
 
-        return volumeSize + volumeSnapshotSize + (imageCacheSize == null ? 0L : imageCacheSize);
+        return volumeSize + volumeSnapshotSize + (imageCacheSize == null ? 0 : imageCacheSize);
     }
 
     @ExceptionSafe
@@ -2545,9 +2538,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
             fc.clusters.add(ClusterInventory.valueOf(c));
         }
 
-        List<FactoryCluster> fcs = new ArrayList<>();
-        fcs.addAll(m.values());
-        return fcs;
+        return new ArrayList<FactoryCluster>(m.values());
     }
 
     @Override

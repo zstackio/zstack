@@ -311,7 +311,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     public boolean start() {
         for (LocalStorageBackupStorageMediator m : pluginRgty.getExtensionList(LocalStorageBackupStorageMediator.class)) {
             for (String hvType : m.getSupportedHypervisorTypes()) {
-                String key = makeMediatorKey(hvType, m.getSupportedBackupStorageType().toString());
+                String key = makeMediatorKey(hvType, m.getSupportedBackupStorageType());
                 LocalStorageBackupStorageMediator old = backupStorageMediatorMap.get(key);
                 if (old != null) {
                     throw new CloudRuntimeException(String.format("duplicate LocalStorageBackupStorageMediator[%s, %s]" +
@@ -393,7 +393,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
     }
 
     @Override
-    public void preDeleteHost(HostInventory inventory) throws HostException {
+    public void preDeleteHost(HostInventory inventory) {
     }
 
     @Override
@@ -647,12 +647,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
             return candidates;
         }
 
-        List<String> vmAllVolumeUuids = CollectionUtils.transformToList(vm.getAllVolumes(), new Function<String, VolumeInventory>() {
-            @Override
-            public String call(VolumeInventory arg) {
-                return arg.getUuid();
-            }
-        });
+        List<String> vmAllVolumeUuids = CollectionUtils.transformToList(vm.getAllVolumes(), VolumeInventory::getUuid);
 
         // root volume could be located at a shared storage
         String sql = "select ref.hostUuid" +
@@ -774,12 +769,7 @@ public class LocalStorageFactory implements PrimaryStorageFactory, Component,
 
         String hostUuid = ret.get(0);
 
-        List<String> vmRootVolumeUuids = CollectionUtils.transformToList(candidatesCopy, new Function<String, VmInstanceVO>() {
-            @Override
-            public String call(VmInstanceVO arg) {
-                return arg.getRootVolumeUuid();
-            }
-        });
+        List<String> vmRootVolumeUuids = CollectionUtils.transformToList(candidatesCopy, VmInstanceVO::getRootVolumeUuid);
 
         // exclude: vm root volume is local and root volume is not on target host
         sql = "select ref.resourceUuid" +
