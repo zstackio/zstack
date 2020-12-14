@@ -15,6 +15,8 @@ class ClusterSpec extends Spec {
     String description
     @SpecParam
     String hypervisorType = KVMConstant.KVM_HYPERVISOR_TYPE
+    @SpecParam
+    String architecture = "x86_64"
     List<HostSpec> hosts = []
 
     List<String> primaryStorageToAttach = []
@@ -68,6 +70,7 @@ class ClusterSpec extends Spec {
             delegate.sessionId = sessionId
             delegate.userTags = userTags
             delegate.systemTags = systemTags
+            delegate.architecture = architecture
         } as ClusterInventory
 
         primaryStorageToAttach.each { String primaryStorageName ->

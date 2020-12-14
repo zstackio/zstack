@@ -44,6 +44,7 @@ public class APIUpdateImageEvent extends APIEvent {
         inv.setFormat(ImageConstant.QCOW2_FORMAT_STRING);
         inv.setMediaType(ImageConstant.ImageMediaType.RootVolumeTemplate.toString());
         inv.setPlatform(ImagePlatform.Windows.toString());
+        inv.setArchitecture(ImageArchitecture.x86_64.toString());
 
         event.setInventory(inv);
 

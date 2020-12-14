@@ -65,6 +65,9 @@ public class ImageAO extends ResourceVO implements ShadowEntity {
     @Column
     private String guestOsType;
 
+    @Column
+    private String architecture;
+
     @Transient
     private ImageAO shadow;
 
@@ -99,6 +102,14 @@ public class ImageAO extends ResourceVO implements ShadowEntity {
 
     public void setPlatform(ImagePlatform platform) {
         this.platform = platform;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 
     public String getName() {
