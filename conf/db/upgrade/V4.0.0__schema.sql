@@ -234,6 +234,34 @@ DELIMITER ;
 CALL upgradeProjectAdminSystemTags();
 
 
+DROP PROCEDURE IF EXISTS updateIAM2VirtualIDRoleRefCreateAccountUuid;
+DElIMITER $$
+CREATE PROCEDURE updateIAM2VirtualIDRoleRefCreateAccountUuid()
+BEGIN
+  DECLARE targetAccountUuid VARCHAR(32);
+  DECLARE virtualIDUuid VARCHAR(32);
+  DECLARE roleUuid VARCHAR(32);
+  DECLARE done INT DEFAULT FALSE;
+  DECLARE cur CURSOR FOR select ref.virtualIDUuid, ref.roleUuid from IAM2VirtualIDRoleRefVO ref where ref.targetAccountUuid='';
+  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+  open cur;
+  read_loop: LOOP
+      FETCH cur INTO virtualIDUuid, roleUuid;
+      IF done THEN
+            LEAVE read_loop;
+      END IF;
+
+      select accountUuid into targetAccountUuid from AccountResourceRefVO where resourceUuid = roleUuid and resourceType = 'RoleVO';
+      update IAM2VirtualIDRoleRefVO refvo set refvo.targetAccountUuid = targetAccountUuid where refvo.virtualIDUuid = virtualIDUuid and refvo.roleUuid = roleUuid;
+    END LOOP;
+    CLOSE cur;
+    SELECT CURTIME();
+END $$
+DELIMITER ;
+CALL updateIAM2VirtualIDRoleRefCreateAccountUuid();
+
+
+
 DELIMITER $$
 CREATE PROCEDURE insertDefaultIAM2Organization()
 BEGIN
