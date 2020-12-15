@@ -201,17 +201,21 @@ class VirtualRouterLoadBalancerCase extends SubCase{
         listenerAction.loadBalancerPort = 44
         listenerAction.instancePort = 44
         listenerAction.protocol = "tcp"
-        listenerAction.systemTags = ["maxConnection::abc"]
+        listenerAction.systemTags = ["maxConnection::abc", "Nbprocess::abc"]
         listenerAction.sessionId = adminSession()
 
         CreateLoadBalancerListenerAction.Result lblRes = listenerAction.call()
         assert lblRes.error != null
 
-        listenerAction.systemTags = ["maxConnection::50000000"]
+        listenerAction.systemTags = ["maxConnection::50000000", "Nbprocess::10"]
         lblRes = listenerAction.call()
         assert lblRes.error != null
 
-        listenerAction.systemTags = ["maxConnection::"+LoadBalancerConstants.MAX_CONNECTION_LIMIT]
+        listenerAction.systemTags = ["maxConnection::"+LoadBalancerConstants.MAX_CONNECTION_LIMIT, "Nbprocess::abc"]
+        lblRes = listenerAction.call()
+        assert lblRes.error != null
+
+        listenerAction.systemTags = ["maxConnection::"+LoadBalancerConstants.MAX_CONNECTION_LIMIT, "Nbprocess::12"]
         lblRes = listenerAction.call()
         assert lblRes.error == null
         assert _name == lblRes.value.inventory.name
