@@ -216,6 +216,8 @@ public class ZQL {
 
         ZQLLexer l = new ZQLLexer(CharStreams.fromString(text));
         ZQLParser p = new ZQLParser(new CommonTokenStream(l));
+        
+        l.addErrorListener(new ThrowingErrorListener(text));
         p.addErrorListener(new ThrowingErrorListener(text));
 
         Map currentContext = ZQLContext.get();
