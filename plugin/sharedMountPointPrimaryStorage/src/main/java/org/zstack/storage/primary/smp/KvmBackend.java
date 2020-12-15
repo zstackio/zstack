@@ -1189,7 +1189,9 @@ public class KvmBackend extends HypervisorBackend {
         boolean offline = true;
         VolumeInventory volume = msg.getTo();
 
+        final MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
         if (volume.getType().equals(VolumeType.Memory.toString())) {
+            completion.success(reply);
             return;
         }
 
@@ -1211,8 +1213,6 @@ public class KvmBackend extends HypervisorBackend {
 
             offline = (state == VmInstanceState.Stopped || state == VmInstanceState.Destroyed);
         }
-
-        final MergeVolumeSnapshotOnPrimaryStorageReply reply = new MergeVolumeSnapshotOnPrimaryStorageReply();
 
         if (offline) {
             OfflineMergeSnapshotCmd cmd = new OfflineMergeSnapshotCmd();
