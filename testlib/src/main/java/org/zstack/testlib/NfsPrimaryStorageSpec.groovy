@@ -178,7 +178,7 @@ class NfsPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
-            simulator(NfsPrimaryToSftpBackupKVMBackend.CREATE_VOLUME_FROM_TEMPLATE_PATH) {
+            simulator(NfsPrimaryStorageKVMBackend.CREATE_VOLUME_FROM_TEMPLATE_PATH) {
                 return new NfsPrimaryStorageKVMBackendCommands.CreateRootVolumeFromTemplateResponse()
             }
 

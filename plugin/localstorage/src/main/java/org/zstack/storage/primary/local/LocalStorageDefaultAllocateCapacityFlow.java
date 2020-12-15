@@ -129,13 +129,16 @@ public class LocalStorageDefaultAllocateCapacityFlow implements Flow {
 
         String localStorageUuid = getRequiredStorageUuid(spec.getDestHost().getUuid(), spec.getRequiredPrimaryStorageUuidForRootVolume());
 
-        SimpleQuery<BackupStorageVO> bq = dbf.createQuery(BackupStorageVO.class);
-        bq.select(BackupStorageVO_.type);
-        bq.add(BackupStorageVO_.uuid, Op.EQ, spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
-        String bsType = bq.findValue();
 
-        List<String> primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
-        DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
+        List<String> primaryStorageTypes = null;
+        if (spec.getImageSpec().isNeedDownload() || spec.getImageSpec().getSelectedBackupStorage() != null) {
+            SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
+            q.select(BackupStorageVO_.type);
+            q.add(BackupStorageVO_.uuid, Op.EQ, spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
+            String bsType = q.findValue();
+            primaryStorageTypes = hostAllocatorMgr.getBackupStoragePrimaryStorageMetrics().get(bsType);
+            DebugUtils.Assert(primaryStorageTypes != null, "why primaryStorageTypes is null");
+        }
 
         List<AllocatePrimaryStorageMsg> msgs = new ArrayList<>();
 

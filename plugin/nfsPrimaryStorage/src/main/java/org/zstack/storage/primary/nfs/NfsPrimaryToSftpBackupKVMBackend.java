@@ -1,6 +1,5 @@
 package org.zstack.storage.primary.nfs;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -10,15 +9,12 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.backup.BackupStorageInventory;
-import org.zstack.header.storage.primary.ImageCacheInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
-import org.zstack.header.volume.VolumeInventory;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
@@ -53,7 +49,6 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
     @Autowired
     private ApiTimeoutManager timeoutMgr;
 
-    public static final String CREATE_VOLUME_FROM_TEMPLATE_PATH = "/nfsprimarystorage/sftp/createvolumefromtemplate";
     public static final String UPLOAD_TO_SFTP_PATH = "/nfsprimarystorage/uploadtosftpbackupstorage";
     public static final String DOWNLOAD_FROM_SFTP_PATH = "/nfsprimarystorage/downloadfromsftpbackupstorage";
 
@@ -70,50 +65,6 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
     @Override
     public List<String> getSupportedHypervisorTypes() {
         return list(KVMConstant.KVM_HYPERVISOR_TYPE);
-    }
-
-    @Override
-    public void createVolumeFromImageCache(final PrimaryStorageInventory primaryStorage, final ImageCacheInventory image,
-                                           final VolumeInventory volume, final ReturnValueCompletion<String> completion) {
-        HostInventory host = primaryStorageFactory.getConnectedHostForOperation(primaryStorage).get(0);
-
-        final String installPath = StringUtils.isNotEmpty(volume.getInstallPath()) ? volume.getInstallPath() :
-                NfsPrimaryStorageKvmHelper.makeRootVolumeInstallUrl(primaryStorage, volume);
-        final String accountUuid = acntMgr.getOwnerAccountUuidOfResource(volume.getUuid());
-        final CreateRootVolumeFromTemplateCmd cmd = new CreateRootVolumeFromTemplateCmd();
-        cmd.setTemplatePathInCache(image.getInstallUrl());
-        cmd.setInstallUrl(installPath);
-        cmd.setAccountUuid(accountUuid);
-        cmd.setName(volume.getName());
-        cmd.setVolumeUuid(volume.getUuid());
-        cmd.setUuid(primaryStorage.getUuid());
-
-        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-        msg.setCommand(cmd);
-        msg.setPath(CREATE_VOLUME_FROM_TEMPLATE_PATH);
-        msg.setHostUuid(host.getUuid());
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
-        bus.send(msg, new CloudBusCallBack(completion) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    completion.fail(reply.getError());
-                    return;
-                }
-
-                CreateRootVolumeFromTemplateResponse rsp = ((KVMHostAsyncHttpCallReply)reply).toResponse(CreateRootVolumeFromTemplateResponse.class);
-                if (!rsp.isSuccess()) {
-                    ErrorCode err = operr("fails to create root volume[uuid:%s] from cached image[path:%s] because %s",
-                            volume.getUuid(), image.getImageUuid(), rsp.getError());
-                    completion.fail(err);
-                    return;
-                }
-
-
-                nfsMgr.reportCapacityIfNeeded(primaryStorage.getUuid(), rsp);
-                completion.success(installPath);
-            }
-        });
     }
 
     @Override

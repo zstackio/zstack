@@ -103,7 +103,10 @@ public class VmAllocateHostFlow implements Flow {
         }
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         msg.setVmInstance(spec.getVmInventory());
-        msg.setRequiredBackupStorageUuid(spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
+
+        if (spec.getImageSpec().getSelectedBackupStorage() != null) {
+            msg.setRequiredBackupStorageUuid(spec.getImageSpec().getSelectedBackupStorage().getBackupStorageUuid());
+        }
         return msg;
     }
 

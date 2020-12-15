@@ -1880,6 +1880,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
     class DownloadToCache {
         ImageSpec image;
+        VolumeSnapshotInventory snapshot;
         private void doDownload(final ReturnValueCompletion<ImageCacheVO> completion) {
             ImageCacheVO cache = Q.New(ImageCacheVO.class)
                     .eq(ImageCacheVO_.primaryStorageUuid, self.getUuid())
@@ -1940,32 +1941,52 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     });
 
                     flow(new Flow() {
-                        String __name__ = "download-from-backup-storage";
+                        String __name__ = "download-from-" + (snapshot != null ? "volume" : "backup-storage");
 
                         boolean deleteOnRollback;
 
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
-                            MediatorDowloadParam param = new MediatorDowloadParam();
-                            param.setImage(image);
-                            param.setInstallPath(makeCacheInstallPath(image.getInventory().getUuid()));
-                            param.setPrimaryStorageUuid(self.getUuid());
-                            BackupStorageMediator mediator = getBackupStorageMediator(image.getSelectedBackupStorage().getBackupStorageUuid());
-                            mediator.param = param;
+                            if (snapshot != null) {
+                                deleteOnRollback = true;
+                                CpCmd cmd = new CpCmd();
+                                cmd.srcPath = snapshot.getPrimaryStorageInstallPath();
+                                cmd.dstPath = makeCacheInstallPath(image.getInventory().getUuid());
+                                cmd.shareable = false;
+                                httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(completion) {
+                                    @Override
+                                    public void success(CpRsp rsp) {
+                                        cachePath = rsp.installPath;
+                                        trigger.next();
+                                    }
 
-                            deleteOnRollback = mediator.deleteWhenRollbackDownload();
-                            mediator.download(new ReturnValueCompletion<String>(trigger) {
-                                @Override
-                                public void success(String path) {
-                                    cachePath = path;
-                                    trigger.next();
-                                }
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                });
+                            } else {
+                                MediatorDowloadParam param = new MediatorDowloadParam();
+                                param.setImage(image);
+                                param.setInstallPath(makeCacheInstallPath(image.getInventory().getUuid()));
+                                param.setPrimaryStorageUuid(self.getUuid());
+                                BackupStorageMediator mediator = getBackupStorageMediator(image.getSelectedBackupStorage().getBackupStorageUuid());
+                                mediator.param = param;
 
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
+                                deleteOnRollback = mediator.deleteWhenRollbackDownload();
+                                mediator.download(new ReturnValueCompletion<String>(trigger) {
+                                    @Override
+                                    public void success(String path) {
+                                        cachePath = path;
+                                        trigger.next();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                });
+                            }
                         }
 
                         @Override
@@ -2102,17 +2123,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             .eq(ImageCacheVO_.imageUuid, image.getInventory().getUuid())
                             .find();
 
-                    if (cache != null ){
+                    if (cache != null) {
                         final CheckIsBitsExistingCmd cmd = new CheckIsBitsExistingCmd();
                         cmd.setInstallPath(cache.getInstallUrl());
                         httpCall(CHECK_BITS_PATH, cmd, CheckIsBitsExistingRsp.class, new ReturnValueCompletion<CheckIsBitsExistingRsp>(chain) {
                             @Override
                             public void success(CheckIsBitsExistingRsp returnValue) {
-                                if(returnValue.isExisting()) {
+                                if (returnValue.isExisting()) {
                                     logger.debug("image has been existing");
                                     completion.success(cache);
                                     chain.next();
-                                }else{
+                                } else {
                                     logger.debug("image not found, remove vo and re-download");
                                     SimpleQuery<ImageCacheVO> q = dbf.createQuery(ImageCacheVO.class);
                                     q.add(ImageCacheVO_.primaryStorageUuid, Op.EQ, self.getUuid());
@@ -2149,7 +2170,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             }
                         });
 
-                    }else{
+                    } else {
                         doDownload(new ReturnValueCompletion<ImageCacheVO>(chain) {
                             @Override
                             public void success(ImageCacheVO returnValue) {
@@ -2164,7 +2185,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             }
                         });
                     }
-
                 }
 
                 @Override
@@ -2350,8 +2370,106 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     @Override
-    protected void check(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
+    protected void check(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {}
+
+    @Override
+    protected void handle(CreateImageCacheFromVolumeOnPrimaryStorageMsg msg) {
+        final CreateImageCacheFromVolumeOnPrimaryStorageReply reply = new CreateImageCacheFromVolumeOnPrimaryStorageReply();
+        final TaskProgressRange parentStage = getTaskStage();
+        final TaskProgressRange CREATE_SNAPSHOT_STAGE = new TaskProgressRange(0, 10);
+        final TaskProgressRange CREATE_IMAGE_CACHE_STAGE = new TaskProgressRange(10, 100);
+
+        String volumeUuid = msg.getVolumeInventory().getUuid();
+        String imageUuid = msg.getImageInventory().getUuid();
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("create-snapshot-and-image-from-volume-%s", volumeUuid));
+        chain.preCheck(data -> buildErrIfCanceled());
+        chain.then(new ShareFlow() {
+            VolumeSnapshotInventory snapshot;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "create-volume-snapshot";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        String volumeAccountUuid = acntMgr.getOwnerAccountUuidOfResource(volumeUuid);
+                        TaskProgressRange stage = markTaskStage(parentStage, CREATE_SNAPSHOT_STAGE);
+
+                        CreateVolumeSnapshotMsg cmsg = new CreateVolumeSnapshotMsg();
+                        cmsg.setName("Snapshot-" + volumeUuid);
+                        cmsg.setDescription("Take snapshot for " + volumeUuid);
+                        cmsg.setVolumeUuid(volumeUuid);
+                        cmsg.setAccountUuid(volumeAccountUuid);
+
+                        bus.makeLocalServiceId(cmsg, VolumeSnapshotConstant.SERVICE_ID);
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply r) {
+                                if (!r.isSuccess()) {
+                                    trigger.fail(r.getError());
+                                    return;
+                                }
+
+                                CreateVolumeSnapshotReply createVolumeSnapshotReply = (CreateVolumeSnapshotReply)r;
+                                snapshot = createVolumeSnapshotReply.getInventory();
+                                reportProgress(stage.getEnd().toString());
+                                trigger.next();
+                            }
+                        });
+
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "create-image-cache-from-volume-snapshot";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        TaskProgressRange stage = markTaskStage(parentStage, CREATE_IMAGE_CACHE_STAGE);
+                        DownloadToCache cache = new DownloadToCache();
+                        cache.image = new ImageSpec();
+                        cache.image.setInventory(msg.getImageInventory());
+                        cache.snapshot = snapshot;
+                        cache.download(new ReturnValueCompletion<ImageCacheVO>(trigger) {
+                            @Override
+                            public void success(ImageCacheVO cache) {
+                                reportProgress(stage.getEnd().toString());
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        logger.debug(String.format("successfully create template[uuid:%s] from volume[uuid:%s]", imageUuid, volumeUuid));
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        logger.warn(String.format("failed to create template from volume[uuid:%s], because %s", volumeUuid, errCode));
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+        }).start();
     }
+
+    @Override
+    protected void check(CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {}
 
     @Override
     protected void handle(final CreateTemplateFromVolumeOnPrimaryStorageMsg msg) {
@@ -2449,7 +2567,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        logger.warn(String.format("successfully create template[uuid:%s] from volume[uuid:%s]", imageUuid, volumeUuid));
+                        logger.debug(String.format("successfully create template[uuid:%s] from volume[uuid:%s]", imageUuid, volumeUuid));
                         reply.setTemplateBackupStorageInstallPath(imageReply.getBackupStorageInstallPath());
                         reply.setFormat(snapshot.getFormat());
                         bus.reply(msg, reply);

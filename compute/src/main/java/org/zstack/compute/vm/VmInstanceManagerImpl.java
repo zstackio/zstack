@@ -28,6 +28,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -63,7 +64,6 @@ import org.zstack.header.zone.ZoneInventory;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
-import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.SystemTagUtils;
@@ -74,7 +74,6 @@ import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -166,9 +165,15 @@ public class VmInstanceManagerImpl extends AbstractService implements
     @Autowired
     protected L3NetworkManager l3nm;
 
+    private List<VmInstanceExtensionManager> vmExtensionManagers = new ArrayList<>();
+
     @Override
     public void handleMessage(Message msg) {
-        if (msg instanceof APIMessage) {
+        VmInstanceExtensionManager extensionManager = vmExtensionManagers.stream().filter(it -> it.getMessageClasses()
+                .stream().anyMatch(clz -> clz.isAssignableFrom(msg.getClass()))).findFirst().orElse(null);
+        if (extensionManager != null) {
+            extensionManager.handleMessage(msg);
+        } else if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
         } else {
             handleLocalMessage(msg);
@@ -206,8 +211,6 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APICreateVmInstanceMsg) {
             handle((APICreateVmInstanceMsg) msg);
-        } else if (msg instanceof APICreateVmInstanceFromVolumeMsg) {
-            handle((APICreateVmInstanceFromVolumeMsg) msg);
         } else if(msg instanceof APICreateVmNicMsg) {
             handle((APICreateVmNicMsg) msg);
         } else if (msg instanceof APIDeleteVmNicMsg) {
@@ -856,7 +859,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         }).start();
     }
 
-    private void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<VmInstanceInventory> completion) {
+    protected void doCreateVmInstance(final CreateVmInstanceMsg msg, final APICreateMessage cmsg, ReturnValueCompletion<VmInstanceInventory> completion) {
         pluginRgty.getExtensionList(VmInstanceCreateExtensionPoint.class).forEach(extensionPoint -> {
             extensionPoint.preCreateVmInstance(msg);
         });
@@ -1031,28 +1034,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
         });
     }
 
-    private List<VmNicSpec> getVmNicSpecsFromNewVmInstanceMsg(NewVmInstanceMessage msg) {
-        List<VmNicSpec> nicSpecs = new ArrayList<>();
-
-        for (String l3Uuid : msg.getL3NetworkUuids()) {
-            List<L3NetworkInventory> l3Invs = new ArrayList<>();
-            L3NetworkInventory inv = L3NetworkInventory.valueOf(dbf.findByUuid(l3Uuid, L3NetworkVO.class));
-            l3Invs.add(inv);
-            nicSpecs.add(new VmNicSpec(l3Invs));
-        }
-
-        return nicSpecs;
-    }
-
-    private CreateVmInstanceMsg fromAPICreateVmInstanceFromVolumeMsg(APICreateVmInstanceFromVolumeMsg msg, String imageUuid) {
-        CreateVmInstanceMsg cmsg = fromAPINewVmInstanceMsg(msg);
-        cmsg.setImageUuid(imageUuid);
-        cmsg.setPrimaryStorageUuidForRootVolume(msg.getPrimaryStorageUuid());
-        return cmsg;
-    }
-
     private CreateVmInstanceMsg fromAPICreateVmInstanceMsg(APICreateVmInstanceMsg msg) {
-        CreateVmInstanceMsg cmsg = fromAPINewVmInstanceMsg(msg);
+        CreateVmInstanceMsg cmsg = NewVmInstanceMsgBuilder.fromAPINewVmInstanceMsg(msg);
         cmsg.setImageUuid(msg.getImageUuid());
         cmsg.setRootDiskOfferingUuid(msg.getRootDiskOfferingUuid());
         if (msg.getRootDiskSize() != null) {
@@ -1069,173 +1052,12 @@ public class VmInstanceManagerImpl extends AbstractService implements
         return cmsg;
     }
 
-    private CreateVmInstanceMsg fromAPINewVmInstanceMsg(NewVmInstanceMessage2 msg) {
-        CreateVmInstanceMsg cmsg = new CreateVmInstanceMsg();
-        APICreateMessage api = (APICreateMessage) msg;
-
-        if(msg.getZoneUuid() != null){
-            cmsg.setZoneUuid(msg.getZoneUuid());
-        }else{
-            String zoneUuid = Q.New(L3NetworkVO.class)
-                    .select(L3NetworkVO_.zoneUuid)
-                    .eq(L3NetworkVO_.uuid, msg.getL3NetworkUuids().get(0))
-                    .findValue();
-            cmsg.setZoneUuid(zoneUuid);
-        }
-
-        final String instanceOfferingUuid = msg.getInstanceOfferingUuid();
-        if (instanceOfferingUuid != null) {
-            InstanceOfferingVO iovo = dbf.findByUuid(instanceOfferingUuid, InstanceOfferingVO.class);
-            cmsg.setInstanceOfferingUuid(iovo.getUuid());
-            cmsg.setCpuSpeed(iovo.getCpuSpeed());
-            cmsg.setAllocatorStrategy(iovo.getAllocatorStrategy());
-        }
-
-        cmsg.setCpuNum(msg.getCpuNum());
-        cmsg.setMemorySize(msg.getMemorySize());
-
-        cmsg.setAccountUuid(api.getSession().getAccountUuid());
-        cmsg.setName(msg.getName());
-        cmsg.setL3NetworkSpecs(getVmNicSpecsFromNewVmInstanceMsg(msg));
-        cmsg.setType(msg.getType());
-
-        cmsg.setClusterUuid(msg.getClusterUuid());
-        cmsg.setHostUuid(msg.getHostUuid());
-        cmsg.setDescription(msg.getDescription());
-        cmsg.setResourceUuid(api.getResourceUuid());
-        cmsg.setDefaultL3NetworkUuid(msg.getDefaultL3NetworkUuid());
-        cmsg.setStrategy(msg.getStrategy());
-        cmsg.setServiceId(api.getServiceId());
-        cmsg.setHeaders(api.getHeaders());
-
-        return cmsg;
-    }
-
     private String getPSUuidForDataVolume(List<String> systemTags){
         if(systemTags == null || systemTags.isEmpty()){
             return null;
         }
 
         return SystemTagUtils.findTagValue(systemTags, VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME, VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN);
-    }
-
-    private void handle(final APICreateVmInstanceFromVolumeMsg msg) {
-        APICreateVmInstanceFromVolumeEvent event = new APICreateVmInstanceFromVolumeEvent(msg.getId());
-        final String IMAGE_UUID = "image uuid";
-
-        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName("create-vm-from-volume-" + msg.getVolumeUuid());
-        chain.then(new Flow() {
-            String __name__ = "create-image-from-volume";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                CreateDataVolumeTemplateFromVolumeMsg cmsg = new CreateDataVolumeTemplateFromVolumeMsg();
-                cmsg.setVolumeUuid(msg.getVolumeUuid());
-                cmsg.setName("root-image-for-vm-" + msg.getName());
-                cmsg.setSession(msg.getSession());
-                bus.makeLocalServiceId(cmsg, ImageConstant.SERVICE_ID);
-                bus.send(cmsg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                            return;
-                        }
-
-                        CreateDataVolumeTemplateFromVolumeReply r = reply.castReply();
-                        data.put(IMAGE_UUID, r.getInventory().getUuid());
-                        trigger.next();
-                    }
-                });
-            }
-
-            @Override
-            public void rollback(FlowRollback trigger, Map data) {
-                String imageUuid = (String) data.get(IMAGE_UUID);
-                if (imageUuid == null) {
-                    trigger.rollback();
-                    return;
-                }
-
-                ImageDeletionMsg dmsg = new ImageDeletionMsg();
-                dmsg.setImageUuid(imageUuid);
-                dmsg.setForceDelete(true);
-                dmsg.setDeletionPolicy(ImageDeletionPolicyManager.ImageDeletionPolicy.Direct.toString());
-                bus.makeTargetServiceIdByResourceUuid(dmsg, ImageConstant.SERVICE_ID, dmsg.getImageUuid());
-                bus.send(dmsg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        trigger.rollback();
-                    }
-                });
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "update-image";
-
-            private void createImageTags(String uuid, APICreateMessage msg) {
-                if (msg.getSystemTags() != null) {
-                    List<String> imageTags = tagMgr.filterSystemTags(msg.getSystemTags(), ImageVO.class.getSimpleName());
-                    msg.getSystemTags().removeAll(imageTags);
-                    tagMgr.createTags(imageTags, null, uuid, ImageVO.class.getSimpleName());
-                }
-            }
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                String imageUuid = (String) data.get(IMAGE_UUID);
-
-                UpdateImageMsg umsg = new UpdateImageMsg();
-                umsg.setUuid(imageUuid);
-                umsg.setMediaType(ImageMediaType.RootVolumeTemplate.toString());
-                umsg.setPlatform(msg.getPlatform() == null ? ImagePlatform.Linux.toString() : msg.getPlatform());
-                bus.makeTargetServiceIdByResourceUuid(umsg, ImageConstant.SERVICE_ID, umsg.getImageUuid());
-                bus.send(umsg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                            return;
-                        }
-
-                        createImageTags(imageUuid, msg);
-                        trigger.next();
-                    }
-                });
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "create-vm";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                CreateVmInstanceMsg cmsg = fromAPICreateVmInstanceFromVolumeMsg(msg, (String) data.get(IMAGE_UUID));
-                doCreateVmInstance(cmsg, msg, new ReturnValueCompletion<VmInstanceInventory>(trigger) {
-                    @Override
-                    public void success(VmInstanceInventory inventory) {
-                        event.setInventory(inventory);
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                });
-            }
-        }).done(new FlowDoneHandler(msg) {
-            @Override
-            public void handle(Map data) {
-                pluginRgty.getExtensionList(CreateVmFromVolumeExtensionPoint.class).forEach(ext ->
-                        ext.afterCreateVmFromVolume(event.getInventory()));
-                bus.publish(event);
-            }
-        }).error(new FlowErrorHandler(msg) {
-            @Override
-            public void handle(ErrorCode errCode, Map data) {
-                event.setError(errCode);
-                bus.publish(event);
-            }
-        }).start();
     }
 
     private void handle(final APICreateVmInstanceMsg msg) {
@@ -1441,6 +1263,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             populateExtensions();
             installSystemTagValidator();
             installGlobalConfigUpdater();
+            vmExtensionManagers.addAll(pluginRgty.getExtensionList(VmInstanceExtensionManager.class));
 
             bus.installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
                 @Override

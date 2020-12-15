@@ -104,6 +104,7 @@ public class VmInstanceSpec implements Serializable {
 
     public static class ImageSpec implements Serializable {
         private ImageInventory inventory;
+        private boolean needDownload = true;
         private ImageBackupStorageRefInventory selectedBackupStorage;
 
         public ImageInventory getInventory() {
@@ -120,6 +121,14 @@ public class VmInstanceSpec implements Serializable {
 
         public void setSelectedBackupStorage(ImageBackupStorageRefInventory selectedBackupStorage) {
             this.selectedBackupStorage = selectedBackupStorage;
+        }
+
+        public boolean isNeedDownload() {
+            return needDownload;
+        }
+
+        public void setNeedDownload(boolean needDownload) {
+            this.needDownload = needDownload;
         }
     }
 
@@ -178,6 +187,10 @@ public class VmInstanceSpec implements Serializable {
         private String imageUuid;
         private String primaryStorageUuid;
         private String backupStorageUuid;
+
+        public boolean isAttachedIso() {
+            return imageUuid != null;
+        }
 
         public String getUuid() {
             return uuid;

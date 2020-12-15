@@ -170,7 +170,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         } else if (msg instanceof CancelCreateRootVolumeTemplateFromRootVolumeMsg) {
             handle((CancelCreateRootVolumeTemplateFromRootVolumeMsg) msg);
         } else if (msg instanceof CreateDataVolumeTemplateFromVolumeMsg){
-            handle ((CreateDataVolumeTemplateFromVolumeMsg)msg);
+            handle ((CreateDataVolumeTemplateFromVolumeMsg) msg);
+        } else if (msg instanceof CreateTemporaryTemplateFromVolumeMsg) {
+            handle((CreateTemporaryTemplateFromVolumeMsg) msg);
         } else if (msg instanceof CancelCreateDataVolumeTemplateFromVolumeMsg) {
             handle((CancelCreateDataVolumeTemplateFromVolumeMsg) msg);
         } else {
@@ -182,6 +184,141 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         CreateDataVolumeTemplateFromVolumeLongJobData data = new CreateDataVolumeTemplateFromVolumeLongJobData(msg);
         BeanUtils.copyProperties(msg, data);
         handleCreateDataVolumeTemplateFromVolumeMsg(data, new CreateDataVolumeTemplateFromVolumeReply());
+    }
+
+    private void handle(CreateTemporaryTemplateFromVolumeMsg msg) {
+        CreateTemporaryTemplateFromVolumeReply reply = new CreateTemporaryTemplateFromVolumeReply();
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("create-temporary-volume-template-from-volume-%s", msg.getVolumeUuid()));
+        chain.preCheck(data -> buildErrIfCanceled());
+        chain.then(new ShareFlow() {
+            ImageVO image;
+            long actualSize;
+            String volumePsUuid;
+
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "get-actual-size-of-volume";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        SyncVolumeSizeMsg smsg = new SyncVolumeSizeMsg();
+                        smsg.setVolumeUuid(msg.getVolumeUuid());
+                        bus.makeTargetServiceIdByResourceUuid(smsg, VolumeConstant.SERVICE_ID, msg.getVolumeUuid());
+                        bus.send(smsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                SyncVolumeSizeReply sr = reply.castReply();
+                                actualSize = sr.getActualSize();
+                                volumePsUuid = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid())
+                                        .select(VolumeVO_.primaryStorageUuid)
+                                        .findValue();
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "create-image-in-database";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        SimpleQuery<VolumeVO> q = dbf.createQuery(VolumeVO.class);
+                        q.select(VolumeVO_.format, VolumeVO_.size);
+                        q.add(VolumeVO_.uuid, Op.EQ, msg.getVolumeUuid());
+                        Tuple t = q.findTuple();
+
+                        String format = t.get(0, String.class);
+                        long size = t.get(1, Long.class);
+
+                        final ImageVO vo = new ImageVO();
+                        vo.setUuid(Platform.getUuid());
+                        vo.setName("temporary-image-from-volume-" + msg.getVolumeUuid());
+                        vo.setType(ImageConstant.ZSTACK_IMAGE_TYPE);
+                        vo.setMediaType(ImageMediaType.DataVolumeTemplate);
+                        vo.setSize(size);
+                        vo.setActualSize(actualSize);
+                        vo.setState(ImageState.Enabled);
+                        vo.setStatus(ImageStatus.Creating);
+                        vo.setSystem(false);
+                        vo.setFormat(format);
+                        vo.setUrl(String.format("volume://%s", msg.getVolumeUuid()));
+                        vo.setAccountUuid(msg.getSession().getAccountUuid());
+                        image = dbf.persistAndRefresh(vo);
+
+                        tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), ImageVO.class.getSimpleName());
+                        tagMgr.createNonInherentSystemTag(image.getUuid(),
+                                ImageSystemTags.TEMPORARY_IMAGE.getTagFormat(),
+                                ImageVO.class.getSimpleName());
+
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (image != null) {
+                            dbf.remove(image);
+                        }
+
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "create-image-cache-from-volume";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        CreateImageCacheFromVolumeMsg cmsg = new CreateImageCacheFromVolumeMsg();
+                        cmsg.setUuid(msg.getVolumeUuid());
+                        cmsg.setImage(ImageInventory.valueOf(image));
+                        bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeConstant.SERVICE_ID, cmsg.getUuid());
+                        bus.send(cmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply r) {
+                                if (!r.isSuccess()) {
+                                    trigger.fail(r.getError());
+                                    return;
+                                }
+
+                                CreateImageCacheFromVolumeReply cr = r.castReply();
+                                reply.setLocateHostUuid(cr.getLocateHostUuid());
+                                reply.setLocatePsUuid(volumePsUuid);
+                                image = dbf.reload(image);
+                                image.setStatus(ImageStatus.Ready);
+                                image = dbf.updateAndRefresh(image);
+
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        reply.setInventory(ImageInventory.valueOf(image));
+                        bus.reply(msg, reply);
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        reply.setError(errCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+            }
+        }).start();
     }
 
     private void handleApiMessage(Message msg) {

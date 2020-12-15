@@ -54,12 +54,19 @@ public class ImageBackupStorageAllocatorFlow extends AbstractHostAllocatorFlow {
             return true;
         }
 
+        if (spec.getRequiredPrimaryStorageUuids() != null && !spec.getRequiredPrimaryStorageUuids().isEmpty()) {
+            psUuids.retainAll(spec.getRequiredPrimaryStorageUuids());
+            if (psUuids.isEmpty()) {
+                return true;
+            }
+        }
+
         SimpleQuery<ImageCacheVO> cq = dbf.createQuery(ImageCacheVO.class);
         cq.add(ImageCacheVO_.imageUuid, Op.EQ, spec.getImage().getUuid());
         cq.add(ImageCacheVO_.primaryStorageUuid, Op.IN, psUuids);
         cq.groupBy(ImageCacheVO_.primaryStorageUuid);
         long count = cq.count();
-        return count !=  psUuids.size();
+        return count < psUuids.size();
     }
 
     @Override

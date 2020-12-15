@@ -22,6 +22,7 @@ import org.zstack.header.storage.backup.BackupStorageType;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.vm.VmInstanceSpec.ImageSpec;
+import org.zstack.header.volume.VolumeInventory;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -37,6 +38,8 @@ public class NfsDownloadImageToCacheJob implements Job {
     private ImageSpec image;
     @JobContext
     private PrimaryStorageInventory primaryStorage;
+    @JobContext
+    private VolumeInventory volume;
 
     @Autowired
     private NfsPrimaryStorageFactory nfsFactory;
@@ -62,13 +65,6 @@ public class NfsDownloadImageToCacheJob implements Job {
     }
 
     private void download(final ReturnValueCompletion<Object> completion) {
-        BackupStorageVO bsvo = dbf.findByUuid(image.getSelectedBackupStorage().getBackupStorageUuid(), BackupStorageVO.class);
-        final BackupStorageInventory backupStorage = BackupStorageInventory.valueOf(bsvo);
-        final NfsPrimaryToBackupStorageMediator mediator = nfsFactory.getPrimaryToBackupStorageMediator(
-                BackupStorageType.valueOf(backupStorage.getType()),
-                nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getInventory().getFormat(), primaryStorage.getUuid())
-        );
-
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("download-image-%s-to-nfs-primary-storage-%s-cache", image.getInventory().getUuid(), primaryStorage.getUuid()));
         chain.then(new ShareFlow() {
@@ -123,6 +119,37 @@ public class NfsDownloadImageToCacheJob implements Job {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        if (volume != null) {
+                            downloadFromVolume(trigger);
+                        } else {
+                            downloadFromBackupStorage(trigger);
+                        }
+                    }
+
+                    private void downloadFromVolume(FlowTrigger trigger) {
+                        NfsPrimaryStorageBackend bkd = nfsFactory.getHypervisorBackend(nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getInventory().getFormat(), primaryStorage.getUuid()));
+                        bkd.createImageCacheFromVolume(primaryStorage, volume, image.getInventory(), new ReturnValueCompletion<String>(trigger) {
+                            @Override
+                            public void success(String path) {
+                                cacheInstallPath = path;
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+
+                    private void downloadFromBackupStorage(FlowTrigger trigger) {
+                        BackupStorageVO bsvo = dbf.findByUuid(image.getSelectedBackupStorage().getBackupStorageUuid(), BackupStorageVO.class);
+                        final BackupStorageInventory backupStorage = BackupStorageInventory.valueOf(bsvo);
+                        final NfsPrimaryToBackupStorageMediator mediator = nfsFactory.getPrimaryToBackupStorageMediator(
+                                BackupStorageType.valueOf(backupStorage.getType()),
+                                nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getInventory().getFormat(), primaryStorage.getUuid())
+                        );
+
                         mediator.downloadBits(primaryStorage, backupStorage, image.getSelectedBackupStorage().getInstallPath(), cacheInstallPath, false, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -209,5 +236,9 @@ public class NfsDownloadImageToCacheJob implements Job {
 
     public void setPrimaryStorage(PrimaryStorageInventory primaryStorage) {
         this.primaryStorage = primaryStorage;
+    }
+
+    public void setVolume(VolumeInventory volume) {
+        this.volume = volume;
     }
 }
