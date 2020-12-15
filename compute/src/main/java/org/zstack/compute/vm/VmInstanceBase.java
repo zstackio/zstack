@@ -2213,7 +2213,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 extEmitter.afterDestroyVm(inv);
                 logger.debug(String.format("successfully deleted vm instance[name:%s, uuid:%s]", self.getName(), self.getUuid()));
                 if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
-                    changeVmStateInDb(VmInstanceStateEvent.destroyed);
+                    if (self.getState() != VmInstanceState.Destroyed) {
+                        changeVmStateInDb(VmInstanceStateEvent.destroyed);
+                    }
                     callVmJustBeforeDeleteFromDbExtensionPoint();
                     dbf.removeCollection(self.getVmCdRoms(), VmCdRomVO.class);
                     dbf.remove(getSelf());
@@ -2279,7 +2281,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                 self = dbf.findByUuid(self.getUuid(), VmInstanceVO.class);
                 if (self == null || self.getState() == VmInstanceState.Destroyed) {
                     // the vm has been destroyed, most likely by rollback
-                    if (deletionPolicy != VmInstanceDeletionPolicy.DBOnly && deletionPolicy != VmInstanceDeletionPolicy.KeepVolume) {
+                    if (deletionPolicy != VmInstanceDeletionPolicy.DBOnly
+                            && deletionPolicy != VmInstanceDeletionPolicy.KeepVolume) {
                         bus.reply(msg, r);
                         chain.next();
                         return;
