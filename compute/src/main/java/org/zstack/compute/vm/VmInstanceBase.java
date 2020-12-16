@@ -4245,7 +4245,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        trigger.next();
+                        trigger.fail(errorCode);
                     }
                 });
             }

@@ -1,9 +1,6 @@
 package org.zstack.test.integration.networkservice.provider.flat.eip
 
-import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
-import org.zstack.header.vm.VmNicVO
-import org.zstack.header.vm.VmNicVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.service.eip.EipConstant
@@ -133,11 +130,11 @@ class DetachNicWithEipNegativeCase extends SubCase {
             name = "vip"
             l3NetworkUuid = pubL3.uuid
         } as VipInventory
-        EipInventory eip = createEip {
+        def eip = createEip {
             name = "eip"
             vipUuid = vip.uuid
             vmNicUuid = vm.getVmNics().get(0).uuid
-        }
+        } as EipInventory
 
         env.simulator(KVMConstant.KVM_DETACH_NIC_PATH) {
             def rsp = new KVMAgentCommands.DetachNicRsp()
@@ -149,10 +146,7 @@ class DetachNicWithEipNegativeCase extends SubCase {
         action.sessionId = adminSession()
         action.vmNicUuid = vm.getVmNics().get(0).uuid
         DetachL3NetworkFromVmAction.Result res = action.call()
-        eip = queryEip {conditions=["uuid=${eip.uuid}"]} [0]
-        assert eip.vmNicUuid == null
-        assert eip.guestIp == null
-        assert !Q.New(VmNicVO.class).eq(VmNicVO_.uuid, vm.getVmNics().get(0).uuid).isExists()
+        assert res.error != null
     }
 
     @Override
