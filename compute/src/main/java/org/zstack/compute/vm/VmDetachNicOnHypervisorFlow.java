@@ -12,8 +12,6 @@ import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 
 import java.util.Map;
 
@@ -22,7 +20,6 @@ import java.util.Map;
  */
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmDetachNicOnHypervisorFlow extends NoRollbackFlow {
-    private final static CLogger logger = Utils.getLogger(VmDetachNicOnHypervisorFlow.class);
     @Autowired
     private CloudBus bus;
 
@@ -41,9 +38,7 @@ public class VmDetachNicOnHypervisorFlow extends NoRollbackFlow {
                 if (reply.isSuccess()) {
                     trigger.next();
                 } else {
-                    logger.warn(String.format("delete vmnic[uuid:%s] of vm [uuid:%s] from host failed because %s",
-                            msg.getNic().getUuid(), msg.getVmInstanceUuid(), reply.getError().getDetails()));
-                    trigger.next();
+                    trigger.fail(reply.getError());
                 }
             }
         });
