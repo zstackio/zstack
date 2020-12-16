@@ -4423,8 +4423,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 });
 
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.DetachNic);
-        // comment out for org.zstack.baremetal2.instance.BareMetal2InstanceFactory.afterBuildVmSpec
-        //spec.setVmInventory(VmInstanceInventory.valueOf(self));
+        spec.setVmInventory(VmInstanceInventory.valueOf(self));
         spec.setDestNics(list(nic));
     
         FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
@@ -5301,15 +5300,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        // for org.zstack.baremetal2.instance.BareMetal2InstanceFactory.afterBuildVmSpec
-        VmInstanceSpec spec = new VmInstanceSpec();
-        spec.setVmInventory(VmInstanceInventory.valueOf(self));
-        for (BuildVmSpecExtensionPoint ext : pluginRgty.getExtensionList(BuildVmSpecExtensionPoint.class)) {
-            ext.afterBuildVmSpec(spec);
-        }
-
         // VmInstanceState.Running
-        String hostUuid = spec.getVmInventory().getHostUuid();
+        String hostUuid = self.getHostUuid();
         DetachVolumeFromVmOnHypervisorMsg dmsg = new DetachVolumeFromVmOnHypervisorMsg();
         dmsg.setVmInventory(VmInstanceInventory.valueOf(self));
         dmsg.setInventory(volume);
@@ -5364,11 +5356,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setVmInventory(VmInstanceInventory.valueOf(self));
         spec.setCurrentVmOperation(VmOperation.AttachVolume);
         spec.setDestDataVolumes(list(volume));
-
-        for (BuildVmSpecExtensionPoint ext : pluginRgty.getExtensionList(BuildVmSpecExtensionPoint.class)) {
-            ext.afterBuildVmSpec(spec);
-        }
-
         FlowChain chain;
         if (volume.getStatus().equals(VolumeStatus.Ready.toString())) {
             chain = FlowChainBuilder.newSimpleFlowChain();
@@ -6247,7 +6234,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Reboot);
-        spec.setDestHost(HostInventory.valueOf(dbf.findByUuid(spec.getVmInventory().getHostUuid(), HostVO.class)));
+        spec.setDestHost(HostInventory.valueOf(dbf.findByUuid(self.getHostUuid(), HostVO.class)));
 
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.rebooting);
