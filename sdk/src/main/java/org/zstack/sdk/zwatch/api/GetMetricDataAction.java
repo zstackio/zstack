@@ -47,6 +47,9 @@ public class GetMetricDataAction extends AbstractAction {
     public java.util.List labels;
 
     @Param(required = false)
+    public java.util.List valueConditions;
+
+    @Param(required = false)
     public java.util.List functions;
 
     @Param(required = false)
