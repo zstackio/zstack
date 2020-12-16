@@ -7,4 +7,5 @@ public enum HybridType {
 	AliyunNAS,
 	AliyunEBS,
 	AliyunSms,
+	S3,
 }
