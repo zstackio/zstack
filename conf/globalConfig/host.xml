@@ -37,13 +37,6 @@
     </config>
     <config>
         <category>host</category>
-        <name>ping.tracker.delay</name>
-        <description>The delay tracker start first ping, in seconds</description>
-        <defaultValue>60</defaultValue>
-        <type>java.lang.Integer</type>
-    </config>
-    <config>
-        <category>host</category>
         <name>ping.maxFailure</name>
         <description>The maximum count of ping failure before reconnecting host</description>
         <defaultValue>3</defaultValue>
