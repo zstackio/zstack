@@ -37,6 +37,9 @@ public class StartBareMetal2InstanceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String chassisUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String chassisOfferingUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 
