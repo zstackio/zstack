@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.0"
 					
 				}
 				column {
@@ -38,7 +38,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.0"
 					
 				}
 				column {
@@ -48,7 +48,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.0"
 					
 				}
 				column {
@@ -58,7 +58,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.0"
 					
 				}
 			}
