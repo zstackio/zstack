@@ -87,7 +87,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
         private HostReconnectTask reconnectTask;
 
         Tracker(String uuid) {
-            super(TimeUnit.SECONDS, HostGlobalConfig.PING_TRACKER_DELAY.value(Long.class));
+            super(TimeUnit.SECONDS, HostGlobalConfig.PING_HOST_INTERVAL.value(Long.class));
             this.uuid = uuid;
             hypervisorType = Q.New(HostVO.class).select(HostVO_.hypervisorType)
                     .eq(HostVO_.uuid, uuid).findValue();

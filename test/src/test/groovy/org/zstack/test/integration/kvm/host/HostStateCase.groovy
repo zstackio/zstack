@@ -86,7 +86,6 @@ class HostStateCase extends SubCase {
             return rsp
         }
 
-        HostGlobalConfig.PING_TRACKER_DELAY.updateValue(1)
         HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1)
 
         1.upto(5) {

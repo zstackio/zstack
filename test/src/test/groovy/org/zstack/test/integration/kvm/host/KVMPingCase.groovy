@@ -444,8 +444,7 @@ class KVMPingCase extends SubCase {
         bus = bean(CloudBus.class)
 
         env.create {
-            HostGlobalConfig.PING_TRACKER_DELAY.updateValue(1)
-        HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1)
+            HostGlobalConfig.PING_HOST_INTERVAL.updateValue(1)
             HostGlobalConfig.MAXIMUM_PING_FAILURE.updateValue(1)
             HostGlobalConfig.SLEEP_TIME_AFTER_PING_FAILURE.updateValue(0)
 
