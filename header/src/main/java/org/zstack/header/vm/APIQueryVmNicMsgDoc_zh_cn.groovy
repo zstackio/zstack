@@ -9,7 +9,7 @@ doc {
 
     category "vmInstance"
 
-    desc """在这里填写API描述"""
+    desc """查询云主机网卡"""
 
     rest {
         request {

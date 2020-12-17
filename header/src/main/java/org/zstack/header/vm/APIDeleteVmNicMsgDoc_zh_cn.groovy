@@ -7,7 +7,7 @@ doc {
 
     category "vmInstance"
 
-    desc """从云主机卸载网卡"""
+    desc """删除云主机网卡"""
 
     rest {
         request {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.0"
 					
 				}
 				column {
@@ -38,7 +38,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "4.0"
 					
 				}
 				column {
@@ -48,7 +48,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.0"
 					
 				}
 				column {
@@ -58,7 +58,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.0"
 					
 				}
 			}
