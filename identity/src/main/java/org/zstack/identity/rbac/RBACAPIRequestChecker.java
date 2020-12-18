@@ -16,6 +16,7 @@ import org.zstack.utils.logging.CLogger;
 import java.lang.reflect.Field;
 import java.util.*;
 
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 
 public class RBACAPIRequestChecker implements APIRequestChecker {
@@ -33,6 +34,10 @@ public class RBACAPIRequestChecker implements APIRequestChecker {
         rbacEntity = entity;
         if (rbacEntity.getApiMessage().getClass().isAnnotationPresent(SuppressRBACCheck.class)) {
             return;
+        }
+
+        if (PolicyUtils.isAdminOnlyAction(entity.getApiName()) && !AccountConstant.isAdminPermission(entity.getApiMessage().getSession())) {
+            throw new OperationFailureException(err(IdentityErrors.PERMISSION_DENIED, "request api is admin only, can not be executed by current user"));
         }
 
         check();

@@ -31,9 +31,9 @@ public class RBACInfo implements RBACDescription {
                 APIMessage msg = entity.getApiMessage();
                 if (msg instanceof APIDeleteL2NetworkMsg) {
                     boolean isVxlan = Q.New(L2NetworkVO.class)
-                            .select(L2NetworkVO_.type)
                             .eq(L2NetworkVO_.uuid, ((APIDeleteL2NetworkMsg) msg).getUuid())
-                            .findValue() == VxlanNetworkConstant.VXLAN_NETWORK_TYPE;
+                            .eq(L2NetworkVO_.type, VxlanNetworkConstant.VXLAN_NETWORK_TYPE)
+                            .isExists();
 
                     if (isVxlan) {
                         entity.setApiName(DELETE_VXLAN_NETWORK_API_NAME);
