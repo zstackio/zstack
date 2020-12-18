@@ -195,7 +195,7 @@ BEGIN
 
         SET targetProjectUuid = SUBSTRING_INDEX(projectOperatorTag, '::', -1);
         SELECT `accountUuid` into targetAccountUuid FROM `IAM2ProjectAccountRefVO` WHERE `projectUuid` = targetProjectUuid LIMIT 1;
-
+        delete from IAM2VirtualIDRoleRefVO where virtualIDUuid = iam2VirtualIDUuid and roleUuid = 'f2f474c60e7340c0a1d44080d5bde3a9';
         INSERT INTO IAM2VirtualIDRoleRefVO (`virtualIDUuid`, `roleUuid`, `targetAccountUuid`, createDate, lastOpDate) VALUES (iam2VirtualIDUuid, 'f2f474c60e7340c0a1d44080d5bde3a9', targetAccountUuid, NOW(), NOW());
     END LOOP;
     CLOSE cur;
@@ -224,7 +224,7 @@ BEGIN
 
         SET targetProjectUuid = SUBSTRING_INDEX(projectAdminTag, '::', -1);
         SELECT `accountUuid` into targetAccountUuid FROM `IAM2ProjectAccountRefVO` WHERE `projectUuid` = targetProjectUuid LIMIT 1;
-
+        delete from IAM2VirtualIDRoleRefVO where virtualIDUuid = iam2VirtualIDUuid and roleUuid = 'f2f474c60e7340c0a1d44080d5bde3a9';
         INSERT INTO IAM2VirtualIDRoleRefVO (`virtualIDUuid`, `roleUuid`, `targetAccountUuid`, createDate, lastOpDate) VALUES (iam2VirtualIDUuid, 'f2f474c60e7340c0a1d44080d5bde3a9', targetAccountUuid, NOW(), NOW());
     END LOOP;
     CLOSE cur;
