@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.8
+// Generated from ZQL.g4 by ANTLR 4.7.1
 
 package org.zstack.zql.antlr4;
 

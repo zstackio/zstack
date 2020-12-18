@@ -1,4 +1,4 @@
-// Generated from ZQL.g4 by ANTLR 4.8
+// Generated from ZQL.g4 by ANTLR 4.7.1
 
 package org.zstack.zql.antlr4;
 
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class ZQLParser extends Parser {
-	static { RuntimeMetaData.checkVersion("4.8", RuntimeMetaData.VERSION); }
+	static { RuntimeMetaData.checkVersion("4.7.1", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
 	protected static final PredictionContextCache _sharedContextCache =
@@ -39,44 +39,35 @@ public class ZQLParser extends Parser {
 		RULE_filterByExpr = 34, RULE_filterBy = 35, RULE_namedAsKey = 36, RULE_namedAsValue = 37, 
 		RULE_namedAs = 38, RULE_query = 39, RULE_count = 40, RULE_sumByValue = 41, 
 		RULE_sumBy = 42, RULE_sum = 43, RULE_search = 44, RULE_keyword = 45, RULE_index = 46;
-	private static String[] makeRuleNames() {
-		return new String[] {
-			"zqls", "zql", "entity", "field", "multiFields", "operator", "value", 
-			"listValue", "logicalOperator", "complexValue", "getQuery", "apiparams", 
-			"input", "output", "expr", "equal", "condition", "queryTarget", "function", 
-			"queryTargetWithFunction", "orderByExpr", "orderBy", "limit", "offset", 
-			"restrictByExpr", "restrictBy", "returnWithExprBlock", "returnWithExpr", 
-			"returnWith", "groupByExpr", "groupBy", "subQueryTarget", "subQuery", 
-			"filterByExprBlock", "filterByExpr", "filterBy", "namedAsKey", "namedAsValue", 
-			"namedAs", "query", "count", "sumByValue", "sumBy", "sum", "search", 
-			"keyword", "index"
-		};
-	}
-	public static final String[] ruleNames = makeRuleNames();
+	public static final String[] ruleNames = {
+		"zqls", "zql", "entity", "field", "multiFields", "operator", "value", 
+		"listValue", "logicalOperator", "complexValue", "getQuery", "apiparams", 
+		"input", "output", "expr", "equal", "condition", "queryTarget", "function", 
+		"queryTargetWithFunction", "orderByExpr", "orderBy", "limit", "offset", 
+		"restrictByExpr", "restrictBy", "returnWithExprBlock", "returnWithExpr", 
+		"returnWith", "groupByExpr", "groupBy", "subQueryTarget", "subQuery", 
+		"filterByExprBlock", "filterByExpr", "filterBy", "namedAsKey", "namedAsValue", 
+		"namedAs", "query", "count", "sumByValue", "sumBy", "sum", "search", "keyword", 
+		"index"
+	};
 
-	private static String[] makeLiteralNames() {
-		return new String[] {
-			null, "';'", "'.'", "','", "'='", "'!='", "'>'", "'>='", "'<'", "'<='", 
-			"'is null'", "'is not null'", "'in'", "'not in'", "'like'", "'not like'", 
-			"'has'", "'not has'", "'('", "')'", "'list('", "'{'", "'}'", "'by'", 
-			"'filter by'", "'offset'", "'limit'", "'query'", "'getapi'", "'count'", 
-			"'sum'", "'search'", "'distinct'", "'order by'", "'group by'", "'named as'", 
-			null, "'restrict by'", "'return with'", "'where'", "'from'", "'and'", 
-			"'or'", "'asc'", "'desc'", "'api'", "'output'"
-		};
-	}
-	private static final String[] _LITERAL_NAMES = makeLiteralNames();
-	private static String[] makeSymbolicNames() {
-		return new String[] {
-			null, null, null, null, null, null, null, null, null, null, null, null, 
-			null, null, null, null, null, null, null, null, null, null, null, null, 
-			"FILTER_BY", "OFFSET", "LIMIT", "QUERY", "GET", "COUNT", "SUM", "SEARCH", 
-			"DISTINCT", "ORDER_BY", "GROUP_BY", "NAMED_AS", "ORDER_BY_VALUE", "RESTRICT_BY", 
-			"RETURN_WITH", "WHERE", "FROM", "AND", "OR", "ASC", "DESC", "INPUT", 
-			"OUTPUT", "BOOLEAN", "INT", "FLOAT", "ID", "WS", "STRING"
-		};
-	}
-	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
+	private static final String[] _LITERAL_NAMES = {
+		null, "';'", "'.'", "','", "'='", "'!='", "'>'", "'>='", "'<'", "'<='", 
+		"'is null'", "'is not null'", "'in'", "'not in'", "'like'", "'not like'", 
+		"'has'", "'not has'", "'('", "')'", "'list('", "'{'", "'}'", "'by'", "'filter by'", 
+		"'offset'", "'limit'", "'query'", "'getapi'", "'count'", "'sum'", "'search'", 
+		"'distinct'", "'order by'", "'group by'", "'named as'", null, "'restrict by'", 
+		"'return with'", "'where'", "'from'", "'and'", "'or'", "'asc'", "'desc'", 
+		"'api'", "'output'"
+	};
+	private static final String[] _SYMBOLIC_NAMES = {
+		null, null, null, null, null, null, null, null, null, null, null, null, 
+		null, null, null, null, null, null, null, null, null, null, null, null, 
+		"FILTER_BY", "OFFSET", "LIMIT", "QUERY", "GET", "COUNT", "SUM", "SEARCH", 
+		"DISTINCT", "ORDER_BY", "GROUP_BY", "NAMED_AS", "ORDER_BY_VALUE", "RESTRICT_BY", 
+		"RETURN_WITH", "WHERE", "FROM", "AND", "OR", "ASC", "DESC", "INPUT", "OUTPUT", 
+		"BOOLEAN", "INT", "FLOAT", "ID", "WS", "STRING"
+	};
 	public static final Vocabulary VOCABULARY = new VocabularyImpl(_LITERAL_NAMES, _SYMBOLIC_NAMES);
 
 	/**
@@ -126,7 +117,6 @@ public class ZQLParser extends Parser {
 		super(input);
 		_interp = new ParserATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
-
 	public static class ZqlsContext extends ParserRuleContext {
 		public List<ZqlContext> zql() {
 			return getRuleContexts(ZqlContext.class);
