@@ -7,8 +7,13 @@ import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DbEntityLister;
+import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.cluster.ClusterInventory;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
@@ -24,12 +29,13 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 
 public class L2NetworkManagerImpl extends AbstractService implements L2NetworkManager {
     private static final CLogger logger = Utils.getLogger(L2NetworkManagerImpl.class);
-    
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -76,10 +82,229 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
             handle((APICreateL2NetworkMsg)msg);
         } else if (msg instanceof APIGetL2NetworkTypesMsg) {
             handle((APIGetL2NetworkTypesMsg) msg);
+        } else if (msg instanceof APIGetCandidateL2ForAttachingClusterMsg) {
+            handle((APIGetCandidateL2ForAttachingClusterMsg)msg);
+        } else if (msg instanceof APIGetCandidateClusterForAttachingL2Msg) {
+            handle((APIGetCandidateClusterForAttachingL2Msg)msg);
         } else if (msg instanceof L2NetworkMessage) {
             passThrough((L2NetworkMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void handle(APIGetCandidateClusterForAttachingL2Msg msg) {
+        APIGetCandidateClusterForAttachingL2Reply reply = new APIGetCandidateClusterForAttachingL2Reply();
+        reply.setInventories(getClusterCandidates(msg));
+        bus.reply(msg, reply);
+    }
+
+    private List<ClusterInventory> getClusterCandidates(APIGetCandidateClusterForAttachingL2Msg msg) {
+        String l2Uuid = msg.getL2NetworkUuid();
+        L2NetworkVO l2NetworkVO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l2Uuid).find();
+
+        if (l2NetworkVO == null || l2NetworkVO.getType().equals("VxlanNetwork")) {
+            return new ArrayList<>();
+        }
+
+        List<String> clusterUuids = SQL.New("select distinct ref.clusterUuid from L2NetworkVO l2, L2NetworkClusterRefVO ref where" +
+                " l2.uuid = ref.l2NetworkUuid" +
+                " and l2.uuid = :l2Uuid")
+                .param("l2Uuid", l2NetworkVO.getUuid())
+                .list();
+
+        List<ClusterVO> clusterVOS;
+        if (msg.getClusterTypes() == null || msg.getClusterTypes().isEmpty()) {
+            clusterVOS = Q.New(ClusterVO.class).list();
+        } else {
+            clusterVOS = Q.New(ClusterVO.class).in(ClusterVO_.type, msg.getClusterTypes()).list();
+        }
+        if (clusterVOS.isEmpty()) {
+            return new ArrayList<>();
+        }
+        clusterVOS = clusterVOS.stream().filter(clusterVO -> !clusterUuids.contains(clusterVO.getUuid())).collect(Collectors.toList());
+
+        List<ClusterInventory> ret = new ArrayList<>();
+
+        if (!l2NetworkVO.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE) &&
+                !l2NetworkVO.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
+            clusterVOS = clusterVOS.stream().filter(cluster -> cluster.getHypervisorType().equals("KVM")).collect(Collectors.toList());
+            ret.addAll(ClusterInventory.valueOf(clusterVOS));
+        } else {
+            for (ClusterVO cluster : clusterVOS) {
+                if (canAttachL2ToThisCluster(l2NetworkVO, cluster)) {
+                    ret.add(ClusterInventory.valueOf(cluster));
+                }
+            }
+        }
+        return ret;
+    }
+
+    private boolean canAttachL2ToThisCluster(L2NetworkVO l2NetworkVO, ClusterVO clusterVO) {
+        StringBuilder sqlBuilder = new StringBuilder();
+        if (l2NetworkVO.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
+            sqlBuilder.append("select l2 from L2VlanNetworkVO l2,L2NetworkClusterRefVO ref where");
+        } else {
+            sqlBuilder.append("select l2 from L2NetworkVO l2,L2NetworkClusterRefVO ref where");
+        }
+        sqlBuilder.append(" l2.type = :l2Type and");
+        sqlBuilder.append(" l2.uuid = ref.l2NetworkUuid and ref.clusterUuid = :clusterUuid");
+
+
+        if (l2NetworkVO.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
+            List<L2NetworkVO> attachedL2VOS = SQL.New(sqlBuilder.toString())
+                    .param("l2Type",L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)
+                    .param("clusterUuid", clusterVO.getUuid())
+                    .list();
+            return attachedL2VOS.stream().noneMatch(l2 -> l2.getPhysicalInterface().equals(l2NetworkVO.getPhysicalInterface()));
+        } else if (l2NetworkVO.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
+            L2VlanNetworkVO l2VlanNetworkVO = Q.New(L2VlanNetworkVO.class).eq(L2VlanNetworkVO_.uuid, l2NetworkVO.getUuid()).find();
+            List<L2VlanNetworkVO> attachedL2VOS = SQL.New(sqlBuilder.toString())
+                    .param("l2Type",L2NetworkConstant.L2_VLAN_NETWORK_TYPE)
+                    .param("clusterUuid", clusterVO.getUuid())
+                    .list();
+            return attachedL2VOS.stream().noneMatch(l2 -> (l2.getPhysicalInterface().equals(l2VlanNetworkVO.getPhysicalInterface()) &&
+                    l2VlanNetworkVO.getVlan() == l2VlanNetworkVO.getVlan()));
+        }
+        return false;
+    }
+
+    private void handle(APIGetCandidateL2ForAttachingClusterMsg msg) {
+        APIGetCandidateL2ForAttachingClusterReply reply = new APIGetCandidateL2ForAttachingClusterReply();
+
+        reply.setInventories(getCandidateL2ForAttachingCluster(msg.getClusterUuid()));
+        bus.reply(msg, reply);
+    }
+
+    private List<L2NetworkData> getCandidateL2ForAttachingCluster(String clusterUuid) {
+        ClusterVO clusterVO = Q.New(ClusterVO.class).eq(ClusterVO_.uuid, clusterUuid).find();
+        if (clusterVO == null) {
+            return new ArrayList<>();
+        }
+
+        List<L2NetworkVO> l2s = Q.New(L2NetworkVO.class).list();
+        if (l2s.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<L2NetworkVO> attachClusterL2s= SQL.New("select distinct l2 from L2NetworkVO l2, L2NetworkClusterRefVO ref where" +
+                " l2.uuid = ref.l2NetworkUuid" +
+                " and ref.clusterUuid = :clusterUuid")
+                .param("clusterUuid", clusterVO.getUuid())
+                .list();
+        //filter l2 attached to cluster
+        l2s = l2s.stream().filter(l2 -> !attachClusterL2s.stream()
+                .map(L2NetworkVO::getUuid)
+                .collect(Collectors.toList())
+                .contains(l2.getUuid()))
+                .collect(Collectors.toList());
+
+        return getCandidateL2(clusterVO, l2s, attachClusterL2s);
+    }
+
+    private List<L2NetworkData> getCandidateL2(ClusterVO cluster, List<L2NetworkVO> l2s, List<L2NetworkVO> attachedL2s) {
+        List<L2NetworkData> ret = new ArrayList<>();
+
+        List<L2NetworkVO> noVlanL2s = new ArrayList<>();
+        List<L2NetworkVO> vlanL2s = new ArrayList<>();
+        List<L2NetworkVO> vxlanL2s = new ArrayList<>();
+
+        List<L2NetworkVO> attachedNoVlanL2s = new ArrayList<>();
+        List<L2NetworkVO> attachedVlanL2s = new ArrayList<>();
+        List<L2NetworkVO> attachedVxlanL2s = new ArrayList<>();
+
+        classifyL2(l2s, noVlanL2s, vlanL2s, vxlanL2s);
+        classifyL2(attachedL2s, attachedNoVlanL2s, attachedVlanL2s, attachedVxlanL2s);
+
+        List<L2VlanNetworkVO> l2VlanNetworkVOS = new ArrayList<>();
+        if (!vlanL2s.isEmpty()) {
+            l2VlanNetworkVOS = Q.New(L2VlanNetworkVO.class)
+                    .in(L2VlanNetworkVO_.uuid, vlanL2s.stream().map(L2NetworkVO::getUuid).collect(Collectors.toList()))
+                    .list();
+        }
+        List<L2VlanNetworkVO> attachedL2VlanNetworkVOS = new ArrayList<>();
+        if (!attachedVlanL2s.isEmpty()) {
+            attachedL2VlanNetworkVOS = Q.New(L2VlanNetworkVO.class)
+                    .in(L2VlanNetworkVO_.uuid, attachedVlanL2s.stream().map(L2NetworkVO::getUuid).collect(Collectors.toList()))
+                    .list();
+        }
+        final List<L2VlanNetworkVO> attachedVlanL2VOs = attachedL2VlanNetworkVOS;
+
+        if (attachedL2s.isEmpty()) {
+            ret.addAll(getL2DateResult(noVlanL2s));
+            ret.addAll(getL2DateResultForVlanL2(l2VlanNetworkVOS));
+            if (cluster.getHypervisorType().equals("KVM")) {
+                ret.addAll(getL2DateResult(vxlanL2s));
+            }
+            return ret;
+        }
+
+        //filter novlan l2
+        noVlanL2s = noVlanL2s.stream().filter(noVlanL2 -> !attachedNoVlanL2s.stream()
+                .map(L2NetworkVO::getPhysicalInterface)
+                .collect(Collectors.toList())
+                .contains(noVlanL2.getPhysicalInterface()))
+                .collect(Collectors.toList());
+
+        //filter vlan l2
+        l2VlanNetworkVOS = l2VlanNetworkVOS.stream().filter(vlanL2 -> {
+            return attachedVlanL2VOs.stream()
+                    .noneMatch(attachedL2 -> (vlanL2.getPhysicalInterface().equals(attachedL2.getPhysicalInterface()) && attachedL2.getVlan() == vlanL2.getVlan()));
+        }).collect(Collectors.toList());
+
+        ret.addAll(getL2DateResult(noVlanL2s));
+        ret.addAll(getL2DateResultForVlanL2(l2VlanNetworkVOS));
+        if (cluster.getHypervisorType().equals("KVM")) {
+            ret.addAll(getL2DateResult(vxlanL2s));
+        }
+
+        return ret;
+    }
+
+    private List<L2NetworkData> getL2DateResult(List<L2NetworkVO> l2s) {
+        List<L2NetworkData> ret = new ArrayList<>();
+        for (L2NetworkVO l2NetworkVO : l2s) {
+            L2NetworkData l2NetworkData = new L2NetworkData();
+            l2NetworkData.setUuid(l2NetworkVO.getUuid());
+            l2NetworkData.setName(l2NetworkVO.getName());
+            l2NetworkData.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
+            l2NetworkData.setType(l2NetworkVO.getType());
+            l2NetworkData.setZoneUuid(l2NetworkVO.getZoneUuid());
+            l2NetworkData.setDescription(l2NetworkVO.getDescription());
+            l2NetworkData.setCreateDate(l2NetworkVO.getCreateDate());
+            l2NetworkData.setLastOpDate(l2NetworkVO.getLastOpDate());
+            ret.add(l2NetworkData);
+        }
+        return ret;
+    }
+
+    private List<L2NetworkData> getL2DateResultForVlanL2(List<L2VlanNetworkVO> l2s) {
+        List<L2NetworkData> ret = new ArrayList<>();
+        for (L2VlanNetworkVO l2NetworkVO : l2s) {
+            L2NetworkData l2NetworkData = new L2NetworkData();
+            l2NetworkData.setName(l2NetworkVO.getName());
+            l2NetworkData.setUuid(l2NetworkVO.getUuid());
+            l2NetworkData.setPhysicalInterface(l2NetworkVO.getPhysicalInterface());
+            l2NetworkData.setType(l2NetworkVO.getType());
+            l2NetworkData.setZoneUuid(l2NetworkVO.getZoneUuid());
+            l2NetworkData.setDescription(l2NetworkVO.getDescription());
+            l2NetworkData.setCreateDate(l2NetworkVO.getCreateDate());
+            l2NetworkData.setLastOpDate(l2NetworkVO.getLastOpDate());
+            l2NetworkData.setVlan(l2NetworkVO.getVlan());
+            ret.add(l2NetworkData);
+        }
+        return ret;
+    }
+
+    private void classifyL2(List<L2NetworkVO> allL2s,  List<L2NetworkVO> noVlanL2s, List<L2NetworkVO> vlanL2s, List<L2NetworkVO> vxlanL2s) {
+        for (L2NetworkVO l2 : allL2s) {
+            if (l2.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)) {
+                vlanL2s.add(l2);
+            } else if (l2.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
+                noVlanL2s.add(l2);
+            } else if (l2.getType().equals("VxlanNetworkPool") || l2.getType().equals("HardwareVxlanNetworkPool")) {
+                vxlanL2s.add(l2);
+            }
         }
     }
 
@@ -104,7 +329,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
             bus.replyErrorByMessageType((Message)msg, errCode);
             return;
         }
-        
+
         L2NetworkFactory factory = getL2NetworkFactory(L2NetworkType.valueOf(vo.getType()));
         L2Network nw = factory.getL2Network(vo);
         nw.handleMessage(amsg);
@@ -187,22 +412,22 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         if (factory == null) {
             throw new CloudRuntimeException(String.format("Cannot find L2NetworkFactory for type(%s)", type));
         }
-        
+
         return factory;
     }
-    
+
     @Override
     public L2NetworkRealizationExtensionPoint getRealizationExtension(L2NetworkType l2Type, HypervisorType hvType) {
         Map<HypervisorType, L2NetworkRealizationExtensionPoint> map = realizationExts.get(l2Type);
         if (map == null) {
             throw new IllegalArgumentException(String.format("Cannot find L2NetworkRealizationExtensionPoint supporting L2NetworkType[%s]", l2Type));
         }
-        
+
         L2NetworkRealizationExtensionPoint extp = map.get(hvType);
         if (extp == null) {
             throw new IllegalArgumentException(String.format("Cannot find L2NetworkRealizationExtensionPoint for L2NetworkType[%s] supporting hypervisor[%s]", l2Type, hvType));
         }
-        
+
         return extp;
     }
 
@@ -232,7 +457,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
             }
             l2NetworkFactories.put(f.getType().toString(), f);
         }
-        
+
         for (L2NetworkRealizationExtensionPoint extp : pluginRgty.getExtensionList(L2NetworkRealizationExtensionPoint.class)) {
             Map<HypervisorType, L2NetworkRealizationExtensionPoint> map = realizationExts.get(extp.getSupportedL2NetworkType());
             if (map == null) {
