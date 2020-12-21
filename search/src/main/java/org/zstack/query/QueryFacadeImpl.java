@@ -17,10 +17,9 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.APIReply;
 import org.zstack.header.message.Message;
-import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.query.*;
 import org.zstack.header.rest.APINoSee;
@@ -43,6 +42,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.inerr;
+import static org.zstack.core.Platform.operr;
 
 public class QueryFacadeImpl extends AbstractService implements QueryFacade, GlobalApiMessageInterceptor, ReplyMessagePreSendingExtensionPoint {
     private static CLogger logger = Utils.getLogger(QueryFacadeImpl.class);
@@ -185,11 +185,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
     }
 
     private void handleLocalMessage(Message msg) {
-        if (msg instanceof ZQLQueryMsg) {
-            handle((ZQLQueryMsg) msg);
-        } else {
-            bus.dealWithUnknownMessage(msg);
-        }
+        bus.dealWithUnknownMessage(msg);
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -206,54 +202,6 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         } else {
             bus.dealWithUnknownMessage(msg);
         }
-    }
-
-    private void handle(ZQLQueryMsg msg) {
-        thdf.syncSubmit(new SyncTask<Void>() {
-            @Override
-            public Void call() {
-                ZQLQueryReply reply = new ZQLQueryReply();
-                ZQLContext.putAPISession(msg.getSessionInventory());
-
-                // use doCall to make message exception safe
-                doCall(new ReturnValueCompletion<List<ZQLQueryReturn>>(msg) {
-                    @Override
-                    public void success(List<ZQLQueryReturn> returnValue) {
-                        ZQLContext.cleanAPISession();
-                        reply.setResults(returnValue);
-                        bus.reply(msg, reply);
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        ZQLContext.cleanAPISession();
-                        reply.setError(errorCode);
-                        bus.reply(msg, reply);
-                    }
-                });
-
-                return null;
-            }
-
-            private void doCall(ReturnValueCompletion<List<ZQLQueryReturn>> completion) {
-                completion.success(ZQL.fromString(msg.getZql()).getResultList());
-            }
-
-            @Override
-            public String getName() {
-                return getSyncSignature();
-            }
-
-            @Override
-            public String getSyncSignature() {
-                return "inner-zql";
-            }
-
-            @Override
-            public int getSyncLevel() {
-                return 3;
-            }
-        });
     }
 
     private void handle(APIZQLQueryMsg msg) {
@@ -659,34 +607,24 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
     public void marshalReplyMessageBeforeSending(Message replyOrEvent, NeedReplyMessage msg) {
         if (replyOrEvent instanceof ZQLFilterReply) {
             ZQLFilterReply reply = (ZQLFilterReply) replyOrEvent;
-            List<String> resources = reply.getFilterResources();
-            SessionInventory session;
-
-            if (resources == null || resources.isEmpty()) {
+            List<String> resourceUuids = reply.getInventoryUuids();
+            if (resourceUuids == null || resourceUuids.isEmpty() || !(msg instanceof APIMessage)) {
                 return;
             }
 
-            if (msg instanceof APIMessage) {
-                session = ((APIMessage) msg).getSession();
-            } else {
-                return;
-            }
-
+            ZQLContext.putAPISession(((APIMessage) msg).getSession());
             String queryVOName = StringUtils.removeEnd(reply.getInventoryName(), "Inventory").toLowerCase();
-            ZQLQueryMsg zqlMsg = new ZQLQueryMsg();
-            zqlMsg.setSessionInventory(session);
-            zqlMsg.setZql(String.format("query %s where uuid in (%s)", queryVOName,
-                    resources.stream()
-                            .map(s -> "'" + s + "'")
-                            .collect(Collectors.joining(", "))));
-            bus.makeTargetServiceIdByResourceUuid(zqlMsg, SearchConstant.QUERY_FACADE_SERVICE_ID, session.getUuid());
-            MessageReply re = bus.call(zqlMsg);
-            if (!re.isSuccess()) {
-                throw new OperationFailureException(re.getError());
+            String zql = String.format("query %s where uuid in (%s)", queryVOName,
+                    resourceUuids.stream().map(s -> "'" + s + "'")
+                    .collect(Collectors.joining(", ")));
+
+            try {
+                reply.setFilteredInventories(ZQL.fromString(zql).getSingleResult().inventories);
+            } catch (Exception e) {
+                ((APIReply) reply).setError(operr(e.getMessage()));
             }
 
-            ZQLQueryReply ar = re.castReply();
-            reply.setFilteredResult(ar.getResults().get(0).inventories);
+            ZQLContext.cleanAPISession();
         }
     }
 }

@@ -3,9 +3,9 @@ package org.zstack.query;
 import java.util.List;
 
 public interface ZQLFilterReply {
-    List<String> getFilterResources();
+    List<String> getInventoryUuids();
 
-    void setFilteredResult(List result);
+    void setFilteredInventories(List inventories);
 
     String getInventoryName();
 }
