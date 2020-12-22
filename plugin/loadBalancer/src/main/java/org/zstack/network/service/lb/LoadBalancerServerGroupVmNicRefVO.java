@@ -25,7 +25,7 @@ public class LoadBalancerServerGroupVmNicRefVO {
 
     @Column
     @org.zstack.header.vo.ForeignKey(parentEntityClass = LoadBalancerServerGroupVO.class, parentKey = "uuid", onDeleteAction = org.zstack.header.vo.ForeignKey.ReferenceOption.CASCADE)
-    private String loadBalancerServerGroupUuid;
+    private String serverGroupUuid;
 
     @Column
     @ForeignKey(parentEntityClass = VmNicVO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
@@ -84,12 +84,12 @@ public class LoadBalancerServerGroupVmNicRefVO {
         this.lastOpDate = lastOpDate;
     }
 
-    public String getLoadBalancerServerGroupUuid() {
-        return loadBalancerServerGroupUuid;
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
     }
 
-    public void setLoadBalancerServerGroupUuid(String loadBalancerServerGroupUuid) {
-        this.loadBalancerServerGroupUuid = loadBalancerServerGroupUuid;
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
     }
 
     public Long getWeight() {

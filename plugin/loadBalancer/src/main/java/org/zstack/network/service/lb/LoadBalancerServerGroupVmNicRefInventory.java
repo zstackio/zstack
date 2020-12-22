@@ -19,7 +19,7 @@ public class LoadBalancerServerGroupVmNicRefInventory {
     public static LoadBalancerServerGroupVmNicRefInventory valueOf(LoadBalancerServerGroupVmNicRefVO vo) {
         LoadBalancerServerGroupVmNicRefInventory inv = new LoadBalancerServerGroupVmNicRefInventory();
         inv.setId(vo.getId());
-        inv.setListenerUuid(vo.getLoadBalancerServerGroupUuid());
+        inv.setListenerUuid(vo.getServerGroupUuid());
         inv.setVmNicUuid(vo.getVmNicUuid());
         inv.setWeight(vo.getWeight());
         inv.setCreateDate(vo.getCreateDate());
@@ -51,11 +51,7 @@ public class LoadBalancerServerGroupVmNicRefInventory {
     public void setId(long id) {
         this.id = id;
     }
-
-    public String getserverGroupUuid() {
-        return serverGroupUuid;
-    }
-
+    
     public void setListenerUuid(String listenerUuid) {
         this.serverGroupUuid = listenerUuid;
     }

@@ -26,7 +26,7 @@ public class LoadBalancerListenerServerGroupRefVO {
 
         @Column
         @ForeignKey(parentEntityClass = LoadBalancerServerGroupVO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
-        private String loadBalancerServerGroupUuid;
+        private String serverGroupUuid;
 
         @Column
         private Timestamp createDate;
@@ -50,12 +50,12 @@ public class LoadBalancerListenerServerGroupRefVO {
                 this.listenerUuid = listenerUuid;
         }
 
-        public String getLoadBalancerServerGroupUuid() {
-                return loadBalancerServerGroupUuid;
+        public String getServerGroupUuid() {
+                return serverGroupUuid;
         }
 
-        public void setLoadBalancerServerGroupUuid(String loadBalancerServerGroupUuid) {
-                this.loadBalancerServerGroupUuid = loadBalancerServerGroupUuid;
+        public void setServerGroupUuid(String serverGroupUuid) {
+                this.serverGroupUuid = serverGroupUuid;
         }
 
         public Timestamp getCreateDate() {

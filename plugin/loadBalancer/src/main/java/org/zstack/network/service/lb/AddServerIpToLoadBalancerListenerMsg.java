@@ -11,7 +11,7 @@ public class AddServerIpToLoadBalancerListenerMsg extends NeedReplyMessage imple
 
     private String LoadBalancerlistenerUuid;
 
-    private String loadBalancerServerGroupUuid;
+    private String serverGroupUuid;
 
     @Override
     public String getLoadBalancerUuid() {
@@ -37,12 +37,12 @@ public class AddServerIpToLoadBalancerListenerMsg extends NeedReplyMessage imple
         LoadBalancerlistenerUuid = loadBalancerlistenerUuid;
     }
 
-    public String getLoadBalancerServerGroupUuid() {
-        return loadBalancerServerGroupUuid;
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
     }
 
-    public void setLoadBalancerServerGroupUuid(String loadBalancerServerGroupUuid) {
-        this.loadBalancerServerGroupUuid = loadBalancerServerGroupUuid;
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
     }
 
 }

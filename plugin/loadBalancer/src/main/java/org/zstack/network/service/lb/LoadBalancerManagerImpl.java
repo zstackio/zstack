@@ -488,7 +488,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                     return ;
                 }
                 List<String> nicUuids = Q.New(LoadBalancerServerGroupVmNicRefVO.class).select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid)
-                        .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, defaultServerGroupUuid).listValues();
+                        .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, defaultServerGroupUuid).listValues();
                 if (nicUuids.isEmpty()) {
                     return;
                 }
@@ -829,8 +829,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
                 " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
                 " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid" +
-                " and listener.uuid = lgref.listenerUuid and lgref.loadBalancerServerGroupUuid = g.uuid " +
-                " and g.uuid = nicRef.loadBalancerServerGroupUuid and nicRef.vmNicUuid = nic.uuid" +
+                " and listener.uuid = lgref.listenerUuid and lgref.serverGroupUuid = g.uuid " +
+                " and g.uuid = nicRef.serverGroupUuid and nicRef.vmNicUuid = nic.uuid" +
                 " and nicRef.status != 'Pending'")
                         .param("vipUuid", vipUuid).list();
         if (l3Uuids != null && !l3Uuids.isEmpty()) {
@@ -840,8 +840,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
                 " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
                 " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid" +
-                " and listener.uuid = lgref.listenerUuid and lgref.loadBalancerServerGroupUuid = g.uuid " +
-                " and g.uuid = nicRef.loadBalancerServerGroupUuid and nicRef.vmNicUuid = nic.uuid" +
+                " and listener.uuid = lgref.listenerUuid and lgref.serverGroupUuid = g.uuid " +
+                " and g.uuid = nicRef.serverGroupUuid and nicRef.vmNicUuid = nic.uuid" +
                 " and nicRef.status != 'Pending'")
                 .param("vipUuid", vipUuid).list();
 
@@ -855,8 +855,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
                 " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
                 " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid" +
-                " and listener.uuid = lgref.listenerUuid and lgref.loadBalancerServerGroupUuid = g.uuid " +
-                " and g.uuid = nicRef.loadBalancerServerGroupUuid and nicRef.vmNicUuid = nic.uuid" +
+                " and listener.uuid = lgref.listenerUuid and lgref.serverGroupUuid = g.uuid " +
+                " and g.uuid = nicRef.serverGroupUuid and nicRef.vmNicUuid = nic.uuid" +
                 " and nicRef.status != 'Pending' and nic.l3NetworkUuid = :l3uuid")
                 .param("vipUuid", vipUuid).param("l3uuid", peerL3Uuid).list();
         if (l3Uuids != null && !l3Uuids.isEmpty()) {
@@ -866,8 +866,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 " from LoadBalancerVO lb, LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
                 " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
                 " where lb.vipUuid = :vipUuid and lb.uuid = listener.loadBalancerUuid" +
-                " and listener.uuid = lgref.listenerUuid and lgref.loadBalancerServerGroupUuid = g.uuid " +
-                " and g.uuid = nicRef.loadBalancerServerGroupUuid and nicRef.vmNicUuid = nic.uuid" +
+                " and listener.uuid = lgref.listenerUuid and lgref.serverGroupUuid = g.uuid " +
+                " and g.uuid = nicRef.serverGroupUuid and nicRef.vmNicUuid = nic.uuid" +
                 " and nicRef.status != 'Pending' and nic.l3NetworkUuid = :l3uuid")
                 .param("vipUuid", vipUuid).param("l3uuid", peerL3Uuid).list();
 
@@ -885,7 +885,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         for (LoadBalancerListenerVO l : vo.getListeners()) {
             List<LoadBalancerServerGroupInventory> groupInventories = new ArrayList<>();
             for (LoadBalancerListenerServerGroupRefVO groupRef : l.getServerGroupRefs()) {
-                LoadBalancerServerGroupVO groupVO = dbf.findByUuid(groupRef.getLoadBalancerServerGroupUuid(), LoadBalancerServerGroupVO.class);
+                LoadBalancerServerGroupVO groupVO = dbf.findByUuid(groupRef.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
                 for (LoadBalancerServerGroupVmNicRefVO nicRef : groupVO.getLoadBalancerServerGroupVmNicRefs()) {
                     if (nicRef.getStatus() == LoadBalancerVmNicStatus.Active || nicRef.getStatus() == LoadBalancerVmNicStatus.Pending) {
                         activeNicUuids.add(nicRef.getVmNicUuid());
@@ -946,8 +946,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         List<String> listenerUuids = SQL.New("select distinct listener.uuid " +
                 " from LoadBalancerServerGroupVO g, LoadBalancerListenerVO listener, VmNicVO nic, " +
                 " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef" +
-                " where listener.uuid = lgref.listenerUuid and lgref.loadBalancerServerGroupUuid = g.uuid " +
-                " and g.uuid = nicRef.loadBalancerServerGroupUuid and nicRef.vmNicUuid in (:vmNicUuids)")
+                " where listener.uuid = lgref.listenerUuid and lgref.serverGroupUuid = g.uuid " +
+                " and g.uuid = nicRef.serverGroupUuid and nicRef.vmNicUuid in (:vmNicUuids)")
                 .param("vmNicUuids", vmNicUuids).list();
         return listenerUuids;
     }
@@ -1004,7 +1004,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             Map<String, Long> weight = new LoadBalancerWeightOperator().getWeight(vo.getUuid());
             for(LoadBalancerListenerVmNicRefVO ref : vo.getVmNicRefs()) {
                 LoadBalancerServerGroupVmNicRefVO vmNicRef = new LoadBalancerServerGroupVmNicRefVO();
-                vmNicRef.setLoadBalancerServerGroupUuid(groupVO.getUuid());
+                vmNicRef.setServerGroupUuid(groupVO.getUuid());
                 vmNicRef.setVmNicUuid(ref.getVmNicUuid());
                 if (weight.get(ref.getVmNicUuid()) != null) {
                     vmNicRef.setWeight(weight.get(ref.getVmNicUuid()));
@@ -1018,7 +1018,7 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             /* attach server group to listener */
             LoadBalancerListenerServerGroupRefVO ref = new LoadBalancerListenerServerGroupRefVO();
             ref.setListenerUuid(vo.getUuid());
-            ref.setLoadBalancerServerGroupUuid(groupVO.getUuid());
+            ref.setServerGroupUuid(groupVO.getUuid());
             dbf.persist(ref);
 
         }

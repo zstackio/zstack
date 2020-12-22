@@ -65,7 +65,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
     private List<Tuple> getLbTuple(VmInstanceSpec servedVm) {
         String sql = "select grp.uuid, grp.loadBalancerUuid, ref.vmNicUuid, nic.l3NetworkUuid from " +
                 "LoadBalancerServerGroupVmNicRefVO ref, LoadBalancerServerGroupVO grp, VmNicVO nic" +
-                " where ref.loadBalancerServerGroupUuid = grp.uuid and ref.vmNicUuid = nic.uuid and nic.uuid in (:nicUuids)";
+                " where ref.serverGroupUuid = grp.uuid and ref.vmNicUuid = nic.uuid and nic.uuid in (:nicUuids)";
         TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
         q.setParameter("nicUuids", CollectionUtils.transformToList(servedVm.getDestNics(), new Function<String, VmNicInventory>() {
             @Override
@@ -312,7 +312,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
             List<String> nicUuids = new ArrayList<>();
             List<String> serverIps = new ArrayList<>();
             for (LoadBalancerListenerServerGroupRefVO ref : listenerVO.getServerGroupRefs()) {
-                LoadBalancerServerGroupVO groupVO = dbf.findByUuid(ref.getLoadBalancerServerGroupUuid(), LoadBalancerServerGroupVO.class);
+                LoadBalancerServerGroupVO groupVO = dbf.findByUuid(ref.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
                 nicUuids.addAll(groupVO.getLoadBalancerServerGroupVmNicRefs().stream()
                         .map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList()));
                 serverIps.addAll(groupVO.getLoadBalancerServerGroupServerIps().stream()

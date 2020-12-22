@@ -18,16 +18,16 @@ import org.zstack.header.rest.RestRequest;
 )
 public class APIGetCandidateVmNicsForLoadBalancerServerGroupMsg extends APISyncCallMessage implements LoadBalancerMessage {
     @APIParam(resourceType = LoadBalancerServerGroupVO.class, required = false)
-    private String servergroupUuid;
+    private String serverGroupUuid;
     @APIParam(resourceType = LoadBalancerVO.class, required = false)
     private String loadBalancerUuid;
 
-    public String getServergroupUuid() {
-        return servergroupUuid;
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
     }
 
-    public void setServergroupUuid(String servergroupUuid) {
-        this.servergroupUuid = servergroupUuid;
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
     }
 
     public String getLoadBalancerUuid() {
@@ -41,7 +41,7 @@ public class APIGetCandidateVmNicsForLoadBalancerServerGroupMsg extends APISyncC
     public static APIGetCandidateVmNicsForLoadBalancerServerGroupMsg __example__() {
         APIGetCandidateVmNicsForLoadBalancerServerGroupMsg msg = new APIGetCandidateVmNicsForLoadBalancerServerGroupMsg();
 
-        msg.setServergroupUuid(uuid());
+        msg.setServerGroupUuid(uuid());
         msg.setLoadBalancerUuid(uuid());
 
         return msg;

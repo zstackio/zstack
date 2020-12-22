@@ -307,7 +307,7 @@ public class LoadBalancerBase {
                     @Override
                     public void success() {
                         SQL.New(LoadBalancerServerGroupVmNicRefVO.class)
-                                .in(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuids())
+                                .in(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, msg.getServerGroupUuids())
                                 .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, msg.getVmNicUuids()).delete();
                         bus.reply(msg, reply);
                         chain.next();
@@ -606,8 +606,8 @@ public class LoadBalancerBase {
         APIGetCandidateVmNicsForLoadBalancerServerGroupReply reply = new APIGetCandidateVmNicsForLoadBalancerServerGroupReply();
         LoadBalancerFactory f = lbMgr.getLoadBalancerFactory(self.getType().toString());
         LoadBalancerServerGroupVO groupVO = null;
-        if (msg.getServergroupUuid() != null) {
-            groupVO = dbf.findByUuid(msg.getServergroupUuid(), LoadBalancerServerGroupVO.class);
+        if (msg.getServerGroupUuid() != null) {
+            groupVO = dbf.findByUuid(msg.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
         }
         List<VmNicVO> nicVOS = f.getAttachableVmNicsForServerGroup(self, groupVO);
         reply.setInventories(VmNicInventory.valueOf(nicVOS));
@@ -933,10 +933,10 @@ public class LoadBalancerBase {
                                         .select(LoadBalancerServerGroupVO_.uuid).listValues();
                                 if (serverGroupUuids != null && !serverGroupUuids.isEmpty()) {
                                     sql(LoadBalancerServerGroupVmNicRefVO.class)
-                                            .in(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, serverGroupUuids)
+                                            .in(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, serverGroupUuids)
                                             .delete();
                                     sql(LoadBalancerServerGroupServerIpVO.class)
-                                            .in(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid, serverGroupUuids)
+                                            .in(LoadBalancerServerGroupServerIpVO_.serverGroupUuid, serverGroupUuids)
                                             .delete();
                                     sql(LoadBalancerServerGroupVO.class)
                                             .in(LoadBalancerServerGroupVO_.uuid, serverGroupUuids)
@@ -1115,7 +1115,7 @@ public class LoadBalancerBase {
             @Override
             public void success() {
                 SQL.New(LoadBalancerServerGroupVmNicRefVO.class)
-                        .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, groupVO.getUuid())
+                        .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, groupVO.getUuid())
                         .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, msg.getVmNicUuids()).delete();
                 SQL.New(LoadBalancerListenerVmNicRefVO.class)
                         .eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getListenerUuid())
@@ -1188,7 +1188,7 @@ public class LoadBalancerBase {
 
                     LoadBalancerListenerServerGroupRefVO ref = new LoadBalancerListenerServerGroupRefVO();
                     ref.setListenerUuid(msg.getListenerUuid());
-                    ref.setLoadBalancerServerGroupUuid(groupVO.getUuid());
+                    ref.setServerGroupUuid(groupVO.getUuid());
                     dbf.persist(ref);
                 } else {
                     groupVO = dbf.findByUuid(listenerVO.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
@@ -1199,7 +1199,7 @@ public class LoadBalancerBase {
 
                 for (String nicUuid : msg.getVmNicUuids()) {
                     LoadBalancerServerGroupVmNicRefVO ref = new LoadBalancerServerGroupVmNicRefVO();
-                    ref.setLoadBalancerServerGroupUuid(groupVO.getUuid());
+                    ref.setServerGroupUuid(groupVO.getUuid());
                     ref.setVmNicUuid(nicUuid);
                     ref.setStatus(LoadBalancerVmNicStatus.Active);
                     if (weight.get(nicUuid) != null) {
@@ -1235,7 +1235,7 @@ public class LoadBalancerBase {
                     public void fail(ErrorCode errorCode) {
                         reply.setError(errorCode);
                         SQL.New(LoadBalancerServerGroupVmNicRefVO.class)
-                                .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, finalVO.getUuid())
+                                .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, finalVO.getUuid())
                                 .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, msg.getVmNicUuids()).delete();
                         bus.reply(msg, reply);
                         chain.next();
@@ -1349,7 +1349,7 @@ public class LoadBalancerBase {
         }
 
         for (LoadBalancerListenerServerGroupRefVO ref : listenerVO.getServerGroupRefs()) {
-            LoadBalancerServerGroupVO groupVO = dbf.findByUuid(ref.getLoadBalancerServerGroupUuid(), LoadBalancerServerGroupVO.class);
+            LoadBalancerServerGroupVO groupVO = dbf.findByUuid(ref.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
             for (LoadBalancerServerGroupVmNicRefVO nicRef : groupVO.getLoadBalancerServerGroupVmNicRefs()) {
                 if (nicRef.getStatus() == LoadBalancerVmNicStatus.Active || nicRef.getStatus() == LoadBalancerVmNicStatus.Pending) {
                     return true;
@@ -1648,7 +1648,7 @@ public class LoadBalancerBase {
 
     private boolean isListenerNeedRefresh(LoadBalancerListenerVO lblVo) {
         for (LoadBalancerListenerServerGroupRefVO ref : lblVo.getServerGroupRefs()) {
-            LoadBalancerServerGroupVO groupVO = dbf.findByUuid(ref.getLoadBalancerServerGroupUuid(), LoadBalancerServerGroupVO.class);
+            LoadBalancerServerGroupVO groupVO = dbf.findByUuid(ref.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
             if (groupVO.getLoadBalancerServerGroupVmNicRefs().stream().anyMatch(r -> r.getStatus() == LoadBalancerVmNicStatus.Active)) {
                 return true;
             }
@@ -2035,7 +2035,7 @@ public class LoadBalancerBase {
 
                 LoadBalancerListenerServerGroupRefVO serverGroupRefVO = new LoadBalancerListenerServerGroupRefVO();
                 serverGroupRefVO.setListenerUuid(msg.getlistenerUuid());
-                serverGroupRefVO.setLoadBalancerServerGroupUuid(msg.getServerGroupUuid());
+                serverGroupRefVO.setServerGroupUuid(msg.getServerGroupUuid());
                 dbf.persist(serverGroupRefVO);
 
                 LoadBalancerServerGroupVO groupVO = dbf.findByUuid(msg.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
@@ -2067,7 +2067,7 @@ public class LoadBalancerBase {
                     public void fail(ErrorCode errorCode) {
                         SQL.New(LoadBalancerListenerServerGroupRefVO.class)
                                 .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getlistenerUuid())
-                                .eq(LoadBalancerListenerServerGroupRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                                .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid, msg.getServerGroupUuid())
                                 .delete();
                         event.setError(errorCode);
                         bus.publish(event);
@@ -2134,7 +2134,7 @@ public class LoadBalancerBase {
                                 String vmNicUuid = vmNic.get("uuid");
                                 vmNicUuids.add(vmNicUuid);
                                 LoadBalancerServerGroupVmNicRefVO refVO = new LoadBalancerServerGroupVmNicRefVO();
-                                refVO.setLoadBalancerServerGroupUuid(msg.getServerGroupUuid());
+                                refVO.setServerGroupUuid(msg.getServerGroupUuid());
                                 refVO.setVmNicUuid(vmNicUuid);
                                 if (vmNic.containsKey("weight")) {
                                     Long vmNicWeight = Long.valueOf(vmNic.get("weight"));
@@ -2154,7 +2154,7 @@ public class LoadBalancerBase {
                                 serverIps.add(ipAddr);
                                 LoadBalancerServerGroupServerIpVO serverIpVO = new LoadBalancerServerGroupServerIpVO();
                                 serverIpVO.setIpAddress(ipAddr);
-                                serverIpVO.setLoadBalancerServerGroupUuid(msg.getServerGroupUuid());
+                                serverIpVO.setServerGroupUuid(msg.getServerGroupUuid());
                                 if(server.containsKey("weight")){
                                     Long ipWeight = Long.valueOf(server.get("weight"));
                                     serverIpVO.setWeight(ipWeight);
@@ -2174,13 +2174,13 @@ public class LoadBalancerBase {
                     public void rollback(FlowRollback trigger, Map data) {
                         if ( !vmNicUuids.isEmpty() ) {
                             SQL.New(LoadBalancerServerGroupVmNicRefVO.class)
-                                    .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                                    .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, msg.getServerGroupUuid())
                                     .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,vmNicUuids).delete();
                         }
 
                         if ( !serverIps.isEmpty()) {
                             SQL.New(LoadBalancerServerGroupServerIpVO.class)
-                                    .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                                    .eq(LoadBalancerServerGroupServerIpVO_.serverGroupUuid, msg.getServerGroupUuid())
                                     .in(LoadBalancerServerGroupServerIpVO_.ipAddress,serverIps).delete();
                         }
 
@@ -2319,7 +2319,7 @@ public class LoadBalancerBase {
                     @Override
                     public void success() {
                         SQL.New(LoadBalancerListenerServerGroupRefVO.class)
-                                .eq(LoadBalancerListenerServerGroupRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                                .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid, msg.getServerGroupUuid())
                                 .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid()).delete();
                         event.setInventory(LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class)));
                         bus.publish(event);
@@ -2358,13 +2358,13 @@ public class LoadBalancerBase {
                 if (listerUuids.isEmpty()) {
                     if (!msg.getVmNicUuids().isEmpty()) {
                         SQL.New(LoadBalancerServerGroupVmNicRefVO.class)
-                                .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                                .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, msg.getServerGroupUuid())
                                 .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, msg.getVmNicUuids()).delete();
                     }
 
                     if (!msg.getServerIps().isEmpty()) {
                         SQL.New(LoadBalancerServerGroupServerIpVO.class)
-                                .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                                .eq(LoadBalancerServerGroupServerIpVO_.serverGroupUuid, msg.getServerGroupUuid())
                                 .in(LoadBalancerServerGroupServerIpVO_.ipAddress, msg.getServerIps()).delete();
                     }
                     event.setInventory(LoadBalancerServerGroupInventory.valueOf(dbf.findByUuid(msg.getServerGroupUuid(), LoadBalancerServerGroupVO.class)));
@@ -2378,13 +2378,13 @@ public class LoadBalancerBase {
                     public void success() {
                         if (msg.getVmNicUuids() != null && !msg.getVmNicUuids().isEmpty()) {
                             SQL.New(LoadBalancerServerGroupVmNicRefVO.class)
-                                    .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                                    .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, msg.getServerGroupUuid())
                                     .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, msg.getVmNicUuids()).delete();
                         }
 
                         if (msg.getServerIps() != null && !msg.getServerIps().isEmpty()) {
                             SQL.New(LoadBalancerServerGroupServerIpVO.class)
-                                    .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                                    .eq(LoadBalancerServerGroupServerIpVO_.serverGroupUuid, msg.getServerGroupUuid())
                                     .in(LoadBalancerServerGroupServerIpVO_.ipAddress, msg.getServerIps()).delete();
                         }
                         event.setInventory(LoadBalancerServerGroupInventory.valueOf(dbf.findByUuid(msg.getServerGroupUuid(), LoadBalancerServerGroupVO.class)));
@@ -2475,7 +2475,7 @@ public class LoadBalancerBase {
                     for (Map<String, String> vmNic : vmNics) {
                         String vmNicUuid = vmNic.get("uuid");
                         LoadBalancerServerGroupVmNicRefVO vmNicRefVO = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
-                                .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                                .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, msg.getServerGroupUuid())
                                 .eq(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, vmNicUuid)
                                 .find();
                         if (vmNic.containsKey("weight")) {
@@ -2491,7 +2491,7 @@ public class LoadBalancerBase {
                     for (Map<String, String> server : servers) {
                         String ipAddress = server.get("ipAddress");
                         LoadBalancerServerGroupServerIpVO serverIpVO = Q.New(LoadBalancerServerGroupServerIpVO.class)
-                                .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                                .eq(LoadBalancerServerGroupServerIpVO_.serverGroupUuid,msg.getServerGroupUuid())
                                 .eq(LoadBalancerServerGroupServerIpVO_.ipAddress, ipAddress)
                                 .find();
                         if (server.containsKey("weight")) {
