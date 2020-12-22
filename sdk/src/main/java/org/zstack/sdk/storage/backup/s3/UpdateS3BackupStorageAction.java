@@ -1,4 +1,4 @@
-package org.zstack.sdk;
+package org.zstack.sdk.storage.backup.s3;
 
 import java.util.HashMap;
 import java.util.Map;
