@@ -1,4 +1,4 @@
-package org.zstack.sdk;
+package org.zstack.sdk.storage.backup.s3;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +12,7 @@ public class QueryS3BackupStorageAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryS3BackupStorageResult value;
+        public org.zstack.sdk.storage.backup.s3.QueryS3BackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -34,8 +34,8 @@ public class QueryS3BackupStorageAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryS3BackupStorageResult value = res.getResult(org.zstack.sdk.QueryS3BackupStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryS3BackupStorageResult() : value; 
+        org.zstack.sdk.storage.backup.s3.QueryS3BackupStorageResult value = res.getResult(org.zstack.sdk.storage.backup.s3.QueryS3BackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.storage.backup.s3.QueryS3BackupStorageResult() : value; 
 
         return ret;
     }

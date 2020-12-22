@@ -424,7 +424,7 @@ public class SourceClassMap {
 			put("org.zstack.storage.backup.imagestore.ImageStoreBackupStorageInventory", "org.zstack.sdk.ImageStoreBackupStorageInventory");
 			put("org.zstack.storage.backup.imagestore.ImageStoreGcResult", "org.zstack.sdk.ImageStoreGcResult");
 			put("org.zstack.storage.backup.imagestore.ImageStoreImageStruct", "org.zstack.sdk.ImageStoreImageStruct");
-			put("org.zstack.storage.backup.s3.header.S3BackupStorageInventory", "org.zstack.sdk.S3BackupStorageInventory");
+			put("org.zstack.storage.backup.s3.header.S3BackupStorageInventory", "org.zstack.sdk.storage.backup.s3.S3BackupStorageInventory");
 			put("org.zstack.storage.backup.sftp.SftpBackupStorageInventory", "org.zstack.sdk.SftpBackupStorageInventory");
 			put("org.zstack.storage.ceph.backup.CephBackupStorageInventory", "org.zstack.sdk.CephBackupStorageInventory");
 			put("org.zstack.storage.ceph.backup.CephBackupStorageMonInventory", "org.zstack.sdk.CephBackupStorageMonInventory");
@@ -853,7 +853,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.RouterAreaInventory", "org.zstack.header.protocol.RouterAreaInventory");
 			put("org.zstack.sdk.RunningState", "org.zstack.storage.device.localRaid.RunningState");
 			put("org.zstack.sdk.RunningTaskInfo", "org.zstack.header.core.progress.RunningTaskInfo");
-			put("org.zstack.sdk.S3BackupStorageInventory", "org.zstack.storage.backup.s3.header.S3BackupStorageInventory");
 			put("org.zstack.sdk.SchedulerJobGroupInventory", "org.zstack.header.scheduler.SchedulerJobGroupInventory");
 			put("org.zstack.sdk.SchedulerJobGroupJobRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupJobRefInventory");
 			put("org.zstack.sdk.SchedulerJobGroupSchedulerTriggerRefInventory", "org.zstack.header.scheduler.SchedulerJobGroupSchedulerTriggerRefInventory");
@@ -1045,6 +1044,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.sns.platform.email.SNSEmailPlatformInventory", "org.zstack.sns.platform.email.SNSEmailPlatformInventory");
 			put("org.zstack.sdk.sns.platform.http.SNSHttpEndpointInventory", "org.zstack.sns.platform.http.SNSHttpEndpointInventory");
 			put("org.zstack.sdk.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory", "org.zstack.sns.platform.microsoftteams.SNSMicrosoftTeamsEndpointInventory");
+			put("org.zstack.sdk.storage.backup.s3.S3BackupStorageInventory", "org.zstack.storage.backup.s3.header.S3BackupStorageInventory");
 			put("org.zstack.sdk.ticket.entity.ArchiveTicketInventory", "org.zstack.ticket.entity.ArchiveTicketInventory");
 			put("org.zstack.sdk.ticket.entity.ArchiveTicketStatusHistoryInventory", "org.zstack.ticket.entity.ArchiveTicketStatusHistoryInventory");
 			put("org.zstack.sdk.ticket.entity.TicketFlowCollectionInventory", "org.zstack.ticket.entity.TicketFlowCollectionInventory");

@@ -1,4 +1,4 @@
-package org.zstack.sdk;
+package org.zstack.sdk.storage.backup.s3;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +12,7 @@ public class AddRemoteS3BackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddS3BackupStorageResult value;
+        public org.zstack.sdk.storage.backup.s3.AddS3BackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -93,8 +93,8 @@ public class AddRemoteS3BackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddS3BackupStorageResult value = res.getResult(org.zstack.sdk.AddS3BackupStorageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddS3BackupStorageResult() : value; 
+        org.zstack.sdk.storage.backup.s3.AddS3BackupStorageResult value = res.getResult(org.zstack.sdk.storage.backup.s3.AddS3BackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.sdk.storage.backup.s3.AddS3BackupStorageResult() : value; 
 
         return ret;
     }
