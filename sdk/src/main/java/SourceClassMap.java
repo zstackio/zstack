@@ -207,6 +207,7 @@ public class SourceClassMap {
 			put("org.zstack.header.longjob.LongJobInventory", "org.zstack.sdk.LongJobInventory");
 			put("org.zstack.header.longjob.LongJobState", "org.zstack.sdk.LongJobState");
 			put("org.zstack.header.managementnode.ManagementNodeInventory", "org.zstack.sdk.ManagementNodeInventory");
+			put("org.zstack.header.network.l2.L2NetworkData", "org.zstack.sdk.L2NetworkData");
 			put("org.zstack.header.network.l2.L2NetworkInventory", "org.zstack.sdk.L2NetworkInventory");
 			put("org.zstack.header.network.l2.L2VlanNetworkInventory", "org.zstack.sdk.L2VlanNetworkInventory");
 			put("org.zstack.header.network.l3.AddressPoolInventory", "org.zstack.sdk.AddressPoolInventory");
@@ -744,6 +745,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.JsonLabelInventory", "org.zstack.core.jsonlabel.JsonLabelInventory");
 			put("org.zstack.sdk.KVMHostInventory", "org.zstack.kvm.KVMHostInventory");
 			put("org.zstack.sdk.KVMIsoTO", "org.zstack.kvm.KVMIsoTO");
+			put("org.zstack.sdk.L2NetworkData", "org.zstack.header.network.l2.L2NetworkData");
 			put("org.zstack.sdk.L2NetworkInventory", "org.zstack.header.network.l2.L2NetworkInventory");
 			put("org.zstack.sdk.L2VlanNetworkInventory", "org.zstack.header.network.l2.L2VlanNetworkInventory");
 			put("org.zstack.sdk.L2VxlanNetworkInventory", "org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory");
