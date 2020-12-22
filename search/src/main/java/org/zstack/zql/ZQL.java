@@ -206,6 +206,15 @@ public class ZQL {
         }
     }
 
+    public ZQLQueryReturn getSingleResultWithSession(SessionInventory session) {
+        try {
+            ZQLContext.putAPISession(session);
+            return getSingleResult();
+        } finally {
+            ZQLContext.cleanAPISession();
+        }
+    }
+
     public ZQLQueryReturn getSingleResult() {
         List<ZQLQueryReturn> rs = getResultList();
         return rs.get(0);

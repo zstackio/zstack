@@ -612,19 +612,12 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
                 return;
             }
 
-            ZQLContext.putAPISession(((APIMessage) msg).getSession());
             String queryVOName = StringUtils.removeEnd(reply.getInventoryName(), "Inventory").toLowerCase();
             String zql = String.format("query %s where uuid in (%s)", queryVOName,
                     resourceUuids.stream().map(s -> "'" + s + "'")
-                    .collect(Collectors.joining(", ")));
+                            .collect(Collectors.joining(", ")));
 
-            try {
-                reply.setFilteredInventories(ZQL.fromString(zql).getSingleResult().inventories);
-            } catch (Exception e) {
-                ((APIReply) reply).setError(operr(e.getMessage()));
-            }
-
-            ZQLContext.cleanAPISession();
+            reply.setFilteredInventories(ZQL.fromString(zql).getSingleResultWithSession(((APIMessage) msg).getSession()).inventories);
         }
     }
 }

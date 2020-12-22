@@ -223,7 +223,7 @@ public class VolumeSnapshotTree {
             return tree;
         }
 
-        private SnapshotLeaf walkUp(SnapshotLeaf leaf, Function<Boolean, VolumeSnapshotInventory> func) {
+        private static SnapshotLeaf walkUp(SnapshotLeaf leaf, Function<Boolean, VolumeSnapshotInventory> func) {
             if (func.call(leaf.inventory)) {
                 return leaf;
             }
@@ -251,7 +251,7 @@ public class VolumeSnapshotTree {
             return walkDown(this, func);
         }
 
-        private SnapshotLeaf walkDown(SnapshotLeaf leaf, Function<Boolean, VolumeSnapshotInventory> func) {
+        private static SnapshotLeaf walkDown(SnapshotLeaf leaf, Function<Boolean, VolumeSnapshotInventory> func) {
             if (func.call(leaf.inventory)) {
                 return leaf;
             }
@@ -303,18 +303,36 @@ public class VolumeSnapshotTree {
             return ancestors;
         }
 
+        public SnapshotLeafInventory toLeafInventory(Set<String> filterUuids) {
+            return doToLeafInventory(filterUuids);
+        }
+
         public SnapshotLeafInventory toLeafInventory() {
+            return doToLeafInventory(null);
+        }
+
+        private SnapshotLeafInventory doToLeafInventory(Set<String> filterUuids) {
             SnapshotLeafInventory leafInventory = new SnapshotLeafInventory();
-            leafInventory.setInventory(getInventory());
+            leafInventory.setInventory(getInventory(filterUuids));
             if (parent != null) {
                 leafInventory.setParentUuid(parent.getUuid());
             }
 
             for (SnapshotLeaf leaf : children) {
-                leafInventory.getChildren().add(leaf.toLeafInventory());
+                leafInventory.getChildren().add(leaf.doToLeafInventory(filterUuids));
             }
 
             return leafInventory;
+        }
+
+        private VolumeSnapshotInventory getInventory(Set<String> filterUuids) {
+            if (filterUuids == null || filterUuids.contains(inventory.getUuid())) {
+                return inventory;
+            } else {
+                VolumeSnapshotInventory inv = new VolumeSnapshotInventory();
+                inv.setUuid(inventory.getUuid());
+                return inv;
+            }
         }
     }
 
