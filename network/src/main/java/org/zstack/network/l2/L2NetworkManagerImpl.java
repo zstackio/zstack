@@ -115,9 +115,9 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
 
         List<ClusterVO> clusterVOS;
         if (msg.getClusterTypes() == null || msg.getClusterTypes().isEmpty()) {
-            clusterVOS = Q.New(ClusterVO.class).list();
+            clusterVOS = Q.New(ClusterVO.class).eq(ClusterVO_.zoneUuid, l2NetworkVO.getZoneUuid()).list();
         } else {
-            clusterVOS = Q.New(ClusterVO.class).in(ClusterVO_.type, msg.getClusterTypes()).list();
+            clusterVOS = Q.New(ClusterVO.class).eq(ClusterVO_.zoneUuid, l2NetworkVO.getZoneUuid()).in(ClusterVO_.type, msg.getClusterTypes()).list();
         }
         if (clusterVOS.isEmpty()) {
             return new ArrayList<>();
@@ -164,7 +164,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
                     .param("clusterUuid", clusterVO.getUuid())
                     .list();
             return attachedL2VOS.stream().noneMatch(l2 -> (l2.getPhysicalInterface().equals(l2VlanNetworkVO.getPhysicalInterface()) &&
-                    l2VlanNetworkVO.getVlan() == l2VlanNetworkVO.getVlan()));
+                    l2.getVlan() == l2VlanNetworkVO.getVlan()));
         }
         return false;
     }
@@ -182,7 +182,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
             return new ArrayList<>();
         }
 
-        List<L2NetworkVO> l2s = Q.New(L2NetworkVO.class).list();
+        List<L2NetworkVO> l2s = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.zoneUuid, clusterVO.getZoneUuid()).list();
         if (l2s.isEmpty()) {
             return new ArrayList<>();
         }
@@ -198,6 +198,29 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
                 .collect(Collectors.toList())
                 .contains(l2.getUuid()))
                 .collect(Collectors.toList());
+
+        //filter l2 attached to different type cluster
+        List<L2NetworkVO> attachedDifferentTypeClusterL2VOs = null;
+        if (!clusterVO.getType().equals("vmware")) {
+            attachedDifferentTypeClusterL2VOs = SQL.New("select distinct l2 from L2NetworkVO l2, L2NetworkClusterRefVO ref, ClusterVO cluster where" +
+                    " l2.uuid = ref.l2NetworkUuid" +
+                    " and ref.clusterUuid = cluster.uuid" +
+                    " and cluster.type = :clusterType")
+                    .param("clusterType", "vmware")
+                    .list();
+        } else {
+            attachedDifferentTypeClusterL2VOs = SQL.New("select distinct l2 from L2NetworkVO l2, L2NetworkClusterRefVO ref where" +
+                    " l2.uuid = ref.l2NetworkUuid" +
+                    " and ref.clusterUuid is not null")
+                    .list();
+        }
+        final List<L2NetworkVO> attachedDifferentTypeClusterL2s = attachedDifferentTypeClusterL2VOs == null ? new ArrayList<>() : attachedDifferentTypeClusterL2VOs;
+        l2s = l2s.stream().filter(l2 -> !attachedDifferentTypeClusterL2s.stream()
+                .map(L2NetworkVO::getUuid)
+                .collect(Collectors.toList())
+                .contains(l2.getUuid()))
+                .collect(Collectors.toList());
+
 
         return getCandidateL2(clusterVO, l2s, attachClusterL2s);
     }
