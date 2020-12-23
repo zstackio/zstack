@@ -101,7 +101,7 @@
         <Logger name="org.zstack" level="debug"/>
 
         <Logger name="org.zstack.utils" level="trace"/>
-
+        <Logger name="org.zstack.utils.string.StringSimilarity" level="INFO"/>
         <Logger name="org.zstack.utils.HTTP" level="debug"/>
 
         <Logger name="org.zstack.core.rest" level="trace"/>
@@ -115,6 +115,10 @@
         <!--
                 <Logger name="org.zstack.billing" level="TRACE" />
         -->
+
+        <Logger name="org.zstack.zwatch.prometheus.ProgressMonitorHelper" level="INFO"/>
+
+        <Logger name="org.zstack.header.rest.TimeoutRestTemplate" level="INFO"/>
 
         <Logger name="org.hibernate" level="warn"/>
 
