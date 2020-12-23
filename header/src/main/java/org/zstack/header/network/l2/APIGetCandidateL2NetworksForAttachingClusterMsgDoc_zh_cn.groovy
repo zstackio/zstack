@@ -1,5 +1,7 @@
 package org.zstack.header.network.l2
 
+import org.zstack.header.network.l2.APIGetCandidateL2NetworksForAttachingClusterReply
+
 doc {
     title "获取集群允许加载的二层网络"
 
