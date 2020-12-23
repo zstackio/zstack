@@ -21,7 +21,7 @@ public class LoadBalancerServerGroupServerIpInventory implements Serializable {
     public static LoadBalancerServerGroupServerIpInventory valueOf(LoadBalancerServerGroupServerIpVO vo) {
         LoadBalancerServerGroupServerIpInventory inv = new LoadBalancerServerGroupServerIpInventory();
         inv.setId(vo.getId());
-        inv.setServerGroupUuid(vo.getLoadBalancerServerGroupUuid());
+        inv.setServerGroupUuid(vo.getServerGroupUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         inv.setIpAddress(vo.getIpAddress());

@@ -1805,8 +1805,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         String sql = "select distinct l from LoadBalancerListenerVO l, LoadBalancerServerGroupVO grp, " +
                 " LoadBalancerListenerServerGroupRefVO lgRef, VmNicVO nic, LoadBalancerServerGroupVmNicRefVO nicRef, " +
                 " LoadBalancerVO lb where lb.type = :lbType and lb.uuid = l.loadBalancerUuid " +
-                " and l.uuid = lgRef.listenerUuid and lgRef.loadBalancerServerGroupUuid = grp.uuid " +
-                " and grp.uuid = nicRef.loadBalancerServerGroupUuid and nicRef.status in (:status) " +
+                " and l.uuid = lgRef.listenerUuid and lgRef.serverGroupUuid = grp.uuid " +
+                " and grp.uuid = nicRef.serverGroupUuid and nicRef.status in (:status) " +
                 " and nicRef.vmNicUuid=nic.uuid and nic.l3NetworkUuid=(:l3Uuid)";
 
         List<LoadBalancerListenerVO> listenerVOS = SQL.New(sql, LoadBalancerListenerVO.class).param("l3Uuid", l3Uuid)
@@ -1824,12 +1824,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         for (Map.Entry<String, List<LoadBalancerListenerVO>> e : listenerMap.entrySet()) {
             List<String> serverGroupUuids = new ArrayList<>();
             for (LoadBalancerListenerVO listenerVO : e.getValue()) {
-                serverGroupUuids.addAll(listenerVO.getServerGroupRefs().stream().map(LoadBalancerListenerServerGroupRefVO::getLoadBalancerServerGroupUuid).collect(Collectors.toList()));
+                serverGroupUuids.addAll(listenerVO.getServerGroupRefs().stream().map(LoadBalancerListenerServerGroupRefVO::getServerGroupUuid).collect(Collectors.toList()));
             }
             HashMap<String, VmNicInventory> nicMap = new HashMap<>();
             if (!serverGroupUuids.isEmpty()) {
                 sql = "select nic from LoadBalancerServerGroupVmNicRefVO ref, VmNicVO nic " +
-                        "where nic.uuid=ref.vmNicUuid and ref.loadBalancerServerGroupUuid in (:serverGroupUuids) and ref.status in (:status)";
+                        "where nic.uuid=ref.vmNicUuid and ref.serverGroupUuid in (:serverGroupUuids) and ref.status in (:status)";
 
                 List<VmNicVO> nicVOS = SQL.New(sql, VmNicVO.class).param("serverGroupUuids", serverGroupUuids)
                         .param("status", asList(LoadBalancerVmNicStatus.Active, LoadBalancerVmNicStatus.Pending)).list();

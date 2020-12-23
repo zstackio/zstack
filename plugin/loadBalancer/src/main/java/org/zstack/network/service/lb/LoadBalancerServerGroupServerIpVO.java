@@ -13,7 +13,7 @@ import java.sql.Timestamp;
 @EntityGraph(
 
         parents = {
-                @EntityGraph.Neighbour(type = LoadBalancerServerGroupVO.class, myField = "loadBalancerServerGroupUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = LoadBalancerServerGroupVO.class, myField = "serverGroupUuid", targetField = "uuid"),
         }
 )
 public class LoadBalancerServerGroupServerIpVO  {
@@ -30,7 +30,7 @@ public class LoadBalancerServerGroupServerIpVO  {
 
     @Column
     @ForeignKey(parentEntityClass = LoadBalancerServerGroupVO.class, parentKey = "uuid", onDeleteAction = ForeignKey.ReferenceOption.CASCADE)
-    private String loadBalancerServerGroupUuid;
+    private String serverGroupUuid;
 
     @Column
     @Enumerated(EnumType.STRING)
@@ -50,12 +50,12 @@ public class LoadBalancerServerGroupServerIpVO  {
         this.id = id;
     }
 
-    public String getLoadBalancerServerGroupUuid() {
-        return loadBalancerServerGroupUuid;
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
     }
 
-    public void setLoadBalancerServerGroupUuid(String loadBalancerServerGroupUuid) {
-        this.loadBalancerServerGroupUuid = loadBalancerServerGroupUuid;
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
     }
 
     public String getIpAddress() {

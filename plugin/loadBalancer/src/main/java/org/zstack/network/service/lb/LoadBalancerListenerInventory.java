@@ -57,7 +57,7 @@ public class LoadBalancerListenerInventory implements Serializable {
 
         List<LoadBalancerServerGroupVmNicRefVO> serverGroupVmNicRefVOs
                 = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
-                .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,vo.getServerGroupUuid())
+                .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid,vo.getServerGroupUuid())
                 .list();
         Set<LoadBalancerListenerVmNicRefVO> vmNicRefs = new HashSet<>();
         for(LoadBalancerServerGroupVmNicRefVO serverGroupVmNicRefVO: serverGroupVmNicRefVOs){

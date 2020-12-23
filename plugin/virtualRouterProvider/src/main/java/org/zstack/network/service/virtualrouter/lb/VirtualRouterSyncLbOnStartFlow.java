@@ -81,7 +81,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                 String sql = "select lb from LoadBalancerVO lb, LoadBalancerListenerVO l, LoadBalancerServerGroupVO g, " +
                         " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef, VmNicVO nic, L3NetworkVO l3" +
                         " where lb.uuid = l.loadBalancerUuid and l.uuid = lgref.listenerUuid " +
-                        " and lgref.loadBalancerServerGroupUuid = g.uuid and nicRef.loadBalancerServerGroupUuid= g.uuid " +
+                        " and lgref.serverGroupUuid = g.uuid and nicRef.serverGroupUuid= g.uuid " +
                         " and nicRef.vmNicUuid = nic.uuid and nic.l3NetworkUuid = l3.uuid" +
                         " and l3.uuid in (:l3uuids) and lb.state = :state and lb.uuid not in (select t.resourceUuid from SystemTagVO t" +
                         " where t.tag = :tag and t.resourceType = :rtype)";
@@ -96,7 +96,7 @@ public class VirtualRouterSyncLbOnStartFlow implements Flow {
                         sql = "select lb from LoadBalancerVO lb, LoadBalancerListenerVO l, LoadBalancerServerGroupVO g, " +
                                 " LoadBalancerListenerServerGroupRefVO lgref, LoadBalancerServerGroupVmNicRefVO nicRef, VmNicVO nic, L3NetworkVO l3" +
                                 " where lb.uuid = l.loadBalancerUuid and l.uuid = lgref.listenerUuid " +
-                                " and lgref.loadBalancerServerGroupUuid = g.uuid and nicRef.loadBalancerServerGroupUuid= g.uuid " +
+                                " and lgref.serverGroupUuid = g.uuid and nicRef.serverGroupUuid= g.uuid " +
                                 " and nicRef.vmNicUuid = nic.uuid and nic.l3NetworkUuid = l3.uuid" +
                                 " and l3.uuid in (:l3uuids) and lb.state = :state and lb.uuid not in (select t.resourceUuid from SystemTagVO t" +
                                 " where t.tag = :tag and t.resourceType = :rtype and t.resourceUuid not in (:mylbs))";
