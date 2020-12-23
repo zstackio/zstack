@@ -106,6 +106,10 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
     }
 
     protected void doConnectAgent(final Completion completion) {
+        doConnectAgent(false, completion);
+    }
+
+    protected void doConnectAgent(boolean fullDeploy, final Completion completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
@@ -192,6 +196,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                     runner.setTargetIp(Platform.getManagementServerIp());
                     runner.setTargetUuid(Platform.getManagementServerId());
                     runner.setPlayBookName(ANSIBLE_PLAYBOOK_NAME);
+                    runner.setFullDeploy(fullDeploy);
                     runner.putArgument("pkg_consoleproxy", agentPackageName);
                     runner.putArgument("http_console_proxy_port", CoreGlobalProperty.HTTP_CONSOLE_PROXY_PORT);
                     if (CoreGlobalProperty.SYNC_NODE_TIME) {
@@ -328,7 +333,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
             return;
         }
 
-        doConnectAgent(new Completion(msg) {
+        doConnectAgent(msg.isFullDeploy(), new Completion(msg) {
             @Override
             public void success() {
                 bus.reply(msg, reply);

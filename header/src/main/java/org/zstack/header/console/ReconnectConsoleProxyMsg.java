@@ -7,6 +7,7 @@ import org.zstack.header.message.NeedReplyMessage;
  */
 public class ReconnectConsoleProxyMsg extends NeedReplyMessage implements ConsoleProxyAgentMessage {
     private String agentUuid;
+    private boolean fullDeploy;
 
     public String getAgentUuid() {
         return agentUuid;
@@ -14,5 +15,13 @@ public class ReconnectConsoleProxyMsg extends NeedReplyMessage implements Consol
 
     public void setAgentUuid(String agentUuid) {
         this.agentUuid = agentUuid;
+    }
+
+    public boolean isFullDeploy() {
+        return fullDeploy;
+    }
+
+    public void setFullDeploy(boolean fullDeploy) {
+        this.fullDeploy = fullDeploy;
     }
 }
