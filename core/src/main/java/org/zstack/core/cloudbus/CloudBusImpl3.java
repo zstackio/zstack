@@ -418,7 +418,12 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         reply.setServiceId(request.getHeaderEntry(REPLY_TO));
 
         if (request instanceof NeedReplyMessage) {
-            callReplyPreSendingExtensions(reply, (NeedReplyMessage) request);
+            try {
+                callReplyPreSendingExtensions(reply, (NeedReplyMessage) request);
+            } catch (Exception e) {
+                logger.error("failed to call pre-sending reply extension:", e);
+                reply.setError(operr(e.getMessage()));
+            }
         }
 
         doSend(reply);

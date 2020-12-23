@@ -43,13 +43,14 @@ public class APIGetPortForwardingAttachableVmNicsReply extends APIReply implemen
     }
 
     @Override
-    public List<String> getFilterResources() {
+    public List<String> getInventoryUuids() {
         return inventories.stream().map(VmNicInventory::getUuid).collect(Collectors.toList());
     }
 
     @Override
-    public void setFilteredResult(List result) {
-        this.inventories = (List<VmNicInventory>) result;
+    @SuppressWarnings("unchecked")
+    public void setFilteredInventories(List inventories) {
+        this.inventories = (List<VmNicInventory>) inventories;
     }
 
     @Override

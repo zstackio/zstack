@@ -1,5 +1,6 @@
 package org.zstack.storage.snapshot;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
@@ -49,6 +50,8 @@ import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.zql.ZQL;
+import org.zstack.zql.ZQLContext;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
@@ -986,11 +989,11 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     @Override
     public void marshalReplyMessageBeforeSending(Message replyOrEvent, NeedReplyMessage msg) {
         if (replyOrEvent instanceof APIQueryVolumeSnapshotTreeReply) {
-            marshal((APIQueryVolumeSnapshotTreeReply) replyOrEvent);
+            marshal(((APIMessage) msg).getSession(), (APIQueryVolumeSnapshotTreeReply) replyOrEvent);
         }
     }
 
-    private void marshal(APIQueryVolumeSnapshotTreeReply reply) {
+    private void marshal(SessionInventory session, APIQueryVolumeSnapshotTreeReply reply) {
         if (reply.getInventories() == null) {
             // this is for count
             return;
@@ -1001,8 +1004,16 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             sq.add(VolumeSnapshotVO_.treeUuid, Op.EQ, inv.getUuid());
             List<VolumeSnapshotVO> vos = sq.list();
             VolumeSnapshotTree tree = VolumeSnapshotTree.fromVOs(vos);
-            inv.setTree(tree.getRoot().toLeafInventory());
+            inv.setTree(tree.getRoot().toLeafInventory(querySnapshotUuids(inv.getUuid(), session)));
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<String> querySnapshotUuids(String treeUuid, SessionInventory session) {
+        String zql = String.format("query volumesnapshot.uuid where treeUuid = '%s'", treeUuid);
+        List<Object> invs = ZQL.fromString(zql).getSingleResultWithSession(session).inventories;
+        return invs != null ? invs.stream().map(it -> ((VolumeSnapshotInventory) it).getUuid()).collect(Collectors.toSet())
+                : Collections.emptySet();
     }
 
     @Override
