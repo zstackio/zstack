@@ -20,7 +20,7 @@ public class LoadBalancerListenerServerGroupRefInventory implements Serializable
         LoadBalancerListenerServerGroupRefInventory inv = new LoadBalancerListenerServerGroupRefInventory();
         inv.setId(vo.getId());
         inv.setListenerUuid(vo.getListenerUuid());
-        inv.setServerGroupUuid(vo.getLoadBalancerServerGroupUuid());
+        inv.setServerGroupUuid(vo.getServerGroupUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
         return inv;

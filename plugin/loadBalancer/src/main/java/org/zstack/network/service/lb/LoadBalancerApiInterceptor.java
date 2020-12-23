@@ -795,7 +795,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         List<String> usedIps = new ArrayList<>();
         List <String> usedVmNicUuids = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
                 .select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid)
-                .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid,msg.getServerGroupUuid())
                 .listValues();
         if(usedVmNicUuids!=null && !usedVmNicUuids.isEmpty()){
             usedIps.addAll(Q.New(VmNicVO.class)
@@ -805,7 +805,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         }
         List<String> useServerIps = Q.New(LoadBalancerServerGroupServerIpVO.class)
                 .select(LoadBalancerServerGroupServerIpVO_.ipAddress)
-                .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                .eq(LoadBalancerServerGroupServerIpVO_.serverGroupUuid,msg.getServerGroupUuid())
                 .listValues();
         if(useServerIps!=null && !useServerIps.isEmpty()){
             usedIps.addAll(useServerIps);
@@ -863,7 +863,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             List<String> existingNics = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
                     .select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid)
                     .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,vmNicUuids)
-                    .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                    .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid,msg.getServerGroupUuid())
                     .listValues();
             if (!existingNics.isEmpty()) {
                 throw new ApiMessageInterceptionException(operr("the vm nics[uuid:%s] are already on the load balancer servegroup [uuid:%s]", existingNics, msg.getServerGroupUuid()));
@@ -926,7 +926,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             Set<String> existingServerIps = new HashSet<>(Q.New(LoadBalancerServerGroupServerIpVO.class)
                     .select(LoadBalancerServerGroupServerIpVO_.ipAddress)
                     .in(LoadBalancerServerGroupServerIpVO_.ipAddress,serverIps)
-                    .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                    .eq(LoadBalancerServerGroupServerIpVO_.serverGroupUuid,msg.getServerGroupUuid())
                     .listValues());
             if (!existingServerIps.isEmpty()) {
                 throw new ApiMessageInterceptionException(operr("the server ips [uuid:%s] are already on the load balancer servegroup [uuid:%s]", existingServerIps, msg.getServerGroupUuid()));
@@ -954,7 +954,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             Set<String> existingNics = new HashSet<>(Q.New(LoadBalancerServerGroupVmNicRefVO.class)
                     .select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid)
                     .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,msg.getVmNicUuids())
-                    .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                    .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid,msg.getServerGroupUuid())
                     .listValues()
             );
 
@@ -973,7 +973,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             Set<String> existingServerIps = new HashSet<>(Q.New(LoadBalancerServerGroupServerIpVO.class)
                     .select(LoadBalancerServerGroupServerIpVO_.ipAddress)
                     .in(LoadBalancerServerGroupServerIpVO_.ipAddress,msg.getServerIps())
-                    .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                    .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid,msg.getServerGroupUuid())
                     .listValues());
             if(existingServerIps.isEmpty()){
                 throw new ApiMessageInterceptionException(operr("serverips are all not in servergroup [%s]", msg.getServerGroupUuid()));
@@ -1002,7 +1002,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     private void validate(APIAddServerGroupToLoadBalancerListenerMsg msg){
         List<LoadBalancerListenerServerGroupRefVO> existingRefs
                 = Q.New(LoadBalancerListenerServerGroupRefVO.class)
-                    .eq(LoadBalancerListenerServerGroupRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                    .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid, msg.getServerGroupUuid())
                     .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getlistenerUuid())
                     .list();
         if(existingRefs != null && !existingRefs.isEmpty()){
@@ -1012,13 +1012,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
         List<String> oldServerGroupUuids = Q.New(LoadBalancerListenerServerGroupRefVO.class)
                 .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getlistenerUuid())
-                .select(LoadBalancerListenerServerGroupRefVO_.loadBalancerServerGroupUuid).listValues();
+                .select(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid).listValues();
         if (!oldServerGroupUuids.isEmpty()) {
             List<String> oldVmNicUuids = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
-                    .in(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, oldServerGroupUuids)
+                    .in(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, oldServerGroupUuids)
                     .select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid).listValues();
             List<String> newVmNicUuids = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
-                    .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                    .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, msg.getServerGroupUuid())
                     .select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid).listValues();
             if (!newVmNicUuids.isEmpty() && !oldVmNicUuids.isEmpty()) {
                 for (String nicUuid : newVmNicUuids) {
@@ -1030,10 +1030,10 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
 
             List<String> oldServerIps = Q.New(LoadBalancerServerGroupServerIpVO.class)
-                    .in(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid, oldServerGroupUuids)
+                    .in(LoadBalancerServerGroupServerIpVO_.serverGroupUuid, oldServerGroupUuids)
                     .select(LoadBalancerServerGroupServerIpVO_.ipAddress).listValues();
             List<String> newServerIps = Q.New(LoadBalancerServerGroupServerIpVO.class)
-                    .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                    .eq(LoadBalancerServerGroupServerIpVO_.serverGroupUuid, msg.getServerGroupUuid())
                     .select(LoadBalancerServerGroupServerIpVO_.ipAddress).listValues();
             if (!newServerIps.isEmpty() && !oldServerIps.isEmpty()) {
                 for (String ipAddress : newServerIps) {
@@ -1054,7 +1054,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     private void validate(APIRemoveServerGroupFromLoadBalancerListenerMsg msg){
         List<LoadBalancerListenerServerGroupRefVO> existingRefs
                 = Q.New(LoadBalancerListenerServerGroupRefVO.class)
-                .eq(LoadBalancerListenerServerGroupRefVO_.loadBalancerServerGroupUuid, msg.getServerGroupUuid())
+                .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid, msg.getServerGroupUuid())
                 .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid())
                 .list();
         if(existingRefs == null || existingRefs.isEmpty()){
@@ -1101,7 +1101,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 if(vmNic.containsKey("uuid")){
                     LoadBalancerServerGroupVmNicRefVO serverGroupVmNicRefVO = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
                             .eq(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,vmNic.get("uuid"))
-                            .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                            .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid,msg.getServerGroupUuid())
                             .find();
                     if(serverGroupVmNicRefVO == null){
                         throw new ApiMessageInterceptionException(argerr("could not update backend server vmnic of serverGroup,because serverGroup[uuid:%s] don not have vmnic [uuid:%s] ",msg.getServerGroupUuid(),vmNic.containsKey("uuid")));
@@ -1143,7 +1143,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     String ipAddress = server.get("ipAddress");
                     LoadBalancerServerGroupServerIpVO serverIpVO = Q.New(LoadBalancerServerGroupServerIpVO.class)
                             .eq(LoadBalancerServerGroupServerIpVO_.ipAddress,ipAddress)
-                            .eq(LoadBalancerServerGroupServerIpVO_.loadBalancerServerGroupUuid,msg.getServerGroupUuid())
+                            .eq(LoadBalancerServerGroupServerIpVO_.serverGroupUuid,msg.getServerGroupUuid())
                             .find();
                     if(serverIpVO == null){
                         throw new ApiMessageInterceptionException(argerr("could not update backend server ip of serverGroup,because serverGroup[uuid:%s] don not have ip [ipAddress:%s] ",msg.getServerGroupUuid(),ipAddress));

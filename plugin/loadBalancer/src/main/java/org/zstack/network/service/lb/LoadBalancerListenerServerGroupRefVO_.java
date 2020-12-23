@@ -9,7 +9,7 @@ import java.sql.Timestamp;
 public class LoadBalancerListenerServerGroupRefVO_ {
     public static volatile SingularAttribute<LoadBalancerListenerServerGroupRefVO, Long> id;
     public static volatile SingularAttribute<LoadBalancerListenerServerGroupRefVO, String> listenerUuid;
-    public static volatile SingularAttribute<LoadBalancerListenerServerGroupRefVO, String> loadBalancerServerGroupUuid;
+    public static volatile SingularAttribute<LoadBalancerListenerServerGroupRefVO, String> serverGroupUuid;
     public static volatile SingularAttribute<LoadBalancerListenerServerGroupRefVO, Timestamp> createDate;
     public static volatile SingularAttribute<LoadBalancerListenerServerGroupRefVO, Timestamp> lastOpDate;
 }

@@ -13,7 +13,7 @@ public class RemoveServerGroupFromLoadBalancerListenerMsg extends NeedReplyMessa
 
     private String LoadBalancerlistenerUuid;
 
-    private String loadBalancerServerGroupUuid;
+    private String serverGroupUuid;
 
     @Override
     public String getLoadBalancerUuid() {
@@ -48,11 +48,11 @@ public class RemoveServerGroupFromLoadBalancerListenerMsg extends NeedReplyMessa
         this.serverIps = serverIps;
     }
 
-    public String getLoadBalancerServerGroupUuid() {
-        return loadBalancerServerGroupUuid;
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
     }
 
-    public void setLoadBalancerServerGroupUuid(String loadBalancerServerGroupUuid) {
-        this.loadBalancerServerGroupUuid = loadBalancerServerGroupUuid;
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
     }
 }

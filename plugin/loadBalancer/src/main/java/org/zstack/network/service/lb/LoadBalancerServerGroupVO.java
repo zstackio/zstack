@@ -24,9 +24,9 @@ import java.util.stream.Collectors;
 @EntityGraph(
 
         friends = {
-                @EntityGraph.Neighbour(type = LoadBalancerListenerServerGroupRefVO.class, myField = "loadbalancerServerGroupUuid", targetField = "uuid"),
-                @EntityGraph.Neighbour(type = LoadBalancerServerGroupServerIpVO.class, myField = "loadbalancerServerGroupUuid", targetField = "uuid"),
-                @EntityGraph.Neighbour(type = LoadBalancerServerGroupVmNicRefVO.class, myField = "loadbalancerServerGroupUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = LoadBalancerListenerServerGroupRefVO.class, myField = "serverGroupUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = LoadBalancerServerGroupServerIpVO.class, myField = "serverGroupUuid", targetField = "uuid"),
+                @EntityGraph.Neighbour(type = LoadBalancerServerGroupVmNicRefVO.class, myField = "serverGroupUuid", targetField = "uuid"),
         }
 )
 public class LoadBalancerServerGroupVO extends ResourceVO  implements OwnedByAccount {
@@ -50,18 +50,18 @@ public class LoadBalancerServerGroupVO extends ResourceVO  implements OwnedByAcc
     private String accountUuid;
 
     @OneToMany(fetch = FetchType.EAGER)
-    @JoinColumn(name = "loadBalancerServerGroupUuid", insertable = false, updatable = false)
+    @JoinColumn(name = "serverGroupUuid", insertable = false, updatable = false)
     @NoView
     private Set<LoadBalancerListenerServerGroupRefVO> loadBalancerListenerServerGroupRefs = new HashSet<LoadBalancerListenerServerGroupRefVO>();
 
     @OneToMany(fetch = FetchType.EAGER)
-    @JoinColumn(name = "loadBalancerServerGroupUuid", insertable = false, updatable = false)
+    @JoinColumn(name = "serverGroupUuid", insertable = false, updatable = false)
     @NoView
     private Set<LoadBalancerServerGroupServerIpVO> loadBalancerServerGroupServerIps = new HashSet<LoadBalancerServerGroupServerIpVO>();
 
 
     @OneToMany(fetch = FetchType.EAGER)
-    @JoinColumn(name = "loadBalancerServerGroupUuid", insertable = false, updatable = false)
+    @JoinColumn(name = "serverGroupUuid", insertable = false, updatable = false)
     @NoView
     private Set<LoadBalancerServerGroupVmNicRefVO> loadBalancerServerGroupVmNicRefs = new HashSet<LoadBalancerServerGroupVmNicRefVO>();
 
