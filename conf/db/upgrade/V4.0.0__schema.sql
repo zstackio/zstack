@@ -712,3 +712,5 @@ UPDATE `VRouterRouteEntryVO` SET `type` = 'Unknown' where `type` = '5';
 
 ALTER TABLE `zstack`.`UsbDeviceVO` modify column iSerial varchar(1024) DEFAULT NULL;
 ALTER TABLE `zstack`.`ZBoxVO` modify column `iSerial` varchar(1024) DEFAULT NULL;
+
+ALTER TABLE `zstack`.`SNSEmailPlatformVO` CHANGE COLUMN `password` `password` VARCHAR(255) NULL
