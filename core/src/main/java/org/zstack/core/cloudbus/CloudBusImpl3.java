@@ -275,6 +275,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         MessageReply r = new MessageReply();
         r.putHeaderEntry(CORRELATION_ID, m.getId());
         r.setError(err);
+        r.setServiceId(m.getServiceId());
         return r;
     }
 
