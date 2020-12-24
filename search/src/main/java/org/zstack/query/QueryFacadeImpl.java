@@ -8,8 +8,9 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.core.thread.*;
+import org.zstack.core.thread.SyncTask;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.thread.ThreadGlobalProperty;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
@@ -18,7 +19,6 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.APIReply;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.query.*;
@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.inerr;
-import static org.zstack.core.Platform.operr;
 
 public class QueryFacadeImpl extends AbstractService implements QueryFacade, GlobalApiMessageInterceptor, ReplyMessagePreSendingExtensionPoint {
     private static CLogger logger = Utils.getLogger(QueryFacadeImpl.class);
@@ -53,13 +52,12 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
 
     private Map<String, List<String>> apiNoSeeFields = new HashMap<>();
     private Map<String, List<Class>> inventoryFamilies = new HashMap<>();
+    private static int syncThreadNum = 10;
 
     @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
     private CloudBus bus;
-    @Autowired
-    private ErrorFacade errf;
     @Autowired
     private ThreadFacade thdf;
 
@@ -161,8 +159,14 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
     }
 
+    // ZQL and batch-query both can use just less than half sync threads
+    private static int getQuerySyncLevel() {
+        return syncThreadNum / 2 - 1;
+    }
+
     @Override
     public boolean start() {
+        syncThreadNum = thdf.getSyncThreadNum(ThreadGlobalProperty.MAX_THREAD_NUM);
         checkBoxTypeInInventory();
         populateExtensions();
         collectInventoryAPINoSee();
@@ -247,7 +251,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
 
             @Override
             public int getSyncLevel() {
-                return ThreadGlobalProperty.MAX_THREAD_NUM / 3;
+                return getQuerySyncLevel();
             }
         });
     }
@@ -290,7 +294,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
 
             @Override
             public int getSyncLevel() {
-                return ThreadGlobalProperty.MAX_THREAD_NUM / 3;
+                return getQuerySyncLevel();
             }
         });
     }
