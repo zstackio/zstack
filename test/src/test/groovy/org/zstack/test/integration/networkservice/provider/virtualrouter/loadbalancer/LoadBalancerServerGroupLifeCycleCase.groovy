@@ -20,7 +20,7 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
     EnvSpec env
     LoadBalancerServerGroupInventory servergroup1
     LoadBalancerServerGroupInventory servergroup2
-
+    LoadBalancerServerGroupInventory servergroup3
     @Override
     void setup() {
         useSpring(NetworkServiceProviderTest.springSpec)
@@ -143,6 +143,13 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
                         loadBalancerPort = 33
                         instancePort = 33
                     }
+
+                    listener {
+                        name = "listener-44"
+                        protocol = "tcp"
+                        loadBalancerPort = 44
+                        instancePort = 44
+                    }
                 }
             }
 
@@ -210,6 +217,12 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
             name = "lb-group-2"
         }
         assert servergroup2.name == "lb-group-2"
+
+        servergroup3 = createLoadBalancerServerGroup {
+            loadBalancerUuid =  lb.uuid
+            name = "null-group"
+        }
+
 
     }
 
@@ -331,6 +344,22 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
         }
         servergroup = queryLoadBalancerServerGroup{ conditions = ["uuid=${servergroup1.uuid}".toString()]}[0]
         assert servergroup.vmNicRefs.size() == 2
+
+
+        def lbl3 = env.inventoryByName("listener-44") as LoadBalancerListenerInventory
+        addServerGroupToLoadBalancerListener {
+            listenerUuid = lbl3.uuid
+            serverGroupUuid = servergroup3.uuid
+        }
+        // can remove servergroup which don not have vmnic and serverip
+        removeServerGroupFromLoadBalancerListener {
+            listenerUuid = lbl3.uuid
+            serverGroupUuid = servergroup3.uuid
+        }
+
+
+
+
     }
 
     void TestDeleteLoadBalancerServerGroup(){
