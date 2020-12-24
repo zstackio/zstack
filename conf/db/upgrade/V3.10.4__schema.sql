@@ -7,6 +7,5 @@ CREATE TABLE zstack.S3BackupStorageVO
     usePathStyle boolean      NOT NULL DEFAULT TRUE,
     akeyUuid     varchar(32),
     PRIMARY KEY (uuid),
-    CONSTRAINT fkS3BackupStorageVHybridAccountVO FOREIGN KEY (akeyUuid) REFERENCES zstack.HybridAccountVO (uuid) ON DELETE SET NULL,
-    constraint uniqBucket unique (region, endpoint, bucket)
+    CONSTRAINT fkS3BackupStorageVHybridAccountVO FOREIGN KEY (akeyUuid) REFERENCES zstack.HybridAccountVO (uuid) ON DELETE SET NULL
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
