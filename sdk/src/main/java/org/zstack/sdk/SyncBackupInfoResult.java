@@ -2,7 +2,7 @@ package org.zstack.sdk;
 
 
 
-public class GetBackupInfoResult  {
+public class SyncBackupInfoResult  {
 
     public int imported;
     public void setImported(int imported) {
