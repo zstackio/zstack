@@ -38,5 +38,6 @@ public interface ThreadFacade extends Component {
 
     Runnable submitTimerTask(TimerTask task, TimeUnit unit, long delay);
 
+    int getSyncThreadNum(int totalThreadNum);
     void printThreadsAndTasks();
 }
