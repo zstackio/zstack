@@ -12,7 +12,7 @@ public class AddServerGroupToLoadBalancerListenerMsg extends NeedReplyMessage im
 
     private String LoadBalancerlistenerUuid;
 
-    private String loadBalancerServerGroupUuid;
+    private String serverGroupUuid;
 
     @Override
     public String getLoadBalancerUuid() {
@@ -47,11 +47,11 @@ public class AddServerGroupToLoadBalancerListenerMsg extends NeedReplyMessage im
         this.serverIps = serverIps;
     }
 
-    public String getLoadBalancerServerGroupUuid() {
-        return loadBalancerServerGroupUuid;
+    public String getServerGroupUuid() {
+        return serverGroupUuid;
     }
 
-    public void setLoadBalancerServerGroupUuid(String loadBalancerServerGroupUuid) {
-        this.loadBalancerServerGroupUuid = loadBalancerServerGroupUuid;
+    public void setServerGroupUuid(String serverGroupUuid) {
+        this.serverGroupUuid = serverGroupUuid;
     }
 }

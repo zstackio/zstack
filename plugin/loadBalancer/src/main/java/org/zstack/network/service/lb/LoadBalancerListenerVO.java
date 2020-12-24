@@ -206,12 +206,12 @@ public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount
     }
 
     public List<String> getAttachedVmNics() {
-        List<String> serverGroupUuids = getServerGroupRefs().stream().map(LoadBalancerListenerServerGroupRefVO::getLoadBalancerServerGroupUuid).collect(Collectors.toList());
+        List<String> serverGroupUuids = getServerGroupRefs().stream().map(LoadBalancerListenerServerGroupRefVO::getServerGroupUuid).collect(Collectors.toList());
         List<String> attachedNicUuids = new ArrayList<>();
         if (!serverGroupUuids.isEmpty()) {
             attachedNicUuids = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
                     .select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid)
-                    .in(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid, serverGroupUuids)
+                    .in(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, serverGroupUuids)
                     .listValues();
         }
         return attachedNicUuids;

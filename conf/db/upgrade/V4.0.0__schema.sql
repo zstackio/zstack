@@ -664,37 +664,37 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LoadBalancerServerGroupVO`(
 CREATE TABLE IF NOT EXISTS `zstack`.`LoadBalancerListenerServerGroupRefVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
     `listenerUuid` varchar(32) NOT NULL,
-    `loadBalancerServerGroupUuid` varchar(32) NOT NULL,
+    `serverGroupUuid` varchar(32) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
     PRIMARY KEY (`id`),
     CONSTRAINT fkLoadBalancerListenerServerGroupRefVOLoadBalancerListenerVO FOREIGN KEY (listenerUuid) REFERENCES `zstack`.`LoadBalancerListenerVO` (uuid) ON DELETE CASCADE,
-    CONSTRAINT fkLoadBalancerListenerVmNicRefVOLoadBalancerServerGroupVO FOREIGN KEY (loadBalancerServerGroupUuid) REFERENCES `zstack`.`LoadBalancerServerGroupVO` (uuid) ON DELETE CASCADE
+    CONSTRAINT fkLoadBalancerListenerServerGroupRefVOLoadBalancerServerGroupVO FOREIGN KEY (serverGroupUuid) REFERENCES `zstack`.`LoadBalancerServerGroupVO` (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `zstack`.`LoadBalancerServerGroupVmNicRefVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-	`loadBalancerServerGroupUuid` varchar(32) NOT NULL,
+	`serverGroupUuid` varchar(32) NOT NULL,
     `vmNicUuid` varchar(32) NOT NULL,
     `weight` bigint unsigned NOT NULL DEFAULT 100,
     `status` varchar(64) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
     PRIMARY KEY (`id`),
-    CONSTRAINT fkLoadBalancerServerGroupVmNicRefVOLoadBalancerServerGroupVO FOREIGN KEY (loadBalancerServerGroupUuid) REFERENCES `zstack`.`LoadBalancerServerGroupVO` (uuid) ON DELETE CASCADE,
+    CONSTRAINT fkLoadBalancerServerGroupVmNicRefVOLoadBalancerServerGroupVO FOREIGN KEY (serverGroupUuid) REFERENCES `zstack`.`LoadBalancerServerGroupVO` (uuid) ON DELETE CASCADE,
     CONSTRAINT fkLoadBalancerServerGroupVmNicRefVOVmNicVO FOREIGN KEY (vmNicUuid) REFERENCES `zstack`.`VmNicVO` (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `zstack`.`LoadBalancerServerGroupServerIpVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
-    `loadBalancerServerGroupUuid` varchar(32) NOT NULL,
+    `serverGroupUuid` varchar(32) NOT NULL,
   	`ipAddress` varchar(128) NOT NULL,
     `weight` bigint unsigned NOT NULL DEFAULT 100,
   	`status` varchar(64) NOT NULL,
     `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp,
     PRIMARY KEY (`id`),
-    CONSTRAINT fkLoadBalancerServerGroupServerIpVOLoadBalancerServerGroupVO FOREIGN KEY (loadBalancerServerGroupUuid) REFERENCES `zstack`.`LoadBalancerServerGroupVO` (uuid) ON DELETE CASCADE
+    CONSTRAINT fkLoadBalancerServerGroupServerIpVOLoadBalancerServerGroupVO FOREIGN KEY (serverGroupUuid) REFERENCES `zstack`.`LoadBalancerServerGroupVO` (uuid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`LoadBalancerVO` ADD COLUMN `type` varchar(255) DEFAULT "Shared";

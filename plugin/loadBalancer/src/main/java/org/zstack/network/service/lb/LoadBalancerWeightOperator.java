@@ -132,7 +132,7 @@ public class LoadBalancerWeightOperator {
                 return;
             }
             LoadBalancerServerGroupVmNicRefVO vmNicRefVOS = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
-                    .eq(LoadBalancerServerGroupVmNicRefVO_.loadBalancerServerGroupUuid,defaultServerGroupUuid)
+                    .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid,defaultServerGroupUuid)
                     .eq(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,nicUuid)
                     .find();
             if(weight != vmNicRefVOS.getWeight()){
