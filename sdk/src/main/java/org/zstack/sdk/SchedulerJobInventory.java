@@ -68,6 +68,14 @@ public class SchedulerJobInventory  {
         return this.jobData;
     }
 
+    public java.lang.String jobClassName;
+    public void setJobClassName(java.lang.String jobClassName) {
+        this.jobClassName = jobClassName;
+    }
+    public java.lang.String getJobClassName() {
+        return this.jobClassName;
+    }
+
     public java.util.List triggersUuid;
     public void setTriggersUuid(java.util.List triggersUuid) {
         this.triggersUuid = triggersUuid;
