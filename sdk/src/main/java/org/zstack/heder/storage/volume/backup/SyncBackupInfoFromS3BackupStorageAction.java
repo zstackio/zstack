@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetBackupInfoFromS3BackupStorageAction extends AbstractAction {
+public class SyncBackupInfoFromS3BackupStorageAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetBackupInfoFromS3BackupStorageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.heder.storage.volume.backup.GetBackupInfoFromS3BackupStorageResult value;
+        public org.zstack.heder.storage.volume.backup.SyncBackupInfoFromS3BackupStorageResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -60,8 +60,8 @@ public class GetBackupInfoFromS3BackupStorageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.heder.storage.volume.backup.GetBackupInfoFromS3BackupStorageResult value = res.getResult(org.zstack.heder.storage.volume.backup.GetBackupInfoFromS3BackupStorageResult.class);
-        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.GetBackupInfoFromS3BackupStorageResult() : value; 
+        org.zstack.heder.storage.volume.backup.SyncBackupInfoFromS3BackupStorageResult value = res.getResult(org.zstack.heder.storage.volume.backup.SyncBackupInfoFromS3BackupStorageResult.class);
+        ret.value = value == null ? new org.zstack.heder.storage.volume.backup.SyncBackupInfoFromS3BackupStorageResult() : value; 
 
         return ret;
     }
@@ -94,7 +94,7 @@ public class GetBackupInfoFromS3BackupStorageAction extends AbstractAction {
         info.path = "/volume-backups/s3/{backupStorageUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "getBackupInfoFromS3BackupStorage";
+        info.parameterName = "syncBackupInfoFromS3BackupStorage";
         return info;
     }
 
