@@ -209,63 +209,63 @@ public class StringSimilarity {
         return l.distance(str, sub);
     }
 
-    private static final List<String> redundanceStrs = CollectionDSL.list("unhandled exception happened when calling");
+    private static final List<String> redundantStrs = CollectionDSL.list("unhandled exception happened when calling");
 
     private static boolean isRedundant(String sub) {
-        for (String redundanceStr: redundanceStrs) {
-            if (sub.startsWith(redundanceStr)) {
+        for (String redundantStr: redundantStrs) {
+            if (sub.startsWith(redundantStr)) {
                 return true;
             }
         }
         return false;
     }
 
-    private static void logSearchSpend(String sub, long start) {
-        logger.debug(String.format("spend %s ms to search elaboration \"%s\"", System.currentTimeMillis() - start,
+    private static void logSearchSpend(String sub, long start, boolean found) {
+        logger.debug(String.format("[%s] spend %s ms to search elaboration \"%s\"", found, System.currentTimeMillis() - start,
                 sub.length() > 50 ? sub.substring(0 , 50) + "..." : sub));
     }
 
-    public static ErrorCodeElaboration findSimilary(String sub, Object...args) {
+    public static ErrorCodeElaboration findSimilar(String sub, Object...args) {
         if (sub == null || sub.isEmpty() || isRedundant(sub)) {
             return null;
         }
 
         long start = System.currentTimeMillis();
         if (errors.get(sub) != null) {
-            logSearchSpend(sub, start);
+            logSearchSpend(sub, start, true);
             return errors.get(sub);
         }
 
         if (missed.get(sub) != null) {
-            logSearchSpend(sub, start);
+            logSearchSpend(sub, start, false);
             return null;
         }
 
         ErrorCodeElaboration err;
         try {
-            logger.debug(String.format("start to find similary from: %s", String.format(sub, args)));
-            err = findMostSimilaryRegex(String.format(sub, args));
+            logger.trace(String.format("start to search elaboration for: %s", String.format(sub, args)));
+            err = findMostSimilarRegex(String.format(sub, args));
         } catch (Exception e) {
-            logger.warn("exception happened when format error message");
-            logger.warn(e.getMessage());
-            logger.debug(String.format("start to find similary from: %s", sub));
-            err = findMostSimilaryRegex(sub);
+            logger.trace(String.format("start search elaboration for: %s", sub));
+            err = findMostSimilarRegex(sub);
         }
 
         if (err == null) {
-            err = findSimilaryDistance(sub);
+            err = findSimilarDistance(sub);
         }
 
         if (err != null) {
+            logSearchSpend(sub, start, true);
             err.setFormatSrcError(sub);
+        } else {
+            logSearchSpend(sub, start, false);
         }
 
-        logSearchSpend(sub, start);
         return err;
     }
 
     // better precision, worse performance
-    private static ErrorCodeElaboration findMostSimilaryRegex(String sub) {
+    private static ErrorCodeElaboration findMostSimilarRegex(String sub) {
         ErrorCodeElaboration matchE = null;
         for (ErrorCodeElaboration elaboration: elaborations) {
             if (ElaborationSearchMethod.distance == elaboration.getMethod()) {
@@ -283,27 +283,13 @@ public class StringSimilarity {
         return matchE;
     }
 
-    // better performance(2x), worse precision
-    private static ErrorCodeElaboration findFirshSimilaryRegex(String sub) {
-        for (ErrorCodeElaboration elaboration: elaborations) {
-            if (ElaborationSearchMethod.distance == elaboration.getMethod()) {
-                continue;
-            }
-            if (isRegexMatched(elaboration.getRegex(), sub)) {
-                return elaboration;
-            }
-        }
-
-        return null;
-    }
-
-    private static ErrorCodeElaboration findSimilaryDistance(String sub) {
+    private static ErrorCodeElaboration findSimilarDistance(String sub) {
         ErrorCodeElaboration result = null;
         for (ErrorCodeElaboration elaboration: elaborations) {
             if (ElaborationSearchMethod.regex == elaboration.getMethod()) {
                 continue;
             }
-            double distance = getSimilary(elaboration.getRegex(), sub);
+            double distance = getSimilar(elaboration.getRegex(), sub);
             if (result == null) {
                 result = new ErrorCodeElaboration(elaboration);
                 result.setDistance(distance);
@@ -333,15 +319,15 @@ public class StringSimilarity {
         return patterns.get(regex).matcher(sub).find();
     }
 
-    private static double getSimilary(String str, String sub) {
-        return getSimilary(str, sub, "jaroWinkler");
+    private static double getSimilar(String str, String sub) {
+        return getSimilar(str, sub, "jaroWinkler");
     }
 
     private static double getLength(String str, String sub) {
-        return getSimilary(str, sub, "optimal");
+        return getSimilar(str, sub, "optimal");
     }
 
-    private static double getSimilary(String str, String sub, String algorithm) {
+    private static double getSimilar(String str, String sub, String algorithm) {
         switch (algorithm) {
             case "levenshtein": return levenshtein(str, sub);
             case "normalized": return normalized(str, sub);

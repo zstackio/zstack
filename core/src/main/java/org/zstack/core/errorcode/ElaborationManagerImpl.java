@@ -335,7 +335,7 @@ public class ElaborationManagerImpl extends AbstractService {
         List<ElaborationVO> vos = getMissedElatorations(msg.getRepeats(), msg.getStartTime());
 
         vos.forEach(vo -> {
-            ErrorCodeElaboration e = StringSimilarity.findSimilary(vo.getErrorInfo());
+            ErrorCodeElaboration e = StringSimilarity.findSimilar(vo.getErrorInfo());
             if (!StringSimilarity.matched(e)) {
                 reply.getInventories().add(ElaborationInventory.valueOf(vo));
             }
@@ -444,7 +444,7 @@ public class ElaborationManagerImpl extends AbstractService {
         APIGetElaborationsReply reply = new APIGetElaborationsReply();
 
         if (msg.getRegex() != null) {
-            ErrorCodeElaboration e = StringSimilarity.findSimilary(msg.getRegex());
+            ErrorCodeElaboration e = StringSimilarity.findSimilar(msg.getRegex());
             if (StringSimilarity.matched(e)) {
                 if (msg.getCategory() != null && msg.getCategory().equalsIgnoreCase(e.getCategory())) {
                     reply.getContents().add(new ElaborationContent(e));
