@@ -2484,9 +2484,11 @@ public class LoadBalancerBase {
                                 .find();
                         if (vmNic.containsKey("weight")) {
                             Long vmNicWeight = Long.valueOf(vmNic.get("weight"));
-                            vmNicRefVO.setWeight(vmNicWeight);
-                            dbf.update(vmNicRefVO);
-                            canRefresh = true;
+                            if (vmNicWeight != vmNicRefVO.getWeight()) {
+                                vmNicRefVO.setWeight(vmNicWeight);
+                                dbf.update(vmNicRefVO);
+                                canRefresh = true;
+                            }
                         }
                     }
                 }
@@ -2500,9 +2502,11 @@ public class LoadBalancerBase {
                                 .find();
                         if (server.containsKey("weight")) {
                             Long serverIpWeight = Long.valueOf(server.get("weight"));
-                            serverIpVO.setWeight(serverIpWeight);
-                            dbf.update(serverIpVO);
-                            canRefresh = true;
+                            if(serverIpWeight != serverIpVO.getWeight()){
+                                serverIpVO.setWeight(serverIpWeight);
+                                dbf.update(serverIpVO);
+                                canRefresh = true;
+                            }
                         }
                     }
                 }

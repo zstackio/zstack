@@ -282,6 +282,17 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
             serverGroupUuid = servergroup1.uuid
         }
 
+        changeLoadBalancerBackendServer {
+            vmNics = [['uuid': nic1.uuid, 'weight': '40']]
+            serverGroupUuid = servergroup1.uuid
+        }
+
+        expect(AssertionError.class) {
+            changeLoadBalancerBackendServer {
+                serverGroupUuid = servergroup1.uuid
+            }
+        }
+
         addBackendServerToServerGroup {
             vmNics = [['uuid':nic2.uuid,'weight':'20'],['uuid':nic3.uuid,'weight':'30']]
             serverGroupUuid = servergroup1.uuid
