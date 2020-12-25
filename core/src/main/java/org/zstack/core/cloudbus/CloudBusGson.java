@@ -128,6 +128,10 @@ public class CloudBusGson {
         return gson.fromJson(json, Message.class);
     }
 
+    public static <T> T fromJson(String json, Class<T> clazz) {
+        return gson.fromJson(json, clazz);
+    }
+
     public static String toJson(Message msg) {
         return gson.toJson(msg, Message.class);
     }

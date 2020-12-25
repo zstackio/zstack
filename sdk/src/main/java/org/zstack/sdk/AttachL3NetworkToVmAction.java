@@ -34,8 +34,11 @@ public class AttachL3NetworkToVmAction extends AbstractAction {
     @Param(required = false)
     public java.lang.String staticIp;
 
-    @Param(required = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String driverType;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String customMac;
 
     @Param(required = false)
     public java.util.List systemTags;

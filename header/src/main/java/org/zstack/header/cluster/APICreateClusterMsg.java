@@ -70,14 +70,14 @@ public class APICreateClusterMsg extends APICreateMessage implements CreateClust
      * - Simulator
      * - baremetal
      */
-    @APIParam(validValues = {"KVM", "Simulator", "baremetal", "xdragon"})
+    @APIParam(validValues = {"KVM", "Simulator", "baremetal", "baremetal2", "xdragon"})
     private String hypervisorType;
     /**
      * @desc see field 'type' of :ref:`ClusterInventory` for details
      * @choices zstack
      * - baremetal
      */
-    @APIParam(required = false, validValues = {"zstack", "baremetal"})
+    @APIParam(required = false, validValues = {"zstack", "baremetal", "baremetal2"})
     private String type;
 
     @APIParam(required = false, validValues = {"x86_64", "aarch64", "mips64el"})

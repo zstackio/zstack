@@ -74,7 +74,8 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
                 q.add(HostVO_.uuid, Op.EQ, vm.getHostUuid());
                 String mgmtIp = q.findValue();
                 try {
-                    URI uri = new URI(String.format("http://%s:%s/", mgmtIp, rsp.getPort()));
+                    // see https://tools.ietf.org/html/rfc7869#section-2.1
+                    URI uri = new URI(String.format("vnc://%s:%s/", mgmtIp, rsp.getPort()));
                     complete.success(uri);
                 } catch (URISyntaxException e) {
                     complete.fail(inerr(e.getMessage()));

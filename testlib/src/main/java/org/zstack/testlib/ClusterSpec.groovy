@@ -19,8 +19,8 @@ class ClusterSpec extends Spec {
     String architecture = "x86_64"
     List<HostSpec> hosts = []
 
-    private List<String> primaryStorageToAttach = []
-    private List<String> l2NetworkToAttach = []
+    List<String> primaryStorageToAttach = []
+    List<String> l2NetworkToAttach = []
 
     ClusterInventory inventory
 

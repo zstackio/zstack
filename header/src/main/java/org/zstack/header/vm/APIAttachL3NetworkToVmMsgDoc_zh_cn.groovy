@@ -81,6 +81,16 @@ doc {
 					since "4.0.0"
 					
 				}
+				column {
+					name "customMac"
+					enclosedIn "params"
+					desc "自定义网卡MAC地址"
+					location "body"
+					type "String"
+					optional true
+					since "4.0.0"
+					
+				}
 			}
         }
 

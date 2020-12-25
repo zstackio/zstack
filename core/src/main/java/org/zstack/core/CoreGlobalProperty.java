@@ -1,6 +1,8 @@
 package org.zstack.core;
 
 import org.zstack.core.propertyvalidator.AvailableValues;
+import org.zstack.core.propertyvalidator.NumberRange;
+
 import java.util.List;
 
 /**
@@ -48,8 +50,12 @@ public class CoreGlobalProperty {
     public static boolean IS_UPGRADE_START;
     @GlobalProperty(name = "shadowEntityOn", defaultValue = "false")
     public static boolean SHADOW_ENTITY_ON;
+    @NumberRange({1024, 49151})
     @GlobalProperty(name = "consoleProxyPort", defaultValue = "4900")
-    public static int CONSOLE_PROXY_PORT;
+    public static int CONSOLE_PROXY_PORT;       // for vnc
+    @GlobalProperty(name = "httpConsoleProxyPort", defaultValue = "4901")
+    @NumberRange({1024, 49151})
+    public static int HTTP_CONSOLE_PROXY_PORT;  // for terminal
     @GlobalProperty(name = "consoleProxyCertFile", defaultValue = "")
     public static String CONSOLE_PROXY_CERT_FILE;
     @GlobalProperty(name = "dataDir", defaultValue = "/var/lib/zstack/")
