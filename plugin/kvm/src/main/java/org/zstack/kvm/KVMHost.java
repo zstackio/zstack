@@ -2584,6 +2584,10 @@ public class KVMHost extends HostBase implements Host {
         cmd.setMemory(spec.getVmInventory().getMemorySize());
         cmd.setMaxMemory(self.getCapacity().getTotalPhysicalMemory());
         cmd.setClock(ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio) ? "localtime" : "utc");
+        if (VmSystemTags.CLOCK_TRACK.hasTag(spec.getVmInventory().getUuid())) {
+            cmd.setClockTrack(VmSystemTags.CLOCK_TRACK.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class, VmSystemTags.CLOCK_TRACK_TOKEN));
+        }
+
         cmd.setVideoType(VmGlobalConfig.VM_VIDEO_TYPE.value(String.class));
         if (VmSystemTags.QXL_MEMORY.hasTag(spec.getVmInventory().getUuid())) {
             Map<String,String> qxlMemory = VmSystemTags.QXL_MEMORY.getTokensByResourceUuid(spec.getVmInventory().getUuid());
