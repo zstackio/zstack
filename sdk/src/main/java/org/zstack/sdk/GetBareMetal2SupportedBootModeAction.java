@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetGlobalPropertyAction extends AbstractAction {
+public class GetBareMetal2SupportedBootModeAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetGlobalPropertyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetGlobalPropertyResult value;
+        public org.zstack.sdk.GetBareMetal2SupportedBootModeResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -51,8 +51,8 @@ public class GetGlobalPropertyAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetGlobalPropertyResult value = res.getResult(org.zstack.sdk.GetGlobalPropertyResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetGlobalPropertyResult() : value; 
+        org.zstack.sdk.GetBareMetal2SupportedBootModeResult value = res.getResult(org.zstack.sdk.GetBareMetal2SupportedBootModeResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetBareMetal2SupportedBootModeResult() : value; 
 
         return ret;
     }
@@ -82,7 +82,7 @@ public class GetGlobalPropertyAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/global-properties";
+        info.path = "/baremetal2/chassis/supported-boot-modes";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

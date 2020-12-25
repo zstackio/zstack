@@ -15110,6 +15110,33 @@ abstract class ApiHelper {
     }
 
 
+    def getBareMetal2SupportedBootMode(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetBareMetal2SupportedBootModeAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetBareMetal2SupportedBootModeAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getBaremetalChassisPowerStatus(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetBaremetalChassisPowerStatusAction.class) Closure c) {
         def a = new org.zstack.sdk.GetBaremetalChassisPowerStatusAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -15976,33 +16003,6 @@ abstract class ApiHelper {
 
     def getFreeIpOfL3Network(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetFreeIpOfL3NetworkAction.class) Closure c) {
         def a = new org.zstack.sdk.GetFreeIpOfL3NetworkAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def getGlobalProperty(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetGlobalPropertyAction.class) Closure c) {
-        def a = new org.zstack.sdk.GetGlobalPropertyAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
