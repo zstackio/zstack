@@ -131,6 +131,9 @@ public class VmSystemTags {
     public static String SOUND_TYPE_TOKEN = "soundType";
     public static PatternedSystemTag SOUND_TYPE = new PatternedSystemTag(String.format("soundType::{%s}", SOUND_TYPE_TOKEN), VmInstanceVO.class);
 
+    public static final String CLOCK_TRACK_TOKEN = "clockTrack";
+    public static PatternedSystemTag CLOCK_TRACK = new PatternedSystemTag(String.format("clockTrack::{%s}", CLOCK_TRACK_TOKEN), VmInstanceVO.class);
+
     public static String QXL_RAM_TOKEN = "ram";
     public static String QXL_VRAM_TOKEN = "vram";
     public static String QXL_VGAMEM_TOKEN = "vgamem";
