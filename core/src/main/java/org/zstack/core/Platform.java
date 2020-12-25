@@ -894,7 +894,7 @@ public class Platform {
         if (String.format(details, args).length() > StringSimilarity.maxElaborationRegex) {
             return null;
         }
-        ErrorCodeElaboration elaboration = StringSimilarity.findSimilary(details, args);
+        ErrorCodeElaboration elaboration = StringSimilarity.findSimilar(details, args);
         if (elaboration == null) {
             return null;
         }
