@@ -1103,7 +1103,11 @@ public class LoadBalancerBase {
         }
 
         LoadBalancerBackend bkd = getBackend();
-        bkd.removeVmNics(removeNicStruct(serverGroupUuids, listenerUuids, vmNicUuids, serverIps), nics,completion);
+        if( (vmNicUuids.isEmpty() && serverIps.isEmpty() ) || bkd == null){
+            completion.success();
+        }else {
+            bkd.removeVmNics(removeNicStruct(serverGroupUuids, listenerUuids, vmNicUuids, serverIps), nics, completion);
+        }
     }
 
     private void removeNic(APIRemoveVmNicFromLoadBalancerMsg msg, final NoErrorCompletion completion) {
