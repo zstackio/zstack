@@ -1411,6 +1411,7 @@ public class KVMAgentCommands {
         private String nestedVirtualization;
         private String hostManagementIp;
         private String clock;
+        private String clockTrack;
         private boolean useNuma;
         private String usbRedirect;
         private boolean useBootMenu;
@@ -1595,6 +1596,14 @@ public class KVMAgentCommands {
 
         public void setClock(String clock) {
             this.clock = clock;
+        }
+
+        public String getClockTrack() {
+            return clockTrack;
+        }
+
+        public void setClockTrack(String clockTrack) {
+            this.clockTrack = clockTrack;
         }
 
         public int getSocketNum() {
