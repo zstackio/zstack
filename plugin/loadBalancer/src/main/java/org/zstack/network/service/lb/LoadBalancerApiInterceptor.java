@@ -1118,9 +1118,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                                             vmNic.get("uuid"), vmNicWeight, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
                                 }
 
-                                if (vmNicWeight != serverGroupVmNicRefVO.getWeight()) {
-                                    canChangeVmNic = true;
-                                }
+                                canChangeVmNic = true;
+
                             }catch (Exception e) {
                                 throw new ApiMessageInterceptionException(argerr("could not change backend server vmnic to serverGroup[uuid:%s] ,because vmnic weight[%s] not a correct number",vmNic.get("weight")));
                             }
@@ -1159,9 +1158,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                                         server.get("ipAddress"), serverIpWeight, LoadBalancerConstants.BALANCER_WEIGHT_MIN, LoadBalancerConstants.BALANCER_WEIGHT_MAX));
                             }
 
-                            if(serverIpWeight != serverIpVO.getWeight()){
-                                canChangeServerIp = true;
-                            }
+                            canChangeServerIp = true;
+
                         }catch (Exception e) {
                             throw new ApiMessageInterceptionException(argerr("could not add backend server ip to serverGroup[uuid:%s] ,because vmnic weight[%s] not a correct number",server.get("weight")));
                         }
@@ -1182,7 +1180,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if( canChangeVmNic || canChangeServerIp){
             msg.setLoadBalancerUuid(loadBalancerUuid);
         }else{
-            throw new ApiMessageInterceptionException(argerr("vmnic or ip is null"));
+            throw new ApiMessageInterceptionException(argerr("could not change backendserver, beacause vmincs and serverips is null"));
         }
     }
 
