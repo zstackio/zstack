@@ -96,9 +96,10 @@ class LocalStorageSpec extends PrimaryStorageSpec {
                 LocalStorageSpec lspec = spec.specByUuid(cmd.uuid)
                 assert lspec != null: "cannot find local storage[uuid:${cmd.uuid}]"
 
-                def rsp = new LocalStorageKvmBackend.AgentResponse()
+                def rsp = new LocalStorageKvmBackend.InitRsp()
                 rsp.totalCapacity = lspec.totalCapacity
                 rsp.availableCapacity = lspec.availableCapacity
+                rsp.localStorageUsedCapacity = 0L
                 return rsp
             }
 

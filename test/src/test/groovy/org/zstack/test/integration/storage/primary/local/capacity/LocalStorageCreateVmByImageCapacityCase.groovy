@@ -96,9 +96,10 @@ class LocalStorageCreateVmByImageCapacityCase extends SubCase {
         assert beforeCapacityResult.totalPhysicalCapacity == capacityResult.totalPhysicalCapacity
 
         env.simulator(LocalStorageKvmBackend.INIT_PATH) {
-            def rsp = new LocalStorageKvmBackend.CreateEmptyVolumeRsp()
+            def rsp = new LocalStorageKvmBackend.InitRsp()
             rsp.totalCapacity = hostCapacity.totalCapacity
             rsp.availableCapacity = hostCapacity.availableCapacity - SizeUnit.GIGABYTE.toByte(20) - SizeUnit.GIGABYTE.toByte(1)
+            rsp.localStorageUsedCapacity = 0
             return rsp
         }
 
