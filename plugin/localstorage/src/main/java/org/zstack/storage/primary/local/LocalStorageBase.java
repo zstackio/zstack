@@ -1499,22 +1499,107 @@ public class LocalStorageBase extends PrimaryStorageBase {
     }
 
     private void handle(RemoveHostFromLocalStorageMsg msg) {
+        RemoveHostFromLocalStorageReply reply = new RemoveHostFromLocalStorageReply();
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("remove-host-%s-from-localStorage-%s", msg.getHostUuid(), msg.getPrimaryStorageUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                removeHostFromLocalStorage(msg, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
+    private void removeHostFromLocalStorage(RemoveHostFromLocalStorageMsg msg, Completion completion) {
         LocalStorageHostRefVO ref = Q.New(LocalStorageHostRefVO.class)
                 .eq(LocalStorageHostRefVO_.hostUuid, msg.getHostUuid())
                 .eq(LocalStorageHostRefVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
                 .find();
-        // jira: http://jira.zstack.io/browse/ZSTAC-9635
-        deleteResourceRef(msg.getHostUuid());
-        if (ref != null) {
-            dbf.remove(ref);
-            decreaseCapacity(ref.getTotalCapacity(),
-                    ref.getAvailableCapacity(),
-                    ref.getTotalPhysicalCapacity(),
-                    ref.getAvailablePhysicalCapacity(),
-                    ref.getSystemUsedCapacity());
-        }
 
-        bus.reply(msg, new RemoveHostFromLocalStorageReply());
+
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName("remove-host-from-localStorage");
+        chain.then(new ShareFlow() {
+            @Override
+            public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "remove-volume-under-resource";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+
+                        List<VolumeVO> volumeVOS = SQL.New("select vo from VolumeVO vo, LocalStorageResourceRefVO ref " +
+                                "where vo.uuid = ref.resourceUuid and ref.hostUuid =:hostUuid " +
+                                "and ref.primaryStorageUuid=:primaryStorageUuid and ref.resourceType=:resourceType " +
+                                "and vo.type=:type")
+                                .param("hostUuid", msg.getHostUuid())
+                                .param("primaryStorageUuid", self.getUuid())
+                                .param("resourceType", VolumeVO.class.getSimpleName())
+                                .param("type", VolumeType.Root)
+                                .list();
+
+                        //ZSTAC-34201 delete resources under volumes
+                        for (VolumeVO vo : volumeVOS) {
+                            pluginRgty.getExtensionList(VolumeJustBeforeDeleteFromDbExtensionPoint.class).forEach(ext-> ext.volumeJustBeforeDeleteFromDb(VolumeInventory.valueOf(vo)));
+                        }
+
+                        trigger.next();
+
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String  __name__ = "delete-host-resource";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        //ZSTAC-9635
+                        deleteResourceRef(msg.getHostUuid());
+                        if (ref != null) {
+                            dbf.remove(ref);
+                            decreaseCapacity(ref.getTotalCapacity(),
+                                    ref.getAvailableCapacity(),
+                                    ref.getTotalPhysicalCapacity(),
+                                    ref.getAvailablePhysicalCapacity(),
+                                    ref.getSystemUsedCapacity());
+                        }
+
+                        trigger.next();
+                    }
+                });
+
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).start();
     }
 
     void deleteResourceRef(String hostUuid) {
@@ -1600,7 +1685,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                         sql("delete from VmCdRomVO cdrom where cdrom.vmInstanceUuid in (:uuids)")
                                 .param("uuids", vmUuidsToDelete).execute();
                     }
-
                     // delete volumes including root and data volumes
                     sql("delete from VolumeVO vol where vol.uuid in (:uuids)")
                             .param("uuids", volumesUuids).execute();
