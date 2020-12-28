@@ -93,12 +93,16 @@ class LocalStorageSpec extends PrimaryStorageSpec {
 
             simulator(LocalStorageKvmBackend.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.InitCmd.class)
-                LocalStorageSpec lspec = spec.specByUuid(cmd.uuid)
-                assert lspec != null: "cannot find local storage[uuid:${cmd.uuid}]"
 
-                def rsp = new LocalStorageKvmBackend.AgentResponse()
-                rsp.totalCapacity = lspec.totalCapacity
-                rsp.availableCapacity = lspec.availableCapacity
+                def rsp = new LocalStorageKvmBackend.InitRsp()
+                rsp.localStorageUsedCapacity = 0L
+
+                LocalStorageSpec lspec = spec.specByUuid(cmd.uuid)
+                if (lspec != null) {
+                    rsp.totalCapacity = lspec.totalCapacity
+                    rsp.availableCapacity = lspec.availableCapacity
+                }
+
                 return rsp
             }
 

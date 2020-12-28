@@ -1645,7 +1645,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                 bkd.handle(msg, new ReturnValueCompletion<PhysicalCapacityUsage>(msg) {
                     @Override
-                    public void success(PhysicalCapacityUsage c) {
+                    public void success(PhysicalCapacityUsage usage) {
+                        LocalStoragePhysicalCapacityUsage c = (LocalStoragePhysicalCapacityUsage)usage;
+
                         List<LocalStorageHostRefVO> refs = Q.New(LocalStorageHostRefVO.class)
                                 .eq(LocalStorageHostRefVO_.hostUuid, msg.getHostUuid())
                                 .eq(LocalStorageHostRefVO_.primaryStorageUuid, self.getUuid())
@@ -1660,7 +1662,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
                             ref.setHostUuid(msg.getHostUuid());
                             ref.setPrimaryStorageUuid(self.getUuid());
-                            ref.setSystemUsedCapacity(c.totalPhysicalSize - c.availablePhysicalSize);
+                            ref.setSystemUsedCapacity(c.totalPhysicalSize - c.availablePhysicalSize - c.localStorageUsedSize);
                             dbf.persist(ref);
 
                             increaseCapacity(
@@ -1674,6 +1676,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
                             ref.setTotalPhysicalCapacity(c.totalPhysicalSize);
                             ref.setTotalCapacity(c.totalPhysicalSize);
+                            ref.setSystemUsedCapacity(c.totalPhysicalSize - c.availablePhysicalSize - c.localStorageUsedSize);
                             dbf.update(ref);
 
                             // the host's local storage capacity changed
@@ -2823,5 +2826,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }
 
         bus.reply(msg, r);
+    }
+
+    public static class LocalStoragePhysicalCapacityUsage extends PrimaryStorageBase.PhysicalCapacityUsage {
+        public long localStorageUsedSize;
     }
 }
