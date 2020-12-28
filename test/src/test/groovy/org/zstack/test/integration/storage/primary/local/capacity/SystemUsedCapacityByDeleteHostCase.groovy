@@ -73,8 +73,7 @@ class SystemUsedCapacityByDeleteHostCase extends SubCase {
         long originSstemUsedCapacity = ps.systemUsedCapacity
 
         boolean checked = false
-        env.simulator(LocalStorageKvmBackend.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            def rsp = new LocalStorageKvmBackend.AgentResponse()
+        env.afterSimulator(LocalStorageKvmBackend.INIT_PATH) { rsp, HttpEntity<String> e ->
             rsp.totalCapacity = 2
             rsp.availableCapacity = 1
             checked = true

@@ -1,5 +1,6 @@
 package org.zstack.test.integration.storage.primary.local.capacity
 
+import org.springframework.http.HttpEntity
 import org.zstack.header.image.ImageConstant
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.DiskOfferingInventory
@@ -95,11 +96,9 @@ class LocalStorageCreateVmByImageCapacityCase extends SubCase {
         assert beforeCapacityResult.totalCapacity == capacityResult.totalCapacity
         assert beforeCapacityResult.totalPhysicalCapacity == capacityResult.totalPhysicalCapacity
 
-        env.simulator(LocalStorageKvmBackend.INIT_PATH) {
-            def rsp = new LocalStorageKvmBackend.InitRsp()
+        env.afterSimulator(LocalStorageKvmBackend.INIT_PATH) { rsp, HttpEntity<String> e ->
             rsp.totalCapacity = hostCapacity.totalCapacity
             rsp.availableCapacity = hostCapacity.availableCapacity - SizeUnit.GIGABYTE.toByte(20) - SizeUnit.GIGABYTE.toByte(1)
-            rsp.localStorageUsedCapacity = 0
             return rsp
         }
 
