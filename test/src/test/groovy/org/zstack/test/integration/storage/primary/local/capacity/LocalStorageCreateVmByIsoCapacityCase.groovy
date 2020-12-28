@@ -118,19 +118,14 @@ class LocalStorageCreateVmByIsoCapacityCase extends SubCase {
         reconnectHost {
             uuid = host.uuid
         }
-
-        retryInSecs {
-            GetPrimaryStorageCapacityResult afterCapacityResult = getPrimaryStorageCapacity {
-                primaryStorageUuids = [ps.uuid]
-            }
-
-            // system used should subtract image cache size and volume actual size
-            assert beforeCapacityResult.availableCapacity == afterCapacityResult.availableCapacity +
-                    SizeUnit.GIGABYTE.toByte(21) - SizeUnit.GIGABYTE.toByte(2) + SizeUnit.GIGABYTE.toByte(1) + SizeUnit.GIGABYTE.toByte(20)
-            assert beforeCapacityResult.availablePhysicalCapacity ==
-                    afterCapacityResult.availablePhysicalCapacity + SizeUnit.GIGABYTE.toByte(20) + SizeUnit.GIGABYTE.toByte(1)
-            assert beforeCapacityResult.totalCapacity == afterCapacityResult.totalCapacity
-            assert beforeCapacityResult.totalPhysicalCapacity == afterCapacityResult.totalPhysicalCapacity
+        GetPrimaryStorageCapacityResult afterCapacityResult = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
         }
+        assert beforeCapacityResult.availableCapacity == afterCapacityResult.availableCapacity +
+                SizeUnit.GIGABYTE.toByte(1) + SizeUnit.GIGABYTE.toByte(20)
+        assert beforeCapacityResult.availablePhysicalCapacity ==
+                afterCapacityResult.availablePhysicalCapacity + SizeUnit.GIGABYTE.toByte(20) + SizeUnit.GIGABYTE.toByte(1)
+        assert beforeCapacityResult.totalCapacity == afterCapacityResult.totalCapacity
+        assert beforeCapacityResult.totalPhysicalCapacity == afterCapacityResult.totalPhysicalCapacity
     }
 }
