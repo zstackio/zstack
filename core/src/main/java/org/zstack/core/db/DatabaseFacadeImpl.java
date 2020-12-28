@@ -447,9 +447,16 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
     @Transactional(readOnly = true)
     private void getDbVersionOnInit() {
-        String sql = "select version from schema_version order by version desc limit 1";
+        String sql = "select version from schema_version";
         Query q = getEntityManager().createNativeQuery(sql);
-        dbVersion = (String) q.getSingleResult();
+
+        @SuppressWarnings("unchecked")
+        List<String> versions = q.getResultList();
+        dbVersion = versions.stream()
+                .map(VersionComparator::new)
+                .max(VersionComparator::compare)
+                .map(VersionComparator::toString)
+                .orElseThrow(() -> new CloudRuntimeException("cannot get db version."));
     }
 
     void init() {
