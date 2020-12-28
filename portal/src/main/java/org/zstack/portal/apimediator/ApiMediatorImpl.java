@@ -141,24 +141,9 @@ public class ApiMediatorImpl extends AbstractService implements ApiMediator, Glo
         });
     }
 
-    @Transactional(readOnly = true)
-    private String getMnVersion() {
-        String sql = "select v.version from schema_version v order by installed_rank desc";
-        Query q = dbf.getEntityManager().createNativeQuery(sql);
-        q.setMaxResults(5);
-
-        @SuppressWarnings("unchecked")
-        List<String> versions = q.getResultList();
-        Optional<String> ver = versions.stream()
-                .map(VersionComparator::new)
-                .max(VersionComparator::compare)
-                .map(VersionComparator::toString);
-        return ver.orElse("unknown");
-    }
-
     private void handle(APIGetVersionMsg msg) {
         APIGetVersionReply reply = new APIGetVersionReply();
-        reply.setVersion(getMnVersion());
+        reply.setVersion(dbf.getDbVersion());
         bus.reply(msg, reply);
     }
 
