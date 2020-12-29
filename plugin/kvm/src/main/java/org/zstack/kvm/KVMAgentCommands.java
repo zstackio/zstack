@@ -281,6 +281,21 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class takeOverCmd extends AgentCommand {
+        private String hostUuid;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+    }
+
+    public static class takeOverResponse extends AgentResponse {
+    }
+
     public static class PingCmd extends AgentCommand {
         public String hostUuid;
     }
