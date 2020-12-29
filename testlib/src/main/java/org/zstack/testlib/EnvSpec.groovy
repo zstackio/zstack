@@ -405,6 +405,7 @@ class EnvSpec extends ApiHelper implements Node  {
     }
 
     protected void deploy() {
+        logger.debug("Deploy EnvSpec started")
         def allNodes = []
 
         walk {
@@ -424,7 +425,7 @@ class EnvSpec extends ApiHelper implements Node  {
             return sn.hasProperty("name") ? sn.name : sn.toString()
         }
 
-        System.out.println("deploying path: ${names.join(" --> ")} ")
+        logger.debug("deploying path: ${names.join(" --> ")} ")
 
         resolvedNodes.each {
             if (!(it instanceof CreateAction)) {
@@ -481,6 +482,8 @@ class EnvSpec extends ApiHelper implements Node  {
                 it.postOperations.each { it() }
             }
         }
+
+        logger.debug("Deploy EnvSpec finished")
     }
 
     private List<GlobalConfigInventory> getChangedConfig() {
@@ -507,6 +510,7 @@ class EnvSpec extends ApiHelper implements Node  {
     }
 
     void resetAllGlobalConfig() {
+        logger.debug("Reset all global config started")
         CountDownLatch latch = new CountDownLatch(1)
         List<ErrorCode> errors = []
         new While<>(getChangedConfig()).all(new While.Do<GlobalConfigInventory>() {
@@ -539,6 +543,8 @@ class EnvSpec extends ApiHelper implements Node  {
 
         assert ret: "global configs not all updated after 1 minutes timeout"
         assert errors.isEmpty(): "some global configs fail to update, see ${errors.collect {it.toString()}}"
+
+        logger.debug("Reset all global config finished")
     }
 
     def recreate(String specName) {
@@ -563,6 +569,7 @@ class EnvSpec extends ApiHelper implements Node  {
     }
 
     protected void installSimulatorHandlers() {
+        logger.debug("Install simulator handlers started")
         simulatorClasses.each { clz ->
             def con = clz.getConstructors()[0]
 
@@ -580,6 +587,7 @@ class EnvSpec extends ApiHelper implements Node  {
 
             sim.registerSimulators(this)
         }
+        logger.debug("Install simulator handlers finished")
     }
 
     EnvSpec create(Closure cl = null) {
