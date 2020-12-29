@@ -881,5 +881,3 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2InstanceProvisionNicVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`ConsoleProxyVO` ADD COLUMN `targetSchema` varchar(32) NOT NULL DEFAULT 'vnc';
-
-ALTER TABLE `zstack`.`SNSEmailPlatformVO` CHANGE COLUMN `password` `password` VARCHAR(255) NULL
