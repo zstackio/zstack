@@ -1,5 +1,7 @@
 package org.zstack.utils.string;
 
+import com.github.sisyphsu.retree.ReMatcher;
+import com.github.sisyphsu.retree.ReTree;
 import info.debatty.java.stringsimilarity.*;
 import org.apache.commons.io.FileUtils;
 import org.zstack.utils.CollectionDSL;
@@ -44,6 +46,8 @@ public class StringSimilarity {
     };
 
     private static final Map<String, Pattern> patterns = new ConcurrentHashMap<>();
+
+    private static ReTree retrees;
 
     // initial errors from json files
     private static List<ErrorCodeElaboration> elaborations = initialElaborations();
@@ -96,6 +100,20 @@ public class StringSimilarity {
         }
     }
 
+    private static void retress(List<ErrorCodeElaboration> els) {
+        if (retrees != null) {
+            retrees = null;
+        }
+        List<String> r = new ArrayList<>();
+        for (ErrorCodeElaboration e: els) {
+            if (ElaborationSearchMethod.distance == e.getMethod()) {
+                continue;
+            }
+            r.add(e.getRegex());
+        }
+        retrees = new ReTree(r.toArray(new String[0]));
+    }
+
     private static void pattern(List<ErrorCodeElaboration> els) {
         patterns.clear();
         for (ErrorCodeElaboration e: els) {
@@ -141,6 +159,7 @@ public class StringSimilarity {
 
         validate(els);
         pattern(els);
+        retress(els);
         logger.info(String.format("finish initializing system elaborations, got %s elaborations", els.size()));
         return els;
     }
@@ -266,6 +285,9 @@ public class StringSimilarity {
 
     // better precision, worse performance
     private static ErrorCodeElaboration findMostSimilarRegex(String sub) {
+        if (!isRegexMatchedByRetrees(sub)) {
+            return null;
+        }
         ErrorCodeElaboration matchE = null;
         for (ErrorCodeElaboration elaboration: elaborations) {
             if (ElaborationSearchMethod.distance == elaboration.getMethod()) {
@@ -310,6 +332,10 @@ public class StringSimilarity {
 
         buffer.deleteCharAt(buffer.lastIndexOf("\n"));
         return String.format(buffer.toString(), args);
+    }
+
+    private static boolean isRegexMatchedByRetrees(String sub) {
+        return new ReMatcher(retrees, sub).find();
     }
 
     private static boolean isRegexMatched(String regex, String sub) {
