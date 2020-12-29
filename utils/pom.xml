@@ -126,6 +126,11 @@
             <artifactId>java-string-similarity</artifactId>
             <version>RELEASE</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.sisyphsu</groupId>
+            <artifactId>retree</artifactId>
+            <version>1.0.4</version>
+        </dependency>
     </dependencies>
 
     <build>
