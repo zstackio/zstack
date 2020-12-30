@@ -17,7 +17,6 @@ import java.io.Serializable;
 import java.util.*;
 
 public class KVMAgentCommands {
-
     public enum BootDev {
         hd(VmBootDevice.HardDisk),
         cdrom(VmBootDevice.CdRom),
@@ -1869,15 +1868,15 @@ public class KVMAgentCommands {
         public void setColoSecondary(boolean coloSecondary) {
             this.coloSecondary = coloSecondary;
         }
-    
+
         public boolean isConsoleLogToFile() {
             return consoleLogToFile;
         }
-    
+
         public void setConsoleLogToFile(boolean consoleLogToFile) {
             this.consoleLogToFile = consoleLogToFile;
         }
-    
+
         @Override
         public Map<String, Object> getAddons() {
             if (addons == null) {
