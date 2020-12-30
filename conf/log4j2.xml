@@ -4,7 +4,7 @@
         <RollingFile name="RollingFile" fileName="${sys:catalina.home}/logs/management-server.log"
                      filePattern="${sys:catalina.home}/logs/management-server-%d{yyyy-MM-dd}-%i.log.gz">
             <Masksensitivepatternlayout>
-                <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] %X{api,} (%t) %m%n</pattern>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1}] %X{api,task} (%t) %m%n</pattern>
                 <replaces>
                    <!-- <replace regex='(password|remote_pass|dstPassword|consolePassword|remotePass)(\\":\\"|":"|": "|:)(.*?)(\\"|"| )' replacement="$1$2*****$4" />-->
                     <replace regex='(ansible_ssh_pass)(=)(.*?)( )' replacement="$1$2*****$4"/>
