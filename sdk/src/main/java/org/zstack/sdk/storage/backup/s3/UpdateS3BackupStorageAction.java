@@ -37,8 +37,8 @@ public class UpdateS3BackupStorageAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String akeyUuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean usePathStyle;
+    @Param(required = false, validValues = {"path","vhost"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String accessStyle;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;

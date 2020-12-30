@@ -36,12 +36,12 @@ public class S3BackupStorageInventory extends org.zstack.sdk.BackupStorageInvent
         return this.akeyUuid;
     }
 
-    public boolean usePathStyle;
-    public void setUsePathStyle(boolean usePathStyle) {
-        this.usePathStyle = usePathStyle;
+    public java.lang.String accessStyle;
+    public void setAccessStyle(java.lang.String accessStyle) {
+        this.accessStyle = accessStyle;
     }
-    public boolean getUsePathStyle() {
-        return this.usePathStyle;
+    public java.lang.String getAccessStyle() {
+        return this.accessStyle;
     }
 
 }

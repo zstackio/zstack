@@ -37,8 +37,8 @@ public class AddRemoteS3BackupStorageAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String akeyUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean usePathStyle;
+    @Param(required = true, validValues = {"path","vhost"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String accessStyle;
 
     @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String url;
