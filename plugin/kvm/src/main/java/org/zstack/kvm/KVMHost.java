@@ -123,6 +123,7 @@ public class KVMHost extends HostBase implements Host {
     // ///////////////////// REST URL //////////////////////////
     private String baseUrl;
     private String connectPath;
+    private String takeOverPath;
     private String pingPath;
     private String checkPhysicalNetworkInterfacePath;
     private String startVmPath;
@@ -174,6 +175,10 @@ public class KVMHost extends HostBase implements Host {
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_CONNECT_PATH);
         connectPath = ub.build().toUriString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_TAKE_OVER_PATH);
+        takeOverPath = ub.build().toUriString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_PING_PATH);
@@ -3335,6 +3340,24 @@ public class KVMHost extends HostBase implements Host {
                                 }
                             });
                         }
+
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "check-Host-is-taken-over";
+
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                takeOverCmd cmd = new takeOverCmd();
+                                cmd.setHostUuid(self.getUuid());
+                                takeOverResponse rsp = restf.syncJsonPost(takeOverPath, cmd, takeOverResponse.class);
+                                if (!rsp.isSuccess()) {
+                                    trigger.fail(operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
+                                            self.getUuid(), self.getManagementIp(), takeOverPath, rsp.getError()));
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
+
                     }
 
                     flow(new NoRollbackFlow() {
