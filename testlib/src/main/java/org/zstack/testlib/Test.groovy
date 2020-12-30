@@ -606,13 +606,14 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
 
                 logger.error("a sub case[${c.class}] of suite[${this.class}] fails, ${t.message}", t)
             } finally {
-                if (caseResultShellPath != null){
-                    String shellCmd = String.format("suite_name=%s case_name=%s result=%s sh %s", this.class.name, r.caseType.name, (r.success ? "success" : "failure"), caseResultShellPath)
-                    ShellUtils.run(shellCmd)
-                }
 
                 def spendTime = (System.currentTimeMillis() - caseStartTime) as long
                 logger.info("spend time collected: case ${c.class.simpleName} of suite[${this.class}] spends ${spendTime} millisencends")
+
+                if (caseResultShellPath != null){
+                    String shellCmd = String.format("suite_name=%s case_name=%s result=%s spend_time=%s sh %s", this.class.name, r.caseType.name, (r.success ? "success" : "failure"), spendTime, caseResultShellPath)
+                    ShellUtils.run(shellCmd)
+                }
 
                 def fname = c.class.name.replace(".", "_") + "." + spendTime + "." + (r.success ? "success" : "failure")
                 def rfile = new File([dir.absolutePath, fname].join("/"))
@@ -630,7 +631,7 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
         allCases.each {
             if (it.success == null && isTimeout){
                 if (caseResultShellPath != null){
-                    String shellCmd = String.format("suite_name=%s case_name=%s result=timeout sh %s", this.class.name, it.caseType.name, caseResultShellPath)
+                    String shellCmd = String.format("suite_name=%s case_name=%s result=timeout spend_time=0 sh %s", this.class.name, it.caseType.name, caseResultShellPath)
                     ShellUtils.run(shellCmd)
                 }
                 def fname = it.caseType.name.replace(".", "_") + ".timeout"
@@ -639,7 +640,7 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
                 timeout ++
             } else if (it.success == null){
                 if (caseResultShellPath != null){
-                    String shellCmd = String.format("suite_name=%s case_name=%s result=skipped sh %s", this.class.name, it.caseType.name, caseResultShellPath)
+                    String shellCmd = String.format("suite_name=%s case_name=%s result=skipped spend_time=0 sh %s", this.class.name, it.caseType.name, caseResultShellPath)
                     ShellUtils.run(shellCmd)
                 }
                 def fname = it.caseType.name.replace(".", "_") + ".skipped"
