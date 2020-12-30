@@ -314,7 +314,7 @@ public class KvmBackend extends HypervisorBackend {
                     new PrimaryStorageCapacityUpdater(self.getUuid()).run(new PrimaryStorageCapacityUpdaterRunnable() {
                         @Override
                         public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {
-                            if (cap.getAvailableCapacity() == 0) {
+                            if (cap.getTotalCapacity() == 0 || cap.getAvailableCapacity() == 0) {
                                 cap.setAvailableCapacity(rsp.availableCapacity);
                             }
 
