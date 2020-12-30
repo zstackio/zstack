@@ -663,6 +663,12 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             if (ctx != null) {
                 ThreadContext.putAll(ctx);
             }
+
+            if (!ThreadContext.containsKey(Constants.THREAD_CONTEXT_API)) {
+                if (!ThreadContext.containsKey(Constants.THREAD_CONTEXT_TASK)) {
+                    ThreadContext.put(Constants.THREAD_CONTEXT_TASK, msg.getId());
+                }
+            }
         }
 
         if (msg.getHeaders().containsKey(THREAD_CONTEXT_STACK)) {
