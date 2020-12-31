@@ -58,6 +58,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.createSubTaskProgress;
@@ -1537,6 +1538,16 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 .eq(LocalStorageHostRefVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
                 .find();
 
+        List<VolumeVO> volumeVOS = SQL.New("select vo from VolumeVO vo, LocalStorageResourceRefVO ref " +
+                "where vo.uuid = ref.resourceUuid and ref.hostUuid =:hostUuid " +
+                "and ref.primaryStorageUuid=:primaryStorageUuid and ref.resourceType=:resourceType " +
+                "and vo.type=:type")
+                .param("hostUuid", msg.getHostUuid())
+                .param("primaryStorageUuid", self.getUuid())
+                .param("resourceType", VolumeVO.class.getSimpleName())
+                .param("type", VolumeType.Root)
+                .list();
+
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName("remove-host-from-localStorage");
@@ -1547,17 +1558,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     String __name__ = "remove-volume-under-resource";
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-
-                        List<VolumeVO> volumeVOS = SQL.New("select vo from VolumeVO vo, LocalStorageResourceRefVO ref " +
-                                "where vo.uuid = ref.resourceUuid and ref.hostUuid =:hostUuid " +
-                                "and ref.primaryStorageUuid=:primaryStorageUuid and ref.resourceType=:resourceType " +
-                                "and vo.type=:type")
-                                .param("hostUuid", msg.getHostUuid())
-                                .param("primaryStorageUuid", self.getUuid())
-                                .param("resourceType", VolumeVO.class.getSimpleName())
-                                .param("type", VolumeType.Root)
-                                .list();
-
                         //ZSTAC-34201 delete resources under volumes
                         for (VolumeVO vo : volumeVOS) {
                             pluginRgty.getExtensionList(VolumeJustBeforeDeleteFromDbExtensionPoint.class).forEach(ext-> ext.volumeJustBeforeDeleteFromDb(VolumeInventory.valueOf(vo)));
@@ -1565,6 +1565,28 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                         trigger.next();
 
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "remove-vm-under-resource";
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        List<String> volumeUuids = volumeVOS.stream().map(VolumeVO::getUuid).collect(Collectors.toList());
+                        if (!volumeUuids.isEmpty()) {
+                            List<VmInstanceVO> vmInstanceVOS = SQL.New("select vm from VmInstanceVO vm where vm.rootVolumeUuid in" +
+                                    " (select vol.uuid from VolumeVO vol where vol.uuid in (:volUuids)" +
+                                    " and vol.type = :volType)")
+                                    .param("volUuids", volumeUuids)
+                                    .param("volType", VolumeType.Root).list();
+
+                            for (VmInstanceVO vo : vmInstanceVOS) {
+                                pluginRgty.getExtensionList(VmJustBeforeDeleteFromDbExtensionPoint.class).forEach(ext-> ext.vmJustBeforeDeleteFromDb(VmInstanceInventory.valueOf(vo)));
+                            }
+
+                        }
+
+                        trigger.next();
                     }
                 });
 
