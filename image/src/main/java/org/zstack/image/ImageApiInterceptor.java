@@ -21,6 +21,7 @@ import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotState;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
@@ -76,7 +77,6 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         } else if (msg instanceof APICreateDataVolumeTemplateFromVolumeSnapshotMsg) {
             validate((APICreateDataVolumeTemplateFromVolumeSnapshotMsg) msg);
         }
-
 
         setServiceId(msg);
         return msg;

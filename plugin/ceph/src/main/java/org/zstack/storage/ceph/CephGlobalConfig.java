@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 
@@ -25,4 +26,8 @@ public class CephGlobalConfig {
     public static GlobalConfig BACKUP_STORAGE_MON_AUTO_RECONNECT = new GlobalConfig(CATEGORY, "backupStorage.mon.autoReconnect");
     @GlobalConfigValidation
     public static GlobalConfig GC_INTERVAL = new GlobalConfig(CATEGORY, "deletion.gcInterval");
+
+    @GlobalConfigDef(type = Boolean.class, defaultValue = "true")
+    @GlobalConfigValidation
+    public static GlobalConfig PREVENT_VM_SPLIT_BRAIN = new GlobalConfig(CATEGORY, "checkImageWatcherBeforeStartVm");
 }

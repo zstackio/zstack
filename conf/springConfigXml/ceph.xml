@@ -47,6 +47,7 @@
             <zstack:extension interface="org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidator" />
             <zstack:extension interface="org.zstack.storage.snapshot.MarkRootVolumeAsSnapshotExtension" />
             <zstack:extension interface="org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint" />
         </zstack:plugin>
     </bean>
 
