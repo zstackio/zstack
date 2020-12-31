@@ -340,6 +340,10 @@ class CreateVmConcurrentlyCase extends SubCase {
 
         assert successCount.get() == runningVmQuota
 
+        stopVmInstance {
+            uuid = vms.get(0).getUuid()
+        }
+
         def cnt = 0
         hasError = false
         for (int i = 0; i < imageNumQuota+1; ++i) {

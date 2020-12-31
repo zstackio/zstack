@@ -95,7 +95,7 @@ public class CloudBusJMX implements Component, BeforeSendMessageInterceptor,
 
         long cost = System.currentTimeMillis() - bundle.startTime;
         bundle.statistic.count(cost);
-        messageStartTime.invalidate(bundle);
+        messageStartTime.invalidate(msgId);
     }
 
     @Override

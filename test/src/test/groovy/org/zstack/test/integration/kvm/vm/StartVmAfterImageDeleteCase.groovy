@@ -128,6 +128,11 @@ class StartVmAfterImageDeleteCase extends SubCase {
     }
 
     void testCreateTemplateFromRootVolume(){
+        vm = stopVmInstance {
+            delegate.uuid = vm.uuid
+        } as VmInstanceInventory
+        assert vm.state == VmInstanceState.Stopped.toString()
+
         createRootVolumeTemplateFromRootVolume {
             name = "test"
             rootVolumeUuid = vm.rootVolumeUuid
@@ -135,11 +140,6 @@ class StartVmAfterImageDeleteCase extends SubCase {
     }
 
     void testGetCandidate() {
-        vm = stopVmInstance {
-            delegate.uuid = vm.uuid
-        } as VmInstanceInventory
-        assert vm.state == VmInstanceState.Stopped.toString()
-
         def result = getVmStartingCandidateClustersHosts {
             delegate.uuid = vm.uuid
         } as GetVmStartingCandidateClustersHostsResult
