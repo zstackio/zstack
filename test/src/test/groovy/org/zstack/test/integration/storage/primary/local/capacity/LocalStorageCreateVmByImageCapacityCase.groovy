@@ -3,7 +3,6 @@ package org.zstack.test.integration.storage.primary.local.capacity
 import org.springframework.http.HttpEntity
 import org.zstack.header.image.ImageConstant
 import org.zstack.sdk.BackupStorageInventory
-import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GetPrimaryStorageCapacityResult
 import org.zstack.sdk.HostDiskCapacity
@@ -17,8 +16,6 @@ import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-import org.zstack.utils.gson.JSONObjectUtil
-
 /**
  * Created by SyZhao on 2017/4/17.
  */
@@ -56,7 +53,6 @@ class LocalStorageCreateVmByImageCapacityCase extends SubCase {
         def l3 = env.inventoryByName("l3") as L3NetworkInventory
         def bs = env.inventoryByName("sftp") as BackupStorageInventory
         def host = env.inventoryByName("kvm") as HostInventory
-        def cluster = env.inventoryByName("cluster") as ClusterInventory
 
         ImageInventory sizedImage = addImage {
             name = "sized-image"
@@ -101,14 +97,8 @@ class LocalStorageCreateVmByImageCapacityCase extends SubCase {
         assert beforeCapacityResult.totalPhysicalCapacity == capacityResult.totalPhysicalCapacity
 
         env.afterSimulator(LocalStorageKvmBackend.INIT_PATH) { rsp, HttpEntity<String> e ->
-            LocalStorageKvmBackend.InitCmd cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.InitCmd.class)
-
-            if (host.uuid == cmd.hostUuid) {
-                rsp = new LocalStorageKvmBackend.CreateEmptyVolumeRsp()
-                rsp.totalCapacity = hostCapacity.totalCapacity
-                rsp.availableCapacity = hostCapacity.availableCapacity - SizeUnit.GIGABYTE.toByte(20) - SizeUnit.GIGABYTE.toByte(1)
-            }
-
+            rsp.totalCapacity = hostCapacity.totalCapacity
+            rsp.availableCapacity = hostCapacity.availableCapacity - SizeUnit.GIGABYTE.toByte(20) - SizeUnit.GIGABYTE.toByte(1)
             return rsp
         }
 
@@ -118,38 +108,10 @@ class LocalStorageCreateVmByImageCapacityCase extends SubCase {
         GetPrimaryStorageCapacityResult afterCapacityResult = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
         }
-
-        // current available plus system used + allocated resource
-        assert beforeCapacityResult.availableCapacity == afterCapacityResult.availableCapacity + SizeUnit.GIGABYTE.toByte(21) - SizeUnit.GIGABYTE.toByte(2) + SizeUnit.GIGABYTE.toByte(1) + SizeUnit.GIGABYTE.toByte(2)
+        assert beforeCapacityResult.availableCapacity == afterCapacityResult.availableCapacity +
+                SizeUnit.GIGABYTE.toByte(1) + SizeUnit.GIGABYTE.toByte(2)
         assert beforeCapacityResult.availablePhysicalCapacity == afterCapacityResult.availablePhysicalCapacity + SizeUnit.GIGABYTE.toByte(20) + SizeUnit.GIGABYTE.toByte(1)
         assert beforeCapacityResult.totalCapacity == afterCapacityResult.totalCapacity
         assert beforeCapacityResult.totalPhysicalCapacity == afterCapacityResult.totalPhysicalCapacity
-
-        detachPrimaryStorageFromCluster {
-            primaryStorageUuid = ps.uuid
-            clusterUuid = cluster.uuid
-        }
-
-        attachPrimaryStorageToCluster {
-            primaryStorageUuid = ps.uuid
-            clusterUuid = cluster.uuid
-        }
-
-        retryInSecs {
-            afterCapacityResult = getPrimaryStorageCapacity {
-                primaryStorageUuids = [ps.uuid]
-            }
-
-            // ImageCache(1G) + QCOW2(2G)
-            // agent reply 21G used capacity, subtract image cache size and volume actual size
-            // and plus ImageCache(1G) + QCOW2(2G) as available size
-            assert beforeCapacityResult.availableCapacity == afterCapacityResult.availableCapacity + SizeUnit.GIGABYTE.toByte(21) - SizeUnit.GIGABYTE.toByte(2) + SizeUnit.GIGABYTE.toByte(3)
-
-            // available physical capacity use return physical avail subtract image cache size and volume actual size as initial available physical size
-            assert beforeCapacityResult.availablePhysicalCapacity ==
-                    afterCapacityResult.availablePhysicalCapacity + SizeUnit.GIGABYTE.toByte(20) - SizeUnit.GIGABYTE.toByte(1)
-            assert beforeCapacityResult.totalCapacity == afterCapacityResult.totalCapacity
-            assert beforeCapacityResult.totalPhysicalCapacity == afterCapacityResult.totalPhysicalCapacity
-        }
     }
 }

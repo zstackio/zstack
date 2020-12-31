@@ -1723,7 +1723,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                 bkd.handle(msg, new ReturnValueCompletion<PhysicalCapacityUsage>(msg) {
                     @Override
-                    public void success(PhysicalCapacityUsage c) {
+                    public void success(PhysicalCapacityUsage usage) {
+                        LocalStoragePhysicalCapacityUsage c = (LocalStoragePhysicalCapacityUsage)usage;
+
                         List<LocalStorageHostRefVO> refs = Q.New(LocalStorageHostRefVO.class)
                                 .eq(LocalStorageHostRefVO_.hostUuid, msg.getHostUuid())
                                 .eq(LocalStorageHostRefVO_.primaryStorageUuid, self.getUuid())
@@ -1738,7 +1740,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
                             ref.setHostUuid(msg.getHostUuid());
                             ref.setPrimaryStorageUuid(self.getUuid());
-                            ref.setSystemUsedCapacity(c.totalPhysicalSize - c.availablePhysicalSize);
+                            ref.setSystemUsedCapacity(c.totalPhysicalSize - c.availablePhysicalSize - c.localStorageUsedSize);
                             dbf.persist(ref);
 
                             increaseCapacity(
@@ -1752,13 +1754,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
                             ref.setTotalPhysicalCapacity(c.totalPhysicalSize);
                             ref.setTotalCapacity(c.totalPhysicalSize);
-                            long managedResourceSize = calculateManagedResourceActualSize(msg.getHostUuid());
-
-                            long originSystemUsed = ref.getSystemUsedCapacity();
-                            logger.debug("total physical is " + c.totalPhysicalSize + "avail physical is " + c.availablePhysicalSize + "managede size is " + managedResourceSize);
-                            ref.setSystemUsedCapacity(c.totalPhysicalSize - c.availablePhysicalSize - managedResourceSize);
-                            increaseCapacity(null, null, null, null, ref.getSystemUsedCapacity() - originSystemUsed);
-
+                            ref.setSystemUsedCapacity(c.totalPhysicalSize - c.availablePhysicalSize - c.localStorageUsedSize);
                             dbf.update(ref);
 
                             // the host's local storage capacity changed
@@ -1808,51 +1804,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         }).start();
-    }
-
-    protected long calculateManagedResourceActualSize(String hostUuid) {
-        List<String> volumeUuids = Q.New(LocalStorageResourceRefVO.class)
-                .select(LocalStorageResourceRefVO_.resourceUuid)
-                .eq(LocalStorageResourceRefVO_.hostUuid, hostUuid)
-                .eq(LocalStorageResourceRefVO_.resourceType, VolumeVO.class.getSimpleName())
-                .listValues();
-
-        long volumeSize = 0;
-        if (!volumeUuids.isEmpty()) {
-            Long size = SQL.New("select sum(vol.actualSize) from VolumeVO vol where vol.uuid in (:volUuids)")
-                    .param("volUuids", volumeUuids)
-                    .find();
-
-
-            if (size != null) {
-                volumeSize = size;
-            }
-        }
-
-        List<String> snapshotUuids = Q.New(LocalStorageResourceRefVO.class)
-                .select(LocalStorageResourceRefVO_.resourceUuid)
-                .eq(LocalStorageResourceRefVO_.hostUuid, hostUuid)
-                .eq(LocalStorageResourceRefVO_.resourceType, VolumeSnapshotVO.class.getSimpleName())
-                .listValues();
-
-        long volumeSnapshotSize = 0;
-        if (!snapshotUuids.isEmpty()) {
-            Long size = SQL.New("select sum(snap.size) from VolumeSnapshotVO snap where snap.uuid in (:snapUuids)")
-                    .param("snapUuids", snapshotUuids)
-                    .find();
-
-            if (size != null) {
-                volumeSnapshotSize = size;
-            }
-        }
-
-        Long imageCacheSize = SQL.New("select sum(cache.size) from ImageCacheVO cache where cache.primaryStorageUuid = :psUuid" +
-                " and cache.installUrl like :url")
-                .param("psUuid", self.getUuid())
-                .param("url", String.format("%%hostUuid://%s%%", hostUuid))
-                .find();
-
-        return volumeSize + volumeSnapshotSize + (imageCacheSize == null ? 0 : imageCacheSize);
     }
 
     @ExceptionSafe
@@ -2982,5 +2933,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }
 
         bus.reply(msg, r);
+    }
+
+    public static class LocalStoragePhysicalCapacityUsage extends PrimaryStorageBase.PhysicalCapacityUsage {
+        public long localStorageUsedSize;
     }
 }
