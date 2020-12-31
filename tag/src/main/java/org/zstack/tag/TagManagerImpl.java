@@ -418,6 +418,13 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     @Override
+    public void copySystemTag(String srcResourceUuid, String srcResourceType,
+                              String dstResourceUuid, String dstResourceType) {
+        copySystemTag(srcResourceUuid, srcResourceType, dstResourceUuid, dstResourceType, true);
+        copySystemTag(srcResourceUuid, srcResourceType, dstResourceUuid, dstResourceType, false);
+    }
+
+    @Override
     public SystemTagInventory updateSystemTag(String tagUuid, String newTag) {
         SystemTagVO vo = dbf.findByUuid(tagUuid, SystemTagVO.class);
         SystemTagInventory old = SystemTagInventory.valueOf(vo);

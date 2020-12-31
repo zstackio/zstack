@@ -63,4 +63,6 @@ public interface TagManager {
     void createTags(List<String> systemTags, List<String> userTags, String resourceUuid, String resourceType);
 
     List<String> filterSystemTags(List<String> systemTags, String resourceType);
+
+    void copySystemTag(String srcResourceUuid, String srcResourceType, String dstResourceUuid, String dstResourceType);
 }
