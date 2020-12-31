@@ -14220,7 +14220,7 @@
       "msg.getPciSpecUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 374,
+    "line": 373,
     "fileName": "src/main/java/org/zstack/pciDevice/specification/PciSpecificationManagerImpl.java"
   },
   {
@@ -14230,7 +14230,7 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 372,
+    "line": 371,
     "fileName": "src/main/java/org/zstack/pciDevice/specification/PciSpecificationManagerImpl.java"
   },
   {
@@ -14241,7 +14241,19 @@
       "msg.getVmInstanceUuid()",
       "rly.getError()"
     ],
-    "line": 367,
+    "line": 366,
+    "fileName": "src/main/java/org/zstack/pciDevice/specification/PciSpecificationManagerImpl.java"
+  },
+  {
+    "raw": "pci devices[uuid:%s] should have been attached to vm[uuid:%s] but it is attached to vm[uuid:%s]",
+    "en_US": "pci devices[uuid:{0}] should have been attached to vm[uuid:{1}] but it is attached to vm[uuid:{2}]",
+    "zh_CN": "PCI设备[uuid:{0}]本应该绑定云主机[uuid:{1}], 但实际上绑定了云主机[uuid:{2}]",
+    "arguments": [
+      "pciUuidsNotMatch",
+      "msg.getVmInstanceUuid()",
+      "vmUuidsPciAttached"
+    ],
+    "line": 454,
     "fileName": "src/main/java/org/zstack/pciDevice/specification/PciSpecificationManagerImpl.java"
   },
   {
@@ -14252,7 +14264,7 @@
       "msg.getMdevSpecUuid()",
       "msg.getVmInstanceUuid()"
     ],
-    "line": 544,
+    "line": 565,
     "fileName": "src/main/java/org/zstack/pciDevice/specification/PciSpecificationManagerImpl.java"
   },
   {
@@ -14262,7 +14274,7 @@
     "arguments": [
       "msg.getVmInstanceUuid()"
     ],
-    "line": 537,
+    "line": 558,
     "fileName": "src/main/java/org/zstack/pciDevice/specification/PciSpecificationManagerImpl.java"
   },
   {
@@ -14273,7 +14285,7 @@
       "specUuid",
       "systemTag"
     ],
-    "line": 756,
+    "line": 779,
     "fileName": "src/main/java/org/zstack/pciDevice/specification/PciSpecificationManagerImpl.java"
   },
   {
@@ -14284,7 +14296,7 @@
       "specUuid",
       "systemTag"
     ],
-    "line": 769,
+    "line": 792,
     "fileName": "src/main/java/org/zstack/pciDevice/specification/PciSpecificationManagerImpl.java"
   },
   {
