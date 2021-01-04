@@ -14,6 +14,7 @@ import org.zstack.header.search.Inventory;
 import org.zstack.header.search.TypeField;
 import org.zstack.header.vm.cdrom.VmCdRomInventory;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.header.zone.ZoneInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
@@ -23,6 +24,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @inventory inventory for vm instance
@@ -256,8 +258,9 @@ public class VmInstanceInventory implements Serializable, Cloneable {
      */
     private List<VmNicInventory> vmNics;
     /**
-     * @desc a list of volumes the vm has, including root volume and data volume.
-     * See :ref:`VolumeInventory`
+     * @desc a list of volumes the vm has, including all types volume.
+     * See :{@link VolumeInventory}
+     * See :{@link VolumeType}
      */
     private List<VolumeInventory> allVolumes;
 
@@ -526,6 +529,15 @@ public class VmInstanceInventory implements Serializable, Cloneable {
 
     public void setVmNics(List<VmNicInventory> vmNics) {
         this.vmNics = vmNics;
+    }
+
+    /**
+     * @return a list of disk the vm using on hypervisor, including root volume and data volume.
+     * See :{@link VolumeType}
+     * See :{@link VolumeInventory#isDisk}
+     */
+    public List<VolumeInventory> getAllDiskVolumes() {
+        return allVolumes.stream().filter(VolumeInventory::isDisk).collect(Collectors.toList());
     }
 
     public List<VolumeInventory> getAllVolumes() {

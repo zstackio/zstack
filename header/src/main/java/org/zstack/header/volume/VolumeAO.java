@@ -174,6 +174,10 @@ public class VolumeAO extends ResourceVO implements ShadowEntity {
         this.type = volumeType;
     }
 
+    public boolean isDisk() {
+        return type == VolumeType.Data || type == VolumeType.Root;
+    }
+
     public long getSize() {
         return size;
     }
