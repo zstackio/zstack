@@ -627,7 +627,6 @@ public class ImageBase implements Image {
         ));
         creator.recreate = true;
         creator.create();
-
         APISetImageBootModeEvent evt = new APISetImageBootModeEvent(msg.getId());
         bus.publish(evt);
     }
