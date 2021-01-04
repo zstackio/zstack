@@ -15,6 +15,7 @@ import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table
@@ -89,13 +90,16 @@ public class VmInstanceVO extends VmInstanceAO implements OwnedByAccount, ToInve
         this.allVolumes = allVolumes;
     }
 
+    public Set<VolumeVO> getAllDiskVolumes() {
+        return allVolumes.stream().filter(VolumeVO::isDisk).collect(Collectors.toSet());
+    }
+
     public VolumeVO getRootVolume() {
         if (allVolumes == null) {
             return null;
         }
 
-        Optional<VolumeVO> opt = allVolumes.stream().filter(v -> v.getUuid().equals(getRootVolumeUuid())).findAny();
-        return opt.isPresent() ? opt.get() : null;
+        return allVolumes.stream().filter(v -> v.getUuid().equals(getRootVolumeUuid())).findAny().orElse(null);
     }
 
     public Set<VmCdRomVO> getVmCdRoms() {
