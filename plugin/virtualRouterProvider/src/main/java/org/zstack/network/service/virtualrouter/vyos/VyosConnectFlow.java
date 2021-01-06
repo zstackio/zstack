@@ -19,13 +19,9 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.InitCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.InitRsp;
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
-import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
-import org.zstack.network.service.virtualrouter.VirtualRouterManager;
-import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
-import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.zsha2.ZSha2Helper;
@@ -111,6 +107,12 @@ public class VyosConnectFlow extends NoRollbackFlow {
                             @Override
                             public void success(InitRsp ret) {
                                 if (ret.isSuccess()) {
+                                    VirtualRouterMetadataStruct struct = new VirtualRouterMetadataStruct();
+                                    struct.setVrUuid(vrUuid);
+                                    struct.setKernelVersion(ret.getKernelVersion());
+                                    struct.setVyosVersion(ret.getVyosVersion());
+                                    struct.setZvrVersion(ret.getZvrVersion());
+                                    new VirtualRouterMetadataOperator().updateVirtualRouterMetadata(struct);
                                     trigger.next();
                                 } else {
                                     trigger.fail(operr("operation error, because:%s", ret.getError()));
@@ -121,7 +123,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
                             public Class<InitRsp> getReturnClass() {
                                 return InitRsp.class;
                             }
-                        });
+                        }, TimeUnit.MILLISECONDS, TimeUnit.SECONDS.toMillis(Long.parseLong(VirtualRouterGlobalConfig.VYOS_ECHO_TIMEOUT.value())));
                     }
                 });
 

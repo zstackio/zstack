@@ -72,7 +72,34 @@ public class VirtualRouterCommands {
 	}
 
     public static class InitRsp extends AgentResponse {
-    }
+		private String zvrVersion;
+		private String vyosVersion;
+		private String kernelVersion;
+
+		public String getZvrVersion() {
+			return zvrVersion;
+		}
+
+		public void setZvrVersion(String zvrVersion) {
+			this.zvrVersion = zvrVersion;
+		}
+
+		public String getVyosVersion() {
+			return vyosVersion;
+		}
+
+		public void setVyosVersion(String vyosVersion) {
+			this.vyosVersion = vyosVersion;
+		}
+
+		public String getKernelVersion() {
+			return kernelVersion;
+		}
+
+		public void setKernelVersion(String kernelVersion) {
+			this.kernelVersion = kernelVersion;
+		}
+	}
 	
 	public static class NicInfo {
 		private String ip;
@@ -949,7 +976,7 @@ public class VirtualRouterCommands {
 
 	public static class PingRsp extends AgentResponse {
 		private String uuid;
-		private String version;
+		private String version;  /* zvr version */
 		private String haStatus;
 		private Boolean healthy;
 		private String healthDetail;

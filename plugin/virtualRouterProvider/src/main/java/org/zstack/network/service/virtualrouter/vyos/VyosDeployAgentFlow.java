@@ -27,6 +27,8 @@ import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshException;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -87,18 +89,15 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
         int timeoutInSeconds = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class);
         long timeout = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeoutInSeconds);
 
-        if (isReconnect && !NetworkUtils.isRemotePortOpen(mgmtNicIp, 22, 2000)) {
-            throw new OperationFailureException(operr("unable to ssh in to the vyos[%s], the ssh port seems not open", mgmtNicIp));
-        }
-
+        List<Throwable> errors = new ArrayList<>();
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
             @Override
             public boolean run() {
                 try {
                     long now = System.currentTimeMillis();
                     if (now > timeout) {
-                        trigger.fail(err(ApplianceVmErrors.UNABLE_TO_START, "the SSH port is not" +
-                                " open after %s seconds. Failed to login the vyos router[ip:%s]", timeoutInSeconds, mgmtNicIp));
+                        trigger.fail(err(ApplianceVmErrors.UNABLE_TO_START, "vyos deploy agent failed, because %s",
+                                errors.get(errors.size() -1)));
                         return true;
                     }
 
@@ -109,7 +108,8 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                         return false;
                     }
                 } catch (Throwable t) {
-                    logger.warn("unhandled exception happened", t);
+                    logger.warn("vyos deploy agent failed", t);
+                    errors.add(t);
                     return false;
                 }
             }
@@ -164,7 +164,8 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
             @Override
             public long getInterval() {
-                return 1;
+                /* retry too fast will produce too much useless log */
+                return 20;
             }
 
             @Override
