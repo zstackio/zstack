@@ -21,12 +21,9 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.InitCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.InitRsp;
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
-import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig;
-import org.zstack.network.service.virtualrouter.VirtualRouterManager;
-import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -51,11 +48,6 @@ public class VyosConnectFlow extends NoRollbackFlow {
     private DatabaseFacade dbf;
     @Autowired
     private ResourceConfigFacade rcf;
-    @Autowired
-    private VyosVersionManager vyosVersionManager;
-    @Autowired
-    private PluginRegistry pluginRgty;
-    private static final CLogger logger = Utils.getLogger(VyosConnectFlow.class);
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -119,6 +111,12 @@ public class VyosConnectFlow extends NoRollbackFlow {
                             @Override
                             public void success(InitRsp ret) {
                                 if (ret.isSuccess()) {
+                                    VirtualRouterMetadataStruct struct = new VirtualRouterMetadataStruct();
+                                    struct.setVrUuid(vrUuid);
+                                    struct.setKernelVersion(ret.getKernelVersion());
+                                    struct.setVyosVersion(ret.getVyosVersion());
+                                    struct.setZvrVersion(ret.getZvrVersion());
+                                    new VirtualRouterMetadataOperator().updateVirtualRouterMetadata(struct);
                                     trigger.next();
                                 } else {
                                     trigger.fail(operr("operation error, because:%s", ret.getError()));
@@ -129,40 +127,10 @@ public class VyosConnectFlow extends NoRollbackFlow {
                             public Class<InitRsp> getReturnClass() {
                                 return InitRsp.class;
                             }
-                        });
+                        }, TimeUnit.MILLISECONDS, TimeUnit.SECONDS.toMillis(Long.parseLong(VirtualRouterGlobalConfig.VYOS_ECHO_TIMEOUT.value())));
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "sync-version-to-db";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        vyosVersionManager.vyosRouterVersionCheck(vrUuid, new ReturnValueCompletion<VyosVersionCheckResult>(trigger) {
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void success(VyosVersionCheckResult returnValue) {
-                                if (returnValue.isNeedReconnect()) {
-                                    trigger.next();
-                                    return;
-                                }
-
-                                List<VyosConnectExtensionPoint> exts = pluginRgty.getExtensionList(VyosConnectExtensionPoint.class);
-                                if (exts.isEmpty()) {
-                                    trigger.next();
-                                    return;
-                                }
-                                logger.debug(String.format("start to sync version to db, general zvr version is %s", returnValue.getVersion()));
-                                exts.get(0).syncVersionToDb(vrUuid, returnValue.getVersion());
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
                 done(new FlowDoneHandler(trigger) {
                     @Override
                     public void handle(Map data) {
