@@ -721,7 +721,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class KvmSetupSelfFencerCmd extends AgentCommand {
-        public String heartbeatImagePath;
+        public List<String> poolNames;
         public String hostUuid;
         public long interval;
         public int maxAttempts;
@@ -3672,10 +3672,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cmd.maxAttempts = param.getMaxAttempts();
         cmd.storageCheckerTimeout = param.getStorageCheckerTimeout();
         cmd.userKey = getSelf().getUserKey();
-        cmd.heartbeatImagePath = String.format("%s/ceph-ps-%s-host-hb-%s",
-                getDefaultRootVolumePoolName(),
-                self.getUuid(),
-                param.getHostUuid());
+        cmd.poolNames = Q.New(CephPrimaryStoragePoolVO.class)
+                .select(CephPrimaryStoragePoolVO_.poolName)
+                .eq(CephPrimaryStoragePoolVO_.type, CephPrimaryStoragePoolType.Root.toString())
+                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
+                .listValues();
         cmd.monUrls = CollectionUtils.transformToList(getSelf().getMons(), new Function<String, CephPrimaryStorageMonVO>() {
             @Override
             public String call(CephPrimaryStorageMonVO arg) {
