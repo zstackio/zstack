@@ -7,6 +7,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -16,6 +17,13 @@ public class TimeUtils {
 
     public static String TIME_UNIT_WEEKS = "WEEKS";
     public static String TIME_UNIT_MONTHS = "MONTHS";
+
+    public static final String[] patterns = {
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ssX",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSX"
+    };
 
     private static CLogger logger = Utils.getLogger(TimeUtils.class);
 
@@ -198,5 +206,19 @@ public class TimeUtils {
             }
         }
         return true;
+    }
+
+    public static String parseRFC3339DateTime(String time) {
+        for (String pattern : patterns) {
+            try {
+                SimpleDateFormat df = new SimpleDateFormat(pattern);
+                df.setTimeZone(TimeZone.getTimeZone("UTC"));
+                return df.format(df.parse(time));
+            } catch (ParseException e) {
+                continue;
+            }
+        }
+
+        return null;
     }
 }

@@ -143,37 +143,54 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 ErrorCodeList errorCodeList = new ErrorCodeList();
-                new While<>(l2Networks).step((l2, c) -> {
-                    if (l2.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)) {
-                        noVlanNetworkBackend.realize(l2, hostUuid, true, new Completion(c) {
-                            @Override
-                            public void success() {
-                                c.done();
-                            }
+                List<L2NetworkInventory> novlanNetworks = l2Networks.stream().filter(l2 -> l2.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)).collect(Collectors.toList());
+                new While<>(novlanNetworks).step((l2, c) -> {
+                    noVlanNetworkBackend.realize(l2, hostUuid, true, new Completion(c) {
+                        @Override
+                        public void success() {
+                            c.done();
+                        }
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                errorCodeList.getCauses().add(errorCode);
-                                c.allDone();
-                            }
-                        });
-                    } else if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(l2.getType())) {
-                        vlanNetworkBackend.realize(l2, hostUuid, true, new Completion(c) {
-                            @Override
-                            public void success() {
-                                c.done();
-                            }
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            errorCodeList.getCauses().add(errorCode);
+                            c.allDone();
+                        }
+                    });
+                }, 10).run(new NoErrorCompletion(trigger) {
+                    @Override
+                    public void done() {
+                        if (!errorCodeList.getCauses().isEmpty()) {
+                            trigger.fail(errorCodeList.getCauses().get(0));
+                            return;
+                        }
 
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                errorCodeList.getCauses().add(errorCode);
-                                c.allDone();
-                            }
-                        });
-                    } else {
-                        errorCodeList.getCauses().add(operr("KVMConnectExtensionForL2Network wont's support L2Network[type:%s]", l2.getType()));
-                        c.allDone();
+                        trigger.next();
                     }
+                });
+            }
+        });
+
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "realize_vlan";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                ErrorCodeList errorCodeList = new ErrorCodeList();
+                List<L2NetworkInventory> vlanNetworks = l2Networks.stream().filter(l2 -> l2.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)).collect(Collectors.toList());
+                new While<>(vlanNetworks).step((l2, c) -> {
+                    vlanNetworkBackend.realize(l2, hostUuid, true, new Completion(c) {
+                        @Override
+                        public void success() {
+                            c.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            errorCodeList.getCauses().add(errorCode);
+                            c.allDone();
+                        }
+                    });
                 }, 10).run(new NoErrorCompletion(trigger) {
                     @Override
                     public void done() {

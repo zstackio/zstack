@@ -14,4 +14,11 @@
         <type>java.lang.Boolean</type>
         <defaultValue>false</defaultValue>
     </config>
+    <config>
+        <category>vyos</category>
+        <name>auto.restart.ipsec</name>
+        <description>auto restart vpn when ike key expired</description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>false</defaultValue>
+    </config>
 </globalConfig>

@@ -34,6 +34,7 @@ import org.zstack.header.core.*;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -57,9 +58,11 @@ import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.network.l3.NetworkGlobalProperty;
+import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.tag.SystemTag;
 import org.zstack.tag.SystemTagCreator;
@@ -85,7 +88,6 @@ import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
-
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
     private static final ZTester tester = Utils.getTester();
@@ -2363,11 +2365,33 @@ public class KVMHost extends HostBase implements Host {
 
     }
 
+    @Transactional
+    private void setVmNicMultiqueueNum(final VmInstanceSpec spec) {
+        try {
+            if (!ImagePlatform.isType(spec.getImageSpec().getInventory().getPlatform(), ImagePlatform.Linux)) {
+                return;
+            }
+
+            if (!rcf.getResourceConfigValue(KVMGlobalConfig.AUTO_VM_NIC_MULTIQUEUE,
+                    spec.getDestHost().getClusterUuid(), Boolean.class)) {
+                return;
+            }
+
+            ResourceConfig multiQueues = rcf.getResourceConfig(VmGlobalConfig.VM_NIC_MULTIQUEUE_NUM.getIdentity());
+            Integer queues = spec.getVmInventory().getCpuNum() > KVMConstant.DEFAULT_MAX_NIC_QUEUE_NUMBER ? KVMConstant.DEFAULT_MAX_NIC_QUEUE_NUMBER : spec.getVmInventory().getCpuNum();
+            multiQueues.updateValue(spec.getVmInventory().getUuid(), queues.toString());
+
+        } catch (Exception e) {
+            logger.warn(String.format("got exception when trying set nic multiqueue for vm: %s, %s", spec.getVmInventory().getUuid(), e));
+        }
+    }
+
     private void handle(final CreateVmOnHypervisorMsg msg) {
         inQueue().name(String.format("start-vm-on-kvm-%s", self.getUuid()))
                 .asyncBackup(msg)
                 .run(chain -> {
                     setDataVolumeUseVirtIOSCSI(msg.getVmSpec());
+                    setVmNicMultiqueueNum(msg.getVmSpec());
                     startVm(msg.getVmSpec(), msg, new NoErrorCompletion(chain) {
                         @Override
                         public void done() {
@@ -2545,6 +2569,10 @@ public class KVMHost extends HostBase implements Host {
         cmd.setMemory(spec.getVmInventory().getMemorySize());
         cmd.setMaxMemory(self.getCapacity().getTotalPhysicalMemory());
         cmd.setClock(ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio) ? "localtime" : "utc");
+        if (VmSystemTags.CLOCK_TRACK.hasTag(spec.getVmInventory().getUuid())) {
+            cmd.setClockTrack(VmSystemTags.CLOCK_TRACK.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmInstanceVO.class, VmSystemTags.CLOCK_TRACK_TOKEN));
+        }
+
         cmd.setVideoType(VmGlobalConfig.VM_VIDEO_TYPE.value(String.class));
         if (VmSystemTags.QXL_MEMORY.hasTag(spec.getVmInventory().getUuid())) {
             Map<String,String> qxlMemory = VmSystemTags.QXL_MEMORY.getTokensByResourceUuid(spec.getVmInventory().getUuid());
@@ -2556,7 +2584,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
         cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
-        cmd.setEmulateHyperV(rcf.getResourceConfigValue(VmGlobalConfig.EMULATE_HYPERV, spec.getVmInventory().getUuid(), Boolean.class));
+        cmd.setEmulateHyperV(!ImagePlatform.isType(platform, ImagePlatform.Linux) && rcf.getResourceConfigValue(VmGlobalConfig.EMULATE_HYPERV, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setAdditionalQmp(VmGlobalConfig.ADDITIONAL_QMP.value(Boolean.class));
         cmd.setApplianceVm(spec.getVmInventory().getType().equals("ApplianceVm"));
         cmd.setSystemSerialNumber(makeAndSaveVmSystemSerialNumber(spec.getVmInventory().getUuid()));
@@ -3173,6 +3201,7 @@ public class KVMHost extends HostBase implements Host {
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("continue-connecting-kvm-host-%s-%s", self.getManagementIp(), self.getUuid()));
+        chain.getData().put(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR, new ErrorCodeList());
         chain.allowWatch();
         for (KVMHostConnectExtensionPoint extp : factory.getConnectExtensions()) {
             KVMHostConnectedContext ctx = new KVMHostConnectedContext();
@@ -3187,8 +3216,9 @@ public class KVMHost extends HostBase implements Host {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                if (noStorageAccessible()){
-                    completion.fail(operr("host can not access any primary storage, please check network"));
+                if (noStorageAccessible()) {
+                    ErrorCodeList errorCodeList = (ErrorCodeList) data.get(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR);
+                    completion.fail(operr("host can not access any primary storage, %s", errorCodeList != null && StringUtils.isNotEmpty(errorCodeList.getReadableDetails()) ? errorCodeList.getReadableDetails() : "please check network"));
                 } else {
                     completion.success();
                 }

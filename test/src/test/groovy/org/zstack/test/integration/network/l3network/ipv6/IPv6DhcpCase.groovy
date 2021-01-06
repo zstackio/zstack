@@ -188,8 +188,8 @@ class IPv6DhcpCase extends SubCase {
             }
         }
 
-        pcmds = new ArrayList<>()
-        cmds = new ArrayList<>()
+        pcmds = Collections.synchronizedList(new ArrayList())
+        cmds =  Collections.synchronizedList(new ArrayList())
         reconnectHost {
             uuid = vm.hostUuid
         }

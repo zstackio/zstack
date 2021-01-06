@@ -16,10 +16,7 @@ import org.zstack.header.message.APIListMessage;
 import org.zstack.header.vo.EO;
 import org.zstack.header.vo.SoftDeletionCascade;
 import org.zstack.header.vo.SoftDeletionCascades;
-import org.zstack.utils.BeanUtils;
-import org.zstack.utils.DebugUtils;
-import org.zstack.utils.FieldUtils;
-import org.zstack.utils.ObjectUtils;
+import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
 
@@ -450,9 +447,16 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
 
     @Transactional(readOnly = true)
     private void getDbVersionOnInit() {
-        String sql = "select version from schema_version order by version desc limit 1";
+        String sql = "select v.version from schema_version v";
         Query q = getEntityManager().createNativeQuery(sql);
-        dbVersion = (String) q.getSingleResult();
+
+        @SuppressWarnings("unchecked")
+        List<String> versions = q.getResultList();
+        dbVersion = versions.stream()
+                .map(VersionComparator::new)
+                .max(VersionComparator::compare)
+                .map(VersionComparator::toString)
+                .orElseThrow(() -> new CloudRuntimeException("cannot get db version."));
     }
 
     void init() {

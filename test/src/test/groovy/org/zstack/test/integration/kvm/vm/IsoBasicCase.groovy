@@ -76,11 +76,6 @@ class IsoBasicCase extends SubCase {
                     url  = "http://zstack.org/download/test.iso"
                     format = ImageConstant.ISO_FORMAT_STRING.toString()
                 }
-
-                image {
-                    name = "image"
-                    url  = "http://zstack.org/download/image.qcow2"
-                }
             }
 
             zone {
@@ -172,8 +167,10 @@ class IsoBasicCase extends SubCase {
             imageUuid = iso0.uuid
             l3NetworkUuids = [l3.uuid]
             rootDiskOfferingUuid = diskOffering.uuid
+            systemTags = ["clockTrack::guest"]
         }
         assert null != cmd
+        assert cmd.clockTrack == "guest"
 
         checkIsoSystemTag(newVm.uuid, iso0.uuid, 0)
         checkVmIsoNum(newVm.uuid, 1)

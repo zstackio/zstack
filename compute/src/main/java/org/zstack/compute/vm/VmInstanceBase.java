@@ -6376,6 +6376,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                     checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
                         @Override
                         public void done() {
+                            self = dbf.reload(self);
+                            if (self.getState() == VmInstanceState.Running) {
+                                for (DeleteInhibitHASystemTagExtensionPoint ext : pluginRgty.getExtensionList(DeleteInhibitHASystemTagExtensionPoint.class)) {
+                                    ext.deleteInhibitHaSystemTag(self.getUuid());
+                                }
+                            }
+
                             completion.fail(errCode);
                             extEmitter.failedToStopVm(inv, errCode);
                         }
