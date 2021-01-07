@@ -103,6 +103,9 @@
         <name>org.zstack.header.vm.APIGetVmBootOrderMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APISetVmBootVolumeMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APIGetVmConsolePasswordMsg</name>
     </message>
     <message>

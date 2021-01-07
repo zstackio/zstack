@@ -1,6 +1,7 @@
 package org.zstack.compute.vm;
 
 import org.zstack.header.tag.TagDefinition;
+import org.zstack.header.vm.VmInstance;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.tag.PatternedSystemTag;
@@ -89,6 +90,9 @@ public class VmSystemTags {
 
     public static String BOOT_MODE_TOKEN = "bootMode";
     public static PatternedSystemTag BOOT_MODE = new PatternedSystemTag(String.format("bootMode::{%s}", BOOT_MODE_TOKEN), VmInstanceVO.class);
+
+    public static String BOOT_VOLUME_TOKEN = "bootVolume";
+    public static PatternedSystemTag BOOT_VOLUME = new PatternedSystemTag(String.format("bootVolume::{%s}", BOOT_VOLUME_TOKEN), VmInstanceVO.class);
 
     public static PatternedSystemTag ADDITIONAL_QMP_ADDED = new PatternedSystemTag("additionalQmp", VmInstanceVO.class);
 
