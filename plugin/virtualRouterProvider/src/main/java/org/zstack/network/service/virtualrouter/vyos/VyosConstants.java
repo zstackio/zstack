@@ -30,4 +30,8 @@ public interface VyosConstants {
     String VIP_REBUILD_VERSION = "3.8.4.2";
 
     String VYOS_VMWARE_ALLOW_NIC_HOT_PLUGIN_VERSION = "4.2.0.0";
+
+    int NTP_PORT = 123;
+    int DNS_PORT = 53;
+
 }
