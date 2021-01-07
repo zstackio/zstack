@@ -2927,6 +2927,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmBootOrderMsg) msg);
         } else if (msg instanceof APISetVmClockTrackMsg) {
             handle((APISetVmClockTrackMsg) msg);
+        } else if (msg instanceof APISetVmBootVolumeMsg) {
+            handle((APISetVmBootVolumeMsg) msg);
         } else if (msg instanceof APISetVmConsolePasswordMsg) {
             handle((APISetVmConsolePasswordMsg) msg);
         } else if (msg instanceof APISetVmSoundTypeMsg) {
@@ -3415,6 +3417,97 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
+    }
+
+    private void handle(APISetVmBootVolumeMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                refreshVO();
+                setBootVolume(msg);
+
+                APISetVmBootVolumeEvent event = new APISetVmBootVolumeEvent(msg.getId());
+                event.setInventory(getSelfInventory());
+                bus.publish(event);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return "set-vm-boot-volume";
+            }
+        });
+    }
+
+    private void setBootVolume(APISetVmBootVolumeMsg msg) {
+        if (msg.getVolumeUuid().equals(self.getRootVolumeUuid())) {
+            return;
+        }
+
+        if (self.getState() == VmInstanceState.Stopped) {
+            doSetBootVolume(msg.getVolumeUuid());
+            refreshVO();
+            return;
+        }
+
+        SystemTagCreator creator = VmSystemTags.BOOT_VOLUME.newSystemTagCreator(self.getUuid());
+        creator.setTagByTokens(Collections.singletonMap(VmSystemTags.BOOT_VOLUME_TOKEN, msg.getVolumeUuid()));
+        creator.recreate = true;
+        creator.create();
+    }
+
+    private VolumeInventory getBootVolume(VmInstanceInventory inv, VmOperation operation) {
+        if (operation != VmOperation.Start && operation != VmOperation.Reboot) {
+            return inv.getRootVolume();
+        }
+
+        String newBootVolUuid = VmSystemTags.BOOT_VOLUME.getTokenByResourceUuid(self.getUuid(), VmSystemTags.BOOT_VOLUME_TOKEN);
+        if (newBootVolUuid == null ||
+                newBootVolUuid.equals(self.getRootVolumeUuid()) ||
+                self.getAllVolumes().stream().noneMatch(vol -> vol.getUuid().equals(newBootVolUuid))) {
+            return inv.getRootVolume();
+        }
+
+        doSetBootVolume(newBootVolUuid);
+        refreshVO();
+        inv.setAllVolumes(VolumeInventory.valueOf(self.getAllVolumes()));
+        inv.setRootVolumeUuid(newBootVolUuid);
+        return inv.getAllVolumes().stream().filter(it -> it.getUuid().equals(newBootVolUuid))
+                .findFirst().orElse(inv.getRootVolume());
+    }
+
+    @Transactional
+    protected void doSetBootVolume(String volumeUuid) {
+        if (volumeUuid.equals(self.getRootVolumeUuid())) {
+            return;
+        }
+
+        VolumeVO originRootVolume = self.getRootVolume();
+        VolumeVO targetVolume = self.getAllVolumes().stream().filter(it -> it.getUuid().equals(volumeUuid))
+                .findFirst().orElseThrow(() -> new OperationFailureException(
+                        operr("volume[uuid%s] should be attached.")
+                ));
+
+        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, originRootVolume.getUuid())
+                .set(VolumeVO_.deviceId, targetVolume.getDeviceId())
+                .set(VolumeVO_.type, VolumeType.Data)
+                .update();
+
+        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, targetVolume.getUuid())
+                .set(VolumeVO_.deviceId, 0)
+                .set(VolumeVO_.type, VolumeType.Root)
+                .update();
+
+        SQL.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, self.getUuid())
+                .set(VmInstanceVO_.rootVolumeUuid, volumeUuid)
+                .update();
+
+        VmSystemTags.BOOT_VOLUME.delete(self.getUuid());
     }
 
     private void handle(APISetVmConsolePasswordMsg msg) {
@@ -6510,7 +6603,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }
 
-        VolumeInventory rootVol = inv.getRootVolume();
+        VolumeInventory rootVol = getBootVolume(inv, operation);
         Optional.ofNullable(rootVol).ifPresent(it -> {
             spec.setDestRootVolume(it);
             spec.setRequiredPrimaryStorageUuidForRootVolume(it.getPrimaryStorageUuid());
