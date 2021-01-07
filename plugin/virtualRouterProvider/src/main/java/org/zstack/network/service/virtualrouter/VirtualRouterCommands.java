@@ -536,6 +536,7 @@ public class VirtualRouterCommands {
 
     public static class SyncSNATCmd extends AgentCommand {
         private List<SNATInfo> snats;
+        private Boolean enable;
 
         public List<SNATInfo> getSnats() {
             return snats;
@@ -544,7 +545,15 @@ public class VirtualRouterCommands {
         public void setSnats(List<SNATInfo> snats) {
             this.snats = snats;
         }
-    }
+
+		public Boolean getEnable() {
+			return enable;
+		}
+
+		public void setEnable(Boolean enable) {
+			this.enable = enable;
+		}
+	}
     public static class SyncSNATRsp extends AgentResponse {
     }
 	

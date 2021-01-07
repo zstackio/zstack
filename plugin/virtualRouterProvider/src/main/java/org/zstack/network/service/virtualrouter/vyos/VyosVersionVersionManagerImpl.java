@@ -32,6 +32,7 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
         if (zvrVersion == null) {
             logger.warn(String.format("virtual router[uuid: %s] has no zvr version tag", vrUuid));
             result.setNeedReconnect(true);
+            result.setRebuildSnat(true);
             completion.success(result);
             return;
         }
@@ -40,6 +41,7 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
         if (!(VirtualRouterMetadataOperator.zvrVersionCheck(zvrVersion))) {
             logger.warn(String.format("virtual router[uuid: %s] version [%s] format error", vrUuid, zvrVersion));
             result.setNeedReconnect(true);
+            result.setRebuildSnat(true);
             completion.success(result);
             return;
         }
@@ -54,6 +56,9 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
             int newVersion = mnVersion.compare(VyosConstants.VIP_REBUILD_VERSION);
             if ((oldVersion < 0) && (newVersion > 0)) {
                 result.setRebuildVip(true);
+            }
+            if (remoteVersion.compare(VyosConstants.SNAT_REBUILD_VERSION) < 0) {
+                result.setRebuildSnat(true);
             }
         } else {
             logger.debug(String.format("virtual router[uuid: %s] successfully finish the version check", vrUuid));

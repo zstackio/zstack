@@ -28,6 +28,9 @@ public interface VyosConstants {
     String HA_STATUS = "haStatus";
 
     String VIP_REBUILD_VERSION = "3.8.4.2";
+    /* in old version, vpc snat is disabled in mn node, but it's not delete in vyos node, which is fix in http://jira.zstack.io/browse/ZSTAC-27851
+    *  so when upgrade before 3.9.0.0, mn will reconnect virtual router, during reconnection, the snat rules should be deleted*/
+    String SNAT_REBUILD_VERSION = "3.9.0.1";
 
     String VYOS_VMWARE_ALLOW_NIC_HOT_PLUGIN_VERSION = "4.2.0.0";
 }
