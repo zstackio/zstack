@@ -93,6 +93,9 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
                     if ((oldVersion < 0) && (newVersion > 0)) {
                         result.setRebuildVip(true);
                     }
+                    if (remoteVersion.compare(VyosConstants.SNAT_REBUILD_VERSION) < 0) {
+                        result.setRebuildSnat(true);
+                    }
                     completion.success(result);
                 } else {
                     logger.debug(String.format("virtual router[uuid: %s] successfully finish the version check", vrUuid));

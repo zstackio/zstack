@@ -3,6 +3,7 @@ package org.zstack.network.service.virtualrouter.nat;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.appliancevm.ApplianceVmConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -61,6 +62,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
+        final Boolean rebuildSnat = (Boolean) data.get(ApplianceVmConstant.Params.rebuildSnat.toString());
         List<String> nwServed = vr.getAllL3Networks();
         nwServed = vrMgr.selectL3NetworksNeedingSpecificNetworkService(nwServed, NetworkServiceType.SNAT);
         if (nwServed.isEmpty()) {
@@ -76,7 +78,8 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
         /*
         * snat disabled and skip directly by zhanyong.miao ZSTAC-18373
         * */
-        if (haBackend.isSnatDisabledOnRouter(vr.getUuid())) {
+        boolean disabled = haBackend.isSnatDisabledOnRouter(vr.getUuid());
+        if (disabled && !rebuildSnat) {
             chain.next();
             return;
         }
@@ -99,6 +102,7 @@ public class VirtualRouterSyncSNATOnStartFlow implements Flow {
 
         VirtualRouterCommands.SyncSNATCmd cmd = new VirtualRouterCommands.SyncSNATCmd();
         cmd.setSnats(snatInfo);
+        cmd.setEnable(!disabled);
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setPath(VirtualRouterConstant.VR_SYNC_SNAT_PATH);
         msg.setCommand(cmd);

@@ -328,6 +328,7 @@ public class VirtualRouterSnatBackend extends AbstractVirtualRouterBackend imple
 
         VirtualRouterCommands.SyncSNATCmd cmd = new VirtualRouterCommands.SyncSNATCmd();
         cmd.setSnats(snatInfo);
+        cmd.setEnable(true);
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setPath(VirtualRouterConstant.VR_SYNC_SNAT_PATH);
         msg.setCommand(cmd);
