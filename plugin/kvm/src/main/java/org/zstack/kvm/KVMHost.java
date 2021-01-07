@@ -2590,7 +2590,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
         boolean emulatehyperV = false;
-        if (ImageArchitecture.x86_64.toString().equals(architecture)) {
+        if (HostCPUArchitecture.x86_64.toString().equals(architecture)) {
             emulatehyperV = !ImagePlatform.isType(platform, ImagePlatform.Linux) && rcf.getResourceConfigValue(VmGlobalConfig.EMULATE_HYPERV, spec.getVmInventory().getUuid(), Boolean.class);
         }
         cmd.setEmulateHyperV(emulatehyperV);
