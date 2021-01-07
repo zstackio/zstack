@@ -11,6 +11,8 @@ public interface KVMConstant {
     String KVM_HYPERVISOR_TYPE = "KVM";
 
     String KVM_CONNECT_PATH = "/host/connect";
+    String KVM_GET_FLAG_PATH = "/host/getFlag";
+    String KVM_ADD_FLAG_PATH = "/host/addFlag";
     String KVM_PING_PATH = "/host/ping";
     String KVM_UPDATE_HOST_CONFIGURATION_PATH = "/host/update/configuration";
     String KVM_ECHO_PATH = "/host/echo";

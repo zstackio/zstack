@@ -288,6 +288,55 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class getFlagCmd extends AgentCommand {
+
+    }
+
+    public static class getFlagResponse extends AgentResponse {
+        private String hostIp;
+        private String managementIp;
+
+        public String getMNIp() {
+            return managementIp;
+        }
+
+        public void setMNIp(String managementIp) {
+            this.managementIp = managementIp;
+        }
+
+        public String getHostIp() {
+            return hostIp;
+        }
+
+        public void setHostIp(String hostIp) {
+            this.hostIp = hostIp;
+        }
+    }
+
+    public static class addFlagCmd extends AgentCommand {
+        private String hostIp;
+        private String managementIp;
+
+        public String getMNIp() {
+            return managementIp;
+        }
+
+        public void setMNIp(String managementIp) {
+            this.managementIp = managementIp;
+        }
+
+        public String getHostIp() {
+            return hostIp;
+        }
+
+        public void setHostIp(String hostIp) {
+            this.hostIp = hostIp;
+        }
+    }
+
+    public static class addFlagResponse extends AgentResponse {
+    }
+
     public static class PingCmd extends AgentCommand {
         public String hostUuid;
     }
