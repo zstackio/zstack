@@ -880,6 +880,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2InstanceProvisionNicVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`ConsoleProxyVO` ADD COLUMN `targetSchema` varchar(32) NOT NULL DEFAULT 'vnc';
+ALTER TABLE EcsInstanceVO DROP FOREIGN KEY fkEcsInstanceVOEcsImageVO;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`VirtualRouterMetadataVO` (
     `uuid` varchar(32) NOT NULL UNIQUE,
