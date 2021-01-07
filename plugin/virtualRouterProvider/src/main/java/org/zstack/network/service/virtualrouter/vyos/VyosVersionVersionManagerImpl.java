@@ -1,6 +1,7 @@
 package org.zstack.network.service.virtualrouter.vyos;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
@@ -31,6 +32,7 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
         if (zvrVersion == null) {
             logger.warn(String.format("virtual router[uuid: %s] has no zvr version tag", vrUuid));
             result.setNeedReconnect(true);
+            result.setRebuildSnat(true);
             completion.success(result);
             return;
         }
@@ -39,6 +41,7 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
         if (!(VirtualRouterMetadataOperator.zvrVersionCheck(zvrVersion))) {
             logger.warn(String.format("virtual router[uuid: %s] version [%s] format error", vrUuid, zvrVersion));
             result.setNeedReconnect(true);
+            result.setRebuildSnat(true);
             completion.success(result);
             return;
         }
@@ -48,6 +51,14 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
         if (mnVersion.compare(remoteVersion) > 0) {
             logger.warn(String.format("virtual router[uuid: %s] version [%s] is older than management node version [%s]",vrUuid, zvrVersion, managementVersion));
             result.setNeedReconnect(true);
+            int oldVersion = remoteVersion.compare(VyosConstants.VIP_REBUILD_VERSION);
+            int newVersion = mnVersion.compare(VyosConstants.VIP_REBUILD_VERSION);
+            if ((oldVersion < 0) && (newVersion > 0)) {
+                result.setRebuildVip(true);
+            }
+            if (remoteVersion.compare(VyosConstants.SNAT_REBUILD_VERSION) < 0) {
+                result.setRebuildSnat(true);
+            }
         } else {
             logger.debug(String.format("virtual router[uuid: %s] successfully finish the version check", vrUuid));
         }
@@ -57,6 +68,11 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
     private String getManagementVersion() {
         String managementVersion = null;
         String path = null;
+
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            return "3.10.0.0";
+        }
+
         try {
             path = PathUtil.findFileOnClassPath(VyosConstants.VYOS_VERSION_PATH, true).getAbsolutePath();
         } catch (RuntimeException e) {

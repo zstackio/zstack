@@ -547,7 +547,15 @@ public class VirtualRouterCommands {
         public void setSnats(List<SNATInfo> snats) {
             this.snats = snats;
         }
-    }
+
+		public Boolean getEnable() {
+			return enable;
+		}
+
+		public void setEnable(Boolean enable) {
+			this.enable = enable;
+		}
+	}
     public static class SyncSNATRsp extends AgentResponse {
     }
 	
