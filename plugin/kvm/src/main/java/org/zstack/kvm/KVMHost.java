@@ -123,6 +123,8 @@ public class KVMHost extends HostBase implements Host {
     // ///////////////////// REST URL //////////////////////////
     private String baseUrl;
     private String connectPath;
+    private String getFlagPath;
+    private String addFlagPath;
     private String pingPath;
     private String checkPhysicalNetworkInterfacePath;
     private String startVmPath;
@@ -174,6 +176,14 @@ public class KVMHost extends HostBase implements Host {
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_CONNECT_PATH);
         connectPath = ub.build().toUriString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_GET_FLAG_PATH);
+        getFlagPath = ub.build().toUriString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_ADD_FLAG_PATH);
+        addFlagPath = ub.build().toUriString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_PING_PATH);
@@ -3119,7 +3129,15 @@ public class KVMHost extends HostBase implements Host {
                 if (noStorageAccessible()){
                     completion.fail(operr("host can not access any primary storage, please check network"));
                 } else {
-                    completion.success();
+                    addFlagCmd cmd = new addFlagCmd();//加超时
+                    cmd.setHostIp(getSelf().getManagementIp());
+                    cmd.setMNIp(restf.getHostName());
+                    addFlagResponse rsp = restf.syncJsonPost(addFlagPath, cmd, addFlagResponse.class);
+                    if (!rsp.isSuccess()) {
+                        completion.fail(operr(rsp.getError()));
+                    }else{
+                        completion.success();
+                    }
                 }
             }
         }).error(new FlowErrorHandler(completion) {
@@ -3335,6 +3353,43 @@ public class KVMHost extends HostBase implements Host {
                                 }
                             });
                         }
+
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "check-Host-is-taken-over";
+
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                getFlagCmd cmd = new getFlagCmd();//加超时
+                                getFlagResponse rsp = restf.syncJsonPost(getFlagPath, cmd, getFlagResponse.class);
+                                if (!rsp.isSuccess()) {
+                                    trigger.fail(operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
+                                            self.getUuid(), self.getManagementIp(), getFlagPath, rsp.getError()));
+                                    return;
+                                } else {
+                                    if (rsp.getHostIp() == null || rsp.getHostIp().isEmpty() || rsp.getMNIp() == null || rsp.getMNIp().isEmpty()) {
+                                        trigger.next();
+                                        return;
+                                    }
+
+                                    logger.debug(String.format("restf.getHostName() %s", restf.getHostName()));
+                                    if (!rsp.getMNIp().equals(restf.getHostName())) {
+                                        trigger.fail(operr("add failed. Please check whether the host[uuid:%s, ip:%s, url:%s] has been taken over by other MN[ip:%s]",
+                                                self.getUuid(), self.getManagementIp(), getFlagPath, rsp.getMNIp()));
+                                        return;
+                                    }
+
+                                    HostVO lastHostInv = Q.New(HostVO.class).eq(HostVO_.managementIp, rsp.getHostIp()).find();
+                                    if (lastHostInv == null) {
+                                        trigger.next();
+                                        return;
+                                    }
+
+                                    trigger.fail(operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because the host has been taken over",
+                                            self.getUuid(), self.getManagementIp(), getFlagPath));
+
+                                }
+                            }
+                        });
                     }
 
                     flow(new NoRollbackFlow() {
