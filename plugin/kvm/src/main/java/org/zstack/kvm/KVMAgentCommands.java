@@ -288,6 +288,37 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class getFlagCmd extends AgentCommand {
+
+    }
+
+    public static class getFlagResponse extends AgentResponse {
+        private String hostUuid;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+    }
+
+    public static class addFlagCmd extends AgentCommand {
+        private String hostUuid;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+    }
+
+    public static class addFlagResponse extends AgentResponse {
+    }
+
     public static class PingCmd extends AgentCommand {
         public String hostUuid;
     }

@@ -122,6 +122,8 @@ public class KVMHost extends HostBase implements Host {
     // ///////////////////// REST URL //////////////////////////
     private String baseUrl;
     private String connectPath;
+    private String getFlagPath;
+    private String addFlagPath;
     private String pingPath;
     private String updateHostConfigurationPath;
     private String checkPhysicalNetworkInterfacePath;
@@ -174,6 +176,14 @@ public class KVMHost extends HostBase implements Host {
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_CONNECT_PATH);
         connectPath = ub.build().toUriString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_GET_FLAG_PATH);
+        getFlagPath = ub.build().toUriString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_ADD_FLAG_PATH);
+        addFlagPath = ub.build().toUriString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_PING_PATH);
@@ -3237,7 +3247,14 @@ public class KVMHost extends HostBase implements Host {
                     ErrorCodeList errorCodeList = (ErrorCodeList) data.get(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR);
                     completion.fail(operr("host can not access any primary storage, %s", errorCodeList != null && StringUtils.isNotEmpty(errorCodeList.getReadableDetails()) ? errorCodeList.getReadableDetails() : "please check network"));
                 } else {
-                    completion.success();
+                    addFlagCmd cmd = new addFlagCmd();//加超时
+                    cmd.setHostUuid(self.getUuid());
+                    addFlagResponse rsp = restf.syncJsonPost(addFlagPath, cmd, addFlagResponse.class, TimeUnit.MINUTES, 1);
+                    if (!rsp.isSuccess()) {
+                        completion.fail(operr(rsp.getError()));
+                    }else{
+                        completion.success();
+                    }
                 }
             }
         }).error(new FlowErrorHandler(completion) {
@@ -3453,6 +3470,35 @@ public class KVMHost extends HostBase implements Host {
                                 }
                             });
                         }
+
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "check-Host-is-taken-over";
+
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                getFlagCmd cmd = new getFlagCmd();//加超时
+                                getFlagResponse rsp = restf.syncJsonPost(getFlagPath, cmd, getFlagResponse.class, TimeUnit.MINUTES, 1);
+                                if (!rsp.isSuccess()) {
+                                    trigger.fail(operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
+                                            self.getUuid(), self.getManagementIp(), getFlagPath, rsp.getError()));
+                                    return;
+                                } else {
+                                    logger.debug(String.format("flag is [hostUuid:%s]", rsp.getHostUuid()));
+                                    if (rsp.getHostUuid() == null || rsp.getHostUuid().isEmpty()) {
+                                        trigger.next();
+                                        return;
+                                    }
+
+                                    HostVO lastHostInv = Q.New(HostVO.class).eq(HostVO_.uuid, rsp.getHostUuid()).find();
+                                    if (lastHostInv == null) {
+                                        trigger.next();
+                                    } else {
+                                        trigger.fail(operr("the host[ip:%s] has been taken over, because flag[HostUuid:%s] exists in the database",
+                                                self.getManagementIp(), lastHostInv.getUuid()));
+                                    }
+                                }
+                            }
+                        });
                     }
 
                     flow(new NoRollbackFlow() {
