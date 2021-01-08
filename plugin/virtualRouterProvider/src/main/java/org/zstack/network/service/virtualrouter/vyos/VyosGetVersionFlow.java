@@ -76,117 +76,22 @@ public class VyosGetVersionFlow extends NoRollbackFlow {
             }
         }
 
-        final FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("virtual-router-%s-get-version", vrUuid));
-        chain.setData(flowData);
-        chain.then(new ShareFlow() {
-            Boolean echoSuccess = false;
+        vyosVersionManager.vyosRouterVersionCheck(vrUuid, new ReturnValueCompletion<VyosVersionCheckResult>(flowTrigger) {
             @Override
-            public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "echo";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_ECHO_PATH);
-                        restf.echo(url, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                echoSuccess = true;
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                if (NetworkUtils.isRemotePortOpen(mgmtNic.getIp(), 22, 2000)) {
-                                    /*zvr not ready, and need to deploy agent for ZSTAC-20420*/
-                                    flowData.put(ApplianceVmConstant.Params.isReconnect.toString(), Boolean.TRUE.toString());
-                                    flowData.put(ApplianceVmConstant.Params.managementNicIp.toString(), mgmtNic.getIp());
-                                    trigger.next();
-                                } else {
-                                    trigger.fail(errorCode);
-                                }
-                            }
-                        }, TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(Long.parseLong(VirtualRouterGlobalConfig.VYOS_ECHO_TIMEOUT.value())));
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "get-version";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        if (!echoSuccess) {
-                            flowData.put(ApplianceVmConstant.Params.rebuildVip.toString(), true);
-                            trigger.next();
-                            return;
-                        }
-
-                        vyosVersionManager.vyosRouterVersionCheck(vrUuid, new ReturnValueCompletion<VyosVersionCheckResult>(trigger) {
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void success(VyosVersionCheckResult returnValue) {
-                                if (returnValue.isNeedReconnect()) {
-                                    logger.warn(String.format("virtual router [uuid:%s] need to be reconnect: %s", vrUuid, JSONObjectUtil.toJsonString(returnValue)));
-                                    flowData.put(ApplianceVmConstant.Params.isReconnect.toString(), Boolean.TRUE.toString());
-                                    flowData.put(ApplianceVmConstant.Params.managementNicIp.toString(), mgmtNic.getIp());
-                                    flowData.put(ApplianceVmConstant.Params.rebuildVip.toString(), returnValue.isRebuildVip());
-                                }
-                                trigger.next();
-                            }
-                        });
-                    }
-                });
-
-                flow(new NoRollbackFlow() {
-                    String __name__ = "configure-ntp";
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_CONFIGURE_NTP);
-                        VirtualRouterCommands.ConfigureNtpCmd cmd = new VirtualRouterCommands.ConfigureNtpCmd();
-
-                        cmd.setTimeServers(CoreGlobalProperty.CHRONY_SERVERS);
-                        restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<VirtualRouterCommands.ConfigureNtpRsp>(trigger) {
-                            @Override
-                            public void fail(ErrorCode err) {
-                                logger.debug(String.format("operation error, because:%s", err.getDetails()));
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void success(VirtualRouterCommands.ConfigureNtpRsp ret) {
-                                if (!ret.isSuccess()) {
-                                    logger.debug(String.format("operation error, because:%s", ret.getError()));
-                                }
-                                trigger.next();
-                            }
-
-                            @Override
-                            public Class<VirtualRouterCommands.ConfigureNtpRsp> getReturnClass() {
-                                return VirtualRouterCommands.ConfigureNtpRsp.class;
-                            }
-                        });
-                    }
-                });
-
-                done(new FlowDoneHandler(flowTrigger) {
-                    @Override
-                    public void handle(Map data) {
-                        flowTrigger.next();
-                    }
-                });
-
-                error(new FlowErrorHandler(flowTrigger) {
-                    @Override
-                    public void handle(ErrorCode errCode, Map data) {
-                        flowTrigger.fail(errCode);
-                    }
-                });
+            public void fail(ErrorCode errorCode) {
+                flowTrigger.next();
             }
-        }).start();
+
+            @Override
+            public void success(VyosVersionCheckResult returnValue) {
+                if (returnValue.isNeedReconnect()) {
+                    logger.warn(String.format("virtual router [uuid:%s] need to be reconnect: %s", vrUuid, JSONObjectUtil.toJsonString(returnValue)));
+                    flowData.put(ApplianceVmConstant.Params.isReconnect.toString(), Boolean.TRUE.toString());
+                    flowData.put(ApplianceVmConstant.Params.managementNicIp.toString(), mgmtNic.getIp());
+                    flowData.put(ApplianceVmConstant.Params.rebuildVip.toString(), returnValue.isRebuildVip());
+                }
+                flowTrigger.next();
+            }
+        });
     }
 }

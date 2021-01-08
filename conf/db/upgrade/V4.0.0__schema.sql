@@ -159,7 +159,6 @@ DELIMITER ;
 CALL checkVirtualhostsExist();
 DROP PROCEDURE IF EXISTS checkVirtualhostsExist;
 
-ALTER TABLE `zstack`.`VpcRouterVmVO` ADD COLUMN `generalVersion` varchar(32) DEFAULT NULL;
 CREATE TABLE `IAM2ProjectRoleVO` (
     `uuid` VARCHAR(32) NOT NULL,
     `iam2ProjectRoleType` VARCHAR(64) NOT NULL,
@@ -881,3 +880,12 @@ CREATE TABLE IF NOT EXISTS `zstack`.`BareMetal2InstanceProvisionNicVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `zstack`.`ConsoleProxyVO` ADD COLUMN `targetSchema` varchar(32) NOT NULL DEFAULT 'vnc';
+
+CREATE TABLE IF NOT EXISTS `zstack`.`VirtualRouterMetadataVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `zvrVersion` varchar(32) DEFAULT NULL,
+    `vyosVersion` varchar(32) DEFAULT NULL,
+    `kernelVersion` varchar(32) DEFAULT NULL,
+    PRIMARY KEY  (`uuid`),
+    CONSTRAINT `fkVirtualRouterMetadataVOVirtualRouterVmVO` FOREIGN KEY (`uuid`) REFERENCES `VirtualRouterVmVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
