@@ -44,9 +44,9 @@
     />
     <pbcast.GMS print_local_addr="false"
                 install_view_locally_first="true"
-                join_timeout="5000"
+                join_timeout="${JGroup.JoinTimeout}"
     />
-    <pbcast.FLUSH timeout="0" start_flush_timeout="10000"/>
+    <pbcast.FLUSH timeout="0" bypass="${JGroup.FlushBypass}"/>
     <MFC max_credits="2m"
          min_threshold="0.40"
     />
