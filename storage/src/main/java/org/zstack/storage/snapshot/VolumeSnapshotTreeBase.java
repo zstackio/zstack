@@ -1010,9 +1010,6 @@ public class VolumeSnapshotTreeBase {
                 if (shrinkResult.getDeltaSize() != 0) {
                     currentRoot.setSize(shrinkResult.getSize());
                     dbf.updateAndRefresh(currentRoot);
-                    PrimaryStorageCapacityUpdater updater =
-                            new PrimaryStorageCapacityUpdater(currentRoot.getPrimaryStorageUuid());
-                    updater.increaseAvailableCapacity(shrinkResult.getDeltaSize());
                 }
                 completion.success(shrinkResult);
             }

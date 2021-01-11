@@ -203,10 +203,9 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                         if (!rsp.isSuccess()) {
                             completion.fail(operr("failed to download bits from the SFTP backup storage[hostname:%s, path: %s] to the local primary storage[uuid:%s, path: %s], %s",
                                     greply.getHostname(), backupStorageInstallPath, pinv.getUuid(), primaryStorageInstallPath, rsp.getError()));
-                            return;
+                        } else {
+                            completion.success();
                         }
-
-                        completion.success();
                     }
                 });
             }

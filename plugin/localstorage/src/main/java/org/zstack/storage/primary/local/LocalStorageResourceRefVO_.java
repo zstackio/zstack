@@ -12,6 +12,7 @@ public class LocalStorageResourceRefVO_ {
     public static volatile SingularAttribute<LocalStorageResourceRefVO, String> primaryStorageUuid;
     public static volatile SingularAttribute<LocalStorageResourceRefVO, String> resourceUuid;
     public static volatile SingularAttribute<LocalStorageResourceRefVO, String> hostUuid;
+    public static volatile SingularAttribute<LocalStorageResourceRefVO, String> size;
     public static volatile SingularAttribute<LocalStorageResourceRefVO, String> resourceType;
     public static volatile SingularAttribute<LocalStorageResourceRefVO, Timestamp> createDate;
     public static volatile SingularAttribute<LocalStorageResourceRefVO, Timestamp> lastOpDate;

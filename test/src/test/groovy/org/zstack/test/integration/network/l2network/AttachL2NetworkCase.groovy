@@ -13,6 +13,7 @@ import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.l3.NetworkGlobalProperty
 import org.zstack.sdk.ClusterInventory
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.L2NetworkInventory
 import org.zstack.test.integration.network.NetworkTest;
 import org.zstack.testlib.EnvSpec;
@@ -95,6 +96,7 @@ public class AttachL2NetworkCase extends SubCase{
             testAttachL2ValnNetwork()
             testAttachL2NoVlanNetworkSynchronously()
             testAttachL2VlanNetworkSynchronously()
+            testAddHost()
         }
 
     }
@@ -222,6 +224,30 @@ public class AttachL2NetworkCase extends SubCase{
             }
         }
     }
+
+    void testAddHost(){
+        ClusterInventory cluster = env.inventoryByName("cluster1")
+
+        KVMAgentCommands.CreateBridgeCmd createCmd = null
+        env.afterSimulator(KVMConstant.KVM_REALIZE_L2NOVLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
+            createCmd = json(e.body, KVMAgentCommands.CreateBridgeCmd.class)
+            return rsp
+        }
+
+        env.afterSimulator(KVMConstant.KVM_REALIZE_L2VLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
+            assert createCmd != null
+            return rsp
+        }
+
+        addKVMHost {
+            name = "test"
+            managementIp = "127.0.0.2"
+            username = "root"
+            password = "password"
+            clusterUuid = cluster.uuid
+        }
+    }
+
     @Override
     public void clean() {
         env.delete()

@@ -8,6 +8,7 @@ import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.List;
 
 public class FirstAvailableIpv6AllocatorStrategy extends AbstractIpAllocatorStrategy{
@@ -24,7 +25,7 @@ public class FirstAvailableIpv6AllocatorStrategy extends AbstractIpAllocatorStra
         used.add(new BigInteger(String.valueOf(IPv6NetworkUtils.ipv6AddressToBigInteger(excludeIp))));
         BigInteger start = IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getStartIp());
         BigInteger end = IPv6NetworkUtils.ipv6AddressToBigInteger(vo.getEndIp());
-
+        Collections.sort(used);
         BigInteger target = IPv6NetworkUtils.findFirstAvailableIpv6Address(start,end, used.toArray(new BigInteger[used.size()]));
         if (target != null) {
             return IPv6NetworkUtils.ipv6AddressToString(target);

@@ -47,6 +47,9 @@ public class KVMGlobalConfig {
     public static GlobalConfig CHECK_HOST_CPU_MODEL_NAME = new GlobalConfig(CATEGORY, "checkHostCpuModelName");
     @GlobalConfigValidation
     public static GlobalConfig KVM_IGNORE_MSRS = new GlobalConfig(CATEGORY, "ignoreMsrs");
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig({ClusterVO.class})
+    public static GlobalConfig AUTO_VM_NIC_MULTIQUEUE = new GlobalConfig(CATEGORY, "auto.set.vm.nic.multiqueue");
     @GlobalConfigValidation
     public static GlobalConfig MIGRATE_AUTO_CONVERGE = new GlobalConfig(CATEGORY, "migrate.autoConverge");
     @GlobalConfigValidation
