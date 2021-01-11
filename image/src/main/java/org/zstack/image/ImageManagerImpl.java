@@ -4,6 +4,7 @@ import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.cluster.ArchitectureType;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
@@ -687,11 +688,10 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     }
 
     private void initDefaultImageArch() {
-        String defaultArch = System.getProperty("os.arch").equals("amd64") ? "x86_64" : System.getProperty("os.arch");
-        UpdateQuery.New(ImageVO.class)
+        SQL.New(ImageVO.class)
                 .isNull(ImageVO_.architecture)
                 .notEq(ImageVO_.mediaType, ImageMediaType.DataVolumeTemplate)
-                .set(ImageVO_.architecture, defaultArch)
+                .set(ImageVO_.architecture, ArchitectureType.defaultArch())
                 .update();
     }
 
