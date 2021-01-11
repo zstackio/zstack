@@ -1,9 +1,10 @@
 package org.zstack.image;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.HostSystemTags;
+import org.zstack.compute.vm.VmExtraInfoGetter;
 import org.zstack.core.CoreGlobalProperty;
-import org.zstack.core.GlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -18,7 +19,6 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.message.Message;
 import org.zstack.header.storage.backup.BackupStorageState;
 import org.zstack.header.storage.backup.BackupStorageStatus;
 import org.zstack.header.storage.backup.BackupStorageVO;
@@ -26,7 +26,6 @@ import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotState;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
-import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
@@ -181,7 +180,8 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         fillGuestOsType(msg);
     }
 
-    private void validate(APICreateRootVolumeTemplateFromRootVolumeMsg msg) {
+    @Transactional(readOnly = true)
+    protected void validate(APICreateRootVolumeTemplateFromRootVolumeMsg msg) {
         if (msg.getPlatform() == null) {
             String platform = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.rootVolumeUuid, msg.getRootVolumeUuid()).select(VmInstanceVO_.platform).findValue();
             msg.setPlatform(platform == null ? ImagePlatform.Linux.toString() : platform);
@@ -196,9 +196,10 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getArchitecture() == null) {
-            String vmUuid = dbf.createQuery(VolumeVO.class).add(VolumeVO_.uuid, Op.EQ, msg.getRootVolumeUuid()).find().getVmInstanceUuid();
-            String hostUuid = dbf.createQuery(VmInstanceVO.class).add(VmInstanceVO_.uuid, Op.EQ, vmUuid).find().getHostUuid();
-            msg.setArchitecture(HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(hostUuid, HostSystemTags.CPU_ARCHITECTURE_TOKEN));
+            String vmUuid = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getRootVolumeUuid())
+                    .select(VolumeVO_.vmInstanceUuid)
+                    .findValue();
+            msg.setArchitecture(VmExtraInfoGetter.New(vmUuid).getArchitecture());
         }
     }
 
