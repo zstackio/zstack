@@ -293,44 +293,26 @@ public class KVMAgentCommands {
     }
 
     public static class getFlagResponse extends AgentResponse {
-        private String hostIp;
-        private String managementIp;
+        private String hostUuid;
 
-        public String getMNIp() {
-            return managementIp;
+        public String getHostUuid() {
+            return hostUuid;
         }
 
-        public void setMNIp(String managementIp) {
-            this.managementIp = managementIp;
-        }
-
-        public String getHostIp() {
-            return hostIp;
-        }
-
-        public void setHostIp(String hostIp) {
-            this.hostIp = hostIp;
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
         }
     }
 
     public static class addFlagCmd extends AgentCommand {
-        private String hostIp;
-        private String managementIp;
+        private String hostUuid;
 
-        public String getMNIp() {
-            return managementIp;
+        public String getHostUuid() {
+            return hostUuid;
         }
 
-        public void setMNIp(String managementIp) {
-            this.managementIp = managementIp;
-        }
-
-        public String getHostIp() {
-            return hostIp;
-        }
-
-        public void setHostIp(String hostIp) {
-            this.hostIp = hostIp;
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
         }
     }
 

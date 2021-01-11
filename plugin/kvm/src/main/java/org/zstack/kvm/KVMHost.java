@@ -3248,9 +3248,8 @@ public class KVMHost extends HostBase implements Host {
                     completion.fail(operr("host can not access any primary storage, %s", errorCodeList != null && StringUtils.isNotEmpty(errorCodeList.getReadableDetails()) ? errorCodeList.getReadableDetails() : "please check network"));
                 } else {
                     addFlagCmd cmd = new addFlagCmd();//加超时
-                    cmd.setHostIp(getSelf().getManagementIp());
-                    cmd.setMNIp(restf.getHostName());
-                    addFlagResponse rsp = restf.syncJsonPost(addFlagPath, cmd, addFlagResponse.class);
+                    cmd.setHostUuid(self.getUuid());
+                    addFlagResponse rsp = restf.syncJsonPost(addFlagPath, cmd, addFlagResponse.class, TimeUnit.MINUTES, 1);
                     if (!rsp.isSuccess()) {
                         completion.fail(operr(rsp.getError()));
                     }else{
@@ -3478,33 +3477,25 @@ public class KVMHost extends HostBase implements Host {
                             @Override
                             public void run(FlowTrigger trigger, Map data) {
                                 getFlagCmd cmd = new getFlagCmd();//加超时
-                                getFlagResponse rsp = restf.syncJsonPost(getFlagPath, cmd, getFlagResponse.class);
+                                getFlagResponse rsp = restf.syncJsonPost(getFlagPath, cmd, getFlagResponse.class, TimeUnit.MINUTES, 1);
                                 if (!rsp.isSuccess()) {
                                     trigger.fail(operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
                                             self.getUuid(), self.getManagementIp(), getFlagPath, rsp.getError()));
                                     return;
                                 } else {
-                                    if (rsp.getHostIp() == null || rsp.getHostIp().isEmpty() || rsp.getMNIp() == null || rsp.getMNIp().isEmpty()) {
+                                    logger.debug(String.format("flag is [hostUuid:%s]", rsp.getHostUuid()));
+                                    if (rsp.getHostUuid() == null || rsp.getHostUuid().isEmpty()) {
                                         trigger.next();
                                         return;
                                     }
 
-                                    logger.debug(String.format("restf.getHostName() %s", restf.getHostName()));
-                                    if (!rsp.getMNIp().equals(restf.getHostName())) {
-                                        trigger.fail(operr("add failed. Please check whether the host[uuid:%s, ip:%s, url:%s] has been taken over by other MN[ip:%s]",
-                                                self.getUuid(), self.getManagementIp(), getFlagPath, rsp.getMNIp()));
-                                        return;
-                                    }
-
-                                    HostVO lastHostInv = Q.New(HostVO.class).eq(HostVO_.managementIp, rsp.getHostIp()).find();
+                                    HostVO lastHostInv = Q.New(HostVO.class).eq(HostVO_.uuid, rsp.getHostUuid()).find();
                                     if (lastHostInv == null) {
                                         trigger.next();
-                                        return;
+                                    } else {
+                                        trigger.fail(operr("the host[ip:%s] has been taken over, because flag[HostUuid:%s] exists in the database",
+                                                self.getManagementIp(), lastHostInv.getUuid()));
                                     }
-
-                                    trigger.fail(operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because the host has been taken over",
-                                            self.getUuid(), self.getManagementIp(), getFlagPath));
-
                                 }
                             }
                         });
