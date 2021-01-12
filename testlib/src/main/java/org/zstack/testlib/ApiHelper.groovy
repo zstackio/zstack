@@ -13434,8 +13434,7 @@ abstract class ApiHelper {
             return errorOut(a.call())
         }
     }
-
-
+    
     def deleteWebhook(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteWebhookAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteWebhookAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -15407,6 +15406,33 @@ abstract class ApiHelper {
     }
 
 
+    def getCandidateAffinityGroupForAttachingVm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetCandidateAffinityGroupForAttachingVmAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetCandidateAffinityGroupForAttachingVmAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getCandidateBackupStorageForCreatingImage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetCandidateBackupStorageForCreatingImageAction.class) Closure c) {
         def a = new org.zstack.sdk.GetCandidateBackupStorageForCreatingImageAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -15652,6 +15678,33 @@ abstract class ApiHelper {
 
     def getCandidatePrimaryStoragesForCreatingVm(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmAction.class) Closure c) {
         def a = new org.zstack.sdk.GetCandidatePrimaryStoragesForCreatingVmAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getCandidateVMForAttachingAffinityGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetCandidateVMForAttachingAffinityGroupAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetCandidateVMForAttachingAffinityGroupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
