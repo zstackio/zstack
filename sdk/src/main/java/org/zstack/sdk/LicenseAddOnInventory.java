@@ -44,6 +44,30 @@ public class LicenseAddOnInventory  {
         return this.vmNum;
     }
 
+    public java.lang.Integer availableHostNum;
+    public void setAvailableHostNum(java.lang.Integer availableHostNum) {
+        this.availableHostNum = availableHostNum;
+    }
+    public java.lang.Integer getAvailableHostNum() {
+        return this.availableHostNum;
+    }
+
+    public java.lang.Integer availableCpuNum;
+    public void setAvailableCpuNum(java.lang.Integer availableCpuNum) {
+        this.availableCpuNum = availableCpuNum;
+    }
+    public java.lang.Integer getAvailableCpuNum() {
+        return this.availableCpuNum;
+    }
+
+    public java.lang.Integer availableVmNum;
+    public void setAvailableVmNum(java.lang.Integer availableVmNum) {
+        this.availableVmNum = availableVmNum;
+    }
+    public java.lang.Integer getAvailableVmNum() {
+        return this.availableVmNum;
+    }
+
     public java.lang.String licenseType;
     public void setLicenseType(java.lang.String licenseType) {
         this.licenseType = licenseType;
