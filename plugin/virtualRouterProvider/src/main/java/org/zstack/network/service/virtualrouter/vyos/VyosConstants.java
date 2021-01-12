@@ -33,4 +33,8 @@ public interface VyosConstants {
     String SNAT_REBUILD_VERSION = "3.9.0.1";
 
     String VYOS_VMWARE_ALLOW_NIC_HOT_PLUGIN_VERSION = "4.2.0.0";
+
+    int NTP_PORT = 123;
+    int DNS_PORT = 53;
+
 }

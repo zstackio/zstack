@@ -179,6 +179,7 @@ class VirtualRouterLoadBalancerUDPCase extends SubCase{
             TestCreateLoadBalancerListener()
 
             TestVirtualRouterDownReconnectVm()
+            TestLoadBalancerListenerReservedPort()
             //TestUpdateLoadBalancerCase()
             //TestDeleteLoadBalancerListener()
         }
@@ -188,45 +189,6 @@ class VirtualRouterLoadBalancerUDPCase extends SubCase{
         L3NetworkInventory pubL3 = env.inventoryByName("pubL3")
         VmInstanceInventory vm = env.inventoryByName("vm")
         LoadBalancerInventory lb = env.inventoryByName("lb")
-
-        expect (AssertionError.class) {
-            createLoadBalancerListener {
-                protocol = "udp"
-                loadBalancerUuid = lb.uuid
-                loadBalancerPort = 53
-                instancePort = 10000
-                name = "test-listener"
-            }
-        }
-
-        VirtualRouterVmInventory vr = queryVirtualRouterVm {}[0]
-        VmNicInventory pubNic = vr.getVmNics().stream().filter{nic -> nic.l3NetworkUuid == vr.getPublicNetworkUuid()}.collect(Collectors.toList()) [0]
-        VipVO pubVip = Q.New(VipVO.class).list().stream().filter{ v -> v.ip == pubNic.ip}.collect(Collectors.toList()) [0]
-
-        LoadBalancerInventory lb2 = createLoadBalancer {
-            name = "test-lb-2"
-            vipUuid = pubVip.uuid
-        }
-
-        expect (AssertionError.class) {
-            createLoadBalancerListener {
-                protocol = "tcp"
-                loadBalancerUuid = lb2.uuid
-                loadBalancerPort = 22
-                instancePort = 22
-                name = "test-listener-1"
-            }
-        }
-
-        expect (AssertionError.class) {
-            createLoadBalancerListener {
-                protocol = "tcp"
-                loadBalancerUuid = lb2.uuid
-                loadBalancerPort = 7272
-                instancePort = 7272
-                name = "test-listener-1"
-            }
-        }
 
         LoadBalancerListenerInventory listener = createLoadBalancerListener {
             protocol = "udp"
@@ -294,6 +256,90 @@ class VirtualRouterLoadBalancerUDPCase extends SubCase{
         } else {
             assert LoadBalancerConstants.LB_PROTOCOL_UDP == lb.getListeners().toArray()[1].getProtocol()
             assert LoadBalancerConstants.LB_PROTOCOL_TCP == lb.getListeners().toArray()[0].getProtocol()
+        }
+    }
+
+    void TestLoadBalancerListenerReservedPort() {
+        LoadBalancerInventory lb = env.inventoryByName("lb")
+
+        /* normal vip can used all reserved port */
+        createLoadBalancerListener {
+            protocol = "udp"
+            loadBalancerUuid = lb.uuid
+            loadBalancerPort = 53
+            instancePort = 10000
+            name = "test-listener"
+        }
+
+        createLoadBalancerListener {
+            protocol = "tcp"
+            loadBalancerUuid = lb.uuid
+            loadBalancerPort = 53
+            instancePort = 10000
+            name = "test-listener"
+        }
+
+        createLoadBalancerListener {
+            protocol = "udp"
+            loadBalancerUuid = lb.uuid
+            loadBalancerPort = 68
+            instancePort = 10000
+            name = "test-listener"
+        }
+
+        createLoadBalancerListener {
+            protocol = "udp"
+            loadBalancerUuid = lb.uuid
+            loadBalancerPort = 500
+            instancePort = 10000
+            name = "test-listener"
+        }
+
+        createLoadBalancerListener {
+            protocol = "udp"
+            loadBalancerUuid = lb.uuid
+            loadBalancerPort = 4500
+            instancePort = 10000
+            name = "test-listener"
+        }
+
+        /* system vip can not use reserved port */
+        VirtualRouterVmInventory vr = queryVirtualRouterVm {}[0]
+        VmNicInventory pubNic = vr.getVmNics().stream().filter{nic -> nic.l3NetworkUuid == vr.getPublicNetworkUuid()}.collect(Collectors.toList()) [0]
+        VipVO pubVip = Q.New(VipVO.class).list().stream().filter{ v -> v.ip == pubNic.ip}.collect(Collectors.toList()) [0]
+        LoadBalancerInventory lb2 = createLoadBalancer {
+            name = "test-lb-2"
+            vipUuid = pubVip.uuid
+        }
+
+        expect (AssertionError.class) {
+            createLoadBalancerListener {
+                protocol = "udp"
+                loadBalancerUuid = lb2.uuid
+                loadBalancerPort = 53
+                instancePort = 10000
+                name = "test-listener"
+            }
+        }
+
+        expect (AssertionError.class) {
+            createLoadBalancerListener {
+                protocol = "tcp"
+                loadBalancerUuid = lb2.uuid
+                loadBalancerPort = 53
+                instancePort = 10000
+                name = "test-listener"
+            }
+        }
+
+        expect (AssertionError.class) {
+            createLoadBalancerListener {
+                protocol = "udp"
+                loadBalancerUuid = lb2.uuid
+                loadBalancerPort = 123
+                instancePort = 10000
+                name = "test-listener"
+            }
         }
     }
 

@@ -101,6 +101,7 @@
             <zstack:extension interface="org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint" />
             <zstack:extension interface="org.zstack.header.network.l2.L2NetworkCreateExtensionPoint" />
             <zstack:extension interface="org.zstack.appliancevm.ApplianceVmPrepareBootstrapInfoExtensionPoint" />
+            <zstack:extension interface="org.zstack.network.service.vip.VipGetUsedPortRangeExtensionPoint" />
         </zstack:plugin>
     </bean>
 
