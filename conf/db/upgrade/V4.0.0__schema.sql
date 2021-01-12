@@ -889,3 +889,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VirtualRouterMetadataVO` (
     PRIMARY KEY  (`uuid`),
     CONSTRAINT `fkVirtualRouterMetadataVOVirtualRouterVmVO` FOREIGN KEY (`uuid`) REFERENCES `VirtualRouterVmVO` (`uuid`) ON UPDATE RESTRICT ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+UPDATE ResourceVO SET resourceType = "PrimaryStorageVO", concreteResourceType = "org.zstack.storage.ceph.primary.CephPrimaryStorageVO"  WHERE resourceType = "CephPrimaryStorageVO";
