@@ -92,6 +92,14 @@ public class LicenseInventory  {
         return this.availableCpuNum;
     }
 
+    public java.lang.Integer availableVmNum;
+    public void setAvailableVmNum(java.lang.Integer availableVmNum) {
+        this.availableVmNum = availableVmNum;
+    }
+    public java.lang.Integer getAvailableVmNum() {
+        return this.availableVmNum;
+    }
+
     public boolean expired;
     public void setExpired(boolean expired) {
         this.expired = expired;
