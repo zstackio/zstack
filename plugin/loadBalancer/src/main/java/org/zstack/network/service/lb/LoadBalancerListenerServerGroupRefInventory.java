@@ -1,5 +1,9 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
 
 import java.io.Serializable;
@@ -9,6 +13,12 @@ import java.util.Collection;
 import java.util.List;
 
 @Inventory(mappingVOClass = LoadBalancerListenerServerGroupRefVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "group", inventoryClass = LoadBalancerServerGroupInventory.class,
+                foreignKey = "serverGroupUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "listener", inventoryClass = LoadBalancerListenerInventory.class,
+                foreignKey = "listenerUuid", expandedInventoryKey = "uuid"),
+})
 public class LoadBalancerListenerServerGroupRefInventory implements Serializable {
     private long id;
     private String listenerUuid;
