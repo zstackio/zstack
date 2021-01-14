@@ -40,7 +40,7 @@ import static org.zstack.core.Platform.getReflections;
 import static org.zstack.core.Platform.operr;
 
 public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailureExtensionPoint, KVMHostConnectExtensionPoint,
-        ReplyMessagePreSendingExtensionPoint, HostConnectionReestablishExtensionPoint, HostAfterConnectedExtensionPoint, Component {
+        MarshalReplyMessageExtensionPoint, HostConnectionReestablishExtensionPoint, HostAfterConnectedExtensionPoint, Component {
     private static final CLogger logger = Utils.getLogger(KvmVmSyncPingTask.class);
 
     @Autowired
@@ -144,12 +144,21 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     }
 
     @Override
-    public List<Class> getReplyMessageClassForPreSendingExtensionPoint() {
+    public List<Class> getReplyMessageClassForMarshalExtensionPoint() {
         return skipVmTracerReplies;
     }
 
     @Override
     public void marshalReplyMessageBeforeSending(Message replyOrEvent, NeedReplyMessage msg) {
+        continueTraceVmAfterWhenMessageReplied(replyOrEvent, msg);
+    }
+
+    @Override
+    public void marshalReplyMessageBeforeDropping(Message replyOrEvent, NeedReplyMessage msg) {
+        continueTraceVmAfterWhenMessageReplied(replyOrEvent, msg);
+    }
+
+    private void continueTraceVmAfterWhenMessageReplied(Message replyOrEvent, NeedReplyMessage msg) {
         String vmUuid = null;
         String apiId = null;
 

@@ -91,7 +91,7 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     private boolean trackerClose = false;
     private Map<String, MessageStatistic> statistics = new HashMap<String, MessageStatistic>();
 
-    private Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<Class, List<ReplyMessagePreSendingExtensionPoint>>();
+    private Map<Class, List<MarshalReplyMessageExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<Class, List<MarshalReplyMessageExtensionPoint>>();
 
     private Map<Class, List<BeforeDeliveryMessageInterceptor>> beforeDeliveryMessageInterceptors = new HashMap<Class, List<BeforeDeliveryMessageInterceptor>>();
     private Map<Class, List<BeforeSendMessageInterceptor>> beforeSendMessageInterceptors = new HashMap<Class, List<BeforeSendMessageInterceptor>>();
@@ -1684,9 +1684,9 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
     }
 
     private void callReplyPreSendingExtensions(Message msg, NeedReplyMessage msgReq) {
-        List<ReplyMessagePreSendingExtensionPoint> exts = replyMessageMarshaller.get(msg.getClass());
+        List<MarshalReplyMessageExtensionPoint> exts = replyMessageMarshaller.get(msg.getClass());
         if (exts != null) {
-            for (ReplyMessagePreSendingExtensionPoint ext : exts) {
+            for (MarshalReplyMessageExtensionPoint ext : exts) {
                 ext.marshalReplyMessageBeforeSending(msg, msgReq);
             }
         }
@@ -2429,8 +2429,8 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
 
     private void populateExtension() {
         services = pluginRgty.getExtensionList(Service.class);
-        for (ReplyMessagePreSendingExtensionPoint extp : pluginRgty.getExtensionList(ReplyMessagePreSendingExtensionPoint.class)) {
-            List<Class> clazzs = extp.getReplyMessageClassForPreSendingExtensionPoint();
+        for (MarshalReplyMessageExtensionPoint extp : pluginRgty.getExtensionList(MarshalReplyMessageExtensionPoint.class)) {
+            List<Class> clazzs = extp.getReplyMessageClassForMarshalExtensionPoint();
             if (clazzs == null || clazzs.isEmpty()) {
                 continue;
             }
@@ -2441,9 +2441,9 @@ public class CloudBusImpl2 implements CloudBus, CloudBusIN, ManagementNodeChange
                             clz.getName(), extp.getClass().getName()));
                 }
 
-                List<ReplyMessagePreSendingExtensionPoint> exts = replyMessageMarshaller.get(clz);
+                List<MarshalReplyMessageExtensionPoint> exts = replyMessageMarshaller.get(clz);
                 if (exts == null) {
-                    exts = new ArrayList<ReplyMessagePreSendingExtensionPoint>();
+                    exts = new ArrayList<MarshalReplyMessageExtensionPoint>();
                     replyMessageMarshaller.put(clz, exts);
                 }
                 exts.add(extp);

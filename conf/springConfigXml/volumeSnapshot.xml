@@ -17,7 +17,7 @@
             <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.header.Service"/>
             <zstack:extension interface="org.zstack.header.volume.VolumeBeforeExpungeExtensionPoint"/>
-            <zstack:extension interface="org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint"/>
+            <zstack:extension interface="org.zstack.core.cloudbus.MarshalReplyMessageExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint"/>

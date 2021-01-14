@@ -81,7 +81,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     private final String EVENT_ID = makeLocalServiceId("cloudbus.events");
 
     private final List<Service> services = new ArrayList<>();
-    private final Map<Class, List<ReplyMessagePreSendingExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<>();
+    private final Map<Class, List<MarshalReplyMessageExtensionPoint>> replyMessageMarshaller = new ConcurrentHashMap<>();
     private final List<RestAPIExtensionPoint> apiExts = new CopyOnWriteArrayList<>();
     private final List<CloudBusExtensionPoint> msgExts = new CopyOnWriteArrayList<>();
 
@@ -393,10 +393,19 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         doSendAndCallExtensions(msg);
     }
 
-    private void callReplyPreSendingExtensions(Message msg, NeedReplyMessage msgReq) {
-        List<ReplyMessagePreSendingExtensionPoint> exts = replyMessageMarshaller.get(msg.getClass());
+    private void callReplyBeforeDropExtensions(Message msg, NeedReplyMessage msgReq) {
+        List<MarshalReplyMessageExtensionPoint> exts = replyMessageMarshaller.get(msg.getClass());
         if (exts != null) {
-            for (ReplyMessagePreSendingExtensionPoint ext : exts) {
+            for (MarshalReplyMessageExtensionPoint ext : exts) {
+                ext.marshalReplyMessageBeforeDropping(msg, msgReq);
+            }
+        }
+    }
+
+    private void callReplyPreSendingExtensions(Message msg, NeedReplyMessage msgReq) {
+        List<MarshalReplyMessageExtensionPoint> exts = replyMessageMarshaller.get(msg.getClass());
+        if (exts != null) {
+            for (MarshalReplyMessageExtensionPoint ext : exts) {
                 ext.marshalReplyMessageBeforeSending(msg, msgReq);
             }
         }
@@ -406,6 +415,10 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     @Override
     public void reply(Message request, MessageReply reply) {
         if (Boolean.parseBoolean(request.getHeaderEntry(NO_NEED_REPLY_MSG))) {
+            if (request instanceof NeedReplyMessage) {
+                callReplyBeforeDropExtensions(reply, (NeedReplyMessage) request);
+            }
+
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("%s in message%s is set, drop reply%s", NO_NEED_REPLY_MSG,
                         dumpMessage(request), dumpMessage(reply)));
@@ -1098,8 +1111,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             registerService(serv);
         });
 
-        for (ReplyMessagePreSendingExtensionPoint extp : pluginRgty.getExtensionList(ReplyMessagePreSendingExtensionPoint.class)) {
-            List<Class> clazzs = extp.getReplyMessageClassForPreSendingExtensionPoint();
+        for (MarshalReplyMessageExtensionPoint extp : pluginRgty.getExtensionList(MarshalReplyMessageExtensionPoint.class)) {
+            List<Class> clazzs = extp.getReplyMessageClassForMarshalExtensionPoint();
             if (clazzs == null || clazzs.isEmpty()) {
                 continue;
             }
@@ -1110,7 +1123,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                             clz.getName(), extp.getClass().getName()));
                 }
 
-                List<ReplyMessagePreSendingExtensionPoint> exts = replyMessageMarshaller.computeIfAbsent(clz, k -> new ArrayList<>());
+                List<MarshalReplyMessageExtensionPoint> exts = replyMessageMarshaller.computeIfAbsent(clz, k -> new ArrayList<>());
                 exts.add(extp);
             }
         }

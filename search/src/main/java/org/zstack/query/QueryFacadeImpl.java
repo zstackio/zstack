@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint;
+import org.zstack.core.cloudbus.MarshalReplyMessageExtensionPoint;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.ThreadFacade;
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.inerr;
 
-public class QueryFacadeImpl extends AbstractService implements QueryFacade, GlobalApiMessageInterceptor, ReplyMessagePreSendingExtensionPoint {
+public class QueryFacadeImpl extends AbstractService implements QueryFacade, GlobalApiMessageInterceptor, MarshalReplyMessageExtensionPoint {
     private static CLogger logger = Utils.getLogger(QueryFacadeImpl.class);
     private Map<String, QueryBuilderFactory> builerFactories = new HashMap<>();
     private Map<String, QueryBelongFilter> belongfilters = new HashMap<>();
@@ -603,7 +603,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
     }
 
     @Override
-    public List<Class> getReplyMessageClassForPreSendingExtensionPoint() {
+    public List<Class> getReplyMessageClassForMarshalExtensionPoint() {
         return zqlFilterClasses;
     }
 

@@ -2,7 +2,7 @@ package org.zstack.mediator;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint;
+import org.zstack.core.cloudbus.MarshalReplyMessageExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedReplyMessage;
@@ -17,12 +17,12 @@ import java.util.stream.Collectors;
 
 /**
  */
-public class EipPortForwardingAttachableMarshaler implements ReplyMessagePreSendingExtensionPoint {
+public class EipPortForwardingAttachableMarshaler implements MarshalReplyMessageExtensionPoint {
     @Autowired
     private DatabaseFacade dbf;
 
     @Override
-    public List<Class> getReplyMessageClassForPreSendingExtensionPoint() {
+    public List<Class> getReplyMessageClassForMarshalExtensionPoint() {
         List<Class> clz = new ArrayList<Class>();
         return clz;
     }

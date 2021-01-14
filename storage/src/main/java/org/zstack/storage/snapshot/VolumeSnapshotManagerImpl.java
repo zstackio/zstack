@@ -1,6 +1,5 @@
 package org.zstack.storage.snapshot;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
@@ -8,8 +7,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.MarshalReplyMessageExtensionPoint;
 import org.zstack.core.cloudbus.MessageSafe;
-import org.zstack.core.cloudbus.ReplyMessagePreSendingExtensionPoint;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -51,7 +50,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.zql.ZQL;
-import org.zstack.zql.ZQLContext;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
@@ -67,7 +65,7 @@ import static org.zstack.utils.CollectionDSL.list;
  */
 public class VolumeSnapshotManagerImpl extends AbstractService implements
         VolumeSnapshotManager,
-        ReplyMessagePreSendingExtensionPoint,
+        MarshalReplyMessageExtensionPoint,
         VolumeBeforeExpungeExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint,
         ReportQuotaExtensionPoint,
@@ -980,7 +978,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     }
 
     @Override
-    public List<Class> getReplyMessageClassForPreSendingExtensionPoint() {
+    public List<Class> getReplyMessageClassForMarshalExtensionPoint() {
         List<Class> ret = new ArrayList<>();
         ret.add(APIQueryVolumeSnapshotTreeReply.class);
         return ret;
