@@ -54,6 +54,14 @@ class KVMSimulator implements Simulator {
             return rsp
         }
 
+        spec.simulator(KVMConstant.KVM_ADD_TAKEOVERFLAG_PATH) {
+            return new KVMAgentCommands.addTakeOverFlagResponse()
+        }
+
+        spec.simulator(KVMConstant.KVM_DELETE_TAKEOVERFLAG_PATH) {
+            return new KVMAgentCommands.deleteTakeOverFlagResponse()
+        }
+
         spec.simulator(KVMConstant.KVM_HARDEN_CONSOLE_PATH) {
             return new KVMAgentCommands.AgentResponse()
         }
