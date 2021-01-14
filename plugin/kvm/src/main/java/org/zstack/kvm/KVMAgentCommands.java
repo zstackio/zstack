@@ -288,6 +288,52 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class getTakeOverFlagCmd extends AgentCommand {
+
+    }
+
+    public static class getTakeOverFlagResponse extends AgentResponse {
+        private String hostUuid;
+        private int uTime;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public int getUTime() {
+            return uTime;
+        }
+
+        public void setUTime(int uTime) {
+            this.uTime = uTime;
+        }
+    }
+
+    public static class addTakeOverFlagCmd extends AgentCommand {
+        private String hostUuid;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+    }
+
+    public static class addTakeOverFlagResponse extends AgentResponse {
+    }
+
+    public static class deleteTakeOverFlagCmd extends AgentCommand {
+    }
+
+    public static class deleteTakeOverFlagResponse extends AgentResponse {
+    }
+
     public static class PingCmd extends AgentCommand {
         public String hostUuid;
     }

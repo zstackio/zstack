@@ -107,6 +107,8 @@ public abstract class HostBase extends AbstractHost {
 
     protected abstract void pingHook(Completion completion);
 
+    protected abstract void deleteTakeOverFlag(Completion completion);
+
     protected abstract int getVmMigrateQuantity();
 
     protected abstract void changeStateHook(HostState current, HostStateEvent stateEvent, HostState next);
@@ -474,6 +476,23 @@ public abstract class HostBase extends AbstractHost {
                 }
             });
         }
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                deleteTakeOverFlag(new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.debug(String.format("Failed to delete the takeover flag. The reason is:[%s], please delete the flag manually", errorCode));
+                        trigger.next();
+                    }
+                });
+            }
+        });
 
         chain.done(new FlowDoneHandler(msg) {
             private void complete() {
