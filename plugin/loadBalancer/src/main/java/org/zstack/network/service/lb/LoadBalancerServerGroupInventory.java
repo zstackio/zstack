@@ -3,6 +3,8 @@ package org.zstack.network.service.lb;
 import org.zstack.core.db.Q;
 import org.zstack.header.query.ExpandedQueries;
 import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
@@ -16,8 +18,14 @@ import java.util.stream.Collectors;
 
 @Inventory(mappingVOClass = LoadBalancerServerGroupVO.class)
 @ExpandedQueries({
-        @ExpandedQuery(expandedField = "listenerServerGroupRefs", inventoryClass = LoadBalancerListenerServerGroupRefInventory.class,
-                foreignKey = "uuid", expandedInventoryKey = "serverGroupUuid"),
+        @ExpandedQuery(expandedField = "serverGroupRef", inventoryClass = LoadBalancerListenerServerGroupRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "serverGroupUuid", hidden = true),
+        @ExpandedQuery(expandedField = "vmNicRef", inventoryClass = LoadBalancerServerGroupVmNicRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "serverGroupUuid", hidden = true),
+})
+@ExpandedQueryAliases({
+        @ExpandedQueryAlias(alias = "vmNic", expandedField = "vmNicRef.vmNic"),
+        @ExpandedQueryAlias(alias = "listener", expandedField = "serverGroupRef.listener"),
 })
 
 public class LoadBalancerServerGroupInventory implements Serializable {

@@ -1,12 +1,28 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.header.query.ExpandedQueries;
+import org.zstack.header.query.ExpandedQuery;
+import org.zstack.header.query.ExpandedQueryAlias;
+import org.zstack.header.query.ExpandedQueryAliases;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.vm.VmNicInventory;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 @Inventory(mappingVOClass = LoadBalancerServerGroupVmNicRefVO.class)
+@ExpandedQueries({
+        @ExpandedQuery(expandedField = "vmNic", inventoryClass = VmNicInventory.class,
+                foreignKey = "vmNicUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(expandedField = "serverGroup", inventoryClass = LoadBalancerServerGroupInventory.class,
+                foreignKey = "serverGroupUuid", expandedInventoryKey = "uuid"),
+        @ExpandedQuery(target = VmNicInventory.class, expandedField = "loadBalancerServerGroupRef",
+                inventoryClass = LoadBalancerServerGroupVmNicRefInventory.class, foreignKey = "uuid", expandedInventoryKey = "vmNicUuid", hidden = true)
+})
+@ExpandedQueryAliases({
+        @ExpandedQueryAlias(target = VmNicInventory.class, alias = "loadBalancerServerGroup", expandedField = "loadBalancerServerGroupRef.serverGroup")
+})
 public class LoadBalancerServerGroupVmNicRefInventory {
     private Long id;
     private String serverGroupUuid;

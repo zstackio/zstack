@@ -20,11 +20,14 @@ import java.util.*;
                 foreignKey = "loadBalancerUuid", expandedInventoryKey = "uuid"),
         @ExpandedQuery(expandedField = "vmNicRef", inventoryClass = LoadBalancerListenerVmNicRefInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "listenerUuid", hidden = true),
+        @ExpandedQuery(expandedField = "serverGroupRef", inventoryClass = LoadBalancerListenerServerGroupRefInventory.class,
+                foreignKey = "uuid", expandedInventoryKey = "listenerUuid", hidden = true),
         @ExpandedQuery(expandedField = "certificate", inventoryClass = LoadBalancerListenerCertificateRefInventory.class,
                 foreignKey = "uuid", expandedInventoryKey = "listenerUuid")
 })
 @ExpandedQueryAliases({
-        @ExpandedQueryAlias(alias = "vmNic", expandedField = "vmNicRef.vmNic")
+        @ExpandedQueryAlias(alias = "vmNic", expandedField = "vmNicRef.vmNic"),
+        @ExpandedQueryAlias(alias = "serverGroup", expandedField = "serverGroupRef.group"),
 })
 public class LoadBalancerListenerInventory implements Serializable {
     private String uuid;
