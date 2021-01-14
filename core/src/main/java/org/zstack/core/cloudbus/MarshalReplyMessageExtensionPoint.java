@@ -7,9 +7,13 @@ import java.util.List;
 
 /**
  */
-public interface ReplyMessagePreSendingExtensionPoint {
-    List<Class> getReplyMessageClassForPreSendingExtensionPoint();
+public interface MarshalReplyMessageExtensionPoint {
+    List<Class> getReplyMessageClassForMarshalExtensionPoint();
 
     // When "replyOrEvent" is an event, then the second argument "msg" will be null.
     void marshalReplyMessageBeforeSending(Message replyOrEvent, NeedReplyMessage msg);
+
+    default void marshalReplyMessageBeforeDropping(Message replyOrEvent, NeedReplyMessage msg) {
+
+    }
 }
