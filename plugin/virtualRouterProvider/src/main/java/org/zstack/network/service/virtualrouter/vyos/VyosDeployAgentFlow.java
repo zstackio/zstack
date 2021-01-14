@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.*;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
@@ -105,6 +106,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                         deployAgent();
                         return true;
                     } else {
+                        errors.add(new Throwable(String.format("tcp port 22 is not opened on managment nic %s", mgmtNicIp)));
                         return false;
                     }
                 } catch (Throwable t) {

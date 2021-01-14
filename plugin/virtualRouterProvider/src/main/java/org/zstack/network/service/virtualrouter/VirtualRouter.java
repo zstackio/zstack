@@ -313,7 +313,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     public Class<LinkedHashMap> getReturnClass() {
                         return LinkedHashMap.class;
                     }
-                });
+                }, TimeUnit.SECONDS, ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class).longValue());
             }
 
             @Override
