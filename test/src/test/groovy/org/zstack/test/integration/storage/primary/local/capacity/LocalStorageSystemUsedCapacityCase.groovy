@@ -2,6 +2,7 @@ package org.zstack.test.integration.storage.primary.local.capacity
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.primary.local.LocalStorageHostRefVO
@@ -12,10 +13,10 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
 /**
- * Created by lining on 2017/4/21.
+ * Created by lining on 2020/12/28.
  */
 
-class SystemUsedCapacityByDeleteHostCase extends SubCase {
+class LocalStorageSystemUsedCapacityCase extends SubCase {
     EnvSpec env
 
     @Override
@@ -40,13 +41,6 @@ class SystemUsedCapacityByDeleteHostCase extends SubCase {
                     name = "cluster"
                     hypervisorType = "KVM"
 
-                    kvm {
-                        name = "kvm"
-                        managementIp = "localhost"
-                        username = "root"
-                        password = "password"
-                    }
-
                     attachPrimaryStorage("local")
                 }
 
@@ -62,56 +56,44 @@ class SystemUsedCapacityByDeleteHostCase extends SubCase {
     @Override
     void test() {
         env.create {
-            checkPSSystemUsedCapacityAfterDeleteHost()
+            testAddHost()
         }
     }
 
-    void checkPSSystemUsedCapacityAfterDeleteHost(){
+    void testAddHost() {
+        ClusterInventory cluster = env.inventoryByName("cluster")
         PrimaryStorageInventory ps = env.inventoryByName("local")
-        HostInventory host = env.inventoryByName("kvm")
 
-        long originSystemUsedCapacity = ps.systemUsedCapacity
-
-        boolean checked = false
-        env.afterSimulator(LocalStorageKvmBackend.INIT_PATH) { rsp, HttpEntity<String> e ->
-            rsp.totalCapacity = 2
-            rsp.availableCapacity = 1
-            checked = true
+        LocalStorageKvmBackend.InitRsp initRsp = null;
+        env.afterSimulator(LocalStorageKvmBackend.INIT_PATH) { LocalStorageKvmBackend.InitRsp rsp, HttpEntity<String> e ->
+            rsp.totalCapacity = 10
+            rsp.availableCapacity = 5
+            rsp.localStorageUsedCapacity = 2
+            initRsp = rsp
             return rsp
         }
 
-        HostInventory host1 = addKVMHost {
+        HostInventory host = addKVMHost {
             name = "host1"
             managementIp = "127.0.0.3"
             username = "root"
             password = "password"
-            clusterUuid = host.clusterUuid
+            clusterUuid = cluster.uuid
         }
-        assert checked
+
+        assert initRsp != null
+
         LocalStorageHostRefVO hostRefVO = Q.New(LocalStorageHostRefVO.class)
                 .eq(LocalStorageHostRefVO_.hostUuid, host.uuid).find()
-        LocalStorageHostRefVO host1RefVO = Q.New(LocalStorageHostRefVO.class)
-                .eq(LocalStorageHostRefVO_.hostUuid, host1.uuid).find()
+        assert hostRefVO.totalCapacity == initRsp.totalCapacity
+        assert hostRefVO.totalPhysicalCapacity == initRsp.totalCapacity
+        assert hostRefVO.systemUsedCapacity == initRsp.totalCapacity - initRsp.availableCapacity - initRsp.localStorageUsedCapacity
+        assert hostRefVO.availablePhysicalCapacity == initRsp.availableCapacity
+        assert hostRefVO.availableCapacity == hostRefVO.availableCapacity
+
         ps = queryPrimaryStorage {
             conditions=["uuid=${ps.uuid}".toString()]
         }[0]
-        assert hostRefVO.systemUsedCapacity + host1RefVO.systemUsedCapacity == ps.systemUsedCapacity
-        checked = false
-
-        deleteHost {
-            uuid = host1.uuid
-        }
-        assert false == Q.New(LocalStorageHostRefVO.class)
-                .eq(LocalStorageHostRefVO_.hostUuid, host1.uuid).isExists()
-        hostRefVO = Q.New(LocalStorageHostRefVO.class)
-                .eq(LocalStorageHostRefVO_.hostUuid, host.uuid).find()
-        ps = queryPrimaryStorage {
-            conditions=["uuid=${ps.uuid}".toString()]
-        }[0]
-        assert !checked
-        assert hostRefVO.systemUsedCapacity == ps.systemUsedCapacity
-        assert originSystemUsedCapacity == ps.systemUsedCapacity
-
+        assert ps.systemUsedCapacity == hostRefVO.systemUsedCapacity
     }
-
 }

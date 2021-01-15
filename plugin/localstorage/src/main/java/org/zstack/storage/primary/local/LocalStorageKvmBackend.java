@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -159,6 +158,18 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
 
         public void setInitFilePath(String initFilePath) {
             this.initFilePath = initFilePath;
+        }
+    }
+
+    public static class InitRsp extends AgentResponse {
+        private Long localStorageUsedCapacity;
+
+        public Long getLocalStorageUsedCapacity() {
+            return localStorageUsedCapacity;
+        }
+
+        public void setLocalStorageUsedCapacity(Long localStorageUsedCapacity) {
+            this.localStorageUsedCapacity = localStorageUsedCapacity;
         }
     }
 
@@ -1660,13 +1671,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.setPath(self.getUrl());
         cmd.setInitFilePath(makeInitializedFilePath());
 
-        httpCall(INIT_PATH, msg.getHostUuid(), cmd, true, AgentResponse.class,
-                new ReturnValueCompletion<AgentResponse>(completion) {
+        httpCall(INIT_PATH, msg.getHostUuid(), cmd, true, InitRsp.class,
+                new ReturnValueCompletion<InitRsp>(completion) {
                     @Override
-                    public void success(AgentResponse rsp) {
-                        PhysicalCapacityUsage usage = new PhysicalCapacityUsage();
+                    public void success(InitRsp rsp) {
+                        LocalStoragePhysicalCapacityUsage usage = new LocalStoragePhysicalCapacityUsage();
                         usage.totalPhysicalSize = rsp.getTotalCapacity();
                         usage.availablePhysicalSize = rsp.getAvailableCapacity();
+                        usage.localStorageUsedSize = rsp.getLocalStorageUsedCapacity();
                         completion.success(usage);
                     }
 
@@ -2824,7 +2836,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             public void run(List<MessageReply> replies) {
                 long total = 0;
                 long avail = 0;
-                long physicalAvail = 0;
                 long systemUsed = 0;
                 List<LocalStorageHostRefVO> refs = new ArrayList<>();
 
@@ -2837,7 +2848,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     }
 
                     KVMHostAsyncHttpCallReply r = reply.castReply();
-                    AgentResponse rsp = r.toResponse(AgentResponse.class);
+                    InitRsp rsp = r.toResponse(InitRsp.class);
                     if (!rsp.isSuccess()) {
                         logger.warn(String.format("cannot get the physical capacity of local storage on the host[uuid:%s], %s",
                                 hostUuid, rsp.getError()));
@@ -2854,31 +2865,24 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         }
                     }
 
-                    Long managedResourceSize = calculateManagedResourceActualSize(hostUuid);
-                    Long usedSize = rsp.getTotalCapacity() - rsp.getAvailableCapacity() - managedResourceSize;
-                    
                     total += rsp.getTotalCapacity();
-
                     avail += rsp.getAvailableCapacity();
-
-                    // add managed resource size to available physical size
-                    physicalAvail += rsp.getAvailableCapacity();
-                    // subtract managed resource size from usedSize as system used
-                    systemUsed += usedSize;
+                    long systemUsedCapacity = rsp.getTotalCapacity() - rsp.getAvailableCapacity() - rsp.getLocalStorageUsedCapacity();
+                    systemUsed += systemUsedCapacity;
 
                     LocalStorageHostRefVO ref = new LocalStorageHostRefVO();
                     ref.setPrimaryStorageUuid(self.getUuid());
                     ref.setHostUuid(hostUuid);
-                    ref.setAvailablePhysicalCapacity(rsp.getAvailableCapacity() + managedResourceSize);
+                    ref.setAvailablePhysicalCapacity(rsp.getAvailableCapacity());
                     ref.setAvailableCapacity(rsp.getAvailableCapacity());
                     ref.setTotalCapacity(rsp.getTotalCapacity());
                     ref.setTotalPhysicalCapacity(rsp.getTotalCapacity());
-                    ref.setSystemUsedCapacity(usedSize);
+                    ref.setSystemUsedCapacity(systemUsedCapacity);
                     refs.add(ref);
                 }
 
                 dbf.persistCollection(refs);
-                increaseCapacity(total, avail, total, physicalAvail, systemUsed);
+                increaseCapacity(total, avail, total, avail, systemUsed);
                 completion.success();
             }
         });
