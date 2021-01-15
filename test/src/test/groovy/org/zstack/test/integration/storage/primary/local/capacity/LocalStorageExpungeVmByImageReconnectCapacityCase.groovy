@@ -1,6 +1,5 @@
 package org.zstack.test.integration.storage.primary.local.capacity
 
-import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.db.Q
 import org.zstack.header.image.ImageConstant
@@ -24,8 +23,6 @@ import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
-import org.zstack.utils.gson.JSONObjectUtil
-
 /**
  * Created by SyZhao on 2017/4/21.
  */
@@ -119,7 +116,7 @@ class LocalStorageExpungeVmByImageReconnectCapacityCase extends SubCase {
         env.simulator(LocalStorageKvmBackend.CREATE_VOLUME_FROM_CACHE_PATH) {
             def rsp = new LocalStorageKvmBackend.CreateVolumeFromCacheRsp()
             rsp.totalCapacity = hostCapacity.totalCapacity
-            rsp.availableCapacity = hostCapacity.totalCapacity - SizeUnit.GIGABYTE.toByte(20)
+            rsp.availableCapacity = hostCapacity.availableCapacity - SizeUnit.GIGABYTE.toByte(20)
             return rsp
         }
 
@@ -129,18 +126,6 @@ class LocalStorageExpungeVmByImageReconnectCapacityCase extends SubCase {
 
         VmInstanceVO vmvo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
         assert vmvo.state == VmInstanceState.Destroyed
-
-        env.afterSimulator(LocalStorageKvmBackend.INIT_PATH) { rsp, HttpEntity<String> e ->
-            LocalStorageKvmBackend.InitCmd cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.InitCmd.class)
-
-            if (host.uuid == cmd.hostUuid) {
-                rsp = new LocalStorageKvmBackend.CreateEmptyVolumeRsp()
-                rsp.totalCapacity = hostCapacity.totalCapacity
-                rsp.availableCapacity = hostCapacity.totalCapacity - SizeUnit.GIGABYTE.toByte(20)
-            }
-
-            return rsp
-        }
 
         reconnectHost {
             uuid = vm.hostUuid
@@ -156,37 +141,24 @@ class LocalStorageExpungeVmByImageReconnectCapacityCase extends SubCase {
         LocalStorageHostRefVO afterRefVO = Q.New(LocalStorageHostRefVO.class)
                 .eq(LocalStorageHostRefVO_.hostUuid, vm.hostUuid).find()
 
-        // system used should subtract image cache size and volume actual size
-        assert beforeCapacityResult.availablePhysicalCapacity == afterCapacityResult.availablePhysicalCapacity + SizeUnit.GIGABYTE.toByte(20)
-        assert beforeCapacityResult.totalCapacity == afterCapacityResult.availableCapacity + SizeUnit.GIGABYTE.toByte(20) - SizeUnit.GIGABYTE.toByte(2) + SizeUnit.GIGABYTE.toByte(3)
-        assert beforeRefVO.availablePhysicalCapacity == afterRefVO.availablePhysicalCapacity + SizeUnit.GIGABYTE.toByte(20)
-
-        // next step will expunge root volume, physical size changed
-        env.afterSimulator(LocalStorageKvmBackend.DELETE_BITS_PATH) { rsp, HttpEntity<String> e ->
-            rsp = new LocalStorageKvmBackend.DeleteBitsRsp()
-            rsp.totalCapacity = hostCapacity.totalCapacity
-            rsp.availableCapacity = hostCapacity.totalCapacity  - SizeUnit.GIGABYTE.toByte(19)
-            return rsp
-        }
+        assert beforeCapacityResult.availablePhysicalCapacity == afterCapacityResult.availablePhysicalCapacity
+        assert beforeCapacityResult.availableCapacity == afterCapacityResult.availableCapacity
+        assert beforeRefVO.availablePhysicalCapacity == afterRefVO.availablePhysicalCapacity
 
         expungeVmInstance {
             uuid = vm.uuid
         }
 
-        retryInSecs {
-            afterCapacityResult = getPrimaryStorageCapacity {
-                primaryStorageUuids = [ps.uuid]
-            } as GetPrimaryStorageCapacityResult
+        afterCapacityResult = getPrimaryStorageCapacity {
+            primaryStorageUuids = [ps.uuid]
+        } as GetPrimaryStorageCapacityResult
 
-            afterRefVO = Q.New(LocalStorageHostRefVO.class)
-                    .eq(LocalStorageHostRefVO_.hostUuid, vm.hostUuid).find()
+        afterRefVO = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, vm.hostUuid).find()
 
-            // system used should subtract image cache size
-            assert beforeRefVO.availablePhysicalCapacity == afterRefVO.availablePhysicalCapacity + SizeUnit.GIGABYTE.toByte(19)
-            assert beforeRefVO.availableCapacity == afterRefVO.availableCapacity + SizeUnit.GIGABYTE.toByte(19) - SizeUnit.GIGABYTE.toByte(1)
-            assert beforeCapacityResult.availablePhysicalCapacity == afterCapacityResult.availablePhysicalCapacity + SizeUnit.GIGABYTE.toByte(19)
-            assert beforeCapacityResult.totalCapacity == afterCapacityResult.availableCapacity + SizeUnit.GIGABYTE.toByte(19)
-        }
-
+        assert beforeRefVO.availablePhysicalCapacity == afterRefVO.availablePhysicalCapacity
+        assert beforeRefVO.availableCapacity == afterRefVO.availableCapacity - SizeUnit.GIGABYTE.toByte(2)
+        assert beforeCapacityResult.availablePhysicalCapacity == afterCapacityResult.availablePhysicalCapacity
+        assert beforeCapacityResult.availableCapacity == afterCapacityResult.availableCapacity - SizeUnit.GIGABYTE.toByte(2)
     }
 }

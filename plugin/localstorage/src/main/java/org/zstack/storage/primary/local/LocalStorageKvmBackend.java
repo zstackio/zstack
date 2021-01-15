@@ -7,7 +7,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -2824,7 +2823,6 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
             public void run(List<MessageReply> replies) {
                 long total = 0;
                 long avail = 0;
-                long physicalAvail = 0;
                 long systemUsed = 0;
                 List<LocalStorageHostRefVO> refs = new ArrayList<>();
 
@@ -2854,31 +2852,23 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         }
                     }
 
-                    Long managedResourceSize = calculateManagedResourceActualSize(hostUuid);
-                    Long usedSize = rsp.getTotalCapacity() - rsp.getAvailableCapacity() - managedResourceSize;
-                    
                     total += rsp.getTotalCapacity();
-
                     avail += rsp.getAvailableCapacity();
-
-                    // add managed resource size to available physical size
-                    physicalAvail += rsp.getAvailableCapacity();
-                    // subtract managed resource size from usedSize as system used
-                    systemUsed += usedSize;
+                    systemUsed += (rsp.getTotalCapacity() - rsp.getAvailableCapacity());
 
                     LocalStorageHostRefVO ref = new LocalStorageHostRefVO();
                     ref.setPrimaryStorageUuid(self.getUuid());
                     ref.setHostUuid(hostUuid);
-                    ref.setAvailablePhysicalCapacity(rsp.getAvailableCapacity() + managedResourceSize);
+                    ref.setAvailablePhysicalCapacity(rsp.getAvailableCapacity());
                     ref.setAvailableCapacity(rsp.getAvailableCapacity());
                     ref.setTotalCapacity(rsp.getTotalCapacity());
                     ref.setTotalPhysicalCapacity(rsp.getTotalCapacity());
-                    ref.setSystemUsedCapacity(usedSize);
+                    ref.setSystemUsedCapacity(rsp.getTotalCapacity() - rsp.getAvailableCapacity());
                     refs.add(ref);
                 }
 
                 dbf.persistCollection(refs);
-                increaseCapacity(total, avail, total, physicalAvail, systemUsed);
+                increaseCapacity(total, avail, total, avail, systemUsed);
                 completion.success();
             }
         });
