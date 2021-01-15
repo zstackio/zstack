@@ -73,4 +73,6 @@ public interface VmInstanceConstant {
 
     String EMPTY_CDROM = "empty";
     String NONE_CDROM = "none";
+    String COLD_MIGRATE = "0x01";
+    String HOT_MIGRATE = "0x02";
 }

@@ -90,6 +90,8 @@ import java.util.stream.Collectors;
 import static org.zstack.core.CoreGlobalProperty.PLATFORM_ID;
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
+import static org.zstack.header.host.HostErrors.FAILD_TO_VSOC_MIGRATE;
+import static org.zstack.header.vm.VmInstanceConstant.COLD_MIGRATE;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 public class KVMHost extends HostBase implements Host {
@@ -166,6 +168,9 @@ public class KVMHost extends HostBase implements Host {
     private String startColoSyncPath;
     private String registerPrimaryVmHeartbeatPath;
     private String vmCreateVsocPath;
+    private String vmDeleteVsocPath;
+    private String vsocMigratePath;
+    private String bootFromNewNodePath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -342,6 +347,16 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_VM_CREATE_VSOC);
         vmCreateVsocPath = ub.build().toString();
+        ub.path(KVMConstant.KVM_VM_DELETE_VSOC);
+        vmDeleteVsocPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_MIGRATE);
+        vsocMigratePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_BOOT_FROM_NEW_NODE);
+        bootFromNewNodePath = ub.build().toString();
     }
 
     class Http<T> {
@@ -1723,6 +1738,37 @@ public class KVMHost extends HostBase implements Host {
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("migrate-vm-%s-on-kvm-host-%s", vmUuid, self.getUuid()));
+        chain.then(new Flow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                VsocMigrateCommand cmd = new VsocMigrateCommand();
+                cmd.vmUuid = s.vmUuid;
+                cmd.socId = s.dstHostUuid;
+                cmd.type = VmInstanceConstant.HOT_MIGRATE;
+                UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(vsocMigratePath);
+                ub.host(srcHostMigrateIp);
+                String vsocMigrateUrl = ub.build().toString();
+                new Http<>(migrateVmPath, cmd, VsocMigrateRsp.class).call(srcHostUuid, new ReturnValueCompletion<VsocMigrateRsp>(trigger) {
+                    @Override
+                    public void success(VsocMigrateRsp ret) {
+                        if (!ret.isSuccess()) {
+                            ErrorCode err = err(FAILD_TO_VSOC_MIGRATE, ret.getError());
+                            trigger.fail(err);
+                        }
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+
+            }
+        });
         chain.then(new ShareFlow() {
             @Override
             public void setup() {

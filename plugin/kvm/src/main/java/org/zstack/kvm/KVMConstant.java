@@ -63,6 +63,8 @@ public interface KVMConstant {
     String KVM_REGISTER_PRIMARY_VM_HEARTBEAT = "/register/primary/vm/heartbeat";
     String KVM_VM_CREATE_VSOC = "/vm/createvsoc";
     String KVM_VM_DELETE_VSOC = "/vm/deletevsoc";
+    String KVM_VSOC_MIGRATE = "/vm/vsocmigrate";
+    String KVM_BOOT_FROM_NEW_NODE = "/vm/boot_from_new_node";
 
     String ISO_TO = "kvm.isoto";
     String ANSIBLE_PLAYBOOK_NAME = "kvm.py";
