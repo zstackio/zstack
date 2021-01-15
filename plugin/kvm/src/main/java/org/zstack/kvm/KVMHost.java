@@ -13,6 +13,7 @@ import org.zstack.compute.host.HostSystemTags;
 import org.zstack.compute.host.MigrateNetworkExtensionPoint;
 import org.zstack.compute.vm.*;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.GlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.agent.AgentConstant;
@@ -549,6 +550,10 @@ public class KVMHost extends HostBase implements Host {
             handle((RegisterColoPrimaryCheckMsg) msg);
         } else if (msg instanceof CreateVmVsocFileMsg) {
             handle((CreateVmVsocFileMsg) msg);
+        } else if (msg instanceof DeleteVmVsocFileMsg) {
+            handle((DeleteVmVsocFileMsg) msg);
+        } else if (msg instanceof VmVsocMigrateMsg) {
+            handle((VmVsocMigrateMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -599,12 +604,40 @@ public class KVMHost extends HostBase implements Host {
                         bus.reply(msg, re);
                     }
                 });
+
+    private void handle(VmVsocMigrateMsg msg) {
+        VsocMigrateCommand cmd = new VsocMigrateCommand();
+        cmd.vmUuid = msg.getVmUuid();
+        cmd.socId = msg.getDestSocId();
+        cmd.type = VmInstanceConstant.HOT_MIGRATE;
+        cmd.platformId = PLATFORM_ID;
+
+        new Http<>(vsocMigratePath, cmd, VsocMigrateRsp.class).call(new ReturnValueCompletion<VsocMigrateRsp>(msg) {
+            @Override
+            public void success(VsocMigrateRsp ret) {
+                VmVsocMigrateReply rsp = new VmVsocMigrateReply();
+                if (!ret.isSuccess()) {
+                    rsp.setError(operr("migrate vm vsoc fail,becauese:%s", ret.getError()));
+                    bus.reply(msg, rsp);
+                } else{
+                    bus.reply(msg, rsp);
+                }
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                VmVsocMigrateReply rsp = new VmVsocMigrateReply();
+                rsp.setError(err);
+                bus.reply(msg, rsp);
             }
         });
     }
 
     private void handle(RegisterColoPrimaryCheckMsg msg) {
         inQueue().name(String.format("register-vm-heart-beat-on-%s", self.getUuid()))
+
+    private void handle(GetVmFirstBootDeviceOnHypervisorMsg msg) {
+        inQueue().name(String.format("get-first-boot-device-of-vm-%s-on-kvm-%s", msg.getVmInstanceUuid(), self.getUuid()))
                 .asyncBackup(msg)
                 .run(chain -> registerPrimaryVmHeartbeat(msg, new NoErrorCompletion(chain) {
                     @Override
@@ -633,7 +666,7 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void fail(ErrorCode err) {
-                final GetVmFirstBootDeviceOnHypervisorReply reply = new GetVmFirstBootDeviceOnHypervisorReply();
+                final DeleteVmVsocFileReply reply = new DeleteVmVsocFileReply();
                 reply.setError(err);
                 bus.reply(msg, reply);
             }

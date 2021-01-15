@@ -2991,6 +2991,7 @@ public class KVMAgentCommands {
         public String vmUuid;
         public String socId;
         public String type;
+        public String platformId;
     }
 
     public static class VsocMigrateRsp extends AgentResponse {
