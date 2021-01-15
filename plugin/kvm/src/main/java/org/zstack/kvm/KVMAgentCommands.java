@@ -2372,4 +2372,14 @@ public class KVMAgentCommands {
 
     public static class DeleteVmVsocRsp extends AgentResponse {
     }
+
+    public static class VsocMigrateCommand extends AgentCommand {
+        public String vmUuid;
+        public String socId;
+        public String type;
+        public String platformId;
+    }
+
+    public static class VsocMigrateRsp extends AgentResponse {
+    }
 }

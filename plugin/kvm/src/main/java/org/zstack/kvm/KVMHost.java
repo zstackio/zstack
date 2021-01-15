@@ -16,6 +16,7 @@ import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmPriorityOperator;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.GlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.agent.AgentConstant;
@@ -83,6 +84,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.CoreGlobalProperty.PLATFORM_ID;
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
+import static org.zstack.header.host.HostErrors.FAILD_TO_VSOC_MIGRATE;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -153,6 +155,8 @@ public class KVMHost extends HostBase implements Host {
     private String getVmFirstBootDevicePath;
     private String vmCreateVsocPath;
     private String vmDeleteVsocPath;
+    private String vsocMigratePath;
+    private String bootFromNewNodePath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -301,6 +305,14 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_VM_DELETE_VSOC);
         vmDeleteVsocPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_VSOC_MIGRATE);
+        vsocMigratePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_BOOT_FROM_NEW_NODE);
+        bootFromNewNodePath = ub.build().toString();
     }
 
     class Http<T> {
@@ -481,10 +493,39 @@ public class KVMHost extends HostBase implements Host {
             handle((CreateVmVsocFileMsg) msg);
         } else if (msg instanceof DeleteVmVsocFileMsg) {
             handle((DeleteVmVsocFileMsg) msg);
-        }
-        else {
+        } else if (msg instanceof VmVsocMigrateMsg) {
+            handle((VmVsocMigrateMsg) msg);
+        } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(VmVsocMigrateMsg msg) {
+        VsocMigrateCommand cmd = new VsocMigrateCommand();
+        cmd.vmUuid = msg.getVmUuid();
+        cmd.socId = msg.getDestSocId();
+        cmd.type = VmInstanceConstant.HOT_MIGRATE;
+        cmd.platformId = PLATFORM_ID;
+
+        new Http<>(vsocMigratePath, cmd, VsocMigrateRsp.class).call(new ReturnValueCompletion<VsocMigrateRsp>(msg) {
+            @Override
+            public void success(VsocMigrateRsp ret) {
+                VmVsocMigrateReply rsp = new VmVsocMigrateReply();
+                if (!ret.isSuccess()) {
+                    rsp.setError(operr("migrate vm vsoc fail,becauese:%s", ret.getError()));
+                    bus.reply(msg, rsp);
+                } else{
+                    bus.reply(msg, rsp);
+                }
+            }
+
+            @Override
+            public void fail(ErrorCode err) {
+                VmVsocMigrateReply rsp = new VmVsocMigrateReply();
+                rsp.setError(err);
+                bus.reply(msg, rsp);
+            }
+        });
     }
 
     private void handle(GetVmFirstBootDeviceOnHypervisorMsg msg) {
@@ -517,7 +558,7 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void fail(ErrorCode err) {
-                final GetVmFirstBootDeviceOnHypervisorReply reply = new GetVmFirstBootDeviceOnHypervisorReply();
+                final DeleteVmVsocFileReply reply = new DeleteVmVsocFileReply();
                 reply.setError(err);
                 bus.reply(msg, reply);
             }
@@ -543,7 +584,7 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void fail(ErrorCode err) {
-                final GetVmFirstBootDeviceOnHypervisorReply reply = new GetVmFirstBootDeviceOnHypervisorReply();
+                final DeleteVmVsocFileReply reply = new DeleteVmVsocFileReply();
                 reply.setError(err);
                 bus.reply(msg, reply);
             }
