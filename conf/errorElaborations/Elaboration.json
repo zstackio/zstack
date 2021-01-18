@@ -620,8 +620,8 @@
     "code": "1003",
     "method": "regex",
     "regex": ".*unable to attach a L3 network to the vm\\[uuid:.*], Unable to create tap device vnic.*: Device or resource busy.*",
-    "message_cn": "无法将L3网络连接到vm, 因为无法创建tap设备:设备或资源忙",
-    "message_en": "unable to attach a L3 network to the vm, Unable to create tap device: Device or resource busy.*"
+    "message_cn": "无法将L3网络连接到vm, 因为无法创建tap设备:设备或资源忙。请重试一遍或者手动删除网络接口[%6$s]。",
+    "message_en": "unable to attach a L3 network to the vm, Unable to create tap device: Device or resource busy.Please try again or delete device[%6$s] by yourself"
   },
   {
     "category": "L3",
@@ -899,7 +899,7 @@
     "category": "PS",
     "code": "1019",
     "method": "regex",
-    "regex": ".*unable to connect the shared block group primary storage\\[uuid:.*, name:.*] to the cluster\\[uuid:.*], Can't access shared block group primary storage on host\\[uuid:.*].*and create vg with forceWipw=False.*",
+    "regex": ".*can not find vg .* and create vg with forceWipw=.*",
     "message_cn": "无法将主机上的共享块主存储加载到集群，因为存在原有数据，请勾选清理块设备并重试。",
     "message_en": "Unable to connect the shared block group primary storage to the cluster, because device is not empty, please check the checkbox of \"Clear SharedBlock\" and try again."
   },

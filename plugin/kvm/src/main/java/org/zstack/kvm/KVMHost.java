@@ -1620,9 +1620,15 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(AttachNicResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr("failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s]," +
-                                    "because %s", msg.getNicInventory().getUuid(), msg.getNicInventory().getVmInstanceUuid(),
-                            self.getUuid(), self.getManagementIp(), ret.getError()));
+                    if (ret.getError().contains("Device or resource busy")) {
+                        reply.setError(operr("failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s]," +
+                                        "because %s, please try again or delete device[%s] by yourself", msg.getNicInventory().getUuid(), msg.getNicInventory().getVmInstanceUuid(),
+                                self.getUuid(), self.getManagementIp(), ret.getError(), msg.getNicInventory().getInternalName()));
+                    } else {
+                        reply.setError(operr("failed to attach nic[uuid:%s, vm:%s] on kvm host[uuid:%s, ip:%s]," +
+                                        "because %s", msg.getNicInventory().getUuid(), msg.getNicInventory().getVmInstanceUuid(),
+                                self.getUuid(), self.getManagementIp(), ret.getError()));
+                    }
                 }
 
                 bus.reply(msg, reply);
@@ -2902,7 +2908,12 @@ public class KVMHost extends HostBase implements Host {
                             sshShell.setPassword(getSelf().getPassword());
                             sshShell.setPort(getSelf().getPort());
                             sshShell.setWithSudo(false);
-                            SshResult ret = sshShell.runCommand(String.format("curl --connect-timeout 10 %s|| wget --spider -q --connect-timeout=10 %s|| test $? -eq 8", restf.getCallbackUrl(), restf.getCallbackUrl()));
+                            final String cmd = String.format("curl --connect-timeout 10 %s|| wget --spider -q --connect-timeout=10 %s|| test $? -eq 8", restf.getCallbackUrl(), restf.getCallbackUrl());
+                            SshResult ret = sshShell.runCommand(cmd);
+                            if (ret.getStderr() != null && ret.getStderr().contains("No route to host")) {
+                                // c.f. https://access.redhat.com/solutions/1120533
+                                ret = sshShell.runCommand(cmd);
+                            }
 
                             if (ret.isSshFailure()) {
                                 throw new OperationFailureException(operr("unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity," +
