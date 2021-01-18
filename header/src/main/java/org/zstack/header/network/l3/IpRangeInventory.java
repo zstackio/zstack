@@ -260,7 +260,10 @@ public class IpRangeInventory implements Serializable {
         ipr.setGateway(msg.getGateway());
         ipr.setL3NetworkUuid(msg.getL3NetworkUuid());
         SubnetUtils su = new SubnetUtils(msg.getStartIp(), msg.getNetmask());
-        ipr.setNetworkCidr(su.getInfo().getCidrSignature());
+        SubnetInfo si = su.getInfo();
+        su = new SubnetUtils(si.getNetworkAddress(), msg.getNetmask());
+        si = su.getInfo();
+        ipr.setNetworkCidr(si.getCidrSignature());
         ipr.setUuid(msg.getResourceUuid());
         ipr.setIpVersion(IPv6Constants.IPv4);
         ipr.setIpRangeType(IpRangeType.valueOf(msg.getIpRangeType()));
@@ -270,9 +273,11 @@ public class IpRangeInventory implements Serializable {
     public static IpRangeInventory fromMessage(APIAddIpRangeByNetworkCidrMsg msg) {
         SubnetUtils utils = new SubnetUtils(msg.getNetworkCidr());
         SubnetInfo subnet = utils.getInfo();
+        utils = new SubnetUtils(subnet.getNetworkAddress(), subnet.getNetmask());
+        subnet = utils.getInfo();
 
         IpRangeInventory ipr = new IpRangeInventory();
-        ipr.setNetworkCidr(msg.getNetworkCidr());
+        ipr.setNetworkCidr(subnet.getCidrSignature());
         ipr.setName(msg.getName());
         ipr.setDescription(msg.getDescription());
 
