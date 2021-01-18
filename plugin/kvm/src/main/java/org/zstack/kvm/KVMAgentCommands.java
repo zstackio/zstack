@@ -209,6 +209,8 @@ public class KVMAgentCommands {
         private List<String> iptablesRules;
         private boolean ignoreMsrs;
         private boolean pageTableExtensionDisabled;
+        private int tcpServerPort;
+        private String version;
 
         public boolean isIgnoreMsrs() {
             return ignoreMsrs;
@@ -249,6 +251,22 @@ public class KVMAgentCommands {
         public void setPageTableExtensionDisabled(boolean pageTableExtensionDisabled) {
             this.pageTableExtensionDisabled = pageTableExtensionDisabled;
         }
+
+        public int getTcpServerPort() {
+            return tcpServerPort;
+        }
+
+        public void setTcpServerPort(int tcpServerPort) {
+            this.tcpServerPort = tcpServerPort;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
     }
 
     public static class ConnectResponse extends AgentResponse {
@@ -287,6 +305,8 @@ public class KVMAgentCommands {
 
     public static class PingResponse extends AgentResponse {
         private String hostUuid;
+        private String sendCommandUrl;
+        private String version;
 
         public String getHostUuid() {
             return hostUuid;
@@ -295,6 +315,47 @@ public class KVMAgentCommands {
         public void setHostUuid(String hostUuid) {
             this.hostUuid = hostUuid;
         }
+
+        public String getSendCommandUrl() {
+            return sendCommandUrl;
+        }
+
+        public void setSendCommandUrl(String sendCommandUrl) {
+            this.sendCommandUrl = sendCommandUrl;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+    }
+
+    public static class UpdateHostConfigurationCmd extends AgentCommand {
+        public String hostUuid;
+        public String sendCommandUrl;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getSendCommandUrl() {
+            return sendCommandUrl;
+        }
+
+        public void setSendCommandUrl(String sendCommandUrl) {
+            this.sendCommandUrl = sendCommandUrl;
+        }
+    }
+
+    public static class UpdateHostConfigurationResponse extends AgentResponse {
+
     }
 
     public static class CheckPhysicalNetworkInterfaceCmd extends AgentCommand {
@@ -2773,6 +2834,7 @@ public class KVMAgentCommands {
         public List<String> psUuids;
         public String reason;
         public String vmUuidsString;
+        public boolean fencerFailure = true;
     }
 
     public static class ReportFailoverCmd {

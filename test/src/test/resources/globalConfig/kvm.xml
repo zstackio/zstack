@@ -176,4 +176,28 @@
         <description>tcp or udp ports allowed by kvmagent, udp port start with 'u' like 'u67', port range can be like this: 1100:1200, multiple port or port range can be separated by ”,“</description>
         <defaultValue>22,7070,16509,49152:49261,2049,20000:30000,u4789,u8472,7069,9100,9103</defaultValue>
     </config>
+
+    <config>
+        <category>kvm</category>
+        <name>enable.host.tcp.connection.check</name>
+        <description>Enable host connection check offered by tcp detection.</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>connection.server.update.interval</name>
+        <description>Interval for tcp server update its heartbeat time.</description>
+        <defaultValue>1</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <category>kvm</category>
+        <name>host.connection.check.interval</name>
+        <description>Interval to check if sockets from host are out of date.</description>
+        <defaultValue>3</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
 </globalConfig>
