@@ -44,6 +44,8 @@ public class TimeoutRestTemplate extends RestTemplate {
             long endTime = System.currentTimeMillis();
             if(endTime - startTime > (connectTimeout + 3000) || endTime - startTime > (readTimeout + 3000) ){
                 logger.error(String.format("TimeoutRestTemplate timeout error, requestId=%s, connectTimeout=%s, readTimeout=%s, spendTime=%s", requestId, connectTimeout, readTimeout, endTime - startTime));
+            } else {
+                logger.debug(String.format("TimeoutRestTemplate exchange method:%s, url: %s", method, url));
             }
         }
     }
