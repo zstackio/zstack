@@ -3087,16 +3087,16 @@
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationUtils.java"
   },
   {
-    "raw": "template must contain [ZStackTemplateFormatVersion]",
-    "en_US": "template must contain [ZStackTemplateFormatVersion]",
+    "raw": "template must contain [AStackTemplateFormatVersion]",
+    "en_US": "template must contain [AStackTemplateFormatVersion]",
     "zh_CN": "",
     "arguments": [],
     "line": 24,
     "fileName": "src/main/java/org/zstack/cloudformation/CloudFormationUtils.java"
   },
   {
-    "raw": "invalid ZStackTemplateFormatVersion: %s, %s",
-    "en_US": "invalid ZStackTemplateFormatVersion: {0}, {1}",
+    "raw": "invalid AStackTemplateFormatVersion: %s, %s",
+    "en_US": "invalid AStackTemplateFormatVersion: {0}, {1}",
     "zh_CN": "",
     "arguments": [
       "result.getTemplateVersion()",
