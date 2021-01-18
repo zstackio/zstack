@@ -89,6 +89,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
         int timeoutInSeconds = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class);
         long timeout = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeoutInSeconds);
+        int sshPort = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);
 
         List<Throwable> errors = new ArrayList<>();
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
@@ -102,11 +103,11 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                         return true;
                     }
 
-                    if (NetworkUtils.isRemotePortOpen(mgmtNicIp, 22, 2000)) {
+                    if (NetworkUtils.isRemotePortOpen(mgmtNicIp, sshPort, 2000)) {
                         deployAgent();
                         return true;
                     } else {
-                        errors.add(new Throwable(String.format("tcp port 22 is not opened on managment nic %s", mgmtNicIp)));
+                        errors.add(new Throwable(String.format("vyos agent port %s is not opened on managment nic %s", sshPort, mgmtNicIp)));
                         return false;
                     }
                 } catch (Throwable t) {
