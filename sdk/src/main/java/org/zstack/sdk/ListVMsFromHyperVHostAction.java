@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddV2VConversionHostAction extends AbstractAction {
+public class ListVMsFromHyperVHostAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddV2VConversionHostAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddV2VConversionHostResult value;
+        public org.zstack.sdk.ListVMsFromHyperVHostResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,26 +25,14 @@ public class AddV2VConversionHostAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, validValues = {"VMWARE","KVM","HYPERV"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
+    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hypervURI;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hostUuid;
-
-    @Param(required = true, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String storagePath;
+    public java.lang.String conversionHostUuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String v2vType = "HYPERV";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -78,8 +66,8 @@ public class AddV2VConversionHostAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddV2VConversionHostResult value = res.getResult(org.zstack.sdk.AddV2VConversionHostResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddV2VConversionHostResult() : value; 
+        org.zstack.sdk.ListVMsFromHyperVHostResult value = res.getResult(org.zstack.sdk.ListVMsFromHyperVHostResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ListVMsFromHyperVHostResult() : value; 
 
         return ret;
     }
@@ -109,7 +97,7 @@ public class AddV2VConversionHostAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/v2v-conversion-hosts";
+        info.path = "/v2v/hyperv/listvm";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
