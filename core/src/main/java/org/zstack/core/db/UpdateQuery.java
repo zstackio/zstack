@@ -41,7 +41,7 @@ public interface UpdateQuery {
 
     int hardDelete();
 
-    void update();
+    int update();
 
     static UpdateQuery New(Class entityClass) {
         return new UpdateQueryImpl().entity(entityClass);

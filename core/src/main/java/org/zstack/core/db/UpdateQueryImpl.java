@@ -255,12 +255,12 @@ public class UpdateQueryImpl implements UpdateQuery {
 
     @Override
     @DeadlockAutoRestart
-    public void update() {
-        _update();
+    public int update() {
+        return _update();
     }
 
     @Transactional
-    private void _update() {
+    private int _update() {
         DebugUtils.Assert(entityClass!=null, "entity class cannot be null");
 
         StringBuilder sb = new StringBuilder(String.format("UPDATE %s vo", entityClass.getSimpleName()));
@@ -290,7 +290,8 @@ public class UpdateQueryImpl implements UpdateQuery {
             fillConditions(q);
         }
 
-        q.executeUpdate();
+        int n = q.executeUpdate();
         dbf.getEntityManager().flush();
+        return n;
     }
 }
