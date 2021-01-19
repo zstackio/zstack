@@ -2382,4 +2382,13 @@ public class KVMAgentCommands {
 
     public static class VsocMigrateRsp extends AgentResponse {
     }
+
+    public static class BootFromNewNodeCommand extends AgentCommand {
+        public String vmUuid;
+        public String prvSocId;
+        public String platformId;
+    }
+
+    public static class BootFromNewNodeRsp extends AgentResponse {
+    }
 }

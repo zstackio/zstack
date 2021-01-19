@@ -496,9 +496,41 @@ public class KVMHost extends HostBase implements Host {
             handle((DeleteVmVsocFileMsg) msg);
         } else if (msg instanceof VmVsocMigrateMsg) {
             handle((VmVsocMigrateMsg) msg);
+        } else if ((msg instanceof VmBootFromNewNodeMsg)) {
+            handle((VmBootFromNewNodeMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(VmBootFromNewNodeMsg msg) {
+        BootFromNewNodeCommand cmd = new BootFromNewNodeCommand();
+        cmd.platformId = msg.getPlatformId();
+        cmd.vmUuid = msg.getVmUuid();
+        cmd.prvSocId = msg.getPrvSocId();
+
+        new Http<>(bootFromNewNodePath, cmd, BootFromNewNodeRsp.class).call(new ReturnValueCompletion<BootFromNewNodeRsp>(msg) {
+            @Override
+            public void success(BootFromNewNodeRsp ret) {
+                VmBootFromNewNodeReply rsp = new VmBootFromNewNodeReply();
+                if (ret.isSuccess()) {
+                    bus.reply(msg, rsp);
+                } else {
+                    logger.warn(String.format("Fail:call boot_from_new_node, because: %s", ret.getError()));
+                    rsp.setSuccess(false);
+                    rsp.setError(operr("Fail:call boot_from_new_node, because: %s", ret.getError()));
+                    bus.reply(msg, rsp);
+                }
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                VmBootFromNewNodeReply rsp = new VmBootFromNewNodeReply();
+                rsp.setSuccess(false);
+                rsp.setError(errorCode);
+                bus.reply(msg, rsp);
+            }
+        });
     }
 
     private void handle(VmVsocMigrateMsg msg) {
