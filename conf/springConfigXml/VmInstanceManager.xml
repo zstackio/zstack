@@ -57,6 +57,7 @@
                 <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicForStartingVmFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
+                <value>org.zstack.compute.vm.VmCheckVmVsocFile</value>
                 <value>org.zstack.compute.vm.VmStartOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
             </list>
