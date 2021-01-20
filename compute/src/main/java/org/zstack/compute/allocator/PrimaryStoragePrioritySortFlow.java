@@ -3,19 +3,21 @@ package org.zstack.compute.allocator;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.header.allocator.AbstractHostSortorFlow;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageVO;
-import org.zstack.header.storage.backup.*;
+import org.zstack.header.storage.backup.PrimaryStoragePriorityGetter;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -25,8 +27,6 @@ import java.util.stream.Collectors;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
     private static CLogger logger = Utils.getLogger(PrimaryStoragePrioritySortFlow.class);
-    @Autowired
-    private CloudBus bus;
     @Autowired
     protected DatabaseFacade dbf;
     @Autowired
@@ -38,7 +38,7 @@ public class PrimaryStoragePrioritySortFlow extends AbstractHostSortorFlow {
     public void sort() {
         DebugUtils.Assert(candidates != null && !candidates.isEmpty(), "HostInventory cannot be none");
 
-        if (spec.getImage() == null || dbf.findByUuid(spec.getImage().getUuid(), ImageVO.class) == null) {
+        if (spec.getImage() == null || !dbf.isExist(spec.getImage().getUuid(), ImageVO.class)) {
             prepareForNext(candidates);
             return;
         }
