@@ -37,8 +37,10 @@ import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshException;
+import org.zstack.utils.ssh.SshResult;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -115,7 +117,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
                         String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_INIT);
 
                         int timeoutInSeconds = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class);
-                        int interval = 5 ; /* seonds*/
+                        int interval = 30 ; /* seonds*/
 
                         List<Integer> steps = new ArrayList<>(timeoutInSeconds/interval);
                         for (int i = 0; i < timeoutInSeconds/interval; i++) {
@@ -131,17 +133,40 @@ public class VyosConnectFlow extends NoRollbackFlow {
                             restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
                                 private void debug () {
                                     int sshPort = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);
-                                    if (!NetworkUtils.isRemotePortOpen(mgmtNic.getIp(), sshPort, 2000)) {
+                                    if (!NetworkUtils.isRemotePortOpen(mgmtNic.getIp(), sshPort, interval)) {
                                         logger.debug(String.format("vyos agent port %s is not opened on managment nic %s",
                                                 sshPort, mgmtNic.getIp()));
                                         return;
                                     }
-                                    String script = "sudo cat /home/vyos/zvr/zvrboot.log\n" +
-                                            "sudo  cat /home/vyos/zvr/zvrstartup.log\n" +
-                                            "sudo  cat /home/vyos/zvr/zvr.log";
-                                    new Ssh().shell(script).setTimeout(60).setPrivateKey(asf.getPrivateKey())
-                                            .setUsername("vyos").setHostname(mgmtNic.getIp()).setPort(sshPort)
-                                            .runErrorByExceptionAndClose();
+                                    Ssh ssh1 = new Ssh();
+                                    ssh1.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
+                                            .setHostname(mgmtNic.getIp()).setTimeout(interval);
+                                    SshResult ret1 = ssh1.command("sudo cat /home/vyos/zvr/zvrboot.log").runAndClose();
+                                    if (ret1.getReturnCode() == 0) {
+                                        logger.debug(String.format("vyos bootup log %s", ret1.getStdout()));
+                                    } else {
+                                        logger.debug(String.format("get vyos bootup log failed: %s", ret1.getStderr()));
+                                    }
+
+                                    Ssh ssh2 = new Ssh();
+                                    ssh2.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
+                                            .setHostname(mgmtNic.getIp()).setTimeout(interval);
+                                    SshResult ret2 = ssh2.command("sudo cat /home/vyos/zvr/zvrstartup.log").runAndClose();
+                                    if (ret2.getReturnCode() == 0) {
+                                        logger.debug(String.format("zvr startup log %s", ret2.getStdout()));
+                                    } else {
+                                        logger.debug(String.format("get zvr startup log failed: %s", ret2.getStderr()));
+                                    }
+
+                                    Ssh ssh3 = new Ssh();
+                                    ssh3.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
+                                            .setHostname(mgmtNic.getIp()).setTimeout(interval);
+                                    SshResult ret3 = ssh3.command("sudo cat /home/vyos/zvr/zvr.log").runAndClose();
+                                    if (ret3.getReturnCode() == 0) {
+                                        logger.debug(String.format("zvr log %s", ret3.getStdout()));
+                                    } else {
+                                        logger.debug(String.format("get zvr log failed: %s", ret3.getStderr()));
+                                    }
                                 }
 
                                 @Override
@@ -161,6 +186,9 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                         struct.setZvrVersion(ret.getZvrVersion());
                                         new VirtualRouterMetadataOperator().updateVirtualRouterMetadata(struct);
                                         wcompl.allDone();
+                                        for (ErrorCode e : errs) {
+                                            errs.remove(e);
+                                        }
                                     } else {
                                         debug();
                                         errs.add(operr("vyos init command failed, because:%s", ret.getError()));
