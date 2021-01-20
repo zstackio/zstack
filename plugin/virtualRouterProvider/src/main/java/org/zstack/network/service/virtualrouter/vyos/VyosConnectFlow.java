@@ -9,6 +9,10 @@ import org.zstack.appliancevm.ApplianceVmSpec;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.asyncbatch.While;
+import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -22,9 +26,13 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.network.service.lb.LoadBalancerGlobalConfig;
+import org.zstack.network.service.virtualrouter.*;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.InitCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.InitRsp;
 import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO;
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO_;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -33,6 +41,7 @@ import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
 
+import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -121,6 +130,18 @@ public class VyosConnectFlow extends NoRollbackFlow {
                             cmd.setMgtCidr(Platform.getManagementServerCidr());
                             cmd.setUuid(vrUuid);
                             cmd.setLogLevel(rcf.getResourceConfigValue(VirtualRouterGlobalConfig.LOG_LEVEL, vrUuid, String.class));
+                            Map <String,String> parms = new HashMap<>();
+
+                            long count = Q.New(VirtualRouterLoadBalancerRefVO.class)
+                                .eq(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid, vrUuid)
+                                .notNull(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid)
+                                .count();
+                            if(count > 0){
+                                parms.put(VirtualRouterGlobalConfig.IPV4_LOCAL_PORT_RANGE.getName(),VirtualRouterGlobalConfig.IPV4_LOCAL_PORT_RANGE.value());
+                            }
+                            cmd.setParms(parms);
+
+
                             restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
                                 private void debug () {
                                     int sshPort = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);

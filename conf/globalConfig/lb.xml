@@ -79,6 +79,14 @@
     </config>
 
     <config>
+        <category>loadBalancer</category>
+        <name>httpMode</name>
+        <description>When mode http is turned on, HAProxy processes HTTP protocol for each request and response passing through. to choose from http-keep-alive,http-server-close,http-tunnel,httpclose,forceclose</description>
+        <defaultValue>http-server-close</defaultValue>
+        <type>java.lang.String</type>
+    </config>
+
+    <config>
         <name>listener.num</name>
         <description>default quota for listener.num</description>
         <defaultValue>20</defaultValue>

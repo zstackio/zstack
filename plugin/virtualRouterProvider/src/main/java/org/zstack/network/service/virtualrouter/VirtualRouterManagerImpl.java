@@ -12,6 +12,8 @@ import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigException;
+import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
@@ -572,13 +574,38 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         });
     }
 
+    private void installConfigValidateExtension() {
+        VirtualRouterGlobalConfig.IPV4_LOCAL_PORT_RANGE.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
+                String[] ports = value.split("-");
+                if (ports != null && ports.length == 2) {
+                    try {
+                        long lowPort = Long.parseLong(ports[0]);
+                        long upPort = Long.parseLong(ports[1]);
+                        if ((lowPort == 0 && upPort == 0) || (lowPort >= 1024 && upPort <= 65535 && lowPort <= upPort)) {
+                            return;
+                        }
+                        throw new GlobalConfigException(String.format("%s must in range in [%s, %s]",
+                                VirtualRouterGlobalConfig.IPV4_LOCAL_PORT_RANGE.getName(), "1024", "65535"));
+                    } catch (NumberFormatException e) {
+                        throw new GlobalConfigException(String.format("%s %s is not a number or out of range of a Long type", ports[0], ports[1]), e);
+                    }
+                } else {
+                    throw new GlobalConfigException(String.format("%s must be this format port-port",
+                            VirtualRouterGlobalConfig.IPV4_LOCAL_PORT_RANGE.getName()));
+                }
+            }
+        });
+    }
+
 	@Override
 	public boolean start() {
 		populateExtensions();
         deployAnsible();
 		buildWorkFlowBuilder();
         installSystemValidator();
-
+        installConfigValidateExtension();
         rebootVirtualRouterVmOnRebootEvent();
 
         VirtualRouterSystemTags.VR_PARALLELISM_DEGREE.installLifeCycleListener(new SystemTagLifeCycleListener() {
