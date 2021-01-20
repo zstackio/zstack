@@ -4,7 +4,6 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -17,28 +16,21 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor.InterceptorPosition;
 import org.zstack.header.apimediator.StopRoutingException;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.*;
-import org.zstack.header.rest.RestRequest;
 import org.zstack.portal.apimediator.schema.Service;
-import org.zstack.utils.DebugUtils;
 import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
-import org.zstack.utils.function.FunctionNoArg;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 import static org.zstack.core.Platform.*;
 
-import javax.persistence.TypedQuery;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created with IntelliJ IDEA.
@@ -61,6 +53,8 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private List<ApiMessageValidator> validators;
 
     private boolean unitTestOn;
     private List<String> configFolders;
@@ -256,10 +250,9 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         }
     }
 
-
     private void apiParamValidation(APIMessage msg) {
         try {
-            msg.validate(new PortApiValidator());
+            msg.validate(validators);
         } catch (ApiMessageInterceptionException | StopRoutingException ae) {
             if (logger.isTraceEnabled()) {
                 logger.trace(ae.getMessage(), ae);

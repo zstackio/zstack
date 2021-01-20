@@ -1,8 +1,7 @@
 package org.zstack.portal.apimediator;
 
-import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.core.Ordered;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatchWithReturn;
@@ -27,8 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static org.zstack.core.Platform.err;
 
-@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class PortApiValidator implements ApiMessageValidator {
+public class PortApiValidator implements ApiMessageValidator, Ordered {
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -104,5 +102,10 @@ public class PortApiValidator implements ApiMessageValidator {
                 }
             }
         }
+    }
+    
+    @Override
+    public int getOrder() {
+        return -1;
     }
 }

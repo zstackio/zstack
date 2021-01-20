@@ -24,4 +24,16 @@
             </list>
 	</property>
     </bean>
+    
+    <bean id="ApiMessageParamValidator" class="org.zstack.header.message.ApiMessageParamValidator">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.message.ApiMessageValidator"/>
+        </zstack:plugin>
+    </bean>
+    
+    <bean id="PortApiValidator" class="org.zstack.portal.apimediator.PortApiValidator">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.message.ApiMessageValidator"/>
+        </zstack:plugin>
+    </bean>
 </beans>
