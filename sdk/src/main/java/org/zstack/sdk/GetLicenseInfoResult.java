@@ -11,4 +11,12 @@ public class GetLicenseInfoResult {
         return this.inventory;
     }
 
+    public java.util.List additions;
+    public void setAdditions(java.util.List additions) {
+        this.additions = additions;
+    }
+    public java.util.List getAdditions() {
+        return this.additions;
+    }
+
 }
