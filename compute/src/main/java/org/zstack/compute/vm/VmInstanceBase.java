@@ -16,7 +16,6 @@ import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Defer;
 import org.zstack.core.defer.Deferred;
-import org.zstack.core.errorcode.schema.Error;
 import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -603,14 +602,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 getStartingCandidateHosts(msg, new ReturnValueCompletion<AllocateHostDryRunReply>(chain) {
                     @Override
                     public void success(AllocateHostDryRunReply returnValue) {
-                        List<HostInventory> hosts = ((AllocateHostDryRunReply) returnValue).getHosts();
+                        List<HostInventory> hosts = returnValue.getHosts();
                         if (!hosts.isEmpty()) {
-                            List<String> cuuids = CollectionUtils.transformToList(hosts, new Function<String, HostInventory>() {
-                                @Override
-                                public String call(HostInventory arg) {
-                                    return arg.getClusterUuid();
-                                }
-                            });
+                            List<String> cuuids = CollectionUtils.transformToList(hosts, HostInventory::getClusterUuid);
 
                             SimpleQuery<ClusterVO> cq = dbf.createQuery(ClusterVO.class);
                             cq.add(ClusterVO_.uuid, Op.IN, cuuids);
@@ -662,7 +656,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         amsg.setAllocatorStrategy(self.getAllocatorStrategy());
         amsg.setVmOperation(VmOperation.Start.toString());
-        if (self.getImageUuid() != null && dbf.findByUuid(self.getImageUuid(), ImageVO.class) != null) {
+        if (self.getImageUuid() != null && dbf.isExist(self.getImageUuid(), ImageVO.class)) {
             amsg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
         }
         amsg.setL3NetworkUuids(VmNicHelper.getL3Uuids(VmNicInventory.valueOf(self.getVmNics())));
@@ -2045,12 +2039,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 final SetDefaultL3Network setDefaultL3Network = new SetDefaultL3Network();
                 setDefaultL3Network.set();
-                Defer.guard(new Runnable() {
-                    @Override
-                    public void run() {
-                        setDefaultL3Network.rollback();
-                    }
-                });
+                Defer.guard(setDefaultL3Network::rollback);
 
                 final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
                 spec.setVmInventory(VmInstanceInventory.valueOf(self));
@@ -2627,7 +2616,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        reply.setError(error);
+                        reply.setError(errorCode);
                         bus.reply(msg, reply);
                         chain.next();
                     }
@@ -3291,7 +3280,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         String order = VmSystemTags.BOOT_ORDER.getTokenByResourceUuid(self.getUuid(), VmSystemTags.BOOT_ORDER_TOKEN);
         if (order != null) {
             reply.setOrder(list(order.split(",")));
-        } else if (order == null && !IsoOperator.isIsoAttachedToVm(msg.getUuid())) {
+        } else if (!IsoOperator.isIsoAttachedToVm(msg.getUuid())) {
             reply.setOrder(list(VmBootDevice.HardDisk.toString(), VmBootDevice.Network.toString()));
         } else {
             reply.setOrder(list(VmBootDevice.HardDisk.toString(), VmBootDevice.CdRom.toString(), VmBootDevice.Network.toString()));
@@ -4625,7 +4614,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 msg.setOldMemoryCapacity(oldMemorySize);
                 msg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
                 msg.setVmInstance(VmInstanceInventory.valueOf(self));
-                if (self.getImageUuid() != null && dbf.findByUuid(self.getImageUuid(), ImageVO.class) != null) {
+                if (self.getImageUuid() != null && dbf.isExist(self.getImageUuid(), ImageVO.class)) {
                     msg.setImage(ImageInventory.valueOf(dbf.findByUuid(self.getImageUuid(), ImageVO.class)));
                 }
                 msg.setHostUuid(self.getHostUuid());
@@ -5730,7 +5719,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                         return null;
                     }
                 });
-                disks.add(DiskOfferingInventory.valueOf(dvo));
+                if (dvo != null) {
+                    disks.add(DiskOfferingInventory.valueOf(dvo));
+                }
             }
             spec.setDataDiskOfferings(disks);
         } else {
@@ -6833,7 +6824,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         bus.send(smsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
-                UpdateVmPriorityReply r = new UpdateVmPriorityReply();
                 if (!reply.isSuccess()) {
                     ErrorCode err = operr("update vm[%s] priority to [%s] failed,because %s",
                             self.getUuid(), msg.getPriority(), reply.getError());
@@ -6970,7 +6960,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         .orderBy(VmCdRomVO_.deviceId, SimpleQuery.Od.ASC)
                         .list();
 
-                Map<String, Integer> cdRomUUidDeviceIdMap = cdRomVOS.stream().collect(Collectors.toMap(VmCdRomVO::getUuid, i -> i.getDeviceId()));
+                Map<String, Integer> cdRomUUidDeviceIdMap = cdRomVOS.stream().collect(Collectors.toMap(VmCdRomVO::getUuid, VmCdRomVO::getDeviceId));
                 int deviceId = cdRomUUidDeviceIdMap.get(vmCdRomUuid);
 
                 VmCdRomVO beforeDefaultCdRomVO = null;
