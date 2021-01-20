@@ -8,6 +8,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigException;
+import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -382,10 +384,30 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             lbFactories.put(f.getType(), f);
         }
 
+        installConfigValidateExtension();
         prepareSystemTags();
 
         upgradeLoadBalancerServerGroup();
         return true;
+    }
+
+
+    private void installConfigValidateExtension(){
+        LoadBalancerGlobalConfig.HTTP_MODE.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
+                List<String> httpModes = new ArrayList<>(Arrays.asList("http-keep-alive",
+                                                                        "http-server-close",
+                                                                        " http-tunnel",
+                                                                        "httpclose",
+                                                                        "forceclose"));
+                if (!httpModes.contains(value)) {
+                    throw new GlobalConfigException(String.format("%s must be in %s",
+                            LoadBalancerGlobalConfig.HTTP_MODE.getName(),String.join(", ",httpModes)));
+                }
+            }
+        });
+
     }
 
     private void prepareSystemTags() {

@@ -31,4 +31,8 @@ public class LoadBalancerGlobalConfig {
     public static GlobalConfig BALANCER_ALGORITHM = new GlobalConfig(CATEGORY, "balancerAlgorithm");
     @GlobalConfigValidation
     public static GlobalConfig ACL_MAX_COUNT = new GlobalConfig(CATEGORY, "aclMaxCount");
+    @GlobalConfigValidation
+    public static GlobalConfig HTTP_MODE = new GlobalConfig(CATEGORY, "httpMode");
+
+
 }

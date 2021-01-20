@@ -8,6 +8,7 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class VirtualRouterCommands {
 	public static class AgentCommand implements Serializable {
@@ -36,6 +37,7 @@ public class VirtualRouterCommands {
 		private String mgtCidr;
 		private String logLevel;
 		private List<String> timeServers;
+		private Map<String,String> parms;
 
 		public String getUuid() {
 			return uuid;
@@ -75,6 +77,14 @@ public class VirtualRouterCommands {
 
 		public void setTimeServers(List<String> timeServers) {
 			this.timeServers = timeServers;
+		}
+
+		public Map<String, String> getParms() {
+			return parms;
+		}
+
+		public void setParms(Map<String, String> parms) {
+			this.parms = parms;
 		}
 	}
 
