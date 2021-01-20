@@ -25,6 +25,7 @@ import org.zstack.utils.network.IPv6Constants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
@@ -61,7 +62,7 @@ public class DhcpApply {
                     FlatDhcpAcquireDhcpServerIpReply r = reply.castReply();
                     List<FlatDhcpAcquireDhcpServerIpReply.DhcpServerIpStruct> dhcpServerIps = r.getDhcpServerList();
                     if (dhcpServerIps == null || dhcpServerIps.isEmpty()) {
-                        completion.fail(operr("could not get dhcp server ip for l3 network [uuid:%s]", msg.getL3NetworkUuid()));
+                        completion.success();
                         return;
                     }
 
@@ -87,6 +88,10 @@ public class DhcpApply {
         }
 
         FlatDhcpBackend.PrepareDhcpCmd getPrepareDhcpCmd() {
+            if (dhcp4Server == null && dhcp6Server == null) {
+                return null;
+            }
+
             FlatDhcpBackend.DhcpInfo i = info.get(0);
 
             FlatDhcpBackend.PrepareDhcpCmd cmd = new FlatDhcpBackend.PrepareDhcpCmd();
@@ -181,6 +186,7 @@ public class DhcpApply {
                             List<FlatDhcpBackend.PrepareDhcpCmd> dhcpCmds = internalWorkers
                                     .stream()
                                     .map(InternalWorker::getPrepareDhcpCmd)
+                                    .filter(Objects::nonNull)
                                     .collect(Collectors.toList());
 
                             FlatDhcpBackend.BatchPrepareDhcpCmd cmd = new FlatDhcpBackend.BatchPrepareDhcpCmd();
