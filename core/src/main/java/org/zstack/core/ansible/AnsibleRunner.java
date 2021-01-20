@@ -80,6 +80,7 @@ public class AnsibleRunner {
     private boolean runOnLocal;
     private AnsibleNeedRun ansibleNeedRun;
     private String ansibleExecutable;
+    private boolean forceRun;
 
     public String getAnsibleExecutable() {
         return ansibleExecutable;
@@ -203,6 +204,14 @@ public class AnsibleRunner {
 
     public void setFullDeploy(boolean fullDeploy) {
         this.fullDeploy = fullDeploy;
+    }
+
+    public boolean isForceRun() {
+        return forceRun;
+    }
+
+    public void setForceRun(boolean forceRun) {
+        this.forceRun = forceRun;
     }
 
     private void setupPublicKey() throws IOException {
@@ -374,7 +383,7 @@ public class AnsibleRunner {
 
     public void run(ReturnValueCompletion<Boolean> completion) {
         try {
-            if (!isNeedRun()) {
+            if (!forceRun && !isNeedRun()) {
                 completion.success(false);
                 return;
             }
@@ -398,7 +407,9 @@ public class AnsibleRunner {
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
+
     }
+
 
     public void restartAgent(String agentName, Completion completion) {
         String script = String.format("sudo bash /etc/init.d/%s restart\n", agentName);
