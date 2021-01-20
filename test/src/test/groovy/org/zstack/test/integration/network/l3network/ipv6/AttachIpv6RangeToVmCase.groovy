@@ -6,11 +6,7 @@ import org.zstack.test.integration.network.NetworkTest
 import org.zstack.test.integration.network.l3network.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.network.IPv6Constants
-
 import java.util.stream.Collectors
-
-import static java.util.Arrays.asList
 
 /**
  * Created by shixin on 2018/09/10.
@@ -38,6 +34,7 @@ class AttachIpv6RangeToVmCase extends SubCase {
     void test() {
         env.create {
             testCreateVmOfPrivateIPv6Network()
+            testAttachDualStackNetworkToVm()
         }
     }
 
@@ -128,6 +125,33 @@ class AttachIpv6RangeToVmCase extends SubCase {
             conditions=["uuid=${vm.uuid}"]
         } [0]
         assert vm1.getVmNics().size() == 5
+    }
+
+    void testAttachDualStackNetworkToVm() {
+        L3NetworkInventory l3_statefull = env.inventoryByName("l3-Statefull-DHCP")
+        L3NetworkInventory l3 = env.inventoryByName("l3")
+        InstanceOfferingInventory offering = env.inventoryByName("instanceOffering")
+        ImageInventory image = env.inventoryByName("image1")
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm-test"
+            instanceOfferingUuid = offering.uuid
+            imageUuid = image.uuid
+            defaultL3NetworkUuid = l3.uuid
+            l3NetworkUuids = [l3.uuid]
+        }
+
+        addIpRangeByNetworkCidr {
+            name = "ipr4-1"
+            l3NetworkUuid = l3_statefull.getUuid()
+            networkCidr = "192.168.110.0/24"
+        }
+
+        attachL3NetworkToVm {
+            vmInstanceUuid=vm.uuid
+            l3NetworkUuid=l3_statefull.uuid
+            staticIp="2001:2003::6"
+        }
     }
 }
 
