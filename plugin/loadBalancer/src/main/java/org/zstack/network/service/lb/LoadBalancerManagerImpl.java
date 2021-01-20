@@ -8,6 +8,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigException;
+import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -41,10 +43,7 @@ import org.zstack.identity.Account;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.service.vip.*;
 import org.zstack.tag.TagManager;
-import org.zstack.utils.CollectionUtils;
-import org.zstack.utils.RangeSet;
-import org.zstack.utils.Utils;
-import org.zstack.utils.VipUseForList;
+import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 
@@ -382,10 +381,55 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             lbFactories.put(f.getType(), f);
         }
 
+        installConfigValidateExtension();
         prepareSystemTags();
 
         upgradeLoadBalancerServerGroup();
         return true;
+    }
+
+
+    private void installConfigValidateExtension(){
+        LoadBalancerGlobalConfig.IPV4_LOCAL_PORT_RANGE.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
+                String [] ports = value.split("-");
+                if(ports!=null && ports.length ==2){
+                    try {
+                        long lowPort = Long.parseLong(ports[0]);
+                        long upPort = Long.parseLong(ports[1]);
+                        if (!(lowPort >= 1024 && upPort <= 65535 && lowPort <= upPort)) {
+                            throw new GlobalConfigException(String.format("%s must in range in [%s, %s]",
+                                    LoadBalancerGlobalConfig.IPV4_LOCAL_PORT_RANGE.getName(), "1024", "65535"));
+                        }
+                    } catch (NumberFormatException e) {
+                        throw new GlobalConfigException(String.format("%s %s is not a number or out of range of a Long type", ports[0],ports[1]), e);
+                    }
+                }else{
+                    throw new GlobalConfigException(String.format("%s must be this format port-port",
+                            LoadBalancerGlobalConfig.IPV4_LOCAL_PORT_RANGE.getName()));
+                }
+            }
+        });
+
+
+        LoadBalancerGlobalConfig.HTTP_MODE.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
+                List<String> httpModes = new ArrayList<>(Arrays.asList("http-keep-alive",
+                                                                        "http-server-close",
+                                                                        " http-tunnel",
+                                                                        "httpclose",
+                                                                        "forceclose"));
+                if (!httpModes.contains(value)) {
+                    throw new GlobalConfigException(String.format("%s must be in %s",
+                            LoadBalancerGlobalConfig.HTTP_MODE.getName(),String.join(", ",httpModes)));
+                }
+            }
+        });
+
+
+
     }
 
     private void prepareSystemTags() {

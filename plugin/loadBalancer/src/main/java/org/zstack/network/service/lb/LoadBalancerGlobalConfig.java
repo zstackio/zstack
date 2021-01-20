@@ -1,8 +1,6 @@
 package org.zstack.network.service.lb;
 
-import org.zstack.core.config.GlobalConfig;
-import org.zstack.core.config.GlobalConfigDefinition;
-import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.core.config.*;
 
 /**
  * Created by frank on 8/14/2015.
@@ -31,4 +29,9 @@ public class LoadBalancerGlobalConfig {
     public static GlobalConfig BALANCER_ALGORITHM = new GlobalConfig(CATEGORY, "balancerAlgorithm");
     @GlobalConfigValidation
     public static GlobalConfig ACL_MAX_COUNT = new GlobalConfig(CATEGORY, "aclMaxCount");
+    @GlobalConfigValidation
+    public static GlobalConfig HTTP_MODE = new GlobalConfig(CATEGORY, "httpMode");
+    @GlobalConfigValidation
+    public static GlobalConfig IPV4_LOCAL_PORT_RANGE = new GlobalConfig(CATEGORY, "ipv4LocalPortRange");
+
 }

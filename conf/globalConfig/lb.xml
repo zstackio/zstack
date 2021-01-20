@@ -79,6 +79,24 @@
     </config>
 
     <config>
+        <category>loadBalancer</category>
+        <name>httpMode</name>
+        <description>When mode http is turned on, HAProxy processes HTTP protocol for each request and response passing through.
+            to choose from http-keep-alive,http-server-close,http-tunnel,httpclose,forceclose</description>
+        <defaultValue>http-server-close</defaultValue>
+        <type>java.lang.String</type>
+    </config>
+
+    <config>
+        <category>loadBalancer</category>
+        <name>ipv4LocalPortRange</name>
+        <description>net.ipv4.ip_local_port_range, defines the local port range that is used by TCP and UDP traffic to choose the local port.
+            0-0，means that the system configuration will not be changed,which depends on the system.Notice that it has to start at 1024</description>
+        <defaultValue>0-0</defaultValue>
+        <type>java.lang.String</type>
+    </config>
+
+    <config>
         <name>listener.num</name>
         <description>default quota for listener.num</description>
         <defaultValue>20</defaultValue>
