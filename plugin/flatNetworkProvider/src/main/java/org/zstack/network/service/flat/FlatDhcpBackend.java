@@ -935,13 +935,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         List<VmNicVO> dhcpNics = new ArrayList<>();
-        for (VmNicInventory nic : vm.getVmNics()) {
+        for (VmNicVO nic : nics) {
             if (l3Uuid != null && !VmNicHelper.getL3Uuids(nic).contains(l3Uuid)) {
                 continue;
             }
 
-            VmNicVO nicVO = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
-            dhcpNics.add(nicVO);
+            dhcpNics.add(nic);
         }
         List<DhcpStruct> structs = dhcpExtension.makeDhcpStruct(vm, hostNames, dhcpNics);
         dhcpInfoList.addAll(toDhcpInfo(structs));
