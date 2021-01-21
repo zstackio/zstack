@@ -32,7 +32,7 @@ public class VipConfigProxy extends VirtualRouterConfigProxy implements Applianc
     protected void attachNetworkServiceToNoHaVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
         List<VirtualRouterVipVO> refs = new ArrayList<>();
         for (String uuid : serviceUuids) {
-            if (dbf.findByUuid(uuid, VirtualRouterVipVO.class) != null) {
+            if (dbf.isExist(uuid, VirtualRouterVipVO.class)) {
                 continue;
             }
 
