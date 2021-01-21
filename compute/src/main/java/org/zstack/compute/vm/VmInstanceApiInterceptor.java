@@ -564,6 +564,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
             boolean found = false;
             for (NormalIpRangeVO ipr : iprs) {
+                if (!ipr.getIpVersion().equals(NetworkUtils.getIpversion(msg.getStaticIp()))) {
+                    continue;
+                }
+
                 if (NetworkUtils.isInRange(msg.getStaticIp(), ipr.getStartIp(), ipr.getEndIp())) {
                     found = true;
                     break;
