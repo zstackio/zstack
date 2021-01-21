@@ -937,7 +937,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         List<VmNicVO> dhcpNics = new ArrayList<>();
-        for (VmNicInventory nic : vm.getVmNics()) {
+        for (VmNicVO nic : nics) {
             if (l3Uuid != null && !VmNicHelper.getL3Uuids(nic).contains(l3Uuid)) {
                 continue;
             }
