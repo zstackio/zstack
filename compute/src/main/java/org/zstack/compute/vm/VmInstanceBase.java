@@ -2602,7 +2602,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        reply.setError(error);
+                        reply.setError(errorCode);
                         bus.reply(msg, reply);
                         chain.next();
                     }
