@@ -115,7 +115,9 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
         List<String> eipUuids = new ArrayList<>();
         if (isNewCreated) {
             final List<VmNicInventory> guestNics = vr.getGuestNics();
-            final VmNicInventory publicNic = vr.getPublicNic();
+            List<String> pubL3Uuids = new ArrayList<>();
+            pubL3Uuids.add(vr.getPublicNic().getL3NetworkUuid());
+            pubL3Uuids.addAll(vr.getAdditionalPublicNics().stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()));
 
             if (guestNics == null || guestNics.isEmpty()) {
                 return new ArrayList<>();
@@ -127,10 +129,10 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
                 public List<String> call() {
                     String sql = "select eip.uuid from EipVO eip, VipVO vip, VmNicVO nic, VmInstanceVO vm where " +
                             " vm.uuid = nic.vmInstanceUuid and eip.vipUuid = vip.uuid " +
-                            " and eip.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and vip.serviceProvider in (:providers) " +
+                            " and eip.vmNicUuid = nic.uuid and vip.l3NetworkUuid in (:vipL3Uuids) and vip.serviceProvider in (:providers) " +
                             " and nic.l3NetworkUuid in (:guestL3Uuid)";
                     TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                    q.setParameter("vipL3Uuid", publicNic.getL3NetworkUuid());
+                    q.setParameter("vipL3Uuids", pubL3Uuids);
                     q.setParameter("guestL3Uuid", guestNics.stream().map(n -> n.getL3NetworkUuid()).collect(Collectors.toList()));
                     /*just only vrouter vip and skip the flat vip*/
                     q.setParameter("providers", Arrays.asList(VyosConstants.PROVIDER_TYPE.toString(), VirtualRouterConstant.PROVIDER_TYPE.toString()));
