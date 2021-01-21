@@ -4,8 +4,8 @@ import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.cluster.ArchitectureType;
 import org.zstack.compute.host.HostSystemTags;
+import org.zstack.compute.vm.VmExtraInfoGetter;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
 import org.zstack.core.asyncbatch.LoopAsyncBatch;
@@ -691,7 +691,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
         SQL.New(ImageVO.class)
                 .isNull(ImageVO_.architecture)
                 .notEq(ImageVO_.mediaType, ImageMediaType.DataVolumeTemplate)
-                .set(ImageVO_.architecture, ArchitectureType.defaultArch())
+                .set(ImageVO_.architecture, ImageArchitecture.defaultArch())
                 .update();
     }
 
@@ -1491,7 +1491,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                         imvo.setPlatform(ImagePlatform.valueOf(msgData.getPlatform()));
                         imvo.setStatus(ImageStatus.Downloading);
                         imvo.setType(ImageConstant.ZSTACK_IMAGE_TYPE);
-                        imvo.setArchitecture(ImageUtils.getArchitectureFromRootVolume(msgData.getRootVolumeUuid(), null));
+                        imvo.setArchitecture(VmExtraInfoGetter.New(rootVolume.getVmInstanceUuid()).getArchitecture());
                         imvo.setUrl(String.format("volume://%s", msgData.getRootVolumeUuid()));
                         imvo.setSize(volvo.getSize());
                         imvo.setActualSize(imageActualSize);
