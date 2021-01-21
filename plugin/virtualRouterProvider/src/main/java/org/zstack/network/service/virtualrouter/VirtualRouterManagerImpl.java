@@ -589,9 +589,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     try {
                         long lowPort = Long.parseLong(ports[0]);
                         long upPort = Long.parseLong(ports[1]);
-                        if (!(lowPort >= 1024 && upPort <= 65535 && lowPort <= upPort)) {
-                            throw new GlobalConfigException(String.format("%s must in range in [%s, %s]",
-                                    VirtualRouterGlobalConfig.IPV4_LOCAL_PORT_RANGE.getName(), "1024", "65535"));
+                        if  (!( (lowPort >= 1024 && upPort <= 65535 && lowPort <= upPort) || (lowPort == 0 && upPort ==0) )) {
+                            throw new GlobalConfigException(String.format("can not update %s:[%s,%s],beacause %s must in range in [1024, 65535],",
+                                    VirtualRouterGlobalConfig.IPV4_LOCAL_PORT_RANGE.getName(), ports[0],ports[1],VirtualRouterGlobalConfig.IPV4_LOCAL_PORT_RANGE.getName()));
                         }
                     } catch (NumberFormatException e) {
                         throw new GlobalConfigException(String.format("%s %s is not a number or out of range of a Long type", ports[0], ports[1]), e);
