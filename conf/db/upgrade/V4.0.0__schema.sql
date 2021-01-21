@@ -891,3 +891,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VirtualRouterMetadataVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 UPDATE ResourceVO SET resourceType = "PrimaryStorageVO", concreteResourceType = "org.zstack.storage.ceph.primary.CephPrimaryStorageVO"  WHERE resourceType = "CephPrimaryStorageVO";
+
+ALTER TABLE `zstack`.`PolicyRouteRuleSetVO` MODIFY COLUMN `name` varchar(255)
