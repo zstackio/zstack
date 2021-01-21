@@ -8,7 +8,8 @@ import java.util.List;
 
 public class VirtualRouterOperator {
     public static ApplianceVmSpec addVirtualRouterVmNicSpec(ApplianceVmSpec aspec, L3NetworkInventory mgmtNw, L3NetworkInventory pubNw,
-                                                        List<L3NetworkInventory> priNws, List<L3NetworkInventory> additionalPubNws, boolean isRouter) {
+                                                        List<L3NetworkInventory> priNws, List<L3NetworkInventory> additionalPubNws,
+                                                            boolean isRouter, boolean haEnabled) {
         ApplianceVmNicSpec mgmtNicSpec = new ApplianceVmNicSpec();
         mgmtNicSpec.setL3NetworkUuid(mgmtNw.getUuid());
         if (aspec.getStaticVip().containsKey(mgmtNw.getUuid())) {
@@ -21,17 +22,20 @@ public class VirtualRouterOperator {
         aspec.setDefaultL3Network(mgmtNw);
 
         if (pubNw != null && !pubNw.getUuid().equals(mgmtNw.getUuid())) {
-            ApplianceVmNicSpec pnicSpec = new ApplianceVmNicSpec();
-            pnicSpec.setL3NetworkUuid(pubNw.getUuid());
-            if (aspec.getStaticVip().containsKey(pubNw.getUuid())) {
-                pnicSpec.setStaticIp(aspec.getStaticVip().get(pubNw.getUuid()));
+            /* public nic spec for ha group is not created here */
+            if (!haEnabled) {
+                ApplianceVmNicSpec pnicSpec = new ApplianceVmNicSpec();
+                pnicSpec.setL3NetworkUuid(pubNw.getUuid());
+                if (aspec.getStaticVip().containsKey(pubNw.getUuid())) {
+                    pnicSpec.setStaticIp(aspec.getStaticVip().get(pubNw.getUuid()));
+                }
+                if (isRouter) {
+                    pnicSpec.setMetaData(VirtualRouterNicMetaData.PUBLIC_NIC_MASK.toString());
+                }
+                pnicSpec.setAllowDuplicatedAddress(true);
+                aspec.getAdditionalNics().add(pnicSpec);
+                aspec.setDefaultRouteL3Network(pubNw);
             }
-            if (isRouter) {
-                pnicSpec.setMetaData(VirtualRouterNicMetaData.PUBLIC_NIC_MASK.toString());
-            }
-            pnicSpec.setAllowDuplicatedAddress(true);
-            aspec.getAdditionalNics().add(pnicSpec);
-            aspec.setDefaultRouteL3Network(pubNw);
         } else {
             if (isRouter) {
                 mgmtNicSpec.setMetaData(VirtualRouterNicMetaData.PUBLIC_AND_MANAGEMENT_NIC_MASK.toString());
