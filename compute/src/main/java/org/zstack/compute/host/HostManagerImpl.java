@@ -374,6 +374,32 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 });
             }
         }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String arch = HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN);
+
+                if (arch == null) {
+                    trigger.fail(operr("after connecting, host[name:%s, ip:%s] returns a null architecture", vo.getName(), vo.getManagementIp()));
+                    return;
+                }
+
+                ClusterVO cluster = dbf.findByUuid(msg.getClusterUuid(), ClusterVO.class);
+                if (cluster.getArchitecture() == null) {
+                    cluster.setArchitecture(arch);
+                    dbf.update(cluster);
+                    trigger.next();
+                    return;
+                }
+
+                if (!arch.equals(cluster.getArchitecture())) {
+                    trigger.fail(operr("cluster[uuid:%s]'s architecture is %s, not match the host[name:%s, ip:%s] architecture %s",
+                            vo.getClusterUuid(), cluster.getArchitecture(), vo.getName(), vo.getManagementIp(), arch));
+                    return;
+                }
+
+                trigger.next();
+            }
+        }).then(new NoRollbackFlow() {
             String __name__ = "check-host-os-version";
 
             @Override
@@ -381,9 +407,15 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 String distro = HostSystemTags.OS_DISTRIBUTION.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_DISTRIBUTION_TOKEN);
                 String release = HostSystemTags.OS_RELEASE.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_RELEASE_TOKEN);
                 String version = HostSystemTags.OS_VERSION.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.OS_VERSION_TOKEN);
+                String arch = HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN);
 
                 if (distro == null || release == null || version == null) {
                     trigger.fail(operr("after connecting, host[name:%s, ip:%s] returns a null os version", vo.getName(), vo.getManagementIp()));
+                    return;
+                }
+
+                if (arch == null) {
+                    trigger.fail(operr("after connecting, host[name:%s, ip:%s] returns a null architecture", vo.getName(), vo.getManagementIp()));
                     return;
                 }
 
@@ -442,10 +474,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             @Override
             public void handle(Map data) {
                 HostInventory inv = factory.getHostInventory(vo.getUuid());
-                if (cluster.getArchitecture() == null) {
-                    cluster.setArchitecture(HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(vo.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN));
-                    dbf.update(cluster);
-                }
                 logger.debug(String.format("successfully added host[name:%s, hypervisor:%s, uuid:%s]", vo.getName(), vo.getHypervisorType(), vo.getUuid()));
                 completion.success(inv);
             }
