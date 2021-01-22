@@ -891,3 +891,81 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VirtualRouterMetadataVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 UPDATE ResourceVO SET resourceType = "PrimaryStorageVO", concreteResourceType = "org.zstack.storage.ceph.primary.CephPrimaryStorageVO"  WHERE resourceType = "CephPrimaryStorageVO";
+
+UPDATE ResourceVO set concreteResourceType = "org.zstack.header.vm.VmInstanceVO" WHERE concreteResourceType = "" AND uuid IN (SELECT uuid from VmInstanceVO WHERE type = "UserVm");
+UPDATE AccountResourceRefVO set concreteResourceType = "org.zstack.header.vm.VmInstanceVO" WHERE concreteResourceType = "" AND resourceUuid IN (SELECT uuid from VmInstanceVO WHERE type = "UserVm");
+
+UPDATE ResourceVO set concreteResourceType = "org.zstack.header.configuration.InstanceOfferingVO" WHERE concreteResourceType = "" AND uuid IN (SELECT uuid from InstanceOfferingVO WHERE type = "UserVm");
+UPDATE AccountResourceRefVO set concreteResourceType = "org.zstack.header.configuration.InstanceOfferingVO" WHERE concreteResourceType = "" AND resourceUuid IN (SELECT uuid from InstanceOfferingVO WHERE type = "UserVm");
+
+UPDATE ResourceVO set concreteResourceType = "org.zstack.header.cluster.ClusterVO" WHERE concreteResourceType = "" AND uuid IN (SELECT uuid from ClusterVO WHERE hypervisorType = "KVM");
+UPDATE AccountResourceRefVO set concreteResourceType = "org.zstack.header.cluster.ClusterVO" WHERE concreteResourceType = "" AND resourceUuid IN (SELECT uuid from ClusterVO WHERE hypervisorType = "KVM");
+
+UPDATE ResourceVO set concreteResourceType = "org.zstack.kvm.KVMHostVO" WHERE concreteResourceType = "" AND uuid IN (SELECT uuid from HostVO WHERE hypervisorType = "KVM");
+UPDATE AccountResourceRefVO set concreteResourceType = "org.zstack.kvm.KVMHostVO" WHERE concreteResourceType = "" AND resourceUuid IN (SELECT uuid from HostVO WHERE hypervisorType = "KVM");
+
+UPDATE ResourceVO set concreteResourceType = "org.zstack.network.service.lb.LoadBalancerVO" WHERE concreteResourceType = "" AND uuid IN (SELECT uuid from LoadBalancerVO WHERE type = "Shared");
+UPDATE AccountResourceRefVO set concreteResourceType = "org.zstack.network.service.lb.LoadBalancerVO" WHERE concreteResourceType = "" AND resourceUuid IN (SELECT uuid from LoadBalancerVO WHERE type = "Shared");
+
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.pciDevice.PciDeviceOfferingVO" WHERE concreteResourceType = "" AND resourceType = "PciDeviceOfferingVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.pciDevice.PciDeviceOfferingVO" WHERE concreteResourceType = "" AND resourceType = "PciDeviceOfferingVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.pciDevice.PciDeviceOfferingVO" WHERE concreteResourceType = "" AND resourceType = "PciDeviceOfferingVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.pciDevice.PciDeviceOfferingVO" WHERE concreteResourceType = "" AND resourceType = "PciDeviceOfferingVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.vmware.VCenterPrimaryStorageVO" WHERE concreteResourceType = "" AND resourceType = "VCenterPrimaryStorageVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.vmware.VCenterPrimaryStorageVO" WHERE concreteResourceType = "" AND resourceType = "VCenterPrimaryStorageVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.volume.VolumeVO" WHERE concreteResourceType = "" AND resourceType = "VolumeVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.header.volume.VolumeVO" WHERE concreteResourceType = "" AND resourceType = "VolumeVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.network.service.eip.EipVO" WHERE concreteResourceType = "" AND resourceType = "EipVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.network.service.eip.EipVO" WHERE concreteResourceType = "" AND resourceType = "EipVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.network.service.vip.VipVO" WHERE concreteResourceType = "" AND resourceType = "VipVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.network.service.vip.VipVO" WHERE concreteResourceType = "" AND resourceType = "VipVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.affinitygroup.AffinityGroupVO" WHERE concreteResourceType = "" AND resourceType = "AffinityGroupVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.header.affinitygroup.AffinityGroupVO" WHERE concreteResourceType = "" AND resourceType = "AffinityGroupVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.network.service.portforwarding.PortForwardingRuleVO" WHERE concreteResourceType = "" AND resourceType = "PortForwardingRuleVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.network.service.portforwarding.PortForwardingRuleVO" WHERE concreteResourceType = "" AND resourceType = "PortForwardingRuleVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.cloudformation.StackTemplateVO" WHERE concreteResourceType = "" AND resourceType = "StackTemplateVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.header.cloudformation.StackTemplateVO" WHERE concreteResourceType = "" AND resourceType = "StackTemplateVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.vpc.VpcRouterVmVO" WHERE concreteResourceType = "" AND resourceType = "VpcRouterVmVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.vpc.VpcRouterVmVO" WHERE concreteResourceType = "" AND resourceType = "VpcRouterVmVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.network.service.lb.LoadBalancerListenerVO" WHERE concreteResourceType = "" AND resourceType = "LoadBalancerListenerVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.network.service.lb.LoadBalancerListenerVO" WHERE concreteResourceType = "" AND resourceType = "LoadBalancerListenerVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.network.l3.L3NetworkVO" WHERE concreteResourceType = "" AND resourceType = "L3NetworkVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.header.network.l3.L3NetworkVO" WHERE concreteResourceType = "" AND resourceType = "L3NetworkVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.vmware.ESXHostVO" WHERE concreteResourceType = "" AND resourceType = "ESXHostVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.vmware.ESXHostVO" WHERE concreteResourceType = "" AND resourceType = "ESXHostVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.ipsec.IPsecConnectionVO" WHERE concreteResourceType = "" AND resourceType = "IPsecConnectionVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.ipsec.IPsecConnectionVO" WHERE concreteResourceType = "" AND resourceType = "IPsecConnectionVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.storage.primary.sharedblock.SharedBlockGroupVO" WHERE concreteResourceType = "" AND resourceType = "SharedBlockGroupVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.storage.primary.sharedblock.SharedBlockGroupVO" WHERE concreteResourceType = "" AND resourceType = "SharedBlockGroupVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.storage.primary.sharedblock.SharedBlockGroupVO" WHERE concreteResourceType = "" AND resourceType = "SharedBlockGroupVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.storage.primary.sharedblock.SharedBlockGroupVO" WHERE concreteResourceType = "" AND resourceType = "SharedBlockGroupVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.network.service.virtualrouter.VirtualRouterOfferingVO" WHERE concreteResourceType = "" AND resourceType = "VirtualRouterOfferingVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.network.service.virtualrouter.VirtualRouterOfferingVO" WHERE concreteResourceType = "" AND resourceType = "VirtualRouterOfferingVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.storage.ceph.primary.CephPrimaryStorageVO" WHERE concreteResourceType = "" AND resourceType = "CephPrimaryStorageVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.storage.ceph.primary.CephPrimaryStorageVO" WHERE concreteResourceType = "" AND resourceType = "CephPrimaryStorageVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.network.service.lb.CertificateVO" WHERE concreteResourceType = "" AND resourceType = "CertificateVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.network.service.lb.CertificateVO" WHERE concreteResourceType = "" AND resourceType = "CertificateVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.storage.backup.imagestore.ImageStoreBackupStorageVO" WHERE concreteResourceType = "" AND resourceType = "ImageStoreBackupStorageVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.storage.backup.imagestore.ImageStoreBackupStorageVO" WHERE concreteResourceType = "" AND resourceType = "ImageStoreBackupStorageVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO" WHERE concreteResourceType = "" AND resourceType = "VxlanNetworkVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkVO" WHERE concreteResourceType = "" AND resourceType = "VxlanNetworkVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.vmware.VCenterVO" WHERE concreteResourceType = "" AND resourceType = "VCenterVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.vmware.VCenterVO" WHERE concreteResourceType = "" AND resourceType = "VCenterVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.baremetal.power.BaremetalChassisVO" WHERE concreteResourceType = "" AND resourceType = "BaremetalChassisVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.header.baremetal.power.BaremetalChassisVO" WHERE concreteResourceType = "" AND resourceType = "BaremetalChassisVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.storage.backup.sftp.SftpBackupStorageVO" WHERE concreteResourceType = "" AND resourceType = "SftpBackupStorageVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.storage.backup.sftp.SftpBackupStorageVO" WHERE concreteResourceType = "" AND resourceType = "SftpBackupStorageVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.configuration.DiskOfferingVO" WHERE concreteResourceType = "" AND resourceType = "DiskOfferingVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.header.configuration.DiskOfferingVO" WHERE concreteResourceType = "" AND resourceType = "DiskOfferingVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.vmware.VCenterBackupStorageVO" WHERE concreteResourceType = "" AND resourceType = "VCenterBackupStorageVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.vmware.VCenterBackupStorageVO" WHERE concreteResourceType = "" AND resourceType = "VCenterBackupStorageVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.vrouterRoute.VRouterRouteTableVO" WHERE concreteResourceType = "" AND resourceType = "VRouterRouteTableVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.vrouterRoute.VRouterRouteTableVO" WHERE concreteResourceType = "" AND resourceType = "VRouterRouteTableVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.network.l2.L2VlanNetworkVO" WHERE concreteResourceType = "" AND resourceType = "L2VlanNetworkVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.header.network.l2.L2VlanNetworkVO" WHERE concreteResourceType = "" AND resourceType = "L2VlanNetworkVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.storage.ceph.backup.CephBackupStorageVO" WHERE concreteResourceType = "" AND resourceType = "CephBackupStorageVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.storage.ceph.backup.CephBackupStorageVO" WHERE concreteResourceType = "" AND resourceType = "CephBackupStorageVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.cloudformation.ResourceStackVO" WHERE concreteResourceType = "" AND resourceType = "ResourceStackVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.header.cloudformation.ResourceStackVO" WHERE concreteResourceType = "" AND resourceType = "ResourceStackVO";
+UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.baremetal.pxeserver.BaremetalPxeServerVO" WHERE concreteResourceType = "" AND resourceType = "BaremetalPxeServerVO";
+UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.header.baremetal.pxeserver.BaremetalPxeServerVO" WHERE concreteResourceType = "" AND resourceType = "BaremetalPxeServerVO";
