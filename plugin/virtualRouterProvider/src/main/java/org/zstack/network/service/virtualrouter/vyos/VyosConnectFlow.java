@@ -202,10 +202,8 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                         struct.setVyosVersion(ret.getVyosVersion());
                                         struct.setZvrVersion(ret.getZvrVersion());
                                         new VirtualRouterMetadataOperator().updateVirtualRouterMetadata(struct);
+                                        errs.removeAll(errs);
                                         wcompl.allDone();
-                                        for (ErrorCode e : errs) {
-                                            errs.remove(e);
-                                        }
                                     } else {
                                         debug();
                                         errs.add(operr("vyos init command failed, because:%s", ret.getError()));
