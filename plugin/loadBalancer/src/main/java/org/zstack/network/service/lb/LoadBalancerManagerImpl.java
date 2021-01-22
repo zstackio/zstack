@@ -53,6 +53,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -978,6 +979,27 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
     @Override
     public void upgradeLoadBalancerServerGroup() {
         if (!LoadBalancerGlobalProperty.UPGRADE_LB_SERVER_GROUP) {
+            /* lb upgrade failed check */
+            List<LoadBalancerListenerVO> listenerVOS = Q.New(LoadBalancerListenerVO.class).list();
+            for (LoadBalancerListenerVO vo : listenerVOS) {
+                /* if listener has old vmnic attached directly, a related lb server group must has been crated  */
+                List<String> nicUuids = vo.getVmNicRefs().stream().map(LoadBalancerListenerVmNicRefVO::getVmNicUuid)
+                        .collect(Collectors.toList());
+                if (!nicUuids.isEmpty()) {
+                    List<String> uuids = new ArrayList<>();
+                    for (LoadBalancerListenerServerGroupRefVO ref : vo.getServerGroupRefs()) {
+                        LoadBalancerServerGroupVO groupVO = dbf.findByUuid(ref.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+                        uuids.addAll(groupVO.getLoadBalancerServerGroupVmNicRefs().stream()
+                                .map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList()));
+                    }
+
+                    if (!uuids.containsAll(nicUuids)) {
+                        throw new CloudRuntimeException(String.format("load balancer listener [uuid:%s] upgraded failed," +
+                                "vmnics directly attached are [%s], vmnic attached to its serverGroup are",
+                                vo.getUuid(), uuids));
+                    }
+                }
+            }
             return;
         }
 
@@ -1043,6 +1065,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             ref.setServerGroupUuid(groupVO.getUuid());
             dbf.persist(ref);
 
+            /* remove vmnic directly attached load balaner */
+            dbf.removeCollection(vo.getVmNicRefs(), LoadBalancerListenerVmNicRefVO.class);
         }
 
         dbf.persistCollection(vmNicRefVOS);
