@@ -28,6 +28,8 @@ import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -2174,19 +2176,41 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<HostVO> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
-        List<HostVO> result = new ArrayList<>();
+        // TODO: move to compute module.
+
         String architecture = spec.getArchitecture();
         if (architecture == null && spec.getImage() != null) {
             architecture = spec.getImage().getArchitecture();
         }
-        for (HostVO host : candidates) {
-            String hostArch = HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(host.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN);
-            if (architecture == null || hostArch == null || architecture.equals(hostArch)){
-                result.add(host);
-            }
+
+        if (architecture == null && spec.getVmInstance() != null) {
+            architecture = VmExtraInfoGetter.New(spec.getVmInstance().getUuid()).getArchitecture();
         }
-        return result;
+
+        if (architecture == null) {
+            return candidates;
+        }
+
+        List<String> archTypes = SQL.New("select distinct c.architecture from ClusterVO c" +
+                " where c.architecture is not null", String.class).list();
+
+        String finalArchitecture = architecture;
+        if (archTypes.stream().noneMatch(it -> it.equals(finalArchitecture))) {
+            return Collections.emptyList();
+        }
+
+        if (archTypes.size() == 1) {
+            return candidates;
+        }
+
+        Set<String> sameArchClusterUuids = new HashSet<>(Q.New(ClusterVO.class).select(ClusterVO_.uuid)
+                .eq(ClusterVO_.architecture, architecture)
+                .listValues());
+
+        return candidates.stream().filter(it -> sameArchClusterUuids.contains(it.getClusterUuid()))
+                .collect(Collectors.toList());
     }
 
     @Override
