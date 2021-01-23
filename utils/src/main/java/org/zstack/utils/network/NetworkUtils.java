@@ -519,6 +519,16 @@ public class NetworkUtils {
         return cidr.equals("0.0.0.0/0");
     }
 
+    public static SubnetUtils.SubnetInfo getSubnetInfo(SubnetUtils subnet) {
+        SubnetUtils.SubnetInfo info = subnet.getInfo();
+        if (info.getAddressCountLong() > 0) {
+            return info;
+        }
+
+        subnet.setInclusiveHostCount(true);
+        return subnet.getInfo();
+    }
+
     public static boolean isCidrOverlap(String cidr1, String cidr2) {
         DebugUtils.Assert(isCidr(cidr1), String.format("%s is not a cidr", cidr1));
         DebugUtils.Assert(isCidr(cidr2), String.format("%s is not a cidr", cidr2));
@@ -526,8 +536,8 @@ public class NetworkUtils {
         SubnetUtils su1 = new SubnetUtils(cidr1);
         SubnetUtils su2 = new SubnetUtils(cidr2);
 
-        SubnetUtils.SubnetInfo info1 = su1.getInfo();
-        SubnetUtils.SubnetInfo info2 = su2.getInfo();
+        SubnetUtils.SubnetInfo info1 = getSubnetInfo(su1);
+        SubnetUtils.SubnetInfo info2 = getSubnetInfo(su2);
 
         return isIpv4RangeOverlap(info1.getLowAddress(), info1.getHighAddress(), info2.getLowAddress(), info2.getHighAddress());
     }
@@ -546,13 +556,13 @@ public class NetworkUtils {
         DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
         validateIp(ipv4);
 
-        SubnetUtils.SubnetInfo info = new SubnetUtils(cidr).getInfo();
+        SubnetUtils.SubnetInfo info = getSubnetInfo(new SubnetUtils(cidr));
         return isIpv4InRange(ipv4, info.getLowAddress(), info.getHighAddress());
     }
 
     public static List<String> filterIpv4sInCidr(List<String> ipv4s, String cidr){
         DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
-        SubnetUtils.SubnetInfo info = new SubnetUtils(cidr).getInfo();
+        SubnetUtils.SubnetInfo info = getSubnetInfo(new SubnetUtils(cidr));
         List<String> results = new ArrayList<>();
 
         for (String ipv4 : ipv4s) {
@@ -573,8 +583,8 @@ public class NetworkUtils {
         DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
         DebugUtils.Assert(isCidr(subCidr), String.format("%s is not a cidr", subCidr));
 
-        SubnetUtils.SubnetInfo range = new SubnetUtils(cidr).getInfo();
-        SubnetUtils.SubnetInfo sub = new SubnetUtils(subCidr).getInfo();
+        SubnetUtils.SubnetInfo range = getSubnetInfo(new SubnetUtils(cidr));
+        SubnetUtils.SubnetInfo sub = getSubnetInfo(new SubnetUtils(subCidr));
         return range.isInRange(sub.getLowAddress()) && range.isInRange(sub.getHighAddress());
     }
     
