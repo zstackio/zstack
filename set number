@@ -1,0 +1,870 @@
+[33mcommit 7715a5149dd860eeaa2a7f2040331de206b23acf[m
+Author: lining <2016220101025@std.uestc.edu.cn>
+Date:   Mon Jan 25 00:24:19 2021 +0800
+
+    [BugFix: ZSTACK-36182]
+
+[1mdiff --git a/conf/springConfigXml/ceph.xml b/conf/springConfigXml/ceph.xml[m
+[1mindex c906b7fda6..b4b7d1fd82 100755[m
+[1m--- a/conf/springConfigXml/ceph.xml[m
+[1m+++ b/conf/springConfigXml/ceph.xml[m
+[36m@@ -87,4 +87,22 @@[m
+             <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotDeletionProtector"/>[m
+         </zstack:plugin>[m
+     </bean>[m
+[32m+[m
+[32m+[m[32m    <bean id="OpenSourceCephPrimaryCapacityUpdater" class="org.zstack.storage.ceph.primary.capacity.OpenSourceCephPrimaryCapacityUpdater">[m
+[32m+[m[32m        <zstack:plugin>[m
+[32m+[m[32m            <zstack:extension interface="org.zstack.storage.ceph.primary.capacity.CephPrimaryCapacityUpdater"/>[m
+[32m+[m[32m        </zstack:plugin>[m
+[32m+[m[32m    </bean>[m
+[32m+[m
+[32m+[m[32m    <bean id="XSKYCephPrimaryCapacityBaseUpdater" class="org.zstack.storage.ceph.primary.capacity.XSKYCephPrimaryCapacityBaseUpdater">[m
+[32m+[m[32m        <zstack:plugin>[m
+[32m+[m[32m            <zstack:extension interface="org.zstack.storage.ceph.primary.capacity.CephPrimaryCapacityUpdater"/>[m
+[32m+[m[32m        </zstack:plugin>[m
+[32m+[m[32m    </bean>[m
+[32m+[m
+[32m+[m[32m    <bean id="SandStoneCephPrimaryCapacityBaseUpdater" class="org.zstack.storage.ceph.primary.capacity.SandStoneCephPrimaryCapacityBaseUpdater">[m
+[32m+[m[32m        <zstack:plugin>[m
+[32m+[m[32m            <zstack:extension interface="org.zstack.storage.ceph.primary.capacity.CephPrimaryCapacityUpdater"/>[m
+[32m+[m[32m        </zstack:plugin>[m
+[32m+[m[32m    </bean>[m
+ </beans>[m
+[1mdiff --git a/plugin/ceph/src/main/java/org/zstack/storage/ceph/CephCapacity.java b/plugin/ceph/src/main/java/org/zstack/storage/ceph/CephCapacity.java[m
+[1mindex dfc63086cf..13c596d912 100644[m
+[1m--- a/plugin/ceph/src/main/java/org/zstack/storage/ceph/CephCapacity.java[m
+[1m+++ b/plugin/ceph/src/main/java/org/zstack/storage/ceph/CephCapacity.java[m
+[36m@@ -1,5 +1,8 @@[m
+ package org.zstack.storage.ceph;[m
+ [m
+[32m+[m[32mimport org.zstack.storage.ceph.backup.CephBackupStorageBase;[m
+[32m+[m[32mimport org.zstack.storage.ceph.primary.CephPrimaryStorageBase;[m
+[32m+[m
+ import java.util.List;[m
+ [m
+ /**[m
+[36m@@ -10,7 +13,27 @@[m [mpublic class CephCapacity {[m
+     private Long totalCapacity;[m
+     private Long availableCapacity;[m
+     private List<CephPoolCapacity> poolCapacities;[m
+[31m-    private boolean xsky = false;[m
+[32m+[m[32m    private String cephManufacturer;[m
+[32m+[m
+[32m+[m[32m    public CephCapacity() {[m
+[32m+[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public CephCapacity(String fsid, CephPrimaryStorageBase.AgentResponse rsp) {[m
+[32m+[m[32m        this.fsid = fsid;[m
+[32m+[m[32m        this.availableCapacity = rsp.getAvailableCapacity();[m
+[32m+[m[32m        this.totalCapacity = rsp.getTotalCapacity();[m
+[32m+[m[32m        this.poolCapacities = rsp.getPoolCapacities();[m
+[32m+[m[32m        this.cephManufacturer = rsp.getType();[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public CephCapacity(String fsid, CephBackupStorageBase.AgentResponse rsp) {[m
+[32m+[m[32m        this.fsid = fsid;[m
+[32m+[m[32m        this.availableCapacity = rsp.getAvailableCapacity();[m
+[32m+[m[32m        this.totalCapacity = rsp.getTotalCapacity();[m
+[32m+[m[32m        this.poolCapacities = rsp.getPoolCapacities();[m
+[32m+[m[32m        this.cephManufacturer = rsp.getType();[m
+[32m+[m[32m    }[m
+ [m
+     public Long getTotalCapacity() {[m
+         return totalCapacity;[m
+[36m@@ -37,11 +60,20 @@[m [mpublic class CephCapacity {[m
+     }[m
+ [m
+     public boolean isXsky() {[m
+[31m-        return xsky;[m
+[32m+[m[32m        return CephConstants.CEPH_MANUFACTURER_XSKY.equals(cephManufacturer);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public boolean isEnterpriseCeph() {[m
+[32m+[m[32m        return CephConstants.CEPH_MANUFACTURER_XSKY.equals(cephManufacturer) ||[m
+[32m+[m[32m                CephConstants.CEPH_MANUFACTURER_SANDSTONE.equals(cephManufacturer);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public String getCephManufacturer() {[m
+[32m+[m[32m        return cephManufacturer;[m
+     }[m
+ [m
+[31m-    public void setXsky(String type) {[m
+[31m-        this.xsky = "xsky".equals(type);[m
+[32m+[m[32m    public void setCephManufacturer(String cephManufacturer) {[m
+[32m+[m[32m        this.cephManufacturer = cephManufacturer;[m
+     }[m
+ [m
+     public String getFsid() {[m
+[1mdiff --git a/plugin/ceph/src/main/java/org/zstack/storage/ceph/CephConstants.java b/plugin/ceph/src/main/java/org/zstack/storage/ceph/CephConstants.java[m
+[1mindex 9506cc5229..3a7f8437b9 100755[m
+[1m--- a/plugin/ceph/src/main/java/org/zstack/storage/ceph/CephConstants.java[m
+[1m+++ b/plugin/ceph/src/main/java/org/zstack/storage/ceph/CephConstants.java[m
+[36m@@ -26,4 +26,8 @@[m [mpublic interface CephConstants {[m
+ [m
+     String CEPH_BS_IPTABLES_COMMENTS = "Cephb.allow.port";[m
+     String CEPH_PS_IPTABLES_COMMENTS = "Cephp.allow.port";[m
+[32m+[m
+[32m+[m[32m    String CEPH_MANUFACTURER_XSKY = "xsky";[m
+[32m+[m[32m    String CEPH_MANUFACTURER_SANDSTONE = "sandstone";[m
+[32m+[m[32m    String CEPH_MANUFACTURER_OPENSOURCE = "open-source";[m
+ }[m
+[1mdiff --git a/plugin/ceph/src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java b/plugin/ceph/src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java[m
+[1mindex 3877b9a976..ca78147fa5 100755[m
+[1m--- a/plugin/ceph/src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java[m
+[1m+++ b/plugin/ceph/src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageBase.java[m
+[36m@@ -5,6 +5,7 @@[m [mimport org.springframework.beans.factory.annotation.Autowire;[m
+ import org.springframework.beans.factory.annotation.Autowired;[m
+ import org.springframework.beans.factory.annotation.Configurable;[m
+ import org.springframework.transaction.annotation.Transactional;[m
+[32m+[m[32mimport org.zstack.core.CoreGlobalProperty;[m
+ import org.zstack.core.Platform;[m
+ import org.zstack.core.agent.AgentConstant;[m
+ import org.zstack.core.asyncbatch.While;[m
+[36m@@ -117,6 +118,13 @@[m [mpublic class CephBackupStorageBase extends BackupStorageBase {[m
+         List<CephPoolCapacity> poolCapacities;[m
+         String type;[m
+ [m
+[32m+[m[32m        public AgentResponse() {[m
+[32m+[m[32m            boolean unitTestOn = CoreGlobalProperty.UNIT_TEST_ON;[m
+[32m+[m[32m            if (unitTestOn && type == null) {[m
+[32m+[m[32m                type = CephConstants.CEPH_MANUFACTURER_OPENSOURCE;[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+[32m+[m
+         public String getError() {[m
+             return error;[m
+         }[m
+[36m@@ -786,12 +794,7 @@[m [mpublic class CephBackupStorageBase extends BackupStorageBase {[m
+ [m
+     private void updateCapacityIfNeeded(AgentResponse rsp) {[m
+         if (rsp.getTotalCapacity() != null && rsp.getAvailableCapacity() != null) {[m
+[31m-            CephCapacity cephCapacity = new CephCapacity();[m
+[31m-            cephCapacity.setFsid(getSelf().getFsid());[m
+[31m-            cephCapacity.setAvailableCapacity(rsp.availableCapacity);[m
+[31m-            cephCapacity.setTotalCapacity(rsp.totalCapacity);[m
+[31m-            cephCapacity.setPoolCapacities(rsp.getPoolCapacities());[m
+[31m-            cephCapacity.setXsky(rsp.getType());[m
+[32m+[m[32m            CephCapacity cephCapacity = new CephCapacity(getSelf().getFsid(), rsp);[m
+             new CephCapacityUpdater().update(cephCapacity);[m
+         }[m
+     }[m
+[36m@@ -1407,12 +1410,7 @@[m [mpublic class CephBackupStorageBase extends BackupStorageBase {[m
+                                 }[m
+ [m
+                                 CephCapacityUpdater updater = new CephCapacityUpdater();[m
+[31m-                                CephCapacity cephCapacity = new CephCapacity();[m
+[31m-                                cephCapacity.setFsid(ret.fsid);[m
+[31m-                                cephCapacity.setAvailableCapacity(ret.availableCapacity);[m
+[31m-                                cephCapacity.setTotalCapacity(ret.totalCapacity);[m
+[31m-                                cephCapacity.setPoolCapacities(ret.poolCapacities);[m
+[31m-                                cephCapacity.setXsky(ret.getType());[m
+[32m+[m[32m                                CephCapacity cephCapacity = new CephCapacity(ret.fsid, ret);[m
+                                 updater.update(cephCapacity, true);[m
+                                 trigger.next();[m
+                             }[m
+[1mdiff --git a/plugin/ceph/src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageFactory.java b/plugin/ceph/src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageFactory.java[m
+[1mindex 1bfe67251d..326e0de482 100755[m
+[1m--- a/plugin/ceph/src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageFactory.java[m
+[1m+++ b/plugin/ceph/src/main/java/org/zstack/storage/ceph/backup/CephBackupStorageFactory.java[m
+[36m@@ -104,7 +104,7 @@[m [mpublic class CephBackupStorageFactory implements BackupStorageFactory, CephCapac[m
+         long total = cephCapacity.getTotalCapacity();[m
+         long avail = cephCapacity.getAvailableCapacity();[m
+         List<CephPoolCapacity> poolCapacities = cephCapacity.getPoolCapacities();[m
+[31m-        boolean xsky = cephCapacity.isXsky();[m
+[32m+[m[32m        boolean enterpriseCeph = cephCapacity.isEnterpriseCeph();[m
+ [m
+         String sql = "select c from CephBackupStorageVO c where c.fsid = :fsid";[m
+         TypedQuery<CephBackupStorageVO> q = dbf.getEntityManager().createQuery(sql, CephBackupStorageVO.class);[m
+[36m@@ -121,7 +121,7 @@[m [mpublic class CephBackupStorageFactory implements BackupStorageFactory, CephCapac[m
+                             .filter(e -> vo.getPoolName().equals(e.getName()))[m
+                             .findAny().get();[m
+ [m
+[31m-                    if (xsky) {[m
+[32m+[m[32m                    if (enterpriseCeph) {[m
+                         vo.setTotalCapacity(poolCapacity.getTotalCapacity());[m
+                         vo.setAvailableCapacity(poolCapacity.getAvailableCapacity());[m
+                     }[m
+[1mdiff --git a/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java[m
+[1mindex 2d6747f1e3..e03b52b1bd 100755[m
+[1m--- a/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java[m
+[1m+++ b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageBase.java[m
+[36m@@ -2,6 +2,7 @@[m [mpackage org.zstack.storage.ceph.primary;[m
+ [m
+ import org.apache.logging.log4j.ThreadContext;[m
+ import org.springframework.beans.factory.annotation.Autowired;[m
+[32m+[m[32mimport org.zstack.core.CoreGlobalProperty;[m
+ import org.zstack.core.Platform;[m
+ import org.zstack.core.agent.AgentConstant;[m
+ import org.zstack.core.asyncbatch.While;[m
+[36m@@ -157,6 +158,13 @@[m [mpublic class CephPrimaryStorageBase extends PrimaryStorageBase {[m
+         List<CephPoolCapacity> poolCapacities;[m
+         String type;[m
+ [m
+[32m+[m[32m        public AgentResponse() {[m
+[32m+[m[32m            boolean unitTestOn = CoreGlobalProperty.UNIT_TEST_ON;[m
+[32m+[m[32m            if (unitTestOn && type == null) {[m
+[32m+[m[32m                type = CephConstants.CEPH_MANUFACTURER_OPENSOURCE;[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+[32m+[m
+         public String getError() {[m
+             return error;[m
+         }[m
+[36m@@ -2837,12 +2845,7 @@[m [mpublic class CephPrimaryStorageBase extends PrimaryStorageBase {[m
+ [m
+     private void updateCapacityIfNeeded(AgentResponse rsp) {[m
+         if (rsp.totalCapacity != null && rsp.availableCapacity != null) {[m
+[31m-            CephCapacity cephCapacity = new CephCapacity();[m
+[31m-            cephCapacity.setFsid(getSelf().getFsid());[m
+[31m-            cephCapacity.setAvailableCapacity(rsp.availableCapacity);[m
+[31m-            cephCapacity.setTotalCapacity(rsp.totalCapacity);[m
+[31m-            cephCapacity.setPoolCapacities(rsp.poolCapacities);[m
+[31m-            cephCapacity.setXsky(rsp.getType());[m
+[32m+[m[32m            CephCapacity cephCapacity = new CephCapacity(getSelf().getFsid(), rsp);[m
+             new CephCapacityUpdater().update(cephCapacity);[m
+         }[m
+     }[m
+[36m@@ -3095,12 +3098,7 @@[m [mpublic class CephPrimaryStorageBase extends PrimaryStorageBase {[m
+                                 self = dbf.updateAndRefresh(self);[m
+ [m
+                                 CephCapacityUpdater updater = new CephCapacityUpdater();[m
+[31m-                                CephCapacity cephCapacity = new CephCapacity();[m
+[31m-                                cephCapacity.setFsid(ret.fsid);[m
+[31m-                                cephCapacity.setAvailableCapacity(ret.availableCapacity);[m
+[31m-                                cephCapacity.setTotalCapacity(ret.totalCapacity);[m
+[31m-                                cephCapacity.setPoolCapacities(ret.poolCapacities);[m
+[31m-                                cephCapacity.setXsky(ret.getType());[m
+[32m+[m[32m                                CephCapacity cephCapacity = new CephCapacity(ret.fsid, ret);[m
+                                 updater.update(cephCapacity, true);[m
+                                 createPrimaryStorageLicenseVendor(ret.getType());[m
+                                 trigger.next();[m
+[1mdiff --git a/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java[m
+[1mindex 6ce2ef348b..5faff398e0 100755[m
+[1m--- a/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java[m
+[1m+++ b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageFactory.java[m
+[36m@@ -45,6 +45,7 @@[m [mimport org.zstack.kvm.KVMAgentCommands.*;[m
+ import org.zstack.kvm.*;[m
+ import org.zstack.storage.ceph.*;[m
+ import org.zstack.storage.ceph.primary.KVMCephVolumeTO.MonInfo;[m
+[32m+[m[32mimport org.zstack.storage.ceph.primary.capacity.CephPrimaryCapacityUpdater;[m
+ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;[m
+ import org.zstack.storage.snapshot.MarkRootVolumeAsSnapshotExtension;[m
+ import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;[m
+[36m@@ -108,6 +109,8 @@[m [mpublic class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap[m
+ [m
+     private Future imageCacheCleanupThread;[m
+ [m
+[32m+[m[32m    private List<CephPrimaryCapacityUpdater> capacityUpdaters;[m
+[32m+[m
+     static {[m
+         type.setSupportHeartbeatFile(true);[m
+         type.setOrder(799);[m
+[36m@@ -247,109 +250,16 @@[m [mpublic class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap[m
+ [m
+     @Override[m
+     public void update(CephCapacity cephCapacity) {[m
+[31m-        String fsid = cephCapacity.getFsid();[m
+[31m-        long total = cephCapacity.getTotalCapacity();[m
+[31m-        long avail = cephCapacity.getAvailableCapacity();[m
+[31m-        List<CephPoolCapacity> poolCapacities = cephCapacity.getPoolCapacities();[m
+[31m-        boolean xsky = cephCapacity.isXsky();[m
+[31m-[m
+[31m-        CephPrimaryStorageVO cephPs = SQL.New("select pri from CephPrimaryStorageVO pri where pri.fsid = :fsid",CephPrimaryStorageVO.class)[m
+[31m-                .param("fsid", fsid)[m
+[31m-                .find();[m
+[31m-        if (cephPs == null) {[m
+[31m-            return;[m
+[31m-        }[m
+[31m-[m
+[31m-        List<String> poolNames = new ArrayList<>();[m
+[31m-        List<Long> poolTotalCapacities = new ArrayList<>();[m
+[31m-        List<Long> poolAvailableCapacities = new ArrayList<>();[m
+[31m-[m
+[31m-        if (!xsky) {[m
+[31m-            PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(cephPs.getUuid());[m
+[31m-            updater.run(new PrimaryStorageCapacityUpdaterRunnable() {[m
+[31m-                @Override[m
+[31m-                public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {[m
+[31m-                    if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {[m
+[31m-                        // init[m
+[31m-                        cap.setTotalCapacity(total);[m
+[31m-                        cap.setAvailableCapacity(avail);[m
+[31m-                    }[m
+[31m-[m
+[31m-                    cap.setTotalPhysicalCapacity(total);[m
+[31m-                    cap.setAvailablePhysicalCapacity(avail);[m
+[31m-[m
+[31m-                    return cap;[m
+[31m-                }[m
+[31m-            });[m
+[31m-        }[m
+[31m-[m
+[31m-        if (poolCapacities == null) {[m
+[31m-            return;[m
+[31m-        }[m
+[31m-[m
+[31m-        new SQLBatch() {[m
+[31m-            @Override[m
+[31m-            protected void scripts() {[m
+[31m-                List<CephPrimaryStoragePoolVO> pools = sql("select pool from CephPrimaryStoragePoolVO pool, CephPrimaryStorageVO ps" +[m
+[31m-                        " where pool.primaryStorageUuid = ps.uuid and ps.fsid = :fsid", CephPrimaryStoragePoolVO.class)[m
+[31m-                        .param("fsid", fsid)[m
+[31m-                        .list();[m
+[31m-                if (pools == null) {[m
+[31m-                    pools = new ArrayList<>();[m
+[31m-                }[m
+[31m-[m
+[31m-                for (CephPrimaryStoragePoolVO poolVO : pools) {[m
+[31m-                    if (!poolCapacities.stream().anyMatch((e) -> poolVO.getPoolName().equals(e.getName()))) {[m
+[31m-                        if (poolNames.contains(poolVO.getPoolName())) {[m
+[31m-                            continue;[m
+[31m-                        }[m
+[31m-                        poolNames.add(poolVO.getPoolName());[m
+[31m-                        poolAvailableCapacities.add(poolVO.getAvailableCapacity());[m
+[31m-                        poolTotalCapacities.add(poolVO.getTotalCapacity());[m
+[31m-                        continue;[m
+[31m-                    }[m
+[31m-[m
+[31m-                    CephPoolCapacity poolCapacity = poolCapacities.stream()[m
+[31m-                            .filter(e -> poolVO.getPoolName().equals(e.getName()))[m
+[31m-                            .findAny().get();[m
+[31m-[m
+[31m-                    if (!poolNames.contains(poolVO.getPoolName())) {[m
+[31m-                        poolNames.add(poolVO.getPoolName());[m
+[31m-                        poolAvailableCapacities.add(poolCapacity.getAvailableCapacity());[m
+[31m-                        poolTotalCapacities.add(poolCapacity.getTotalCapacity());[m
+[31m-                    }[m
+[31m-[m
+[31m-                    poolVO.setAvailableCapacity(poolCapacity.getAvailableCapacity());[m
+[31m-                    poolVO.setReplicatedSize(poolCapacity.getReplicatedSize());[m
+[31m-                    poolVO.setUsedCapacity(poolCapacity.getUsedCapacity());[m
+[31m-                    poolVO.setTotalCapacity(poolCapacity.getTotalCapacity());[m
+[31m-                    dbf.getEntityManager().merge(poolVO);[m
+[31m-                }[m
+[32m+[m[32m        DebugUtils.Assert(cephCapacity.getCephManufacturer() != null,[m
+[32m+[m[32m                "ceph manufacturer is null");[m
+ [m
+[31m-                if (!xsky) {[m
+[31m-                    return;[m
+[31m-                }[m
+[31m-[m
+[31m-                long psTotalPhysicalCapacity = poolTotalCapacities.stream().mapToLong(Long::longValue).sum();[m
+[31m-                long psAvailablePhysicalCapacity = poolAvailableCapacities.stream().mapToLong(Long::longValue).sum();[m
+[31m-[m
+[31m-                PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(cephPs.getUuid());[m
+[31m-                updater.run(new PrimaryStorageCapacityUpdaterRunnable() {[m
+[31m-                    @Override[m
+[31m-                    public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {[m
+[31m-                        if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {[m
+[31m-                            // init[m
+[31m-                            cap.setAvailableCapacity(psTotalPhysicalCapacity);[m
+[31m-                        }[m
+[31m-                        cap.setTotalCapacity(psTotalPhysicalCapacity);[m
+[31m-                        cap.setTotalPhysicalCapacity(psTotalPhysicalCapacity);[m
+[31m-                        cap.setAvailablePhysicalCapacity(psAvailablePhysicalCapacity);[m
+[31m-[m
+[31m-                        return cap;[m
+[31m-                    }[m
+[31m-                });[m
+[32m+[m[32m        for (CephPrimaryCapacityUpdater capacityUpdater : capacityUpdaters) {[m
+[32m+[m[32m            if (!cephCapacity.getCephManufacturer().equals(capacityUpdater.getCephManufacturer())) {[m
+[32m+[m[32m                continue;[m
+             }[m
+[31m-        }.execute();[m
+[32m+[m[32m            capacityUpdater.update(cephCapacity);[m
+[32m+[m[32m            break;[m
+[32m+[m[32m        }[m
+     }[m
+ [m
+     private IsoTO convertIsoToCephIfNeeded(final IsoTO to) {[m
+[36m@@ -608,6 +518,8 @@[m [mpublic class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap[m
+             }[m
+         });[m
+ [m
+[32m+[m[32m        capacityUpdaters = pluginRgty.getExtensionList(CephPrimaryCapacityUpdater.class);[m
+[32m+[m
+         return true;[m
+     }[m
+ [m
+[1mdiff --git a/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageMonBase.java b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageMonBase.java[m
+[1mindex 3e23a543bf..c6b590fadd 100755[m
+[1m--- a/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageMonBase.java[m
+[1m+++ b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/CephPrimaryStorageMonBase.java[m
+[36m@@ -63,13 +63,7 @@[m [mpublic class CephPrimaryStorageMonBase extends CephMonBase {[m
+         public String primaryStorageUuid;[m
+     }[m
+ [m
+[31m-    public static class AgentRsp {[m
+[31m-        public boolean success;[m
+[31m-        public String error;[m
+[31m-        public Long totalCapacity;[m
+[31m-        public Long availableCapacity;[m
+[31m-        public List<CephPoolCapacity> poolCapacities;[m
+[31m-        public String type;[m
+[32m+[m[32m    public static class AgentRsp extends CephPrimaryStorageBase.AgentResponse {[m
+     }[m
+ [m
+     public static class PingCmd extends AgentCmd {[m
+[36m@@ -449,12 +443,7 @@[m [mpublic class CephPrimaryStorageMonBase extends CephMonBase {[m
+                             .select(CephPrimaryStorageVO_.fsid)[m
+                             .eq(CephPrimaryStorageVO_.uuid, primaryStorageUuid)[m
+                             .findValue();[m
+[31m-                    CephCapacity cephCapacity = new CephCapacity();[m
+[31m-                    cephCapacity.setFsid(fsid);[m
+[31m-                    cephCapacity.setAvailableCapacity(rsp.availableCapacity);[m
+[31m-                    cephCapacity.setTotalCapacity(rsp.totalCapacity);[m
+[31m-                    cephCapacity.setPoolCapacities(rsp.poolCapacities);[m
+[31m-                    cephCapacity.setXsky(rsp.type);[m
+[32m+[m[32m                    CephCapacity cephCapacity = new CephCapacity(fsid, rsp);[m
+                     new CephCapacityUpdater().update(cephCapacity);[m
+                 }[m
+ [m
+[1mdiff --git a/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/CephPrimaryCapacityUpdater.java b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/CephPrimaryCapacityUpdater.java[m
+[1mnew file mode 100644[m
+[1mindex 0000000000..3cb815a4c6[m
+[1m--- /dev/null[m
+[1m+++ b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/CephPrimaryCapacityUpdater.java[m
+[36m@@ -0,0 +1,12 @@[m
+[32m+[m[32mpackage org.zstack.storage.ceph.primary.capacity;[m
+[32m+[m
+[32m+[m[32mimport org.zstack.storage.ceph.CephCapacity;[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by lining on 2021/1/22.[m
+[32m+[m[32m */[m
+[32m+[m[32mpublic interface CephPrimaryCapacityUpdater {[m
+[32m+[m[32m    String getCephManufacturer();[m
+[32m+[m
+[32m+[m[32m    void update(CephCapacity capacity);[m
+[32m+[m[32m}[m
+[1mdiff --git a/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/EnterpriseCephPrimaryCapacityBaseUpdater.java b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/EnterpriseCephPrimaryCapacityBaseUpdater.java[m
+[1mnew file mode 100644[m
+[1mindex 0000000000..9fc789dba4[m
+[1m--- /dev/null[m
+[1m+++ b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/EnterpriseCephPrimaryCapacityBaseUpdater.java[m
+[36m@@ -0,0 +1,108 @@[m
+[32m+[m[32mpackage org.zstack.storage.ceph.primary.capacity;[m
+[32m+[m
+[32m+[m[32mimport org.springframework.beans.factory.annotation.Autowire;[m
+[32m+[m[32mimport org.springframework.beans.factory.annotation.Autowired;[m
+[32m+[m[32mimport org.springframework.beans.factory.annotation.Configurable;[m
+[32m+[m[32mimport org.zstack.core.db.DatabaseFacade;[m
+[32m+[m[32mimport org.zstack.core.db.SQL;[m
+[32m+[m[32mimport org.zstack.core.db.SQLBatch;[m
+[32m+[m[32mimport org.zstack.header.storage.primary.PrimaryStorageCapacityUpdaterRunnable;[m
+[32m+[m[32mimport org.zstack.header.storage.primary.PrimaryStorageCapacityVO;[m
+[32m+[m[32mimport org.zstack.storage.ceph.CephCapacity;[m
+[32m+[m[32mimport org.zstack.storage.ceph.CephPoolCapacity;[m
+[32m+[m[32mimport org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO;[m
+[32m+[m[32mimport org.zstack.storage.ceph.primary.CephPrimaryStorageVO;[m
+[32m+[m[32mimport org.zstack.storage.primary.PrimaryStorageCapacityUpdater;[m
+[32m+[m
+[32m+[m[32mimport java.util.ArrayList;[m
+[32m+[m[32mimport java.util.List;[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by lining on 2021/1/22.[m
+[32m+[m[32m */[m
+[32m+[m[32m@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)[m
+[32m+[m[32mpublic abstract class EnterpriseCephPrimaryCapacityBaseUpdater implements CephPrimaryCapacityUpdater {[m
+[32m+[m[32m    @Autowired[m
+[32m+[m[32m    private DatabaseFacade dbf;[m
+[32m+[m
+[32m+[m[32m    @Override[m
+[32m+[m[32m    public void update(CephCapacity cephCapacity) {[m
+[32m+[m[32m        String fsid = cephCapacity.getFsid();[m
+[32m+[m[32m        List<CephPoolCapacity> poolCapacities = cephCapacity.getPoolCapacities();[m
+[32m+[m
+[32m+[m[32m        CephPrimaryStorageVO cephPs = SQL.New("select pri from CephPrimaryStorageVO pri where pri.fsid = :fsid",CephPrimaryStorageVO.class)[m
+[32m+[m[32m                .param("fsid", fsid)[m
+[32m+[m[32m                .find();[m
+[32m+[m[32m        if (cephPs == null) {[m
+[32m+[m[32m            return;[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        if (poolCapacities == null || poolCapacities.isEmpty()) {[m
+[32m+[m[32m            return;[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        List<String> poolNames = new ArrayList<>();[m
+[32m+[m[32m        List<Long> poolTotalCapacities = new ArrayList<>();[m
+[32m+[m[32m        List<Long> poolAvailableCapacities = new ArrayList<>();[m
+[32m+[m
+[32m+[m[32m        new SQLBatch() {[m
+[32m+[m[32m            @Override[m
+[32m+[m[32m            protected void scripts() {[m
+[32m+[m[32m                List<CephPrimaryStoragePoolVO> pools = sql("select pool from CephPrimaryStoragePoolVO pool, CephPrimaryStorageVO ps" +[m
+[32m+[m[32m                        " where pool.primaryStorageUuid = ps.uuid and ps.fsid = :fsid", CephPrimaryStoragePoolVO.class)[m
+[32m+[m[32m                        .param("fsid", fsid)[m
+[32m+[m[32m                        .list();[m
+[32m+[m[32m                if (pools == null) {[m
+[32m+[m[32m                    pools = new ArrayList<>();[m
+[32m+[m[32m                }[m
+[32m+[m
+[32m+[m[32m                for (CephPrimaryStoragePoolVO poolVO : pools) {[m
+[32m+[m[32m                    if (!poolCapacities.stream().anyMatch((e) -> poolVO.getPoolName().equals(e.getName()))) {[m
+[32m+[m[32m                        if (poolNames.contains(poolVO.getPoolName())) {[m
+[32m+[m[32m                            continue;[m
+[32m+[m[32m                        }[m
+[32m+[m[32m                        poolNames.add(poolVO.getPoolName());[m
+[32m+[m[32m                        poolAvailableCapacities.add(poolVO.getAvailableCapacity());[m
+[32m+[m[32m                        poolTotalCapacities.add(poolVO.getTotalCapacity());[m
+[32m+[m[32m                        continue;[m
+[32m+[m[32m                    }[m
+[32m+[m
+[32m+[m[32m                    CephPoolCapacity poolCapacity = poolCapacities.stream()[m
+[32m+[m[32m                            .filter(e -> poolVO.getPoolName().equals(e.getName()))[m
+[32m+[m[32m                            .findAny().get();[m
+[32m+[m
+[32m+[m[32m                    if (!poolNames.contains(poolVO.getPoolName())) {[m
+[32m+[m[32m                        poolNames.add(poolVO.getPoolName());[m
+[32m+[m[32m                        poolAvailableCapacities.add(poolCapacity.getAvailableCapacity());[m
+[32m+[m[32m                        poolTotalCapacities.add(poolCapacity.getTotalCapacity());[m
+[32m+[m[32m                    }[m
+[32m+[m
+[32m+[m[32m                    poolVO.setAvailableCapacity(poolCapacity.getAvailableCapacity());[m
+[32m+[m[32m                    poolVO.setReplicatedSize(poolCapacity.getReplicatedSize());[m
+[32m+[m[32m                    poolVO.setUsedCapacity(poolCapacity.getUsedCapacity());[m
+[32m+[m[32m                    poolVO.setTotalCapacity(poolCapacity.getTotalCapacity());[m
+[32m+[m[32m                    dbf.getEntityManager().merge(poolVO);[m
+[32m+[m[32m                }[m
+[32m+[m
+[32m+[m[32m                long psTotalPhysicalCapacity = poolTotalCapacities.stream().mapToLong(Long::longValue).sum();[m
+[32m+[m[32m                long psAvailablePhysicalCapacity = poolAvailableCapacities.stream().mapToLong(Long::longValue).sum();[m
+[32m+[m
+[32m+[m[32m                PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(cephPs.getUuid());[m
+[32m+[m[32m                updater.run(new PrimaryStorageCapacityUpdaterRunnable() {[m
+[32m+[m[32m                    @Override[m
+[32m+[m[32m                    public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {[m
+[32m+[m[32m                        if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {[m
+[32m+[m[32m                            // init[m
+[32m+[m[32m                            cap.setAvailableCapacity(psTotalPhysicalCapacity);[m
+[32m+[m[32m                        }[m
+[32m+[m[32m                        cap.setTotalCapacity(psTotalPhysicalCapacity);[m
+[32m+[m[32m                        cap.setTotalPhysicalCapacity(psTotalPhysicalCapacity);[m
+[32m+[m[32m                        cap.setAvailablePhysicalCapacity(psAvailablePhysicalCapacity);[m
+[32m+[m
+[32m+[m[32m                        return cap;[m
+[32m+[m[32m                    }[m
+[32m+[m[32m                });[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }.execute();[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[1mdiff --git a/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/OpenSourceCephPrimaryCapacityUpdater.java b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/OpenSourceCephPrimaryCapacityUpdater.java[m
+[1mnew file mode 100644[m
+[1mindex 0000000000..a0ce66c29a[m
+[1m--- /dev/null[m
+[1m+++ b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/OpenSourceCephPrimaryCapacityUpdater.java[m
+[36m@@ -0,0 +1,107 @@[m
+[32m+[m[32mpackage org.zstack.storage.ceph.primary.capacity;[m
+[32m+[m
+[32m+[m[32mimport org.springframework.beans.factory.annotation.Autowire;[m
+[32m+[m[32mimport org.springframework.beans.factory.annotation.Autowired;[m
+[32m+[m[32mimport org.springframework.beans.factory.annotation.Configurable;[m
+[32m+[m[32mimport org.zstack.core.db.DatabaseFacade;[m
+[32m+[m[32mimport org.zstack.core.db.SQL;[m
+[32m+[m[32mimport org.zstack.core.db.SQLBatch;[m
+[32m+[m[32mimport org.zstack.header.storage.primary.PrimaryStorageCapacityUpdaterRunnable;[m
+[32m+[m[32mimport org.zstack.header.storage.primary.PrimaryStorageCapacityVO;[m
+[32m+[m[32mimport org.zstack.storage.ceph.CephCapacity;[m
+[32m+[m[32mimport org.zstack.storage.ceph.CephConstants;[m
+[32m+[m[32mimport org.zstack.storage.ceph.CephPoolCapacity;[m
+[32m+[m[32mimport org.zstack.storage.ceph.primary.CephPrimaryStoragePoolVO;[m
+[32m+[m[32mimport org.zstack.storage.ceph.primary.CephPrimaryStorageVO;[m
+[32m+[m[32mimport org.zstack.storage.primary.PrimaryStorageCapacityUpdater;[m
+[32m+[m
+[32m+[m[32mimport java.util.ArrayList;[m
+[32m+[m[32mimport java.util.List;[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by lining on 2021/1/22.[m
+[32m+[m[32m */[m
+[32m+[m[32m@Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)[m
+[32m+[m[32mpublic class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacityUpdater {[m
+[32m+[m[32m    @Autowired[m
+[32m+[m[32m    private DatabaseFacade dbf;[m
+[32m+[m
+[32m+[m[32m    @Override[m
+[32m+[m[32m    public String getCephManufacturer() {[m
+[32m+[m[32m        return CephConstants.CEPH_MANUFACTURER_OPENSOURCE;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    @Override[m
+[32m+[m[32m    public void update(CephCapacity cephCapacity) {[m
+[32m+[m[32m        String fsid = cephCapacity.getFsid();[m
+[32m+[m[32m        long total = cephCapacity.getTotalCapacity();[m
+[32m+[m[32m        long avail = cephCapacity.getAvailableCapacity();[m
+[32m+[m[32m        List<CephPoolCapacity> poolCapacities = cephCapacity.getPoolCapacities();[m
+[32m+[m
+[32m+[m[32m        CephPrimaryStorageVO cephPs = SQL.New("select pri from CephPrimaryStorageVO pri where pri.fsid = :fsid",CephPrimaryStorageVO.class)[m
+[32m+[m[32m                .param("fsid", fsid)[m
+[32m+[m[32m                .find();[m
+[32m+[m[32m        if (cephPs == null) {[m
+[32m+[m[32m            return;[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        List<String> poolNames = new ArrayList<>();[m
+[32m+[m
+[32m+[m[32m        PrimaryStorageCapacityUpdater updater = new PrimaryStorageCapacityUpdater(cephPs.getUuid());[m
+[32m+[m[32m        updater.run(new PrimaryStorageCapacityUpdaterRunnable() {[m
+[32m+[m[32m            @Override[m
+[32m+[m[32m            public PrimaryStorageCapacityVO call(PrimaryStorageCapacityVO cap) {[m
+[32m+[m[32m                if (cap.getTotalCapacity() == 0 && cap.getAvailableCapacity() == 0) {[m
+[32m+[m[32m                    // init[m
+[32m+[m[32m                    cap.setTotalCapacity(total);[m
+[32m+[m[32m                    cap.setAvailableCapacity(avail);[m
+[32m+[m[32m                }[m
+[32m+[m
+[32m+[m[32m                cap.setTotalPhysicalCapacity(total);[m
+[32m+[m[32m                cap.setAvailablePhysicalCapacity(avail);[m
+[32m+[m[32m                return cap;[m
+[32m+[m[32m            }[m
+[32m+[m[32m        });[m
+[32m+[m
+[32m+[m[32m        if (poolCapacities == null) {[m
+[32m+[m[32m            return;[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        new SQLBatch() {[m
+[32m+[m[32m            @Override[m
+[32m+[m[32m            protected void scripts() {[m
+[32m+[m[32m                List<CephPrimaryStoragePoolVO> pools = sql("select pool from CephPrimaryStoragePoolVO pool, CephPrimaryStorageVO ps" +[m
+[32m+[m[32m                        " where pool.primaryStorageUuid = ps.uuid and ps.fsid = :fsid", CephPrimaryStoragePoolVO.class)[m
+[32m+[m[32m                        .param("fsid", fsid)[m
+[32m+[m[32m                        .list();[m
+[32m+[m[32m                if (pools == null) {[m
+[32m+[m[32m                    pools = new ArrayList<>();[m
+[32m+[m[32m                }[m
+[32m+[m
+[32m+[m[32m                for (CephPrimaryStoragePoolVO poolVO : pools) {[m
+[32m+[m[32m                    if (!poolCapacities.stream().anyMatch((e) -> poolVO.getPoolName().equals(e.getName()))) {[m
+[32m+[m[32m                        if (poolNames.contains(poolVO.getPoolName())) {[m
+[32m+[m[32m                            continue;[m
+[32m+[m[32m                        }[m
+[32m+[m[32m                        poolNames.add(poolVO.getPoolName());[m
+[32m+[m[32m                        continue;[m
+[32m+[m[32m                    }[m
+[32m+[m
+[32m+[m[32m                    CephPoolCapacity poolCapacity = poolCapacities.stream()[m
+[32m+[m[32m                            .filter(e -> poolVO.getPoolName().equals(e.getName()))[m
+[32m+[m[32m                            .findAny().get();[m
+[32m+[m
+[32m+[m[32m                    if (!poolNames.contains(poolVO.getPoolName())) {[m
+[32m+[m[32m                        poolNames.add(poolVO.getPoolName());[m
+[32m+[m[32m                    }[m
+[32m+[m
+[32m+[m[32m                    poolVO.setAvailableCapacity(poolCapacity.getAvailableCapacity());[m
+[32m+[m[32m                    poolVO.setReplicatedSize(poolCapacity.getReplicatedSize());[m
+[32m+[m[32m                    poolVO.setUsedCapacity(poolCapacity.getUsedCapacity());[m
+[32m+[m[32m                    poolVO.setTotalCapacity(poolCapacity.getTotalCapacity());[m
+[32m+[m[32m                    dbf.getEntityManager().merge(poolVO);[m
+[32m+[m[32m                }[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }.execute();[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[1mdiff --git a/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/SandStoneCephPrimaryCapacityBaseUpdater.java b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/SandStoneCephPrimaryCapacityBaseUpdater.java[m
+[1mnew file mode 100644[m
+[1mindex 0000000000..bacb2f178b[m
+[1m--- /dev/null[m
+[1m+++ b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/SandStoneCephPrimaryCapacityBaseUpdater.java[m
+[36m@@ -0,0 +1,13 @@[m
+[32m+[m[32mpackage org.zstack.storage.ceph.primary.capacity;[m
+[32m+[m
+[32m+[m[32mimport org.zstack.storage.ceph.CephConstants;[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by lining on 2021/1/22.[m
+[32m+[m[32m */[m
+[32m+[m[32mpublic class SandStoneCephPrimaryCapacityBaseUpdater extends EnterpriseCephPrimaryCapacityBaseUpdater {[m
+[32m+[m[32m    @Override[m
+[32m+[m[32m    public String getCephManufacturer() {[m
+[32m+[m[32m        return CephConstants.CEPH_MANUFACTURER_SANDSTONE;[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[1mdiff --git a/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/XSKYCephPrimaryCapacityBaseUpdater.java b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/XSKYCephPrimaryCapacityBaseUpdater.java[m
+[1mnew file mode 100644[m
+[1mindex 0000000000..fa6bf425a9[m
+[1m--- /dev/null[m
+[1m+++ b/plugin/ceph/src/main/java/org/zstack/storage/ceph/primary/capacity/XSKYCephPrimaryCapacityBaseUpdater.java[m
+[36m@@ -0,0 +1,13 @@[m
+[32m+[m[32mpackage org.zstack.storage.ceph.primary.capacity;[m
+[32m+[m
+[32m+[m[32mimport org.zstack.storage.ceph.CephConstants;[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by lining on 2021/1/22.[m
+[32m+[m[32m */[m
+[32m+[m[32mpublic class XSKYCephPrimaryCapacityBaseUpdater extends EnterpriseCephPrimaryCapacityBaseUpdater {[m
+[32m+[m[32m    @Override[m
+[32m+[m[32m    public String getCephManufacturer() {[m
+[32m+[m[32m        return CephConstants.CEPH_MANUFACTURER_XSKY;[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[1mdiff --git a/test/src/test/groovy/org/zstack/test/integration/storage/primary/ceph/sandstone/capacity/CephSandStonePoolCapacityCase.groovy b/test/src/test/groovy/org/zstack/test/integration/storage/primary/ceph/sandstone/capacity/CephSandStonePoolCapacityCase.groovy[m
+[1mnew file mode 100644[m
+[1mindex 0000000000..27e4d0a24f[m
+[1m--- /dev/null[m
+[1m+++ b/test/src/test/groovy/org/zstack/test/integration/storage/primary/ceph/sandstone/capacity/CephSandStonePoolCapacityCase.groovy[m
+[36m@@ -0,0 +1,118 @@[m
+[32m+[m[32mpackage org.zstack.test.integration.storage.primary.ceph.sandstone.capacity[m
+[32m+[m
+[32m+[m[32mimport org.springframework.http.HttpEntity[m
+[32m+[m[32mimport org.zstack.core.Platform[m
+[32m+[m[32mimport org.zstack.sdk.*[m
+[32m+[m[32mimport org.zstack.storage.ceph.CephConstants[m
+[32m+[m[32mimport org.zstack.storage.ceph.CephPoolCapacity[m
+[32m+[m[32mimport org.zstack.storage.ceph.primary.CephPrimaryStorageBase[m
+[32m+[m[32mimport org.zstack.test.integration.storage.CephEnv[m
+[32m+[m[32mimport org.zstack.test.integration.storage.StorageTest[m
+[32m+[m[32mimport org.zstack.testlib.CephPrimaryStorageSpec[m
+[32m+[m[32mimport org.zstack.testlib.EnvSpec[m
+[32m+[m[32mimport org.zstack.testlib.SubCase[m
+[32m+[m[32mimport org.zstack.utils.gson.JSONObjectUtil[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by lining on 2021/01/23.[m
+[32m+[m[32m */[m
+[32m+[m[32mclass CephSandStonePoolCapacityCase extends SubCase {[m
+[32m+[m[32m    EnvSpec env[m
+[32m+[m
+[32m+[m[32m    @Override[m
+[32m+[m[32m    void clean() {[m
+[32m+[m[32m        env.delete()[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    @Override[m
+[32m+[m[32m    void setup() {[m
+[32m+[m[32m        useSpring(StorageTest.springSpec)[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    @Override[m
+[32m+[m[32m    void environment() {[m
+[32m+[m[32m        env = CephEnv.CephStorageOneVmEnv()[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    @Override[m
+[32m+[m[32m    void test() {[m
+[32m+[m[32m        env.create {[m
+[32m+[m[32m            testReconnectPrimaryStorage()[m
+[32m+[m[32m        }[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    void testReconnectPrimaryStorage() {[m
+[32m+[m[32m        PrimaryStorageInventory ps = env.inventoryByName("ceph-pri")[m
+[32m+[m[32m        CephBackupStorageInventory bs = env.inventoryByName("ceph-bk")[m
+[32m+[m
+[32m+[m[32m        CephPrimaryStoragePoolInventory primaryStoragePool = queryCephPrimaryStoragePool {}[0][m
+[32m+[m
+[32m+[m[32m        GetPrimaryStorageCapacityResult beforePsCapacity = getPrimaryStorageCapacity {[m
+[32m+[m[32m            primaryStorageUuids = [ps.uuid][m
+[32m+[m[32m        }[m
+[32m+[m[32m        long addSize = 1[m
+[32m+[m
+[32m+[m[32m        env.simulator(CephPrimaryStorageBase.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->[m
+[32m+[m[32m            def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.InitCmd.class)[m
+[32m+[m[32m            CephPrimaryStorageSpec cspec = spec.specByUuid(cmd.uuid)[m
+[32m+[m
+[32m+[m[32m            def rsp = new CephPrimaryStorageBase.InitRsp()[m
+[32m+[m[32m            rsp.fsid = cspec.fsid[m
+[32m+[m[32m            rsp.userKey = Platform.uuid[m
+[32m+[m[32m            rsp.totalCapacity = 1000[m
+[32m+[m[32m            rsp.availableCapacity = 999[m
+[32m+[m[32m            rsp.poolCapacities = [[m
+[32m+[m[32m                    new CephPoolCapacity([m
+[32m+[m[32m                            name : primaryStoragePool.poolName,[m
+[32m+[m[32m                            usedCapacity: primaryStoragePool.usedCapacity,[m
+[32m+[m[32m                            availableCapacity : primaryStoragePool.availableCapacity + addSize,[m
+[32m+[m[32m                            totalCapacity: primaryStoragePool.totalCapacity + addSize[m
+[32m+[m[32m                    ),[m
+[32m+[m[32m                    new CephPoolCapacity([m
+[32m+[m[32m                            name : bs.poolName,[m
+[32m+[m[32m                            usedCapacity: bs.getPoolUsedCapacity(),[m
+[32m+[m[32m                            availableCapacity : bs.availableCapacity + addSize,[m
+[32m+[m[32m                            totalCapacity: bs.totalCapacity + addSize[m
+[32m+[m[32m                    ),[m
+[32m+[m[32m                    new CephPoolCapacity([m
+[32m+[m[32m                            name : "other-pool",[m
+[32m+[m[32m                            availableCapacity : 10,[m
+[32m+[m[32m                            usedCapacity: 10,[m
+[32m+[m[32m                            totalCapacity: 20,[m
+[32m+[m[32m                    ),[m
+[32m+[m[32m                    new CephPoolCapacity([m
+[32m+[m[32m                            availableCapacity : 11,[m
+[32m+[m[32m                            usedCapacity: 11[m
+[32m+[m[32m                    )[m
+[32m+[m[32m            ][m
+[32m+[m[32m            rsp.type = CephConstants.CEPH_MANUFACTURER_SANDSTONE[m
+[32m+[m[32m            return rsp[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        reconnectPrimaryStorage {[m
+[32m+[m[32m            uuid = ps.uuid[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        GetPrimaryStorageCapacityResult afterPsCapacity = getPrimaryStorageCapacity {[m
+[32m+[m[32m            primaryStorageUuids = [ps.uuid][m
+[32m+[m[32m        }[m
+[32m+[m[32m        assert afterPsCapacity.availablePhysicalCapacity - beforePsCapacity.availablePhysicalCapacity == addSize[m
+[32m+[m[32m        assert afterPsCapacity.totalCapacity - beforePsCapacity.availablePhysicalCapacity == addSize[m
+[32m+[m[32m        assert afterPsCapacity.totalPhysicalCapacity - beforePsCapacity.totalPhysicalCapacity == addSize[m
+[32m+[m[32m        retryInSecs {[m
+[32m+[m[32m            afterPsCapacity = getPrimaryStorageCapacity {[m
+[32m+[m[32m                primaryStorageUuids = [ps.uuid][m
+[32m+[m[32m            }[m
+[32m+[m[32m            assert addSize == afterPsCapacity.availableCapacity - beforePsCapacity.availableCapacity[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        CephPrimaryStoragePoolInventory afterPrimaryStoragePool = queryCephPrimaryStoragePool {}[0][m
+[32m+[m[32m        assert afterPrimaryStoragePool.availableCapacity - primaryStoragePool.availableCapacity == addSize[m
+[32m+[m
+[32m+[m[32m        BackupStorageInventory afterBs = queryBackupStorage {[m
+[32m+[m[32m            conditions = ["uuid=${bs.uuid}"][m
+[32m+[m[32m        }[0][m
+[32m+[m[32m        assert afterBs.availableCapacity == bs.availableCapacity + addSize[m
+[32m+[m[32m        assert afterBs.totalCapacity == bs.totalCapacity + addSize[m
+[32m+[m[32m    }[m
+[32m+[m[32m}[m
+[1mdiff --git a/testlib/src/main/java/org/zstack/testlib/CephBackupStorageSpec.groovy b/testlib/src/main/java/org/zstack/testlib/CephBackupStorageSpec.groovy[m
+[1mindex fb93fdee3d..db0763b432 100755[m
+[1m--- a/testlib/src/main/java/org/zstack/testlib/CephBackupStorageSpec.groovy[m
+[1m+++ b/testlib/src/main/java/org/zstack/testlib/CephBackupStorageSpec.groovy[m
+[36m@@ -4,6 +4,7 @@[m [mimport org.springframework.http.HttpEntity[m
+ import org.zstack.core.Platform[m
+ import org.zstack.core.agent.AgentConstant[m
+ import org.zstack.core.db.Q[m
+[32m+[m[32mimport org.zstack.storage.ceph.CephConstants[m[41m[m
+ import org.zstack.storage.ceph.CephPoolCapacity[m
+ import org.zstack.storage.ceph.backup.CephBackupStorageBase[m
+ import org.zstack.storage.ceph.backup.CephBackupStorageMonBase[m
+[36m@@ -75,6 +76,7 @@[m [mclass CephBackupStorageSpec extends BackupStorageSpec {[m
+                         )[m
+                 ][m
+                 rsp.poolCapacities = poolCapacities[m
+[32m+[m[32m                rsp.type = CephConstants.CEPH_MANUFACTURER_OPENSOURCE[m[41m[m
+                 return rsp[m
+             }[m
+ [m
+[1mdiff --git a/testlib/src/main/java/org/zstack/testlib/CephPrimaryStorageSpec.groovy b/testlib/src/main/java/org/zstack/testlib/CephPrimaryStorageSpec.groovy[m
+[1mindex 583e93c294..dfa9d13191 100755[m
+[1m--- a/testlib/src/main/java/org/zstack/testlib/CephPrimaryStorageSpec.groovy[m
+[1m+++ b/testlib/src/main/java/org/zstack/testlib/CephPrimaryStorageSpec.groovy[m
+[36m@@ -8,6 +8,7 @@[m [mimport org.zstack.header.volume.VolumeVO[m
+ import org.zstack.header.volume.VolumeVO_[m
+ import org.zstack.kvm.KVMAgentCommands[m
+ import org.zstack.sdk.PrimaryStorageInventory[m
+[32m+[m[32mimport org.zstack.storage.ceph.CephConstants[m[41m[m
+ import org.zstack.storage.ceph.CephPoolCapacity[m
+ import org.zstack.storage.ceph.primary.CephPrimaryStorageBase[m
+ import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase[m
+[36m@@ -99,6 +100,7 @@[m [mclass CephPrimaryStorageSpec extends PrimaryStorageSpec {[m
+                         ),[m
+                 ][m
+                 rsp.poolCapacities = poolCapacities[m
+[32m+[m[32m                rsp.type = CephConstants.CEPH_MANUFACTURER_OPENSOURCE[m[41m[m
+                 return rsp[m
+             }[m
+ [m

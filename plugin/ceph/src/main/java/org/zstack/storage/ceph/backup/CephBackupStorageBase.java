@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.agent.AgentConstant;
 import org.zstack.core.asyncbatch.While;
@@ -116,6 +117,13 @@ public class CephBackupStorageBase extends BackupStorageBase {
         Long availableCapacity;
         List<CephPoolCapacity> poolCapacities;
         String type;
+
+        public AgentResponse() {
+            boolean unitTestOn = CoreGlobalProperty.UNIT_TEST_ON;
+            if (unitTestOn && type == null) {
+                type = CephConstants.CEPH_MANUFACTURER_OPENSOURCE;
+            }
+        }
 
         public String getError() {
             return error;
@@ -786,12 +794,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     private void updateCapacityIfNeeded(AgentResponse rsp) {
         if (rsp.getTotalCapacity() != null && rsp.getAvailableCapacity() != null) {
-            CephCapacity cephCapacity = new CephCapacity();
-            cephCapacity.setFsid(getSelf().getFsid());
-            cephCapacity.setAvailableCapacity(rsp.availableCapacity);
-            cephCapacity.setTotalCapacity(rsp.totalCapacity);
-            cephCapacity.setPoolCapacities(rsp.getPoolCapacities());
-            cephCapacity.setXsky(rsp.getType());
+            CephCapacity cephCapacity = new CephCapacity(getSelf().getFsid(), rsp);
             new CephCapacityUpdater().update(cephCapacity);
         }
     }
@@ -1407,12 +1410,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                 }
 
                                 CephCapacityUpdater updater = new CephCapacityUpdater();
-                                CephCapacity cephCapacity = new CephCapacity();
-                                cephCapacity.setFsid(ret.fsid);
-                                cephCapacity.setAvailableCapacity(ret.availableCapacity);
-                                cephCapacity.setTotalCapacity(ret.totalCapacity);
-                                cephCapacity.setPoolCapacities(ret.poolCapacities);
-                                cephCapacity.setXsky(ret.getType());
+                                CephCapacity cephCapacity = new CephCapacity(ret.fsid, ret);
                                 updater.update(cephCapacity, true);
                                 trigger.next();
                             }
