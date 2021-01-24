@@ -8,6 +8,7 @@ import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.storage.ceph.CephConstants
 import org.zstack.storage.ceph.CephPoolCapacity
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
@@ -99,6 +100,7 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                         ),
                 ]
                 rsp.poolCapacities = poolCapacities
+                rsp.type = CephConstants.CEPH_MANUFACTURER_OPENSOURCE
                 return rsp
             }
 

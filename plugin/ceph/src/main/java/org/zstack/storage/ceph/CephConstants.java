@@ -26,4 +26,8 @@ public interface CephConstants {
 
     String CEPH_BS_IPTABLES_COMMENTS = "Cephb.allow.port";
     String CEPH_PS_IPTABLES_COMMENTS = "Cephp.allow.port";
+
+    String CEPH_MANUFACTURER_XSKY = "xsky";
+    String CEPH_MANUFACTURER_SANDSTONE = "sandstone";
+    String CEPH_MANUFACTURER_OPENSOURCE = "open-source";
 }
