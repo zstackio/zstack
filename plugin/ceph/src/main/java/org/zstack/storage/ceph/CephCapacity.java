@@ -1,5 +1,8 @@
 package org.zstack.storage.ceph;
 
+import org.zstack.storage.ceph.backup.CephBackupStorageBase;
+import org.zstack.storage.ceph.primary.CephPrimaryStorageBase;
+
 import java.util.List;
 
 /**
@@ -10,7 +13,27 @@ public class CephCapacity {
     private Long totalCapacity;
     private Long availableCapacity;
     private List<CephPoolCapacity> poolCapacities;
-    private boolean xsky = false;
+    private String cephManufacturer;
+
+    public CephCapacity() {
+
+    }
+
+    public CephCapacity(String fsid, CephPrimaryStorageBase.AgentResponse rsp) {
+        this.fsid = fsid;
+        this.availableCapacity = rsp.getAvailableCapacity();
+        this.totalCapacity = rsp.getTotalCapacity();
+        this.poolCapacities = rsp.getPoolCapacities();
+        this.cephManufacturer = rsp.getType();
+    }
+
+    public CephCapacity(String fsid, CephBackupStorageBase.AgentResponse rsp) {
+        this.fsid = fsid;
+        this.availableCapacity = rsp.getAvailableCapacity();
+        this.totalCapacity = rsp.getTotalCapacity();
+        this.poolCapacities = rsp.getPoolCapacities();
+        this.cephManufacturer = rsp.getType();
+    }
 
     public Long getTotalCapacity() {
         return totalCapacity;
@@ -37,11 +60,20 @@ public class CephCapacity {
     }
 
     public boolean isXsky() {
-        return xsky;
+        return CephConstants.CEPH_MANUFACTURER_XSKY.equals(cephManufacturer);
     }
 
-    public void setXsky(String type) {
-        this.xsky = "xsky".equals(type);
+    public boolean isEnterpriseCeph() {
+        return CephConstants.CEPH_MANUFACTURER_XSKY.equals(cephManufacturer) ||
+                CephConstants.CEPH_MANUFACTURER_SANDSTONE.equals(cephManufacturer);
+    }
+
+    public String getCephManufacturer() {
+        return cephManufacturer;
+    }
+
+    public void setCephManufacturer(String cephManufacturer) {
+        this.cephManufacturer = cephManufacturer;
     }
 
     public String getFsid() {
