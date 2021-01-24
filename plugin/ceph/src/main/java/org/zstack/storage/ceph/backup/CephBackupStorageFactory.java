@@ -104,7 +104,7 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
         long total = cephCapacity.getTotalCapacity();
         long avail = cephCapacity.getAvailableCapacity();
         List<CephPoolCapacity> poolCapacities = cephCapacity.getPoolCapacities();
-        boolean xsky = cephCapacity.isXsky();
+        boolean enterpriseCeph = cephCapacity.isEnterpriseCeph();
 
         String sql = "select c from CephBackupStorageVO c where c.fsid = :fsid";
         TypedQuery<CephBackupStorageVO> q = dbf.getEntityManager().createQuery(sql, CephBackupStorageVO.class);
@@ -121,7 +121,7 @@ public class CephBackupStorageFactory implements BackupStorageFactory, CephCapac
                             .filter(e -> vo.getPoolName().equals(e.getName()))
                             .findAny().get();
 
-                    if (xsky) {
+                    if (enterpriseCeph) {
                         vo.setTotalCapacity(poolCapacity.getTotalCapacity());
                         vo.setAvailableCapacity(poolCapacity.getAvailableCapacity());
                     }
