@@ -4,6 +4,7 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.Platform
 import org.zstack.core.agent.AgentConstant
 import org.zstack.core.db.Q
+import org.zstack.storage.ceph.CephConstants
 import org.zstack.storage.ceph.CephPoolCapacity
 import org.zstack.storage.ceph.DataSecurityPolicy
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
@@ -79,6 +80,7 @@ class CephBackupStorageSpec extends BackupStorageSpec {
                         )
                 ]
                 rsp.poolCapacities = poolCapacities
+                rsp.type = CephConstants.CEPH_MANUFACTURER_OPENSOURCE
                 return rsp
             }
 
