@@ -3501,13 +3501,21 @@ public class KVMHost extends HostBase implements Host {
                             SshResult ret = sshShell.runCommand("uname -m");
 
                             if (ret.isSshFailure() || ret.getReturnCode() != 0) {
-                                throw new OperationFailureException(operr("unable to get host cpu architecture, please check if username/password is wrong; %s", ret.getExitErrorMessage()));
+                                trigger.fail(operr("unable to get host cpu architecture, please check if username/password is wrong; %s", ret.getExitErrorMessage()));
+                                return;
                             }
 
                             String hostArchitecture = ret.getStdout().trim();
-                            String clusterArchitecture = Q.New(ClusterVO.class).select(ClusterVO_.architecture).eq(ClusterVO_.uuid, self.getClusterUuid()).findValue();
-                            if (clusterArchitecture != null && !hostArchitecture.equals(clusterArchitecture)) {
-                                throw new OperationFailureException(operr("host cpu architecture[%s] is not matched the cluster[%s]", hostArchitecture, clusterArchitecture));
+                            ClusterVO cluster = dbf.findByUuid(self.getClusterUuid(), ClusterVO.class);
+                            if (cluster.getArchitecture() != null && !hostArchitecture.equals(cluster.getArchitecture())) {
+                                trigger.fail(operr("host cpu architecture[%s] is not matched the cluster[%s]", hostArchitecture, cluster.getArchitecture()));
+                                return;
+                            }
+
+                            // for upgrade case, prevent from add host failure.
+                            if (cluster.getArchitecture() == null && !info.isNewAdded()) {
+                                cluster.setArchitecture(hostArchitecture);
+                                dbf.update(cluster);
                             }
 
                             trigger.next();
