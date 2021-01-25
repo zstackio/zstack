@@ -95,5 +95,32 @@ class LocalStorageSystemUsedCapacityCase extends SubCase {
             conditions=["uuid=${ps.uuid}".toString()]
         }[0]
         assert ps.systemUsedCapacity == hostRefVO.systemUsedCapacity
+
+        initRsp = null;
+        env.afterSimulator(LocalStorageKvmBackend.INIT_PATH) { LocalStorageKvmBackend.InitRsp rsp, HttpEntity<String> e ->
+            rsp.totalCapacity = 10
+            rsp.availableCapacity = 5
+            rsp.localStorageUsedCapacity = 3
+            initRsp = rsp
+            return rsp
+        }
+        reconnectHost {
+            uuid = host.uuid
+        }
+
+        assert initRsp != null
+        hostRefVO = Q.New(LocalStorageHostRefVO.class)
+                .eq(LocalStorageHostRefVO_.hostUuid, host.uuid).find()
+        assert hostRefVO.totalCapacity == initRsp.totalCapacity
+        assert hostRefVO.totalPhysicalCapacity == initRsp.totalCapacity
+        assert hostRefVO.systemUsedCapacity == initRsp.totalCapacity - initRsp.availableCapacity - initRsp.localStorageUsedCapacity
+        assert hostRefVO.availablePhysicalCapacity == initRsp.availableCapacity
+        assert hostRefVO.availableCapacity == hostRefVO.availableCapacity
+
+        ps = queryPrimaryStorage {
+            conditions=["uuid=${ps.uuid}".toString()]
+        }[0]
+        assert ps.systemUsedCapacity == hostRefVO.systemUsedCapacity
+
     }
 }

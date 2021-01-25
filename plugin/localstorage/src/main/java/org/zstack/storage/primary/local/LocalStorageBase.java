@@ -1673,11 +1673,17 @@ public class LocalStorageBase extends PrimaryStorageBase {
                                     ref.getSystemUsedCapacity());
                         } else {
                             ref = refs.get(0);
+                            long originSystemUsed = ref.getSystemUsedCapacity();
+
                             ref.setAvailablePhysicalCapacity(c.availablePhysicalSize);
                             ref.setTotalPhysicalCapacity(c.totalPhysicalSize);
                             ref.setTotalCapacity(c.totalPhysicalSize);
                             ref.setSystemUsedCapacity(c.totalPhysicalSize - c.availablePhysicalSize - c.localStorageUsedSize);
                             dbf.update(ref);
+
+                            if (originSystemUsed != ref.getSystemUsedCapacity()) {
+                                increaseCapacity(null, null, null, null, ref.getSystemUsedCapacity() - originSystemUsed);
+                            }
 
                             // the host's local storage capacity changed
                             // need to recalculate the capacity in the database
