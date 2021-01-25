@@ -25,7 +25,7 @@ public class CreatePolicyRouteRuleSetAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 16, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
