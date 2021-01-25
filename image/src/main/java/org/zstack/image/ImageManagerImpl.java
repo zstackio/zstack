@@ -2193,21 +2193,21 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             return candidates;
         }
 
-        List<String> archTypes = SQL.New("select distinct c.architecture from ClusterVO c" +
-                " where c.architecture is not null", String.class).list();
+        List<String> archTypes = SQL.New("select distinct c.architecture from ClusterVO c", String.class).list();
 
         String finalArchitecture = architecture;
-        if (archTypes.stream().noneMatch(it -> it.equals(finalArchitecture))) {
+        long matchCount = archTypes.stream().filter(it -> it == null || it.equals(finalArchitecture)).count();
+        if (matchCount == archTypes.size()) {
+            return candidates;
+        } else if (matchCount == 0) {
             return Collections.emptyList();
         }
 
-        if (archTypes.size() == 1) {
-            return candidates;
-        }
-
-        Set<String> sameArchClusterUuids = new HashSet<>(Q.New(ClusterVO.class).select(ClusterVO_.uuid)
-                .eq(ClusterVO_.architecture, architecture)
-                .listValues());
+        Set<String> sameArchClusterUuids = new HashSet<>(SQL.New("select c.uuid from ClusterVO c" +
+                " where c.architecture = :arch" +
+                " or c.architecture is null", String.class)
+                .param("arch", finalArchitecture)
+                .list());
 
         return candidates.stream().filter(it -> sameArchClusterUuids.contains(it.getClusterUuid()))
                 .collect(Collectors.toList());
