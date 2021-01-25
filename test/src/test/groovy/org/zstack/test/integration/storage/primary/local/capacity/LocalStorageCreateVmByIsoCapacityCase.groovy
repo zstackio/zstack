@@ -111,7 +111,8 @@ class LocalStorageCreateVmByIsoCapacityCase extends SubCase {
 
         env.afterSimulator(LocalStorageKvmBackend.INIT_PATH) { rsp, HttpEntity<String> e ->
             rsp.totalCapacity = hostCapacity.totalCapacity
-            rsp.availableCapacity = hostCapacity.availableCapacity - SizeUnit.GIGABYTE.toByte(20) - SizeUnit.GIGABYTE.toByte(1)
+            rsp.localStorageUsedCapacity = SizeUnit.GIGABYTE.toByte(20) + SizeUnit.GIGABYTE.toByte(1)
+            rsp.availableCapacity = hostCapacity.availableCapacity - rsp.localStorageUsedCapacity
             return rsp
         }
 
