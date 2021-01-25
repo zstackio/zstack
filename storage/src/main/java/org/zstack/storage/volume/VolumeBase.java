@@ -764,6 +764,15 @@ public class VolumeBase implements Volume {
                             msg.setDiskSize(self.getSize());
                             bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
                             bus.send(msg);
+
+                            /**
+                             * After volume is deleted on primary storage and volume capacity returned,
+                             * set primaryStorageUuid to null to confirm IncreasePrimaryStorageCapacityMsg
+                             * only be send once.
+                             */
+                            self.setPrimaryStorageUuid(null);
+                            self = dbf.updateAndRefresh(self);
+
                             trigger.next();
                         }
                     });
