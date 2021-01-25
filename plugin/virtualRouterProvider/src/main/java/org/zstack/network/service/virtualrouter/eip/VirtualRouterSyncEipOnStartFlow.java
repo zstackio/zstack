@@ -118,6 +118,10 @@ public class VirtualRouterSyncEipOnStartFlow implements Flow {
             List<String> pubL3Uuids = new ArrayList<>();
             pubL3Uuids.add(vr.getPublicNic().getL3NetworkUuid());
             pubL3Uuids.addAll(vr.getAdditionalPublicNics().stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()));
+            if (!vr.getPublicNic().getL3NetworkUuid().equals(vr.getManagementNetworkUuid())) {
+                /* in old code, eip can be configured on management nic */
+                pubL3Uuids.add(vr.getManagementNetworkUuid());
+            }
 
             if (guestNics == null || guestNics.isEmpty()) {
                 return new ArrayList<>();

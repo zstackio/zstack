@@ -68,10 +68,19 @@ public class VirtualRouterSyncPortForwardingRulesOnStartFlow implements Flow {
             if (guestNics == null || guestNics.isEmpty()) {
                 return new ArrayList<PortForwardingRuleVO>(0);
             }
+
+            List<String> pubL3Uuids = new ArrayList<>();
+            pubL3Uuids.add(vr.getPublicNic().getL3NetworkUuid());
+            pubL3Uuids.addAll(vr.getAdditionalPublicNics().stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()));
+            if (!vr.getPublicNic().getL3NetworkUuid().equals(vr.getManagementNetworkUuid())) {
+                /* in old code, pf can be configured on management nic */
+                pubL3Uuids.add(vr.getManagementNetworkUuid());
+            }
+
             String sql = "select rule from PortForwardingRuleVO rule, VipVO vip, VmNicVO nic, VmInstanceVO vm where vm.uuid = nic.vmInstanceUuid and " +
-                    " rule.vipUuid = vip.uuid and rule.vmNicUuid = nic.uuid and vip.l3NetworkUuid = :vipL3Uuid and nic.l3NetworkUuid in (:guestL3Uuid)";
+                    " rule.vipUuid = vip.uuid and rule.vmNicUuid = nic.uuid and vip.l3NetworkUuid in (:vipL3Uuids) and nic.l3NetworkUuid in (:guestL3Uuid)";
             TypedQuery<PortForwardingRuleVO> q = dbf.getEntityManager().createQuery(sql, PortForwardingRuleVO.class);
-            q.setParameter("vipL3Uuid", publicNic.getL3NetworkUuid());
+            q.setParameter("vipL3Uuids", pubL3Uuids);
             q.setParameter("guestL3Uuid", guestNics.stream().map(VmNicInventory::getL3NetworkUuid).collect(Collectors.toList()));
 
             List<PortForwardingRuleVO> rules =  q.getResultList();
