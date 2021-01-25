@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 
 import javax.persistence.Tuple;
@@ -49,6 +50,10 @@ public class VmExtraInfoGetter {
         }
 
         String hostUuid = t.get(1) != null ? t.get(1, String.class) : t.get(2, String.class);
-        return HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(hostUuid, HostSystemTags.CPU_ARCHITECTURE_TOKEN);
+        return SQL.New("select cluster.architecture from ClusterVO cluster, HostVO host" +
+                " where host.uuid = :huuid" +
+                " and cluster.uuid = host.clusterUuid", String.class)
+                .param("huuid", hostUuid)
+                .find();
     }
 }
