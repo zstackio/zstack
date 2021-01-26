@@ -7,6 +7,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.AsyncTimer;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
@@ -298,6 +299,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     }
 
     @Override
+    @AsyncThread
     public void nodeJoin(ManagementNodeInventory inv) {
         reScanHost();
     }
