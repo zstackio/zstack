@@ -30,6 +30,7 @@ import org.zstack.utils.network.NetworkUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -273,9 +274,13 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
             to.setIp(vip.getIp());
             to.setGateway(vip.getGateway());
             to.setNetmask(vip.getNetmask());
-            to.setOwnerEthernetMac(vr.getVmNics().stream()
+            Optional<VmNicInventory> pubNic = vr.getVmNics().stream()
                     .filter(n -> n.getL3NetworkUuid().equals(vip.getL3NetworkUuid()))
-                    .findFirst().get().getMac());
+                    .findFirst();
+            if (!pubNic.isPresent()) {
+                continue;
+            }
+            to.setOwnerEthernetMac(pubNic.get().getMac());
             to.setVipUuid(vip.getUuid());
             to.setSystem(vip.isSystem());
             vipTOS.add(to);

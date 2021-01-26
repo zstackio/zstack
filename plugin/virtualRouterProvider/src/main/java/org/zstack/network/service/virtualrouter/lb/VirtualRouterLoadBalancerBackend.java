@@ -415,9 +415,12 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         SimpleQuery<VipVO> q = dbf.createQuery(VipVO.class);
         q.add(VipVO_.uuid, Op.EQ, struct.getLb().getVipUuid());
         final VipVO vip = q.find();
-        String publicMac = vr.getVmNics().stream()
+        Optional<VmNicInventory> publicNic = vr.getVmNics().stream()
                 .filter(n -> n.getL3NetworkUuid().equals(vip.getL3NetworkUuid()))
-                .findFirst().get().getMac();
+                .findFirst();
+        if (!publicNic.isPresent()) {
+            return new ArrayList<>();
+        }
 
         return CollectionUtils.transformToList(struct.getListeners(), new Function<LbTO, LoadBalancerListenerInventory>() {
             private List<String> makeAcl(LoadBalancerListenerInventory listenerInv) {
@@ -489,7 +492,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 }
                 to.setNicIps(ips);
-                to.setPublicNic(publicMac);
+                to.setPublicNic(publicNic.get().getMac());
                 params.addAll(CollectionUtils.transformToList(struct.getTags().get(l.getUuid()), new Function<String, String>() {
                     // vnicUuid::weight
                     @Override
@@ -624,6 +627,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         RefreshLbCmd cmd = new RefreshLbCmd();
         cmd.lbs = makeLbTOs(struct, vr);
+        if (cmd.lbs.isEmpty()) {
+            completion.success();
+            return;
+        }
 
         msg.setCommand(cmd);
         bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vr.getUuid());
@@ -1734,6 +1741,10 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     public void destroyLoadBalancerOnVirtualRouter(VirtualRouterVmInventory vr, LoadBalancerStruct struct, Completion completion) {
         DeleteLbCmd cmd = new DeleteLbCmd();
         cmd.setLbs(makeLbTOs(struct, vr));
+        if (cmd.lbs.isEmpty()) {
+            completion.success();
+            return;
+        }
 
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
         msg.setVmInstanceUuid(vr.getUuid());
@@ -1822,9 +1833,20 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         }
 
         for (Map.Entry<String, List<LoadBalancerListenerVO>> e : listenerMap.entrySet()) {
+            LoadBalancerStruct struct = new LoadBalancerStruct();
+            LoadBalancerVO lb = dbf.findByUuid(e.getKey(), LoadBalancerVO.class);
+            struct.setLb(LoadBalancerInventory.valueOf(lb));
+
+            struct.setListenerServerGroupMap(new HashMap<>());
             List<String> serverGroupUuids = new ArrayList<>();
             for (LoadBalancerListenerVO listenerVO : e.getValue()) {
-                serverGroupUuids.addAll(listenerVO.getServerGroupRefs().stream().map(LoadBalancerListenerServerGroupRefVO::getServerGroupUuid).collect(Collectors.toList()));
+                List<String> uuids = listenerVO.getServerGroupRefs().stream().map(LoadBalancerListenerServerGroupRefVO::getServerGroupUuid).collect(Collectors.toList());
+                if (!uuids.isEmpty()) {
+                    List<LoadBalancerServerGroupVO> groupVOS = Q.New(LoadBalancerServerGroupVO.class)
+                            .in(LoadBalancerServerGroupVO_.uuid, uuids).list();
+                    struct.getListenerServerGroupMap().put(listenerVO.getUuid(), LoadBalancerServerGroupInventory.valueOf(groupVOS));
+                    serverGroupUuids.addAll(uuids);
+                }
             }
             HashMap<String, VmNicInventory> nicMap = new HashMap<>();
             if (!serverGroupUuids.isEmpty()) {
@@ -1857,9 +1879,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 systemTags.put(l.getUuid(), q.listValue());
             }
 
-            LoadBalancerStruct struct = new LoadBalancerStruct();
-            LoadBalancerVO lb = dbf.findByUuid(e.getKey(), LoadBalancerVO.class);
-            struct.setLb(LoadBalancerInventory.valueOf(lb));
             struct.setListeners(LoadBalancerListenerInventory.valueOf(e.getValue()));
             struct.setVmNics(nicMap);
             struct.setTags(systemTags);
