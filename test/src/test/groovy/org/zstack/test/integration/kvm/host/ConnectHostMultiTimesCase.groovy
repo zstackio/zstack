@@ -3,10 +3,15 @@ package org.zstack.test.integration.kvm.host
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.CloudBusCallBack
+import org.zstack.core.db.Q
 import org.zstack.core.timeout.ApiTimeoutGlobalProperty
 import org.zstack.header.host.ConnectHostMsg
 import org.zstack.header.host.HostConstant
+import org.zstack.header.host.HostStateEvent
 import org.zstack.header.host.HostStatus
+import org.zstack.header.host.HostVO
+import org.zstack.header.host.HostVO_
+import org.zstack.header.host.ReconnectHostMsg
 import org.zstack.header.message.MessageReply
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
@@ -59,12 +64,54 @@ class ConnectHostMultiTimesCase extends SubCase {
             
             testReconnectFail(30)
             testConnectTimeout(30)
+            testHostOutOfMaintainStateWillReconnectHost()
         }
     }
 
     @Override
     void clean() {
         env.delete()
+    }
+
+    void testHostOutOfMaintainStateWillReconnectHost() {
+        changeHostState {
+            uuid = host1.uuid
+            stateEvent = "maintain"
+        }
+        CountDownLatch latch = new CountDownLatch(1)
+        AtomicInteger successCount = new AtomicInteger(0)
+        AtomicInteger errorCount = new AtomicInteger(0)
+
+        sendConnectHostInternalMessage(host1.uuid, { reply ->
+            if (reply.isSuccess()) {
+                successCount.incrementAndGet()
+            } else if (reply.error != null) {
+                errorCount.incrementAndGet()
+            }
+            latch.countDown()
+        })
+        latch.await()
+        assert successCount.get() == 0
+        assert errorCount.get() == 1
+
+        def count = 0
+        def cleanup = notifyWhenReceivedMessage(ReconnectHostMsg.class) { ReconnectHostMsg msg ->
+            if (msg.hostUuid == host1.uuid) {
+                count++
+            }
+        }
+
+        changeHostState {
+            uuid = host1.uuid
+            stateEvent = HostStateEvent.enable
+        }
+
+        assert count == 1
+        cleanup()
+
+        retryInSecs {
+            assert Q.New(HostVO.class).eq(HostVO_.uuid, host1.uuid).select(HostVO_.status).findValue() == HostStatus.Connected
+        }
     }
 
     void testConnectHost(int times) {

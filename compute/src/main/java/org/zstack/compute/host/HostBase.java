@@ -979,7 +979,7 @@ public abstract class HostBase extends AbstractHost {
     }
     
     private void connect(final ConnectHostMsg msg, ReturnValueCompletion<ConnectHostReply> completion) {
-        thdf.chainSubmit(new ChainTask(msg) {
+        thdf.chainSubmit(new ChainTask(msg, completion) {
             @Override
             public String getSyncSignature() {
                 return connectHostSignature();
