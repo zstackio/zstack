@@ -259,34 +259,6 @@ END $$
 DELIMITER ;
 CALL updateIAM2VirtualIDRoleRefCreateAccountUuid();
 
-
-
-DELIMITER $$
-CREATE PROCEDURE insertDefaultIAM2Organization()
-BEGIN
-    DECLARE virtualIDUuid VARCHAR(32);
-    DECLARE organizationUuid VARCHAR(32);
-    DECLARE done INT DEFAULT FALSE;
-    DECLARE cur CURSOR FOR SELECT uuid, '6e3d19dab98348d8bd67657378843f82' FROM zstack.IAM2VirtualIDVO where type = 'ZStack' and uuid not in (SELECT virtualIDUuid FROM zstack.IAM2VirtualIDOrganizationRefVO);
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-    OPEN cur;
-    read_loop: LOOP
-        FETCH cur INTO virtualIDUuid, organizationUuid;
-        IF done THEN
-            LEAVE read_loop;
-        END IF;
-        INSERT INTO `zstack`.IAM2VirtualIDOrganizationRefVO (virtualIDUuid, organizationUuid, createDate, lastOpDate) VALUES (virtualIDUuid, organizationUuid, NOW(), NOW());
-
-    END LOOP;
-    CLOSE cur;
-    SELECT CURTIME();
-END $$
-DELIMITER ;
-
-CALL insertDefaultIAM2Organization();
-DROP PROCEDURE IF EXISTS insertDefaultIAM2Organization;
-
-
 CREATE TABLE `IAM2ProjectVirtualIDGroupRefVO` (
     `groupUuid` VARCHAR(32) NOT NULL,
     `projectUuid` VARCHAR(32) NOT NULL,
