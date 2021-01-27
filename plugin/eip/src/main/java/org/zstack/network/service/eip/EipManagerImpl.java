@@ -1,7 +1,6 @@
 package org.zstack.network.service.eip;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -59,7 +58,7 @@ import static org.zstack.utils.CollectionDSL.list;
 public class EipManagerImpl extends AbstractService implements EipManager, VipReleaseExtensionPoint,
         AddExpandedQueryExtensionPoint, ReportQuotaExtensionPoint, VmPreAttachL3NetworkExtensionPoint,
         VmIpChangedExtensionPoint, ResourceOwnerAfterChangeExtensionPoint, VipGetServiceReferencePoint,
-        ManagementNodeReadyExtensionPoint {
+        ManagementNodeReadyExtensionPoint, FilterAttachableL3NetworkExtensionPoint {
     private static final CLogger logger = Utils.getLogger(EipManagerImpl.class);
 
     @Autowired
@@ -1620,6 +1619,27 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
                 }
             }
         }.run();
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<L3NetworkInventory> filterAttachableL3Network(VmInstanceInventory vm, List<L3NetworkInventory> l3s) {
+        final List<String> nicUuids = CollectionUtils.transformToList(vm.getVmNics(),
+            VmNicInventory::getUuid);
+    
+        List<L3NetworkInventory> rets = new ArrayList<>(l3s);
+        if (nicUuids.isEmpty()) {
+            return rets;
+        }
+        
+        Set<String> l3Uuids = SQL.New("select vip.l3NetworkUuid from EipVO eip left join VipVO vip " +
+                        "on eip.vipUuid = vip.uuid where eip.vmNicUuid in (:nicUuids)")
+                .param("nicUuids", nicUuids)
+                .list()
+                .stream().map(Objects::toString).collect(Collectors.toSet());
+        
+        rets.removeIf(l3 -> l3Uuids.contains(l3.getUuid()));
+        return rets;
     }
 
     @Override

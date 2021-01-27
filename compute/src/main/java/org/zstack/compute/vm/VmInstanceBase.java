@@ -4011,17 +4011,10 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void handle(APIGetVmAttachableL3NetworkMsg msg) {
         APIGetVmAttachableL3NetworkReply reply = new APIGetVmAttachableL3NetworkReply();
         List<L3NetworkInventory> l3Invs = getAttachableL3Network(msg.getSession().getAccountUuid());
-        List<L3NetworkInventory> ret = new ArrayList<>();
-
-        for (L3NetworkInventory l3 : l3Invs) {
-            try {
-                for (VmPreAttachL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(VmPreAttachL3NetworkExtensionPoint.class)) {
-                    ext.vmPreAttachL3Network(VmInstanceInventory.valueOf(self), l3);
-                }
-                ret.add(l3);
-            } catch (Exception e) {
-                /* vmPreAttachL3Network will filter out the l3s that can not be attached */
-            }
+        
+        List<L3NetworkInventory> ret = new ArrayList<>(l3Invs);
+        for (FilterAttachableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterAttachableL3NetworkExtensionPoint.class)) {
+            ret = ext.filterAttachableL3Network(VmInstanceInventory.valueOf(self), ret);
         }
 
         reply.setInventories(ret);
