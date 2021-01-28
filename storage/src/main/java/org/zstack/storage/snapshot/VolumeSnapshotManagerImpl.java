@@ -24,16 +24,14 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.host.HostConstant;
 import org.zstack.header.identity.*;
 import org.zstack.header.message.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.primary.VolumeSnapshotCapability.VolumeSnapshotArrangementType;
 import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
-import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
-import org.zstack.header.vm.VmInstanceInventory;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
@@ -725,6 +723,30 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                             }
                         });
                         trigger.next();
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = String.format("soc-create-snapshot");
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VmSocCreateSnapshotMsg vmsg = new VmSocCreateSnapshotMsg();
+                        vmsg.setHostUuid(Q.New(VmInstanceVO.class)
+                                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue());
+                        vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
+                        vmsg.setSnapshotUuid(snapshot.getUuid());
+                        vmsg.setVmUuid(Q.New(VmInstanceVO.class)
+                                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.uuid).findValue());
+                        bus.makeTargetServiceIdByResourceUuid(vmsg, HostConstant.SERVICE_ID, vmsg.getHostUuid());
+                        bus.send(vmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                }else {
+                                    trigger.next();
+                                }
+                            }
+                        });
                     }
                 });
 
