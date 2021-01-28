@@ -15,6 +15,7 @@ import org.zstack.utils.*;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
@@ -169,8 +170,8 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
                 .filter(clz -> !APISyncCallMessage.class.isAssignableFrom(clz))
                 .collect(Collectors.toSet());
 
-        List<GlobalConfig> results = new ArrayList<>();
-        allConfigurableMessageClasses.forEach(clz -> {
+        List<GlobalConfig> results = new CopyOnWriteArrayList<>();
+        allConfigurableMessageClasses.parallelStream().forEach(clz -> {
             GlobalConfigVO vo = new GlobalConfigVO();
 
             if (APIMessage.class.isAssignableFrom(clz)) {
