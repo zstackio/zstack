@@ -10071,7 +10071,7 @@
   {
     "raw": "Current port range[%s, %s] is conflicted with used port range [%s, %s] with vip[uuid: %s] protocol: %s ",
     "en_US": "Current port range[{0}, {1}] is conflicted with used port range [{2}, {3}] with vip[uuid: {4}] protocol: {5} ",
-    "zh_CN": "当前使用的端口范围[{0}, {1}]和虚拟IP{uuid: {4}， 协议: {5}}已经使用的端口范围[{2}, {3}]冲突",
+    "zh_CN": "当前使用的端口范围[{0}, {1}]和虚拟IP[uuid: {4}, 协议: {5}]已经使用的端口范围[{2}, {3}]冲突",
     "arguments": [
       "Long.toString(range.getStart())",
       "Long.toString(range.getEnd())",
