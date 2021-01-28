@@ -3005,4 +3005,31 @@ public class KVMAgentCommands {
 
     public static class BootFromNewNodeRsp extends AgentResponse {
     }
+
+    public static class SocCreateSnaphotCommand extends AgentCommand {
+        public String vmUuid;
+        public String platformId;
+        public String snapshotUuid;
+    }
+
+    public static class SocCreateSnapshotRsp extends AgentResponse {
+    }
+
+    public static class SocDeleteSnapshotCommand extends AgentCommand {
+        public String vmUuid;
+        public String platformId;
+        public String snapshotUuid;
+    }
+
+    public static class SocDeleteSnapshotRsp extends AgentResponse {
+    }
+
+    public static class SocUseSnapshotCommand extends AgentCommand {
+        public String vmUuid;
+        public String platformId;
+        public String snapshotUuid;
+    }
+
+    public static class SocUseSnapshotRsp extends AgentResponse {
+    }
 }
