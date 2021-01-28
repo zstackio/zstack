@@ -131,7 +131,7 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
             placePip703();
             placeAnsible196();
 
-            ShellUtils.run(String.format("if ! ansible --version | grep -q 1.9.6; then " +
+            ShellUtils.run(String.format("if ! sudo ansible --version | grep -q 1.9.6; then " +
                     "if grep -i -s centos /etc/system-release; then " +
                     "sudo yum remove -y ansible; " +
                     "elif grep -i -s ubuntu /etc/issue; then " +
