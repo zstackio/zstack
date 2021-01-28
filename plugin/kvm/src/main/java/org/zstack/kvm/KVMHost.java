@@ -2,6 +2,7 @@ package org.zstack.kvm;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.util.Strings;
+import org.springframework.aop.framework.AopProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +17,6 @@ import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmPriorityOperator;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
-import org.zstack.core.GlobalProperty;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.agent.AgentConstant;
@@ -84,8 +84,6 @@ import java.util.stream.Collectors;
 import static org.zstack.core.CoreGlobalProperty.PLATFORM_ID;
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.progress.ProgressReportService.*;
-import static org.zstack.header.host.HostErrors.FAILD_TO_VSOC_MIGRATE;
-import static org.zstack.header.vm.VmInstanceConstant.COLD_MIGRATE;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
@@ -158,6 +156,9 @@ public class KVMHost extends HostBase implements Host {
     private String vmDeleteVsocPath;
     private String vsocMigratePath;
     private String bootFromNewNodePath;
+    private String socCreateSnapshotPath;
+    private String socDeleteSnapshotPath;
+    private String socUseSnapshotPath;
 
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
 
@@ -314,6 +315,18 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_BOOT_FROM_NEW_NODE);
         bootFromNewNodePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_SOC_CREATE_SNAPSHOT_PATH);
+        socCreateSnapshotPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_SOC_DELETE_SNAPSHOT_PATH);
+        socDeleteSnapshotPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_SOC_USE_SNAPSHOT);
+        socUseSnapshotPath = ub.build().toString();
     }
 
     class Http<T> {
@@ -496,11 +509,98 @@ public class KVMHost extends HostBase implements Host {
             handle((DeleteVmVsocFileMsg) msg);
         } else if (msg instanceof VmVsocMigrateMsg) {
             handle((VmVsocMigrateMsg) msg);
-        } else if ((msg instanceof VmBootFromNewNodeMsg)) {
+        } else if (msg instanceof VmBootFromNewNodeMsg) {
             handle((VmBootFromNewNodeMsg) msg);
+        } else if (msg instanceof VmSocCreateSnapshotMsg) {
+            handle ((VmSocCreateSnapshotMsg) msg);
+        } else if (msg instanceof VmSocDeleteSnapshotMsg) {
+            handle((VmSocDeleteSnapshotMsg) msg);
+        } else if (msg instanceof VmSocUseSnapshotMsg) {
+            handle((VmSocUseSnapshotMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(VmSocCreateSnapshotMsg msg) {
+        SocCreateSnaphotCommand cmd = new SocCreateSnaphotCommand();
+        cmd.platformId = msg.getPlatformId();
+        cmd.vmUuid = msg.getVmUuid();
+        cmd.snapshotUuid = msg.getSnapshotUuid();
+
+        new Http<>(socCreateSnapshotPath, cmd, SocCreateSnapshotRsp.class).call(new ReturnValueCompletion<SocCreateSnapshotRsp>(msg) {
+            @Override
+            public void success(SocCreateSnapshotRsp ret) {
+                VmSocCreateSnapshotReply reply = new VmSocCreateSnapshotReply();
+                if (ret.isSuccess()) {
+                    reply.setError(operr("Fail:call create_snapshot, because:%s", ret.getError()));
+                    bus.reply(msg, reply);
+                } else {
+                    bus.reply(msg, reply);
+                }
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                VmSocCreateSnapshotReply reply = new VmSocCreateSnapshotReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(VmSocDeleteSnapshotMsg msg) {
+        SocDeleteSnapshotCommand cmd = new SocDeleteSnapshotCommand();
+        cmd.platformId = msg.getPlatformId();
+        cmd.vmUuid = msg.getVmUuid();
+        cmd.snapshotUuid = msg.getSnapshotUuid();
+
+        new Http<>(socDeleteSnapshotPath, cmd, SocDeleteSnapshotRsp.class).call(new ReturnValueCompletion<SocDeleteSnapshotRsp>(msg) {
+            @Override
+            public void success(SocDeleteSnapshotRsp ret) {
+                VmSocDeleteSnapshotReply reply = new VmSocDeleteSnapshotReply();
+                if (ret.isSuccess()) {
+                    reply.setError(operr("Fail:call delete_snapshot, because:%s", ret.getError()));
+                    bus.reply(msg, reply);
+                } else {
+                    bus.reply(msg, reply);
+                }
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                VmSocDeleteSnapshotReply reply = new VmSocDeleteSnapshotReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(VmSocUseSnapshotMsg msg) {
+        SocUseSnapshotCommand cmd = new SocUseSnapshotCommand();
+        cmd.platformId = msg.getPlatformId();
+        cmd.vmUuid = msg.getVmUuid();
+        cmd.snapshotUuid = msg.getSnapshotUuid();
+
+        new Http<>(socUseSnapshotPath, cmd, SocUseSnapshotRsp.class).call(new ReturnValueCompletion<SocUseSnapshotRsp>(msg) {
+            @Override
+            public void success(SocUseSnapshotRsp ret) {
+                VmSocUseSnapshotReply reply = new VmSocUseSnapshotReply();
+                if (ret.isSuccess()) {
+                    reply.setError(operr("Fail:call use_snapshot, because:%s", ret.getError()));
+                    bus.reply(msg, reply);
+                } else {
+                    bus.reply(msg, reply);
+                }
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                VmSocUseSnapshotReply reply = new VmSocUseSnapshotReply();
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(VmBootFromNewNodeMsg msg) {

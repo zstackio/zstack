@@ -32,6 +32,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostConstant;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
@@ -51,9 +52,7 @@ import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotExtens
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus.StatusEvent;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTree.SnapshotLeaf;
 import org.zstack.header.storage.snapshot.group.*;
-import org.zstack.header.vm.VmInstanceState;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeType;
@@ -1629,6 +1628,38 @@ public class VolumeSnapshotTreeBase {
                     }
                 });
 
+                flow(new Flow() {
+                    String __name__ = "call soc_use_snapshot";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VmSocUseSnapshotMsg vmsg = new VmSocUseSnapshotMsg();
+                        vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
+                        vmsg.setHostUuid(Q.New(VmInstanceVO.class)
+                                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue());
+                        vmsg.setVmUuid(Q.New(VmInstanceVO.class)
+                                .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.uuid).findValue());
+                        vmsg.setSnapshotUuid(msg.getSnapshotUuid());
+
+                        bus.makeTargetServiceIdByResourceUuid(vmsg, HostConstant.SERVICE_ID, vmsg.getHostUuid());
+                        bus.send(vmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                } else {
+                                    trigger.next();
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        trigger.rollback();
+                    }
+                });
+
                 done(new FlowDoneHandler(completion) {
                     @Transactional
                     private void updateLatest() {
@@ -1709,6 +1740,31 @@ public class VolumeSnapshotTreeBase {
         final List<VolumeSnapshotInventory> ctx = Arrays.asList(getSelfInventory());
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-snapshot-%s", msg.getSnapshotUuid()));
+
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                VmSocDeleteSnapshotMsg vmsg = new VmSocDeleteSnapshotMsg();
+                vmsg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
+                vmsg.setSnapshotUuid(msg.getSnapshotUuid());
+                vmsg.setHostUuid(Q.New(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.hostUuid).findValue());
+                vmsg.setVmUuid(Q.New(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.rootVolumeUuid, msg.getVolumeUuid()).select(VmInstanceVO_.uuid).findValue());
+
+                bus.makeTargetServiceIdByResourceUuid(vmsg, HostConstant.SERVICE_ID, vmsg.getHostUuid());
+                bus.send(vmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                });
+            }
+        });
 
         reportProgress("20");
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {

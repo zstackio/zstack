@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.GlobalProperty;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
@@ -27,6 +29,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.APICreateUserGroupEvent;
@@ -2001,7 +2004,6 @@ public class VolumeBase implements Volume {
             public void run(final SyncTaskChain taskChain) {
                 FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
                 chain.setName("");
-
                 chain.then(new NoRollbackFlow() {
                     String __name__ = String.format("create-snapshot-for-volume-%s", msg.getVolumeUuid());
                     @Override
