@@ -230,8 +230,9 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
             msg.setPlatform(ImagePlatform.Linux.toString());
         }
 
-        if (CoreGlobalProperty.UNIT_TEST_ON && msg.getArchitecture() == null) {
-            msg.setArchitecture(ImageArchitecture.x86_64.toString());
+        if (msg.getArchitecture() == null && !ImageMediaType.DataVolumeTemplate.toString().equals(msg.getMediaType())) {
+            msg.setArchitecture(CoreGlobalProperty.UNIT_TEST_ON ?
+                    ImageArchitecture.x86_64.toString() : ImageArchitecture.defaultArch());
         }
 
         if (msg.getBackupStorageUuids() != null) {
