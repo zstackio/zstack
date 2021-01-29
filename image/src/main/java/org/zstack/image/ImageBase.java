@@ -808,8 +808,16 @@ public class ImageBase implements Image {
             self.setArchitecture(msg.getArchitecture());
             update = true;
         }
+
         if (update) {
             self = dbf.updateAndRefresh(self);
+        }
+
+        if (ImageArchitecture.aarch64.toString().equals(msg.getArchitecture())){
+            SystemTagCreator creator = ImageSystemTags.BOOT_MODE.newSystemTagCreator(msg.getImageUuid());
+            creator.setTagByTokens(Collections.singletonMap(ImageSystemTags.BOOT_MODE_TOKEN, ImageBootMode.UEFI.toString()));
+            creator.recreate = true;
+            creator.create();
         }
     }
 
