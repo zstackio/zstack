@@ -1,5 +1,6 @@
 package org.zstack.image;
 
+import edu.emory.mathcs.backport.java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.HostSystemTags;
@@ -85,8 +86,6 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateDataVolumeTemplateFromVolumeSnapshotMsg) msg);
         } else if (msg instanceof APISetImageBootModeMsg) {
             validate((APISetImageBootModeMsg) msg);
-        } else if (msg instanceof APIUpdateImageMsg) {
-            validate((APIUpdateImageMsg) msg);
         }
 
         setServiceId(msg);
@@ -97,18 +96,7 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         ImageVO vo = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
         if (ImageBootMode.Legacy.toString().equals(msg.getBootMode())
                 && ImageArchitecture.aarch64.toString().equals(vo.getArchitecture())) {
-            throw new OperationFailureException(argerr("The aarch64 architecture does not support legacy."));
-        }
-    }
-
-    private void validate(APIUpdateImageMsg msg){
-        if (ImageArchitecture.aarch64.toString().equals(msg.getArchitecture())){
-            SystemTagCreator creator = ImageSystemTags.BOOT_MODE.newSystemTagCreator(msg.getImageUuid());
-            creator.setTagByTokens(map(
-                    e(ImageSystemTags.BOOT_MODE_TOKEN, ImageBootMode.UEFI.toString())
-            ));
-            creator.recreate = true;
-            creator.create();
+            throw new ApiMessageInterceptionException(argerr("The aarch64 architecture does not support legacy."));
         }
     }
 
@@ -233,6 +221,16 @@ public class ImageApiInterceptor implements ApiMessageInterceptor {
         if (msg.getArchitecture() == null && !ImageMediaType.DataVolumeTemplate.toString().equals(msg.getMediaType())) {
             msg.setArchitecture(CoreGlobalProperty.UNIT_TEST_ON ?
                     ImageArchitecture.x86_64.toString() : ImageArchitecture.defaultArch());
+        }
+
+        if (ImageArchitecture.aarch64.toString().equals(msg.getArchitecture())) {
+            if (msg.getSystemTags() != null) {
+                msg.getSystemTags().removeIf(tag -> ImageSystemTags.BOOT_MODE.isMatch(tag));
+            }
+
+            msg.addSystemTag(ImageSystemTags.BOOT_MODE.instantiateTag(Collections.singletonMap(
+                    ImageSystemTags.BOOT_MODE_TOKEN, ImageBootMode.UEFI.toString()
+            )));
         }
 
         if (msg.getBackupStorageUuids() != null) {
