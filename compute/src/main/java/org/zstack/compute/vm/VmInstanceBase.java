@@ -1436,7 +1436,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 }
 
-                doDetachNic(VmNicInventory.valueOf(nicVO), true, false, new Completion(chain) {
+                doDetachNic(VmNicInventory.valueOf(nicVO), true, false, msg.isDbOnly(), new Completion(chain) {
                     @Override
                     public void success() {
                         self = dbf.reload(self);
@@ -4195,6 +4195,10 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void doDetachNic(VmNicInventory vmNic, boolean releaseNic, boolean isRollback, Completion completion) {
+        doDetachNic(vmNic, releaseNic, isRollback, false, completion);
+    }
+
+    private void doDetachNic(VmNicInventory vmNic, boolean releaseNic, boolean isRollback, boolean dbOnly, Completion completion) {
         FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
         fchain.setName(String.format("detach-l3-network-from-vm-%s", vmNic.getVmInstanceUuid()));
         fchain.then(new NoRollbackFlow() {
@@ -4219,7 +4223,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                detachNic(vmNic.getUuid(), releaseNic, isRollback, new Completion(trigger) {
+                detachNic(vmNic.getUuid(), releaseNic, isRollback, dbOnly, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -4372,7 +4376,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         self = dbf.updateAndRefresh(self);
     }
 
-    private void detachNic(final String nicUuid, boolean releaseNic, boolean isRollback, final Completion completion) {
+    private void detachNic(final String nicUuid, boolean releaseNic, boolean isRollback, boolean dbOnly, final Completion completion) {
         VmNicVO vmNicVO = CollectionUtils.find(self.getVmNics(), new Function<VmNicVO, VmNicVO>() {
             @Override
             public VmNicVO call(VmNicVO arg) {
@@ -4420,7 +4424,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         flowChain.getData().put(Params.ReleaseNicAfterDetachNic.toString(), releaseNic);
-        if (self.getState() == VmInstanceState.Running && nic.getL3NetworkUuid() != null) {
+        if (!dbOnly && self.getState() == VmInstanceState.Running && nic.getL3NetworkUuid() != null) {
             flowChain.then(new VmDetachNicOnHypervisorFlow());
         }
         flowChain.then(new VmReleaseResourceOnDetachingNicFlow());
