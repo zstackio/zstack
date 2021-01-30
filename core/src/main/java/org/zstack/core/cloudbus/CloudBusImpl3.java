@@ -18,10 +18,7 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.Constants;
 import org.zstack.header.Service;
 import org.zstack.header.apimediator.StopRoutingException;
-import org.zstack.header.core.ExceptionSafe;
-import org.zstack.header.core.FutureReturnValueCompletion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.NopeNoErrorCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.cloudbus.CloudBusExtensionPoint;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -50,6 +47,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static org.zstack.core.Platform.*;
+import static org.zstack.core.cloudbus.CloudBusGlobalProperty.SYNC_CALL_TIMEOUT;
 import static org.zstack.utils.BeanUtils.getProperty;
 import static org.zstack.utils.BeanUtils.setProperty;
 
@@ -643,7 +641,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
     @Override
     public MessageReply call(NeedReplyMessage msg) {
-        FutureReturnValueCompletion future = new FutureReturnValueCompletion(null);
+        FutureReturnValueCompletion future = new FutureReturnValueCompletion(msg);
         send(msg, new CloudBusCallBack(future) {
             @Override
             public void run(MessageReply reply) {
@@ -651,13 +649,13 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             }
         });
 
-        future.await();
+        future.await(SYNC_CALL_TIMEOUT);
         return future.getResult();
     }
 
     @Override
     public <T extends NeedReplyMessage> List<MessageReply> call(List<T> msgs) {
-        FutureReturnValueCompletion future = new FutureReturnValueCompletion(null);
+        FutureReturnValueCompletion future = new FutureReturnValueCompletion(msgs.get(0));
 
         DebugUtils.Assert(!msgs.isEmpty(), "cannot call empty messages");
         send(msgs, new CloudBusListCallBack(future) {
@@ -667,7 +665,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             }
         });
 
-        future.await();
+        future.await(SYNC_CALL_TIMEOUT);
         return future.getResult();
     }
 

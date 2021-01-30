@@ -3,16 +3,24 @@ package org.zstack.header.core;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.message.Message;
+import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.concurrent.TimeUnit;
 
 /**
  */
 public class FutureReturnValueCompletion extends ReturnValueCompletion {
+    private static final CLogger logger = Utils.getLogger(FutureReturnValueCompletion.class);
+
     private volatile boolean success;
     private ErrorCode errorCode;
     private volatile boolean done;
     private Object result;
+    private long SLOW_FUTURE_TIMEOUT = TimeUnit.MINUTES.toMillis(5);
 
     public FutureReturnValueCompletion(AsyncBackup one, AsyncBackup... others) {
         super(one, others);
@@ -42,16 +50,52 @@ public class FutureReturnValueCompletion extends ReturnValueCompletion {
         return errorCode;
     }
 
+    private void dumpSlowFuture() {
+        try {
+            wait(SLOW_FUTURE_TIMEOUT);
+        } catch (InterruptedException e) {
+            throw new CloudRuntimeException(e);
+        }
+
+        try {
+            if (!done) {
+                AsyncBackup backup = new AsyncBackup() {};
+                if (backups != null && backups.size() > 0) {
+                    backup = backups.get(0);
+                }
+
+                String debugInfo = String.format("Future completion wait over %s milliseconds, detected slow future completion! async backup info: %s",
+                        SLOW_FUTURE_TIMEOUT, backup.getClass().getCanonicalName());
+
+                if (backup instanceof Message) {
+                    debugInfo = debugInfo.concat(String.format("; message dump: %s", JSONObjectUtil.toJsonString((Message)backup)));
+                }
+
+                DebugUtils.dumpStackTrace(debugInfo);
+            }
+        } catch (Exception e) {
+            logger.warn(String.format("dumpSlowFuture get exception %s %s", e.getMessage(), e.toString()));
+        }
+    }
+
     public synchronized void await(long timeout) {
         if (done) {
             return;
         }
 
+        logger.debug(String.format("weiw 0 %s", timeout));
+        if (timeout > SLOW_FUTURE_TIMEOUT) {
+            timeout = timeout - SLOW_FUTURE_TIMEOUT;
+            dumpSlowFuture();
+        }
+
+        logger.debug(String.format("weiw 1 %s", timeout));
         try {
             wait(timeout);
         } catch (InterruptedException e) {
             throw new CloudRuntimeException(e);
         }
+        logger.debug(String.format("weiw 2 %s", done));
 
         if (!done) {
             ErrorCode err = new ErrorCode();
@@ -66,6 +110,7 @@ public class FutureReturnValueCompletion extends ReturnValueCompletion {
             return;
         }
 
+        dumpSlowFuture();
         try {
             wait();
         } catch (InterruptedException e) {

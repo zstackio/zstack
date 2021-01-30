@@ -4,6 +4,7 @@ import org.zstack.core.GlobalProperty;
 import org.zstack.core.GlobalPropertyDefinition;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  */
@@ -53,4 +54,7 @@ public class CloudBusGlobalProperty {
     public static boolean HTTP_ALWAYS;
     @GlobalProperty(name="CloudBus.httpContextPath", defaultValue = "/zstack")
     public static String HTTP_CONTEXT_PATH;
+    // Unit of SYNC_CALL_TIMEOUT: millisecond
+    @GlobalProperty(name="Cloudbus.syncCallTimeout", defaultValue = "900000")
+    public static int SYNC_CALL_TIMEOUT;
 }
