@@ -9,28 +9,22 @@ import org.zstack.header.identity.SuppressCredentialCheck;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.BeanUtils;
 import org.zstack.utils.DebugUtils;
-import org.zstack.utils.Utils;
-import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class RBAC {
-    private final static CLogger logger = Utils.getLogger(RBAC.class);
+    public static List<Permission> permissions = new ArrayList<>();
+    public static List<Role> roles = new ArrayList<>();
+    public static List<GlobalReadableResource> readableResources = new ArrayList<>();
+    public static Map<Class, List<APIPermissionCheckerWrapper>> permissionCheckers = new HashMap<>();
+    private static Map<Class, List<RBACEntityFormatter>> entityFormatters = new HashMap<>();
 
-    public static List<Permission> permissions = new CopyOnWriteArrayList<>();
-    public static List<Role> roles = new CopyOnWriteArrayList<>();
-    public static List<GlobalReadableResource> readableResources = new CopyOnWriteArrayList<>();
-    public static Map<Class, List<APIPermissionCheckerWrapper>> permissionCheckers = new ConcurrentHashMap<>();
-    private static Map<Class, List<RBACEntityFormatter>> entityFormatters = new ConcurrentHashMap<>();
+    public static Map<Class, List<ExpendedFieldPermission>> expendApiClassForPermissionCheck = new HashMap<>();
 
-    public static Map<Class, List<ExpendedFieldPermission>> expendApiClassForPermissionCheck = new ConcurrentHashMap<>();
-
-    private static List<RoleContributor> roleContributors = new CopyOnWriteArrayList<>();
-    private static List<RoleBuilder> roleBuilders = new CopyOnWriteArrayList<>();
+    private static List<RoleContributor> roleContributors = new ArrayList<>();
+    private static List<RoleBuilder> roleBuilders = new ArrayList<>();
 
     private static PolicyMatcher matcher = new PolicyMatcher();
 
@@ -499,7 +493,7 @@ public class RBAC {
 
     @StaticInit
     static void staticInit() {
-        BeanUtils.reflections.getSubTypesOf(RBACDescription.class).parallelStream().forEach(dclz-> {
+        BeanUtils.reflections.getSubTypesOf(RBACDescription.class).forEach(dclz-> {
             RBACDescription rd;
             try {
                 rd = dclz.getConstructor().newInstance();
