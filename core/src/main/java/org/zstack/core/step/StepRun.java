@@ -2,8 +2,9 @@ package org.zstack.core.step;
 
 import org.zstack.core.asyncbatch.While;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -58,7 +59,6 @@ public abstract class StepRun<T> {
             index = end;
         } while (index < totalElements.size());
 
-        List<ErrorCode> errs = new ArrayList<>();
         new While<>(stepElements).each((stepElement, compl) -> {
             if (stepElement.isEmpty()) {
                 compl.done();
@@ -72,15 +72,15 @@ public abstract class StepRun<T> {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    errs.add(errorCode);
+                    compl.addError(errorCode);
                     compl.done();
                 }
             });
-        }).run(new NoErrorCompletion(completion) {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
-                if(errs.size() == stepElements.size()){
-                    completion.fail(errs.get(0));
+            public void done(ErrorCodeList errorCodeList) {
+                if(errorCodeList.getCauses().size() == stepElements.size()){
+                    completion.fail(errorCodeList.getCauses().get(0));
                 }else {
                     completion.success();
                 }
