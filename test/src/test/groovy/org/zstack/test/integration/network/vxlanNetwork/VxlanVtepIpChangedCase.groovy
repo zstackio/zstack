@@ -103,6 +103,7 @@ class VxlanVtepIpChangedCase extends SubCase {
     void test() {
         env.create {
             testVxlanVtepIpChanged()
+            testConnectHostVxlanVtepNotChange()
         }
     }
 
@@ -273,5 +274,36 @@ class VxlanVtepIpChangedCase extends SubCase {
         assert realizeRecords.get(0) == vxlan.vni
 
         rebootVmInstance { uuid = vm1.uuid }
+    }
+
+    void testConnectHostVxlanVtepNotChange() {
+        def host1 = env.inventoryByName("kvm1") as KVMHostInventory
+        def host2 = env.inventoryByName("kvm2") as KVMHostInventory
+
+        def records = [] as SynchronizedList<VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd>
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(entity.body, VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd.class)
+            records.add(cmd.networkUuids)
+            return new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd()
+        }
+
+        env.simulator(VxlanNetworkPoolConstant.VXLAN_KVM_CHECK_L2VXLAN_NETWORK_PATH) { HttpEntity<String> entity, EnvSpec spec ->
+            def resp = new VxlanKvmAgentCommands.CheckVxlanCidrResponse() as VxlanKvmAgentCommands.CheckVxlanCidrResponse
+            if (entity.getHeaders().get("X-Resource-UUID")[0] == host1.uuid) {
+                resp.vtepIp = "192.168.102.10"
+            } else {
+                resp.vtepIp = "192.168.100.11"
+            }
+            resp.setSuccess(true)
+            return resp
+        }
+
+        def vteps = Q.New(VtepVO.class).list() as List<VtepVO>
+        assert vteps.size() == 2
+        assert vteps.vtepIp.toSet() == ["192.168.102.10", "192.168.100.11"].toSet()
+
+        reconnectHost { uuid = host1.uuid }
+        reconnectHost { uuid = host2.uuid }
+        assert records.size() == 0
     }
 }
