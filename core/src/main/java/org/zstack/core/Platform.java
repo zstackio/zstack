@@ -439,8 +439,9 @@ public class Platform {
             }
         }
         if (getGlobalProperty("JGroup.Address") == null) {
-            System.setProperty("JGroup.Address", getManagementServerIp());
-            logger.debug(String.format("default JGroup.Address to JGroup.Address [%s]", getManagementServerIp()));
+            String serverIp = getCanonicalServerIp();
+            System.setProperty("JGroup.Address", serverIp);
+            logger.debug(String.format("default JGroup.Address to JGroup.Address [%s]", serverIp));
         }
         if (ZSha2Helper.isMNHaEnvironment()) {
             SearchGlobalProperty.JGroupFlushBypass = "false";
@@ -696,6 +697,14 @@ public class Platform {
         }
 
         return managementServerIp;
+    }
+
+    public static String getCanonicalServerIp() {
+        if (!ZSha2Helper.isMNHaEnvironment()) {
+            return getManagementServerIp();
+        }
+
+        return ZSha2Helper.getInfo(false).getNodeip();
     }
 
     public static boolean isVIPNode() {
