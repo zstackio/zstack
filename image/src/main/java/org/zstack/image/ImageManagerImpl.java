@@ -4,7 +4,6 @@ import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.zstack.compute.host.HostSystemTags;
 import org.zstack.compute.vm.VmExtraInfoGetter;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.AsyncBatchRunner;
@@ -33,6 +32,7 @@ import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -1867,9 +1867,9 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                     completion.done();
                                 }
                             });
-                        }).run(new NoErrorCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 trigger.next();
                             }
                         });

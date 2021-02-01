@@ -8,11 +8,12 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConnectionReestablishExtensionPoint;
 import org.zstack.header.host.HostException;
@@ -33,7 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
@@ -105,24 +105,22 @@ public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConne
             }
         });
 
-        List<ErrorCode> errorCodeList = new ArrayList<>();
-
-        new While<>(msgs).all((msg, noErrorCompletion) -> {
-            bus.send(msg, new CloudBusCallBack(noErrorCompletion) {
+        new While<>(msgs).all((msg, whileCompletion) -> {
+            bus.send(msg, new CloudBusCallBack(whileCompletion) {
                 @Override
                 public void run(MessageReply reply) {
                     if (!reply.isSuccess()) {
-                        errorCodeList.add(reply.getError());
+                        whileCompletion.addError(reply.getError());
                     }
 
-                    noErrorCompletion.done();
+                    whileCompletion.done();
                 }
             });
-        }).run(new NoErrorCompletion(completion) {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
-                if (!errorCodeList.isEmpty()) {
-                    completion.fail(errorCodeList.get(0));
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(errorCodeList.getCauses().get(0));
                 } else {
                     completion.success();
                 }

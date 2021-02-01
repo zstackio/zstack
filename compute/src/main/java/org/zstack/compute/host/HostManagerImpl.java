@@ -20,9 +20,7 @@ import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.HostCpuOverProvisioningManager;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -151,9 +149,9 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                 }
             });
 
-        }).run(new NoErrorCompletion(msg) {
+        }).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 bus.reply(msg, reply);
             }
         });
@@ -579,9 +577,9 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     compl.done();
                 }
             });
-        }).run(new NoErrorCompletion(msg) {
+        }).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (!err.getCauses().isEmpty()) {
                     reply.setError(err.getCauses().get(0));
                 }
@@ -696,12 +694,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
                     completion.done();
                 }
             });
-        }, 15).run(new NoErrorCompletion() {
-            @Override
-            public void done() {
-                // do nothing
-            }
-        });
+        }, 15).run(new NopeWhileDoneCompletion());
     }
 
     private int getReportInterval() {

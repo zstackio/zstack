@@ -7,13 +7,13 @@ import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.utils.CollectionUtils;
@@ -73,9 +73,9 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
                     compl.done();
                 }
             });
-        }).run(new NoErrorCompletion(completion) {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 completion.done();
             }
         });

@@ -22,9 +22,11 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
@@ -579,9 +581,9 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     }
                 }
             });
-        }).run(new NoErrorCompletion(completion) {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (errors.isEmpty()) {
                     completion.success();
                 } else {
@@ -611,9 +613,9 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                     wcmpl.done();
                 }
             });
-        }).run(new NoErrorCompletion(completion) {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 completion.done();
             }
         });

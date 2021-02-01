@@ -8,6 +8,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkConstant;
@@ -76,9 +77,9 @@ public class InstantiateVxlanNetworkForNewCreatedVmExtension implements PreVmIns
 
                 }
             });
-        }, 5).run(new NoErrorCompletion() {
+        }, 5).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (!errList.getCauses().isEmpty()) {
                     completion.fail(errList.getCauses().get(0));
                     return;

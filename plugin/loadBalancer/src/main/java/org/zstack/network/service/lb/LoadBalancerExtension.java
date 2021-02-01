@@ -9,7 +9,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -17,10 +16,11 @@ import org.zstack.header.acl.AccessControlListEntryInventory;
 import org.zstack.header.acl.AccessControlListInventory;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.NopeWhileDoneCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.host.HostState;
-import org.zstack.header.host.HostStatus;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -352,11 +352,7 @@ public class LoadBalancerExtension extends AbstractNetworkServiceExtension imple
                     comp.done();
                 }
             });
-        }).run(new NoErrorCompletion() {
-            @Override
-            public void done() {
-            }
-        });
+        }).run(new NopeWhileDoneCompletion());
     }
     @Override
     public void afterAddIpEntry(AccessControlListInventory acl, AccessControlListEntryInventory entry) {

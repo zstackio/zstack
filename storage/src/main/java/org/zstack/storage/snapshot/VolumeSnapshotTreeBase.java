@@ -25,6 +25,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -365,9 +366,9 @@ public class VolumeSnapshotTreeBase {
                             whileCompletion.done();
                         }
                     });
-                }).run(new NoErrorCompletion(completion) {
+                }).run(new WhileDoneCompletion(completion) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         if (errList.getCauses().isEmpty()) {
                             trigger.next();
                             return;

@@ -11,7 +11,7 @@ import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.Component;
 import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -31,7 +31,6 @@ import org.zstack.identity.AccountManager;
 import org.zstack.network.l2.L2NetworkDefaultMtu;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniMsg;
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.AllocateVniReply;
-import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.query.QueryFacade;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -205,9 +204,9 @@ public class VxlanNetworkFactory implements L2NetworkFactory, Component, VmInsta
 
                 }
             });
-        }).run(new NoErrorCompletion(completion) {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (!errList.getCauses().isEmpty()) {
                     completion.fail(errList.getCauses().get(0));
                     return;

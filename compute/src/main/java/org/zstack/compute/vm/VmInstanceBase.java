@@ -32,6 +32,7 @@ import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -715,9 +716,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                             whileCompletion.done();
                         }
                     });
-                }).run(new NoErrorCompletion() {
+                }).run(new WhileDoneCompletion(msg, chain) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         if (!errList.getCauses().isEmpty()) {
                             reply.setError(errList.getCauses().get(0));
                             bus.reply(msg, reply);
@@ -832,9 +833,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                                     }
                                 }
                             });
-                        }).run(new NoErrorCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 if (errs.size() > 0) {
                                     trigger.fail(errs.get(0));
                                 } else {
@@ -859,9 +860,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                                         wcomp.done();
                                     }
                                 });
-                            }).run(new NoErrorCompletion() {
+                            }).run(new WhileDoneCompletion(trigger) {
                                 @Override
-                                public void done() {
+                                public void done(ErrorCodeList errorCodeList) {
                                     trigger.rollback();
                                 }
                             });
@@ -906,9 +907,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                                     wcomp.done();
                                 }
                             });
-                        }).run(new NoErrorCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 trigger.next();
                             }
                         });
@@ -3600,9 +3601,9 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                                 c.done();
                             }
-                        })).run(new NoErrorCompletion(trigger) {
+                        })).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 trigger.next();
                             }
                         });
@@ -4331,7 +4332,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected void selectDefaultL3(VmNicInventory nic) {
         if (self.getDefaultL3NetworkUuid() != null) {
             VmInstanceInventory vmInstanceInventory = VmInstanceInventory.valueOf(self);
-            
+
             // maybe default L3 network and nic has been modified | ZSTAC-29441
             if (VmNicHelper.getDefaultNic(vmInstanceInventory) == null) {
                 self.setDefaultL3NetworkUuid(null);
@@ -4342,7 +4343,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         final VmInstanceInventory vm = getSelfInventory();
         final String previousDefaultL3 = vm.getDefaultL3NetworkUuid();
-        
+
         // the nic has been removed, reload
         self = dbf.reload(self);
 
@@ -4414,17 +4415,17 @@ public class VmInstanceBase extends AbstractVmInstance {
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.DetachNic);
         spec.setVmInventory(VmInstanceInventory.valueOf(self));
         spec.setDestNics(list(nic));
-    
+
         FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
         flowChain.setName(String.format("detachNic-vm-%s-nic-%s", self.getUuid(), nicUuid));
         setFlowMarshaller(flowChain);
-        
+
         if (nic.getL3NetworkUuid() != null) {
             L3NetworkVO l3NetworkVO = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
             L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(l3NetworkVO);
             spec.setL3Networks(list(new VmNicSpec(l3Inv)));
         }
-        
+
         flowChain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
         flowChain.getData().put(Params.ReleaseNicAfterDetachNic.toString(), releaseNic);
         if (self.getState() == VmInstanceState.Running && nic.getL3NetworkUuid() != null) {

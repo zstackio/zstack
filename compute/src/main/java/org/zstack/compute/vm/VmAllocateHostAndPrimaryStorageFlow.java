@@ -16,9 +16,10 @@ import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.ReturnHostCapacityMsg;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -166,9 +167,9 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                         whileCompletion.done();
                     }
                 }).start();
-            }).run(new NoErrorCompletion(trigger) {
+            }).run(new WhileDoneCompletion(trigger) {
                 @Override
-                public void done() {
+                public void done(ErrorCodeList errorCodeList) {
                     if (errorCodes.size() == availablePsUuids.size()) {
                         trigger.fail(errorCodes.get(0));
                         return;
@@ -209,9 +210,9 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
                     whileCompletion.done();
                 }
             }).start();
-        }).run(new NoErrorCompletion(trigger) {
+        }).run(new WhileDoneCompletion(trigger) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (errorCodes.size() == availablePsUuids.size()) {
                     trigger.fail(errorCodes.get(0));
                     return;

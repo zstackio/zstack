@@ -11,7 +11,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.utils.CollectionUtils;
@@ -85,9 +86,9 @@ public class VtepCascadeExtension extends AbstractAsyncCascadeExtension {
                     completion1.done();
                 }
             });
-        }).run(new NoErrorCompletion(completion) {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 completion.success();
             }
         });
@@ -120,9 +121,9 @@ public class VtepCascadeExtension extends AbstractAsyncCascadeExtension {
                     completion1.done();
                 }
             });
-        }).run(new NoErrorCompletion(completion) {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 completion.success();
             }
         });

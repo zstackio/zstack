@@ -30,11 +30,12 @@ import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowException;
-import org.zstack.header.core.workflow.WhileCompletion;
+import org.zstack.header.core.WhileCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -1086,8 +1087,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         }.call();
 
         if (vr != null) {
-            ErrorCodeList errorCodeList = new ErrorCodeList();
-
             new While<>(pluginRgty.getExtensionList(AfterAcquireVirtualRouterExtensionPoint.class)).each((ext, c) -> {
                 ext.afterAcquireVirtualRouter(vr, new Completion(c) {
                     @Override
@@ -1097,13 +1096,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        errorCodeList.getCauses().add(errorCode);
+                        c.addError(errorCode);
                         c.done();
                     }
                 });
-            }).run(new NoErrorCompletion(completion) {
+            }).run(new WhileDoneCompletion(completion) {
                 @Override
-                public void done() {
+                public void done(ErrorCodeList errorCodeList) {
                     if (!errorCodeList.getCauses().isEmpty()) {
                         completion.fail(errorCodeList.getCauses().get(0));
                         return;
@@ -2005,9 +2004,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     }
                 }
             });
-        }).run(new NoErrorCompletion() {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (!errList.getCauses().isEmpty()) {
                     completion.fail(errList.getCauses().get(0));
                 } else {
@@ -2112,9 +2111,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
                     wcomp.done();
                 }
             });
-        }, 5).run(new NoErrorCompletion(completion) {
+        }, 5).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 completion.success();
             }
         });

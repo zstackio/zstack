@@ -7,11 +7,12 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.network.service.VirtualRouterHaGroupExtensionPoint;
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant;
 import org.zstack.network.service.virtualrouter.VirtualRouterVmInventory;
@@ -50,9 +51,9 @@ public class VirtualRouterHaSyncConfigToBackendFlow implements Flow {
                     compl.done();
                 }
             });
-        }).run(new NoErrorCompletion(chain) {
+        }).run(new WhileDoneCompletion(chain) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (errs.isEmpty()) {
                     chain.next();
                 } else {

@@ -7,7 +7,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.Q;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -51,7 +51,6 @@ public class VmExpungeMemoryVolumeFlow extends NoRollbackFlow {
             return;
         }
 
-        ErrorCodeList errorCodeList = new ErrorCodeList();
         new While<>(volumes).each((vol, c) -> {
             ExpungeVolumeMsg msg = new ExpungeVolumeMsg();
             msg.setVolumeUuid(vol.getUuid());
@@ -64,15 +63,15 @@ public class VmExpungeMemoryVolumeFlow extends NoRollbackFlow {
                                 spec.getVmInventory().getRootVolumeUuid(), spec.getVmInventory().getUuid(),
                                 spec.getVmInventory().getName(), reply.getError()));
 
-                        errorCodeList.getCauses().add(reply.getError());
+                        c.addError(reply.getError());
                     }
 
                     c.done();
                 }
             });
-        }).run(new NoErrorCompletion() {
+        }).run(new WhileDoneCompletion(trigger) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (!errorCodeList.getCauses().isEmpty()) {
                     trigger.fail(errorCodeList.getCauses().get(0));
                     return;

@@ -22,11 +22,12 @@ import org.zstack.core.trash.StorageTrash;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.core.workflow.WhileCompletion;
+import org.zstack.header.core.WhileCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -193,9 +194,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 }
             });
 
-        }).run(new NoErrorCompletion() {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if(!errs.isEmpty()){
                     completion.fail(errs.get(0));
                 }else {
@@ -446,9 +447,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     compl.done();
                 }
             });
-        }).run(new NoErrorCompletion(completion) {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (errs.size() == hostUuids.size()) {
                     completion.fail(errs.get(0));
                 } else {
@@ -1033,9 +1034,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 }
             });
 
-        }).run(new NoErrorCompletion() {
+        }).run(new WhileDoneCompletion(compl) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if(!errs.isEmpty()){
                     compl.fail(errs.get(0));
                 }else {
@@ -1387,9 +1388,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                     compl.done();
                 }
             });
-        }).run(new NoErrorCompletion() {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if(!errs.isEmpty()){
                     completion.fail(errs.get(0));
                 }else {
@@ -1509,9 +1510,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                             completion.done();
                         }
                     });
-                }).run(new NoErrorCompletion(trigger) {
+                }).run(new WhileDoneCompletion(trigger) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         data.put(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR, errList);
                         trigger.next();
                     }

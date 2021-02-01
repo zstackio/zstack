@@ -18,6 +18,8 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.core.WhileCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -176,9 +178,9 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                     completion1.done();
                 }
             });
-        }).run(new NoErrorCompletion() {
+        }).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 bus.reply(msg, reply);
             }
         });
@@ -379,9 +381,9 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                             completion.done();
                         }
                     });
-                }).run(new NoErrorCompletion(msg) {
+                }).run(new WhileDoneCompletion(msg) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         trigger.next();
                     }
                 });
@@ -534,9 +536,9 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                     completion.done();
                 }
             });
-        }).run(new NoErrorCompletion() {
+        }).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (!errList.getCauses().isEmpty()) {
                     APIDeleteL2NetworkEvent evt = new APIDeleteL2NetworkEvent(msg.getId());
                     bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, msg.getL2NetworkUuid());
@@ -581,9 +583,9 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                     completion.done();
                 }
             });
-        }).run(new NoErrorCompletion(msg) {
+        }).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 dbf.remove(vo);
                 bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, msg.getL2NetworkUuid());
                 bus.publish(evt);
@@ -625,9 +627,9 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                             completion1.done();
                         }
                     });
-                }).run(new NoErrorCompletion() {
+                }).run(new WhileDoneCompletion(trigger) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         if (errList.getCauses().isEmpty()) {
                             trigger.next();
                         } else {

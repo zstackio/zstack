@@ -7,16 +7,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
@@ -24,14 +24,10 @@ import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.network.IPv6Constants;
-import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.TypedQuery;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateNicForStartingVmFlow implements Flow {
@@ -149,9 +145,9 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
                     wcompl.done();
                 }
             });
-        }).run(new NoErrorCompletion(trigger) {
+        }).run(new WhileDoneCompletion(trigger) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (errs.size() > 0) {
                     trigger.fail(errs.get(0));
                 } else {
@@ -207,9 +203,9 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
                     cmpl.done();
                 }
             });
-        }).run(new NoErrorCompletion(trigger) {
+        }).run(new WhileDoneCompletion(trigger) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 trigger.rollback();
             }
         });
