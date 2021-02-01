@@ -77,7 +77,7 @@ class VxlanLazyAttachCase extends SubCase {
 
                     kvm {
                         name = "kvm2"
-                        managementIp = "127.0.0.1"
+                        managementIp = "127.0.0.2"
                         username = "root"
                         password = "password"
 
@@ -213,11 +213,19 @@ class VxlanLazyAttachCase extends SubCase {
             }
         }
 
+        List<VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd> fdbcmds = new ArrayList<>()
+        fdbcmds = Collections.synchronizedList(new ArrayList())
+        env.afterSimulator(VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH) { rsp, HttpEntity<String> e ->
+            VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd cmd = JSONObjectUtil.toObject(e.body, VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd.class)
+            fdbcmds.add(cmd)
+            return rsp
+        }
         attachL2NetworkToCluster {
             delegate.l2NetworkUuid = poolinv.uuid
             delegate.clusterUuid = cluster.uuid
             delegate.systemTags = ["l2NetworkUuid::${poolinv.uuid}::clusterUuid::${cluster.uuid}::cidr::{192.168.100.0/24}".toString()]
         }
+        assert fdbcmds.size() == 2
 
         attachL3NetworkToVm {
             delegate.l3NetworkUuid = l3.uuid
@@ -343,8 +351,17 @@ class VxlanLazyAttachCase extends SubCase {
             vxlanCmd = JSONObjectUtil.toObject(e.body, VxlanKvmAgentCommands.CreateVxlanBridgesCmd.class)
             return rsp
         }
+
+        List<VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd> fdbcmds = new ArrayList<>()
+        fdbcmds = Collections.synchronizedList(new ArrayList())
+        env.afterSimulator(VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH) { rsp, HttpEntity<String> e ->
+            VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd cmd = JSONObjectUtil.toObject(e.body, VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd.class)
+            fdbcmds.add(cmd)
+            return rsp
+        }
         reconnectHost { uuid = host1.uuid }
 
+        assert fdbcmds.size() == 1
         assert vxlanCmd.bridgeCmds.size() == 2
         for (VxlanKvmAgentCommands.CreateVxlanBridgeCmd bridgeCmd : vxlanCmd.bridgeCmds) {
             assert bridgeCmd.vni == vxlan2.vni || bridgeCmd.vni == vxlan1.vni

@@ -143,30 +143,38 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             return;
         }
 
+        List<HostInventory> targets = msg.getHosts();
+        if (targets.isEmpty()) {
+            List<String> hostUuids = vteps.stream().map(VtepVO::getHostUuid).collect(Collectors.toList());
+            Set<String> clusterUuids = vteps.stream().map(VtepVO::getClusterUuid).collect(Collectors.toSet());
+            targets = HostInventory.valueOf(Q.New(HostVO.class)
+                    .in(HostVO_.uuid, hostUuids).in(HostVO_.clusterUuid, clusterUuids).list());
+        }
+
         List<String> vxlanNetworkUuids = Q.New(VxlanNetworkVO.class)
                 .select(VxlanNetworkVO_.uuid)
                 .eq(VxlanNetworkVO_.poolUuid, msg.getPoolUuid())
                 .listValues();
 
-        new While<>(vteps).all((vtep, completion1) -> {
+        new While<>(targets).all((host, completion1) -> {
             Set<String> peers = vteps.stream()
                     .map(v -> v.getVtepIp())
                     .collect(Collectors.toSet());
-            peers.remove(vtep.getVtepIp());
+            peers.remove(host.getManagementIp());
 
-            logger.info(String.format("populate fdb to vtep[ip:%s] for vxlan network pool %s with vxlan network[uuids:%s] to host[uuid:%s]",
-                    vtep.getVtepIp(), msg.getPoolUuid(), vxlanNetworkUuids, vtep.getHostUuid()));
+            logger.info(String.format("populate fdb to host[ip:%s] for vxlan network pool %s with vxlan network[uuids:%s] to host[uuid:%s]",
+                    host.getManagementIp(), msg.getPoolUuid(), vxlanNetworkUuids, host.getUuid()));
 
             VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd cmd = new VxlanKvmAgentCommands.PopulateVxlanNetworksFdbCmd();
             cmd.setPeers(new ArrayList<>(peers));
             cmd.setNetworkUuids(vxlanNetworkUuids);
 
             KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
-            kmsg.setHostUuid(vtep.getHostUuid());
+            kmsg.setHostUuid(host.getUuid());
             kmsg.setCommand(cmd);
             kmsg.setPath(VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH);
             kmsg.setNoStatusCheck(true);
-            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, vtep.getHostUuid());
+            bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, host.getUuid());
             bus.send(kmsg, new CloudBusCallBack(completion1) {
                 @Override
                 public void run(MessageReply reply) {
@@ -605,6 +613,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
 
     private void prepareL2NetworkOnHosts(final String l2NetworkUuid, final List<HostInventory> hosts, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        List<String> vtepIpChanged = new ArrayList<>();
         chain.setName(String.format("prepare-l2-%s-on-hosts", self.getUuid()));
         chain.then(new NoRollbackFlow() {
             @Override
@@ -612,6 +621,7 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 ErrorCodeList errList = new ErrorCodeList();
 
                 new While<>(hosts).all((h, completion1) -> {
+                    VtepVO oldvtep = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, l2NetworkUuid).eq(VtepVO_.hostUuid, h.getUuid()).find();
                     CheckL2NetworkOnHostMsg cmsg = new CheckL2NetworkOnHostMsg();
                     cmsg.setHostUuid(h.getUuid());
                     cmsg.setL2NetworkUuid(l2NetworkUuid);
@@ -621,6 +631,10 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                         public void run(MessageReply reply) {
                             if (!reply.isSuccess()) {
                                 errList.getCauses().add(reply.getError());
+                            }
+                            VtepVO newvtep = Q.New(VtepVO.class).eq(VtepVO_.poolUuid, l2NetworkUuid).eq(VtepVO_.hostUuid, h.getUuid()).find();
+                            if (oldvtep == null ||!oldvtep.getVtepIp().equals(newvtep.getVtepIp())) {
+                                vtepIpChanged.add(h.getUuid());
                             }
                             completion1.done();
                         }
@@ -641,6 +655,10 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 PopulateVtepPeersMsg pmsg = new PopulateVtepPeersMsg();
+                if (vtepIpChanged.isEmpty()) {
+                    /* if some vtepip of some host changed, new vtep ip address need to be update to all host */
+                    pmsg.setHosts(hosts);
+                }
                 pmsg.setPoolUuid(l2NetworkUuid);
                 bus.makeTargetServiceIdByResourceUuid(pmsg, L2NetworkConstant.SERVICE_ID, l2NetworkUuid);
                 bus.send(pmsg, new CloudBusCallBack(pmsg){
