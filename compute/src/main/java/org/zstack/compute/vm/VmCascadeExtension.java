@@ -20,8 +20,9 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.AccountInventory;
@@ -47,7 +48,6 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
@@ -198,9 +198,9 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
                 compl.done();
             }
-        }), parallelism).run(new NoErrorCompletion(completion) {
+        }), parallelism).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (!vmNicUuids.isEmpty() && deleteFromDb) {
                     UpdateQuery q = UpdateQuery.New(AccountResourceRefVO.class)
                             .condAnd(AccountResourceRefVO_.resourceUuid, Op.IN, vmNicUuids)
@@ -423,9 +423,9 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                         noErrorCompletion.done();
                     }
                 });
-            }, parallelism).run(new NoErrorCompletion(completion) {
+            }, parallelism).run(new WhileDoneCompletion(completion) {
                 @Override
-                public void done() {
+                public void done(ErrorCodeList errorCodeList) {
                     if (ZoneVO.class.getSimpleName().equals(action.getRootIssuer())) {
                         dbf.removeByPrimaryKeys(vminvs.stream().map(vm -> vm.getInventory().getVmNics())
                                         .flatMap(List::stream).map(VmNicInventory::getUuid)

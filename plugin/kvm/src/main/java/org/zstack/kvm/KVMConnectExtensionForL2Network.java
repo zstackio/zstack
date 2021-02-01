@@ -11,6 +11,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -112,13 +113,12 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
                     batchCheckNetworkPhysicalInterfaceMsgs.add(bmsg);
                 }
 
-                ErrorCodeList errorCodeList = new ErrorCodeList();
                 new While<>(batchCheckNetworkPhysicalInterfaceMsgs).each((bmsg, c) -> {
                     bus.send(bmsg, new CloudBusCallBack(c) {
                         @Override
                         public void run(MessageReply reply) {
                             if (!reply.isSuccess()) {
-                                errorCodeList.getCauses().add(reply.getError());
+                                c.addError(reply.getError());
                                 c.allDone();
                                 return;
                             }
@@ -126,9 +126,9 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
                             c.done();
                         }
                     });
-                }).run(new NoErrorCompletion() {
+                }).run(new WhileDoneCompletion(trigger) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         if (!errorCodeList.getCauses().isEmpty()) {
                             trigger.fail(errorCodeList.getCauses().get(0));
                             return;
@@ -145,7 +145,6 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                ErrorCodeList errorCodeList = new ErrorCodeList();
                 List<L2NetworkInventory> novlanNetworks = l2Networks.stream().filter(l2 -> l2.getType().equals(L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE)).collect(Collectors.toList());
                 new While<>(novlanNetworks).step((l2, c) -> {
                     noVlanNetworkBackend.realize(l2, hostUuid, true, new Completion(c) {
@@ -156,13 +155,13 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            errorCodeList.getCauses().add(errorCode);
+                            c.addError(errorCode);
                             c.allDone();
                         }
                     });
-                }, 10).run(new NoErrorCompletion(trigger) {
+                }, 10).run(new WhileDoneCompletion(trigger) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         if (!errorCodeList.getCauses().isEmpty()) {
                             trigger.fail(errorCodeList.getCauses().get(0));
                             return;
@@ -179,7 +178,6 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                ErrorCodeList errorCodeList = new ErrorCodeList();
                 List<L2NetworkInventory> vlanNetworks = l2Networks.stream().filter(l2 -> l2.getType().equals(L2NetworkConstant.L2_VLAN_NETWORK_TYPE)).collect(Collectors.toList());
                 new While<>(vlanNetworks).step((l2, c) -> {
                     vlanNetworkBackend.realize(l2, hostUuid, true, new Completion(c) {
@@ -190,13 +188,13 @@ public class KVMConnectExtensionForL2Network implements KVMHostConnectExtensionP
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            errorCodeList.getCauses().add(errorCode);
+                            c.addError(errorCode);
                             c.allDone();
                         }
                     });
-                }, 10).run(new NoErrorCompletion(trigger) {
+                }, 10).run(new WhileDoneCompletion(trigger) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         if (!errorCodeList.getCauses().isEmpty()) {
                             trigger.fail(errorCodeList.getCauses().get(0));
                             return;

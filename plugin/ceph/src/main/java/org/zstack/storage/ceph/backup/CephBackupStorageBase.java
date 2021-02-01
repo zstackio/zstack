@@ -23,6 +23,7 @@ import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.AsyncLatch;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -1309,9 +1310,9 @@ public class CephBackupStorageBase extends BackupStorageBase {
                                     coml.allDone();
                                 }
                             });
-                        }).run(new NoErrorCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 if (!errs.isEmpty()){
                                     trigger.fail(errs.get(0));
                                     return;

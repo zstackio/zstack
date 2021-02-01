@@ -8,23 +8,16 @@ import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l3.IpRangeInventory;
-import org.zstack.header.network.l3.IpRangeVO;
-import org.zstack.header.network.l3.L3NetworkInventory;
-import org.zstack.header.network.l3.L3NetworkVO;
-import org.zstack.network.service.vip.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -101,9 +94,9 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
                             whileCompletion.done();
                         }
                     });
-                }).run(new NoErrorCompletion(completion) {
+                }).run(new WhileDoneCompletion(completion) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         if (!erros.isEmpty()) {
                             completion.fail(erros.get(0));
                         }
@@ -143,9 +136,9 @@ public class LoadBalancerCascadeExtension extends AbstractAsyncCascadeExtension 
                             whileCompletion.done();
                         }
                     });
-                }).run(new NoErrorCompletion(completion) {
+                }).run(new WhileDoneCompletion(trigger) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         trigger.next();
                     }
                 });

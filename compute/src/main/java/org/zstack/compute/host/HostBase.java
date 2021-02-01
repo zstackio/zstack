@@ -26,9 +26,11 @@ import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -259,9 +261,9 @@ public abstract class HostBase extends AbstractHost {
                                     compl.done();
                                 }
                             });
-                        }, migrateQuantity).run(new NoErrorCompletion() {
+                        }, migrateQuantity).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 if (!vmFailedToMigrate.isEmpty()) {
                                     if (HostMaintenancePolicyManager.HostMaintenancePolicy.JustMigrate.equals(hostMaintenancePolicyMgr.getHostMaintenancePolicy(self.getUuid()))) {
                                         trigger.fail(operr("failed to migrate vm[uuids:%s] on host[uuid:%s, name:%s, ip:%s], will try stopping it.",
@@ -321,9 +323,9 @@ public abstract class HostBase extends AbstractHost {
                                     coml.done();
                                 }
                             });
-                        }, quantity).run(new NoErrorCompletion() {
+                        }, quantity).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 if (errors.isEmpty() || HostGlobalConfig.IGNORE_ERROR_ON_MAINTENANCE_MODE.value(Boolean.class)) {
                                     trigger.next();
                                 } else {
@@ -682,9 +684,9 @@ public abstract class HostBase extends AbstractHost {
 
                 compl.done();
             }
-        })).run(new NoErrorCompletion(msg) {
+        })).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (errs.size() == stepCount.size()){
                     final ErrorCode errorCode = errs.get(0);
                     reply.setConnected(false);
