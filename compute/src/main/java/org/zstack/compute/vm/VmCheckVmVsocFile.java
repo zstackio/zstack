@@ -42,7 +42,7 @@ public class VmCheckVmVsocFile implements Flow {
             msg.setUuid(spec.getRequiredHostUuid());
             msg.setPlatformId(CoreGlobalProperty.PLATFORM_ID);
             msg.setVmUuid(spec.getVmInventory().getUuid());
-            msg.setPrvSocId(HostSystemTags.HOST_SSCARDID.getTag(spec.getVmInventory().getLastHostUuid(), HostVO.class));
+            msg.setPrvSocId(HostSystemTags.HOST_SSCARDID.getTokenByResourceUuid(spec.getVmInventory().getLastHostUuid(), HostSystemTags.HOST_SSCARDID_TOKEN));
             bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
             bus.send(msg, new CloudBusCallBack(chain) {
                 @Override
