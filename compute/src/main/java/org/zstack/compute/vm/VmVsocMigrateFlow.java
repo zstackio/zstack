@@ -35,7 +35,7 @@ public class VmVsocMigrateFlow implements Flow {
 
         VmVsocMigrateMsg msg = new VmVsocMigrateMsg();
         msg.setMigrateType(VmInstanceConstant.HOT_MIGRATE);
-        msg.setDestSocId(HostSystemTags.HOST_SSCARDID.getTag(spec.getDestHost().getUuid(), HostVO.class));
+        msg.setDestSocId(HostSystemTags.HOST_SSCARDID.getTokenByResourceUuid(spec.getDestHost().getUuid(), HostSystemTags.HOST_SSCARDID_TOKEN));
         msg.setVmUuid(spec.getVmInventory().getUuid());
         msg.setUuid(spec.getVmInventory().getHostUuid());
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, spec.getVmInventory().getHostUuid());

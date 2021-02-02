@@ -7,7 +7,7 @@ public class VmVsocMigrateMsg extends NeedReplyMessage implements HostMessage {
     private String destSocId;
     private String srcHostIp;
     private String vmUuid;
-    private String migrateType;
+    private int migrateType;
     private String uuid;
 
     public String getDestSocId() {
@@ -34,11 +34,11 @@ public class VmVsocMigrateMsg extends NeedReplyMessage implements HostMessage {
         this.vmUuid = vmUuid;
     }
 
-    public String getMigrateType() {
+    public int getMigrateType() {
         return migrateType;
     }
 
-    public void setMigrateType(String migrateType) {
+    public void setMigrateType(int migrateType) {
         this.migrateType = migrateType;
     }
 

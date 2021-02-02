@@ -637,7 +637,7 @@ public class KVMHost extends HostBase implements Host {
         VsocMigrateCommand cmd = new VsocMigrateCommand();
         cmd.vmUuid = msg.getVmUuid();
         cmd.socId = msg.getDestSocId();
-        cmd.type = VmInstanceConstant.HOT_MIGRATE;
+        cmd.type = msg.getMigrateType();
         cmd.platformId = PLATFORM_ID;
 
         new Http<>(vsocMigratePath, cmd, VsocMigrateRsp.class).call(new ReturnValueCompletion<VsocMigrateRsp>(msg) {
