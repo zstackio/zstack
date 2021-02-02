@@ -10,11 +10,12 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.*;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowException;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
@@ -24,7 +25,6 @@ import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.NetworkUtils;
 
-import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -210,9 +210,9 @@ public class ApplianceVmAllocateNicFlow implements Flow {
                             compl.done();
                         }
                     });
-                }).run(new NoErrorCompletion() {
+                }).run(new WhileDoneCompletion(null) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         removeNicFromDb(nics);
                     }
                 });

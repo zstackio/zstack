@@ -15,8 +15,10 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -34,9 +36,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.snapshot.VolumeSnapshotMessageRouter.getResourceIdToRouteMsg;
 
@@ -214,9 +214,9 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     compl.done();
                 }
             });
-        }).run(new NoErrorCompletion(msg) {
+        }).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 bus.reply(msg, reply);
             }
         });
@@ -372,9 +372,9 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     compl.done();
                 }
             });
-        }).run(new NoErrorCompletion(msg) {
+        }).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 bus.reply(msg, reply);
             }
         });

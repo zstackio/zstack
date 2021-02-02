@@ -8,9 +8,10 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.UpdateQuery;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.ReturnIpMsg;
@@ -73,9 +74,9 @@ public class VmDetachNicFlow extends NoRollbackFlow {
                     comp.done();
                 }
             });
-        }).run(new NoErrorCompletion(trigger){
+        }).run(new WhileDoneCompletion(trigger){
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
                 trigger.next();
             }

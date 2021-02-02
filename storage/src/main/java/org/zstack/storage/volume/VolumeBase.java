@@ -29,7 +29,6 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
-import org.zstack.header.identity.APICreateUserGroupEvent;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImagePlatform;
@@ -721,9 +720,9 @@ public class VolumeBase implements Volume {
                                     c.done();
                                 }
                             });
-                        }).run(new NoErrorCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 trigger.next();
                             }
                         });
@@ -1090,9 +1089,9 @@ public class VolumeBase implements Volume {
                                     c.done();
                                 }
                             });
-                        }).run(new NoErrorCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 if (errList.getCauses().size() > 0) {
                                     trigger.fail(errList.getCauses().get(0));
                                     return;
@@ -2294,9 +2293,9 @@ public class VolumeBase implements Volume {
                             c.done();
                         }
                     });
-                }).run(new NoErrorCompletion(msg) {
+                }).run(new WhileDoneCompletion(msg) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         if (err[0] == null) {
                             createSnapshotGroup(msg, new ReturnValueCompletion<VolumeSnapshotGroupInventory>(trigger) {
                                 @Override

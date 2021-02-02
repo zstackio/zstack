@@ -18,8 +18,9 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.DatabaseFacadeImpl
 import org.zstack.core.db.SQL
 import org.zstack.header.core.NoErrorCompletion
+import org.zstack.header.core.WhileDoneCompletion
 import org.zstack.header.core.progress.TaskProgressVO
-import org.zstack.header.core.workflow.WhileCompletion
+import org.zstack.header.core.WhileCompletion
 import org.zstack.header.errorcode.ElaborationVO
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.SessionVO
@@ -529,9 +530,9 @@ class EnvSpec extends ApiHelper implements Node  {
                     completion.done()
                 }
             }
-        }).run(new NoErrorCompletion() {
+        }).run(new WhileDoneCompletion(null) {
             @Override
-            void done() {
+            void done(org.zstack.header.errorcode.ErrorCodeList errorCodeList) {
                 latch.countDown()
             }
         })

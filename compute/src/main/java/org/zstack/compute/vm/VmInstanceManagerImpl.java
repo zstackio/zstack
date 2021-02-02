@@ -28,14 +28,11 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.cluster.ClusterInventory;
 import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.configuration.*;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.NopeNoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -696,9 +693,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
             });
 
-        }).run(new NoErrorCompletion(msg) {
+        }).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 bus.reply(msg, reply);
             }
         });
@@ -796,9 +793,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
                             wcomp.done();
                         }
                     });
-                }).run(new NoErrorCompletion(trigger) {
+                }).run(new WhileDoneCompletion(trigger) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         if (errors.size() > 0) {
                             trigger.fail(errors.get(0));
                         } else {
@@ -829,9 +826,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
                             }
                         });
-                    }, 2).run(new NoErrorCompletion(trigger) {
+                    }, 2).run(new WhileDoneCompletion(trigger) {
                         @Override
-                        public void done() {
+                        public void done(ErrorCodeList errorCodeList) {
                             dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
                             trigger.rollback();
                         }
@@ -1128,9 +1125,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
                                     }
                                     com.done();
                                 }
-                            })).run(new NoErrorCompletion(trigger) {
+                            })).run(new WhileDoneCompletion(trigger) {
                                 @Override
-                                public void done() {
+                                public void done(ErrorCodeList errorCodeList) {
                                     dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
                                     trigger.next();
                                 }
@@ -2079,7 +2076,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         completion.done();
                     }
                 });
-            }, 200).run(new NopeNoErrorCompletion());
+            }, 200).run(new NopeWhileDoneCompletion());
         }
     }
 

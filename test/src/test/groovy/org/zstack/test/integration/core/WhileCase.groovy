@@ -6,15 +6,19 @@ import org.zstack.core.thread.AsyncThread
 import org.zstack.core.thread.ThreadGlobalProperty
 import org.zstack.header.core.FutureCompletion
 import org.zstack.header.core.NoErrorCompletion
-import org.zstack.header.core.workflow.WhileCompletion
+import org.zstack.header.core.WhileCompletion
+import org.zstack.header.core.WhileDoneCompletion
+import org.zstack.header.errorcode.ErrorCodeList
+import org.zstack.header.errorcode.OperationFailureException
+import org.zstack.test.TestSafeWhile
 import org.zstack.testlib.SubCase
-import org.zstack.testlib.util.TimeUnitUtil
-import org.zstack.utils.TimeUtils
 import org.zstack.utils.Utils
 import org.zstack.utils.logging.CLogger
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+
+import static org.zstack.core.Platform.operr
 
 /**
  * Created by MaJin on 2017-05-02.
@@ -40,6 +44,7 @@ class WhileCase extends SubCase{
 
     @Override
     void test() {
+        testWhileExceptionHandle()
         testStepSmallerThanItems()
         testRunAllWhenItemsEmpty()
         testRunAllCompletionAllDone()
@@ -51,9 +56,13 @@ class WhileCase extends SubCase{
         testRunAllWithConcurrencyCoefficientEqualZero()
     }
 
-    void testStepSmallerThanItems() {
+    static void testWhileExceptionHandle() {
+        new TestSafeWhile().testSafeWhile()
+    }
+
+    static void testStepSmallerThanItems() {
         List<Integer> lst = [1, 2, 3]
-        FutureCompletion future = new FutureCompletion(null)
+        FutureCompletion fc = new FutureCompletion(null)
 
         int count = 0
         new While<>(lst).step(new While.Do() {
@@ -63,36 +72,36 @@ class WhileCase extends SubCase{
                 count ++
                 completion.done()
             }
-        } ,2).run(new NoErrorCompletion() {
+        } ,2).run(new WhileDoneCompletion(fc) {
             @Override
-            void done() {
-                future.success()
+            void done(ErrorCodeList errorCodeList) {
+                fc.success()
             }
         })
 
-        future.await(TIME_OUT)
+        fc.await(TIME_OUT)
         assert count == 3
     }
 
     static void testRunAllWhenItemsEmpty(){
-        FutureCompletion future = new FutureCompletion(null)
+        FutureCompletion fc2 = new FutureCompletion(null)
 
         new While<>(new ArrayList<String>()).all(new While.Do<String>() {
             @Override
             void accept(String item, WhileCompletion completion) {
                 completion.done()
             }
-        }).run(new NoErrorCompletion(){
+        }).run(new WhileDoneCompletion(null){
 
             @Override
-            void done() {
-                future.success()
+            void done(ErrorCodeList errs) {
+                fc2.success()
             }
         })
 
-        future.await(TIME_OUT)
+        fc2.await(TIME_OUT)
 
-        assert future.success
+        assert fc2.success
     }
 
     static void testRunAllCompletionAllDone(){
@@ -102,9 +111,9 @@ class WhileCase extends SubCase{
         new While<>(["1", "2"]).all({item, completion ->
             logger.debug(String.format("item %s allDone", item))
             completion.allDone()
-        }).run(new NoErrorCompletion(){
+        }).run(new WhileDoneCompletion(null){
             @Override
-            void done() {
+            void done(ErrorCodeList errs) {
                 count.addAndGet(1)
                 logger.debug("While is done")
                 future.success()
@@ -121,9 +130,9 @@ class WhileCase extends SubCase{
 
         new While<>(new ArrayList<String>()).step({item, completion ->
             completion.done()
-        }, 1).run(new NoErrorCompletion(){
+        }, 1).run(new WhileDoneCompletion(future){
             @Override
-            void done() {
+            void done(ErrorCodeList errorCodeList) {
                 future.success()
             }
         })
@@ -144,9 +153,9 @@ class WhileCase extends SubCase{
                 itemDoneCount.addAndGet(1)
                 completion.done()
             }
-        }, 2).run(new NoErrorCompletion(){
+        }, 2).run(new WhileDoneCompletion(future){
             @Override
-            void done() {
+            void done(ErrorCodeList errorCodeList) {
                 whileDoneCount.addAndGet(1)
                 logger.debug("While is done")
                 future.success()
@@ -166,9 +175,9 @@ class WhileCase extends SubCase{
         new While<>(["1", "2"]).step({item, completion ->
             logger.debug(String.format("step %s allDone", item))
             completion.allDone()
-        }, 2).run(new NoErrorCompletion(){
+        }, 2).run(new WhileDoneCompletion(future){
             @Override
-            void done() {
+            void done(ErrorCodeList errorCodeList) {
                 count.addAndGet(1)
                 logger.debug("While is done")
                 future.success()
@@ -195,10 +204,9 @@ class WhileCase extends SubCase{
                         target.add(item)
                     }
                     completion.done()
-                }).run(new NoErrorCompletion() {
+                }).run(new WhileDoneCompletion(null) {
                     @Override
-                    void done() {
-                        logger.debug("thread1 over...")
+                    void done(ErrorCodeList errs) {
                     }
                 })
             }
@@ -212,10 +220,9 @@ class WhileCase extends SubCase{
                         target.add(item)
                     }
                     completion.done()
-                }).run(new NoErrorCompletion() {
+                }).run(new WhileDoneCompletion(null) {
                     @Override
-                    void done() {
-                        logger.debug("thread2 over...")
+                    void done(ErrorCodeList errs) {
                     }
                 })
             }
@@ -249,9 +256,9 @@ class WhileCase extends SubCase{
             logger.debug(String.format("item %s allDone", item))
             count.addAndGet(1)
             completion.done()
-        }).run(new NoErrorCompletion(){
+        }).run(new WhileDoneCompletion(null){
             @Override
-            void done() {
+            void done(ErrorCodeList errs) {
                 successCount.incrementAndGet()
                 logger.debug("While is done")
             }
@@ -278,9 +285,9 @@ class WhileCase extends SubCase{
             logger.debug(String.format("item %s allDone", item))
             count.addAndGet(1)
             completion.done()
-        }).run(new NoErrorCompletion(){
+        }).run(new WhileDoneCompletion(null){
             @Override
-            void done() {
+            void done(ErrorCodeList errs) {
                 logger.debug("While is done")
                 successCount.incrementAndGet()
             }

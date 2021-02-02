@@ -8,7 +8,8 @@ import org.zstack.core.cloudbus.*;
 import org.zstack.core.db.Q;
 import org.zstack.header.Component;
 import org.zstack.header.core.NopeNoErrorCompletion;
-import org.zstack.header.core.workflow.WhileCompletion;
+import org.zstack.header.core.NopeWhileDoneCompletion;
+import org.zstack.header.core.WhileCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostConstant;
@@ -170,6 +171,6 @@ public class ApplianceVmPriorityUpgradeConfigExtensionPoint implements Component
                     com.done();
                 }
             });
-        }).run(new NopeNoErrorCompletion());
+        }).run(new NopeWhileDoneCompletion());
     }
 }

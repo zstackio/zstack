@@ -1661,12 +1661,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             return;
         }
 
-        ErrorCodeList errorCodeList = new ErrorCodeList();
         new While<>(trashs).all((inv, coml) -> {
             String details = trash.makeSureInstallPathNotUsed(inv);
             if (details != null) {
                 result.getDetails().add(details);
-//                errorCodeList.getCauses().add(operr("%s is still in using by %s, cannot remove it from trash...", inv.getInstallPath(), inv.getResourceType()));
                 coml.done();
                 return;
             }
@@ -1731,13 +1729,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             }).error(new FlowErrorHandler(coml) {
                 @Override
                 public void handle(ErrorCode errCode, Map data) {
-                    errorCodeList.getCauses().add(errCode);
+                    coml.addError(errCode);
                     coml.done();
                 }
             }).start();
-        }).run(new NoErrorCompletion() {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (errorCodeList.getCauses().isEmpty()) {
                     completion.success(result);
                 } else {
@@ -3029,9 +3027,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                     compl.allDone();
                                 }
                             });
-                        }).run(new NoErrorCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 if (!errors.isEmpty()) {
                                     trigger.fail(errors.get(0));
                                     return;

@@ -3,10 +3,9 @@ package org.zstack.core.aspect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.errorcode.ErrorFacade;
+import org.zstack.header.core.*;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
@@ -20,8 +19,9 @@ public aspect AsyncSafeAspect {
     private static final CLogger logger = Utils.getLogger(AsyncSafeAspect.class);
 
     pointcut asyncSafe1() : execution(* *.*(.., Completion, ..));
-    pointcut asyncSafe2() : execution(* *.*(.., NoErrorCompletion, ..));
+    pointcut asyncSafe2() : execution(* *.*(.., NoErrorCompletion+, ..));
     pointcut asyncSafe3() : execution(* *.*(.., ReturnValueCompletion, ..));
+    pointcut asyncSafe4() : execution(* *.*(.., WhileDoneCompletion, ..));
 
     @Autowired
     private ErrorFacade errf;
@@ -57,8 +57,18 @@ public aspect AsyncSafeAspect {
                     @Override
                     public void call(ErrorCode err) {
                         NoErrorCompletion completion = (NoErrorCompletion)arg;
+                        if (completion instanceof WhileCompletion && !((WhileCompletion) completion).getAddErrorCalled().get()) {
+                            ((WhileCompletion) completion).addError(err);
+                        }
                         completion.done();
                     }
+                };
+            } else if (arg instanceof WhileDoneCompletion) {
+                w = err -> {
+                    ErrorCodeList errs = new ErrorCodeList();
+                    errs.getCauses().add(err);
+                    WhileDoneCompletion completion = (WhileDoneCompletion)arg;
+                    completion.done(errs);
                 };
             } else if (arg instanceof Message) {
                 w = new Wrapper() {
@@ -79,7 +89,7 @@ public aspect AsyncSafeAspect {
         return wrappers;
     }
 
-    Object around() : asyncSafe1() || asyncSafe2() || asyncSafe3() {
+    Object around() : asyncSafe1() || asyncSafe2() || asyncSafe3() || asyncSafe4() {
         try {
             return proceed();
         } catch (Throwable t) {

@@ -21,6 +21,7 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.core.*;
 import org.zstack.header.core.cloudbus.CloudBusExtensionPoint;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudConfigureFailException;
@@ -348,9 +349,9 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                 replies.put(msg.getId(), reply);
                 completion.done();
             }
-        }), parallelLevel).run(new NoErrorCompletion(callBack) {
+        }), parallelLevel).run(new WhileDoneCompletion(callBack) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 List<MessageReply> results = new ArrayList<>();
                 assert msgs.size() == replies.size();
                 msgs.forEach(msg -> results.add(replies.get(msg.getId())));
@@ -370,7 +371,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                 callback.run(msg, reply);
                 completion.done();
             }
-        }), parallelLevel).run(new NopeNoErrorCompletion());
+        }), parallelLevel).run(new NopeWhileDoneCompletion());
     }
 
     @Override

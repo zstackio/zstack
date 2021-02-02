@@ -1,24 +1,20 @@
 package org.zstack.network.service.flat;
 
 import com.google.common.collect.Lists;
-import edu.emory.mathcs.backport.java.util.Collections;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.network.l2.BatchCheckNetworkPhysicalInterfaceMsg;
-import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
-import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.network.IPv6Constants;
 
@@ -145,7 +141,6 @@ public class DhcpApply {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        ErrorCodeList errorCodeList = new ErrorCodeList();
                         new While<>(e.entrySet()).each((entry, c) -> {
                             InternalWorker internalWorker = new InternalWorker();
                             internalWorker.acquireDhcpServerIp(entry, new Completion(c) {
@@ -157,13 +152,13 @@ public class DhcpApply {
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    errorCodeList.getCauses().add(errorCode);
+                                    c.addError(errorCode);
                                     c.allDone();
                                 }
                             });
-                        }).run(new NoErrorCompletion(trigger) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 if (!errorCodeList.getCauses().isEmpty()) {
                                     trigger.fail(errorCodeList.getCauses().get(0));
                                     return;
@@ -201,12 +196,11 @@ public class DhcpApply {
                             msgs.add(msg);
                         }
 
-                        ErrorCodeList errorCodeList = new ErrorCodeList();
                         new While<>(msgs).each((msg, c) -> bus.send(msg, new CloudBusCallBack(c) {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    errorCodeList.getCauses().add(reply.getError());
+                                    c.addError(reply.getError());
                                     c.allDone();
                                     return;
                                 }
@@ -214,16 +208,16 @@ public class DhcpApply {
                                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                                 FlatDhcpBackend.PrepareDhcpRsp rsp = ar.toResponse(FlatDhcpBackend.PrepareDhcpRsp.class);
                                 if (!rsp.isSuccess()) {
-                                    errorCodeList.getCauses().add(operr("operation error, because:%s", rsp.getError()));
+                                    c.addError(operr("operation error, because:%s", rsp.getError()));
                                     c.allDone();
                                     return;
                                 }
 
                                 c.done();
                             }
-                        })).run(new NoErrorCompletion(trigger) {
+                        })).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 if (!errorCodeList.getCauses().isEmpty()) {
                                     trigger.fail(errorCodeList.getCauses().get(0));
                                     return;
@@ -260,12 +254,11 @@ public class DhcpApply {
                             msgs.add(msg);
                         }
 
-                        ErrorCodeList errorCodeList = new ErrorCodeList();
                         new While<>(msgs).each((msg, c) -> bus.send(msg, new CloudBusCallBack(c) {
                             @Override
                             public void run(MessageReply reply) {
                                 if (!reply.isSuccess()) {
-                                    errorCodeList.getCauses().add(reply.getError());
+                                    c.addError(reply.getError());
                                     c.allDone();
                                     return;
                                 }
@@ -273,16 +266,16 @@ public class DhcpApply {
                                 KVMHostAsyncHttpCallReply ar = reply.castReply();
                                 FlatDhcpBackend.ApplyDhcpRsp rsp = ar.toResponse(FlatDhcpBackend.ApplyDhcpRsp.class);
                                 if (!rsp.isSuccess()) {
-                                    errorCodeList.getCauses().add(operr("operation error, because:%s", rsp.getError()));
+                                    c.addError(operr("operation error, because:%s", rsp.getError()));
                                     c.allDone();
                                     return;
                                 }
 
                                 c.done();
                             }
-                        })).run(new NoErrorCompletion(trigger) {
+                        })).run(new WhileDoneCompletion(trigger) {
                             @Override
-                            public void done() {
+                            public void done(ErrorCodeList errorCodeList) {
                                 if (!errorCodeList.getCauses().isEmpty()) {
                                     trigger.fail(errorCodeList.getCauses().get(0));
                                     return;
