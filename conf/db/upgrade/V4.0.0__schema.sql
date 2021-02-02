@@ -943,3 +943,6 @@ UPDATE ResourceVO SET concreteResourceType = "org.zstack.header.baremetal.pxeser
 UPDATE AccountResourceRefVO SET concreteResourceType = "org.zstack.header.baremetal.pxeserver.BaremetalPxeServerVO" WHERE concreteResourceType = "" AND resourceType = "BaremetalPxeServerVO";
 
 ALTER TABLE `zstack`.`PolicyRouteRuleSetVO` modify COLUMN `name` varchar(255)
+
+
+delete from IAM2VirtualIDAttributeVO where name = '__IAM2ProjectAdmin__' and  virtualIDUuid not in (SELECT virtualIDUuid FROM zstack.IAM2VirtualIDRoleRefVO where roleUuid = '55553cefbbfb42468873897c95408a43' ) ;
