@@ -347,10 +347,12 @@ public class TagManagerImpl extends AbstractService implements TagManager,
         if (forceMatch) {
             createTags(msg.getSystemTags(), msg.getUserTags(), resourceUuid, resourceType);
         } else {
+            // User tags first, then system tags
+            createTags(Collections.emptyList(), msg.getUserTags(), resourceUuid, resourceType);
             if (msg.getSystemTags() != null) {
                 for (String tag: msg.getSystemTags()) {
                     if (isValidSystemTag(resourceUuid, resourceType, tag)) {
-                        createTags(msg.getSystemTags(), msg.getUserTags(), resourceUuid, resourceType);
+                        createTags(Collections.singletonList(tag), Collections.emptyList(), resourceUuid, resourceType);
                     }
                 }
             }

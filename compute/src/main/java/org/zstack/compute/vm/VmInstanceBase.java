@@ -3330,6 +3330,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             creator.create();
         } else {
             VmSystemTags.BOOT_ORDER.deleteInherentTag(self.getUuid());
+            VmSystemTags.BOOT_ORDER.delete(self.getUuid());
         }
 
         boolean bootOrderOnce = false;
@@ -3349,10 +3350,12 @@ public class VmInstanceBase extends AbstractVmInstance {
             creator.create();
         } else {
             VmSystemTags.BOOT_ORDER_ONCE.deleteInherentTag(self.getUuid());
+            VmSystemTags.BOOT_ORDER_ONCE.delete(self.getUuid());
         }
         //No need to use this tag: cdromBootOnce
         if (VmSystemTags.CDROM_BOOT_ONCE.hasTag(self.getUuid(), VmInstanceVO.class)) {
             VmSystemTags.CDROM_BOOT_ONCE.deleteInherentTag(self.getUuid());
+            VmSystemTags.CDROM_BOOT_ONCE.delete(self.getUuid());
         }
         evt.setInventory(getSelfInventory());
         bus.publish(evt);
