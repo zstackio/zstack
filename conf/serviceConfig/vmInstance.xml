@@ -196,4 +196,7 @@
     <message>
         <name>org.zstack.header.vm.APIGetVmDeviceAddressMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.vm.APIGetVmsCapabilitiesMsg</name>
+    </message>
 </service>

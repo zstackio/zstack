@@ -1,7 +1,6 @@
-package org.zstack.compute.vm;
+package org.zstack.header.vm;
 
 import org.apache.commons.collections.map.HashedMap;
-import org.zstack.header.vm.VmInstanceConstant;
 
 import java.util.Map;
 

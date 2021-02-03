@@ -452,6 +452,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((CancelMigrateVmMsg) msg);
         } else if (msg instanceof AttachIsoToVmInstanceMsg) {
             handle((AttachIsoToVmInstanceMsg) msg);
+        } else if (msg instanceof GetVmCapabilitiesMsg) {
+            handle((GetVmCapabilitiesMsg) msg);
         } else {
             VmInstanceBaseExtensionFactory ext = vmMgr.getVmInstanceBaseExtensionFactory(msg);
             if (ext != null) {
@@ -2998,17 +3000,36 @@ public class VmInstanceBase extends AbstractVmInstance {
         bus.reply(msg, reply);
     }
 
-    private void handle(APIGetVmCapabilitiesMsg msg) {
-        APIGetVmCapabilitiesReply reply = new APIGetVmCapabilitiesReply();
-
+    private void handle(GetVmCapabilitiesMsg msg) {
+        GetVmCapabilitiesReply reply = new GetVmCapabilitiesReply();
         VmCapabilities capabilities = new VmCapabilities();
         checkPrimaryStorageCapabilities(capabilities);
         checkImageMediaTypeCapabilities(capabilities);
 
         extEmitter.getVmCapabilities(getSelfInventory(), capabilities);
 
-        reply.setCapabilities(capabilities.toMap());
+        reply.setCapabilities(capabilities);
         bus.reply(msg, reply);
+    }
+
+    private void handle(APIGetVmCapabilitiesMsg msg) {
+        APIGetVmCapabilitiesReply reply = new APIGetVmCapabilitiesReply();
+        final GetVmCapabilitiesMsg gmsg = new GetVmCapabilitiesMsg();
+        gmsg.setVmInstanceUuid(msg.getVmInstanceUuid());
+        bus.makeLocalServiceId(gmsg, VmInstanceConstant.SERVICE_ID);
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply re) {
+                if (!re.isSuccess()) {
+                    reply.setSuccess(false);
+                    reply.setError(re.getError());
+                } else {
+                    GetVmCapabilitiesReply greply = (GetVmCapabilitiesReply) re;
+                    reply.setCapabilities(greply.getCapabilities().toMap());
+                }
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void checkPrimaryStorageCapabilities(VmCapabilities capabilities) {

@@ -1,5 +1,7 @@
 package org.zstack.compute.vm;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.validator.routines.DomainValidator;
@@ -36,6 +38,7 @@ import org.zstack.header.core.NopeNoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -227,11 +230,47 @@ public class VmInstanceManagerImpl extends AbstractService implements
             handle((APIUpdatePriorityConfigMsg) msg);
         } else if (msg instanceof APIGetSpiceCertificatesMsg) {
             handle((APIGetSpiceCertificatesMsg) msg);
+        } else if (msg instanceof APIGetVmsCapabilitiesMsg) {
+            handle((APIGetVmsCapabilitiesMsg) msg);
         } else if (msg instanceof VmInstanceMessage) {
             passThrough((VmInstanceMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(final APIGetVmsCapabilitiesMsg msg) {
+        APIGetVmsCapabilitiesEvent evt = new APIGetVmsCapabilitiesEvent(msg.getId());
+        ErrorCodeList err = new ErrorCodeList();
+        Map<String, VmCapabilities> vmsCaps = Maps.newConcurrentMap();
+
+        new While<>(msg.getVmUuids()).step((vmUuid, compl) -> {
+            GetVmCapabilitiesMsg cmsg = new GetVmCapabilitiesMsg();
+            cmsg.setVmInstanceUuid(vmUuid);
+            bus.makeTargetServiceIdByResourceUuid(cmsg, VmInstanceConstant.SERVICE_ID, vmUuid);
+            bus.send(cmsg, new CloudBusCallBack(compl) {
+                @Override
+                public void run(MessageReply r) {
+                    if (!r.isSuccess()) {
+                        err.getCauses().add(r.getError());
+                    } else {
+                        GetVmCapabilitiesReply greply = (GetVmCapabilitiesReply) r;
+                        vmsCaps.put(vmUuid, greply.getCapabilities());
+                    }
+                    compl.done();
+                }
+            });
+        }, 20).run(new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                if (!err.getCauses().isEmpty()) {
+                    evt.setError(err.getCauses().get(0));
+                } else {
+                    evt.setVmsCaps(vmsCaps);
+                }
+                bus.publish(evt);
+            }
+        });
     }
 
     private void handle(final APIUpdatePriorityConfigMsg msg) {

@@ -5,7 +5,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.HostSystemTags;
-import org.zstack.compute.vm.VmCapabilities;
+import org.zstack.header.vm.VmCapabilities;
 import org.zstack.compute.vm.VmCapabilitiesExtensionPoint;
 import org.zstack.configuration.DiskOfferingSystemTags;
 import org.zstack.configuration.InstanceOfferingSystemTags;
@@ -55,7 +55,6 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
-import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
