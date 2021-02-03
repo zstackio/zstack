@@ -22,6 +22,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.allocator.AllocationScene;
 import org.zstack.header.allocator.HostAllocatorConstant;
+import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
@@ -1041,6 +1042,20 @@ public abstract class HostBase extends AbstractHost {
                                 msg.setHostUuid(self.getUuid());
                                 bus.makeLocalServiceId(msg, HostAllocatorConstant.SERVICE_ID);
                                 bus.send(msg);
+                                trigger.next();
+                            }
+                        });
+
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "check-and-set-cluster-architecture-if-needed";
+
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                final ClusterVO cluster = dbf.findByUuid(self.getClusterUuid(), ClusterVO.class);
+                                if (cluster.getArchitecture() == null) {
+                                    cluster.setArchitecture(HostSystemTags.CPU_ARCHITECTURE.getTokenByResourceUuid(self.getUuid(), HostSystemTags.CPU_ARCHITECTURE_TOKEN));
+                                    dbf.update(cluster);
+                                }
                                 trigger.next();
                             }
                         });
