@@ -15,6 +15,7 @@ import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdk.GetVmBootOrderResult
 import org.zstack.sdk.ImageInventory
+import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.SystemTagInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -159,6 +160,7 @@ class SetVmBootOrderCase extends SubCase {
             testSetVmBootFromBootOrderOnceTemporarily()
             testBootOrderWhenVmDetachDevice()
             testBootOrderWhenVmAttachDevice()
+            testSetBootOrderWhenCreateVm()
         }
     }
 
@@ -581,5 +583,61 @@ class SetVmBootOrderCase extends SubCase {
                 assert nic.getBootOrder() == ++bootOrderNum
             }
         })
+    }
+
+    /**
+     * ZSTAC-38152
+     */
+    void testSetBootOrderWhenCreateVm() {
+        def l3_1 = env.inventoryByName("l3_1") as L3NetworkInventory
+        
+        def vm2 = createVmInstance {
+            delegate.name = "vm2"
+            delegate.imageUuid = (env.inventoryByName("image1") as ImageInventory).uuid
+            delegate.instanceOfferingUuid = (
+                    env.inventoryByName("instanceOffering") as InstanceOfferingInventory).uuid
+            delegate.l3NetworkUuids = [l3_1.uuid]
+            delegate.systemTags = [
+                    "${VmSystemTags.BOOT_ORDER_TOKEN}::${VmBootDevice.Network.toString()}".toString(),
+                    "${VmSystemTags.BOOT_ORDER_ONCE_TOKEN}::true".toString()]
+        } as VmInstanceInventory
+        
+        def tags = querySystemTag {
+            delegate.conditions = ["resourceUuid=${vm2.uuid}".toString()]
+        } as List<SystemTagInventory>
+        
+        assert tags.count { tag -> tag.tag.startsWith("${VmSystemTags.BOOT_ORDER_TOKEN}::") } == 0
+        assert tags.count { tag -> tag.tag.startsWith("${VmSystemTags.BOOT_ORDER_ONCE_TOKEN}::") } == 0
+        
+        destroyVmInstance {
+            delegate.uuid = vm2.uuid
+        }
+
+        def vm3 = createVmInstance {
+            delegate.name = "vm3"
+            delegate.imageUuid = (env.inventoryByName("image1") as ImageInventory).uuid
+            delegate.instanceOfferingUuid = (
+                    env.inventoryByName("instanceOffering") as InstanceOfferingInventory).uuid
+            delegate.l3NetworkUuids = [l3_1.uuid]
+            delegate.systemTags = ["${VmSystemTags.BOOT_ORDER_TOKEN}::${VmBootDevice.Network.toString()}".toString()]
+        } as VmInstanceInventory
+
+        tags = querySystemTag {
+            delegate.conditions = ["resourceUuid=${vm3.uuid}".toString()]
+        } as List<SystemTagInventory>
+
+        assert tags.count { tag -> tag.tag.startsWith("${VmSystemTags.BOOT_ORDER_TOKEN}::") } == 1
+        
+        setVmBootOrder {
+            delegate.uuid = vm3.uuid
+            bootOrder = asList(VmBootDevice.HardDisk.toString(), VmBootDevice.CdRom.toString(), VmBootDevice.Network.toString())
+        }
+        tags = querySystemTag {
+            delegate.conditions = ["resourceUuid=${vm3.uuid}".toString()]
+        } as List<SystemTagInventory>
+        
+        assert tags.count { tag -> 
+            tag.tag.startsWith("${VmSystemTags.BOOT_ORDER_TOKEN}::") && tag.inherent
+        } == 1
     }
 }
