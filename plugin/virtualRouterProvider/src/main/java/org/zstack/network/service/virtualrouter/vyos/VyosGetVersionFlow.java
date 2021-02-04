@@ -133,6 +133,8 @@ public class VyosGetVersionFlow extends NoRollbackFlow {
                                     flowData.put(ApplianceVmConstant.Params.isReconnect.toString(), Boolean.TRUE.toString());
                                     flowData.put(ApplianceVmConstant.Params.managementNicIp.toString(), mgmtNic.getIp());
                                     flowData.put(ApplianceVmConstant.Params.rebuildVip.toString(), returnValue.isRebuildVip());
+                                } else{
+                                    flowData.put(ApplianceVmConstant.Params.isReconnect.toString(), Boolean.FALSE.toString());
                                 }
                                 trigger.next();
                             }
