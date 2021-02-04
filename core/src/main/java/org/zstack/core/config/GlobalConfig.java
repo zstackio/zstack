@@ -3,6 +3,7 @@ package org.zstack.core.config;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
@@ -11,8 +12,8 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.identity.SessionInventory;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TypeUtils;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.StringDSL.s;
@@ -331,6 +333,10 @@ public class GlobalConfig {
 
         validate(newValue);
 
+        executeUpdate(newValue, localUpdate);
+    }
+
+    private void executeUpdate(String newValue, boolean localUpdate) {
         SimpleQuery<GlobalConfigVO> q = dbf.createQuery(GlobalConfigVO.class);
         q.add(GlobalConfigVO_.category, Op.EQ, category);
         q.add(GlobalConfigVO_.name, Op.EQ, name);
@@ -401,6 +407,21 @@ public class GlobalConfig {
 
         String newValue = val == null ? null : val.toString();
         update(newValue, true);
+    }
+
+    public void updateValueSkipValidation(Object val) {
+        if (!CoreGlobalProperty.UNIT_TEST_ON) {
+            throw new OperationFailureException(operr("do not allow skip verification"));
+        }
+
+        if (TypeUtils.nullSafeEquals(value, val)) {
+            return;
+        }
+
+        String newValue = val == null ? null : val.toString();
+        // substitute system properties in newValue
+        newValue = StringTemplate.substitute(newValue, propertiesMap);
+        executeUpdate(newValue, true);
     }
 
     boolean isLinked() {

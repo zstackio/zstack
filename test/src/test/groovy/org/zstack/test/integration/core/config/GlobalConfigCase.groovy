@@ -1,5 +1,7 @@
 package org.zstack.test.integration.core.config
 
+import org.zstack.core.config.GlobalConfigException
+import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.config.GlobalConfig
@@ -62,6 +64,7 @@ class GlobalConfigCase extends SubCase {
             testSyncConfigUponEvent()
             testNormalized()
             testUpdateApiTimeoutDefaultValue()
+            testUpdateValueSkipValidation()
         }
     }
 
@@ -234,5 +237,14 @@ class GlobalConfigCase extends SubCase {
                 .eq(GlobalConfigVO_.@name, APICreateVmNicMsg.class.name)
                 .eq(GlobalConfigVO_.defaultValue, "30m")
                 .findValue() == "30m"
+    }
+
+    void testUpdateValueSkipValidation() {
+        expect(GlobalConfigException.class) {
+            VmGlobalConfig.VM_DEFAULT_CD_ROM_NUM.updateValue(-1)
+        }
+
+        VmGlobalConfig.VM_DEFAULT_CD_ROM_NUM.updateValueSkipValidation(-1)
+        VmGlobalConfig.VM_DEFAULT_CD_ROM_NUM.resetValue()
     }
 }
