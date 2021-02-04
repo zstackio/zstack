@@ -632,7 +632,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         setupGlobalConfig();
         populateExtensions();
         setupCanonicalEvents();
-        startPeriodTasks();
         return true;
     }
 
@@ -946,6 +945,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         // Disconnected and connecting are not expected host status for ZStack
         // Need to reconnect those hosts when the node started.
         loadHost(true);
+        startPeriodTasks();
     }
 
     @Override
