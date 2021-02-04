@@ -1,5 +1,6 @@
 package org.zstack.compute.vm;
 
+import org.zstack.header.vm.VmCapabilities;
 import org.zstack.header.vm.VmInstanceInventory;
 
 /**
