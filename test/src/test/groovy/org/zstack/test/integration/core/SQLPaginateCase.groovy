@@ -4,9 +4,8 @@ import org.zstack.core.db.SQL
 import org.zstack.core.thread.AsyncThread
 import org.zstack.header.core.FutureCompletion
 import org.zstack.header.core.NoErrorCompletion
-import org.zstack.header.core.workflow.PaginateCompletion
+import org.zstack.header.core.PaginateCompletion
 import org.zstack.header.identity.AccountConstant
-import org.zstack.header.identity.AccountVO
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 

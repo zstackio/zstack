@@ -5,8 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.workflow.PaginateCompletion;
-import org.zstack.header.core.workflow.WhileCompletion;
+import org.zstack.header.core.PaginateCompletion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.utils.DebugUtils;
 
 import javax.persistence.LockModeType;
@@ -177,6 +177,9 @@ public class SQL {
             public void allDone() {
                 completion.done();
             }
+
+            @Override
+            public void addError(ErrorCode error) {}
         });
     }
 

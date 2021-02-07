@@ -887,9 +887,9 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 }
             });
             comp.done();
-        }).run(new NoErrorCompletion(new NopeCompletion()){
+        }).run(new WhileDoneCompletion(new NopeCompletion()){
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
 
             }
         });

@@ -1,4 +1,4 @@
-package org.zstack.header.core.workflow;
+package org.zstack.header.core;
 
 public abstract class PaginateCompletion extends WhileCompletion {
 }

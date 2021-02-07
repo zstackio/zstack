@@ -8,13 +8,10 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
-import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.network.service.vip.VipConstant;
 import org.zstack.network.service.vip.VipDeletionMsg;
@@ -78,9 +75,9 @@ public class VirtualRouterCleanupVipOnDestroyFlow extends NoRollbackFlow {
                         compl.done();
                     }
                 });
-            }).run(new NoErrorCompletion(trigger) {
+            }).run(new WhileDoneCompletion(trigger) {
                 @Override
-                public void done() {
+                public void done(ErrorCodeList errorCodeList) {
                     vipConfigProxy.detachNetworkService(vrUuid, VipVO.class.getSimpleName(), vipUuids);
                     trigger.next();
                 }

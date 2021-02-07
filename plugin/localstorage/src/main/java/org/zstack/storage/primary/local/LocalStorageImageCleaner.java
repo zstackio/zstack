@@ -11,11 +11,13 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
@@ -144,14 +146,14 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
                 logger.debug(String.format("Failed to clean primary cache for backup storage, on host[uuid:%s] and primary storage[uuid:%s]", hostUuid, psUuid));
                 innerWhileCompletion.done();
             }
-        })).run(new NoErrorCompletion() {
+        })).run(new WhileDoneCompletion(whileCompletion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 whileCompletion.done();
             }
-        })).run(new NoErrorCompletion() {
+        })).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 completion.done();
             }
         });
@@ -201,9 +203,9 @@ public class LocalStorageImageCleaner extends ImageCacheCleaner implements Manag
                     whileCompletion.done();
                 }
             });
-        }).run(new NoErrorCompletion() {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 completion.done();
             }
         });

@@ -18,7 +18,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -193,9 +193,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     completion.done();
                 }
             });
-        }).run(new NoErrorCompletion((Message) msg) {
+        }).run(new WhileDoneCompletion((Message) msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (err[0] == null) {
                     passThrough(msg);
                     return;
@@ -269,9 +269,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                     whileCompletion.done();
                 }
             });
-        }).run(new NoErrorCompletion(msg) {
+        }).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 reply.setResults(results);
                 bus.reply(msg, reply);
             }
@@ -1053,21 +1053,20 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             msgs.add(msg);
         }
 
-        ErrorCodeList errorCodeList = new ErrorCodeList();
         new While<>(msgs).all((msg, c) -> {
             bus.send(msg, new CloudBusCallBack(c) {
                 @Override
                 public void run(MessageReply reply) {
                     if (!reply.isSuccess()) {
-                        errorCodeList.getCauses().add(reply.getError());
+                        c.addError(reply.getError());
                     }
 
                     c.done();
                 }
             });
-        }).run(new NoErrorCompletion(completion) {
+        }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (!errorCodeList.getCauses().isEmpty()) {
                     completion.fail(errorCodeList.getCauses().get(0));
                     return;

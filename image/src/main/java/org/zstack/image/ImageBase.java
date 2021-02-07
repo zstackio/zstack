@@ -23,6 +23,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
@@ -37,7 +38,6 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageDeletionPolicyManager.ImageDeletionPolicy;
 import org.zstack.header.message.*;
 import org.zstack.header.storage.backup.*;
-import org.zstack.header.vm.APISetVmBootModeEvent;
 import org.zstack.header.vm.DetachIsoFromVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.volume.VolumeType;
@@ -373,9 +373,9 @@ public class ImageBase implements Image {
                             completion.done();
                         }
                     });
-                }).run(new NoErrorCompletion() {
+                }).run(new WhileDoneCompletion(trigger) {
                     @Override
-                    public void done() {
+                    public void done(ErrorCodeList errorCodeList) {
                         if (errors.size() != 0) {
                             trigger.fail(operr("detach iso[uuid=%s] from vm failed, errors are %s"
                                     ,msg.getImageUuid(), JSONObjectUtil.toJsonString(errors)));
@@ -503,9 +503,9 @@ public class ImageBase implements Image {
                     compl.done();
                 }
             });
-        }).run(new NoErrorCompletion(msg) {
+        }).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (!err.getCauses().isEmpty()) {
                     reply.setError(err.getCauses().get(0));
                 }
@@ -766,9 +766,9 @@ public class ImageBase implements Image {
                     completion.done();
                 }
             });
-        }).run(new NoErrorCompletion(msg) {
+        }).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 bus.publish(new APIExpungeImageEvent(msg.getId()));
             }
         });

@@ -10,16 +10,14 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.MessageReply;
@@ -159,9 +157,9 @@ public class VmAllocateNicFlow implements Flow {
                         }
                     }
                 });
-            }).run(new NoErrorCompletion(wcomp) {
+            }).run(new WhileDoneCompletion(wcomp) {
                 @Override
-                public void done() {
+                public void done(ErrorCodeList errorCodeList) {
                     if (ipErrs.size() > 0) {
                         errs.add(ipErrs.get(0));
                         wcomp.allDone();
@@ -206,9 +204,9 @@ public class VmAllocateNicFlow implements Flow {
                     }
                 }
             });
-        }).run(new NoErrorCompletion() {
+        }).run(new WhileDoneCompletion(trigger) {
             @Override
-            public void done() {
+            public void done(ErrorCodeList errorCodeList) {
                 if (errs.size() > 0) {
                     trigger.fail(errs.get(0));
                 } else {
