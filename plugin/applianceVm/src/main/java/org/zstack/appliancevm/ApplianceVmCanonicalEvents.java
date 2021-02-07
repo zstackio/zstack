@@ -8,7 +8,6 @@ public class ApplianceVmCanonicalEvents {
     public static final String APPLIANCEVM_STATUS_CHANGED_PATH = "/appliance-vm/status/change";
     public static final String SERVICE_UNHEALTHY_PATH = "/appliance-vm/sevice/unhealthy";
     public static final String SERVICE_HEALTHY_PATH = "/appliance-vm/sevice/healthy";
-    public static final String MASTER_APPLIANCEVM_CHANGED_PATH = "/master-appliance-vm/changed";
 
     @NeedJsonSchema
     public static class ApplianceVmStatusChangedData {
@@ -116,36 +115,6 @@ public class ApplianceVmCanonicalEvents {
 
         public void setHealthy(Boolean healthy) {
             this.healthy = healthy;
-        }
-    }
-
-    public static class MasterVRouterChangedData {
-        private String applianceVmUuid;
-        private String applianceVmType;
-        private ErrorCode reason;
-
-        public String getApplianceVmUuid() {
-            return applianceVmUuid;
-        }
-
-        public void setApplianceVmUuid(String applianceVmUuid) {
-            this.applianceVmUuid = applianceVmUuid;
-        }
-
-        public String getApplianceVmType() {
-            return applianceVmType;
-        }
-
-        public void setApplianceVmType(String applianceVmType) {
-            this.applianceVmType = applianceVmType;
-        }
-
-        public ErrorCode getReason() {
-            return reason;
-        }
-
-        public void setReason(ErrorCode reason) {
-            this.reason = reason;
         }
     }
 }
