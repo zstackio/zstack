@@ -10,6 +10,7 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.asyncbatch.While;
+import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
@@ -27,15 +28,10 @@ import org.zstack.header.configuration.APIUpdateInstanceOfferingEvent;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.configuration.InstanceOfferingState;
 import org.zstack.header.configuration.InstanceOfferingVO;
-import org.zstack.header.core.Completion;
-import org.zstack.header.core.FutureCompletion;
-import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowException;
-import org.zstack.header.core.WhileCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -2178,7 +2174,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     @Override
-    public List<ApplianceVmVO> filterApplianceVmCascade(List<ApplianceVmVO> applianceVmVOS, String parentIssuer, List<String> parentIssuerUuids) {
+    public List<ApplianceVmVO> filterApplianceVmCascade(List<ApplianceVmVO> applianceVmVOS, CascadeAction action, String parentIssuer, List<String> parentIssuerUuids) {
         logger.debug(String.format("filter appliance vm type with parentIssuer [type: %s, uuids: %s]", parentIssuer, parentIssuerUuids));
         if (parentIssuer.equals(L3NetworkVO.class.getSimpleName())) {
             List<ApplianceVmVO> vos = applianceVmsToBeDeleted(applianceVmVOS, parentIssuerUuids);
