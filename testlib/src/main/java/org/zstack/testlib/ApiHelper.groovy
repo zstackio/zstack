@@ -13436,6 +13436,33 @@ abstract class ApiHelper {
     }
 
 
+    def deleteVxlanL2Network(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteVxlanL2NetworkAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteVxlanL2NetworkAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def deleteWebhook(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteWebhookAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteWebhookAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -19031,20 +19058,20 @@ abstract class ApiHelper {
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-
+        
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-
+    
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
+        
             return out
         } else {
             return errorOut(a.call())
@@ -34393,6 +34420,33 @@ abstract class ApiHelper {
     def validateInstanceOfferingUserConfig(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ValidateInstanceOfferingUserConfigAction.class) Closure c) {
         def a = new org.zstack.sdk.ValidateInstanceOfferingUserConfigAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def validatePassword(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ValidatePasswordAction.class) Closure c) {
+        def a = new org.zstack.sdk.ValidatePasswordAction()
+        
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()

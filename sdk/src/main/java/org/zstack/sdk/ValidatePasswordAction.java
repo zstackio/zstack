@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetResourceFromPublishAppAction extends AbstractAction {
+public class ValidatePasswordAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetResourceFromPublishAppAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetResourceFromPublishAppResult value;
+        public org.zstack.sdk.ValidatePasswordResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,8 +25,14 @@ public class GetResourceFromPublishAppAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String loginName;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String password;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String loginType;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -34,14 +40,8 @@ public class GetResourceFromPublishAppAction extends AbstractAction {
     @Param(required = false)
     public java.util.List userTags;
 
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
+    @NonAPIParam
+    public boolean isSuppressCredentialCheck = true;
 
     @Param(required = false)
     public String requestIp;
@@ -54,8 +54,8 @@ public class GetResourceFromPublishAppAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetResourceFromPublishAppResult value = res.getResult(org.zstack.sdk.GetResourceFromPublishAppResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetResourceFromPublishAppResult() : value; 
+        org.zstack.sdk.ValidatePasswordResult value = res.getResult(org.zstack.sdk.ValidatePasswordResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ValidatePasswordResult() : value; 
 
         return ret;
     }
@@ -84,11 +84,11 @@ public class GetResourceFromPublishAppAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/appcenter/app/resources";
-        info.needSession = true;
+        info.httpMethod = "PUT";
+        info.path = "/password/verify";
+        info.needSession = false;
         info.needPoll = false;
-        info.parameterName = "";
+        info.parameterName = "validatePassword";
         return info;
     }
 

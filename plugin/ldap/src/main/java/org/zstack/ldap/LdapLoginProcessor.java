@@ -57,4 +57,9 @@ public class LdapLoginProcessor implements LoginProcessor {
 
         return r;
     }
+
+    @Override
+    public Boolean getValidatePasswordResult(String name, String password) {
+        return true;
+    }
 }

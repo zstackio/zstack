@@ -79,4 +79,15 @@ public class AccountLoginProcessor implements LoginProcessor {
 
         return r;
     }
+
+    @Override
+    public Boolean getValidatePasswordResult(String name, String password) {
+        AccountVO acvo = Q.New(AccountVO.class).eq(AccountVO_.name, name)
+                .eq(AccountVO_.password, password).find();
+
+        if (acvo != null) {
+            return true;
+        }
+        return false;
+    }
 }
