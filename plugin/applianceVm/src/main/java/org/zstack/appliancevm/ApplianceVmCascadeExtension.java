@@ -257,11 +257,36 @@ public class ApplianceVmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     private void handleL2NetworkDetach(CascadeAction action, final Completion completion) {
         List<L2NetworkDetachStruct> structs = action.getParentIssuerContext();
-        final List<VmInstanceVO> apvms = getVmFromL2NetworkDetached(structs);
+        List<VmInstanceVO> apvms = getVmFromL2NetworkDetached(structs);
         if (apvms.isEmpty()) {
             completion.success();
             return;
         }
+
+        List<String> l3uuids = new ArrayList<>();
+        for (L2NetworkDetachStruct s : structs) {
+            List<String> ret = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.l2NetworkUuid, s.getL2NetworkUuid()).select(L3NetworkVO_.uuid).listValues();
+            if (!ret.isEmpty()) {
+                l3uuids.addAll(ret);
+            }
+        }
+
+        List<ApplianceVmVO> applianceVmVOS = Q.New(ApplianceVmVO.class).in(ApplianceVmVO_.uuid, apvms.stream()
+                .map(VmInstanceVO::getUuid).collect(Collectors.toList())).list();
+
+        if (!applianceVmVOS.isEmpty()) {
+            for (ApvmCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(ApvmCascadeFilterExtensionPoint.class)) {
+                applianceVmVOS = ext.filterApplianceVmCascade(applianceVmVOS, action.getParentIssuer(), l3uuids);
+            }
+        }
+
+        if (applianceVmVOS.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        List<String> notNeedDeleteVmUuids = applianceVmVOS.stream().map(ApplianceVmVO::getUuid).collect(Collectors.toList());
+        apvms = apvms.stream().filter(apvm -> !notNeedDeleteVmUuids.contains(apvm.getUuid())).collect(Collectors.toList());
 
         List<String> clusterUuids = CollectionUtils.transformToList(structs, new Function<String, L2NetworkDetachStruct>() {
             @Override
