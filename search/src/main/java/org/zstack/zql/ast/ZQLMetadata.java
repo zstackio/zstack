@@ -232,27 +232,24 @@ public class ZQLMetadata {
 
             List<ChainQueryStruct> ret = new ArrayList<>();
 
-            if (nestConditionNames.size() == 1) {
+            List<String> processedConditionsNames = preProcessingNestConditionNames(metadata, nestConditionNames);
+            if (processedConditionsNames.size() == 1) {
                 FieldChainQuery f = new FieldChainQuery();
                 f.self = metadata;
-                f.fieldName = nestConditionNames.get(0);
+                f.fieldName = processedConditionsNames.get(0);
                 ret.add(f);
             } else {
-                String lastField = nestConditionNames.get(nestConditionNames.size()-1);
-
-                List<String> processedConditionsNames = new ArrayList<>();
-                preProcessingNestConditionNames(
-                        metadata,
-                        nestConditionNames.subList(0, nestConditionNames.size()-1).iterator(),
-                        processedConditionsNames
-                );
-
                 Iterator<String> iterator = processedConditionsNames.iterator();
-
                 InventoryMetadata self = metadata;
                 ExpandQueryMetadata left = null;
-                while (iterator.hasNext()) {
+                String lastField;
+                while (true) {
                     String expandedQueryName = iterator.next();
+                    if (!iterator.hasNext()) {
+                        lastField = expandedQueryName;
+                        break;
+                    }
+
                     ExpandQueryMetadata e = self.expandQueries.get(expandedQueryName);
                     if (e == null) {
                         throw new CloudRuntimeException(String.format("no expand query[%s] found on %s", expandedQueryName, self.selfInventoryClass));
@@ -279,9 +276,24 @@ public class ZQLMetadata {
             return ret;
         }
 
-        private void preProcessingNestConditionNames(InventoryMetadata current, Iterator<String> names, List<String> result) {
+        static List<String> preProcessingNestConditionNames(InventoryMetadata queryTarget, List<String> nestConditionNames) {
+            if (nestConditionNames.size() == 1) {
+                return nestConditionNames;
+            }
+
+            int lastNameIndex = nestConditionNames.size() - 1;
+            String fieldName = nestConditionNames.get(lastNameIndex);
+            Iterator<String> conditionInvNames = nestConditionNames.subList(0, lastNameIndex).iterator();
+
+            List<String> result = new ArrayList<>();
+            fieldName = resolveAliasAndCompressCondition(queryTarget, conditionInvNames, result, fieldName);
+            result.add(fieldName);
+            return result;
+        }
+
+        private static String resolveAliasAndCompressCondition(InventoryMetadata current, Iterator<String> names, List<String> result, String fieldName) {
             if (!names.hasNext()) {
-                return;
+                return fieldName;
             }
 
             String name = names.next();
@@ -290,13 +302,13 @@ public class ZQLMetadata {
                 List<String> newNames = new ArrayList<>();
                 Collections.addAll(newNames, alias.expandQueryText.split("\\."));
                 names.forEachRemaining(newNames::add);
-                preProcessingNestConditionNames(current, newNames.iterator(), result);
+                return resolveAliasAndCompressCondition(current, newNames.iterator(), result, fieldName);
             } else {
                 ExpandQueryMetadata expand = current.expandQueries.get(name);
 
                 if (expand == null) {
                     throw new CloudRuntimeException(String.format("invalid nested query condition[%s] on %s," +
-                            "the expanded target[%s] have no expanded query[%s]",
+                                    "the expanded target[%s] have no expanded query[%s]",
                             StringUtils.join(names, "."),
                             current.selfInventoryClass,
                             current.selfInventoryClass,
@@ -309,8 +321,14 @@ public class ZQLMetadata {
                     throw new CloudRuntimeException(String.format("unable to find inventory metadata for %s", expand.targetInventoryClass));
                 }
 
+                boolean IamLastAndFieldNameIsMine = !names.hasNext();
+                boolean lastExpandIsRedundant = IamLastAndFieldNameIsMine && fieldName.equals(expand.targetKeyName);
+                if (lastExpandIsRedundant) {
+                    return expand.selfKeyName;
+                }
+
                 result.add(name);
-                preProcessingNestConditionNames(current, names, result);
+                return resolveAliasAndCompressCondition(current, names, result, fieldName);
             }
         }
     }
@@ -380,6 +398,7 @@ public class ZQLMetadata {
                 emetadata.name = it.expandedField();
                 emetadata.hidden = it.hidden();
 
+                metadata.selfInventoryFieldNames.add(it.foreignKey());
                 metadata.expandQueries.put(emetadata.name, emetadata);
             });
         }
