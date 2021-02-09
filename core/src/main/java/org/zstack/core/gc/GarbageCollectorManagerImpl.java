@@ -1,6 +1,7 @@
 package org.zstack.core.gc;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
@@ -22,13 +23,16 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 
@@ -51,6 +55,8 @@ public class GarbageCollectorManagerImpl extends AbstractService
     private ErrorFacade errf;
 
     private Future<Void> scanOrphanJobsTask;
+
+    private Future<Void> cleanUpCompletedJobsTask;
 
     private ConcurrentHashMap<String, GarbageCollector> managedGarbageCollectors = new ConcurrentHashMap<>();
 
@@ -86,6 +92,63 @@ public class GarbageCollectorManagerImpl extends AbstractService
         });
 
         logger.debug(String.format("[GC] starts scanning orphan job thread with the interval[%ss]", GCGlobalConfig.SCAN_ORPHAN_JOB_INTERVAL.value(Integer.class)));
+    }
+
+    private void startCleanUpCompletedJobs() {
+        if (cleanUpCompletedJobsTask != null) {
+            cleanUpCompletedJobsTask.cancel(true);
+        }
+
+        cleanUpCompletedJobsTask = thdf.submitPeriodicTask(new PeriodicTask() {
+            @Override
+            public TimeUnit getTimeUnit() {
+                return TimeUnit.HOURS;
+            }
+
+            @Override
+            public long getInterval() {
+                return GCGlobalConfig.CLEAN_UP_COMPLETED_JOB_INTERVAL.value(Long.class);
+            }
+
+            @Override
+            public String getName() {
+                return "clean-up-completed-gc-jobs";
+            }
+
+            @Override
+            public void run() {
+                try {
+                    cleanUpCompletedJobs();
+                } catch (Exception e) {
+                    logger.debug(String.format("clean up completed jobs failed, %s",e.getMessage()));
+                }
+            }
+        });
+
+        logger.debug(String.format("[GC] starts cleaning up completed job thread with the interval[%sh]", GCGlobalConfig.CLEAN_UP_COMPLETED_JOB_INTERVAL.value(Integer.class)));
+    }
+
+    private void cleanUpCompletedJobs() {
+        String time = GCGlobalConfig.RETENTION_TIME.value();
+
+        List<String> completedJobs = Q.New(GarbageCollectorVO.class)
+                                    .select(GarbageCollectorVO_.uuid)
+                                    .eq(GarbageCollectorVO_.status, GCStatus.Done)
+                                    .lt(GarbageCollectorVO_.lastOpDate,
+                                            new Timestamp(System.currentTimeMillis() - TimeUtils.parseTimeInMillis(time)))
+                                    .listValues();
+
+        List<String> jobs = completedJobs
+                .stream()
+                .filter(v -> destinationMaker.isManagedByUs(v))
+                .collect(Collectors.toList());
+
+        if (CollectionUtils.isEmpty(jobs)) {
+            return;
+        }
+
+        dbf.removeByPrimaryKeys(jobs, GarbageCollectorVO.class);
+        logger.info(String.format("clean up %s completed GC jobs", jobs.size()));
     }
 
     void registerGC(GarbageCollector gc) {
@@ -162,11 +225,19 @@ public class GarbageCollectorManagerImpl extends AbstractService
     @Override
     public void managementNodeReady() {
         startScanOrphanJobs();
+        startCleanUpCompletedJobs();
 
         GCGlobalConfig.SCAN_ORPHAN_JOB_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
             @Override
             public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
                 startScanOrphanJobs();
+            }
+        });
+
+        GCGlobalConfig.CLEAN_UP_COMPLETED_JOB_INTERVAL.installUpdateExtension(new GlobalConfigUpdateExtensionPoint() {
+            @Override
+            public void updateGlobalConfig(GlobalConfig oldConfig, GlobalConfig newConfig) {
+                startCleanUpCompletedJobs();
             }
         });
     }

@@ -13,4 +13,10 @@ public class GCGlobalConfig {
 
     @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig SCAN_ORPHAN_JOB_INTERVAL = new GlobalConfig(CATEGORY, "orphanJobScanInterval");
+
+    @GlobalConfigValidation(numberGreaterThan = 1)
+    public static GlobalConfig CLEAN_UP_COMPLETED_JOB_INTERVAL = new GlobalConfig(CATEGORY, "cleanUpCompletedJobInterval");
+
+    @GlobalConfigValidation
+    public static GlobalConfig RETENTION_TIME = new GlobalConfig(CATEGORY, "retentionTime");
 }
