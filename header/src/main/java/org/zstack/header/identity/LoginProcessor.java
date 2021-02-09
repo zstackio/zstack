@@ -54,4 +54,6 @@ public interface LoginProcessor {
     String resourceChecker(String resourceName);
 
     Result getMessageParams(APIMessage message);
+
+    boolean authenticate(String name, String password);
 }
