@@ -10,7 +10,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.*;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -36,7 +35,6 @@ import org.zstack.header.message.Message;
 import org.zstack.header.rest.RestAuthenticationBackend;
 import org.zstack.header.rest.RestAuthenticationParams;
 import org.zstack.header.rest.RestAuthenticationType;
-import org.zstack.header.rest.RestException;
 import org.zstack.header.vo.*;
 import org.zstack.identity.rbac.PolicyUtils;
 import org.zstack.utils.*;
@@ -67,27 +65,19 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
-    private DbEntityLister dl;
-    @Autowired
-    private ErrorFacade errf;
-    @Autowired
     private ThreadFacade thdf;
     @Autowired
     private PluginRegistry pluginRgty;
     @Autowired
     private EventFacade evtf;
-    @Autowired
-    private GlobalConfigFacade gcf;
 
-    private List<String> resourceTypeForAccountRef = new ArrayList<>();
-    private Map<String, Class> resourceTypeClassMap = new HashMap<>();
-    private Map<String, Class> childrenResourceTypeClassMap = new HashMap<>();
-    private List<Class> resourceTypes;
-    private Map<Class, List<Quota>> messageQuotaMap = new HashMap<>();
-    private Map<String, Quota> nameQuotaMap = new HashMap<>();
-    private HashSet<Class> accountApiControl = new HashSet<>();
-    private HashSet<Class> accountApiControlInternal = new HashSet<>();
-    private List<Quota> definedQuotas = new ArrayList<>();
+    private final List<String> resourceTypeForAccountRef = new ArrayList<>();
+    private final List<Class> resourceTypes = new ArrayList<>();
+    private final Map<Class, List<Quota>> messageQuotaMap = new HashMap<>();
+    private final Map<String, Quota> nameQuotaMap = new HashMap<>();
+    private final HashSet<Class> accountApiControl = new HashSet<>();
+    private final HashSet<Class> accountApiControlInternal = new HashSet<>();
+    private final List<Quota> definedQuotas = new ArrayList<>();
 
     @Override
     public void prepareDbInitialValue() {
@@ -626,13 +616,9 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     private void buildResourceTypes() throws ClassNotFoundException {
-        resourceTypes = new ArrayList<>();
         for (String resourceTypeName : resourceTypeForAccountRef) {
             Class<?> rs = Class.forName(resourceTypeName);
             resourceTypes.add(rs);
-            resourceTypeClassMap.put(rs.getSimpleName(), rs);
-            childrenResourceTypeClassMap.put(rs.getSimpleName(), rs);
-            Platform.getAllChildrenResourceType(rs.getSimpleName()).forEach(it -> childrenResourceTypeClassMap.put(it, rs));
         }
     }
 
@@ -880,7 +866,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         if (orphanedResources.size() == 0 || resourceUuids.size() == 0) {
             return;
         }
-        List<String> uuids = resourceUuids.stream().filter(uuid -> orphanedResources.contains(uuid)).collect(Collectors.toList());
+        List<String> uuids = resourceUuids.stream().filter(orphanedResources::contains).collect(Collectors.toList());
 
         CollectionUtils.forEach(exts, new ForEachFunction<TakeOverResourceExtensionPoint>() {
             @Override
@@ -893,7 +879,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     public void adminAdoptAllOrphanedResource(List<String> resourceUuid, String originAccountUuid){
         thdf.syncSubmit(new SyncTask<Void>() {
             @Override
-            public Void call() throws Exception {
+            public Void call() {
                 doAdminAdoptResource(resourceUuid, originAccountUuid);
                 return null;
             }
@@ -1680,10 +1666,6 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
         }
     }
 
-    public void setResourceTypeForAccountRef(List<String> resourceTypeForAccountRef) {
-        this.resourceTypeForAccountRef = resourceTypeForAccountRef;
-    }
-
     public Map<String, SessionInventory> getSessionsCopy() {
         return Session.getSessionsCopy();
     }
@@ -1694,7 +1676,7 @@ public class AccountManagerImpl extends AbstractService implements AccountManage
     }
 
     @Override
-    public SessionInventory doAuth(RestAuthenticationParams params) throws RestException {
+    public SessionInventory doAuth(RestAuthenticationParams params) {
         SessionVO vo = Q.New(SessionVO.class).eq(SessionVO_.uuid, params.authKey).find();
         if (vo != null) {
             return SessionInventory.valueOf(vo);
