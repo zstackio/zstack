@@ -25,6 +25,9 @@ public class GetLicenseInfoAction extends AbstractAction {
         }
     }
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List additionSession;
+
     @Param(required = false)
     public java.util.List systemTags;
 
