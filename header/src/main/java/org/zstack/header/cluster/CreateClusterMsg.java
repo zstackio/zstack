@@ -8,6 +8,7 @@ public class CreateClusterMsg extends NeedReplyMessage implements CreateClusterM
     private String description;
     private String hypervisorType;
     private String type;
+    private String architecture;
     private String resourceUuid;
 
     @Override
@@ -58,6 +59,15 @@ public class CreateClusterMsg extends NeedReplyMessage implements CreateClusterM
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    @Override
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 
     public void setResourceUuid(String resourceUuid) {

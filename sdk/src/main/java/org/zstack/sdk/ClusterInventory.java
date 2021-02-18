@@ -76,4 +76,12 @@ public class ClusterInventory  {
         return this.type;
     }
 
+    public java.lang.String architecture;
+    public void setArchitecture(java.lang.String architecture) {
+        this.architecture = architecture;
+    }
+    public java.lang.String getArchitecture() {
+        return this.architecture;
+    }
+
 }

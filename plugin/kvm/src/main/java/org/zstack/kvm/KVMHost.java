@@ -30,6 +30,8 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Constants;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.cluster.ReportHostCapacityMessage;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.core.*;
 import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
@@ -40,6 +42,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
+import org.zstack.header.image.ImageArchitecture;
 import org.zstack.header.image.ImageBootMode;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.APIMessage;
@@ -2533,6 +2536,8 @@ public class KVMHost extends HostBase implements Host {
             checkPlatformWithOther(spec);
         }
 
+        String architecture = dbf.findByUuid(spec.getDestHost().getClusterUuid(), ClusterVO.class).getArchitecture();
+
         if (ImagePlatform.Windows.toString().equals(platform)) {
             virtio = VmSystemTags.WINDOWS_VOLUME_ON_VIRTIO.hasTag(spec.getVmInventory().getUuid());
         } else {
@@ -2561,6 +2566,7 @@ public class KVMHost extends HostBase implements Host {
             cpuOnSocket = cpuNum;
         }
         cmd.setImagePlatform(platform);
+        cmd.setImageArchitecture(architecture);
         cmd.setSocketNum(socket);
         cmd.setCpuOnSocket(cpuOnSocket);
         cmd.setVmName(spec.getVmInventory().getName());
@@ -2584,7 +2590,11 @@ public class KVMHost extends HostBase implements Host {
         cmd.setInstanceOfferingOnlineChange(VmSystemTags.INSTANCEOFFERING_ONLIECHANGE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.INSTANCEOFFERING_ONLINECHANGE_TOKEN) != null);
         cmd.setKvmHiddenState(rcf.getResourceConfigValue(VmGlobalConfig.KVM_HIDDEN_STATE, spec.getVmInventory().getUuid(), Boolean.class));
         cmd.setSpiceStreamingMode(VmGlobalConfig.VM_SPICE_STREAMING_MODE.value(String.class));
-        cmd.setEmulateHyperV(!ImagePlatform.isType(platform, ImagePlatform.Linux) && rcf.getResourceConfigValue(VmGlobalConfig.EMULATE_HYPERV, spec.getVmInventory().getUuid(), Boolean.class));
+        boolean emulatehyperV = false;
+        if (HostCPUArchitecture.x86_64.toString().equals(architecture)) {
+            emulatehyperV = rcf.getResourceConfigValue(VmGlobalConfig.EMULATE_HYPERV, spec.getVmInventory().getUuid(), Boolean.class);
+        }
+        cmd.setEmulateHyperV(emulatehyperV);
         cmd.setAdditionalQmp(VmGlobalConfig.ADDITIONAL_QMP.value(Boolean.class));
         cmd.setApplianceVm(spec.getVmInventory().getType().equals("ApplianceVm"));
         cmd.setSystemSerialNumber(makeAndSaveVmSystemSerialNumber(spec.getVmInventory().getUuid()));
@@ -2600,7 +2610,7 @@ public class KVMHost extends HostBase implements Host {
             cmd.setPredefinedPciBridgeNum(Integer.valueOf(KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.getTokenByResourceUuid(spec.getVmInventory().getUuid(), KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN)));
         }
 
-        if (VmMachineType.q35.toString().equals(machineType)) {
+        if (VmMachineType.q35.toString().equals(machineType) || VmMachineType.virt.toString().equals(machineType)) {
             cmd.setPciePortNums(VmGlobalConfig.PCIE_PORT_NUMS.value(Integer.class));
 
             if (cmd.getPredefinedPciBridgeNum() == null) {
@@ -3450,7 +3460,12 @@ public class KVMHost extends HostBase implements Host {
                             sshShell.setPassword(getSelf().getPassword());
                             sshShell.setPort(getSelf().getPort());
                             sshShell.setWithSudo(false);
-                            SshResult ret = sshShell.runCommand(String.format("curl --connect-timeout 10 %s|| wget --spider -q --connect-timeout=10 %s|| test $? -eq 8", restf.getCallbackUrl(), restf.getCallbackUrl()));
+                            final String cmd = String.format("curl --connect-timeout 10 %s|| wget --spider -q --connect-timeout=10 %s|| test $? -eq 8", restf.getCallbackUrl(), restf.getCallbackUrl());
+                            SshResult ret = sshShell.runCommand(cmd);
+                            if (ret.getStderr() != null && ret.getStderr().contains("No route to host")) {
+                                // c.f. https://access.redhat.com/solutions/1120533
+                                ret = sshShell.runCommand(cmd);
+                            }
 
                             if (ret.isSshFailure()) {
                                 throw new OperationFailureException(operr("unable to connect to KVM[ip:%s, username:%s, sshPort:%d] to check the management node connectivity," +
@@ -3459,6 +3474,40 @@ public class KVMHost extends HostBase implements Host {
                                 throw new OperationFailureException(operr("the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
                                                 " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), restf.getHostName(),
                                         ret.getStderr(), ret.getExitErrorMessage()));
+                            }
+
+                            trigger.next();
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "check-host-cpu-arch";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            SshShell sshShell = new SshShell();
+                            sshShell.setHostname(getSelf().getManagementIp());
+                            sshShell.setUsername(getSelf().getUsername());
+                            sshShell.setPassword(getSelf().getPassword());
+                            sshShell.setPort(getSelf().getPort());
+                            SshResult ret = sshShell.runCommand("uname -m");
+
+                            if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+                                trigger.fail(operr("unable to get host cpu architecture, please check if username/password is wrong; %s", ret.getExitErrorMessage()));
+                                return;
+                            }
+
+                            String hostArchitecture = ret.getStdout().trim();
+                            ClusterVO cluster = dbf.findByUuid(self.getClusterUuid(), ClusterVO.class);
+                            if (cluster.getArchitecture() != null && !hostArchitecture.equals(cluster.getArchitecture())) {
+                                trigger.fail(operr("host cpu architecture[%s] is not matched the cluster[%s]", hostArchitecture, cluster.getArchitecture()));
+                                return;
+                            }
+
+                            // for upgrade case, prevent from add host failure.
+                            if (cluster.getArchitecture() == null && !info.isNewAdded()) {
+                                cluster.setArchitecture(hostArchitecture);
+                                dbf.update(cluster);
                             }
 
                             trigger.next();

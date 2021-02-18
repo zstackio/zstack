@@ -619,7 +619,6 @@ public class ImageBase implements Image {
         ));
         creator.recreate = true;
         creator.create();
-
         APISetImageBootModeEvent evt = new APISetImageBootModeEvent(msg.getId());
         bus.publish(evt);
     }
@@ -795,6 +794,10 @@ public class ImageBase implements Image {
         }
         if (msg.getPlatform() != null) {
             self.setPlatform(ImagePlatform.valueOf(msg.getPlatform()));
+            update = true;
+        }
+        if (msg.getArchitecture() != null) {
+            self.setArchitecture(msg.getArchitecture());
             update = true;
         }
         if (update) {
