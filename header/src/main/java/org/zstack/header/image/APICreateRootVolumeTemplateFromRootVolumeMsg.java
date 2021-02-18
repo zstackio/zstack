@@ -35,6 +35,7 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
     @APIParam(required = false, validValues = {"Linux", "Windows", "Other", "Paravirtualization", "WindowsVirtio"})
     private String platform;
     private boolean system;
+    private String architecture;
 
     public boolean isSystem() {
         return system;
@@ -50,6 +51,14 @@ public class APICreateRootVolumeTemplateFromRootVolumeMsg extends APICreateMessa
 
     public void setPlatform(String platform) {
         this.platform = platform;
+    }
+
+    public String getArchitecture() {
+        return architecture;
+    }
+
+    public void setArchitecture(String architecture) {
+        this.architecture = architecture;
     }
 
     public String getName() {
