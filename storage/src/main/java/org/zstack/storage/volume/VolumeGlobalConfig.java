@@ -35,4 +35,8 @@ public class VolumeGlobalConfig {
     public static GlobalConfig VOLUME_PHYSICAL_BLOCK_SIZE = new GlobalConfig(CATEGORY, "physical.block.size");
 
     public static GlobalConfig AUTO_SNAPSHOT_BEFORE_CHANGE_OPERATION = new GlobalConfig(CATEGORY, "auto.snapshot.before.change");
+
+    @GlobalConfigValidation
+    @GlobalConfigDef(defaultValue = "AllStatus", type = String.class, description = "specify the status of the volume that allows cascading operations, example: Deleted")
+    public static GlobalConfig CASCADE_ALLOWS_VOLUME_STATUS = new GlobalConfig(CATEGORY, "cascade.allowsVolumeStatus");
 }

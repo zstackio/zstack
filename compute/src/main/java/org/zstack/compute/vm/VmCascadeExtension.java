@@ -481,7 +481,13 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         }
 
         for (VmDeletionStruct inv : vminvs) {
-            ErrorCode err = extEmitter.preDestroyVm(inv.getInventory());
+            ErrorCode err = extEmitter.preCascadeDestroyVm(inv.getInventory());
+            if (err != null) {
+                completion.fail(err);
+                return;
+            }
+
+            err = extEmitter.preDestroyVm(inv.getInventory());
             if (err != null) {
                 completion.fail(err);
                 return;

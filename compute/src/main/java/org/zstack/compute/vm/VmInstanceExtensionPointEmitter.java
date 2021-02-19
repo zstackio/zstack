@@ -1,6 +1,7 @@
 package org.zstack.compute.vm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -44,6 +45,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
     private List<VmCapabilitiesExtensionPoint> capabilitiesExtensionPoints;
     private List<CleanUpAfterVmFailedToStartExtensionPoint> cleanUpAfterVmFailedToStartExtensionPoints;
     private List<CleanUpAfterVmChangeImageExtensionPoint> cleanUpAfterVmChangeImageExtensionPoints;
+    private List<VmCascadeExtensionPoint> vmCascadeExtensionPoints;
 
     public List<ErrorCode> handleSystemTag(String vmUuid, List<String> tags){
         List<ErrorCode> errorCodes = new ArrayList<>();
@@ -450,6 +452,26 @@ public class VmInstanceExtensionPointEmitter implements Component {
         CollectionUtils.safeForEach(cleanUpAfterVmChangeImageExtensionPoints, arg -> arg.cleanUpAfterVmChangeImage(vm));
     }
 
+    public ErrorCode preCascadeDestroyVm(VmInstanceInventory inv) {
+        for (VmCascadeExtensionPoint ext : vmCascadeExtensionPoints) {
+            try {
+                ErrorCode err = ext.preDestroyVm(inv);
+                if (err == null) {
+                    continue;
+                }
+                err = operr("%s[%s] refuses to destroy vm[uuid:%s] because %s",
+                        VmCascadeExtensionPoint.class.getSimpleName(),
+                        ext.getClass().getName(),
+                        inv.getUuid(),
+                        err.getDetails());
+                return err;
+            } catch (Exception e) {
+                logger.warn(String.format("Unhandled exception while calling %s", ext.getClass().getName()), e);
+            }
+        }
+        return null;
+    }
+
     private void populateExtensions() {
         VmInstanceBeforeStartExtensions = pluginRgty.getExtensionList(VmInstanceBeforeStartExtensionPoint.class);
         startNewCreatedVmExtensions = pluginRgty.getExtensionList(VmInstanceStartNewCreatedVmExtensionPoint.class);
@@ -464,6 +486,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         capabilitiesExtensionPoints = pluginRgty.getExtensionList(VmCapabilitiesExtensionPoint.class);
         cleanUpAfterVmFailedToStartExtensionPoints = pluginRgty.getExtensionList(CleanUpAfterVmFailedToStartExtensionPoint.class);
         cleanUpAfterVmChangeImageExtensionPoints = pluginRgty.getExtensionList(CleanUpAfterVmChangeImageExtensionPoint.class);
+        vmCascadeExtensionPoints = pluginRgty.getExtensionList(VmCascadeExtensionPoint.class);
     }
 
     @Override

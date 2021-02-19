@@ -7,17 +7,20 @@ import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusListCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.*;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.configuration.DiskOfferingInventory;
 import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.vm.VmDeletionStruct;
 import org.zstack.header.volume.*;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.utils.CollectionUtils;
@@ -32,6 +35,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.operr;
+
 /**
  */
 public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
@@ -42,6 +47,8 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
     private CloudBus bus;
     @Autowired
     private VolumeDeletionPolicyManager deletionPolicyManager;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private static final String NAME = VolumeVO.class.getSimpleName();
 
@@ -293,6 +300,40 @@ public class VolumeCascadeExtension extends AbstractAsyncCascadeExtension {
     }
 
     private void handleDeletionCheck(CascadeAction action, Completion completion) {
+        if (action.getParentIssuer().equals(NAME)) {
+            completion.success();
+            return;
+        }
+
+        int op = actionToOpCode(action);
+        if (op != OP_DELETE_VOLUME) {
+            completion.success();
+            return;
+        }
+
+        final List<VolumeDeletionStruct> volumes = volumesFromAction(action);
+        if (volumes == null || volumes.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        List<VolumeCascadeExtensionPoint> volumeCascadeExtensionPoints = pluginRgty.getExtensionList(VolumeCascadeExtensionPoint.class);
+
+        for (VolumeDeletionStruct inv : volumes) {
+            for (VolumeCascadeExtensionPoint volumeCascadeExtensionPoint : volumeCascadeExtensionPoints) {
+                ErrorCode err = volumeCascadeExtensionPoint.preDestroyVm(inv.getInventory());
+                if (err != null) {
+                    err = operr("%s[%s] refuses to destroy volume[uuid:%s] because %s",
+                            VolumeCascadeExtensionPoint.class.getSimpleName(),
+                            volumeCascadeExtensionPoint.getClass().getName(),
+                            inv.getInventory().getUuid(),
+                            err.getDetails());
+                    completion.fail(err);
+                    return;
+                }
+            }
+        }
+
         completion.success();
     }
 
