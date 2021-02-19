@@ -53,6 +53,9 @@ public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount
     private String protocol;
 
     @Column
+    private String securityPolicyType;
+
+    @Column
     @ForeignKey(parentEntityClass = LoadBalancerServerGroupVO.class, parentKey = "uuid", onDeleteAction = ReferenceOption.CASCADE)
     private String serverGroupUuid;
 
@@ -155,6 +158,14 @@ public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public String getSecurityPolicyType() {
+        return securityPolicyType;
+    }
+
+    public void setSecurityPolicyType(String securityPolicyName) {
+        this.securityPolicyType = securityPolicyName;
     }
 
     public Timestamp getCreateDate() {

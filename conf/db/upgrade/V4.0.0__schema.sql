@@ -948,3 +948,5 @@ ALTER TABLE `zstack`.`IAM2VirtualIDAttributeVO` ADD INDEX `idxName` (`name`);
 ALTER TABLE `zstack`.`IAM2VirtualIDAttributeVO` ADD INDEX `idxValue` (`value`);
 ALTER TABLE `zstack`.`SharedResourceVO` ADD INDEX `idxToPublic` (`toPublic`);
 ALTER TABLE `zstack`.`IAM2OrganizationVO` ADD INDEX `idxRootOrganizationUuid` (`rootOrganizationUuid`);
+
+ALTER TABLE `zstack`.`LoadBalancerListenerVO` ADD COLUMN `securityPolicyType` varchar(255);
