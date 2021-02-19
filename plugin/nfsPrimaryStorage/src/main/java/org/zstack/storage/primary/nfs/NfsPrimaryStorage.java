@@ -28,7 +28,10 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.ImageBackupStorageRefVO;
+import org.zstack.header.image.ImageBackupStorageRefVO_;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
+import org.zstack.header.image.ImageEO;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -673,10 +676,6 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         final InstantiateVolumeOnPrimaryStorageReply reply = new InstantiateVolumeOnPrimaryStorageReply();
         final ImageSpec ispec = msg.getTemplateSpec();
 
-        SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
-        q.select(BackupStorageVO_.type);
-        q.add(BackupStorageVO_.uuid, Op.EQ, ispec.getSelectedBackupStorage().getBackupStorageUuid());
-        final String bsType = q.findValue();
         final VolumeInventory volume = msg.getVolume();
         final ImageInventory image = ispec.getInventory();
 
@@ -717,6 +716,22 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
                     flow(new NoRollbackFlow() {
                         @Override
                         public void run(final FlowTrigger trigger, Map data) {
+                            String bsType;
+                            if (ispec.getSelectedBackupStorage() != null && ispec.getSelectedBackupStorage().getBackupStorageUuid() != null) {
+                                SimpleQuery<BackupStorageVO> q = dbf.createQuery(BackupStorageVO.class);
+                                q.select(BackupStorageVO_.type);
+                                q.add(BackupStorageVO_.uuid, Op.EQ, ispec.getSelectedBackupStorage().getBackupStorageUuid());
+                                bsType = q.findValue();
+                            } else {
+                                List<ImageBackupStorageRefVO> refs =  Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, imageCache.getImageUuid()).list();
+                                if (refs.isEmpty()) {
+                                    trigger.fail(operr("missing ref between image and backup storage"));
+                                    return;
+                                }
+
+                                bsType = Q.New(BackupStorageVO.class).select(BackupStorageVO_.type).eq(BackupStorageVO_.uuid, refs.get(0).getBackupStorageUuid()).findValue();
+                            }
+
                             NfsPrimaryToBackupStorageMediator mediator = factory.getPrimaryToBackupStorageMediator(
                                     BackupStorageType.valueOf(bsType),
                                     nfsMgr.findHypervisorTypeByImageFormatAndPrimaryStorageUuid(image.getFormat(), self.getUuid())
