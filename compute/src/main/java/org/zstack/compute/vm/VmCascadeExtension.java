@@ -47,7 +47,6 @@ import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
-import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
@@ -496,7 +495,13 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
         }
 
         for (VmDeletionStruct inv : vminvs) {
-            ErrorCode err = extEmitter.preDestroyVm(inv.getInventory());
+            ErrorCode err = extEmitter.preCascadeDestroyVm(inv.getInventory());
+            if (err != null) {
+                completion.fail(err);
+                return;
+            }
+
+            err = extEmitter.preDestroyVm(inv.getInventory());
             if (err != null) {
                 completion.fail(err);
                 return;

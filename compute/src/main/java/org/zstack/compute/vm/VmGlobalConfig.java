@@ -1,6 +1,7 @@
 package org.zstack.compute.vm;
 
 import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
 import org.zstack.header.cluster.ClusterVO;
@@ -70,4 +71,8 @@ public class VmGlobalConfig {
 
     @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig UNKNOWN_GC_INTERVAL = new GlobalConfig(CATEGORY, "set.unknown.gc.interval");
+
+    @GlobalConfigValidation
+    @GlobalConfigDef(defaultValue = "AllStatus", type = String.class, description = "specify the status of the vm that allows cascading operations, example: Destroyed,Stopped")
+    public static GlobalConfig CASCADE_ALLOWS_VM_STATUS = new GlobalConfig(CATEGORY, "cascade.allowsVmStatus");
 }
