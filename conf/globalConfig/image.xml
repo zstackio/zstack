@@ -11,7 +11,7 @@
 		<name>expungePeriod</name>
         <description>the period before a destroyed image being deleted from database and before its root volume being deleted from backup storage, in seconds</description>
 		<category>image</category>
-		<defaultValue>86400</defaultValue>
+		<defaultValue>259200</defaultValue>
 		<type>java.lang.Long</type>
 	</config>
 
