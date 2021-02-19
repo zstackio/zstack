@@ -36,6 +36,7 @@ public class LoadBalancerListenerInventory implements Serializable {
     private String loadBalancerUuid;
     private Integer instancePort;
     private Integer loadBalancerPort;
+    private String securityPolicyType;
     private String protocol;
     private String serverGroupUuid;
     private Timestamp createDate;
@@ -54,6 +55,7 @@ public class LoadBalancerListenerInventory implements Serializable {
         inv.setInstancePort(vo.getInstancePort());
         inv.setLoadBalancerPort(vo.getLoadBalancerPort());
         inv.setProtocol(vo.getProtocol());
+        inv.setSecurityPolicyType(vo.getSecurityPolicyType());
         inv.setName(vo.getName());
         inv.setDescription(vo.getDescription());
         inv.setServerGroupUuid(vo.getServerGroupUuid());
@@ -160,6 +162,14 @@ public class LoadBalancerListenerInventory implements Serializable {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public String getSecurityPolicyType() {
+        return securityPolicyType;
+    }
+
+    public void setSecurityPolicyType(String securityPolicyType) {
+        this.securityPolicyType = securityPolicyType;
     }
 
     public Timestamp getCreateDate() {
