@@ -33,4 +33,8 @@ public class VolumeGlobalConfig {
     @GlobalConfigDef(defaultValue = "0", type = Integer.class, description = "physical block size of the underlying storage")
     @BindResourceConfig({VolumeVO.class, PrimaryStorageVO.class})
     public static GlobalConfig VOLUME_PHYSICAL_BLOCK_SIZE = new GlobalConfig(CATEGORY, "physical.block.size");
+
+    @GlobalConfigValidation
+    @GlobalConfigDef(defaultValue = "AllStatus", type = String.class, description = "specify the status of the volume that allows cascading operations, example: Deleted")
+    public static GlobalConfig CASCADE_ALLOWS_VOLUME_STATUS = new GlobalConfig(CATEGORY, "cascade.allowsVolumeStatus");
 }

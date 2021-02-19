@@ -210,4 +210,10 @@
             <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="VmCascadeProtectionExtensionPoint" class="org.zstack.compute.vm.VmCascadeProtectionExtensionPoint">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.compute.vm.VmCascadeExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
 </beans>

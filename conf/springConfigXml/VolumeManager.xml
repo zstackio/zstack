@@ -90,4 +90,11 @@
             <zstack:extension interface="org.zstack.header.volume.VolumeAttachedJudger"/>
         </zstack:plugin>
     </bean>
+
+    <bean id="VolumeCascadeProtectionExtensionPoint" class="org.zstack.storage.volume.VolumeCascadeProtectionExtensionPoint">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.volume.VolumeCascadeExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
 </beans>
