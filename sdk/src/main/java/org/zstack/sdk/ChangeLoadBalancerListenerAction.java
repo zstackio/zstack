@@ -70,6 +70,9 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, validValues = {"http-keep-alive","http-server-close","http-tunnel","httpclose","forceclose"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String httpMode;
 
+    @Param(required = false, validValues = {"tls_cipher_policy_default","tls_cipher_policy_1_0","tls_cipher_policy_1_1","tls_cipher_policy_1_2","tls_cipher_policy_1_2_strict","tls_cipher_policy_1_2_strict_with_1_3"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String securityPolicyType;
+
     @Param(required = false)
     public java.util.List systemTags;
 
