@@ -1,5 +1,6 @@
 package org.zstack.network.service.lb;
 
+import org.zstack.core.db.Q;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EntityGraph;
@@ -46,6 +47,9 @@ public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount
 
     @Column
     private String protocol;
+
+    @Column
+    private String securityPolicyType;
 
     @OneToMany(fetch=FetchType.EAGER)
     @JoinColumn(name="listenerUuid", insertable=false, updatable=false)
@@ -141,6 +145,14 @@ public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public String getSecurityPolicyType() {
+        return securityPolicyType;
+    }
+
+    public void setSecurityPolicyType(String securityPolicyType) {
+        this.securityPolicyType = securityPolicyType;
     }
 
     public Timestamp getCreateDate() {

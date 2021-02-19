@@ -52,6 +52,10 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     private String healthCheckHttpCode;
     @APIParam(validValues = {"enable", "disable"}, required = false)
     private String aclStatus;
+    @APIParam(validValues = {LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_DEFAULT, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_0, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_1,
+            LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2_STRICT,
+            LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2_STRICT_WITH_1_3}, required = false)
+    private String securityPolicyType;
 
     @APIParam(numberRange = {LoadBalancerConstants.NUMBER_OF_PROCESS_MIN, LoadBalancerConstants.NUMBER_OF_PROCESS_MAX}, required = false)
     private Integer nbprocess;
@@ -172,6 +176,14 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
 
     public void setHealthCheckHttpCode(String healthCheckHttpCode) {
         this.healthCheckHttpCode = healthCheckHttpCode;
+    }
+
+    public String getSecurityPolicyType() {
+        return securityPolicyType;
+    }
+
+    public void setSecurityPolicyType(String securityPolicyType) {
+        this.securityPolicyType = securityPolicyType;
     }
 
     @Override

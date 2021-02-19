@@ -42,6 +42,7 @@ import org.zstack.utils.logging.CLoggerImpl;
 import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
+import static org.zstack.network.service.lb.LoadBalancerConstants.LB_PROTOCOL_HTTPS;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -624,6 +625,12 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (isTcpProto && isTcpReservePort && useForList.isIncluded(useForList.SNAT_NETWORK_SERVICE_TYPE)) {
             throw new ApiMessageInterceptionException(argerr("tcp port 22, 7272 is used by vrouter"));
         }
+
+        if (msg.getSecurityPolicyType() != null) {
+            if (!msg.getProtocol().equals(LB_PROTOCOL_HTTPS)) {
+                throw new ApiMessageInterceptionException(operr("the listener with protocol [%s] doesn't support select security policy", msg.getProtocol(), msg.getHealthCheckProtocol()));
+            }
+        }
     }
 
     private void validate(APIDeleteLoadBalancerListenerMsg msg) {
@@ -711,6 +718,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         LoadBalancerListenerVO listenerVO = Q.New(LoadBalancerListenerVO.class).
                                            eq(LoadBalancerListenerVO_.uuid,msg.getLoadBalancerListenerUuid()).find();
 
+        if (msg.getSecurityPolicyType() != null) {
+            if (!listenerVO.getProtocol().equals(LB_PROTOCOL_HTTPS)) {
+                throw new ApiMessageInterceptionException(operr("the listener with protocol [%s] doesn't support select security policy", listenerVO.getProtocol(), msg.getHealthCheckProtocol()));
+            }
+        }
         if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
             String healthTarget = LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(msg.getLoadBalancerListenerUuid(),
                     LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);

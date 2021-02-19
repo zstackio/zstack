@@ -14,6 +14,7 @@ public class LoadBalancerListenerVO_ extends ResourceVO_ {
     public static volatile SingularAttribute<LoadBalancerListenerVO, String> loadBalancerUuid;
     public static volatile SingularAttribute<LoadBalancerListenerVO, String> name;
     public static volatile SingularAttribute<LoadBalancerListenerVO, String> description;
+    public static volatile SingularAttribute<LoadBalancerListenerVO, String> securityPolicyType;
     public static volatile SingularAttribute<LoadBalancerListenerVO, Integer> instancePort;
     public static volatile SingularAttribute<LoadBalancerListenerVO, Integer> loadBalancerPort;
     public static volatile SingularAttribute<LoadBalancerListenerVO, String> protocol;

@@ -34,6 +34,7 @@ public class LoadBalancerListenerInventory implements Serializable {
     private String loadBalancerUuid;
     private Integer instancePort;
     private Integer loadBalancerPort;
+    private String securityPolicyType;
     private String protocol;
     private Timestamp createDate;
     private Timestamp lastOpDate;
@@ -50,6 +51,7 @@ public class LoadBalancerListenerInventory implements Serializable {
         inv.setInstancePort(vo.getInstancePort());
         inv.setLoadBalancerPort(vo.getLoadBalancerPort());
         inv.setProtocol(vo.getProtocol());
+        inv.setSecurityPolicyType(vo.getSecurityPolicyType());
         inv.setName(vo.getName());
         inv.setDescription(vo.getDescription());
         inv.setVmNicRefs(LoadBalancerListenerVmNicRefInventory.valueOf(vo.getVmNicRefs()));
@@ -136,6 +138,14 @@ public class LoadBalancerListenerInventory implements Serializable {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public String getSecurityPolicyType() {
+        return securityPolicyType;
+    }
+
+    public void setSecurityPolicyType(String securityPolicyType) {
+        this.securityPolicyType = securityPolicyType;
     }
 
     public Timestamp getCreateDate() {

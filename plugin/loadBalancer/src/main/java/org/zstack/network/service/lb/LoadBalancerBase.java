@@ -1419,6 +1419,7 @@ public class LoadBalancerBase {
         vo.setInstancePort(msg.getInstancePort());
         vo.setLoadBalancerPort(msg.getLoadBalancerPort());
         vo.setProtocol(msg.getProtocol());
+        vo.setSecurityPolicyType(msg.getSecurityPolicyType());
         vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo = dbf.persistAndRefresh(vo);
         if (msg.getCertificateUuid() != null) {
@@ -1771,6 +1772,11 @@ public class LoadBalancerBase {
 
                 if (msg.getSystemTags() != null) {
                     new LoadBalancerWeightOperator().setWeight(msg.getSystemTags(), msg.getLoadBalancerListenerUuid());
+                }
+
+                if (msg.getSecurityPolicyType() != null) {
+                    lblVo.setSecurityPolicyType(msg.getSecurityPolicyType());
+                    dbf.update(lblVo);
                 }
 
                 Boolean refresh = Q.New(LoadBalancerListenerVmNicRefVO.class).eq(LoadBalancerListenerVmNicRefVO_.listenerUuid, msg.getUuid()).isExists();

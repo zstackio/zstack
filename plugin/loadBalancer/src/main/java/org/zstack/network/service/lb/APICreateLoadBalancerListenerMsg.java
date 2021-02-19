@@ -53,6 +53,10 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     private List<String> aclUuids;
     @APIParam(validValues = {"white","black"}, required = false)
     private String aclType = LoadBalancerAclType.black.toString();
+    @APIParam(validValues = {LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_DEFAULT, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_0, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_1,
+            LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2_STRICT,
+            LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2_STRICT_WITH_1_3}, required = false)
+    private String securityPolicyType;
 
     @Override
     public String getLoadBalancerUuid() {
@@ -165,6 +169,14 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
 
     public void setAclType(String aclType) {
         this.aclType = aclType;
+    }
+
+    public String getSecurityPolicyType() {
+        return securityPolicyType;
+    }
+
+    public void setSecurityPolicyType(String securityPolicyType) {
+        this.securityPolicyType = securityPolicyType;
     }
 
     public static APICreateLoadBalancerListenerMsg __example__() {
