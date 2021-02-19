@@ -19,7 +19,7 @@
 		<name>expungePeriod</name>
         <description>the period before a deleted data volume being deleted from database and primary storage, in seconds</description>
 		<category>volume</category>
-		<defaultValue>86400</defaultValue>
+		<defaultValue>259200</defaultValue>
 		<type>java.lang.Long</type>
 	</config>
 
