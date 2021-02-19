@@ -702,6 +702,59 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
+    public static class CheckHostStorageConnectionCmd extends AgentCommand implements HasSensitiveInfo {
+        public List<String> poolNames;
+        public String hostUuid;
+        public String userKey;
+        int storageCheckerTimeout;
+        @NoLogging(type = NoLogging.Type.Uri)
+        public List<String> monUrls;
+
+        public List<String> getPoolNames() {
+            return poolNames;
+        }
+
+        public void setPoolNames(List<String> poolNames) {
+            this.poolNames = poolNames;
+        }
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getUserKey() {
+            return userKey;
+        }
+
+        public void setUserKey(String userKey) {
+            this.userKey = userKey;
+        }
+
+        public int getStorageCheckerTimeout() {
+            return storageCheckerTimeout;
+        }
+
+        public void setStorageCheckerTimeout(int storageCheckerTimeout) {
+            this.storageCheckerTimeout = storageCheckerTimeout;
+        }
+
+        public List<String> getMonUrls() {
+            return monUrls;
+        }
+
+        public void setMonUrls(List<String> monUrls) {
+            this.monUrls = monUrls;
+        }
+    }
+
+    public static class CheckHostStorageConnectionRsp extends AgentResponse {
+
+    }
+
     public static class CreateKvmSecretCmd extends KVMAgentCommands.AgentCommand {
         String userKey;
         String uuid;
@@ -1052,6 +1105,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String UNPROTECT_SNAPSHOT_PATH = "/ceph/primarystorage/snapshot/unprotect";
     public static final String CP_PATH = "/ceph/primarystorage/volume/cp";
     public static final String KVM_CREATE_SECRET_PATH = "/vm/createcephsecret";
+    public static final String CHECK_HOST_STORAGE_CONNECTION_PATH = "/ceph/primarystorage/check/host/connection";
     public static final String DELETE_POOL_PATH = "/ceph/primarystorage/deletepool";
     public static final String GET_VOLUME_SIZE_PATH = "/ceph/primarystorage/getvolumesize";
     public static final String GET_VOLUME_SNAPSHOT_SIZE_PATH = "/ceph/primarystorage/getvolumesnapshotsize";
@@ -3564,6 +3618,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((BackupVolumeSnapshotFromPrimaryStorageToBackupStorageMsg) msg);
         } else if (msg instanceof CreateKvmSecretMsg) {
             handle((CreateKvmSecretMsg) msg);
+        } else if (msg instanceof CheckHostStorageConnectionMsg) {
+            handle((CheckHostStorageConnectionMsg) msg);
         } else if (msg instanceof UploadBitsToBackupStorageMsg) {
             handle((UploadBitsToBackupStorageMsg) msg);
         } else if (msg instanceof SetupSelfFencerOnKvmHostMsg) {
@@ -3882,6 +3938,78 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         }).specifyOrder(apiId).call();
+    }
+
+    private void handle(final CheckHostStorageConnectionMsg msg) {
+        CheckHostStorageConnectionReply reply = new CheckHostStorageConnectionReply();
+        checkHostStorageConnection(msg.getHostUuids(), new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void checkHostStorageConnection(List<String> hostUuids, final Completion completion) {
+        final CheckHostStorageConnectionCmd cmd = new CheckHostStorageConnectionCmd();
+        cmd.uuid = self.getUuid();
+        cmd.fsId = getSelf().getFsid();
+        cmd.userKey = getSelf().getUserKey();
+        cmd.poolNames = Q.New(CephPrimaryStoragePoolVO.class)
+                .select(CephPrimaryStoragePoolVO_.poolName)
+                .eq(CephPrimaryStoragePoolVO_.type, CephPrimaryStoragePoolType.Root.toString())
+                .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
+                .listValues();
+        cmd.monUrls = CollectionUtils.transformToList(getSelf().getMons(), (Function<String, CephPrimaryStorageMonVO>) arg -> String.format("%s:%s", arg.getMonAddr(), arg.getMonPort()));
+        cmd.setUserKey(getSelf().getUserKey());
+        String suuid = CephSystemTags.KVM_SECRET_UUID.getTokenByResourceUuid(self.getUuid(), CephSystemTags.KVM_SECRET_UUID_TOKEN);
+        DebugUtils.Assert(suuid != null, String.format("cannot find system tag[%s] for ceph primary storage[uuid:%s]", CephSystemTags.KVM_SECRET_UUID.getTagFormat(), self.getUuid()));
+        cmd.setUuid(suuid);
+
+        List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids, (Function<KVMHostAsyncHttpCallMsg, String>) huuid -> {
+            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+            msg.setCommand(cmd);
+            msg.setPath(CHECK_HOST_STORAGE_CONNECTION_PATH);
+            msg.setHostUuid(huuid);
+            msg.setNoStatusCheck(true);
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, huuid);
+            return msg;
+        });
+
+        ErrorCodeList errorCodeList = new ErrorCodeList();
+        new While<>(msgs).each((msg, wc) -> {
+            bus.send(msg, new CloudBusCallBack(wc) {
+                @Override
+                public void run(MessageReply reply) {
+                    KVMHostAsyncHttpCallReply kr = reply.castReply();
+                    CheckHostStorageConnectionRsp rsp = kr.toResponse(CheckHostStorageConnectionRsp.class);
+                    if (!rsp.isSuccess()) {
+                        errorCodeList.getCauses().add(operr("operation error, because:%s", rsp.getError()));
+                    } else {
+                        updatePrimaryStorageHostStatus(Collections.singletonList(self.getUuid()), msg.getHostUuid(), PrimaryStorageHostStatus.Connected, null);
+                    }
+
+                    wc.done();
+                }
+            });
+        }).run(new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
+
+                completion.success();
+            }
+        });
+
     }
 
     private void handle(final CreateKvmSecretMsg msg) {

@@ -120,6 +120,10 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new KVMAgentCommands.AgentResponse()
             }
 
+            simulator(CephPrimaryStorageBase.CHECK_HOST_STORAGE_CONNECTION_PATH) {
+                return new KVMAgentCommands.AgentResponse()
+            }
+
             simulator(CephPrimaryStorageBase.DELETE_PATH) {
                 return new CephPrimaryStorageBase.DeleteRsp()
             }
