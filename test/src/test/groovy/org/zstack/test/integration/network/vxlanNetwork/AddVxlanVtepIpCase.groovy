@@ -296,7 +296,8 @@ class AddVxlanVtepIpCase extends SubCase {
         assert vtepIps.contains(vtep1)
         assert vtepIps.contains(vtep2)
         retryInSecs(15) {
-            assert cmds.size()==2
+            // if don not have vxlannetwork, can not send cmd VxlanNetworkPoolConstant.VXLAN_KVM_POPULATE_FDB_L2VXLAN_NETWORKS_PATH
+            assert cmds.size()==0
         }
     }
 }

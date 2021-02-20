@@ -157,6 +157,11 @@ public class VxlanNetworkPool extends L2NoVlanNetwork implements L2VxlanNetworkP
                 .select(VxlanNetworkVO_.uuid)
                 .eq(VxlanNetworkVO_.poolUuid, msg.getPoolUuid())
                 .listValues();
+        if(vxlanNetworkUuids.isEmpty()){
+            logger.debug("no need to populate fdb because there is no vxlannetwork");
+            bus.reply(msg, reply);
+            return;
+        }
 
         new While<>(targets).all((host, completion1) -> {
             Set<String> peers = vteps.stream()
