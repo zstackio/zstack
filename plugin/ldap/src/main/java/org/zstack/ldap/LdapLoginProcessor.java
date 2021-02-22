@@ -3,7 +3,6 @@ package org.zstack.ldap;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
-import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.LoginProcessor;
 import org.zstack.header.identity.LoginType;
 import org.zstack.header.message.APIMessage;
@@ -14,7 +13,7 @@ import org.zstack.header.message.APIMessage;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class LdapLoginProcessor implements LoginProcessor {
     public static final LoginType loginType = new LoginType(LdapConstant.LOGIN_TYPE);
-    public static LdapUtil ldapUtil = Platform.New(() -> new LdapUtil(AccountConstant.LOGIN_TYPE));
+    public static LdapUtil ldapUtil = Platform.New(() -> new LdapUtil("IAM2"));
 
     @Override
     public LoginType getLoginType() {
