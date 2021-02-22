@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIChangeLoadBalancerBackendServerEvent
 
 doc {
-    title "ChangeLoadBalancerBackendServer"
+    title "修改负载均衡后端服务器参数"
 
-    category "loadBalancer"
+    category "负载均衡"
 
-    desc """更新负载均衡器服务器组"""
+    desc """修改负载均衡后端服务器参数"""
 
     rest {
         request {
