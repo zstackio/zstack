@@ -30,6 +30,7 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,7 +71,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
                 vr.getUuid(), vip.getL3NetworkUuid(), vip.getUuid(), vip.getIp()));
     }
 
-    public void createVipOnVirtualRouterVm(final VirtualRouterVmInventory vr, List<VipInventory> vips, Boolean rebuildVip, final Completion completion) {
+    public void createVipOnVirtualRouterVm(final VirtualRouterVmInventory vr, List<VipInventory> vips, Boolean syncVip, final Completion completion) {
         final List<VipTO> tos = new ArrayList<VipTO>(vips.size());
         List<VipInventory> systemVip = vips.stream().filter(v -> v.isSystem()).collect(Collectors.toList());
         List<VipInventory> notSystemVip = vips.stream().filter(v -> !v.isSystem()).collect(Collectors.toList());
@@ -94,8 +95,20 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
             tos.add(to);
         }
 
+        List<NicIpTO> nicIps = new ArrayList<>();
+        if (syncVip) {
+            for (VmNicInventory nic : vr.getVmNics()) {
+                /* TODO: not support ipv6 vip */
+                if (!NetworkUtils.isIpv4Address(nic.getIp())) {
+                    continue;
+                }
+                nicIps.add(NicIpTO.valueOf(nic));
+            }
+        }
+
         CreateVipCmd cmd = new CreateVipCmd();
-        cmd.setRebuild(rebuildVip);
+        cmd.setSyncVip(syncVip);
+        cmd.setNicIps(nicIps);
         cmd.setVips(tos);
 
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
@@ -205,7 +218,7 @@ public class VirtualRouterVipBackend extends AbstractVirtualRouterBackend implem
         }
 
         CreateVipCmd cmd = new CreateVipCmd();
-        cmd.setRebuild(false);
+        cmd.setSyncVip(false);
         cmd.setVips(vips);
 
         VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();

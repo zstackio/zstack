@@ -36,7 +36,6 @@ public class ApplianceVmConstant {
         managementNicIp,
         applianceVmUuid,
         timeout,
-        rebuildVip,
         rebuildSnat,
     }
 
