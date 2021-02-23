@@ -26,6 +26,4 @@ public interface VyosConstants {
 
     String REPLACE_FIREWALL_WITH_IPTBALES = "SkipVyosIptables";
     String HA_STATUS = "haStatus";
-
-    String VIP_REBUILD_VERSION = "3.8.4.2";
 }

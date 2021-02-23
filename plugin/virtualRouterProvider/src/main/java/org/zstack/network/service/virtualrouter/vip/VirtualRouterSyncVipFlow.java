@@ -32,7 +32,6 @@ public class VirtualRouterSyncVipFlow implements Flow {
     @Override
     public void run(final FlowTrigger chain, Map data) {
         final VirtualRouterVmInventory vr = (VirtualRouterVmInventory) data.get(VirtualRouterConstant.Param.VR.toString());
-        final Boolean rebuildVip = (Boolean) data.get(ApplianceVmConstant.Params.rebuildVip.toString());
 
         List<String> vrVips = proxy.getServiceUuidsByRouterUuid(vr.getUuid(), VipVO.class.getSimpleName());
         List<String> peerL3Vips = null;
@@ -72,7 +71,7 @@ public class VirtualRouterSyncVipFlow implements Flow {
 
         List<VipInventory> invs = VipInventory.valueOf(vips);
 
-        vipExt.createVipOnVirtualRouterVm(vr, invs, rebuildVip, new Completion(chain) {
+        vipExt.createVipOnVirtualRouterVm(vr, invs, true, new Completion(chain) {
             @Override
             public void success() {
                 proxy.attachNetworkService(vr.getUuid(), VipVO.class.getSimpleName(), vips.stream().map(VipVO::getUuid).collect(Collectors.toList()));
