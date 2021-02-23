@@ -83,11 +83,6 @@ public class VyosVersionVersionManagerImpl implements VyosVersionManager {
                 if (mnVersion.compare(remoteVersion) > 0) {
                     logger.warn(String.format("virtual router[uuid: %s] version [%s] is older than management node version [%s]",vrUuid, ret.getVersion(), managementVersion));
                     result.setNeedReconnect(true);
-                    int oldVersion = remoteVersion.compare(VyosConstants.VIP_REBUILD_VERSION);
-                    int newVersion = mnVersion.compare(VyosConstants.VIP_REBUILD_VERSION);
-                    if ((oldVersion < 0) && (newVersion > 0)) {
-                        result.setRebuildVip(true);
-                    }
                     completion.success(result);
                 } else {
                     logger.debug(String.format("virtual router[uuid: %s] successfully finish the version check", vrUuid));
