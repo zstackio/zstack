@@ -138,6 +138,14 @@ class UpdateVniRangeCase extends SubCase {
                 name = "RANGE-3"
             }
         }
+
+        assert queryVniRange {
+            conditions=["l2NetworkUuid=${pool1.uuid}"]
+        }.size() == 1
+
+        assert queryVniRange {
+            conditions=["vxlanPool.uuid=${pool1.uuid}"]
+        }.size() == 1
     }
 
     @Override
