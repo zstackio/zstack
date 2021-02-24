@@ -687,6 +687,7 @@ public class VolumeSnapshotTreeBase {
                         cmsg.setSnapshot(currentLeaf.getInventory());
                         cmsg.setVolumeUuid(msg.getVolume().getUuid());
                         cmsg.setPrimaryStorageUuid(currentRoot.getPrimaryStorageUuid());
+                        cmsg.setSystemTags(msg.getSystemTags());
                         bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, cmsg.getPrimaryStorageUuid());
                         bus.send(cmsg, new CloudBusCallBack(trigger) {
                             @Override
