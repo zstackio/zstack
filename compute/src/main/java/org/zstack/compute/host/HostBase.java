@@ -241,6 +241,17 @@ public abstract class HostBase extends AbstractHost {
                             }
                         }
 
+                        // Migrate applianceVM first.
+                        final List<String> applianceVMs = Q.New(VmInstanceVO.class)
+                                .select(VmInstanceVO_.uuid)
+                                .notEq(VmInstanceVO_.type, VmInstanceConstant.USER_VM_TYPE)
+                                .in(VmInstanceVO_.uuid, vmUuids)
+                                .listValues();
+                        if (!applianceVMs.isEmpty()) {
+                            vmUuids.removeAll(applianceVMs);
+                            vmUuids.addAll(0, applianceVMs);
+                        }
+
                         new While<>(vmUuids).step((vmUuid, compl) -> {
                             MigrateVmMsg msg = new MigrateVmMsg();
                             msg.setVmInstanceUuid(vmUuid);
