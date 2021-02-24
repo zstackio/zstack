@@ -398,6 +398,9 @@ public class StorageRecycleImpl implements StorageTrash, VolumeSnapshotAfterDele
     }
 
     @Override
+    public void volumePreExpunge(VolumeInventory volume) {}
+
+    @Override
     public void volumeBeforeExpunge(VolumeInventory volume, Completion completion) {
         deleteTrashForVolume(volume.getUuid(), volume.getPrimaryStorageUuid(), completion);
     }
