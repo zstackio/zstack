@@ -6,12 +6,11 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
-import org.zstack.header.core.workflow.Flow;
-import org.zstack.header.core.workflow.FlowTrigger;
-import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -135,7 +134,7 @@ public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConne
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                createSecret(context.getInventory().getUuid(), context.getInventory().getClusterUuid(), new Completion(trigger) {
+                doPrepareCephPrimaryStorage(context, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -148,5 +147,92 @@ public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConne
                 });
             }
         };
+    }
+
+    private void checkHostStorageConnection(final String hostUuid, String clusterUuid, Completion completion) {
+        List<String> psUuids = findCephPrimaryStorage(clusterUuid);
+        if (psUuids.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        List<CheckHostStorageConnectionMsg> msgs = CollectionUtils.transformToList(psUuids, new Function<CheckHostStorageConnectionMsg, String>() {
+            @Override
+            public CheckHostStorageConnectionMsg call(String puuid) {
+                CheckHostStorageConnectionMsg msg = new CheckHostStorageConnectionMsg();
+                msg.setPrimaryStorageUuid(puuid);
+                msg.setHostUuids(list(hostUuid));
+                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, puuid);
+                return msg;
+            }
+        });
+
+        new While<>(msgs).step((msg, whileCompletion) -> {
+            bus.send(msg, new CloudBusCallBack(whileCompletion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        whileCompletion.addError(reply.getError());
+                    }
+
+                    whileCompletion.done();
+                }
+            });
+        }, 10).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                } else {
+                    completion.success();
+                }
+            }
+        });
+    }
+
+    private void doPrepareCephPrimaryStorage(final KVMHostConnectedContext context, Completion completion) {
+        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+        chain.setName("do-prepare-ceph-primary-storage");
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                checkHostStorageConnection(context.getInventory().getUuid(), context.getInventory().getClusterUuid(), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                createSecret(context.getInventory().getUuid(), context.getInventory().getClusterUuid(), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errCode, Map data) {
+                completion.fail(errCode);
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).start();
     }
 }
