@@ -9,6 +9,8 @@ import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -65,6 +67,34 @@ public class APIChangeLoadBalancerBackendServerMsg extends APIMessage implements
     @Override
     public APIAuditor.Result audit(APIMessage msg, APIEvent rsp) {
         return new APIAuditor.Result(((APIChangeLoadBalancerBackendServerMsg)msg).getLoadBalancerUuid(), LoadBalancerVO.class);
+    }
+
+    public static APIChangeLoadBalancerBackendServerMsg __example__() {
+        APIChangeLoadBalancerBackendServerMsg msg = new APIChangeLoadBalancerBackendServerMsg();
+        Map<String,String> vmnicMap = new HashMap<String, String>() {
+            {
+                put("uuid", uuid());
+                put("weight","20");
+            }
+        };
+
+        List<Map<String, String>> vmnicList = new ArrayList<>();
+        vmnicList.add(vmnicMap);
+
+        Map<String,String> serverMap = new HashMap<String, String>() {
+            {
+                put("ipAddress", "192.168.1.1");
+                put("weight","20");
+            }
+        };
+
+        List<Map<String, String>> serverList = new ArrayList<>();
+        serverList.add(serverMap);
+
+        msg.setVmNics(vmnicList);
+        msg.setServers(serverList);
+        msg.setServerGroupUuid(uuid());
+        return msg;
     }
 
 }

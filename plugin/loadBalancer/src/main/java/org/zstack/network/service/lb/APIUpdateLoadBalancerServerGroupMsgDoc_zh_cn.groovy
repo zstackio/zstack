@@ -3,11 +3,11 @@ package org.zstack.network.service.lb
 import org.zstack.network.service.lb.APIUpdateLoadBalancerServerGroupEvent
 
 doc {
-    title "UpdateLoadBalancerServerGroup"
+    title "更新负载均衡服务器组"
 
-    category "loadBalancer"
+    category "负载均衡"
 
-    desc """在这里填写API描述"""
+    desc """更新负载均衡服务器组"""
 
     rest {
         request {
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "0.6"
+					since "4.0"
 					
 				}
 				column {
@@ -38,7 +38,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "4.0"
 					
 				}
 				column {
@@ -48,7 +48,7 @@ doc {
 					location "body"
 					type "String"
 					optional true
-					since "0.6"
+					since "4.0"
 					
 				}
 				column {
@@ -58,7 +58,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.0"
 					
 				}
 				column {
@@ -68,7 +68,7 @@ doc {
 					location "body"
 					type "List"
 					optional true
-					since "0.6"
+					since "4.0"
 					
 				}
 			}

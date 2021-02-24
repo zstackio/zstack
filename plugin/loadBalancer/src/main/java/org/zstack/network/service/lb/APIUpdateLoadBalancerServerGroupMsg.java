@@ -57,4 +57,13 @@ public class APIUpdateLoadBalancerServerGroupMsg extends APIMessage implements L
     public void setLoadBalancerUuid(String loadBalancerUuid) {
         this.loadBalancerUuid = loadBalancerUuid;
     }
+
+    public static APIUpdateLoadBalancerServerGroupMsg __example__() {
+        APIUpdateLoadBalancerServerGroupMsg msg = new APIUpdateLoadBalancerServerGroupMsg();
+        msg.setUuid(uuid());
+        msg.setName("updateServerGroup");
+        msg.setDescription("updateServerGroup");
+        return msg;
+    }
+
 }
