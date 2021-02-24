@@ -495,6 +495,14 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     private void handle(APICreateDataVolumeFromVolumeSnapshotMsg msg) {
         final APICreateDataVolumeFromVolumeSnapshotEvent evt = new APICreateDataVolumeFromVolumeSnapshotEvent(msg.getId());
+
+        SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
+        sq.select(VolumeSnapshotVO_.volumeUuid, VolumeSnapshotVO_.treeUuid);
+        sq.add(VolumeSnapshotVO_.uuid, Op.EQ, msg.getVolumeSnapshotUuid());
+        Tuple t = sq.findTuple();
+        String volumeUuid = t.get(0, String.class);
+        String treeUuid = t.get(1, String.class);
+
         final VolumeVO vo = new VolumeVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -508,6 +516,12 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setType(VolumeType.Data);
         vo.setSize(0);
         vo.setAccountUuid(msg.getSession().getAccountUuid());
+
+        if (msg.getSystemTags() != null && msg.getSystemTags().stream().anyMatch(VolumeSystemTags.FAST_CREATE::isMatch)) {
+            String rootImageUuid = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volumeUuid).select(VolumeVO_.rootImageUuid).findValue();
+            vo.setRootImageUuid(rootImageUuid);
+        }
+
         VolumeVO vvo = new SQLBatchWithReturn<VolumeVO>() {
             @Override
             protected VolumeVO scripts() {
@@ -520,7 +534,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vvo));
 
-        instantiateDataVolumeFromSnapshot(vo, msg.getVolumeSnapshotUuid(), new ReturnValueCompletion<VolumeInventory>(evt) {
+        instantiateDataVolumeFromSnapshot(vo, msg.getVolumeSnapshotUuid(), msg.getSystemTags(), new ReturnValueCompletion<VolumeInventory>(evt) {
             @Override
             public void success(VolumeInventory volume) {
                 evt.setInventory(volume);
@@ -583,6 +597,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     }
 
     private void instantiateDataVolumeFromSnapshot(VolumeVO vo, String snapshotUuid, ReturnValueCompletion<VolumeInventory> completion) {
+        instantiateDataVolumeFromSnapshot(vo, snapshotUuid, null, completion);
+    }
+
+    private void instantiateDataVolumeFromSnapshot(VolumeVO vo, String snapshotUuid, List<String> systemTags, ReturnValueCompletion<VolumeInventory> completion) {
         SimpleQuery<VolumeSnapshotVO> sq = dbf.createQuery(VolumeSnapshotVO.class);
         sq.select(VolumeSnapshotVO_.volumeUuid, VolumeSnapshotVO_.treeUuid);
         sq.add(VolumeSnapshotVO_.uuid, Op.EQ, snapshotUuid);
@@ -596,6 +614,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         cmsg.setTreeUuid(treeUuid);
         cmsg.setUuid(snapshotUuid);
         cmsg.setVolume(VolumeInventory.valueOf(vo));
+        cmsg.setSystemTags(systemTags);
         String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
         bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
         bus.send(cmsg, new CloudBusCallBack(completion) {
