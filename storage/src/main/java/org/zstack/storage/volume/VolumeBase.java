@@ -695,7 +695,7 @@ public class VolumeBase implements Volume {
         }
 
         final VolumeInventory inv = getSelfInventory();
-
+        pluginRgty.getExtensionList(VolumeBeforeExpungeExtensionPoint.class).forEach(ext -> ext.volumePreExpunge(inv));
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName("expunge-volume");
         chain.then(new ShareFlow() {
