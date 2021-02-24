@@ -75,6 +75,7 @@ public class Ssh {
                 String remoteScript = ln(
                         "/bin/bash << EOF",
                         "cat << EOF1 > {remotePath}",
+                        "PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
                         "{scriptContent}",
                         "EOF1",
                         "/bin/bash {remotePath} {parameters} 1>{stdout} 2>{stderr}",
@@ -103,6 +104,7 @@ public class Ssh {
             String remoteScript = ln(
                     "/bin/bash << EOF",
                     "cat << EOF1 > {remotePath}",
+                    "PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
                     "{scriptContent}",
                     "EOF1",
                     "/bin/bash {remotePath} 1>{stdout} 2>{stderr}",
